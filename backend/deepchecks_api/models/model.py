@@ -3,11 +3,9 @@ from dataclasses import field, dataclass
 from typing import Optional, List
 
 from sqlalchemy import Table, Integer, String, Column, Enum
-from sqlalchemy.orm import registry, relationship
+from sqlalchemy.orm import relationship
 
-from backend.deepchecks_api.models import ModelVersion
-
-mapper_registry = registry()
+from backend.deepchecks_api.models import mapper_registry, ModelVersion
 
 
 class TaskType(enum.Enum):
