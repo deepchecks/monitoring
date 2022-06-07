@@ -9,7 +9,7 @@ class Segment:
     __table__ = Table(
         "segment",
         mapper_registry.metadata,
-        Column("id", Integer, primary_key=True),
+        Column("id", Integer, primary_key=True, index=True),
         Column("name", String(50), nullable=False),
         Column("rule", JSON, nullable=False),
         Column("model_id", Integer, ForeignKey("model.id")),
