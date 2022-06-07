@@ -12,7 +12,7 @@ class ModelVersion:
     __table__ = Table(
         "model_version",
         mapper_registry.metadata,
-        Column("id", Integer, primary_key=True),
+        Column("id", Integer, primary_key=True, index=True),
         Column("name", String(50)),
         Column("model_id", Integer, ForeignKey("model.id")),
     )

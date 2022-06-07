@@ -1,29 +1,28 @@
-import enum
 from dataclasses import field, dataclass
 from typing import Optional, List
 
 from sqlalchemy import Table, Integer, String, Column, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import registry, relationship
 
-from backend.deepchecks_api.models import mapper_registry, ModelVersion
+from deepchecks.vision.vision_data import TaskType
+from deepchecks.utils.metrics import ModelType
 
+from backend.deepchecks_api.models import ModelVersion
+from backend.deepchecks_api.models.database import Base
 
-class TaskType(enum.Enum):
-    regression = 'regression'
-    binary = 'binary'  # binary classification
-    multiclass = 'multiclass'  # multiclass classification
+mapper_registry = registry()
 
 
 @mapper_registry.mapped
 @dataclass
-class Model:
+class Model(Base):
     __table__ = Table(
         "model",
         mapper_registry.metadata,
-        Column("id", Integer, primary_key=True),
+        Column("id", Integer, primary_key=True, index=True),
         Column("name", String(50)),
         Column("description", String(200)),
-        Column("task_type", Column(Enum(TaskType))),
+        Column("task_type", Column(Enum(TaskType, ModelType))),
     )
     id: int = field(init=False)
     name: Optional[str] = None
