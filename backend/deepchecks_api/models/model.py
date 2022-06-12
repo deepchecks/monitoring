@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 from dataclasses import field, dataclass
 import enum
 from typing import Optional, List, TYPE_CHECKING
 
-from sqlalchemy import Table, Integer, String, Column, Enum, ForeignKey
+from sqlalchemy import Table, Integer, String, Column, Enum
 from sqlalchemy.orm import relationship
 
 from backend.deepchecks_api.models.database import mapper_registry
