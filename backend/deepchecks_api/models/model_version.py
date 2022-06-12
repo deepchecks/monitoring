@@ -3,8 +3,7 @@ from typing import Optional
 
 from sqlalchemy import Table, Integer, String, Column, ForeignKey
 
-from backend.deepchecks_api.models import mapper_registry
-
+from backend.deepchecks_api.models.database import mapper_registry
 
 @mapper_registry.mapped
 @dataclass
@@ -19,3 +18,4 @@ class ModelVersion:
     id: int = field(init=False)
     name: Optional[str] = None
     model_id: int = field(init=False)
+
