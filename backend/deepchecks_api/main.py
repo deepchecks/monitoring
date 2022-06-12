@@ -1,12 +1,26 @@
-from fastapi import FastAPI
+from enum import Enum
+from fastapi import Depends, FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
-from api.v1.api import router
-# from app.core.config import settings
+from backend.deepchecks_api.models import schemas
+from backend.deepchecks_api.models import models
+from backend.deepchecks_api.models.database import SessionLocal, engine, mapper_registry
+
+from .api.v1.api import router
 
 app = FastAPI(
-    title="Deepchecks Monitoring", openapi_url="api/v1/openapi.json"
+    title="Deepchecks Monitoring", openapi_url="/api/v1/openapi.json"
 )
+mapper_registry.metadata.create_all(bind=engine)
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Set all CORS enabled origins
 # if settings.BACKEND_CORS_ORIGINS:
@@ -18,4 +32,4 @@ app = FastAPI(
 #         allow_headers=["*"],
 #     )
 
-app.include_router(router, prefix="api/v1/")
+app.include_router(router, prefix="/api/v1")
