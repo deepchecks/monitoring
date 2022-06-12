@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import field, dataclass
+import enum
 from typing import Optional, List, TYPE_CHECKING
 
 from sqlalchemy import Table, Integer, String, Column, Enum, ForeignKey
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from backend.deepchecks_api.models.model_version import ModelVersion
 
 
-class ModelEnum(Enum):
+class ModelEnum(enum.Enum):
     """Enum containing supported task types."""
     CLASSIFICATION = 'classification'
     OBJECT_DETECTION = 'object_detection'
@@ -31,7 +32,7 @@ class Model:
         Column("id", Integer, primary_key=True, index=True),
         Column("name", String(50)),
         Column("description", String(200)),
-        Column("task_type", ModelEnum),
+        Column("task_type", Enum(ModelEnum)),
     )
     id: int = field(init=False)
     name: Optional[str] = None
