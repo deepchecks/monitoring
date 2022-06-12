@@ -1,4 +1,3 @@
-from enum import Enum
 from fastapi import Depends, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -6,7 +5,6 @@ from sqlalchemy.orm import Session
 from backend.deepchecks_api.models import schemas
 from backend.deepchecks_api.models import models
 from backend.deepchecks_api.models.database import SessionLocal, engine, mapper_registry
-from backend.deepchecks_api.models.model import ModelEnum
 
 from .api.v1.api import router
 
