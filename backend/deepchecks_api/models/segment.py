@@ -1,6 +1,7 @@
 from dataclasses import field, dataclass
 from sqlalchemy import Table, Integer, String, Column, ForeignKey, JSON
-from backend.deepchecks_api.models import mapper_registry
+
+from backend.deepchecks_api.models.database import  mapper_registry
 
 
 @mapper_registry.mapped

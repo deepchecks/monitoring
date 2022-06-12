@@ -4,7 +4,7 @@ import uuid as uuid_pkg
 from dataclasses import field, dataclass
 from sqlalchemy import Table, String, Column
 
-from backend.deepchecks_api.models import mapper_registry
+from backend.deepchecks_api.models.database import  mapper_registry
 
 
 @mapper_registry.mapped
