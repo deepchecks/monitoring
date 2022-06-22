@@ -8,10 +8,6 @@ from sqlalchemy.orm import relationship
 from backend.deepchecks_api.models.database import mapper_registry
 
 
-if TYPE_CHECKING:
-    from backend.deepchecks_api.models.model_version import ModelVersion
-
-
 class ModelEnum(enum.Enum):
     """Enum containing supported task types."""
     CLASSIFICATION = 'classification'
@@ -24,6 +20,8 @@ class ModelEnum(enum.Enum):
 @mapper_registry.mapped
 @dataclass
 class Model:
+    from backend.deepchecks_api.models.model_version import ModelVersion
+
     __table__ = Table(
         "model",
         mapper_registry.metadata,
