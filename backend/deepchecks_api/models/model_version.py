@@ -3,7 +3,7 @@ from typing import Optional
 
 from sqlalchemy import Table, Integer, String, Column, ForeignKey
 
-from backend.deepchecks_api.models.database import mapper_registry
+from deepchecks_api.models.database import mapper_registry
 
 @mapper_registry.mapped
 @dataclass

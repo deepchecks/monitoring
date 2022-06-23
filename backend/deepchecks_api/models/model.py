@@ -5,7 +5,7 @@ from typing import Optional, List, TYPE_CHECKING
 from sqlalchemy import Table, Integer, String, Column, Enum
 from sqlalchemy.orm import relationship
 
-from backend.deepchecks_api.models.database import mapper_registry
+from deepchecks_api.models.database import mapper_registry
 
 
 class ModelEnum(enum.Enum):
@@ -20,7 +20,7 @@ class ModelEnum(enum.Enum):
 @mapper_registry.mapped
 @dataclass
 class Model:
-    from backend.deepchecks_api.models.model_version import ModelVersion
+    from deepchecks_api.models.model_version import ModelVersion
 
     __table__ = Table(
         "model",

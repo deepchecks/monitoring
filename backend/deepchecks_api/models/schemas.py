@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from backend.deepchecks_api.models.model import ModelEnum
+from deepchecks_api.models.model import ModelEnum
 
 class Model(BaseModel):
     id: int = None
