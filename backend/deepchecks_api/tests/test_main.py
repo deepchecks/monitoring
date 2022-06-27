@@ -46,3 +46,4 @@ def test_add_model():
             "description": None,
             "task_type": "binary",
         }
+      

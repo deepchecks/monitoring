@@ -15,4 +15,3 @@ async def create_model(model: schemas.Model, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_item)
     return db_item
-print('ahhhh')
