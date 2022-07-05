@@ -9,3 +9,4 @@ class Model(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     task_type: ModelEnum = None
+    
