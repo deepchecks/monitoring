@@ -1,11 +1,10 @@
-from fastapi import Depends, FastAPI
-from starlette.middleware.cors import CORSMiddleware
+from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from deepchecks_api.models import schemas
-from deepchecks_api.models import models
+from deepchecks_api.models import schemas, models
+from deepchecks_api.database import get_db
+from deepchecks_api.api.v1 import router
 
-from ..api import get_db, router
 
 @router.post("/models/", response_model=schemas.Model)
 async def create_model(model: schemas.Model, db: Session = Depends(get_db)):
