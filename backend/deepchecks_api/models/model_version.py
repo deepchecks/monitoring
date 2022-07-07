@@ -3,7 +3,7 @@ from dataclasses import field, dataclass
 from datetime import datetime
 from typing import Optional, Dict
 
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean
+from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -48,7 +48,8 @@ class ModelVersion(Base):
         Column("reference_table_name", String(30)),
         Column("model_id", Integer, ForeignKey("models.id"))
     )
-    id: int = field(init=False)
+
+    ids: int
     name: str
     model_id: int
     start_time: Optional[datetime] = field(init=False)

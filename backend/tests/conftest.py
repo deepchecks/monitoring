@@ -1,8 +1,9 @@
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine
+import testing.postgresql
 
-from deepchecks_api.database import engine
 from deepchecks_api.main import app
 from deepchecks_api.models.base import Base
 
@@ -16,7 +17,15 @@ def anyio_backend(request):
     return request.param
 
 
-async def start_db():
+@pytest.fixture(scope='session')
+def engine():
+    postgres = testing.postgresql.Postgresql(port=7654)
+    url = "postgresql+asyncpg://postgres@127.0.0.1:7654/test"
+    yield create_async_engine(url, future=True, echo=True)
+    postgres.stop()
+
+
+async def start_db(engine):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -26,13 +35,13 @@ async def start_db():
 
 
 @pytest_asyncio.fixture
-async def client() -> AsyncClient:
+async def client(engine) -> AsyncClient:
     async with AsyncClient(
         app=app,
-        base_url="http://testserver/v1",
+        base_url="http://testserver",
         headers={"Content-Type": "application/json"},
     ) as client:
-        await start_db()
+        await start_db(engine)
         yield client
         # for AsyncEngine created in function scope, close and
         # clean-up pooled connections

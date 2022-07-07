@@ -26,7 +26,7 @@ class Model(Base):
         Column("description", String(200)),
         Column("task_type", Enum(TaskType))
     )
-    id: int = field(init=False)
+    id: int
     name: Optional[str] = None
     description: Optional[str] = None
     task_type: TaskType = None
