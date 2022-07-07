@@ -22,7 +22,7 @@ async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession
 
 
 # Dependency
-async def get_db() -> AsyncGenerator:
+async def get_db() -> AsyncSession:
     async with async_session() as session:
         try:
             yield session

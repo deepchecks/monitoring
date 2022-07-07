@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateTable
 
 from deepchecks_api.database import get_db
-from deepchecks_api.api.v1 import router
+from deepchecks_api.api.v1.router import router
 from deepchecks_api.logic.data_tables import get_task_related_table_columns, get_monitor_table_meta_columns
 from deepchecks_api.models.model import Model
 from deepchecks_api.models.model_version import ModelVersion

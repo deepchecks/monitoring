@@ -1,9 +1,11 @@
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 import testing.postgresql
+from sqlalchemy.orm import sessionmaker
 
+from deepchecks_api.database import get_db
 from deepchecks_api.main import app
 from deepchecks_api.models.base import Base
 
@@ -21,7 +23,19 @@ def anyio_backend(request):
 def engine():
     postgres = testing.postgresql.Postgresql(port=7654)
     url = "postgresql+asyncpg://postgres@127.0.0.1:7654/test"
-    yield create_async_engine(url, future=True, echo=True)
+
+    engine = create_async_engine(url, future=True, echo=True)
+    TestingSessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
+
+    def override_get_db():
+        try:
+            db = TestingSessionLocal()
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    yield engine
     postgres.stop()
 
 
