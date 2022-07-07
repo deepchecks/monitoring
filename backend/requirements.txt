@@ -1,5 +1,5 @@
 fastapi>=0.78.0
-sqlalchemy>=1.4.37
+sqlalchemy[asyncio]==1.4.39
 dynaconf>=3.1.8
 pydantic>=1.9.1
 pendulum==2.1.2

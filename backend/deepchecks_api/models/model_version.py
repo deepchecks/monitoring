@@ -36,27 +36,28 @@ class ColumnDataType(enum.Enum):
 class ModelVersion(Base):
     __table__ = Table(
         "model_versions",
+        Base.metadata,
         Column("id", Integer, primary_key=True, index=True),
         Column("name", String(100)),
-        Column("start_time", DateTime),
-        Column("end_time", DateTime),
+        Column("start_time", DateTime(timezone=True)),
+        Column("end_time", DateTime(timezone=True)),
         Column("json_schema", JSONB),
         Column("column_roles", JSONB),
         Column("features_importance", JSONB),
         Column("monitor_table_name", String(30)),
         Column("reference_table_name", String(30)),
-        Column("model_id", Integer, ForeignKey("model.id")),
+        Column("model_id", Integer, ForeignKey("models.id"))
     )
     id: int = field(init=False)
-    name: Optional[str] = field(init=False)
-    model_id: int = field(init=False)
+    name: str = field()
+    model_id: int = field()
     start_time: Optional[datetime] = field(init=False)
     end_time: Optional[datetime] = field(init=False)
-    json_schema: dict = field(init=False)
-    column_roles: Dict[str, ColumnRole] = field(init=False)
-    features_importance: Dict[str, float] = field(init=False)
-    monitor_table_name: str = field(init=False)
-    reference_table_name: str = field(init=False)
+    json_schema: dict = field()
+    column_roles: Dict[str, ColumnRole] = field()
+    features_importance: Optional[Dict[str, float]] = field(init=False)
+    monitor_table_name: str = field()
+    reference_table_name: str = field()
 
     __mapper_args__ = {  # type: ignore
         "properties": {

@@ -22,6 +22,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 mapper_registry.metadata.create_all(bind=engine)
 
+
 def override_get_db():
     try:
         db = TestingSessionLocal()
@@ -33,6 +34,7 @@ def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
 
 def test_add_model():
     response = client.post("/api/v1/models/", json={
