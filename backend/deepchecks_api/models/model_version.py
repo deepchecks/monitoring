@@ -37,7 +37,7 @@ class ModelVersion(Base):
     __table__ = Table(
         "model_versions",
         Base.metadata,
-        Column("id", Integer, primary_key=True, index=True),
+        Column("indexs", Integer, primary_key=True, index=True),
         Column("name", String(100)),
         Column("start_time", DateTime(timezone=True)),
         Column("end_time", DateTime(timezone=True)),
@@ -46,9 +46,9 @@ class ModelVersion(Base):
         Column("features_importance", JSONB),
         Column("monitor_table_name", String(30)),
         Column("reference_table_name", String(30)),
-        Column("model_id", Integer, ForeignKey("models.id"))
+        Column("model_id", Integer, ForeignKey("models.index"))
     )
-    id: int = field(init=False)
+    index: int = field(init=False)
     name: str = field()
     model_id: int = field()
     start_time: Optional[datetime] = field(init=False)
