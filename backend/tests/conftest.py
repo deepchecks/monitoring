@@ -27,12 +27,15 @@ def engine():
     engine = create_async_engine(url, future=True, echo=True)
     TestingSessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
-    def override_get_db():
-        try:
-            db = TestingSessionLocal()
-            yield db
-        finally:
-            db.close()
+    async def override_get_db():
+        async with TestingSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+            finally:
+                await session.close()
 
     app.dependency_overrides[get_db] = override_get_db
     yield engine
