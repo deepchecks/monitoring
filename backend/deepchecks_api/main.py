@@ -7,3 +7,9 @@ app = FastAPI(
 )
 
 app.include_router(v1_router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    print('start')
+

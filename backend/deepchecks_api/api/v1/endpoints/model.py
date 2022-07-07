@@ -7,7 +7,7 @@ from deepchecks_api.database import get_db
 from deepchecks_api.api.v1 import router
 
 
-@router.post("/models/", response_model=model_schema.Model)
+@router.post("models/", response_model=model_schema.Model)
 async def create_model(model: model_schema.Model, db: Session = Depends(get_db)):
     data = model.dict(exclude_none=True)
     db_item = model_db.Model(**data)
