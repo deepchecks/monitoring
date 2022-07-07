@@ -4,7 +4,7 @@
 # This Makefile is based on Makefile by jidn: https://github.com/jidn/python-Makefile/blob/master/Makefile
 
 # Package = Source code Directory
-PACKAGE = deepchecks-api
+PACKAGE = deepchecks_api
 
 # Requirements file
 REQUIRE = requirements.txt
@@ -18,7 +18,7 @@ ext_py := $(shell which python3 || which python)
 
 # Override by putting in commandline python=XXX when needed.
 python = $(shell echo ${ext_py} | rev | cut -d '/' -f 1 | rev)
-TESTDIR = $(shell realpath tests)
+TESTDIR = $(shell realpath $(PACKAGE)/tests)
 ENV = $(shell realpath venv)
 repo = pypi
 
@@ -123,37 +123,16 @@ $(ENV):
 requirements: $(ENV)
 	@echo "####  installing dependencies, it could take some time, please wait! #### "
 
-	@if [ -x "$$(command -v nvidia-smi)" ]; \
-	then \
-		$(PIP) install -q\
-		 	"torch==1.10.1+cu111" "torchvision==0.11.2+cu111" "torchaudio==0.10.1" \
-		 	 -f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
-	elif [ $(OS) = "Linux" ]; \
-	then \
-		$(PIP) install -q\
-			"torch==1.10.2+cpu" "torchvision==0.11.3+cpu" "torchaudio==0.10.2+cpu" \
-			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
-	else \
-		$(PIP) install -q torch torchvision torchaudio; \
-	fi;
-
 	@$(PIP) install -U pip
 	@$(PIP) install -q \
 		wheel setuptools \
-		-r ./requirements/requirements.txt \
-		-r ./requirements/vision-requirements.txt \
-		-r ./requirements/nlp-requirements.txt
+		-r ./requirements.txt
 	@$(PIP) install --no-deps -e .
-
-
-doc-requirements: $(ENV)
-	@echo "####  installing documentation dependencies, it could take some time, please wait! #### "
-	@$(PIP) install -q -r ./docs/requirements.txt
 
 
 dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
-	@$(PIP) install -r ./requirements/dev-requirements.txt
+	@$(PIP) install -r ./dev-requirements.txt
 
 
 ### Static Analysis ######################################################

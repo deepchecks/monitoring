@@ -1,11 +1,10 @@
 import enum
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Dict, Optional
 
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.dialects.postgresql import JSONB
-
 
 from deepchecks_api.models.database import mapper_registry
 

@@ -6,7 +6,7 @@ setuptools.setup(
     author="Deepchecks",
     author_email="",
     description="",
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "deepchecks_api"},
+    packages=setuptools.find_packages(where="deepchecks_api"),
     python_requires='>=3.8'
 )

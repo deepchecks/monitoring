@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from deepchecks_api.models.model import ModelEnum
 
+
 class Model(BaseModel):
     id: int = None
     name: Optional[str] = None

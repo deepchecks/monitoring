@@ -2,9 +2,8 @@ from typing import Dict
 
 from pydantic import BaseModel
 
-from deepchecks_api.v1.api import get_db, router
-
 from deepchecks_api.models.model_version import ColumnRole
+from deepchecks_api.v1.api import get_db, router
 
 
 class VersionInfo(BaseModel):

@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from .models.database import engine, mapper_registry
-
 from .api.v1 import router
+from .models.database import engine, mapper_registry
 
 app = FastAPI(
     title="Deepchecks Monitoring", openapi_url="/api/v1/openapi.json"

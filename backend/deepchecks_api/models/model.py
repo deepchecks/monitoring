@@ -1,10 +1,11 @@
 import enum
-from dataclasses import field, dataclass
-from typing import Optional, List
+from dataclasses import dataclass, field
+from typing import List, Optional
+
+from sqlalchemy import Column, Enum, Integer, String, Table
+from sqlalchemy.orm import relationship
 
 from deepchecks_api.models.database import mapper_registry
-from sqlalchemy import Table, Integer, String, Column, Enum
-from sqlalchemy.orm import relationship
 
 
 class TaskType(enum.Enum):
