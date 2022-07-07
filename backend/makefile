@@ -175,20 +175,15 @@ test: requirements dev-requirements
 test-win:
 	@test -d $(WIN_ENV) || python -m venv $(WIN_ENV)
 	@$(WIN_ENV)\Scripts\activate.bat
-	$(PIP_WIN) install -q\
-			"torch==1.10.2+cpu" "torchvision==0.11.3+cpu" "torchaudio==0.10.2+cpu" \
-			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html;
 	@$(PIP_WIN) install -U pip
 	@$(PIP_WIN) install -q \
-		-r ./requirements/requirements.txt \
-		-r ./requirements/vision-requirements.txt \
-		-r ./requirements/nlp-requirements.txt \
-		-r ./requirements/dev-requirements.txt
+		-r requirements.txt \
+		-r dev-requirements.txt
 	python -m pytest $(WIN_TESTDIR)
 
 
 coverage: requirements dev-requirements
-	$(COVERAGE) run --source deepchecks/,tests/ --omit ultralytics_yolov5_master/ -m pytest
+	$(COVERAGE) run --source deepchecks_api -m pytest
 
 coveralls: coverage
 	$(COVERALLS) --service=github
@@ -311,75 +306,14 @@ test-release: dist test-upload
 
 ### Documentation
 
-.PHONY: docs validate-examples website dev-docs gen-static-notebooks license-check links-check
-
-
-docs: requirements doc-requirements dev-requirements $(DOCS_SRC)
-	@export WANDB_MODE=offline
-	cd $(DOCS) && make html SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) 2> docs.error.log
-	@echo ""
-	@echo "++++++++++++++++++++++++"
-	@echo "++++ Build Finished ++++"
-	@echo "++++++++++++++++++++++++"
-	@echo ""
-	@echo "all errors/warnings were written to the file:"
-	@echo "- $(DOCS)/docs.error.log"
-	@echo ""
-	@echo "statistic:"
-	@echo "- ERRORs: $$(grep "ERROR" $(DOCS)/docs.error.log | wc -l)"
-	@echo "- WARNINGs: $$(grep "WARNING" $(DOCS)/docs.error.log | wc -l)"
-
-validate-examples: doc-requirements
-	@$(PYTHON) $(TESTDIR)/examples_validation.py
-
-show-docs: $(DOCS_BUILD)/html
-	@cd $(DOCS_BUILD)/html && $(PYTHON) -m http.server
-
+.PHONY: website dev-docs gen-static-notebooks license-check links-check
 
 license-check:
 	@wget https://dlcdn.apache.org/skywalking/eyes/0.3.0/skywalking-license-eye-0.3.0-bin.tgz && tar -xzvf skywalking-license-eye-0.3.0-bin.tgz
-	@mv skywalking-license-eye-0.3.0-bin/bin/darwin/license-eye ./
+	@mv skywalking-license-eye-0.3.0-bin/bin/linux/license-eye ./
 	@rm -rf skywalking-license-eye-0.3.0-bin && rm -f skywalking-license-eye-0.3.0-bin.tgz
-	./license-eye -c .licenserc_fix.yaml header fix
+	./license-eye -c .licenserc_fix.yaml header check
 	@rm license-eye
-
-
-links-check: $(DOCS_BUILD) $(LYCHEE)
-	@$(LYCHEE) \
-		"./deepchecks/**/*.rst" "./*.rst" "$(DOCS_BUILD)/html/**/*.html" \
-		--base $(DOCS_BUILD)/html \
-		--accept=200,403,429 \
-		--format markdown \
-		--output ./lychee.output \
-		--exclude-loopback \
-		--exclude-mail \
-		--exclude-file $(DOCS)/.lycheeignore \
-		--exclude ".*git.*"; \
-	if [ $? -eq 0 ]; \
-	then \
-		echo "+++ Nothing Detected +++"; \
-		exit 0; \
-	else \
-		echo ""; \
-		echo "++++++++++++++++++++++++++++"; \
-		echo "++++ Links Check Failed ++++"; \
-		echo "++++++++++++++++++++++++++++"; \
-		echo ""; \
-		echo "full output was written to the next file:"; \
-		echo "- $(shell realpath ./lychee.output)"; \
-		echo ""; \
-		head -n 12 lychee.output; \
-		exit 1; \
-	fi;
-
-
-$(LYCHEE):
-	@curl -L --output lychee.tar.gz https://github.com/lycheeverse/lychee/releases/download/v0.8.2/lychee-v0.8.2-x86_64-unknown-linux-gnu.tar.gz
-	@tar -xvzf lychee.tar.gz
-	@rm -rf ./lychee.tar.gz
-	@chmod +x ./lychee
-	@mkdir -p $(BIN)/
-	@mv ./lychee $(BIN)/
 
 
 ### System Installation ######################################################
