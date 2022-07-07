@@ -1,4 +1,5 @@
-from .endpoints.model import create_model
-from .api import router
+from fastapi import APIRouter
 
-__all__ = ['create_model', 'router']
+__all__ = ['router']
+
+router = APIRouter(prefix="/v1")

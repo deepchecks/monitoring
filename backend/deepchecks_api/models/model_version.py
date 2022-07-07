@@ -37,7 +37,7 @@ class ModelVersion(Base):
     __table__ = Table(
         "model_versions",
         Base.metadata,
-        Column("indexs", Integer, primary_key=True, index=True),
+        Column("id", Integer, primary_key=True),
         Column("name", String(100)),
         Column("start_time", DateTime(timezone=True)),
         Column("end_time", DateTime(timezone=True)),
@@ -46,18 +46,18 @@ class ModelVersion(Base):
         Column("features_importance", JSONB),
         Column("monitor_table_name", String(30)),
         Column("reference_table_name", String(30)),
-        Column("model_id", Integer, ForeignKey("models.index"))
+        Column("model_id", Integer, ForeignKey("models.id"))
     )
-    index: int = field(init=False)
-    name: str = field()
-    model_id: int = field()
+    id: int = field(init=False)
+    name: str
+    model_id: int
     start_time: Optional[datetime] = field(init=False)
     end_time: Optional[datetime] = field(init=False)
-    json_schema: dict = field()
-    column_roles: Dict[str, ColumnRole] = field()
+    json_schema: dict
+    column_roles: Dict[str, ColumnRole]
     features_importance: Optional[Dict[str, float]] = field(init=False)
-    monitor_table_name: str = field()
-    reference_table_name: str = field()
+    monitor_table_name: str
+    reference_table_name: str
 
     __mapper_args__ = {  # type: ignore
         "properties": {

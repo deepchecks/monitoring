@@ -21,7 +21,7 @@ class Model(Base):
     __table__ = Table(
         "models",
         Base.metadata,
-        Column("index", Integer, primary_key=True, index=True),
+        Column("id", Integer, primary_key=True),
         Column("name", String(50)),
         Column("description", String(200)),
         Column("task_type", Enum(TaskType))
