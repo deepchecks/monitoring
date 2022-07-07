@@ -19,8 +19,6 @@ on:
 jobs:
   pylint:
     runs-on: ubuntu-latest
-
-
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
@@ -33,7 +31,7 @@ jobs:
     - name: Check import order
       uses: jamescurtin/isort-action@master
       with:
-        sortPaths: backend/app
+        sortPaths: backend/deepchecks_api
   docstring:
     runs-on: ubuntu-latest
     steps:

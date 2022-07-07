@@ -1,3 +1,13 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+
 # This makefile helps with deepchecks Development environment
 # including syntax checking, virtual environments creation,
 # test running and coverage
@@ -328,9 +338,9 @@ show-docs: $(DOCS_BUILD)/html
 
 license-check:
 	@wget https://dlcdn.apache.org/skywalking/eyes/0.3.0/skywalking-license-eye-0.3.0-bin.tgz && tar -xzvf skywalking-license-eye-0.3.0-bin.tgz
-	@mv skywalking-license-eye-0.3.0-bin/bin/linux/license-eye ./
+	@mv skywalking-license-eye-0.3.0-bin/bin/darwin/license-eye ./
 	@rm -rf skywalking-license-eye-0.3.0-bin && rm -f skywalking-license-eye-0.3.0-bin.tgz
-	./license-eye -c .licenserc_fix.yaml header check
+	./license-eye -c .licenserc_fix.yaml header fix
 	@rm license-eye
 
 
