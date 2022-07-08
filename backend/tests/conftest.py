@@ -29,7 +29,8 @@ def application():
 @pytest.fixture(scope='session')
 def engine(application):
     with testing.postgresql.Postgresql(port=7654) as postgres:
-        engine = create_async_engine(postgres.url(), future=True, echo=True)
+        async_url = postgres.url().replace('postgresql', 'postgresql+asyncpg')
+        engine = create_async_engine(async_url, future=True, echo=True)
         TestingSessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
         async def override_get_db():
@@ -45,7 +46,6 @@ def engine(application):
         application.dependency_overrides[AsyncSessionDep.dependency] = override_get_db
         yield engine
         # await engine.dispose()
-        postgres.stop()
 
 
 async def start_db(engine):
@@ -63,4 +63,6 @@ async def client(engine, application) -> t.AsyncIterator[AsyncClient]:
     ) as client:
         await start_db(engine)
         yield client
-        
+        # for AsyncEngine created in function scope, close and
+        # clean-up pooled connections
+        await engine.dispose()
