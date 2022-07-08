@@ -21,48 +21,42 @@ def anyio_backend(request):
     return request.param
 
 
-@pytest.fixture(scope='session')
-def application():
-    return create_application()    
-
-
-@pytest.fixture(scope='session')
-def engine(application):
+@pytest_asyncio.fixture()
+async def engine():
     with testing.postgresql.Postgresql(port=7654) as postgres:
         async_url = postgres.url().replace('postgresql', 'postgresql+asyncpg')
         engine = create_async_engine(async_url, future=True, echo=True)
-        TestingSessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
-        async def override_get_db():
-            async with TestingSessionLocal() as session:
-                try:
-                    yield session
-                    await session.commit()
-                except Exception:
-                    await session.rollback()
-                finally:
-                    await session.close()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
 
-        application.dependency_overrides[AsyncSessionDep.dependency] = override_get_db
         yield engine
-        # await engine.dispose()
+        await engine.dispose()
 
 
-async def start_db(engine):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+@pytest.fixture()
+def application(engine):
+    application = create_application(database_engine=engine)
+    # async def override_get_db():
+    #     TestingSessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
+    #     async with TestingSessionLocal() as session:
+    #         try:
+    #             yield session
+    #             await session.commit()
+    #         except Exception:
+    #             await session.rollback()
+    #         finally:
+    #             await session.close()
+    # application.dependency_overrides[AsyncSessionDep.dependency] = override_get_db
+    return application
 
 
-@pytest_asyncio.fixture
-async def client(engine, application) -> t.AsyncIterator[AsyncClient]:
+@pytest_asyncio.fixture()
+async def client(application) -> t.AsyncIterator[AsyncClient]:
     async with AsyncClient(
         app=application,
         base_url="http://testserver",
         headers={"Content-Type": "application/json"},
     ) as client:
-        await start_db(engine)
         yield client
-        # for AsyncEngine created in function scope, close and
-        # clean-up pooled connections
-        await engine.dispose()
