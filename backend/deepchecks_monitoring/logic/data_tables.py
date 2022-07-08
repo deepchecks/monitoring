@@ -1,6 +1,6 @@
 from sqlalchemy import String, Column, DateTime, Float, ARRAY
 
-from deepchecks_api.models.model import TaskType
+from deepchecks_monitoring.models.model import TaskType
 
 
 def get_monitor_table_meta_columns():

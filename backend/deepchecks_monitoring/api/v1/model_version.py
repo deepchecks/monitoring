@@ -1,23 +1,29 @@
 import uuid
 
-from fastapi import Depends
 from sqlalchemy import Column, Table, MetaData
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 
-from deepchecks_api.database import get_db
-from deepchecks_api.api.v1.router import router
-from deepchecks_api.logic.data_tables import get_task_related_table_columns, get_monitor_table_meta_columns
-from deepchecks_api.models.model import Model
-from deepchecks_api.models.model_version import ModelVersion
-from deepchecks_api.schemas.model_version import VersionInfo
+from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.logic.data_tables import get_task_related_table_columns, get_monitor_table_meta_columns
+from deepchecks_monitoring.models.model import Model
+from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.schemas.model_version import VersionInfo
+from deepchecks_monitoring.utils import fetch_or_404
+
+from .router import router
 
 
 @router.post("/models/{model_id}/version")
-async def create_version(model_id: int, info: VersionInfo, db: Session = Depends(get_db)):
+async def create_version(
+    model_id: int, 
+    info: VersionInfo, 
+    session: AsyncSession = AsyncSessionDep
+):
     # Validate name doesn't exists
-    model: Model = Model.get(model_id)
+    model = await fetch_or_404(session, Model, id=model_id)
     version_names = [v.name for v in model.versions]
+    
     if info.name in version_names:
         raise Exception()
 
@@ -48,17 +54,17 @@ async def create_version(model_id: int, info: VersionInfo, db: Session = Depends
     monitor_table_name = f'monitor_table_{unique_id}'
     monitor_table_columns = meta_columns + task_related_columns + user_columns
     monitor_table = Table(monitor_table_name, MetaData(schema=model.name), *monitor_table_columns)
-    db.execute(CreateTable(monitor_table))
+    await session.execute(CreateTable(monitor_table))
 
     reference_table_name = f'ref_table_{unique_id}'
     reference_table_columns = task_related_columns + user_columns
     reference_table = Table(reference_table_name, MetaData(schema=model.name), reference_table_columns)
-    db.execute(CreateTable(reference_table))
+    await session.execute(CreateTable(reference_table))
 
     # Save version entity
     model_version = ModelVersion(name=info.name, model_id=model_id, json_schema=schema, column_roles=info.column_roles,
                                  features_importance=info.features_importance, monitor_table_name=monitor_table_name,
                                  reference_table_name=reference_table_name)
-    db.add(model_version)
-    db.commit()
+    session.add(model_version)
+    await session.commit()
     return 200

@@ -1,13 +1,13 @@
 import enum
 from dataclasses import field, dataclass
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
-from deepchecks_api.models.base import Base
+from deepchecks_monitoring.models.base import Base
 
 
 class ColumnRole(enum.Enum):
@@ -54,7 +54,7 @@ class ModelVersion(Base):
     model_id: int
     start_time: Optional[datetime] = field(init=False)
     end_time: Optional[datetime] = field(init=False)
-    json_schema: dict
+    json_schema: Dict[Any, Any]
     column_roles: Dict[str, ColumnRole]
     features_importance: Optional[Dict[str, float]] = field(init=False)
     monitor_table_name: str
