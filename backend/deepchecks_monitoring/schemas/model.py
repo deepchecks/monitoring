@@ -11,3 +11,6 @@ class Model(BaseModel):
     name: t.Optional[str] = None
     description: t.Optional[str] = None
     task_type: t.Optional[TaskType] = None
+
+    class Config:
+        orm_mode = True

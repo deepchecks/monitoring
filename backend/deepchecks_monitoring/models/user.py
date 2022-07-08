@@ -9,7 +9,7 @@ __all__ = ['User']
 
 
 @dataclass
-class User:
+class User(Base):
     __table__ = Table(
         "user",
         Base.metadata,

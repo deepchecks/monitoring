@@ -29,8 +29,8 @@ def application(postgres, engine):
     database_uri = postgres.url()
     async_database_uri = postgres.url().replace('postgresql', 'postgresql+asyncpg')
     settings = Settings(database_uri=database_uri, async_database_uri=async_database_uri)  # type: ignore
-    application = create_application(settings=settings)
-    return application
+    app = create_application(settings=settings)
+    return app
 
 
 @pytest.fixture()

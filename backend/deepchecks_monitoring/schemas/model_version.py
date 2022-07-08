@@ -11,3 +11,6 @@ class VersionInfo(BaseModel):
     features_importance: t.Optional[t.Dict[str, float]] = None
     column_roles: t.Optional[t.Dict[str, ColumnRole]]
     column_types: t.Optional[t.Dict[str, ColumnDataType]]
+
+    class Config:
+        orm_mode = True
