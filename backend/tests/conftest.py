@@ -1,22 +1,13 @@
 import typing as t
 
 import pytest
-import pytest_asyncio
 import testing.postgresql
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import create_engine
 
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.models.base import Base
-
-
-# @pytest.fixture(
-#     params=[
-#         pytest.param(("asyncio", {"use_uvloop": True}), id="asyncio+uvloop"),
-#     ]
-# )
-# def anyio_backend(request):
-#     return request.param
+from deepchecks_monitoring.config import Settings
 
 
 @pytest.fixture(scope='session')
@@ -25,22 +16,20 @@ def postgres():
         yield postgres
 
 
-@pytest_asyncio.fixture()
-async def engine(postgres):
-    async_url = postgres.url().replace('postgresql', 'postgresql+asyncpg')
-    engine = create_async_engine(async_url, future=True, echo=True)
-
-    async with engine.begin() as conn:
-        # await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
+@pytest.fixture(scope='session')
+def engine(postgres):
+    engine = create_engine(postgres.url(), echo=True)
     yield engine
-    await engine.dispose()
+    engine.dispose()
 
 
-@pytest.fixture()
-def application(engine):
-    application = create_application(database_engine=engine)
+@pytest.fixture(scope='session')
+def application(postgres, engine):
+    Base.metadata.create_all(engine)
+    database_uri = postgres.url()
+    async_database_uri = postgres.url().replace('postgresql', 'postgresql+asyncpg')
+    settings = Settings(database_uri=database_uri, async_database_uri=async_database_uri)  # type: ignore
+    application = create_application(settings=settings)
     return application
 
 
