@@ -3,7 +3,6 @@ import fastapi
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,26 +28,7 @@ async def get_async_session(request: fastapi.Request) -> t.AsyncIterator[AsyncSe
             await session.close()
 
 
-def get_session(request: fastapi.Request) -> t.Iterator[Session]:
-    """Get async sqlalchemy session instance."""
-    engine: t.Optional[AsyncEngine] = request.app.state.async_database_engine
-    session_factory = sessionmaker(engine, expire_on_commit=False)
-    with session_factory() as session:
-        try:
-            yield session
-            session.commit()
-        except SQLAlchemyError as sql_ex:
-            session.rollback()
-            raise sql_ex
-        except HTTPException as http_ex:
-            session.rollback()
-            raise http_ex
-        finally:
-            session.close()
-
-
 AsyncSessionDep = fastapi.Depends(get_async_session)
-SessionDep = fastapi.Depends(get_session)
 
 
 # Examples of how to use those dependencies:

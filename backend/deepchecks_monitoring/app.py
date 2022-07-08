@@ -10,12 +10,10 @@ from deepchecks_monitoring.api.v1.router import router as v1_router
 __all__ = ['create_application']
 
 
-def create_application(
-    settings: t.Optional[Settings] = None,
-    database_engine: t.Optional[AsyncEngine] = None,
-) -> FastAPI:
+def create_application(settings: t.Optional[Settings] = None) -> FastAPI:
     settings = settings or Settings()  # type: ignore
-    async_engine = database_engine or create_database_engine(settings)
+    
+    async_engine = create_async_engine(str(settings.async_database_uri), echo=settings.echo_sql)
     app = FastAPI(title="Deepchecks Monitoring", openapi_url="/api/v1/openapi.json")
     
     app.state.settings = settings
@@ -28,7 +26,3 @@ def create_application(
         print('start')
     
     return app
-
-
-def create_database_engine(settings: Settings) -> AsyncEngine:
-    return create_async_engine(str(settings.async_database_uri), echo=settings.echo_sql)
