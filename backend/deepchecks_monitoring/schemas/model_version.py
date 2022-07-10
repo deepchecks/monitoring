@@ -10,9 +10,10 @@
 
 """Module defining the ModelVersion schema."""
 import typing as t
-from pydantic import BaseModel
-from deepchecks_monitoring.models.model_version import ColumnRole, ColumnDataType
 
+from pydantic import BaseModel
+
+from deepchecks_monitoring.models.model_version import ColumnDataType, ColumnRole
 
 __all__ = ['VersionInfo']
 

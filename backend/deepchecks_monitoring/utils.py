@@ -10,13 +10,11 @@
 
 """Module defining utility functions for the deepchecks_monitoring app."""
 import typing as t
-from fastapi import HTTPException
-from fastapi import status
-from sqlalchemy import literal
-from sqlalchemy import and_
-from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from fastapi import HTTPException, status
+from sqlalchemy import and_, literal
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import

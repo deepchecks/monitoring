@@ -10,11 +10,11 @@
 
 """Module defining the Segment ORM model."""
 import typing as t
-from dataclasses import field, dataclass
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, JSON
+from dataclasses import dataclass, field
+
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String, Table
 
 from deepchecks_monitoring.models.base import Base
-
 
 __all__ = ["Segment"]
 

@@ -10,13 +10,12 @@
 
 """Module defining the dependencies of the application."""
 import typing as t
+
 import fastapi
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.ext.asyncio import AsyncSession
-
 
 __all__ = ["AsyncSessionDep"]
 

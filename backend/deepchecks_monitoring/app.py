@@ -10,12 +10,12 @@
 
 """Module defining the app."""
 import typing as t
+
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.api.v1.router import router as v1_router
-
+from deepchecks_monitoring.config import Settings
 
 __all__ = ["create_application"]
 

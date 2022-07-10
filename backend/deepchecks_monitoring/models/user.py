@@ -11,10 +11,11 @@
 """Model defining the User ORM model."""
 import typing as t
 import uuid as uuid_pkg
-from dataclasses import field, dataclass
-from sqlalchemy import Table, String, Column
-from deepchecks_monitoring.models.base import Base
+from dataclasses import dataclass, field
 
+from sqlalchemy import Column, String, Table
+
+from deepchecks_monitoring.models.base import Base
 
 __all__ = ["User"]
 

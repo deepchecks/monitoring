@@ -10,7 +10,8 @@
 
 """Module defining the dynamic tables metadata for the monitoring package."""
 import typing as t
-from sqlalchemy import String, Column, DateTime, Float, ARRAY
+
+from sqlalchemy import ARRAY, Column, DateTime, Float, String
 
 from deepchecks_monitoring.models.model import TaskType
 

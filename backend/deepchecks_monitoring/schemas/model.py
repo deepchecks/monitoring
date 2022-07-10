@@ -10,9 +10,10 @@
 
 """Module defining the Model Schema."""
 import typing as t
-from pydantic import BaseModel
-from deepchecks_monitoring.models.model import TaskType
 
+from pydantic import BaseModel
+
+from deepchecks_monitoring.models.model import TaskType
 
 __all__ = ['Model']
 

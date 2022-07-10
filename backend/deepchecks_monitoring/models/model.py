@@ -10,12 +10,13 @@
 
 """Module defining the model ORM model."""
 import enum
-from dataclasses import field, dataclass
-from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import Table, Integer, String, Column, Enum
-from sqlalchemy.orm import relationship
-from deepchecks_monitoring.models.base import Base
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, List, Optional
 
+from sqlalchemy import Column, Enum, Integer, String, Table
+from sqlalchemy.orm import relationship
+
+from deepchecks_monitoring.models.base import Base
 
 if TYPE_CHECKING:
     from deepchecks_monitoring.models.model_version import ModelVersion

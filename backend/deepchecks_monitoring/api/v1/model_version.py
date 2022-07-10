@@ -12,12 +12,12 @@
 
 import uuid
 
-from sqlalchemy import Column, Table, MetaData
+from sqlalchemy import Column, MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.logic.data_tables import get_task_related_table_columns, get_monitor_table_meta_columns
+from deepchecks_monitoring.logic.data_tables import get_monitor_table_meta_columns, get_task_related_table_columns
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.schemas.model_version import VersionInfo

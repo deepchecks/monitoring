@@ -10,6 +10,7 @@
 
 """Module defining the configuration for the deepchecks_monitoring package."""
 import logging
+
 from pydantic import BaseSettings, PostgresDsn
 
 __all__ = ['Settings']

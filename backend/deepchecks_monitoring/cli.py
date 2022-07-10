@@ -11,6 +11,7 @@
 """Module defining the CLI of the monitoring package."""
 import click
 from sqlalchemy import create_engine
+
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models.base import Base
 

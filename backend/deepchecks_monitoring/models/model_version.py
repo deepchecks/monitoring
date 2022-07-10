@@ -10,11 +10,11 @@
 
 """Module defining the ModelVersion ORM model."""
 import enum
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 

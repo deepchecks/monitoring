@@ -11,9 +11,10 @@
 """V1 API of the model."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.schemas.model import Model as ModelSchema
-from deepchecks_monitoring.dependencies import AsyncSessionDep
 
 from .router import router
 
