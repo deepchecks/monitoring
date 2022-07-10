@@ -1,20 +1,10 @@
-# ----------------------------------------------------------------------------
-# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
-#
-# This file is part of Deepchecks.
-# Deepchecks is distributed under the terms of the GNU Affero General
-# Public License (version 3 or later).
-# You should have received a copy of the GNU Affero General Public License
-# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
-# ----------------------------------------------------------------------------
-
 # This makefile helps with deepchecks Development environment
 # including syntax checking, virtual environments creation,
 # test running and coverage
 # This Makefile is based on Makefile by jidn: https://github.com/jidn/python-Makefile/blob/master/Makefile
 
 # Package = Source code Directory
-PACKAGE = deepchecks_api
+PACKAGE = deepchecks-api
 
 # Requirements file
 REQUIRE = requirements.txt
@@ -28,8 +18,8 @@ ext_py := $(shell which python3 || which python)
 
 # Override by putting in commandline python=XXX when needed.
 python = $(shell echo ${ext_py} | rev | cut -d '/' -f 1 | rev)
-TESTDIR = $(shell realpath $(PACKAGE)/tests)
-ENV = $(shell realpath venv)
+TESTDIR = $(shell realpath tests)
+ENV = $(shell realpath .venv)
 repo = pypi
 
 # System Envs
@@ -48,6 +38,7 @@ FLAKE8_RST := $(BIN)/flake8-rst
 PYTEST := $(BIN)/pytest
 TOX := $(BIN)/tox
 TWINE := $(BIN)/twine
+UVICORN := $(BIN)/uvicorn
 
 # Project Settings
 PKGDIR := $(or $(PACKAGE), ./)
@@ -118,34 +109,31 @@ help:
 	@echo "    Clean up | clean up & removing virtualenv"
 	@echo ""
 
+
 all: validate test
 
 
-env: $(ENV)
+env: $(ENV) requirements dev-requirements
 
 
 $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
-	@echo "external python_exe is $(ext_py)"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
+	@$(PIP) install -e .
 
 
 requirements: $(ENV)
-	@echo "####  installing dependencies, it could take some time, please wait! #### "
-
-	@$(PIP) install -U pip
-	@$(PIP) install -q \
-		wheel setuptools \
-		-r ./requirements.txt
-	@$(PIP) install --no-deps -e .
+	@echo "####  installing main dependencies, it could take some time, please wait! #### "
+	@$(PIP) install -q -r ./requirements.txt
 
 
 dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
-	@$(PIP) install -r ./dev-requirements.txt
+	@$(PIP) install -q -r ./dev-requirements.txt
 
 
 ### Static Analysis ######################################################
+
 
 .PHONY: validate pylint docstring
 
@@ -176,14 +164,12 @@ test-win:
 	@test -d $(WIN_ENV) || python -m venv $(WIN_ENV)
 	@$(WIN_ENV)\Scripts\activate.bat
 	@$(PIP_WIN) install -U pip
-	@$(PIP_WIN) install -q \
-		-r requirements.txt \
-		-r dev-requirements.txt
+	@$(PIP_WIN) install -q -r ./requirements.txt -r ./dev-requirements.txt
 	python -m pytest $(WIN_TESTDIR)
 
 
 coverage: requirements dev-requirements
-	$(COVERAGE) run --source deepchecks_api -m pytest
+	$(COVERAGE) run --source deepchecks_monitoring/,tests/ -m pytest
 
 coveralls: coverage
 	$(COVERALLS) --service=github
@@ -306,7 +292,30 @@ test-release: dist test-upload
 
 ### Documentation
 
-.PHONY: website dev-docs gen-static-notebooks license-check links-check
+.PHONY: docs validate-examples website dev-docs gen-static-notebooks license-check links-check
+
+
+docs: requirements doc-requirements dev-requirements $(DOCS_SRC)
+	@export WANDB_MODE=offline
+	cd $(DOCS) && make html SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) 2> docs.error.log
+	@echo ""
+	@echo "++++++++++++++++++++++++"
+	@echo "++++ Build Finished ++++"
+	@echo "++++++++++++++++++++++++"
+	@echo ""
+	@echo "all errors/warnings were written to the file:"
+	@echo "- $(DOCS)/docs.error.log"
+	@echo ""
+	@echo "statistic:"
+	@echo "- ERRORs: $$(grep "ERROR" $(DOCS)/docs.error.log | wc -l)"
+	@echo "- WARNINGs: $$(grep "WARNING" $(DOCS)/docs.error.log | wc -l)"
+
+validate-examples: doc-requirements
+	@$(PYTHON) $(TESTDIR)/examples_validation.py
+
+show-docs: $(DOCS_BUILD)/html
+	@cd $(DOCS_BUILD)/html && $(PYTHON) -m http.server
+
 
 license-check:
 	@wget https://dlcdn.apache.org/skywalking/eyes/0.3.0/skywalking-license-eye-0.3.0-bin.tgz && tar -xzvf skywalking-license-eye-0.3.0-bin.tgz
@@ -316,9 +325,47 @@ license-check:
 	@rm license-eye
 
 
+links-check: $(DOCS_BUILD) $(LYCHEE)
+	@$(LYCHEE) \
+		"./deepchecks/**/*.rst" "./*.rst" "$(DOCS_BUILD)/html/**/*.html" \
+		--base $(DOCS_BUILD)/html \
+		--accept=200,403,429 \
+		--format markdown \
+		--output ./lychee.output \
+		--exclude-loopback \
+		--exclude-mail \
+		--exclude-file $(DOCS)/.lycheeignore \
+		--exclude ".*git.*"; \
+	if [ $? -eq 0 ]; \
+	then \
+		echo "+++ Nothing Detected +++"; \
+		exit 0; \
+	else \
+		echo ""; \
+		echo "++++++++++++++++++++++++++++"; \
+		echo "++++ Links Check Failed ++++"; \
+		echo "++++++++++++++++++++++++++++"; \
+		echo ""; \
+		echo "full output was written to the next file:"; \
+		echo "- $(shell realpath ./lychee.output)"; \
+		echo ""; \
+		head -n 12 lychee.output; \
+		exit 1; \
+	fi;
+
+
+$(LYCHEE):
+	@curl -L --output lychee.tar.gz https://github.com/lycheeverse/lychee/releases/download/v0.8.2/lychee-v0.8.2-x86_64-unknown-linux-gnu.tar.gz
+	@tar -xvzf lychee.tar.gz
+	@rm -rf ./lychee.tar.gz
+	@chmod +x ./lychee
+	@mkdir -p $(BIN)/
+	@mv ./lychee $(BIN)/
+
+
 ### System Installation ######################################################
 
-.PHONY: develop install download jupyter
+.PHONY: develop install download run
 
 develop:
 	$(PYTHON) setup.py develop
@@ -329,8 +376,5 @@ install:
 download:
 	$(PIP) install $(PROJECT)
 
-jupyter: $(JUPYTER)
-	$(BIN)/jupyter-notebook $(args) --notebook-dir=./docs/source/examples
-
-$(JUPYTER):
-	$(PIP) install jupyter
+run:
+	$(UVICORN) --reload --factory deepchecks_monitoring.app:create_application
