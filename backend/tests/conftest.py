@@ -25,6 +25,7 @@ def engine(postgres):
 
 @pytest.fixture(scope='session')
 def application(postgres, engine):
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     database_uri = postgres.url()
     async_database_uri = postgres.url().replace('postgresql', 'postgresql+asyncpg')
