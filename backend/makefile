@@ -33,6 +33,7 @@ OS := $(shell uname -s)
 
 # Venv Executables
 PIP := $(BIN)/pip
+PIP_WIN := python -m pip
 PYTHON := $(BIN)/$(python)
 ANALIZE := $(BIN)/pylint -j 0
 COVERAGE := $(BIN)/coverage
