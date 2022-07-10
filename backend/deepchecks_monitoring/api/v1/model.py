@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Model
-from deepchecks_monitoring.schemas.model import Model as ModelSchema
+from deepchecks_monitoring.schemas.model import ModelSchema
 
 from .router import router
 
@@ -40,6 +40,6 @@ async def create_model(
     """
     model = Model(**model.dict(exclude_none=True))
     session.add(model)
-    await session.commit()
-    await session.refresh(model)
+    # Flushing to get model id
+    await session.flush()
     return ModelSchema.from_orm(model)

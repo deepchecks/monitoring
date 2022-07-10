@@ -15,10 +15,10 @@ from pydantic import BaseModel
 
 from deepchecks_monitoring.models.model import TaskType
 
-__all__ = ['Model']
+__all__ = ['ModelSchema']
 
 
-class Model(BaseModel):
+class ModelSchema(BaseModel):
     """Model schema."""
 
     id: t.Optional[int] = None

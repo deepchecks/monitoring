@@ -1,4 +1,5 @@
 pytest
+pytest-asyncio
 requests
 testing.postgresql
 uvicorn
@@ -13,3 +14,4 @@ pytest-cov
 pyhamcrest
 coveralls
 tox
+httpx

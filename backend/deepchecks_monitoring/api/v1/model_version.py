@@ -7,20 +7,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """V1 API of the model version."""
 
-import uuid
-
-from sqlalchemy import Column, MetaData, Table
+from sqlalchemy import MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.logic.data_tables import get_monitor_table_meta_columns, get_task_related_table_columns
+from deepchecks_monitoring.logic.data_tables import (column_types_to_table_columns, get_monitor_table_meta_columns,
+                                                     get_task_related_table_columns)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.schemas.model_version import VersionInfo
+from deepchecks_monitoring.schemas.model_version import NewVersionSchema
 from deepchecks_monitoring.utils import fetch_or_404
 
 from .router import router
@@ -28,9 +26,10 @@ from .router import router
 
 @router.post('/models/{model_id}/version')
 async def create_version(
-        model_id: int,
-        info: VersionInfo,
-        session: AsyncSession = AsyncSessionDep
+    model_id: int,
+    info: NewVersionSchema,
+    session: AsyncSession = AsyncSessionDep
+
 ):
     """Create a new model version.
 
@@ -43,12 +42,8 @@ async def create_version(
     session : AsyncSession, optional
         SQLAlchemy session.
     """
-    # Validate name doesn't exists
+    # Get relevant model
     model = await fetch_or_404(session, Model, id=model_id)
-    version_names = [v.name for v in model.versions]
-
-    if info.name in version_names:
-        raise Exception()
 
     # Validate column_roles and column_types have same keys
     mutual_exclusive_keys = set(info.column_roles.keys()).symmetric_difference(set(info.column_types.keys()))
@@ -56,10 +51,18 @@ async def create_version(
         raise Exception('column_roles and column_types must have the same keys. Keys missing from either one '
                         f'of the dictionaries: {mutual_exclusive_keys}')
 
+    # Validate features importance have all the features
+    if info.features_importance:
+        feature_names = {name for name, role in info.column_roles.items() if role.is_feature()}
+        mutual_exclusive_keys = feature_names.symmetric_difference(info.features_importance.keys())
+        if mutual_exclusive_keys:
+            raise Exception('features_importance must contain exactly same features as specified in column_roles. '
+                            f'Missing features: {mutual_exclusive_keys}')
+
     # Create json schema
     schema = {
         'type': 'object',
-        'properties': {k: {'type': v} for k, v in info.column_types}
+        'properties': {name: {'type': data_type.value} for name, data_type in info.column_types.items()}
     }
 
     # Create columns for data tables
@@ -71,23 +74,23 @@ async def create_version(
     if collisioned_names:
         raise Exception(f'Can\'t use the following names for columns: {collisioned_names}')
 
-    user_columns = [(Column(k, v.to_sqlalchemy_type(), index=True) for k, v in info.column_types)]
+    # Save version entity
+    model_version = ModelVersion(name=info.name, model_id=model_id, json_schema=schema,
+                                 column_roles=info.column_roles,
+                                 features_importance=info.features_importance)
+    session.add(model_version)
+    # flushing to get an id for the model version
+    await session.flush()
 
-    unique_id = uuid.uuid4().hex[:10]
-    monitor_table_name = f'monitor_table_{unique_id}'
-    monitor_table_columns = meta_columns + task_related_columns + user_columns
-    monitor_table = Table(monitor_table_name, MetaData(schema=model.name), *monitor_table_columns)
+    # Monitor data table
+    monitor_table_columns = meta_columns + task_related_columns + column_types_to_table_columns(info.column_types)
+    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns)
     await session.execute(CreateTable(monitor_table))
 
-    reference_table_name = f'ref_table_{unique_id}'
-    reference_table_columns = task_related_columns + user_columns
-    reference_table = Table(reference_table_name, MetaData(schema=model.name), reference_table_columns)
+    # Reference data table
+    reference_table_columns = get_task_related_table_columns(model.task_type) + \
+        column_types_to_table_columns(info.column_types)
+    reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns)
     await session.execute(CreateTable(reference_table))
 
-    # Save version entity
-    model_version = ModelVersion(name=info.name, model_id=model_id, json_schema=schema, column_roles=info.column_roles,
-                                 features_importance=info.features_importance, monitor_table_name=monitor_table_name,
-                                 reference_table_name=reference_table_name)
-    session.add(model_version)
-    await session.commit()
     return 200

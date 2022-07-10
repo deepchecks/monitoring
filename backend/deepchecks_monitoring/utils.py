@@ -12,9 +12,8 @@
 import typing as t
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, literal
+from sqlalchemy import and_, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
@@ -69,7 +68,7 @@ async def fetch_or_404(
     criteria = and_(*[getattr(model, k) == v for k, v in kwargs.items()])
     statement = select(model).where(criteria)
     result = await session.execute(statement)
-    row = result.first()
+    row = result.scalars().first()
 
     if row is None:
         model_name = getattr(model, "__name__", "Entity")

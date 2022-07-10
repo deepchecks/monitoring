@@ -7,10 +7,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """Module defining the ModelVersion ORM model."""
 import enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -20,6 +19,8 @@ from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
 
+__all__ = ["ColumnRole", "ColumnDataType", "ModelVersion"]
+
 
 class ColumnRole(enum.Enum):
     """Enum containing different roles of columns in data."""
@@ -27,6 +28,10 @@ class ColumnRole(enum.Enum):
     NUMERIC_FEATURE = "numeric_feature"
     CATEGORICAL_FEATURE = "categorical_feature"
     TAG = "tag"
+
+    def is_feature(self):
+        """Return if current role is a feature role."""
+        return self in [ColumnRole.NUMERIC_FEATURE, ColumnRole.CATEGORICAL_FEATURE]
 
 
 class ColumnDataType(enum.Enum):
@@ -55,29 +60,33 @@ class ModelVersion(Base):
         Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("name", String(100)),
-        Column("start_time", DateTime(timezone=True)),
-        Column("end_time", DateTime(timezone=True)),
+        Column("start_time", DateTime(timezone=True), nullable=True),
+        Column("end_time", DateTime(timezone=True), nullable=True),
         Column("json_schema", JSONB),
         Column("column_roles", JSONB),
-        Column("features_importance", JSONB),
-        Column("monitor_table_name", String(30)),
-        Column("reference_table_name", String(30)),
+        Column("features_importance", JSONB, nullable=True),
         Column("model_id", Integer, ForeignKey("models.id"))
     )
 
     name: str
     model_id: int
-    start_time: Optional[datetime] = field(init=False)
-    end_time: Optional[datetime] = field(init=False)
     json_schema: Dict[Any, Any]
     column_roles: Dict[str, ColumnRole]
     features_importance: Optional[Dict[str, float]]
-    monitor_table_name: str
-    reference_table_name: str
     id: int = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
     __mapper_args__ = {  # type: ignore
         "properties": {
             "model": relationship("Model"),
         }
     }
+
+    def get_monitor_table_name(self):
+        """Get name of monitor table."""
+        return f"model_{self.model_id}_monitor_data_{self.id}"
+
+    def get_reference_table_name(self):
+        """Get name of reference table."""
+        return f"model_{self.model_id}_ref_data_{self.id}"

@@ -11,6 +11,7 @@
 """Module defining the app."""
 import typing as t
 
+import orjson
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -35,7 +36,8 @@ def create_application(settings: t.Optional[Settings] = None) -> FastAPI:
     """
     settings = settings or Settings()  # type: ignore
 
-    async_engine = create_async_engine(str(settings.async_database_uri), echo=settings.echo_sql)
+    async_engine = create_async_engine(str(settings.async_database_uri), echo=settings.echo_sql,
+                                       json_serializer=json_serializer)
     app = FastAPI(title="Deepchecks Monitoring", openapi_url="/api/v1/openapi.json")
 
     app.state.settings = settings
@@ -48,3 +50,7 @@ def create_application(settings: t.Optional[Settings] = None) -> FastAPI:
         print("start")
 
     return app
+
+
+def json_serializer(obj):
+    return orjson.dumps(obj).decode()
