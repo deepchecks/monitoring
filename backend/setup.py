@@ -17,5 +17,5 @@ setuptools.setup(
     author_email="",
     description="",
     packages=setuptools.find_packages(),
-    python_requires='>=3.6'
+    python_requires='>=3.8'
 )
