@@ -6,7 +6,7 @@ from sqlalchemy import Table, Integer, String, Column, ForeignKey, JSON
 from deepchecks_monitoring.models.base import Base
 
 
-__all__ = ['Segment']
+__all__ = ["Segment"]
 
 
 @dataclass

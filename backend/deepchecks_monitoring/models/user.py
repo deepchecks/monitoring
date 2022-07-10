@@ -6,7 +6,7 @@ from sqlalchemy import Table, String, Column
 from deepchecks_monitoring.models.base import Base
 
 
-__all__ = ['User']
+__all__ = ["User"]
 
 
 @dataclass

@@ -17,3 +17,6 @@ MULTICLASS
 pydantic
 JSONB
 nullable
+pylint
+Dep
+Affero

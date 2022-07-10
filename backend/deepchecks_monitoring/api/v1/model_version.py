@@ -16,11 +16,11 @@ from deepchecks_monitoring.utils import fetch_or_404
 from .router import router
 
 
-@router.post("/models/{model_id}/version")
+@router.post('/models/{model_id}/version')
 async def create_version(
-    model_id: int, 
-    info: VersionInfo, 
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        info: VersionInfo,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Create a new model version.
 
@@ -36,7 +36,7 @@ async def create_version(
     # Validate name doesn't exists
     model = await fetch_or_404(session, Model, id=model_id)
     version_names = [v.name for v in model.versions]
-    
+
     if info.name in version_names:
         raise Exception()
 

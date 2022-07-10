@@ -11,14 +11,14 @@ if TYPE_CHECKING:
     from deepchecks_monitoring.models.model_version import ModelVersion
 
 
-__all__ = ['TaskType', 'Model']
+__all__ = ["TaskType", "Model"]
 
 
 class TaskType(enum.Enum):
     """Enum containing supported task types."""
 
-    REGRESSION = 'regression'
-    CLASSIFICATION = 'classification'
+    REGRESSION = "regression"
+    CLASSIFICATION = "classification"
 
 
 @dataclass
@@ -37,7 +37,7 @@ class Model(Base):
     name: Optional[str] = None
     description: Optional[str] = None
     task_type: Optional[TaskType] = None
-    versions: List['ModelVersion'] = field(default_factory=list)
+    versions: List["ModelVersion"] = field(default_factory=list)
 
     __mapper_args__ = {  # type: ignore
         "properties": {

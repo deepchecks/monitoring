@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-__all__ = ["AsyncSessionDep",]
+__all__ = ["AsyncSessionDep"]
 
 
 async def get_async_session(request: fastapi.Request) -> t.AsyncIterator[AsyncSession]:
@@ -49,7 +49,7 @@ AsyncSessionDep = fastapi.Depends(get_async_session)
 # ...    name: str
 # ...    age: int
 # ...    last_name: str = ""
-# 
+#
 # >>> @router.post("/person", status_code=http_status.HTTP_201_CREATED)
 # ... async def create_person_entity(
 # ...    person: PersonCreationSchema,

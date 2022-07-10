@@ -144,7 +144,7 @@ validate: pylint docstring
 pylint: dev-requirements
 	$(ANALIZE) $(SOURCES) $(TEST_CODE)
 	$(FLAKE8) $(SOURCES)
-	$(FLAKE8_RST) $(SOURCES)
+# 	$(FLAKE8_RST) $(SOURCES)
 
 
 docstring: dev-requirements

@@ -14,26 +14,26 @@ from deepchecks_monitoring.models.base import Base
 class ColumnRole(enum.Enum):
     """Enum containing different roles of columns in data."""
 
-    NUMERIC_FEATURE = 'numeric_feature'
-    CATEGORICAL_FEATURE = 'categorical_feature'
-    TAG = 'tag'
+    NUMERIC_FEATURE = "numeric_feature"
+    CATEGORICAL_FEATURE = "categorical_feature"
+    TAG = "tag"
 
 
 class ColumnDataType(enum.Enum):
     """Enum containing possible types of data, according to json schema standard."""
 
-    NUMBER = 'number'
-    STRING = 'string'
-    BOOLEAN = 'boolean'
+    NUMBER = "number"
+    STRING = "string"
+    BOOLEAN = "boolean"
 
     def to_sqlalchemy_type(self):
         """Return the SQLAlchemy type of the data type."""
-        map = {
+        types_map = {
             ColumnDataType.NUMBER: Float,
             ColumnDataType.STRING: Text,
             ColumnDataType.BOOLEAN: Boolean
         }
-        return map[self]
+        return types_map[self]
 
 
 @dataclass

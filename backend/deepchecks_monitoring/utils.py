@@ -9,13 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 if t.TYPE_CHECKING is True:
-    from deepchecks_monitoring.models.base import Base
+    from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
 
 
 __all__ = ["exists_or_404", "not_exists_or_400", "fetch_or_404"]
 
 
-A = t.TypeVar('A', bound="Base")
+A = t.TypeVar("A", bound="Base")
 
 
 async def fetch_or_404(
