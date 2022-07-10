@@ -1,3 +1,4 @@
+"""Model defining the User ORM model."""
 import typing as t
 import uuid as uuid_pkg
 from dataclasses import field, dataclass
@@ -10,6 +11,8 @@ __all__ = ['User']
 
 @dataclass
 class User(Base):
+    """ORM model for the user."""
+
     __table__ = Table(
         "user",
         Base.metadata,

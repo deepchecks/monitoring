@@ -4,7 +4,7 @@
 # This Makefile is based on Makefile by jidn: https://github.com/jidn/python-Makefile/blob/master/Makefile
 
 # Package = Source code Directory
-PACKAGE = deepchecks-api
+PACKAGE = deepchecks_monitoring
 
 # Requirements file
 REQUIRE = requirements.txt

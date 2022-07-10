@@ -1,3 +1,4 @@
+"""Module defining the app."""
 import typing as t
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -11,6 +12,18 @@ __all__ = ['create_application']
 
 
 def create_application(settings: t.Optional[Settings] = None) -> FastAPI:
+    """Create the application.
+
+    Parameters
+    ----------
+    settings : Optional[Settings], default None
+        settings for the application
+
+    Returns
+    -------
+    FastAPI
+        application instance
+    """
     settings = settings or Settings()  # type: ignore
     
     async_engine = create_async_engine(str(settings.async_database_uri), echo=settings.echo_sql)

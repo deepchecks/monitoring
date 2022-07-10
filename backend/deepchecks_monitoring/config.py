@@ -1,3 +1,4 @@
+"""Module defining the configuration for the deepchecks_monitoring package."""
 import logging
 from pydantic import BaseSettings, PostgresDsn, Field
 
@@ -8,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
+    """Settings for the deepchecks_monitoring package."""
+
     database_uri: PostgresDsn
     async_database_uri: PostgresDsn
     echo_sql: bool = True
@@ -17,5 +20,7 @@ class Settings(BaseSettings):
     # jwt_access_token_expire_minutes: int = Field(..., env='ACCESS_TOKEN_EXPIRE_MINUTES')
 
     class Config:
+        """Config for the deepchecks_monitoring package."""
+
         env_file = '.env'
         env_file_encoding = 'utf-8'

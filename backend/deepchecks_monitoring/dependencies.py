@@ -1,3 +1,4 @@
+"""Module defining the dependencies of the application."""
 import typing as t
 import fastapi
 from fastapi import HTTPException
@@ -11,7 +12,18 @@ __all__ = ["AsyncSessionDep",]
 
 
 async def get_async_session(request: fastapi.Request) -> t.AsyncIterator[AsyncSession]:
-    """Get async sqlalchemy session instance."""
+    """Get async sqlalchemy session instance.
+
+    Parameters
+    ----------
+    request : fastapi.Request
+        request instance
+
+    Returns
+    -------
+    AsyncIterator[AsyncSession]
+        async sqlalchemy session instance
+    """
     engine: t.Optional[AsyncEngine] = request.app.state.async_database_engine
     session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with session_factory() as session:

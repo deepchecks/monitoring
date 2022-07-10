@@ -1,3 +1,4 @@
+"""Module defining the model ORM model."""
 import enum
 from dataclasses import field, dataclass
 from typing import Optional, List, TYPE_CHECKING
@@ -15,12 +16,15 @@ __all__ = ['TaskType', 'Model']
 
 class TaskType(enum.Enum):
     """Enum containing supported task types."""
+
     REGRESSION = 'regression'
     CLASSIFICATION = 'classification'
 
 
 @dataclass
 class Model(Base):
+    """ORM model for the model."""
+
     __table__ = Table(
         "models",
         Base.metadata,

@@ -32,7 +32,7 @@ jobs:
     - name: Check import order
       uses: jamescurtin/isort-action@master
       with:
-        sortPaths: backend/deepchecks_api
+        sortPaths: backend/deepchecks_monitoring
   docstring:
     runs-on: ubuntu-latest
     steps:

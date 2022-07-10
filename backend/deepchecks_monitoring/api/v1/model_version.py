@@ -1,3 +1,5 @@
+"""V1 API of the model version."""
+
 import uuid
 
 from sqlalchemy import Column, Table, MetaData
@@ -20,6 +22,17 @@ async def create_version(
     info: VersionInfo, 
     session: AsyncSession = AsyncSessionDep
 ):
+    """Create a new model version.
+
+    Parameters
+    ----------
+    model_id : int
+        ID of the model.
+    info : VersionInfo
+        Information about the model version.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+    """
     # Validate name doesn't exists
     model = await fetch_or_404(session, Model, id=model_id)
     version_names = [v.name for v in model.versions]

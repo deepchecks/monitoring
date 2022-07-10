@@ -1,3 +1,4 @@
+"""Module defining the Router for V1 API."""
 from fastapi import APIRouter
 
 __all__ = ['router']

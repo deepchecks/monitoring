@@ -1,3 +1,4 @@
+"""Module defining utility functions for the deepchecks_monitoring app."""
 import typing as t
 from fastapi import HTTPException
 from fastapi import status
@@ -23,19 +24,23 @@ async def fetch_or_404(
     **kwargs
 ) -> A:
     """Fetch the first row that matches provided criteria or raise "No Found" exxception if `None` was returned.
+
     Parameters
     ----------
-    sessions : AsyncSession
+    session : AsyncSession
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
     error_template : Optional[str], default None
-        template of a exception message (possible keys: entity, arguments)
+        template of an exception message (possible keys: entity, arguments)
     **kwargs : Any
         key-value arguments are used as a set of criterias joined by `and` operation
+
     Returns
     -------
     Row
+        first row that matches provided criteria
+
     Examples
     --------
     >>> class Person(Base):
@@ -75,9 +80,10 @@ async def exists_or_404(
     **kwargs
 ):
     """Make sure the record exists, otherwise, raise "Not Found" exception.
+
     Parameters
     ----------
-    sessions : AsyncSession
+    session : AsyncSession
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
@@ -85,6 +91,7 @@ async def exists_or_404(
         template of a exception message (possible keys: entity, arguments)
     **kwargs : Any
         key-value arguments are used as a set of criterias joined by `and` operation
+
     Examples
     --------
     >>> class Person(Base):
@@ -122,9 +129,10 @@ async def not_exists_or_400(
     **kwargs
 ):
     """Make sure there is no a record that matches provided criteria, otherwise, raise "Bad Request" exception.
+
     Parameters
     ----------
-    sessions : AsyncSession
+    session : AsyncSession
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
@@ -132,6 +140,7 @@ async def not_exists_or_400(
         template of a exception message (possible keys: entity, arguments)
     **kwargs : Any
         key-value arguments are used as a set of criterias joined by `and` operation
+
     Examples
     --------
     >>> class Person(Base):

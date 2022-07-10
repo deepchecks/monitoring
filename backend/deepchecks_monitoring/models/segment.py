@@ -1,3 +1,4 @@
+"""Module defining the Segment ORM model."""
 import typing as t
 from dataclasses import field, dataclass
 from sqlalchemy import Table, Integer, String, Column, ForeignKey, JSON
@@ -10,6 +11,8 @@ __all__ = ['Segment']
 
 @dataclass
 class Segment(Base):
+    """ORM model for the segment."""
+
     __table__ = Table(
         "segment",
         Base.metadata,

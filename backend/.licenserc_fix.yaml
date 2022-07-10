@@ -17,7 +17,7 @@ header:
   paths-ignore:
     - '.pylintrc'
     - 'LICENSE'
-    - 'deepchecks_api/deepchecks_monitoring.egg-info/PKG-INFO'
+    - 'deepchecks_monitoring.egg-info/PKG-INFO'
     - 'makefile'
   comment: on-failure
 

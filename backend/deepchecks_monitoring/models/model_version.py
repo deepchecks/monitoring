@@ -1,9 +1,10 @@
+"""Module defining the ModelVersion ORM model."""
 import enum
 from dataclasses import field, dataclass
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean, PrimaryKeyConstraint
+from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -12,18 +13,21 @@ from deepchecks_monitoring.models.base import Base
 
 class ColumnRole(enum.Enum):
     """Enum containing different roles of columns in data."""
+
     NUMERIC_FEATURE = 'numeric_feature'
     CATEGORICAL_FEATURE = 'categorical_feature'
     TAG = 'tag'
 
 
 class ColumnDataType(enum.Enum):
-    """Enum containing possible types of data, according to json schema standard"""
+    """Enum containing possible types of data, according to json schema standard."""
+
     NUMBER = 'number'
     STRING = 'string'
     BOOLEAN = 'boolean'
 
     def to_sqlalchemy_type(self):
+        """Return the SQLAlchemy type of the data type."""
         map = {
             ColumnDataType.NUMBER: Float,
             ColumnDataType.STRING: Text,
@@ -34,6 +38,8 @@ class ColumnDataType(enum.Enum):
 
 @dataclass
 class ModelVersion(Base):
+    """ORM model for the model version."""
+
     __table__ = Table(
         "model_versions",
         Base.metadata,
