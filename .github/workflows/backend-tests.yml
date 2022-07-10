@@ -92,6 +92,8 @@ jobs:
       with:
         requirements: 'backend/requirements-all.txt'
         fail: 'Copyleft,Other,Error'
+        exclude: '(psycopg2.*2\.9\.3)'
+        # psycopg2 is LGPL 2
     - name: Print report
       if: ${{ always() }}
       run: echo "${{ steps.license_check_report.outputs.report }}"
