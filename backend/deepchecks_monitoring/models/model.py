@@ -1,37 +1,39 @@
 import enum
 from dataclasses import field, dataclass
-from typing import Optional, List
-
-from deepchecks_api.models.database import mapper_registry
+from typing import Optional, List, TYPE_CHECKING
 from sqlalchemy import Table, Integer, String, Column, Enum
 from sqlalchemy.orm import relationship
+from deepchecks_monitoring.models.base import Base
+
+
+if TYPE_CHECKING:
+    from deepchecks_monitoring.models.model_version import ModelVersion
+
+
+__all__ = ['TaskType', 'Model']
 
 
 class TaskType(enum.Enum):
     """Enum containing supported task types."""
     REGRESSION = 'regression'
-    BINARY = 'binary'
-    MULTICLASS = 'multiclass'
+    CLASSIFICATION = 'classification'
 
 
-@mapper_registry.mapped
 @dataclass
-class Model:
-    from deepchecks_api.models.model_version import ModelVersion
-
+class Model(Base):
     __table__ = Table(
-        "model",
-        mapper_registry.metadata,
-        Column("id", Integer, primary_key=True, index=True),
+        "models",
+        Base.metadata,
+        Column("id", Integer, primary_key=True),
         Column("name", String(50)),
         Column("description", String(200)),
-        Column("task_type", Enum(TaskType)),
+        Column("task_type", Enum(TaskType))
     )
-    id: int = field(init=False)
+    id: int
     name: Optional[str] = None
     description: Optional[str] = None
-    task_type: Enum = None
-    versions: List[ModelVersion] = field(default_factory=list)
+    task_type: Optional[TaskType] = None
+    versions: List['ModelVersion'] = field(default_factory=list)
 
     __mapper_args__ = {  # type: ignore
         "properties": {

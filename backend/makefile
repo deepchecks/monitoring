@@ -19,7 +19,7 @@ ext_py := $(shell which python3 || which python)
 # Override by putting in commandline python=XXX when needed.
 python = $(shell echo ${ext_py} | rev | cut -d '/' -f 1 | rev)
 TESTDIR = $(shell realpath tests)
-ENV = $(shell realpath venv)
+ENV = $(shell realpath .venv)
 repo = pypi
 
 # System Envs
@@ -38,6 +38,7 @@ FLAKE8_RST := $(BIN)/flake8-rst
 PYTEST := $(BIN)/pytest
 TOX := $(BIN)/tox
 TWINE := $(BIN)/twine
+UVICORN := $(BIN)/uvicorn
 
 # Project Settings
 PKGDIR := $(or $(PACKAGE), ./)
@@ -108,55 +109,31 @@ help:
 	@echo "    Clean up | clean up & removing virtualenv"
 	@echo ""
 
+
 all: validate test
 
 
-env: $(ENV)
+env: $(ENV) requirements dev-requirements
 
 
 $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
-	@echo "external python_exe is $(ext_py)"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
+	@$(PIP) install -e .
 
 
 requirements: $(ENV)
-	@echo "####  installing dependencies, it could take some time, please wait! #### "
-
-	@if [ -x "$$(command -v nvidia-smi)" ]; \
-	then \
-		$(PIP) install -q\
-		 	"torch==1.10.1+cu111" "torchvision==0.11.2+cu111" "torchaudio==0.10.1" \
-		 	 -f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
-	elif [ $(OS) = "Linux" ]; \
-	then \
-		$(PIP) install -q\
-			"torch==1.10.2+cpu" "torchvision==0.11.3+cpu" "torchaudio==0.10.2+cpu" \
-			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
-	else \
-		$(PIP) install -q torch torchvision torchaudio; \
-	fi;
-
-	@$(PIP) install -U pip
-	@$(PIP) install -q \
-		wheel setuptools \
-		-r ./requirements/requirements.txt \
-		-r ./requirements/vision-requirements.txt \
-		-r ./requirements/nlp-requirements.txt
-	@$(PIP) install --no-deps -e .
-
-
-doc-requirements: $(ENV)
-	@echo "####  installing documentation dependencies, it could take some time, please wait! #### "
-	@$(PIP) install -q -r ./docs/requirements.txt
+	@echo "####  installing main dependencies, it could take some time, please wait! #### "
+	@$(PIP) install -q -r ./requirements.txt
 
 
 dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
-	@$(PIP) install -r ./requirements/dev-requirements.txt
+	@$(PIP) install -q -r ./dev-requirements.txt
 
 
 ### Static Analysis ######################################################
+
 
 .PHONY: validate pylint docstring
 
@@ -186,20 +163,13 @@ test: requirements dev-requirements
 test-win:
 	@test -d $(WIN_ENV) || python -m venv $(WIN_ENV)
 	@$(WIN_ENV)\Scripts\activate.bat
-	$(PIP_WIN) install -q\
-			"torch==1.10.2+cpu" "torchvision==0.11.3+cpu" "torchaudio==0.10.2+cpu" \
-			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html;
 	@$(PIP_WIN) install -U pip
-	@$(PIP_WIN) install -q \
-		-r ./requirements/requirements.txt \
-		-r ./requirements/vision-requirements.txt \
-		-r ./requirements/nlp-requirements.txt \
-		-r ./requirements/dev-requirements.txt
+	@$(PIP_WIN) install -q -r ./requirements.txt -r ./dev-requirements.txt
 	python -m pytest $(WIN_TESTDIR)
 
 
 coverage: requirements dev-requirements
-	$(COVERAGE) run --source deepchecks/,tests/ --omit ultralytics_yolov5_master/ -m pytest
+	$(COVERAGE) run --source deepchecks_monitoring/,tests/ -m pytest
 
 coveralls: coverage
 	$(COVERALLS) --service=github
@@ -395,7 +365,7 @@ $(LYCHEE):
 
 ### System Installation ######################################################
 
-.PHONY: develop install download jupyter
+.PHONY: develop install download run
 
 develop:
 	$(PYTHON) setup.py develop
@@ -406,8 +376,5 @@ install:
 download:
 	$(PIP) install $(PROJECT)
 
-jupyter: $(JUPYTER)
-	$(BIN)/jupyter-notebook $(args) --notebook-dir=./docs/source/examples
-
-$(JUPYTER):
-	$(PIP) install jupyter
+run:
+	$(UVICORN) --reload --factory deepchecks_monitoring.app:create_application
