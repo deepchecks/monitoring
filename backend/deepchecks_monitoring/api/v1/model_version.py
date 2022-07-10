@@ -1,11 +1,23 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+
+"""V1 API of the model version."""
+
 import uuid
 
-from sqlalchemy import Column, Table, MetaData
+from sqlalchemy import Column, MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.logic.data_tables import get_task_related_table_columns, get_monitor_table_meta_columns
+from deepchecks_monitoring.logic.data_tables import get_monitor_table_meta_columns, get_task_related_table_columns
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.schemas.model_version import VersionInfo
@@ -14,16 +26,27 @@ from deepchecks_monitoring.utils import fetch_or_404
 from .router import router
 
 
-@router.post("/models/{model_id}/version")
+@router.post('/models/{model_id}/version')
 async def create_version(
-    model_id: int, 
-    info: VersionInfo, 
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        info: VersionInfo,
+        session: AsyncSession = AsyncSessionDep
 ):
+    """Create a new model version.
+
+    Parameters
+    ----------
+    model_id : int
+        ID of the model.
+    info : VersionInfo
+        Information about the model version.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+    """
     # Validate name doesn't exists
     model = await fetch_or_404(session, Model, id=model_id)
     version_names = [v.name for v in model.versions]
-    
+
     if info.name in version_names:
         raise Exception()
 

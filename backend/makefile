@@ -4,7 +4,7 @@
 # This Makefile is based on Makefile by jidn: https://github.com/jidn/python-Makefile/blob/master/Makefile
 
 # Package = Source code Directory
-PACKAGE = deepchecks-api
+PACKAGE = deepchecks_monitoring
 
 # Requirements file
 REQUIRE = requirements.txt
@@ -22,6 +22,10 @@ TESTDIR = $(shell realpath tests)
 ENV = $(shell realpath .venv)
 repo = pypi
 
+WIN_ENV := .venv
+WIN_TESTDIR := tests
+WIN_BIN := $(WIN_ENV)/bin
+
 # System Envs
 BIN := $(ENV)/bin
 pythonpath := PYTHONPATH=.
@@ -29,6 +33,7 @@ OS := $(shell uname -s)
 
 # Venv Executables
 PIP := $(BIN)/pip
+PIP_WIN := python -m pip
 PYTHON := $(BIN)/$(python)
 ANALIZE := $(BIN)/pylint -j 0
 COVERAGE := $(BIN)/coverage
@@ -144,7 +149,7 @@ validate: pylint docstring
 pylint: dev-requirements
 	$(ANALIZE) $(SOURCES) $(TEST_CODE)
 	$(FLAKE8) $(SOURCES)
-	$(FLAKE8_RST) $(SOURCES)
+# 	$(FLAKE8_RST) $(SOURCES)
 
 
 docstring: dev-requirements

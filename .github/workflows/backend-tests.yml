@@ -1,0 +1,99 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+#
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Set Up Env
+      run: make env
+      working-directory: ./backend
+    - name: pip freeze
+      run: make freeze
+      working-directory: ./backend
+    - name: Run Tests
+      run: make test
+      working-directory: ./backend
+  coverage:
+    runs-on: ubuntu-latest
+    name: coveralls
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+      with:
+        python-version: "3.9"
+    - name: Set Up Env
+      run: make env
+      working-directory: ./backend
+    - name: Run Coverage
+      run: make coveralls
+      working-directory: ./backend
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#  tests-windows:
+#    runs-on: windows-latest
+#    strategy:
+#      matrix:
+#        python-version: ["3.8"]
+#    steps:
+#    - uses: actions/checkout@v3
+#    - name: Set up Python ${{ matrix.python-version }}
+#      uses: actions/setup-python@v3
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - name: Run Tests
+#      run: make test-win
+#      working-directory: ./backend
+
+  dependencies-license-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.8'
+    - name: Get explicit and transitive dependencies
+      run: |
+        pip install -r requirements.txt
+        pip freeze > requirements-all.txt
+      working-directory: ./backend
+    - name: Check python
+      id: license_check_report
+      uses: pilosus/action-pip-license-checker@v0.6.1
+      with:
+        requirements: 'backend/requirements-all.txt'
+        fail: 'Copyleft,Other,Error'
+        exclude: '(psycopg2.*2\.9\.3)'
+        # psycopg2 is LGPL 2
+    - name: Print report
+      if: ${{ always() }}
+      run: echo "${{ steps.license_check_report.outputs.report }}"

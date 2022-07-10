@@ -1,9 +1,20 @@
-import enum
-from dataclasses import field, dataclass
-from datetime import datetime
-from typing import Optional, Dict, Any
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
 
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, DateTime, Float, Text, Boolean, PrimaryKeyConstraint
+"""Module defining the ModelVersion ORM model."""
+import enum
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -12,28 +23,33 @@ from deepchecks_monitoring.models.base import Base
 
 class ColumnRole(enum.Enum):
     """Enum containing different roles of columns in data."""
-    NUMERIC_FEATURE = 'numeric_feature'
-    CATEGORICAL_FEATURE = 'categorical_feature'
-    TAG = 'tag'
+
+    NUMERIC_FEATURE = "numeric_feature"
+    CATEGORICAL_FEATURE = "categorical_feature"
+    TAG = "tag"
 
 
 class ColumnDataType(enum.Enum):
-    """Enum containing possible types of data, according to json schema standard"""
-    NUMBER = 'number'
-    STRING = 'string'
-    BOOLEAN = 'boolean'
+    """Enum containing possible types of data, according to json schema standard."""
+
+    NUMBER = "number"
+    STRING = "string"
+    BOOLEAN = "boolean"
 
     def to_sqlalchemy_type(self):
-        map = {
+        """Return the SQLAlchemy type of the data type."""
+        types_map = {
             ColumnDataType.NUMBER: Float,
             ColumnDataType.STRING: Text,
             ColumnDataType.BOOLEAN: Boolean
         }
-        return map[self]
+        return types_map[self]
 
 
 @dataclass
 class ModelVersion(Base):
+    """ORM model for the model version."""
+
     __table__ = Table(
         "model_versions",
         Base.metadata,

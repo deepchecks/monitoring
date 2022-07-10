@@ -1,20 +1,29 @@
-import typing as t
-from fastapi import HTTPException
-from fastapi import status
-from sqlalchemy import literal
-from sqlalchemy import and_
-from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
 
+"""Module defining utility functions for the deepchecks_monitoring app."""
+import typing as t
+
+from fastapi import HTTPException, status
+from sqlalchemy import and_, literal
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 if t.TYPE_CHECKING is True:
-    from deepchecks_monitoring.models.base import Base
+    from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
 
 
 __all__ = ["exists_or_404", "not_exists_or_400", "fetch_or_404"]
 
 
-A = t.TypeVar('A', bound="Base")
+A = t.TypeVar("A", bound="Base")
 
 
 async def fetch_or_404(
@@ -23,19 +32,23 @@ async def fetch_or_404(
     **kwargs
 ) -> A:
     """Fetch the first row that matches provided criteria or raise "No Found" exxception if `None` was returned.
+
     Parameters
     ----------
-    sessions : AsyncSession
+    session : AsyncSession
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
     error_template : Optional[str], default None
-        template of a exception message (possible keys: entity, arguments)
+        template of an exception message (possible keys: entity, arguments)
     **kwargs : Any
         key-value arguments are used as a set of criterias joined by `and` operation
+
     Returns
     -------
     Row
+        first row that matches provided criteria
+
     Examples
     --------
     >>> class Person(Base):
@@ -75,9 +88,10 @@ async def exists_or_404(
     **kwargs
 ):
     """Make sure the record exists, otherwise, raise "Not Found" exception.
+
     Parameters
     ----------
-    sessions : AsyncSession
+    session : AsyncSession
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
@@ -85,6 +99,7 @@ async def exists_or_404(
         template of a exception message (possible keys: entity, arguments)
     **kwargs : Any
         key-value arguments are used as a set of criterias joined by `and` operation
+
     Examples
     --------
     >>> class Person(Base):
@@ -122,9 +137,10 @@ async def not_exists_or_400(
     **kwargs
 ):
     """Make sure there is no a record that matches provided criteria, otherwise, raise "Bad Request" exception.
+
     Parameters
     ----------
-    sessions : AsyncSession
+    session : AsyncSession
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
@@ -132,6 +148,7 @@ async def not_exists_or_400(
         template of a exception message (possible keys: entity, arguments)
     **kwargs : Any
         key-value arguments are used as a set of criterias joined by `and` operation
+
     Examples
     --------
     >>> class Person(Base):

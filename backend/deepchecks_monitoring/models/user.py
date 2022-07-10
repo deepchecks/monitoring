@@ -1,15 +1,29 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+
+"""Model defining the User ORM model."""
 import typing as t
 import uuid as uuid_pkg
-from dataclasses import field, dataclass
-from sqlalchemy import Table, String, Column
+from dataclasses import dataclass, field
+
+from sqlalchemy import Column, String, Table
+
 from deepchecks_monitoring.models.base import Base
 
-
-__all__ = ['User']
+__all__ = ["User"]
 
 
 @dataclass
 class User(Base):
+    """ORM model for the user."""
+
     __table__ = Table(
         "user",
         Base.metadata,
