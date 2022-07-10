@@ -49,16 +49,16 @@ class ModelVersion(Base):
         Column("model_id", Integer, ForeignKey("models.id"))
     )
 
-    ids: int
     name: str
     model_id: int
     start_time: Optional[datetime] = field(init=False)
     end_time: Optional[datetime] = field(init=False)
     json_schema: Dict[Any, Any]
     column_roles: Dict[str, ColumnRole]
-    features_importance: Optional[Dict[str, float]] = field(init=False)
+    features_importance: Optional[Dict[str, float]]
     monitor_table_name: str
     reference_table_name: str
+    id: int = None
 
     __mapper_args__ = {  # type: ignore
         "properties": {

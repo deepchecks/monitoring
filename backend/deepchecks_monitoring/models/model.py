@@ -29,7 +29,7 @@ class Model(Base):
         Column("description", String(200)),
         Column("task_type", Enum(TaskType))
     )
-    id: int
+    id: int = None
     name: Optional[str] = None
     description: Optional[str] = None
     task_type: Optional[TaskType] = None
