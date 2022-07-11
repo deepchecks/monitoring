@@ -13,7 +13,7 @@ import typing as t
 
 from pydantic import BaseModel
 
-from deepchecks_monitoring.models.model_version import ColumnDataType, ColumnRole
+from deepchecks_monitoring.models.model_version import ColumnType
 
 __all__ = ['NewVersionSchema']
 
@@ -23,8 +23,8 @@ class NewVersionSchema(BaseModel):
 
     name: str = None
     features_importance: t.Optional[t.Dict[str, float]] = None
-    column_roles: t.Dict[str, ColumnRole]
-    column_types: t.Dict[str, ColumnDataType]
+    features: t.Dict[str, ColumnType]
+    non_features: t.Dict[str, ColumnType]
 
     class Config:
         """Config for ModelVersion schema."""

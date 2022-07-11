@@ -19,6 +19,7 @@ from httpx import AsyncClient
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
 from deepchecks_monitoring.api.v1.model import create_model
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings

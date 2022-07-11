@@ -19,34 +19,34 @@ from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
 
-__all__ = ["ColumnRole", "ColumnDataType", "ModelVersion"]
+__all__ = ["ColumnType", "ModelVersion"]
 
 
-class ColumnRole(enum.Enum):
-    """Enum containing different roles of columns in data."""
-
-    NUMERIC_FEATURE = "numeric_feature"
-    CATEGORICAL_FEATURE = "categorical_feature"
-    TAG = "tag"
-
-    def is_feature(self):
-        """Return if current role is a feature role."""
-        return self in [ColumnRole.NUMERIC_FEATURE, ColumnRole.CATEGORICAL_FEATURE]
-
-
-class ColumnDataType(enum.Enum):
+class ColumnType(enum.Enum):
     """Enum containing possible types of data, according to json schema standard."""
 
-    NUMBER = "number"
-    STRING = "string"
+    NUMERIC = "numeric"
+    CATEGORICAL = "categorical"
     BOOLEAN = "boolean"
+    TEXT = "text"
 
     def to_sqlalchemy_type(self):
         """Return the SQLAlchemy type of the data type."""
         types_map = {
-            ColumnDataType.NUMBER: Float,
-            ColumnDataType.STRING: Text,
-            ColumnDataType.BOOLEAN: Boolean
+            ColumnType.NUMERIC: Float,
+            ColumnType.CATEGORICAL: Text,
+            ColumnType.BOOLEAN: Boolean,
+            ColumnType.TEXT: Text
+        }
+        return types_map[self]
+
+    def to_json_schema_type(self):
+        """Return the json type of the column type."""
+        types_map = {
+            ColumnType.NUMERIC: "number",
+            ColumnType.CATEGORICAL: "string",
+            ColumnType.BOOLEAN: "boolean",
+            ColumnType.TEXT: "string"
         }
         return types_map[self]
 
@@ -63,7 +63,8 @@ class ModelVersion(Base):
         Column("start_time", DateTime(timezone=True), nullable=True),
         Column("end_time", DateTime(timezone=True), nullable=True),
         Column("json_schema", JSONB),
-        Column("column_roles", JSONB),
+        Column("features", JSONB),
+        Column("non_features", JSONB),
         Column("features_importance", JSONB, nullable=True),
         Column("model_id", Integer, ForeignKey("models.id"))
     )
@@ -71,7 +72,8 @@ class ModelVersion(Base):
     name: str
     model_id: int
     json_schema: Dict[Any, Any]
-    column_roles: Dict[str, ColumnRole]
+    features: Dict[str, ColumnType]
+    non_features: Dict[str, ColumnType]
     features_importance: Optional[Dict[str, float]]
     id: int = None
     start_time: Optional[datetime] = None

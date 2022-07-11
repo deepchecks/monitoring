@@ -18,15 +18,14 @@ async def test_add_model_version(classification_model, async_session):
     # Arrange
     request = {
         "name": "xxx",
-        "column_types": {
-            "x": "number",
-            "y": "string",
+        "features": {
+            "x": "numeric",
+            "y": "categorical",
             "w": "boolean"
         },
-        "column_roles": {
-            "x": "numeric_feature",
-            "y": "categorical_feature",
-            "w": "tag"
+        "non_features": {
+            "a": "numeric",
+            "b": "text"
         }
     }
     request_schema = NewVersionSchema(**request)
@@ -35,4 +34,3 @@ async def test_add_model_version(classification_model, async_session):
     response = await create_version(classification_model.id, request_schema, async_session)
     # Assert
     assert response == 200
-    # assert response.json() == {"id": 1, "name": "44", "description": None, "task_type": "classification"}

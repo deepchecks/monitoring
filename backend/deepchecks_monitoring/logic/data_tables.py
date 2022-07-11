@@ -13,7 +13,7 @@ import typing as t
 
 from sqlalchemy import ARRAY, Column, DateTime, Float, String
 
-from deepchecks_monitoring.models import ColumnDataType
+from deepchecks_monitoring.models import ColumnType
 from deepchecks_monitoring.models.model import TaskType
 
 
@@ -59,7 +59,7 @@ def get_task_related_table_columns(task_type: TaskType) -> t.List[Column]:
         raise Exception(f'Not supported task type {task_type}')
 
 
-def column_types_to_table_columns(column_types: t.Dict[str, ColumnDataType]) -> t.List[Column]:
+def column_types_to_table_columns(column_types: t.Dict[str, ColumnType]) -> t.List[Column]:
     """Get sqlalchemy columns from columns types sent from the user (out of ColumnDataType).
 
     All columns also have index defined on them for faster querying

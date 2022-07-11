@@ -45,51 +45,54 @@ async def create_version(
     # Get relevant model
     model = await fetch_or_404(session, Model, id=model_id)
 
-    # Validate column_roles and column_types have same keys
-    mutual_exclusive_keys = set(info.column_roles.keys()).symmetric_difference(set(info.column_types.keys()))
-    if mutual_exclusive_keys:
-        raise Exception('column_roles and column_types must have the same keys. Keys missing from either one '
-                        f'of the dictionaries: {mutual_exclusive_keys}')
-
     # Validate features importance have all the features
     if info.features_importance:
-        feature_names = {name for name, role in info.column_roles.items() if role.is_feature()}
-        mutual_exclusive_keys = feature_names.symmetric_difference(info.features_importance.keys())
+        mutual_exclusive_keys = set(info.features.keys()).symmetric_difference(info.features_importance.keys())
         if mutual_exclusive_keys:
-            raise Exception('features_importance must contain exactly same features as specified in column_roles. '
+            raise Exception('features_importance must contain exactly same features as specified in "features". '
                             f'Missing features: {mutual_exclusive_keys}')
 
+    # Validate features and non-features doesn't intersect
+    collisioned = set(info.features.keys()).intersection(info.non_features.keys())
+    if collisioned:
+        raise Exception(f'Can\'t use same column name in both features and non_features: {collisioned}')
+
     # Create json schema
+    features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in info.features.items()}
+    non_features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in
+                          info.non_features.items()}
     schema = {
         'type': 'object',
-        'properties': {name: {'type': data_type.value} for name, data_type in info.column_types.items()}
+        'properties': {**features_props, **non_features_props}
     }
 
     # Create columns for data tables
     task_related_columns = get_task_related_table_columns(model.task_type)
     meta_columns = get_monitor_table_meta_columns()
     saved_column_names = set((col.name for col in task_related_columns)) | set((col.name for col in meta_columns))
+    user_column_names = set(info.features.keys()) | set(info.non_features.keys())
     # Validate no collision between features names and saved
-    collisioned_names = saved_column_names.intersection(set(info.column_roles.keys()))
+    collisioned_names = saved_column_names.intersection(user_column_names)
     if collisioned_names:
         raise Exception(f'Can\'t use the following names for columns: {collisioned_names}')
 
     # Save version entity
     model_version = ModelVersion(name=info.name, model_id=model_id, json_schema=schema,
-                                 column_roles=info.column_roles,
+                                 features=info.features, non_features=info.non_features,
                                  features_importance=info.features_importance)
     session.add(model_version)
     # flushing to get an id for the model version
     await session.flush()
 
     # Monitor data table
-    monitor_table_columns = meta_columns + task_related_columns + column_types_to_table_columns(info.column_types)
+    monitor_table_columns = meta_columns + task_related_columns + column_types_to_table_columns(info.features) + \
+        column_types_to_table_columns(info.non_features)
     monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns)
     await session.execute(CreateTable(monitor_table))
 
     # Reference data table
     reference_table_columns = get_task_related_table_columns(model.task_type) + \
-        column_types_to_table_columns(info.column_types)
+        column_types_to_table_columns(info.features) + column_types_to_table_columns(info.non_features)
     reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns)
     await session.execute(CreateTable(reference_table))
 

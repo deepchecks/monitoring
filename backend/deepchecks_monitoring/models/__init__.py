@@ -10,6 +10,6 @@
 """Module defining the ORM models."""
 
 from .model import Model, TaskType
-from .model_version import ColumnDataType, ColumnRole, ModelVersion
+from .model_version import ColumnType, ModelVersion
 
-__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnDataType', 'ColumnRole']
+__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType']
