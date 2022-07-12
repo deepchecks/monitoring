@@ -246,7 +246,7 @@ clean-docs: $(DOCS)
 
 
 trailing-spaces:
-	@find ./deepchecks/ -name "*.py" -type f -print0 | xargs -0 sed -i "s/[[:space:]]*$$//"
+	@find ./deepchecks_monitoring/ -name "*.py" -type f -print0 | xargs -0 sed -i "s/[[:space:]]*$$//"
 	@find ./tests/ -name "*.py" -type f -print0 | xargs -0 sed -i "s/[[:space:]]*$$//"
 
 

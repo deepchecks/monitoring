@@ -15,13 +15,11 @@ import typing as t
 import pytest
 import pytest_asyncio
 import testing.postgresql
-from httpx import AsyncClient
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from deepchecks_monitoring.api.v1.model import create_model
-from deepchecks_monitoring.app import create_application
+from deepchecks_monitoring.app import create_application, json_serializer
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import TaskType
 from deepchecks_monitoring.models.base import Base
@@ -46,39 +44,47 @@ def application(postgres):
 @pytest.fixture(scope="session")
 def event_loop() -> t.Generator:
     """Fix run time error "Attached to a different loop"...
-     Taken from https://rogulski.it/blog/sqlalchemy-14-async-orm-with-fastapi/
-     """
+    Taken from https://rogulski.it/blog/sqlalchemy-14-async-orm-with-fastapi/
+    """
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
 
+@pytest_asyncio.fixture(scope="session")
+async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
+    url = postgres.url().replace("postgresql", "postgresql+asyncpg")
+    engine = create_async_engine(url, echo=True, json_serializer=json_serializer)
+    yield engine
+    await engine.dispose()
+
+
 @pytest_asyncio.fixture()
-async def async_session(application):
+async def async_session(async_engine: AsyncEngine):
     """Get async sqlalchemy session instance."""
-    async with AsyncSession(application.state.async_database_engine) as session:
+    async with AsyncSession(async_engine) as session:
         try:
             yield session
             await session.commit()
-        except SQLAlchemyError as sql_ex:
+        except BaseException as error:
             await session.rollback()
-            raise sql_ex
+            raise error
         finally:
             await session.close()
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def reset_database(application):
-    async with application.state.async_database_engine.begin() as conn:
+async def reset_database(async_engine):
+    async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
         await conn.commit()
 
 
-@pytest_asyncio.fixture()
-async def client(application) -> t.Iterator[AsyncClient]:
-    async with AsyncClient(app=application, base_url="http://test") as ac:
-        yield ac
+@pytest.fixture()
+def client(application) -> t.Iterator[TestClient]:
+    with TestClient(app=application, base_url="http://test") as client:
+        yield client
 
 
 @pytest_asyncio.fixture()
