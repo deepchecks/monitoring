@@ -11,9 +11,12 @@
 """Module defining the app."""
 import typing as t
 
+import jsonschema.exceptions
 import orjson
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from sqlalchemy.ext.asyncio import create_async_engine
+from starlette.responses import JSONResponse
+from starlette.status import HTTP_400_BAD_REQUEST
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings
@@ -48,6 +51,13 @@ def create_application(settings: t.Optional[Settings] = None) -> FastAPI:
     @app.on_event("startup")
     async def startup_event():
         print("start")
+
+    @app.exception_handler(jsonschema.exceptions.ValidationError)
+    async def unicorn_exception_handler(_: Request, exc: jsonschema.exceptions.ValidationError):
+        return JSONResponse(
+            status_code=HTTP_400_BAD_REQUEST,
+            content={"error": exc.message},
+        )
 
     return app
 

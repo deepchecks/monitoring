@@ -13,8 +13,13 @@ import typing as t
 
 from sqlalchemy import ARRAY, Column, DateTime, Float, String
 
-from deepchecks_monitoring.models import ColumnType
-from deepchecks_monitoring.models.model import TaskType
+from deepchecks_monitoring.models import ColumnType, TaskType
+
+SAMPLE_ID_COL = "_dc_sample_id"
+SAMPLE_TS_COL = "_dc_time"
+SAMPLE_LABEL_COL = "_dc_label"
+SAMPLE_PRED_VALUE_COL = "_dc_prediction_value"
+SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
 
 
 def get_monitor_table_meta_columns() -> t.List[Column]:
@@ -26,8 +31,8 @@ def get_monitor_table_meta_columns() -> t.List[Column]:
         list of meta-columns
     """
     return [
-        Column('_dc_sample_id', String(30), primary_key=True),
-        Column('_dc_time', DateTime(timezone=True), index=True),
+        Column(SAMPLE_ID_COL, String(30), primary_key=True),
+        Column(SAMPLE_TS_COL, DateTime(timezone=True), index=True),
     ]
 
 
@@ -46,17 +51,50 @@ def get_task_related_table_columns(task_type: TaskType) -> t.List[Column]:
     """
     if task_type == TaskType.REGRESSION:
         return [
-            Column('_dc_label', Float, index=True),
-            Column('_dc_prediction_value', Float, index=True)
+            Column(SAMPLE_LABEL_COL, Float, index=True),
+            Column(SAMPLE_PRED_VALUE_COL, Float, index=True)
         ]
     elif task_type == TaskType.CLASSIFICATION:
         return [
-            Column('_dc_label', String, index=True),
-            Column('_dc_prediction_label', String, index=True),
-            Column('_dc_prediction_value', ARRAY(Float), index=True)
+            Column(SAMPLE_LABEL_COL, String, index=True),
+            Column(SAMPLE_PRED_LABEL_COL, String, index=True),
+            Column(SAMPLE_PRED_VALUE_COL, ARRAY(Float), index=True)
         ]
     else:
-        raise Exception(f'Not supported task type {task_type}')
+        raise Exception(f"Not supported task type {task_type}")
+
+
+def get_json_schema_columns(task_type: TaskType) -> t.Dict:
+    """Get deepchecks' saved columns to be used in json schema based on given task type.
+
+    Parameters
+    ----------
+    task_type
+
+    Returns
+    -------
+    Dict
+        Items to be inserted into json schema
+    """
+    shared_cols = {
+        SAMPLE_ID_COL: {"type": "string"},
+        SAMPLE_TS_COL: {"type": "string", "format": "datetime"}
+    }
+    if task_type == TaskType.REGRESSION:
+        shared_cols.update({
+            SAMPLE_LABEL_COL: {"type": "number"},
+            SAMPLE_PRED_VALUE_COL: {"type": "number"}
+        })
+    elif task_type == TaskType.CLASSIFICATION:
+        shared_cols.update({
+            SAMPLE_LABEL_COL: {"type": "string"},
+            SAMPLE_PRED_LABEL_COL: {"type": "string"},
+            SAMPLE_PRED_VALUE_COL: {"type": "array", "items": {"type": "number"}}
+        })
+    else:
+        raise Exception(f"Not supported task type {task_type}")
+
+    return shared_cols
 
 
 def column_types_to_table_columns(column_types: t.Dict[str, ColumnType]) -> t.List[Column]:

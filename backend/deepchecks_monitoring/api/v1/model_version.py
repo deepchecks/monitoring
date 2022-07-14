@@ -9,12 +9,14 @@
 # ----------------------------------------------------------------------------
 """V1 API of the model version."""
 
+from fastapi.responses import JSONResponse
 from sqlalchemy import MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.logic.data_tables import (column_types_to_table_columns, get_monitor_table_meta_columns,
+from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_TS_COL, column_types_to_table_columns,
+                                                     get_json_schema_columns, get_monitor_table_meta_columns,
                                                      get_task_related_table_columns)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
@@ -61,9 +63,11 @@ async def create_version(
     features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in info.features.items()}
     non_features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in
                           info.non_features.items()}
+    dc_cols = get_json_schema_columns(model.task_type)
     schema = {
         'type': 'object',
-        'properties': {**features_props, **non_features_props}
+        'properties': {**features_props, **non_features_props, **dc_cols},
+        'required': list(features_props.keys()) + [SAMPLE_ID_COL, SAMPLE_TS_COL]
     }
 
     # Create columns for data tables
@@ -96,4 +100,4 @@ async def create_version(
     reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns)
     await session.execute(CreateTable(reference_table))
 
-    return 200
+    return JSONResponse(content={'id': model_version.id})

@@ -12,7 +12,6 @@
 import typing as t
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if t.TYPE_CHECKING is True:
@@ -65,9 +64,7 @@ async def fetch_or_404(
         "'{entity}' with next set of arguments does not exist - {arguments}"
     ))
 
-    criteria = and_(*[getattr(model, k) == v for k, v in kwargs.items()])
-    statement = select(model).where(criteria)
-    result = await session.execute(statement)
+    result = await model.filter_by(session, **kwargs)
     row = result.scalars().first()
 
     if row is None:
@@ -117,9 +114,7 @@ async def exists_or_404(
         "'{entity}' with next set of arguments does not exist - {arguments}"
     ))
 
-    criteria = and_(*[getattr(model, k) == v for k, v in kwargs.items()])
-    statement = select(literal(True)).where(criteria)
-    result = await session.execute(statement)
+    result = await model.exists(session, **kwargs)
 
     if result.scalar() is None:
         model_name = getattr(model, "__name__", "Entity")
@@ -166,9 +161,7 @@ async def not_exists_or_400(
         "'{entity}' with next set of arguments already exists - {arguments}"
     ))
 
-    criteria = and_(*[getattr(model, k) == v for k, v in kwargs.items()])
-    statement = select(literal(True)).where(criteria)
-    result = await session.execute(statement)
+    result = await model.exists(session, **kwargs)
 
     if result.scalar() is not None:
         model_name = getattr(model, "__name__", "Entity")

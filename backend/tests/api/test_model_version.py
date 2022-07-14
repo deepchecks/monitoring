@@ -8,13 +8,11 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import pytest
-
-from deepchecks_monitoring.api.v1.model_version import create_version
-from deepchecks_monitoring.schemas.model_version import NewVersionSchema
+from fastapi.testclient import TestClient
 
 
 @pytest.mark.asyncio
-async def test_add_model_version(classification_model, async_session):
+async def test_add_model_version(classification_model, client: TestClient):
     # Arrange
     request = {
         "name": "xxx",
@@ -28,9 +26,9 @@ async def test_add_model_version(classification_model, async_session):
             "b": "text"
         }
     }
-    request_schema = NewVersionSchema(**request)
 
     # Act
-    response = await create_version(classification_model.id, request_schema, async_session)
+    response = client.post(f"/api/v1/models/{classification_model.id}/version", json=request)
+
     # Assert
-    assert response == 200
+    assert response.status_code == 200

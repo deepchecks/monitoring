@@ -10,20 +10,24 @@
 
 #  pylint: disable=redefined-outer-name
 import asyncio
+import json
 import typing as t
 
 import pytest
 import pytest_asyncio
 import testing.postgresql
 from fastapi.testclient import TestClient
+from sqlalchemy import inspect, Table, MetaData
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
+from deepchecks_monitoring.api.v1.model_version import create_version
 from deepchecks_monitoring.api.v1.model import create_model
 from deepchecks_monitoring.app import create_application, json_serializer
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import TaskType
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.schemas.model import ModelSchema
+from deepchecks_monitoring.schemas.model_version import NewVersionSchema
 
 
 @pytest.fixture(scope="session")
@@ -32,7 +36,7 @@ def postgres():
         yield postgres
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def application(postgres):
     database_uri = postgres.url()
     async_database_uri = postgres.url().replace("postgresql", "postgresql+asyncpg")
@@ -51,7 +55,7 @@ def event_loop() -> t.Generator:
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
     url = postgres.url().replace("postgresql", "postgresql+asyncpg")
     engine = create_async_engine(url, echo=True, json_serializer=json_serializer)
@@ -76,7 +80,16 @@ async def async_session(async_engine: AsyncEngine):
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def reset_database(async_engine):
     async with async_engine.begin() as conn:
+        # First remove ORM tables
         await conn.run_sync(Base.metadata.drop_all)
+
+        # Second, remove generated tables (leftovers)
+        def drop_all_tables(c):
+            inspector = inspect(c)
+            for table in inspector.get_table_names():
+                Table(table, MetaData()).drop(c)
+
+        await conn.run_sync(drop_all_tables)
         await conn.run_sync(Base.metadata.create_all)
         await conn.commit()
 
@@ -90,4 +103,15 @@ def client(application) -> t.Iterator[TestClient]:
 @pytest_asyncio.fixture()
 async def classification_model(async_session):
     schema = ModelSchema(name="classification model", description="test", task_type=TaskType.CLASSIFICATION)
-    return await create_model(schema, async_session)
+    result = await create_model(schema, async_session)
+    await async_session.commit()
+    return result
+
+
+@pytest_asyncio.fixture()
+async def classification_model_version_1(async_session, classification_model):
+    schema = NewVersionSchema(name="v1", features={"a": "numeric", "b": "categorical"}, non_features={"c": "numeric"})
+    result = await create_version(classification_model.id, schema, async_session)
+    await async_session.commit()
+    return json.loads(result.body)["id"]
+

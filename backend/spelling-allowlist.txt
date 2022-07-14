@@ -20,3 +20,4 @@ nullable
 pylint
 Dep
 Affero
+Asyncpg
