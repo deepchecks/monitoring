@@ -19,6 +19,7 @@ from sqlalchemy.orm import relationship
 from deepchecks_monitoring.models.base import Base
 
 if TYPE_CHECKING:
+    from deepchecks_monitoring.models.check import Check
     from deepchecks_monitoring.models.model_version import ModelVersion
 
 
@@ -49,9 +50,11 @@ class Model(Base):
     description: Optional[str] = None
     task_type: Optional[TaskType] = None
     versions: List["ModelVersion"] = field(default_factory=list)
+    checks: List["Check"] = field(default_factory=list)
 
     __mapper_args__ = {  # type: ignore
         "properties": {
             "versions": relationship("ModelVersion"),
+            "checks": relationship("Check"),
         }
     }

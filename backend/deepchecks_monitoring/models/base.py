@@ -34,7 +34,7 @@ class BaseActions:
         return result
 
     @classmethod
-    async def exists(cls, session: AsyncSession, filter_by):
+    async def exists(cls, session: AsyncSession, **filter_by):
         result = await session.execute(select(literal(True)).where(cls.where(**filter_by)))
         return result
 

@@ -17,11 +17,11 @@ import pytest
 import pytest_asyncio
 import testing.postgresql
 from fastapi.testclient import TestClient
-from sqlalchemy import inspect, Table, MetaData
+from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from deepchecks_monitoring.api.v1.model_version import create_version
 from deepchecks_monitoring.api.v1.model import create_model
+from deepchecks_monitoring.api.v1.model_version import create_version
 from deepchecks_monitoring.app import create_application, json_serializer
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import TaskType
