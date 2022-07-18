@@ -11,14 +11,14 @@
 """Module defining utility functions for the deepchecks_monitoring app."""
 import typing as t
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
 
 
-__all__ = ["exists_or_404", "not_exists_or_400", "fetch_or_404"]
+__all__ = ["exists_or_404", "not_exists_or_400", "fetch_or_404", "bad_request", "limit_request_size"]
 
 
 A = t.TypeVar("A", bound="Base")
@@ -167,6 +167,33 @@ async def not_exists_or_400(
         model_name = getattr(model, "__name__", "Entity")
         args = "; ".join(f"{k}={v}" for k, v in kwargs.items())
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=error_template.format(entity=model_name.capitalize(), arguments=args)
         )
+
+
+def bad_request(message: str):
+    """Return bad request response with given message.
+
+    Parameters
+    ----------
+    message
+    """
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+
+
+def limit_request_size(size: int):
+    """Return a dependency function which validates content size is limited to the given size in bytes.
+
+    Parameters
+    ----------
+    size: int
+        Maximum size for the http content in bytes
+    """
+    async def limit_func(request: Request, max_size=size):
+        if "content-length" not in request.headers:
+            raise HTTPException(status_code=status.HTTP_411_LENGTH_REQUIRED)
+        content_length = int(request.headers["content-length"])
+        if content_length > max_size:
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+    return limit_func

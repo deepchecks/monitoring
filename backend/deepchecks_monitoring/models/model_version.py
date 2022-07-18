@@ -64,7 +64,8 @@ class ModelVersion(Base):
         Column("name", String(100)),
         Column("start_time", DateTime(timezone=True), default=pdl.datetime(3000, 1, 1)),
         Column("end_time", DateTime(timezone=True), default=pdl.datetime(1970, 1, 1)),
-        Column("json_schema", JSONB),
+        Column("monitor_json_schema", JSONB),
+        Column("reference_json_schema", JSONB),
         Column("features", JSONB),
         Column("non_features", JSONB),
         Column("features_importance", JSONB, nullable=True),
@@ -73,7 +74,8 @@ class ModelVersion(Base):
 
     name: str
     model_id: int
-    json_schema: Dict[Any, Any]
+    monitor_json_schema: Dict[Any, Any]
+    reference_json_schema: Dict[Any, Any]
     features: Dict[str, ColumnType]
     non_features: Dict[str, ColumnType]
     features_importance: Optional[Dict[str, float]]
@@ -94,12 +96,18 @@ class ModelVersion(Base):
     def get_monitor_table(self, connection) -> Table:
         """Get table object of the monitor table."""
         metadata = MetaData(bind=connection)
-        columns = json_schema_to_columns(self.json_schema)
+        columns = json_schema_to_columns(self.monitor_json_schema)
         return Table(self.get_monitor_table_name(), metadata, *columns)
 
     def get_reference_table_name(self) -> str:
         """Get name of reference table."""
         return f"model_{self.model_id}_ref_data_{self.id}"
+
+    def get_reference_table(self, connection) -> Table:
+        """Get table object of the reference table."""
+        metadata = MetaData(bind=connection)
+        columns = json_schema_to_columns(self.reference_json_schema)
+        return Table(self.get_reference_table_name(), metadata, *columns)
 
     async def update_timestamps(self, timestamp: pdl.datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamp.

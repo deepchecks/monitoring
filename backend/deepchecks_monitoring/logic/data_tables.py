@@ -22,7 +22,11 @@ SAMPLE_PRED_VALUE_COL = "_dc_prediction_value"
 SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
 
 
-def get_monitor_table_meta_columns() -> t.List[Column]:
+__all__ = ["get_json_schema_columns_for_monitor", "get_json_schema_columns_for_model", "get_table_columns_for_model",
+           "get_table_columns_for_monitor", "column_types_to_table_columns", "SAMPLE_ID_COL", "SAMPLE_TS_COL"]
+
+
+def get_table_columns_for_monitor() -> t.List[Column]:
     """Get the columns for the data table.
 
     Returns
@@ -36,7 +40,7 @@ def get_monitor_table_meta_columns() -> t.List[Column]:
     ]
 
 
-def get_task_related_table_columns(task_type: TaskType) -> t.List[Column]:
+def get_table_columns_for_model(task_type: TaskType) -> t.List[Column]:
     """Get the columns for the data table based on the task type.
 
     Parameters
@@ -64,8 +68,8 @@ def get_task_related_table_columns(task_type: TaskType) -> t.List[Column]:
         raise Exception(f"Not supported task type {task_type}")
 
 
-def get_json_schema_columns(task_type: TaskType) -> t.Dict:
-    """Get deepchecks' saved columns to be used in json schema based on given task type.
+def get_json_schema_columns_for_model(task_type: TaskType) -> t.Dict:
+    """Get deepchecks' saved columns to be used in json schema for a model based on given task type.
 
     Parameters
     ----------
@@ -76,25 +80,32 @@ def get_json_schema_columns(task_type: TaskType) -> t.Dict:
     Dict
         Items to be inserted into json schema
     """
-    shared_cols = {
-        SAMPLE_ID_COL: {"type": "string"},
-        SAMPLE_TS_COL: {"type": "string", "format": "datetime"}
-    }
     if task_type == TaskType.REGRESSION:
-        shared_cols.update({
+        return {
             SAMPLE_LABEL_COL: {"type": "number"},
             SAMPLE_PRED_VALUE_COL: {"type": "number"}
-        })
+        }
     elif task_type == TaskType.CLASSIFICATION:
-        shared_cols.update({
+        return {
             SAMPLE_LABEL_COL: {"type": "string"},
             SAMPLE_PRED_LABEL_COL: {"type": "string"},
             SAMPLE_PRED_VALUE_COL: {"type": "array", "items": {"type": "number"}}
-        })
+        }
     else:
         raise Exception(f"Not supported task type {task_type}")
 
-    return shared_cols
+
+def get_json_schema_columns_for_monitor() -> t.Dict:
+    """Get deepchecks' saved columns to be used in json schema for monitoring table.
+
+    Returns
+    -------
+    Dict
+    """
+    return {
+        SAMPLE_ID_COL: {"type": "string"},
+        SAMPLE_TS_COL: {"type": "string", "format": "datetime"}
+    }
 
 
 def column_types_to_table_columns(column_types: t.Dict[str, ColumnType]) -> t.List[Column]:

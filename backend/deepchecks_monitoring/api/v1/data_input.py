@@ -8,17 +8,22 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """V1 API of the data input."""
+from io import StringIO
+
+import pandas as pd
 import pendulum as pdl
-from fastapi import Body, Response
+from fastapi import Body, Depends, Response, UploadFile
 from jsonschema import validate
-from sqlalchemy import insert, update
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import count
 from starlette.status import HTTP_200_OK
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.utils import fetch_or_404
+from deepchecks_monitoring.schemas.data_input import ReferenceDataSchema
+from deepchecks_monitoring.utils import bad_request, fetch_or_404, limit_request_size
 
 from .router import router
 
@@ -39,10 +44,9 @@ async def log_data(
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
 
-    validate(instance=request_body, schema=model_version.json_schema)
+    validate(instance=request_body, schema=model_version.monitor_json_schema)
 
     # Save sample
-    # connection = await session.connection()
     i = insert(model_version.get_monitor_table(session))
     # Asyncpg unlike psycopg2, must get for datetime columns a python datetime object
     request_timestamp = pdl.parse(request_body[SAMPLE_TS_COL])
@@ -57,7 +61,7 @@ async def log_data(
 @router.post("/data/{model_version_id}/update")
 async def update_data(
     model_version_id: int,
-    request_body: dict = Body,
+    request_body: dict = ReferenceDataSchema,
     session: AsyncSession = AsyncSessionDep
 ):
     """Update a single data sample.
@@ -70,7 +74,7 @@ async def update_data(
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
 
-    json_schema = model_version.json_schema
+    json_schema = model_version.monitor_json_schema
     required_columns = set(json_schema["required"])
     # Create update schema, which contains only non-required columns and sample id
     optional_columns_schema = {
@@ -108,4 +112,61 @@ async def get_schema(
     json schema of the model version
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    return model_version.json_schema
+    return model_version.monitor_json_schema
+
+
+@router.get("/data/{model_version_id}/reference_schema")
+async def get_reference_schema(
+    model_version_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Return json schema of the model version data to use in validation on client-side.
+
+    Parameters
+    ----------
+    model_version_id
+    session
+
+    Returns
+    -------
+    json schema of the model version
+    """
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    return model_version.reference_json_schema
+
+
+@router.post("/data/{model_version_id}/reference",
+             dependencies=[Depends(limit_request_size(500_000_000))])
+async def save_reference(
+    model_version_id: int,
+    file: UploadFile,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Upload reference data for a given model version.
+
+    Parameters
+    ----------
+    model_version_id
+    file
+    session
+    """
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    ref_table = model_version.get_reference_table(session)
+    count_result = await session.execute(select(count()).select_from(ref_table))
+    if count_result.scalar() > 0:
+        bad_request("Already have reference data")
+
+    contents = await file.read()
+    data = pd.read_json(StringIO(contents.decode()), orient="table")
+    if len(data) > 100_000:
+        bad_request(f"Maximum number of samples allowed for reference is 100,000 but got: {len(data)}")
+
+    items = []
+    for (_, row) in data.iterrows():
+        item = row.to_dict()
+        validate(schema=model_version.reference_json_schema, instance=item)
+        items.append(item)
+
+    # Insert all
+    await session.execute(ref_table.insert(), items)
+    return Response(status_code=HTTP_200_OK)
