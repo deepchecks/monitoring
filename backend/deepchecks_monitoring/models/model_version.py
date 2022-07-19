@@ -25,7 +25,7 @@ __all__ = ["ColumnType", "ModelVersion"]
 
 
 class ColumnType(enum.Enum):
-    """Enum containing possible types of data, according to json schema standard."""
+    """Enum containing possible types of data."""
 
     NUMERIC = "numeric"
     CATEGORICAL = "categorical"

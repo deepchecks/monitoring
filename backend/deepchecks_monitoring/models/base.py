@@ -16,7 +16,7 @@ from sqlalchemy.orm import declarative_base
 __all__ = ['Base']
 
 
-class BaseActions:
+class BaseClass:
     """Base class for SqlAlchemy models which implements basic actions using AsyncSession."""
 
     @classmethod
@@ -40,4 +40,4 @@ class BaseActions:
 
 
 # declarative base class
-Base = declarative_base(cls=BaseActions)
+Base = declarative_base(cls=BaseClass)

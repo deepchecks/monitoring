@@ -16,6 +16,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.schemas.model import ModelSchema
 
+from ...utils import fetch_or_404
 from .router import router
 
 
@@ -42,4 +43,27 @@ async def create_model(
     session.add(model)
     # Flushing to get model id
     await session.flush()
+    return ModelSchema.from_orm(model)
+
+
+@router.get("/models/{model_id}", response_model=ModelSchema)
+async def get_model(
+    model_id: int,
+    session: AsyncSession = AsyncSessionDep
+) -> ModelSchema:
+    """Create a new model.
+
+    Parameters
+    ----------
+    model_id : int
+        Model to return.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    ModelSchema
+        Created model.
+    """
+    model = fetch_or_404(session, Model, id=model_id)
     return ModelSchema.from_orm(model)

@@ -22,7 +22,7 @@ class NewVersionSchema(BaseModel):
     """Schema defines the parameters for creating new model version."""
 
     name: str = None
-    features_importance: t.Optional[t.Dict[str, float]] = None
+    feature_importance: t.Optional[t.Dict[str, float]] = None
     features: t.Dict[str, ColumnType]
     non_features: t.Dict[str, ColumnType]
 

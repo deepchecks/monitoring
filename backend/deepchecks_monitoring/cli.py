@@ -10,6 +10,7 @@
 
 """Module defining the CLI of the monitoring package."""
 import click
+import uvicorn
 from sqlalchemy import create_engine
 
 from deepchecks_monitoring.config import Settings
@@ -31,5 +32,11 @@ def initdb():
     engine.dispose()
 
 
-if __name__ == '__main__':
+@cli.command()
+def run():
+    """Initialize the database."""
+    uvicorn.run("app:create_application", port=5000, log_level="info")
+
+
+if __name__ == "__main__":
     cli()

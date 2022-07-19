@@ -51,7 +51,7 @@ async def test_update_data(client: TestClient, classification_model_version_1: i
 
 @pytest.mark.asyncio
 async def test_get_schema(client: TestClient, classification_model_version_1: int):
-    response = client.get(f"/api/v1/data/{classification_model_version_1}/schema")
+    response = client.get(f"/api/v1/model_version/{classification_model_version_1}/schema")
     assert response.status_code == 200
     assert response.json() == {
         "properties": {

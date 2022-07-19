@@ -48,8 +48,8 @@ async def create_version(
     model = await fetch_or_404(session, Model, id=model_id)
 
     # Validate features importance have all the features
-    if info.features_importance:
-        mutual_exclusive_keys = set(info.features.keys()).symmetric_difference(info.features_importance.keys())
+    if info.feature_importance:
+        mutual_exclusive_keys = set(info.features.keys()).symmetric_difference(info.feature_importance.keys())
         if mutual_exclusive_keys:
             raise Exception('features_importance must contain exactly same features as specified in "features". '
                             f'Missing features: {mutual_exclusive_keys}')
@@ -90,7 +90,7 @@ async def create_version(
     # Save version entity
     model_version = ModelVersion(name=info.name, model_id=model_id, monitor_json_schema=monitor_table_schema,
                                  reference_json_schema=reference_table_schema, features=info.features,
-                                 non_features=info.non_features, features_importance=info.features_importance)
+                                 non_features=info.non_features, features_importance=info.feature_importance)
     session.add(model_version)
     # flushing to get an id for the model version
     await session.flush()
@@ -108,3 +108,43 @@ async def create_version(
     await session.execute(CreateTable(reference_table))
 
     return JSONResponse(content={'id': model_version.id})
+
+
+@router.get('/model_version/{model_version_id}/schema')
+async def get_schema(
+    model_version_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Return json schema of the model version data to use in validation on client-side.
+
+    Parameters
+    ----------
+    model_version_id
+    session
+
+    Returns
+    -------
+    json schema of the model version
+    """
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    return model_version.monitor_json_schema
+
+
+@router.get('/model_version/{model_version_id}/reference_schema')
+async def get_reference_schema(
+    model_version_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Return json schema of the model version data to use in validation on client-side.
+
+    Parameters
+    ----------
+    model_version_id
+    session
+
+    Returns
+    -------
+    json schema of the model version
+    """
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    return model_version.reference_json_schema

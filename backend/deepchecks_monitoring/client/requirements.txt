@@ -1,0 +1,4 @@
+pandas
+pendulum==2.1.2
+jsonschema==4.7.2
+requests

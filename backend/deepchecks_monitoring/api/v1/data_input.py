@@ -22,7 +22,6 @@ from starlette.status import HTTP_200_OK
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.schemas.data_input import ReferenceDataSchema
 from deepchecks_monitoring.utils import bad_request, fetch_or_404, limit_request_size
 
 from .router import router
@@ -61,7 +60,7 @@ async def log_data(
 @router.post("/data/{model_version_id}/update")
 async def update_data(
     model_version_id: int,
-    request_body: dict = ReferenceDataSchema,
+    request_body: dict = Body(),
     session: AsyncSession = AsyncSessionDep
 ):
     """Update a single data sample.
@@ -93,46 +92,6 @@ async def update_data(
     await session.execute(statement)
 
     return Response(status_code=HTTP_200_OK)
-
-
-@router.get("/data/{model_version_id}/schema")
-async def get_schema(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
-):
-    """Return json schema of the model version data to use in validation on client-side.
-
-    Parameters
-    ----------
-    model_version_id
-    session
-
-    Returns
-    -------
-    json schema of the model version
-    """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    return model_version.monitor_json_schema
-
-
-@router.get("/data/{model_version_id}/reference_schema")
-async def get_reference_schema(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
-):
-    """Return json schema of the model version data to use in validation on client-side.
-
-    Parameters
-    ----------
-    model_version_id
-    session
-
-    Returns
-    -------
-    json schema of the model version
-    """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    return model_version.reference_json_schema
 
 
 @router.post("/data/{model_version_id}/reference",
