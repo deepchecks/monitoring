@@ -20,7 +20,7 @@ export default function DeepCheckLogo ({onClick,width}:DeepCheckLogoProps){
            cursor:"pointer"
         }}
         >
-            {width > 1220 ? <Logo />:<Logoin1280/> }
+            {width > 1381 ? <Logo />:<Logoin1280/> }
         </Box>
     )
 }

@@ -5,19 +5,53 @@ import { styled } from "@mui/system";
 import Box from '@mui/material/Box';
 const DashboardContainer = styled(Box)(({theme})=>({
     padding: "20px",
+    paddingBottom:"40px",
     marginLeft:"250px",
-    [theme.breakpoints.down(1280)]:{
+    width:"100%",
+    minWidth:"1094px",
+    [theme.breakpoints.down(1381)]:{
         marginLeft:"83px"
-    }
+    },
 }))
-const GridContainer = styled(Box)(({theme})=>({
-    display:"grid",
-    gridTemplateColumns:"514px 514px 514px",
-    gridColumnGap:"30px",
-    gridRowGap:"57px",
-    [theme.breakpoints.down(1280)]:{
-        gridTemplateColumns:"514px 2fr",
-    }
+const FlexContainer = styled(Box)(({theme})=>({
+    display:"flex",
+    flexWrap: "wrap",
+    gap:"30px",
+    justifyContent:"space-between"    
+}))
+const FlexContent = styled(Box)(({theme})=>({
+    maxWidth:"512px",
+    width:"100%",
+    minWidth:"428px",
+    minHeight:"446px",
+    borderLeft:"8px solid #F1E9FE",
+    boxShadow:"0px 0px 25px 2px rgba(0, 0, 0, 0.09)",
+    borderRadius:"10px",
+    marginBottom:"40px",
+    [theme.breakpoints.down(1944)]:{
+        maxWidth: "47%",
+    },
+    
+    "&.fourth":{
+        maxWidth: "47%",
+    },
+    "&.fifth":{
+        maxWidth: "47%",
+        [theme.breakpoints.down(1944)]:{
+            maxWidth:"100% "
+        },
+    },
+    "&.second":{
+        borderWidth: "0px 0px 8px 8px",
+        borderStyle: "solid",
+        borderColor: "#F1E9FE",
+    },
+    "&.sixs":{
+        maxWidth:"100%!important",
+    },
+    "&.sevn":{
+        maxWidth:"100%!important"
+    },
 }))
 
 const title = {color: '#3A474E',
@@ -30,7 +64,7 @@ marginBottom: '11px'}
 
 export function Dashboard() {
     return <DashboardContainer>
-            <Box sx={{display: "flex", alignItems: "center", padding: '20px 48px 20px 0', justifyContent: 'space-between'}}>
+            <Box sx={{display: "flex", alignItems: "center",padding: '20px 48px 20px 0', justifyContent: 'space-between'}}>
                 <Box sx={{display: "flex", alignItems: 'center'}}>
                     <Box sx={{mr: "9.6px"}}><HomeIcon/></Box>
                     <Typography sx={{
@@ -130,14 +164,11 @@ export function Dashboard() {
                 </Box>
             </Box>
         </Box>
-        <GridContainer>
-            <Box sx={{
+        <FlexContainer>
+            <FlexContent className="first" sx={{
                 borderLeft: '8px solid rgba(239, 76, 54, 0.5)',
-                boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
-                borderRadius: '10px',
-                paddingLeft: '20px'
             }}>
-                <Typography sx={title}>
+                <Typography sx={title} >
                     Models List
                 </Typography>
                 <Box>
@@ -145,7 +176,8 @@ export function Dashboard() {
                         sx={{
                             borderRadius: '4px',
                             width: 'calc(100% - 60px)',
-                            margin: '30px'
+                            margin: '30px',
+                            marginLeft: "40px"
                         }}
                         placeholder='Search Model'
                         variant="outlined"
@@ -161,76 +193,55 @@ export function Dashboard() {
                     />
                 </Box>
 
-            </Box>
-            <Box sx={{
-                width:"100%",
-                minWidth:"428px",
-                height:"512px",
-                borderLeft:"8px solid #F1E9FE",
-                boxShadow:"0px 0px 25px 2px rgba(0, 0, 0, 0.09",
-                borderRadius:"10px"
-            }}>
+            </FlexContent>
+            <FlexContent className="second">
                 <Box sx={{}}>
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
                 </Box>
                 
-            </Box>
-            <Box sx={{
-                minWidth:"428px",
-                borderLeft:"8px solid #F1E9FE",
-                boxShadow:"0px 0px 25px 2px rgba(0, 0, 0, 0.09",
-                borderRadius:"10px"
-            }}>
+            </FlexContent>
+            <FlexContent className="third">
                 <Box sx={{}}>
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
                 </Box>
                 
-            </Box>
-            <Box sx={{
-                minWidth:"428px",
-                borderLeft:"8px solid #F1E9FE",
-                boxShadow:"0px 0px 25px 2px rgba(0, 0, 0, 0.09",
-                borderRadius:"10px"
-            }}>
+            </FlexContent>
+            <FlexContent className="fourth">
                 <Box sx={{}}>
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
                 </Box>
                 
-            </Box>
-            <Box sx={{
-                minWidth:"428px",
-                height:"512px",
-                borderLeft:"8px solid #F1E9FE",
-                boxShadow:"0px 0px 25px 2px rgba(0, 0, 0, 0.09",
-                borderRadius:"10px"
-            }}>
+            </FlexContent>
+            <FlexContent className="fifth">
                 <Box sx={{}}>
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
                 </Box>
                 
-            </Box>
-            <Box sx={{
-                minWidth:"428px",
-                height:"512px",
-                borderLeft:"8px solid #F1E9FE",
-                boxShadow:"0px 0px 25px 2px rgba(0, 0, 0, 0.09",
-                borderRadius:"10px"
-            }}>
+            </FlexContent>
+            <FlexContent className="sixs">
                 <Box sx={{}}>
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
                 </Box>
                 
-            </Box>
-        </GridContainer>
+            </FlexContent>
+            <FlexContent className="sevn">
+                <Box sx={{}}>
+                    <Typography  sx={{...title,mt:2,ml:2}}>
+                        Data Ingest Status
+                    </Typography>
+                </Box>
+                
+            </FlexContent>
+        </FlexContainer>
     </DashboardContainer>
 }

@@ -10,8 +10,10 @@ import profileImg from "../../assets/icon/profileImg.jpg"
 import useWindowResize from "../../hook/windowsize";
 const ImgBox = styled(Box)(({ theme }) => ({
     margin:"0 14px",
-    [theme.breakpoints.down(1280)]: {
-        margin:"0 auto"
+    width:"40px",
+    height:"40px",
+    [theme.breakpoints.down(1381)]: {
+        margin:"auto -4px"
     }
 }))
 const SidebarContainer = styled(Box)(({theme})=>({
@@ -23,7 +25,7 @@ const SidebarContainer = styled(Box)(({theme})=>({
     flexDirection: "column",
     alignItems: "center",
     justifyContent:"space-between",
-    [theme.breakpoints.down(1280)]:{
+    [theme.breakpoints.down(1381)]:{
         width:"83px"
     }
 }))
@@ -54,7 +56,7 @@ export default function Sidebar() {
                 {
                     position:"fixed",
                     background: "#17003E",
-                    maxWidth: width > 1220 ? "237px" : "83px",
+                    maxWidth: width > 1381 ? "237px" : "83px",
                     height:"100vh",
                     display: "flex",
                     flexDirection: "column",
@@ -72,7 +74,7 @@ export default function Sidebar() {
                 sidebarInfo.map((el:SidebarInfo) => {
                         return <Box sx = {
                             {
-                                width: width>1223?"237px":"70px",
+                                width: width>1381?"237px":"70px",
                                 ml:"5px",
                                 height: "38px",
                                 display: "flex",
@@ -85,7 +87,7 @@ export default function Sidebar() {
                                 backgroundColor: el.activ ? "#fff" : null,
                                 backgroundImage: el.activ ? `url(${el.ActivIcon})` : `url(${el.Icon})`,
                                 backgroundRepeat: "no-repeat",
-                                backgroundPosition: `${width>1220 ? "30px" : "10px"} center`,
+                                backgroundPosition: `${width>1381 ? "30px" : "10px"} center`,
                                 transition: "all 0.2s ease-in",
                                 "&:hover": {
                                     color: "#B17DFF",
@@ -101,7 +103,7 @@ export default function Sidebar() {
                             }
                         }
                         key = { el.key } >
-                            {width>1220?<Box display = {
+                            {width>1381?<Box display = {
                                 {
                                     display: "flex",
                                     justifyContent: "space-between",
@@ -148,7 +150,9 @@ export default function Sidebar() {
 
                             }
                         }>
-                            <ImgBox>
+                            <ImgBox sx={{
+                                marginLeft:"8px"
+                            }}>
                                 <img src={profileImg} alt='profile' style={{
                                     width: 36,
                                     height: 36,
@@ -158,11 +162,11 @@ export default function Sidebar() {
                                     borderStyle: 'solid'
                                 }}/>
                             </ImgBox>
-                            {width>1220?<Box>Hi, person</Box>:null}
+                            {width>1381?<Box>Hi, person</Box>:null}
                         </Box>
                     </Box>
                     <Box sx={{
-                        width: width>1220?"237px":"0",
+                        width: width>1381?"237px":"0",
                         pb:"79px",
                         display: "flex",
                         alignItems: "center",
@@ -187,10 +191,10 @@ export default function Sidebar() {
                             alignItems: "center",
                             "space-between" : "center",
                         }}>
-                            <ImgBox sx={{margin: "0 17px"}}>
+                            <ImgBox>
                                 <InfoIcon/>
                             </ImgBox>
-                            {width > 1220 ?<Box>Need Help?</Box> :null}
+                            {width > 1381 ?<Box>Need Help?</Box> :null}
                         </Box>
                     </Box>
                 </Box>
