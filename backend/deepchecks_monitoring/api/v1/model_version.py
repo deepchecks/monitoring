@@ -8,30 +8,44 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """V1 API of the model version."""
+import typing as t
 
-from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlalchemy import MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_tables import (column_types_to_table_columns, get_json_schema_columns_for_model,
                                                      get_json_schema_columns_for_monitor, get_table_columns_for_model,
                                                      get_table_columns_for_monitor)
 from deepchecks_monitoring.models.model import Model
-from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.schemas.model_version import NewVersionSchema
+from deepchecks_monitoring.models.model_version import ColumnType, ModelVersion
 from deepchecks_monitoring.utils import fetch_or_404
 
 from .router import router
 
 
+class ModelVersionCreationSchema(BaseModel):
+    """Schema defines the parameters for creating new model version."""
+
+    name: str
+    features: t.Dict[str, ColumnType]
+    non_features: t.Dict[str, ColumnType]
+    feature_importance: t.Optional[t.Dict[str, float]] = None
+
+    class Config:
+        """Config for ModelVersion schema."""
+
+        orm_mode = True
+
+
 @router.post('/models/{model_id}/version')
 async def create_version(
     model_id: int,
-    info: NewVersionSchema,
+    info: ModelVersionCreationSchema,
     session: AsyncSession = AsyncSessionDep
-
 ):
     """Create a new model version.
 
@@ -44,20 +58,20 @@ async def create_version(
     session : AsyncSession, optional
         SQLAlchemy session.
     """
-    # Get relevant model
+    # TODO: all this logic must be implemented (encapsulated) within Model type
     model = await fetch_or_404(session, Model, id=model_id)
 
     # Validate features importance have all the features
     if info.feature_importance:
         mutual_exclusive_keys = set(info.features.keys()).symmetric_difference(info.feature_importance.keys())
         if mutual_exclusive_keys:
-            raise Exception('features_importance must contain exactly same features as specified in "features". '
-                            f'Missing features: {mutual_exclusive_keys}')
+            raise BadRequest('feature_importance must contain exactly same features as specified in "features". '
+                             f'Missing features: {mutual_exclusive_keys}')
 
     # Validate features and non-features doesn't intersect
     intersects_names = set(info.features.keys()).intersection(info.non_features.keys())
     if intersects_names:
-        raise Exception(f'Can\'t use same column name in both features and non_features: {intersects_names}')
+        raise BadRequest(f'Can\'t use same column name in both features and non_features: {intersects_names}')
 
     monitor_cols = get_json_schema_columns_for_monitor()
     model_related_cols = get_json_schema_columns_for_model(model.task_type)
@@ -65,7 +79,7 @@ async def create_version(
     saved_keys = set(monitor_cols.keys()) | set(model_related_cols.keys())
     intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.non_features.keys()))
     if intersects_columns:
-        raise Exception(f'Can\'t use the following names for columns: {intersects_columns}')
+        raise BadRequest(f'Can\'t use the following names for columns: {intersects_columns}')
 
     # Create json schema
     features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in info.features.items()}
@@ -90,7 +104,7 @@ async def create_version(
     # Save version entity
     model_version = ModelVersion(name=info.name, model_id=model_id, monitor_json_schema=monitor_table_schema,
                                  reference_json_schema=reference_table_schema, features=info.features,
-                                 non_features=info.non_features, features_importance=info.feature_importance)
+                                 non_features=info.non_features, feature_importance=info.feature_importance)
     session.add(model_version)
     # flushing to get an id for the model version
     await session.flush()
@@ -107,10 +121,10 @@ async def create_version(
     reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns)
     await session.execute(CreateTable(reference_table))
 
-    return JSONResponse(content={'id': model_version.id})
+    return {'id': model_version.id}
 
 
-@router.get('/model_version/{model_version_id}/schema')
+@router.get('/model-versions/{model_version_id}/schema')
 async def get_schema(
     model_version_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -130,7 +144,7 @@ async def get_schema(
     return model_version.monitor_json_schema
 
 
-@router.get('/model_version/{model_version_id}/reference_schema')
+@router.get('/model-versions/{model_version_id}/reference-schema')
 async def get_reference_schema(
     model_version_id: int,
     session: AsyncSession = AsyncSessionDep

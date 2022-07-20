@@ -74,16 +74,16 @@ class DeepchecksModelVersionClient:
     def __init__(self, host: str, model_version_id: int):
         self.host = host
         self.model_version_id = model_version_id
-        response = requests.get(f'{host}/model_version/{model_version_id}/schema')
+        response = requests.get(f'{host}/model-versions/{model_version_id}/schema')
         response.raise_for_status()
         self.schema = response.json()
-        response = requests.get(f'{host}/model_version/{model_version_id}/reference_schema')
+        response = requests.get(f'{host}/model-versions/{model_version_id}/reference-schema')
         response.raise_for_status()
         self.ref_schema = response.json()
 
     def log_sample(self,
                    sample_id: str,
-                   timestamp: Union[datetime, int] = None,
+                   timestamp: Union[datetime, int, None] = None,
                    prediction_value=None,
                    prediction_label=None,
                    **values):
@@ -125,7 +125,7 @@ class DeepchecksModelVersionClient:
 
         validate(instance=sample, schema=self.schema)
 
-        response = requests.post(f'{self.host}/data/{self.model_version_id}/log', json=sample)
+        response = requests.post(f'{self.host}/model-versions/{self.model_version_id}/data', json=sample)
         response.raise_for_status()
 
     def upload_reference(self,
@@ -155,7 +155,7 @@ class DeepchecksModelVersionClient:
             item = row.to_dict()
             validate(schema=self.ref_schema, instance=item)
 
-        response = requests.post(f'{self.host}/data/{self.model_version_id}/reference',
+        response = requests.post(f'{self.host}/model-versions/{self.model_version_id}/reference',
                                  files={'file': data.to_json(orient='table', index=False)})
         response.raise_for_status()
 
@@ -183,7 +183,7 @@ class DeepchecksModelVersionClient:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         validate(instance=update, schema=optional_columns_schema)
-        response = requests.post(f'{self.host}/data/{self.model_version_id}/update', json=update)
+        response = requests.put(f'{self.host}/model-versions/{self.model_version_id}/data', json=update)
         response.raise_for_status()
 
 

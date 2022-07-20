@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """V1 API of the data input."""
+import typing as t
 from io import StringIO
 
 import pandas as pd
@@ -17,50 +18,45 @@ from jsonschema import validate
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
-from starlette.status import HTTP_200_OK
+from starlette import status
 
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, limit_request_size
+from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.utils import bad_request, fetch_or_404, limit_request_size
+from deepchecks_monitoring.utils import fetch_or_404
 
 from .router import router
 
 
-@router.post("/data/{model_version_id}/log")
+@router.post("/model-versions/{model_version_id}/data")
 async def log_data(
     model_version_id: int,
-    request_body: dict = Body(...),
+    data: t.Dict[t.Any, t.Any] = Body(...),
     session: AsyncSession = AsyncSessionDep
-):
+) -> Response:
     """Insert single data sample.
 
     Parameters
     ----------
     model_version_id
-    request_body
+    data
     session
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-
-    validate(instance=request_body, schema=model_version.monitor_json_schema)
-
-    # Save sample
-    i = insert(model_version.get_monitor_table(session))
+    validate(instance=data, schema=model_version.monitor_json_schema)
+    insert_statement = insert(model_version.get_monitor_table(session))
     # Asyncpg unlike psycopg2, must get for datetime columns a python datetime object
-    request_timestamp = pdl.parse(request_body[SAMPLE_TS_COL])
-    request_body[SAMPLE_TS_COL] = request_timestamp
-    i = i.values(**request_body)
-    await session.execute(i)
+    data[SAMPLE_TS_COL] = request_timestamp = pdl.parse(data[SAMPLE_TS_COL])
+    await session.execute(insert_statement.values(**data))
     await model_version.update_timestamps(request_timestamp, session)
+    return Response(status_code=status.HTTP_201_CREATED)
 
-    return Response(status_code=HTTP_200_OK)
 
-
-@router.post("/data/{model_version_id}/update")
+@router.put("/model-versions/{model_version_id}/data")
 async def update_data(
     model_version_id: int,
-    request_body: dict = Body(),
+    data: t.Dict[t.Any, t.Any] = Body(...),
     session: AsyncSession = AsyncSessionDep
 ):
     """Update a single data sample.
@@ -83,19 +79,23 @@ async def update_data(
         "required": [SAMPLE_ID_COL]
     }
 
-    validate(instance=request_body, schema=optional_columns_schema)
+    validate(instance=data, schema=optional_columns_schema)
 
-    sample_id = request_body.pop(SAMPLE_ID_COL)
+    sample_id = data.pop(SAMPLE_ID_COL)
     connection = await session.connection()
-    statement = update(model_version.get_monitor_table(connection))\
-        .where(SAMPLE_ID_COL == sample_id).values(request_body)
-    await session.execute(statement)
 
-    return Response(status_code=HTTP_200_OK)
+    await session.execute(
+        update(model_version.get_monitor_table(connection))
+        .where(SAMPLE_ID_COL == sample_id).values(data)
+    )
+
+    return Response(status_code=status.HTTP_200_OK)
 
 
-@router.post("/data/{model_version_id}/reference",
-             dependencies=[Depends(limit_request_size(500_000_000))])
+@router.post(
+    "/model-versions/{model_version_id}/reference",
+    dependencies=[Depends(limit_request_size(500_000_000))]
+)
 async def save_reference(
     model_version_id: int,
     file: UploadFile,
@@ -113,12 +113,12 @@ async def save_reference(
     ref_table = model_version.get_reference_table(session)
     count_result = await session.execute(select(count()).select_from(ref_table))
     if count_result.scalar() > 0:
-        bad_request("Already have reference data")
+        raise BadRequest("Already have reference data")
 
     contents = await file.read()
     data = pd.read_json(StringIO(contents.decode()), orient="table")
     if len(data) > 100_000:
-        bad_request(f"Maximum number of samples allowed for reference is 100,000 but got: {len(data)}")
+        raise BadRequest(f"Maximum number of samples allowed for reference is 100,000 but got: {len(data)}")
 
     items = []
     for (_, row) in data.iterrows():
@@ -126,6 +126,5 @@ async def save_reference(
         validate(schema=model_version.reference_json_schema, instance=item)
         items.append(item)
 
-    # Insert all
     await session.execute(ref_table.insert(), items)
-    return Response(status_code=HTTP_200_OK)
+    return Response(status_code=status.HTTP_200_OK)

@@ -10,7 +10,6 @@
 
 #  pylint: disable=redefined-outer-name
 import asyncio
-import json
 import typing as t
 
 import pytest
@@ -20,14 +19,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from deepchecks_monitoring.api.v1.model import create_model
-from deepchecks_monitoring.api.v1.model_version import create_version
+from deepchecks_monitoring.api.v1.model_version import ModelVersionCreationSchema, create_version
 from deepchecks_monitoring.app import create_application, json_serializer
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.models import TaskType
+from deepchecks_monitoring.models import Model, TaskType
 from deepchecks_monitoring.models.base import Base
-from deepchecks_monitoring.schemas.model import ModelSchema
-from deepchecks_monitoring.schemas.model_version import NewVersionSchema
 
 
 @pytest.fixture(scope="session")
@@ -101,17 +97,21 @@ def client(application) -> t.Iterator[TestClient]:
 
 
 @pytest_asyncio.fixture()
-async def classification_model(async_session):
-    schema = ModelSchema(name="classification model", description="test", task_type=TaskType.CLASSIFICATION)
-    result = await create_model(schema, async_session)
+async def classification_model_id(async_session: AsyncSession):
+    model = Model(name="classification model", description="test", task_type=TaskType.CLASSIFICATION)
+    async_session.add(model)
     await async_session.commit()
-    return result
+    await async_session.refresh(model)
+    return model.id
 
 
 @pytest_asyncio.fixture()
-async def classification_model_version_1(async_session, classification_model):
-    schema = NewVersionSchema(name="v1", features={"a": "numeric", "b": "categorical"}, non_features={"c": "numeric"})
-    result = await create_version(classification_model.id, schema, async_session)
+async def classification_model_version_id(async_session: AsyncSession, classification_model_id: int):
+    schema = ModelVersionCreationSchema(
+        name="v1",
+        features={"a": "numeric", "b": "categorical"},
+        non_features={"c": "numeric"}
+    )
+    result = await create_version(classification_model_id, schema, async_session)
     await async_session.commit()
-    return json.loads(result.body)["id"]
-
+    return result["id"]

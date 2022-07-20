@@ -10,6 +10,7 @@
 """Module defining the ModelVersion ORM model."""
 import enum
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import pendulum as pdl
@@ -62,13 +63,13 @@ class ModelVersion(Base):
         Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("name", String(100)),
-        Column("start_time", DateTime(timezone=True), default=pdl.datetime(3000, 1, 1)),
-        Column("end_time", DateTime(timezone=True), default=pdl.datetime(1970, 1, 1)),
+        Column("start_time", DateTime(timezone=True), default=pdl.datetime(1970, 1, 1)),
+        Column("end_time", DateTime(timezone=True), default=pdl.datetime(3000, 1, 1)),
         Column("monitor_json_schema", JSONB),
         Column("reference_json_schema", JSONB),
         Column("features", JSONB),
         Column("non_features", JSONB),
-        Column("features_importance", JSONB, nullable=True),
+        Column("feature_importance", JSONB, nullable=True),
         Column("model_id", Integer, ForeignKey("models.id"))
     )
 
@@ -78,10 +79,10 @@ class ModelVersion(Base):
     reference_json_schema: Dict[Any, Any]
     features: Dict[str, ColumnType]
     non_features: Dict[str, ColumnType]
-    features_importance: Optional[Dict[str, float]]
-    start_time: pdl.datetime = None
-    end_time: pdl.datetime = None
-    id: int = None
+    feature_importance: Optional[Dict[str, float]]
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    id: Optional[int] = None
 
     __mapper_args__ = {  # type: ignore
         "properties": {
@@ -109,7 +110,7 @@ class ModelVersion(Base):
         columns = json_schema_to_columns(self.reference_json_schema)
         return Table(self.get_reference_table_name(), metadata, *columns)
 
-    async def update_timestamps(self, timestamp: pdl.datetime, session: AsyncSession):
+    async def update_timestamps(self, timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamp.
 
         Parameters

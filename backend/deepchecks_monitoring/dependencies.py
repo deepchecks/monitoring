@@ -7,17 +7,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """Module defining the dependencies of the application."""
 import typing as t
 
 import fastapi
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-__all__ = ["AsyncSessionDep"]
+from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
+
+__all__ = ["AsyncSessionDep", "limit_request_size"]
 
 
 async def get_async_session(request: fastapi.Request) -> t.AsyncIterator[AsyncSession]:
@@ -67,3 +68,31 @@ AsyncSessionDep = fastapi.Depends(get_async_session)
 # ...     statement = Person.insert().returning(Person.id)
 # ...     result = await session.execute(statement, person.dict())
 # ...     await session.commit()
+
+
+def limit_request_size(size: int) -> t.Callable[[Request], None]:
+    """Return a dependency function which validates content size is limited to the given size in bytes.
+
+    Parameters
+    ----------
+    size: int
+        Maximum size for the http content in bytes
+
+    Returns
+    -------
+    Request
+    """
+    def dependency(request: Request):
+        if "content-length" not in request.headers:
+            raise ContentLengthRequired("Content-length header value is required")
+
+        try:
+            content_length = int(request.headers["content-length"])
+        except ValueError:
+            raise BadRequest("Content-length header value must be an integer")  # pylint: disable=raise-missing-from
+
+        if content_length > size:
+            mb = size / (1024 * 1024)
+            raise RequestTooLarge(f"Maximum allowed content-length is {mb} MB")
+
+    return dependency

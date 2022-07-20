@@ -7,31 +7,59 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """V1 API of the model."""
+import typing as t
 
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Model
-from deepchecks_monitoring.schemas.model import ModelSchema
+from deepchecks_monitoring.models.model import TaskType
+from deepchecks_monitoring.utils import fetch_or_404
 
-from ...utils import fetch_or_404
 from .router import router
 
 
-@router.post("/models", response_model=ModelSchema)
+class ModelSchema(BaseModel):
+    """Model Schema."""
+
+    id: int
+    name: str
+    description: t.Optional[str]
+    task_type: t.Optional[TaskType]
+
+    class Config:
+        """Config for Model schema."""
+
+        orm_mode = True
+
+
+class ModelCreationSchema(BaseModel):
+    """Model schema."""
+
+    name: str
+    task_type: TaskType
+    description: t.Optional[str] = None
+
+    class Config:
+        """Config for Model schema."""
+
+        orm_mode = True
+
+
+@router.post("/models")
 async def create_model(
-    model: ModelSchema,
+    model: ModelCreationSchema,
     session: AsyncSession = AsyncSessionDep
-) -> ModelSchema:
+):
     """Create a new model.
 
     Parameters
     ----------
-    model : ModelSchema
+    model : ModelCreationSchema
         Model to create.
-    session : AsyncSession, optional
+    session : AsyncSession
         SQLAlchemy session.
 
     Returns
@@ -41,9 +69,8 @@ async def create_model(
     """
     model = Model(**model.dict(exclude_none=True))
     session.add(model)
-    # Flushing to get model id
     await session.flush()
-    return ModelSchema.from_orm(model)
+    return {"id": model.id}
 
 
 @router.get("/models/{model_id}", response_model=ModelSchema)

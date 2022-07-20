@@ -7,7 +7,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """Module defining the Router for V1 API."""
 from fastapi import APIRouter
 

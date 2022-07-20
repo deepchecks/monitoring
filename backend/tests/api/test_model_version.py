@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 
 @pytest.mark.asyncio
-async def test_add_model_version(classification_model, client: TestClient):
+async def test_add_model_version(classification_model_id, client: TestClient):
     # Arrange
     request = {
         "name": "xxx",
@@ -28,7 +28,7 @@ async def test_add_model_version(classification_model, client: TestClient):
     }
 
     # Act
-    response = client.post(f"/api/v1/models/{classification_model.id}/version", json=request)
+    response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
 
     # Assert
     assert response.status_code == 200
