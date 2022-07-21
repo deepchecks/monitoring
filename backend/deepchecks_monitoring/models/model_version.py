@@ -9,9 +9,9 @@
 # ----------------------------------------------------------------------------
 """Module defining the ModelVersion ORM model."""
 import enum
+import typing as t
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 import pendulum as pdl
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, ForeignKey, Integer, MetaData, String, Table, Text, func
@@ -75,14 +75,14 @@ class ModelVersion(Base):
 
     name: str
     model_id: int
-    monitor_json_schema: Dict[Any, Any]
-    reference_json_schema: Dict[Any, Any]
-    features: Dict[str, ColumnType]
-    non_features: Dict[str, ColumnType]
-    feature_importance: Optional[Dict[str, float]]
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    id: Optional[int] = None
+    monitor_json_schema: t.Dict[t.Any, t.Any]
+    reference_json_schema: t.Dict[t.Any, t.Any]
+    features: t.Dict[str, ColumnType]
+    non_features: t.Dict[str, ColumnType]
+    feature_importance: t.Optional[t.Dict[str, float]]
+    start_time: t.Optional[datetime] = None
+    end_time: t.Optional[datetime] = None
+    id: t.Optional[int] = None
 
     __mapper_args__ = {  # type: ignore
         "properties": {
@@ -103,6 +103,14 @@ class ModelVersion(Base):
     def get_reference_table_name(self) -> str:
         """Get name of reference table."""
         return f"model_{self.model_id}_ref_data_{self.id}"
+
+    def get_top_features(self, n_top: int = 30) -> t.Tuple[t.List[str], t.Dict[str, float]]:
+        """Get top n features sorted by feature importence and the feature_importance."""
+        if self.feature_importance:
+            feat_dict = dict(sorted(self.feature_importance.items(), key=lambda item: item[1])[:n_top])
+            feat = list(feat_dict.keys())
+            return feat, feat_dict
+        return list(self.features.keys())[:n_top], None
 
     def get_reference_table(self, connection) -> Table:
         """Get table object of the reference table."""
@@ -132,7 +140,7 @@ class ModelVersion(Base):
             await ModelVersion.update(session, self.id, ts_updates)
 
 
-def json_schema_to_columns(schema: Dict) -> List[Column]:
+def json_schema_to_columns(schema: t.Dict) -> t.List[Column]:
     """Translate a given json schema into corresponding SqlAlchemy table columns.
 
     Parameters
@@ -151,7 +159,7 @@ def json_schema_to_columns(schema: Dict) -> List[Column]:
     return columns
 
 
-def json_schema_property_to_sqlalchemy_type(json_property: Dict) -> TypeEngine:
+def json_schema_property_to_sqlalchemy_type(json_property: t.Dict) -> TypeEngine:
     """Translate a given property inside json schema object to an SqlAlchemy type.
 
     Parameters
