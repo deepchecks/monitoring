@@ -10,18 +10,49 @@
 
 """Module defining utility functions for the deepchecks_monitoring app."""
 import typing as t
+from enum import IntEnum
 
 from fastapi import HTTPException, status
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
 
 
-__all__ = ["exists_or_404", "not_exists_or_400", "fetch_or_404"]
+__all__ = ["exists_or_404", "ExtendedAsyncSession", "not_exists_or_400", "fetch_or_404", "TimeUnit"]
 
 
 A = t.TypeVar("A", bound="Base")
+
+
+class ExtendedAsyncSession(AsyncSession):
+    """Extended async session."""
+
+    async def fetchone_or_404(
+        self,
+        statement: t.Any,
+        message: str
+    ) -> Row:
+        """Fetch the first row or raise "No Found" exxception if `None` was returned."""
+        result = await self.execute(statement)
+        row = result.scalars().first()
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=message
+            )
+        return row
+
+
+class TimeUnit(IntEnum):
+    """Time unit."""
+
+    SECOND = 1
+    MINUTE = 60 * SECOND
+    HOUR = 60 * MINUTE
+    DAY = 24 * HOUR
+    WEEK = 7 * DAY
 
 
 async def fetch_or_404(
@@ -52,6 +83,7 @@ async def fetch_or_404(
     >>> class Person(Base):
     ...    name = Column(String(50))
     ...    last_name = Column(String(50))
+
     >>> await fetch_or_404(
     ...     session=session,
     ...     model=Person,
@@ -61,7 +93,7 @@ async def fetch_or_404(
     """
     error_template = t.cast(str, kwargs.pop(
         "error_template",
-        "'{entity}' with next set of arguments does not exist - {arguments}"
+        "'{entity}' with next set of arguments does not exist: {arguments}"
     ))
 
     result = await model.filter_by(session, **kwargs)
@@ -111,7 +143,7 @@ async def exists_or_404(
     """
     error_template = t.cast(str, kwargs.pop(
         "error_template",
-        "'{entity}' with next set of arguments does not exist - {arguments}"
+        "'{entity}' with next set of arguments does not exist: {arguments}"
     ))
 
     result = await model.exists(session, **kwargs)
@@ -158,7 +190,7 @@ async def not_exists_or_400(
     """
     error_template = t.cast(str, kwargs.pop(
         "error_template",
-        "'{entity}' with next set of arguments already exists - {arguments}"
+        "'{entity}' with next set of arguments already exists: {arguments}"
     ))
 
     result = await model.exists(session, **kwargs)

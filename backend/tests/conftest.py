@@ -7,11 +7,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 #  pylint: disable=redefined-outer-name
 import asyncio
 import typing as t
 
+import dotenv
 import pytest
 import pytest_asyncio
 import testing.postgresql
@@ -24,6 +24,8 @@ from deepchecks_monitoring.app import create_application, json_serializer
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Model, TaskType
 from deepchecks_monitoring.models.base import Base
+
+dotenv.load_dotenv()
 
 
 @pytest.fixture(scope="session")

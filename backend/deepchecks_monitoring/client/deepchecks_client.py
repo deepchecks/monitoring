@@ -10,7 +10,8 @@
 """Module containing deepchecks monitoring client."""
 import enum
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict, Optional, Union
+from urllib.parse import urljoin
 
 import numpy as np
 import pendulum as pdl
@@ -55,6 +56,17 @@ class DeepchecksColumns(enum.Enum):
     SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
 
 
+class HttpSession(requests.Session):
+
+    def __init__(self, *args, base_url: str, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.base_url = base_url
+
+    def request(self, *args, url: str, **kwargs) -> requests.Response:
+        url = urljoin(self.base_url, url)
+        return super().request(*args, url=url, **kwargs)
+
+
 class DeepchecksModelVersionClient:
     """Client to interact with a given model version, including all functions to send data.
 
@@ -66,18 +78,21 @@ class DeepchecksModelVersionClient:
         The id of the model version.
     """
 
-    host: str
     model_version_id: int
     schema: dict
     ref_schema: dict
 
-    def __init__(self, host: str, model_version_id: int):
-        self.host = host
+    def __init__(
+        self,
+        model_version_id: int,
+        session: requests.Session
+    ):
+        self.session = session
         self.model_version_id = model_version_id
-        response = requests.get(f'{host}/model-versions/{model_version_id}/schema')
+        response = self.session.get(f'model-versions/{model_version_id}/schema')
         response.raise_for_status()
         self.schema = response.json()
-        response = requests.get(f'{host}/model-versions/{model_version_id}/reference-schema')
+        response = self.session.get(f'model-versions/{model_version_id}/reference-schema')
         response.raise_for_status()
         self.ref_schema = response.json()
 
@@ -125,13 +140,17 @@ class DeepchecksModelVersionClient:
 
         validate(instance=sample, schema=self.schema)
 
-        response = requests.post(f'{self.host}/model-versions/{self.model_version_id}/data', json=sample)
-        response.raise_for_status()
+        self.session.post(
+            f'model-versions/{self.model_version_id}/data',
+            json=sample
+        ).raise_for_status()
 
-    def upload_reference(self,
-                         dataset: Dataset,
-                         prediction_value: np.ndarray = None,
-                         prediction_label: np.ndarray = None):
+    def upload_reference(
+        self,
+        dataset: Dataset,
+        prediction_value: Optional[np.ndarray] = None,
+        prediction_label: Optional[np.ndarray] = None
+    ):
         """Upload reference data. Possible to upload only once for a given model version.
 
         Parameters
@@ -155,9 +174,10 @@ class DeepchecksModelVersionClient:
             item = row.to_dict()
             validate(schema=self.ref_schema, instance=item)
 
-        response = requests.post(f'{self.host}/model-versions/{self.model_version_id}/reference',
-                                 files={'file': data.to_json(orient='table', index=False)})
-        response.raise_for_status()
+        self.session.post(
+            f'model-versions/{self.model_version_id}/reference',
+            files={'file': data.to_json(orient='table', index=False)}
+        ).raise_for_status()
 
     def update_sample(self, sample_id: str, label=None, **values):
         """Update sample. Possible to update only non_features and label.
@@ -183,8 +203,10 @@ class DeepchecksModelVersionClient:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         validate(instance=update, schema=optional_columns_schema)
-        response = requests.put(f'{self.host}/model-versions/{self.model_version_id}/data', json=update)
-        response.raise_for_status()
+        self.session.put(
+            f'model-versions/{self.model_version_id}/data',
+            json=update
+        ).raise_for_status()
 
 
 class DeepchecksModelClient:
@@ -201,17 +223,23 @@ class DeepchecksModelClient:
     host: str
     model: dict
 
-    def __init__(self, host: str, model_id: int):
-        self.host = host
-        response = requests.get(f'{self.host}/models/{model_id}')
+    def __init__(
+        self,
+        model_id: int,
+        session: requests.Session
+    ):
+        self.session = session
+        response = self.session.get(f'models/{model_id}')
         response.raise_for_status()
         self.model = response.json()
 
-    def create_version(self,
-                       name: str,
-                       features: Dict[str, str],
-                       non_features: Dict[str, str] = None,
-                       feature_importance: Dict[str, float] = None) -> DeepchecksModelVersionClient:
+    def create_version(
+        self,
+        name: str,
+        features: Dict[str, str],
+        non_features: Optional[Dict[str, str]] = None,
+        feature_importance: Optional[Dict[str, float]] = None
+    ) -> DeepchecksModelVersionClient:
         """Create a new model version.
 
         Parameters
@@ -260,7 +288,7 @@ class DeepchecksModelClient:
                     raise Exception(f'value of non_features must be one of {ColumnType.values()} but got {value}')
 
         # Send request
-        response = requests.post(f'{self.host}/models/{self.model["id"]}/version', json={
+        response = self.session.post(f'models/{self.model["id"]}/version', json={
             'name': name,
             'features': features,
             'non_features': non_features or {},
@@ -281,7 +309,7 @@ class DeepchecksModelClient:
         -------
         DeepchecksModelVersionClient
         """
-        return DeepchecksModelVersionClient(self.host, model_version_id)
+        return DeepchecksModelVersionClient(model_version_id, session=self.session)
 
     def add_check(self):
         """Add new check for the model."""
@@ -299,12 +327,23 @@ class DeepchecksClient:
 
     host: str
 
-    def __init__(self, host):
-        self.host = host + '/api/v1'
-        # Will raise exception if host is not available
-        requests.get(f'{self.host}/say-hello')
+    def __init__(
+        self,
+        host: Optional[str] = None,
+        session: Optional[HttpSession] = None
+    ):
+        if session is not None and hasattr(session, 'base_url'):
+            self.session = session
+            self.host = session.base_url  # type: ignore
+        elif host is not None:
+            self.host = host + '/api/v1'
+            self.session = HttpSession(base_url=host)
+        else:
+            raise ValueError('"host" or "session" parameter must be provided')
 
-    def create_model(self, name: str, task_type: str, description: str = None) -> DeepchecksModelClient:
+        self.session.get('say-hello')
+
+    def create_model(self, name: str, task_type: str, description: Optional[str] = None) -> DeepchecksModelClient:
         """Create a new model.
 
         Parameters
@@ -323,7 +362,7 @@ class DeepchecksClient:
         """
         if task_type not in TaskType.values():
             raise Exception(f'task_type must be one of {TaskType.values()}')
-        response = requests.post(f'{self.host}/models', json={
+        response = self.session.post('models', json={
             'name': name,
             'task_type': task_type,
             'description': description
@@ -345,4 +384,4 @@ class DeepchecksClient:
         DeepchecksModelClient
             Client to interact with the model.
         """
-        return DeepchecksModelClient(self.host, model_id)
+        return DeepchecksModelClient(model_id, session=self.session)

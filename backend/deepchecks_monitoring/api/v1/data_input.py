@@ -45,10 +45,10 @@ async def log_data(
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
     validate(instance=data, schema=model_version.monitor_json_schema)
-    insert_statement = insert(model_version.get_monitor_table(session))
     # Asyncpg unlike psycopg2, must get for datetime columns a python datetime object
     data[SAMPLE_TS_COL] = request_timestamp = pdl.parse(data[SAMPLE_TS_COL])
-    await session.execute(insert_statement.values(**data))
+    insert_statement = insert(model_version.get_monitor_table(session)).values(**data)
+    await session.execute(insert_statement)
     await model_version.update_timestamps(request_timestamp, session)
     return Response(status_code=status.HTTP_201_CREATED)
 

@@ -13,15 +13,16 @@ import typing as t
 import fastapi
 from fastapi import HTTPException, Request
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import sessionmaker
 
+from deepchecks_monitoring import utils
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
 
 __all__ = ["AsyncSessionDep", "limit_request_size"]
 
 
-async def get_async_session(request: fastapi.Request) -> t.AsyncIterator[AsyncSession]:
+async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["utils.ExtendedAsyncSession"]:
     """Get async sqlalchemy session instance.
 
     Parameters
@@ -35,7 +36,7 @@ async def get_async_session(request: fastapi.Request) -> t.AsyncIterator[AsyncSe
         async sqlalchemy session instance
     """
     engine: t.Optional[AsyncEngine] = request.app.state.async_database_engine
-    session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    session_factory = sessionmaker(engine, class_=utils.ExtendedAsyncSession, expire_on_commit=False)
     async with session_factory() as session:
         try:
             yield session
