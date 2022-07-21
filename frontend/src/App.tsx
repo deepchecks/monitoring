@@ -4,6 +4,7 @@ import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/colors/color';
 import Sidebar from './components/sidebar/Sidebar';
 import MyRouts from './routes';
 import { styled } from '@mui/system';
+import DiagramLine from './components/dashboard/DiagramLine';
 const Container = styled(Box)(({theme})=>({
   maxWidth:"1920px",
   minWidth: "1280px",

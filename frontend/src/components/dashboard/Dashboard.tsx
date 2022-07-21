@@ -1,8 +1,12 @@
+import React from "react";
 import { TextField, InputAdornment, Typography} from "@mui/material";
 import {HomeIcon, PlusIcon, SearchIcon} from "../../assets/icon/icon";
 import {ChartSvg} from "../../assets/icon/chart";
 import { styled } from "@mui/system";
 import Box from '@mui/material/Box';
+import DiagramLine from "./DiagramLine";
+import {ChartData} from "chart.js"
+
 const DashboardContainer = styled(Box)(({theme})=>({
     padding: "20px",
     paddingBottom:"40px",
@@ -16,7 +20,7 @@ const DashboardContainer = styled(Box)(({theme})=>({
 const FlexContainer = styled(Box)(({theme})=>({
     display:"flex",
     flexWrap: "wrap",
-    gap:"30px",
+    gap:"15px",
     justifyContent:"space-between"    
 }))
 const FlexContent = styled(Box)(({theme})=>({
@@ -29,15 +33,17 @@ const FlexContent = styled(Box)(({theme})=>({
     borderRadius:"10px",
     marginBottom:"40px",
     [theme.breakpoints.down(1944)]:{
+        maxWidth: "32%",
+    },
+    [theme.breakpoints.down(1635)]:{
         maxWidth: "47%",
     },
-    
     "&.fourth":{
         maxWidth: "47%",
     },
     "&.fifth":{
         maxWidth: "47%",
-        [theme.breakpoints.down(1944)]:{
+        [theme.breakpoints.down(1635)]:{
             maxWidth:"100% "
         },
     },
@@ -54,6 +60,224 @@ const FlexContent = styled(Box)(({theme})=>({
     },
 }))
 
+
+
+const data:ChartData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "1",
+        data: [33, 53, 85, 41, 44, 65],
+        fill: true,
+        tension:0.2,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+        borderColor:"#01A9DB"
+      },
+      {
+        label: "3",
+        data: [33, 25, 35, 51, 54, 76],
+        fill: true,
+        borderColor: "#6B1CB0",
+        tension:0.2,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "4",
+        data: [100, 90, 60, 50, 60, 72],
+        fill: true,
+        borderColor: "#0065FF",
+        tension:0.2,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      }
+    ]
+  };
+  const data9:ChartData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "1",
+        data: [0, 3, 9, 42, 11, 65],
+        fill: true,
+        tension:0.25,
+        pointBorderWidth:0,
+        borderColor: "#742774",
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "2",
+        data: [3, 0, 17, 20, 64, 85],
+        fill: true,
+        borderColor: "#01A9DB",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "3",
+        data: [100, 90, 60, 50, 60, 72],
+        fill: true,
+        borderColor: "#742774",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "4",
+        data: [33, 53, 85, 41, 44, 65],
+        fill: true,
+        tension:0.25,
+        borderColor: "#2750AE",
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "5",
+        data: [33, 25, 35, 51, 54, 76],
+        fill: true,
+        borderColor: "#1283DA",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "Third dataset",
+        data: [0, 15, 60, 21, 60, 2],
+        fill: true,
+        borderColor: "#2D7FF9",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "6",
+        data: [11, 22, 66, 49, 44, 38],
+        fill: true,
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+        borderColor: "#9CC7FF",
+      },
+      {
+        label: "7",
+        data: [55, 63, 63, 83, 2, 76],
+        fill: true,
+        borderColor: "#CFDFFF",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "8",
+        data: [3, 40, 80, 0, 20, 30],
+        fill: true,
+        borderColor: "#6B1CB0",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "9",
+        data: [3, 5, 12, 80, 11, 54],
+        fill: true,
+        borderColor: "#7C39ED",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "10",
+        data: [3, 45, 89, 5, 28, 40],
+        fill: true,
+        borderColor: "red",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+    ]
+  };
+  const data6:ChartData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "1",
+        data: [33, 53, 85, 41, 44, 65],
+        fill: true,
+        tension:0.25,
+        pointBorderWidth:0,
+        borderColor: "#742774",
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "2",
+        data: [33, 25, 35, 51, 54, 76],
+        fill: true,
+        borderColor: "#01A9DB",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "3",
+        data: [100, 90, 60, 50, 60, 72],
+        fill: true,
+        borderColor: "#742774",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "4",
+        data: [33, 53, 85, 41, 44, 65],
+        fill: true,
+        tension:0.25,
+        borderColor: "#2750AE",
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "5",
+        data: [33, 25, 35, 51, 54, 76],
+        fill: true,
+        borderColor: "#1283DA",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+      {
+        label: "Third dataset",
+        data: [100, 90, 60, 50, 60, 72],
+        fill: true,
+        borderColor: "#2D7FF9",
+        tension:0.25,
+        pointBorderWidth:0,
+        pointHoverBorderWidth:0,
+        pointHoverRadius:0,
+      },
+    ]
+  };
+  
 const title = {color: '#3A474E',
 fontWeight: 500,
 fontSize: 18,
@@ -199,6 +423,7 @@ export function Dashboard() {
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
+                    <DiagramLine data={data}/>
                 </Box>
                 
             </FlexContent>
@@ -207,14 +432,16 @@ export function Dashboard() {
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
+                    <DiagramLine data={data}/>
                 </Box>
                 
             </FlexContent>
             <FlexContent className="fourth">
-                <Box sx={{}}>
+                <Box >
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
+                    <DiagramLine data={data6}/>
                 </Box>
                 
             </FlexContent>
@@ -223,6 +450,7 @@ export function Dashboard() {
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
+                    <DiagramLine data={data6}/>
                 </Box>
                 
             </FlexContent>
@@ -231,6 +459,7 @@ export function Dashboard() {
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
+                    <DiagramLine data={data6}/>
                 </Box>
                 
             </FlexContent>
@@ -239,6 +468,7 @@ export function Dashboard() {
                     <Typography  sx={{...title,mt:2,ml:2}}>
                         Data Ingest Status
                     </Typography>
+                    <DiagramLine data={data9}/>
                 </Box>
                 
             </FlexContent>

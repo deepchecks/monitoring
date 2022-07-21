@@ -24,7 +24,7 @@ export interface SidebarInfo {
 
 
 let ObjectId = () => Math.random().toString()
-export const sideBarInfo = [{
+export const sideBarInfo:SidebarInfo[] = [{
         key: ObjectId(),
         text: "My Dashboard",
         Icon: Dashboard,
