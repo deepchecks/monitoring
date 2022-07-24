@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------------
 
 """Module defining base functionality for the models."""
-from sqlalchemy import and_, literal, select, update
+from sqlalchemy import and_, delete, literal, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base
 
@@ -36,6 +36,11 @@ class BaseClass:
     @classmethod
     async def exists(cls, session: AsyncSession, **filter_by):
         result = await session.execute(select(literal(True)).where(cls.where(**filter_by)))
+        return result
+
+    @classmethod
+    async def delete(cls, session: AsyncSession, model_id: int):
+        result = await session.execute(delete(cls).where(cls.where(id=model_id)))
         return result
 
 

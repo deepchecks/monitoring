@@ -9,8 +9,9 @@
 # ----------------------------------------------------------------------------
 """Module defining the ORM models."""
 
+from .alert import Alert
 from .check import Check
 from .model import Model, TaskType
 from .model_version import ColumnType, ModelVersion
 
-__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check']
+__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check', 'Alert']

@@ -14,7 +14,6 @@ import pandas as pd
 import pendulum
 from deepchecks import BaseCheck, Dataset
 from deepchecks.core.checks import CheckConfig
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import Table
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,7 +49,7 @@ async def create_check(
     model_id: int,
     check: CheckCreationSchema,
     session: AsyncSession = AsyncSessionDep
-):
+) -> dict:
     """Create a new check.
 
     Parameters
@@ -71,7 +70,7 @@ async def create_check(
     check = Check(model_id=model_id, **check.dict(exclude_none=True))
     session.add(check)
     await session.flush()
-    return JSONResponse(content={'id': check.id})
+    return {'id': check.id}
 
 
 def _create_select_object(model, mon_table: Table, top_feat: t.List[str]) -> Select:
@@ -138,7 +137,7 @@ async def run_check(
     elif lookback_durtion < pendulum.duration(days=8):
         window = pendulum.duration(days=1)
     else:
-        window = pendulum.duration(week=1)
+        window = pendulum.duration(weeks=1)
     check = await fetch_or_404(session, Check, id=check_id)
     model_results = await session.execute(select(Model).where(Model.id == check.model_id)
                                           .options(selectinload(Model.versions)))

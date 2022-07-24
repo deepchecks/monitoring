@@ -64,7 +64,7 @@ async def update_data(
     Parameters
     ----------
     model_version_id
-    request_body
+    data
     session
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
@@ -82,10 +82,9 @@ async def update_data(
     validate(instance=data, schema=optional_columns_schema)
 
     sample_id = data.pop(SAMPLE_ID_COL)
-    connection = await session.connection()
 
     await session.execute(
-        update(model_version.get_monitor_table(connection))
+        update(model_version.get_monitor_table(session))
         .where(SAMPLE_ID_COL == sample_id).values(data)
     )
 

@@ -9,14 +9,18 @@
 # ----------------------------------------------------------------------------
 
 """Module defining the check ORM model."""
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
+
+if TYPE_CHECKING:
+    from deepchecks_monitoring.models.alert import Alert
+
 
 __all__ = ["Check"]
 
@@ -37,9 +41,10 @@ class Check(Base):
     model_id: int
     id: int = None
     name: Optional[str] = None
+    alerts: List["Alert"] = field(default_factory=list)
 
     __mapper_args__ = {  # type: ignore
         "properties": {
-            "model": relationship("Model"),
+            "alerts": relationship("Alert"),
         }
     }

@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
+from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.api.v1.model_version import ModelVersionCreationSchema, create_version
 from deepchecks_monitoring.app import create_application, json_serializer
 from deepchecks_monitoring.config import Settings
@@ -108,6 +109,15 @@ async def classification_model_id(async_session: AsyncSession):
 
 
 @pytest_asyncio.fixture()
+async def regression_model_id(async_session: AsyncSession):
+    model = Model(name="regression model", description="test", task_type=TaskType.REGRESSION)
+    async_session.add(model)
+    await async_session.commit()
+    await async_session.refresh(model)
+    return model.id
+
+
+@pytest_asyncio.fixture()
 async def classification_model_version_id(async_session: AsyncSession, classification_model_id: int):
     schema = ModelVersionCreationSchema(
         name="v1",
@@ -115,5 +125,31 @@ async def classification_model_version_id(async_session: AsyncSession, classific
         non_features={"c": "numeric"}
     )
     result = await create_version(classification_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
+
+
+@pytest_asyncio.fixture()
+async def classification_model_check_id(async_session: AsyncSession, classification_model_id: int):
+    schema = CheckCreationSchema(name="check", config={
+        "class_name": "PerformanceReport",
+        "params": {"reduce": "mean"},
+        "module_name": "deepchecks.tabular.checks"
+    })
+
+    result = await create_check(classification_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
+
+
+@pytest_asyncio.fixture()
+async def regression_model_check_id(async_session: AsyncSession, regression_model_id: int):
+    schema = CheckCreationSchema(name="check", config={
+        "class_name": "PerformanceReport",
+        "params": {"reduce": "mean"},
+        "module_name": "deepchecks.tabular.checks"
+    })
+
+    result = await create_check(regression_model_id, schema, async_session)
     await async_session.commit()
     return result["id"]
