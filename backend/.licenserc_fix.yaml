@@ -19,6 +19,8 @@ header:
     - 'LICENSE'
     - 'deepchecks_monitoring.egg-info/PKG-INFO'
     - 'makefile'
+    - 'migrations/script.py.mako'
+    - 'migrations/README'
   comment: on-failure
 
 dependency:

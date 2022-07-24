@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 """Defining pydantic type for sqlalchemy."""
 # pylint: disable=unused-argument
-from pydantic import BaseModel
 from sqlalchemy import types
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -20,10 +19,8 @@ class PydanticType(types.TypeDecorator):
     impl = JSONB
     cache_ok = True
 
-    def __init__(self, pydantic_model, *args, **kwargs):
+    def __init__(self, *args, pydantic_model=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if not issubclass(pydantic_model, BaseModel):
-            raise Exception('Must use pydantic.BaseModel class')
         self.pydantic_model = pydantic_model
 
     def process_bind_param(self, value, dialect):

@@ -61,8 +61,8 @@ class Alert(Base):
         Column("name", String(50)),
         Column("description", String(200), default=""),
         Column("check_id", Integer, ForeignKey("checks.id")),
-        Column("data_filter", PydanticType(DataFilter), nullable=True),
-        Column("alert_rule", PydanticType(AlertRule)),
+        Column("data_filter", PydanticType(pydantic_model=DataFilter), nullable=True),
+        Column("alert_rule", PydanticType(pydantic_model=AlertRule)),
         Column("lookback", String(20)),
     )
 
