@@ -10,6 +10,9 @@
 
 name: Code Style
 
+env:
+  DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
+
 on:
   push:
     branches: [ main ]
