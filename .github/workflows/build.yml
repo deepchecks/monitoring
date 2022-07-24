@@ -31,7 +31,7 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
     - name: Build and push
       env: 
-        ECR_IMAGE: ${{ MON_IMAGE_NAME }}
+        ECR_IMAGE: ${{ secrets.MON_IMAGE_NAME }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
         docker build -t $ECR_IMAGE:$IMAGE_TAG .
