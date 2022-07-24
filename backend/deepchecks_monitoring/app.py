@@ -9,13 +9,15 @@
 # ----------------------------------------------------------------------------
 
 """Module defining the app."""
+import os
 import typing as t
 
 import jsonschema.exceptions
 import orjson
 from fastapi import FastAPI, Request
 from sqlalchemy.ext.asyncio import create_async_engine
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
+from starlette.staticfiles import StaticFiles
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
@@ -58,6 +60,13 @@ def create_application(settings: t.Optional[Settings] = None) -> FastAPI:
             status_code=HTTP_400_BAD_REQUEST,
             content={"error": exc.message},
         )
+
+    @app.get("/")
+    async def index():
+        return RedirectResponse(url="/index.html")
+
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    app.mount("/", StaticFiles(directory=os.path.join(base_path, "frontend/dist")))
 
     return app
 

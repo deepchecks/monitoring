@@ -1,0 +1,3 @@
+backend/.venv
+backend/.pytest_cache
+backend/deepchecks_monitoring.egg-info
