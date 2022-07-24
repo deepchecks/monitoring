@@ -37,5 +37,5 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: ${{ secrets.MON_IMAGE_NAME }}:latest, ${{ secrets.MON_IMAGE_NAME }}:${{ env.GITHUB_REV }}
+        tags: 809414605910.dkr.ecr.eu-west-1.amazonaws.com/deepchecks/mon:latest, 809414605910.dkr.ecr.eu-west-1.amazonaws.com/deepchecks/mon:${{ env.GITHUB_REV }}
     
