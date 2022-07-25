@@ -9,10 +9,12 @@
 # ----------------------------------------------------------------------------
 
 """Module defining utility functions for the deepchecks_monitoring app."""
+import enum
+import operator
 import typing as t
-from enum import IntEnum
 
 from fastapi import HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,10 +22,53 @@ if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
 
 
-__all__ = ["exists_or_404", "ExtendedAsyncSession", "not_exists_or_400", "fetch_or_404", "TimeUnit"]
+__all__ = ["exists_or_404", "ExtendedAsyncSession", "not_exists_or_400",
+           "fetch_or_404", "TimeUnit", "DataFilter", "OperatorsEnum", "make_oparator_func"]
 
 
-A = t.TypeVar("A", bound="Base")
+class OperatorsEnum(enum.Enum):
+    """Operators for numeric and categorical filters."""
+
+    GE = "greater_than_equals"
+    GT = "greater_than"
+    LE = "lower_than_equals"
+    LT = "lower_than"
+    CONTAINES = "in"
+    EQ = "equals"
+    NOT_EQ = "not_equals"
+
+
+def make_oparator_func(oparator_enum: OperatorsEnum) -> t.Callable[[t.Any, t.Any], bool]:
+    """Return an operator function according to our oparator enum."""
+    op_not_split = oparator_enum.name.split("not_")
+    if len(op_not_split) > 1:
+        has_not = True
+        op_name = op_not_split[1]
+    else:
+        has_not = False
+        op_name = op_not_split[0]
+    op_func = getattr(operator, op_name.lower())
+    return lambda a, b: not op_func(a, b) if has_not else op_func(a, b)
+
+
+class DataFilter(BaseModel):
+    """Filter to be used on data, column can be feature/non-feature and value can be numeric/string."""
+
+    column: str
+    operator: OperatorsEnum
+    value: t.Any
+
+
+class IdResponse(BaseModel):
+    """Schema defines a response containing only id."""
+
+    id: int
+
+
+class CountResponse(BaseModel):
+    """Schema defines a response containing only count."""
+
+    count: int
 
 
 class ExtendedAsyncSession(AsyncSession):
@@ -45,7 +90,10 @@ class ExtendedAsyncSession(AsyncSession):
         return row
 
 
-class TimeUnit(IntEnum):
+A = t.TypeVar("A", bound="Base")
+
+
+class TimeUnit(enum.IntEnum):
     """Time unit."""
 
     SECOND = 1

@@ -22,7 +22,7 @@ async def test_add_check(classification_model_id, client: TestClient):
         "config": {"class_name": "PerformanceReport",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
-        },
+                   },
     }
 
     # Act
@@ -31,14 +31,15 @@ async def test_add_check(classification_model_id, client: TestClient):
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
+
 @pytest.mark.asyncio
 async def test_run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky",
         "config": {"class_name": "PerformanceReport",
-                    "params": {"reduce": "mean"},
-                    "module_name": "deepchecks.tabular.checks"
-        },
+                   "params": {"reduce": "mean"},
+                   "module_name": "deepchecks.tabular.checks"
+                   },
     }
     # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/check", json=request)
@@ -61,15 +62,32 @@ async def test_run_check(classification_model_id, classification_model_version_i
         "_dc_prediction_value": [0.1, 0.3, 0.6],
         "_dc_prediction_label": "2",
         "_dc_label": "2",
-        "a": 11.1,
+        "a": 16.1,
         "b": "ppppp",
     }
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     times_in_iso = [time.isoformat() for time in times]
-    response = client.get("/api/v1/checks/1/run/86400/")
+
+    # test no filter
+    response = client.post("/api/v1/checks/1/run/", json={"lookback": 86400})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]) == 24
+    assert len(json_rsp["output"]["1"]) == 24
     assert set(times_in_iso).issubset(set(json_rsp["time_labels"]))
-    assert len([out for out in json_rsp["output"] if out is not None]) == 4
+    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 4
+
+    # test with filter
+    response = client.post("/api/v1/checks/1/run/",
+                           json={"lookback": 86400, "filter": {"column": "a", "operator": "greater_than", "value": 14}})
+    json_rsp = response.json()
+    assert len(json_rsp["time_labels"]) == 24
+    assert len(json_rsp["output"]["1"]) == 24
+    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 2
+
+    # test with filter no refrence because of filter
+    response = client.post("/api/v1/checks/1/run/",
+                           json={"lookback": 86400, "filter": {"column": "a", "operator": "greater_than", "value": 17}})
+    json_rsp = response.json()
+    assert len(json_rsp["time_labels"]) == 24
+    assert json_rsp["output"] == {"1": None}

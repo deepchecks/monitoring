@@ -22,7 +22,7 @@ from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import TimeUnit, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, TimeUnit, fetch_or_404
 
 from .router import router
 
@@ -61,7 +61,7 @@ class ModelDailyIngestion(TypedDict):
     day: int
 
 
-@router.post("/models")
+@router.post("/models", response_model=IdResponse)
 async def create_model(
     model: ModelCreationSchema,
     session: AsyncSession = AsyncSessionDep

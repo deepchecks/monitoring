@@ -13,5 +13,6 @@ from .alert import Alert
 from .check import Check
 from .model import Model, TaskType
 from .model_version import ColumnType, ModelVersion
+from .monitor import Monitor
 
-__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check', 'Alert']
+__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check', 'Alert', 'Monitor']

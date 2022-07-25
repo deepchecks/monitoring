@@ -15,9 +15,10 @@ Revises:
 Create Date: 2022-07-24 13:49:39.616890
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
+
 import deepchecks_monitoring
 
 # revision identifiers, used by Alembic.

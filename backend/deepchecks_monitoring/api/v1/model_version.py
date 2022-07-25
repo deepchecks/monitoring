@@ -22,7 +22,7 @@ from deepchecks_monitoring.logic.data_tables import (column_types_to_table_colum
                                                      get_table_columns_for_monitor)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ColumnType, ModelVersion
-from deepchecks_monitoring.utils import fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, fetch_or_404
 
 from .router import router
 
@@ -41,7 +41,7 @@ class ModelVersionCreationSchema(BaseModel):
         orm_mode = True
 
 
-@router.post('/models/{model_id}/version')
+@router.post('/models/{model_id}/version', response_model=IdResponse)
 async def create_version(
     model_id: int,
     info: ModelVersionCreationSchema,

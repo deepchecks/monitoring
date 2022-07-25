@@ -18,17 +18,17 @@ from starlette import status
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Check
-from deepchecks_monitoring.models.alert import Alert, AlertRule, DataFilter
-from deepchecks_monitoring.utils import exists_or_404, fetch_or_404
+from deepchecks_monitoring.models.alert import Alert, AlertRule
+from deepchecks_monitoring.utils import CountResponse, DataFilter, IdResponse, exists_or_404, fetch_or_404
 
 from .router import router
 
 
 class AlertCreationSchema(BaseModel):
-    """Schema defines the parameters for creating new model version."""
+    """Schema defines the parameters for creating new alert."""
 
     name: str
-    lookback: str
+    lookback: int
     alert_rule: AlertRule
     description: t.Optional[str]
     data_filter: t.Optional[DataFilter]
@@ -40,7 +40,7 @@ class AlertSchema(BaseModel):
     id: int
     name: str
     check_id: int
-    lookback: str
+    lookback: int
     alert_rule: AlertRule
     description: t.Optional[str] = None
     data_filter: DataFilter = None
@@ -52,7 +52,7 @@ class AlertSchema(BaseModel):
 
 
 class AlertUpdateSchema(BaseModel):
-    """Schema defines the parameters for creating new model version."""
+    """Schema defines the parameters for creating new alert."""
 
     name: t.Optional[str]
     lookback: t.Optional[str]
@@ -61,19 +61,7 @@ class AlertUpdateSchema(BaseModel):
     data_filter: t.Optional[DataFilter]
 
 
-class CreateAlertResponse(BaseModel):
-    """Schema defines the create alert response."""
-
-    id: int
-
-
-class CountAlertResponse(BaseModel):
-    """Schema defines the count alert response."""
-
-    count: int
-
-
-@router.post("/checks/{check_id}/alerts", response_model=CreateAlertResponse)
+@router.post("/checks/{check_id}/alerts", response_model=IdResponse)
 async def create_alert(
     check_id: int,
     body: AlertCreationSchema,
@@ -87,8 +75,8 @@ async def create_alert(
     return {"id": alert.id}
 
 
-@router.get("/alerts/count", response_model=CountAlertResponse)
-@router.get("/models/{model_id}/alerts/count", response_model=CountAlertResponse)
+@router.get("/alerts/count", response_model=CountResponse)
+@router.get("/models/{model_id}/alerts/count", response_model=CountResponse)
 async def count_alerts(
     model_id: t.Optional[int] = None,
     session: AsyncSession = AsyncSessionDep

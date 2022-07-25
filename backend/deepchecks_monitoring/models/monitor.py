@@ -7,50 +7,39 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-"""Module defining the alert ORM model."""
-import typing as t
+"""Module defining the monitor ORM model."""
 from dataclasses import dataclass
+from typing import Optional
 
-from pydantic import BaseModel
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
-from deepchecks_monitoring.utils import DataFilter, OperatorsEnum
+from deepchecks_monitoring.utils import DataFilter
 
-__all__ = ["AlertRule", "Alert"]
-
-
-class AlertRule(BaseModel):
-    """Rule to define an alert on check result, value must be numeric."""
-
-    feature: t.Optional[str]
-    operator: OperatorsEnum
-    value: float
+__all__ = ["Monitor"]
 
 
 @dataclass
-class Alert(Base):
-    """ORM model for the alert."""
+class Monitor(Base):
+    """ORM model for the monitor."""
 
     __table__ = Table(
-        "alerts",
+        "monitor",
         Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("name", String(50)),
         Column("description", String(200), default=""),
         Column("check_id", Integer, ForeignKey("checks.id")),
         Column("data_filter", PydanticType(pydantic_model=DataFilter), nullable=True),
-        Column("alert_rule", PydanticType(pydantic_model=AlertRule)),
         Column("lookback", Integer),
     )
 
     name: str
     check_id: int
     lookback: int
-    alert_rule: AlertRule
-    description: t.Optional[str] = None
+    description: Optional[str] = None
     data_filter: DataFilter = None
     id: int = None
 

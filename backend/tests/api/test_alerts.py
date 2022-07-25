@@ -11,10 +11,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-def add_alert(classification_model_check_id, client) -> int:
+def add_alert(classification_model_check_id, client: TestClient) -> int:
     request = {
         "name": "alerty",
-        "lookback": "7d",
+        "lookback": 86400 * 7,
         "alert_rule": {
             "operator": "greater_than",
             "value": 100
@@ -29,7 +29,7 @@ async def test_add_alert_no_feature(classification_model_check_id, client: TestC
     # Arrange
     request = {
         "name": "alerty",
-        "lookback": "7d",
+        "lookback": 86400 * 7,
         "alert_rule": {
             "operator": "greater_than",
             "value": 100
@@ -47,7 +47,7 @@ async def test_add_alert_with_feature(classification_model_check_id, client: Tes
     # Arrange
     request = {
         "name": "alerty",
-        "lookback": "7d",
+        "lookback": 86400 * 7,
         "alert_rule": {
             "operator": "greater_than",
             "value": 100,
@@ -66,7 +66,7 @@ async def test_add_alert_with_data_filter(classification_model_check_id, client:
     # Arrange
     request = {
         "name": "alerty",
-        "lookback": "7d",
+        "lookback": 86400 * 7,
         "alert_rule": {
             "operator": "greater_than",
             "value": 100,
@@ -91,7 +91,7 @@ async def test_get_alert(classification_model_check_id, client: TestClient):
     alert_id = add_alert(classification_model_check_id, client)
     # Act
     response = client.get(f"/api/v1/alerts/{alert_id}")
-    assert response.json() == {"id": 1, "name": "alerty", "check_id": 1, "lookback": "7d",
+    assert response.json() == {"id": 1, "name": "alerty", "check_id": 1, "lookback": 86400 * 7,
                                "alert_rule": {"feature": None, "operator": "greater_than", "value": 100.0},
                                "description": "", "data_filter": None}
 
