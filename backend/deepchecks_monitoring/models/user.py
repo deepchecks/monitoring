@@ -32,6 +32,10 @@ class User(Base):
         Column("email", String(50), index=True),
         Column("password", String(50)),
     )
+    __table_args__ = {
+        "schema": "default"
+    }
+
     uuid: uuid_pkg.UUID = field(init=False, default_factory=uuid_pkg.uuid4)
     name: t.Optional[str] = None
     email: t.Optional[str] = None

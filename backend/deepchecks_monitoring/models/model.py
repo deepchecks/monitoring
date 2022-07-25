@@ -45,6 +45,10 @@ class Model(Base):
         Column("description", String(200)),
         Column("task_type", Enum(TaskType))
     )
+    __table_args__ = {
+        "schema": "default"
+    }
+
     id: int = None
     name: Optional[str] = None
     description: Optional[str] = None

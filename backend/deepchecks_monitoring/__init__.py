@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """Root module for the deepchecks_monitoring package."""
+from importlib.metadata import version
+
 __all__ = []
+__version__ = version("deepchecks_monitoring")

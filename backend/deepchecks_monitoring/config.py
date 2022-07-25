@@ -10,6 +10,7 @@
 
 """Module defining the configuration for the deepchecks_monitoring package."""
 import logging
+import pathlib
 
 from pydantic import BaseSettings, PostgresDsn
 
@@ -17,6 +18,7 @@ __all__ = ['Settings']
 
 
 logger = logging.getLogger(__name__)
+PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
 
 class Settings(BaseSettings):
@@ -25,6 +27,7 @@ class Settings(BaseSettings):
     database_uri: PostgresDsn
     async_database_uri: PostgresDsn
     echo_sql: bool = True
+    assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
 
     # jwt_secret_key: str = Field(..., env='SECRET_KEY')
     # jwt_algorithm: str = Field(..., env='ALGORITHM')

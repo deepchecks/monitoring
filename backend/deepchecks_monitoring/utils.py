@@ -13,6 +13,7 @@ import enum
 import operator
 import typing as t
 
+import orjson
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.engine import Row
@@ -22,8 +23,17 @@ if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
 
 
-__all__ = ["exists_or_404", "ExtendedAsyncSession", "not_exists_or_400",
-           "fetch_or_404", "TimeUnit", "DataFilter", "OperatorsEnum", "make_oparator_func"]
+__all__ = [
+    "exists_or_404",
+    "ExtendedAsyncSession",
+    "not_exists_or_400",
+    "fetch_or_404",
+    "TimeUnit",
+    "DataFilter",
+    "OperatorsEnum",
+    "make_oparator_func",
+    "json_dumps"
+]
 
 
 class OperatorsEnum(enum.Enum):
@@ -101,6 +111,11 @@ class TimeUnit(enum.IntEnum):
     HOUR = 60 * MINUTE
     DAY = 24 * HOUR
     WEEK = 7 * DAY
+
+
+def json_dumps(data) -> str:
+    """Serialize given object to JSON string."""
+    return orjson.dumps(data).decode()
 
 
 async def fetch_or_404(

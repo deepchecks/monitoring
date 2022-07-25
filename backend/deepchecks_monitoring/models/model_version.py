@@ -72,6 +72,9 @@ class ModelVersion(Base):
         Column("feature_importance", JSONB, nullable=True),
         Column("model_id", Integer, ForeignKey("models.id"))
     )
+    __table_args__ = {
+        "schema": "default"
+    }
 
     name: str
     model_id: int

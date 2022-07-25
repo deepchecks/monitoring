@@ -31,6 +31,10 @@ class Segment(Base):
         Column("rule", JSON, nullable=False),
         Column("model_id", Integer, ForeignKey("model.id")),
     )
+    __table_args__ = {
+        "schema": "default"
+    }
+
     id: int = field(init=False)
     name: t.Optional[str] = None
     rule: str = field(init=False)

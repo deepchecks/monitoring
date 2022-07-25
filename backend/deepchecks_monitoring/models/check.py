@@ -37,6 +37,10 @@ class Check(Base):
         Column("config", JSONB),
         Column("model_id", Integer, ForeignKey("models.id"))
     )
+    __table_args__ = {
+        "schema": "default"
+    }
+
     config: JSONB
     model_id: int
     id: int = None

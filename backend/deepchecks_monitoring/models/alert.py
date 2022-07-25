@@ -46,6 +46,10 @@ class Alert(Base):
         Column("lookback", Integer),
     )
 
+    __table_args__ = {
+        "schema": "default"
+    }
+
     name: str
     check_id: int
     lookback: int

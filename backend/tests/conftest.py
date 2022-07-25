@@ -21,10 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.api.v1.model_version import ModelVersionCreationSchema, create_version
-from deepchecks_monitoring.app import create_application, json_serializer
+from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Model, TaskType
 from deepchecks_monitoring.models.base import Base
+from deepchecks_monitoring.utils import json_dumps
 
 dotenv.load_dotenv()
 
@@ -57,7 +58,7 @@ def event_loop() -> t.Generator:
 @pytest_asyncio.fixture(scope="function")
 async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
     url = postgres.url().replace("postgresql", "postgresql+asyncpg")
-    engine = create_async_engine(url, echo=True, json_serializer=json_serializer)
+    engine = create_async_engine(url, echo=True, json_serializer=json_dumps)
     yield engine
     await engine.dispose()
 

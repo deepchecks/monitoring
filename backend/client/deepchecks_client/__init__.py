@@ -7,10 +7,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
 """Module containing deepchecks monitoring client."""
 import enum
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, Union, Optional
+from importlib.metadata import version
 from urllib.parse import urljoin
 
 import numpy as np
@@ -20,6 +22,7 @@ from deepchecks import Dataset
 from jsonschema import validate
 
 __all__ = ['DeepchecksClient']
+__version__ = version("deepchecks_client")
 
 
 class TaskType(enum.Enum):

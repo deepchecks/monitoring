@@ -14,7 +14,7 @@ import setuptools
 
 SETUP_MODULE = pathlib.Path(__file__).absolute()
 ROOTDIR = SETUP_MODULE.parent
-VERSION_FILE = ROOTDIR / "VERSION"
+VERSION_FILE = ROOTDIR / ".." / "VERSION"
 
 
 SEMANTIC_VERSIONING_RE = re.compile(
@@ -75,14 +75,15 @@ def read_requirements_file(path: pathlib.Path) -> t.Tuple[t.List[str], t.List[st
 version = get_version_string()
 install_requires, dependency_links = read_requirements_file(ROOTDIR / 'requirements.txt')
 
+
 setuptools.setup(
-    name="deepchecks-monitoring",
+    name="deepchecks-client",
     version=version,
     author="Deepchecks",
     author_email="",
     description="",
     package_dir={"": "."},
-    packages=setuptools.find_packages(where=".", include=["deepchecks_monitoring.*"]),
+    packages=setuptools.find_packages(where=".", include=["deepchecks_client.*"]),
     python_requires='>=3.8',
     install_requires=install_requires,
     dependency_links=dependency_links,
