@@ -29,6 +29,7 @@
     "import/no-unresolved": "off",
     "consistent-return": "off",
     "react/jsx-props-no-spreading": "off",
-    "react/require-default-props": "off"
+    "react/require-default-props": "off",
+    "no-nested-ternary": "off"
   }
 }

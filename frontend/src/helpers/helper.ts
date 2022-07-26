@@ -1,25 +1,29 @@
 // import { Alarm, Analysis, Caonfiguration, Dashboard } from "../assets/icon/icon"
+import { FC } from "react";
 import { NavigateFunction } from "react-router-dom";
-import Alarm from "../assets/icon/alarm.svg";
-import AlarmActiv from "../assets/icon/alarmActiv.svg";
-import AlarmHover from "../assets/icon/alarmHover.svg";
-import Analysis from "../assets/icon/analysis.svg";
-import AnalysisHover from "../assets/icon/analysisHover.svg";
-import Caonfiguration from "../assets/icon/caonfiguration.svg";
-import CaonfigurationActiv from "../assets/icon/caonfigurationActiv.svg";
-import CaonfigurationHover from "../assets/icon/caonfigurationHover.svg";
-import Dashboard from "../assets/icon/dashboard.svg";
-import DashboardActiv from "../assets/icon/dashboardActiv.svg";
-import DashboardHover from "../assets/icon/dashboardHover.svg";
+import {
+  Alarm,
+  AlarmActive,
+  AlarmHover,
+  Analysis,
+  AnalysisActive,
+  AnalysisHover,
+  Configuration,
+  ConfigurationActive,
+  ConfigurationHover,
+  Dashboard,
+  DashboardActive,
+  DashboardHover,
+} from "../assets/icon/icon";
 import { ALERTS, ANALISIS, CONFIGURATION, DASHBOARD_ROUTE } from "./routes";
 
 export interface SidebarInfo {
   key: string;
   text: string;
   link: string;
-  Icon: string;
-  IconHover: string;
-  ActivIcon: string;
+  Icon: FC;
+  IconHover: FC;
+  ActivIcon: FC;
   action: (navigate: NavigateFunction, page: string) => void;
   activ: boolean;
 }
@@ -33,7 +37,7 @@ export const sideBarInfo: SidebarInfo[] = [
     link: DASHBOARD_ROUTE,
     Icon: Dashboard,
     IconHover: DashboardHover,
-    ActivIcon: DashboardActiv,
+    ActivIcon: DashboardActive,
     action: (navigate: NavigateFunction, page: string) => {
       navigate(page);
     },
@@ -45,7 +49,7 @@ export const sideBarInfo: SidebarInfo[] = [
     link: ALERTS,
     Icon: Alarm,
     IconHover: AlarmHover,
-    ActivIcon: AlarmActiv,
+    ActivIcon: AlarmActive,
     action: () => 1,
     activ: false,
   },
@@ -55,7 +59,7 @@ export const sideBarInfo: SidebarInfo[] = [
     link: ANALISIS,
     Icon: Analysis,
     IconHover: AnalysisHover,
-    ActivIcon: DashboardActiv,
+    ActivIcon: AnalysisActive,
     action: () => 1,
     activ: false,
   },
@@ -63,9 +67,9 @@ export const sideBarInfo: SidebarInfo[] = [
     key: ObjectId(),
     text: "Configuration",
     link: CONFIGURATION,
-    Icon: Caonfiguration,
-    IconHover: CaonfigurationHover,
-    ActivIcon: CaonfigurationActiv,
+    Icon: Configuration,
+    IconHover: ConfigurationHover,
+    ActivIcon: ConfigurationActive,
     action: () => 1,
     activ: false,
   },

@@ -1,5 +1,6 @@
 import { Box, styled, Typography } from "@mui/material";
 import { Link, LinkProps } from "react-router-dom";
+import { colors } from "../../../helpers/theme/colors";
 
 interface StyledLinkWrapperProps {
   active: boolean;
@@ -24,19 +25,21 @@ export const StyledLinkWrapper = styled(
   color: ${active ? "#17003E" : "#fff"};
   cursor: pointer;
   ${active ? "background-color: #fff;" : ""}
-  transition: all 0.2s ease-in;
 
-  :first-of-type: {
+  &:hover {
+    color: #B17DFF;
+  };
+
+  &:hover img {
+    color: #B17DFF;
+  }
+
+  &:first-of-type {
     margin-top: 0;
   };
 
-  :last-of-type: {
+  &:last-of-type {
     margin-bottom: 0;
-  };
-  
-  :hover: {
-    color: "#B17DFF";
-    transition: all 0.2s ease-in;
   };
 `
 );
@@ -52,13 +55,24 @@ export const StyledTypography = styled(Typography)({
   marginLeft: "14px",
 });
 
-export const StyledArrowWrapper = styled(Box)({
-  width: 16,
-  height: 16,
-  borderRadius: "50%",
-  marginRight: "30px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#E2CFFE",
-});
+interface StyledArrowWrapperProps {
+  hover: boolean;
+}
+
+export const StyledArrowWrapper = styled(Box)<StyledArrowWrapperProps>(
+  ({ hover, theme }) => ({
+    width: 16,
+    height: 16,
+    borderRadius: "50%",
+    marginRight: "30px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: hover
+      ? theme.palette.primary.dark
+      : theme.palette.primary.contrastText,
+    "& svg": {
+      fill: hover ? colors.primary.violet[600] : theme.palette.common.black,
+    },
+  })
+);

@@ -19,18 +19,16 @@ export function DashboardHeader() {
       <StyledFlexWrapper>
         <Stack spacing="20px" alignItems="center" direction="row">
           <AlertCount
-            color="#EF4C36"
             count={10}
-            criticality={3}
+            criticality="critical"
             message="Active Critical Alerts"
           />
           <AlertCount
             count={500}
-            criticality={2}
+            criticality="high"
             message="Active High Alerts"
           />
         </Stack>
-
         <StyledDivider />
         <StyledFlexWrapper>
           <PlusIcon />

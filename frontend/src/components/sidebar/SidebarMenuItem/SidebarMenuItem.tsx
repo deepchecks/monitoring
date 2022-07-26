@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Arow } from "../../../assets/icon/icon";
 import { SidebarInfo } from "../../../helpers/helper";
@@ -15,24 +15,36 @@ interface SidebarMenuItemProps {
 }
 
 function SidebarMenuItemComponent({ info, width }: SidebarMenuItemProps) {
-  const location = useLocation();
+  const [hover, setHover] = useState<boolean>(false);
 
-  const active = location?.pathname === info.link;
+  const location = useLocation();
+  const { ActivIcon, Icon, IconHover, link } = info;
+  const active = location?.pathname === link;
+
+  const onMouseOver = () => {
+    setHover(true);
+  };
+
+  const onMouseLeave = () => {
+    setHover(false);
+  };
 
   return (
-    <StyledLinkWrapper to={info.link} active={active} key={info.key}>
+    <StyledLinkWrapper
+      to={link}
+      active={active}
+      key={info.key}
+      onMouseLeave={onMouseLeave}
+      onMouseOver={onMouseOver}
+    >
       {width > 1381 && (
         <>
           <StyledLeftColumn>
-            {active ? (
-              <img alt="active-icon" src={info.ActivIcon} />
-            ) : (
-              <img alt="icon" src={info.Icon} />
-            )}
-            <StyledTypography>{info.text}</StyledTypography>
+            {hover ? <IconHover /> : active ? <ActivIcon /> : <Icon />}
+            <StyledTypography variant="subtitle1">{info.text}</StyledTypography>
           </StyledLeftColumn>
           {info.text === "Analysis" && (
-            <StyledArrowWrapper>
+            <StyledArrowWrapper hover={hover}>
               <Arow />
             </StyledArrowWrapper>
           )}
