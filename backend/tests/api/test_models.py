@@ -16,3 +16,8 @@ async def test_add_model(client: TestClient):
     response = client.post("/api/v1/models", json={"name": "44", "task_type": "classification"})
     assert response.status_code == 200
     assert response.json() == {"id": 1}
+
+    response = client.get("/api/v1/models/")
+    assert response.status_code == 200
+    resp_json = response.json()
+    assert resp_json[0] == {"id": 1, "name": "44", "task_type": "classification", "description": None}

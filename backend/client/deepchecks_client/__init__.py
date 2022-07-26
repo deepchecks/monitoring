@@ -11,8 +11,8 @@
 """Module containing deepchecks monitoring client."""
 import enum
 from datetime import datetime
-from typing import Dict, Union, Optional
 from importlib.metadata import version
+from typing import Dict, Optional, Union
 from urllib.parse import urljoin
 
 import numpy as np

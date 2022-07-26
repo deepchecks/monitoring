@@ -21,8 +21,9 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.model import TaskType
+from deepchecks_monitoring.models.model_version import ColumnMetadata, ColumnType, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, TimeUnit, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, TimeUnit, exists_or_404, fetch_or_404
 
 from .router import router
 
@@ -97,10 +98,17 @@ async def retrieve_models_data_ingestion(
     t.List[ModelDailyIngestion]
 ]:
     """Retrieve models data ingestion status."""
-    is_within_dateframe = lambda col: col > text(f"(current_timestamp - interval '{time_filter} seconds')")
-    truncate_date = lambda col: func.cast(func.extract("epoch", func.date_trunc("day", col)), SQLInteger)
-    sample_id = lambda columns: getattr(columns, SAMPLE_ID_COL)
-    sample_timestamp = lambda columns: getattr(columns, SAMPLE_TS_COL)
+    def is_within_dateframe(col):
+        return col > text(f"(current_timestamp - interval '{time_filter} seconds')")
+
+    def truncate_date(col):
+        return func.cast(func.extract("epoch", func.date_trunc("day", col)), SQLInteger)
+
+    def sample_id(columns):
+        return getattr(columns, SAMPLE_ID_COL)
+
+    def sample_timestamp(columns):
+        return getattr(columns, SAMPLE_TS_COL)
 
     if model_id is not None:
         models = [
@@ -172,3 +180,68 @@ async def get_model(
     """
     model = await fetch_or_404(session, Model, id=model_id)
     return ModelSchema.from_orm(model)
+
+
+@router.get("/models/", response_model=t.List[ModelSchema])
+async def get_models(
+    session: AsyncSession = AsyncSessionDep
+) -> ModelSchema:
+    """Create a new model.
+
+    Parameters
+    ----------
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    List[ModelSchema]
+        List of models.
+    """
+    results = await session.execute(select(Model))
+    models = []
+    for res in results.scalars().all():
+        models.append(ModelSchema.from_orm(res))
+    return models
+
+
+@router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata])
+async def get_model_columns(
+    model_id: int,
+    session: AsyncSession = AsyncSessionDep
+) -> ModelSchema:
+    """Create a new model.
+
+    Parameters
+    ----------
+    model_id : int
+        Model get columns for.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    Dict[str, ColumnMetadata]
+        Column name and metadata (type and value if available).
+    """
+    await exists_or_404(session, Model, id=model_id)
+    model_results = await session.execute(select(Model).where(Model.id == model_id)
+                                          .options(selectinload(Model.versions)))
+    model: Model = model_results.scalars().first()
+    model_versions: t.List[ModelVersion] = sorted(model.versions, key=lambda version: version.end_time, reverse=True)
+    latest_version = model_versions[0]
+
+    column_dict: t.Dict[str, ColumnMetadata] = {}
+
+    for col in list(latest_version.features.items()) + list(latest_version.non_features.items()):
+        col_name, col_type = col
+        col_metadata = ColumnMetadata(type=col_type)
+        if col_type == ColumnType.BOOLEAN:
+            col_metadata.values = [True, False]
+        elif col_type == ColumnType.CATEGORICAL:
+            col_metadata.values = ["a", "b", "c"]
+        elif col_type == ColumnType.NUMERIC:
+            col_metadata.values = [-9999999, 999999]
+        column_dict[col_name] = col_metadata
+
+    return column_dict

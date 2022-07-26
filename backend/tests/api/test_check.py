@@ -26,10 +26,17 @@ async def test_add_check(classification_model_id, client: TestClient):
     }
 
     # Act
-    response = client.post(f"/api/v1/models/{classification_model_id}/check", json=request)
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
+
+    response = client.get(f"/api/v1/models/{classification_model_id}/checks")
+    assert response.status_code == 200
+    resp_json = response.json()[0]
+    assert resp_json["id"] == 1
+    assert resp_json["name"] == request["name"]
+    assert resp_json["config"] == request["config"]
 
 
 @pytest.mark.asyncio
@@ -42,7 +49,7 @@ async def test_run_check(classification_model_id, classification_model_version_i
                    },
     }
     # Act
-    response = client.post(f"/api/v1/models/{classification_model_id}/check", json=request)
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     times = []
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0) - pdl.duration(days=1)
     for i in [1, 3, 7, 13]:
@@ -72,6 +79,7 @@ async def test_run_check(classification_model_id, classification_model_version_i
     # test no filter
     response = client.post("/api/v1/checks/1/run/", json={"lookback": 86400})
     json_rsp = response.json()
+    assert response.status_code == 200
     assert len(json_rsp["time_labels"]) == 24
     assert len(json_rsp["output"]["1"]) == 24
     assert set(times_in_iso).issubset(set(json_rsp["time_labels"]))

@@ -19,10 +19,18 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.type_api import TypeEngine
+from typing_extensions import TypedDict
 
 from deepchecks_monitoring.models.base import Base
 
-__all__ = ["ColumnType", "ModelVersion"]
+__all__ = ["ColumnType", "ModelVersion", "ColumnMetadata"]
+
+
+class ColumnMetadata(TypedDict):
+    """TypedDict containing relavant column metadata."""
+
+    type: "ColumnType"
+    values: t.Optional[t.Union[t.Tuple[int, int], t.Tuple[bool, bool], t.List[t.Any], None]]
 
 
 class ColumnType(enum.Enum):

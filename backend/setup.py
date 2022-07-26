@@ -7,9 +7,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-import typing as t
-import re
 import pathlib
+import re
+import typing as t
+
 import setuptools
 
 SETUP_MODULE = pathlib.Path(__file__).absolute()

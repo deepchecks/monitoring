@@ -44,6 +44,20 @@ class CheckCreationSchema(BaseModel):
         orm_mode = True
 
 
+class CheckSchema(BaseModel):
+    """Schema for the check."""
+
+    config: CheckConfig
+    model_id: int
+    id: int
+    name: str = None
+
+    class Config:
+        """Config for Alert schema."""
+
+        orm_mode = True
+
+
 class MonitorOptions(BaseModel):
     """Check run schema."""
 
@@ -63,7 +77,7 @@ class CheckResultSchema(BaseModel):
     time_labels: t.List[str]
 
 
-@router.post('/models/{model_id}/check', response_model=IdResponse)
+@router.post('/models/{model_id}/checks', response_model=IdResponse)
 async def create_check(
     model_id: int,
     check: CheckCreationSchema,
@@ -90,6 +104,35 @@ async def create_check(
     session.add(check)
     await session.flush()
     return {'id': check.id}
+
+
+@router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema])
+async def get_checks(
+    model_id: int,
+    session: AsyncSession = AsyncSessionDep
+) -> dict:
+    """Return all the checks.
+
+    Parameters
+    ----------
+    model_id : int
+        ID of the model.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    List[CheckSchema]
+        All the checks.
+    """
+    await exists_or_404(session, Model, id=model_id)
+    select_checks: Select = select(Check)
+    select_checks = select_checks.where(Check.model_id == model_id)
+    results = await session.execute(select_checks)
+    checks = []
+    for res in results.scalars().all():
+        checks.append(CheckSchema.from_orm(res))
+    return checks
 
 
 def _create_select_object(model, mon_table: Table, top_feat: t.List[str]) -> Select:
