@@ -26,7 +26,7 @@ class Monitor(Base):
     """ORM model for the monitor."""
 
     __table__ = Table(
-        "monitor",
+        "monitors",
         Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("name", String(50)),
