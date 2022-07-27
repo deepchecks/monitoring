@@ -12,6 +12,7 @@ import typing as t
 
 import jsonschema.exceptions
 from fastapi import APIRouter, FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -68,6 +69,14 @@ def create_application(
         str(settings.async_database_uri),
         echo=settings.echo_sql,
         json_serializer=json_dumps
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        allow_credentials=True,
     )
 
     app.include_router(v1_router)
