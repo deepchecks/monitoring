@@ -7,22 +7,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+# pylint: disable=unused-import
 """Module defining the dependencies of the application."""
 import typing as t
 
 import fastapi
-from fastapi import HTTPException, Request
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.orm import sessionmaker
+from fastapi import Request
 
-from deepchecks_monitoring import utils
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
+
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.app import ResourcesProvider
+    from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 __all__ = ["AsyncSessionDep", "limit_request_size"]
 
 
-async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["utils.ExtendedAsyncSession"]:
+async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["ExtendedAsyncSession"]:
     """Get async sqlalchemy session instance.
 
     Parameters
@@ -35,20 +36,9 @@ async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["utils.
     AsyncIterator[AsyncSession]
         async sqlalchemy session instance
     """
-    engine: t.Optional[AsyncEngine] = request.app.state.async_database_engine
-    session_factory = sessionmaker(engine, class_=utils.ExtendedAsyncSession, expire_on_commit=False)
-    async with session_factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except SQLAlchemyError as sql_ex:
-            await session.rollback()
-            raise sql_ex
-        except HTTPException as http_ex:
-            await session.rollback()
-            raise http_ex
-        finally:
-            await session.close()
+    resources_provider = t.cast("ResourcesProvider", request.app.state.resources_provider)
+    async with resources_provider.create_async_database_session() as session:
+        yield session
 
 
 AsyncSessionDep = fastapi.Depends(get_async_session)

@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """Module defining the app."""
 import typing as t
+from contextlib import asynccontextmanager
 
 import jsonschema.exceptions
 from fastapi import APIRouter, FastAPI, Request, status
@@ -16,13 +17,54 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.utils import json_dumps
+from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
 __all__ = ["create_application"]
+
+
+class ResourcesProvider:
+    """Provider of resources."""
+
+    settings: Settings
+
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self._async_database_engine: t.Optional[AsyncEngine] = None
+
+    @property
+    def async_database_engine(self) -> AsyncEngine:
+        """Return async sqlalchemy database engine."""
+        if self._async_database_engine:
+            return self._async_database_engine
+        self._async_database_engine = create_async_engine(
+            str(self.settings.async_database_uri),
+            echo=self.settings.echo_sql,
+            json_serializer=json_dumps
+        )
+        return self._async_database_engine
+
+    @asynccontextmanager
+    async def create_async_database_session(self) -> t.AsyncIterator[ExtendedAsyncSession]:
+        """Create async sqlalchemy database session."""
+        session_factory = sessionmaker(
+            self.async_database_engine,
+            class_=ExtendedAsyncSession,
+            expire_on_commit=False
+        )
+        async with session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception as error:
+                await session.rollback()
+                raise error
+            finally:
+                await session.close()
 
 
 def create_application(
@@ -30,6 +72,7 @@ def create_application(
     openapi_url: str = "/api/v1/openapi.json",
     root_path: str = "",
     settings: t.Optional[Settings] = None,
+    resources_provider: t.Optional[ResourcesProvider] = None,
     additional_routers: t.Optional[t.Sequence[APIRouter]] = None,
     additional_dependencies: t.Optional[t.Sequence[Depends]] = None,
 ) -> FastAPI:
@@ -65,11 +108,7 @@ def create_application(
     )
 
     app.state.settings = settings
-    app.state.async_database_engine = create_async_engine(
-        str(settings.async_database_uri),
-        echo=settings.echo_sql,
-        json_serializer=json_dumps
-    )
+    app.state.resources_provider = resources_provider or ResourcesProvider(settings)
 
     app.add_middleware(
         CORSMiddleware,
@@ -86,14 +125,14 @@ def create_application(
             app.include_router(r)
 
     @app.exception_handler(jsonschema.exceptions.ValidationError)
-    async def validation_error_handler(_: Request, exc: jsonschema.exceptions.ValidationError):
+    async def _(_: Request, exc: jsonschema.exceptions.ValidationError):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": exc.message},
         )
 
     @app.get("/")
-    async def index():
+    async def _():
         return RedirectResponse(url="/index.html")
 
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute())))
