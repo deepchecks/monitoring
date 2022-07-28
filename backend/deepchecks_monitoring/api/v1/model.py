@@ -235,13 +235,12 @@ async def get_model_columns(
 
     for col in list(latest_version.features.items()) + list(latest_version.non_features.items()):
         col_name, col_type = col
-        col_metadata = ColumnMetadata(type=col_type)
-        if col_type == ColumnType.BOOLEAN:
-            col_metadata.values = [True, False]
-        elif col_type == ColumnType.CATEGORICAL:
-            col_metadata.values = ["a", "b", "c"]
-        elif col_type == ColumnType.NUMERIC:
-            col_metadata.values = [-9999999, 999999]
-        column_dict[col_name] = col_metadata
-
+        values = None
+        if col_type == ColumnType.BOOLEAN.value:
+            values = [True, False]
+        elif col_type == ColumnType.CATEGORICAL.value:
+            values = ["a", "b", "c"]
+        elif col_type == ColumnType.NUMERIC.value:
+            values = [-9999999, 999999]
+        column_dict[col_name] = ColumnMetadata(type=col_type, values=values)
     return column_dict

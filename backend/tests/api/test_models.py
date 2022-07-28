@@ -21,3 +21,13 @@ async def test_add_model(client: TestClient):
     assert response.status_code == 200
     resp_json = response.json()
     assert resp_json[0] == {"id": 1, "name": "44", "task_type": "classification", "description": None}
+
+
+@pytest.mark.asyncio
+async def test_get_columns_model(classification_model_id, classification_model_version_id, client: TestClient):
+    response = client.get(f"/api/v1/models/{classification_model_id}/columns")
+    assert classification_model_version_id == 1
+    assert response.status_code == 200
+    assert response.json() == {"a": {"type": "numeric", "values": [-9999999, 999999]},
+                               "b": {"type": "categorical", "values": ["a", "b", "c"]},
+                               "c": {"type": "numeric", "values": [-9999999, 999999]}}
