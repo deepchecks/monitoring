@@ -4,6 +4,7 @@ export const StyledBoxContainer = styled(Box)({
   width: "100%",
   paddingBottom: "76px",
   paddingLeft: "30px",
+  marginTop:"40px",
 });
 
 export const StyledBoxWrapper = styled(Box)({

@@ -2,6 +2,7 @@ import { Box } from "@mui/material";
 import { Chart, ChartArea, ChartData, registerables } from "chart.js";
 import { useEffect, useRef, useState } from "react";
 import { Line } from "react-chartjs-2";
+import { gradientColors } from "../../helpers/lineDataChangeFunction";
 
 Chart.register(...registerables);
 
@@ -64,50 +65,15 @@ export default function DiagramLine({ data }: DiagramLineProps) {
     }
     setChartData({
       ...chartData,
-      datasets: chartData.datasets.map((el, i) => {
-        if (i === 0) {
-          return {
-            ...el,
-            backgroundColor: createGradient(
-              char.ctx,
-              char.chartArea,
-              "rgba(1, 169, 219, 0)",
-              "rgba(1, 169, 219, 0.1)"
-            ),
-          };
-        }
-        if (i === 1) {
-          return {
-            ...el,
-            backgroundColor: createGradient(
-              char.ctx,
-              char.chartArea,
-              "rgba(107, 28, 176, 0)",
-              "rgba(107, 28, 176, 0.1)"
-            ),
-          };
-        }
-        if (i % 2 === 0) {
-          return {
-            ...el,
-            backgroundColor: createGradient(
-              char.ctx,
-              char.chartArea,
-              "rgba(0, 101, 255, 0)",
-              "rgba(0, 101, 255, 0.1"
-            ),
-          };
-        }
-        return {
-          ...el,
-          backgroundColor: createGradient(
-            char.ctx,
-            char.chartArea,
-            "rgba(239, 76, 54, 0)",
-            "rgba(239, 76, 54, 0.1"
-          ),
-        };
-      }),
+      datasets: chartData.datasets.map((el, i) => ({
+        ...el,
+        backgroundColor: createGradient(
+          char.ctx,
+          char.chartArea,
+          gradientColors[i][0],
+          gradientColors[i][1]
+        ),
+      })),
     });
   }, [chartRef, data]);
 

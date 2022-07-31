@@ -11,7 +11,6 @@ export const StyledBoxWrapper = styled(Stack)<StyledBoxWrapperProps>(
     position: "fixed",
     background: "#17003E",
     width: view > 1381 ? "237px" : "83px",
-    left: 0,
     height: "100vh",
   })
 );
