@@ -30,6 +30,12 @@
     "consistent-return": "off",
     "react/jsx-props-no-spreading": "off",
     "react/require-default-props": "off",
-    "no-nested-ternary": "off"
+    "no-nested-ternary": "off",
+    "react/no-array-index-key": "off",
+    "no-param-reassign": [
+      "error",
+      { "props": true, "ignorePropertyModificationsFor": ["state"] }
+    ],
+    "no-shadow": "off"
   }
 }

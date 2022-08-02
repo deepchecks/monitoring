@@ -8,6 +8,7 @@ import { ReactComponent as Arow } from "./arow.svg";
 import { ReactComponent as Configuration } from "./caonfiguration.svg";
 import { ReactComponent as ConfigurationActive } from "./caonfigurationActiv.svg";
 import { ReactComponent as ConfigurationHover } from "./caonfigurationHover.svg";
+import { ReactComponent as CloseIcon } from "./close.svg";
 import { ReactComponent as Dashboard } from "./dashboard.svg";
 import { ReactComponent as DashboardActive } from "./dashboardActiv.svg";
 import { ReactComponent as DashboardHover } from "./dashboardHover.svg";
@@ -23,6 +24,7 @@ export {
   Analysis,
   AnalysisActive,
   AnalysisHover,
+  CloseIcon,
   Configuration,
   ConfigurationActive,
   ConfigurationHover,

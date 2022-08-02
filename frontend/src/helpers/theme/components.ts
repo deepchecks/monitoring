@@ -34,6 +34,7 @@ export const componentOptions: Components<Theme> = {
         minWidth: 70,
       },
       contained: ({ theme }) => ({
+        background: theme.palette.primary.main,
         ":hover": {
           background: theme.palette.primary.dark,
         },
@@ -136,6 +137,16 @@ export const componentOptions: Components<Theme> = {
               0.16
             )}`,
           },
+        },
+      }),
+    },
+  },
+  MuiSelect: {
+    styleOverrides: {
+      icon: ({ theme }) => ({
+        color: theme.palette.text.secondary,
+        "& + .MuiOutlinedInput-notchedOutline": {
+          border: `1px solid ${theme.palette.grey[200]}`,
         },
       }),
     },

@@ -1,4 +1,3 @@
-
 interface Output {
   [key: string]: string[] | any[];
 }

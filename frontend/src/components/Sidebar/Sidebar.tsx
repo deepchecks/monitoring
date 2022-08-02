@@ -18,7 +18,7 @@ export default function Sidebar() {
         <Box sx={{ mt: "54px", pl: "14px" }}>
           {sideBarInfo &&
             sideBarInfo.map((info: SidebarInfo) => (
-              <SidebarMenuItem key={info.key} info={info} width={width} />
+              <SidebarMenuItem key={info.link} info={info} width={width} />
             ))}
         </Box>
       </Box>

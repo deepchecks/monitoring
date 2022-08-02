@@ -33,11 +33,11 @@ function SidebarMenuItemComponent({ info, width }: SidebarMenuItemProps) {
     <StyledLinkWrapper
       to={link}
       active={active}
-      key={info.key}
+      key={info.link}
       onMouseLeave={onMouseLeave}
       onMouseOver={onMouseOver}
     >
-      {width > 1381 ?(
+      {width > 1381 ? (
         <>
           <StyledLeftColumn>
             {hover ? <IconHover /> : active ? <ActivIcon /> : <Icon />}
@@ -49,9 +49,11 @@ function SidebarMenuItemComponent({ info, width }: SidebarMenuItemProps) {
             </StyledArrowWrapper>
           )}
         </>
-      ):(<StyledLeftColumn>
-        {hover ? <IconHover /> : active ? <ActivIcon /> : <Icon />}
-      </StyledLeftColumn>)}
+      ) : (
+        <StyledLeftColumn>
+          {hover ? <IconHover /> : active ? <ActivIcon /> : <Icon />}
+        </StyledLeftColumn>
+      )}
     </StyledLinkWrapper>
   );
 }

@@ -17,38 +17,6 @@ function createGradient(
   gradient.addColorStop(1, colorEnd);
   return gradient;
 }
-// const data = {
-//   labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-//   datasets: [
-//     {
-//       data: [33, 53, 85, 41, 44, 65],
-//       fill: true,
-//       tension:0.2,
-//       pointBorderWidth:0,
-//       pointHoverBorderWidth:0,
-//       pointHoverRadius:0,
-//     },
-//     {
-//       data: [33, 25, 35, 51, 54, 76],
-//       fill: true,
-//       borderColor: "#742774",
-//       tension:0.2,
-//       pointBorderWidth:0,
-//       pointHoverBorderWidth:0,
-//       pointHoverRadius:0,
-//     },
-//     {
-//       label: "Third dataset",
-//       data: [100, 90, 60, 50, 60, 72],
-//       fill: true,
-//       borderColor: "#742774",
-//       tension:0.2,
-//       pointBorderWidth:0,
-//       pointHoverBorderWidth:0,
-//       pointHoverRadius:0,
-//     }
-//   ]
-// };
 
 export interface DiagramLineProps {
   data: ChartData<"line">;
@@ -60,12 +28,14 @@ export default function DiagramLine({ data }: DiagramLineProps) {
 
   useEffect(() => {
     const char = chartRef.current;
+
     if (!char) {
       return;
     }
+
     setChartData({
-      ...chartData,
-      datasets: chartData.datasets.map((el, i) => ({
+      ...data,
+      datasets: data.datasets.map((el, i) => ({
         ...el,
         backgroundColor: createGradient(
           char.ctx,
@@ -82,6 +52,7 @@ export default function DiagramLine({ data }: DiagramLineProps) {
       <Line
         data={chartData}
         ref={chartRef}
+        updateMode="active"
         options={{
           responsive: true,
           plugins: {

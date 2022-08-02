@@ -1,4 +1,4 @@
-import { Box, styled, Typography } from "@mui/material";
+import { Box, Button, styled, Typography } from "@mui/material";
 
 export const StyledBoxWrapper = styled(Box)({
   display: "flex",
@@ -31,4 +31,9 @@ export const StyledDivider = styled(Box)({
   margin: "0 20px 0 30px",
   height: "42px",
   width: "1px",
+});
+
+export const StyledButton = styled(Button)({
+  textTransform: "none",
+  padding: "8px",
 });

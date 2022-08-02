@@ -15,9 +15,9 @@ export const lightPaletteOptions: PaletteOptions = {
     white: colors.neutral.white,
   },
   primary: {
-    dark: colors.primary.violet[400],
+    dark: colors.primary.violet[500],
     light: colors.primary.violet[100],
-    main: colors.primary.violet[500],
+    main: colors.primary.violet[400],
     contrastText: colors.primary.violet[200],
   },
   secondary: {
