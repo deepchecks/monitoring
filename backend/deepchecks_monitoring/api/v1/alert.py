@@ -10,18 +10,25 @@
 """V1 API of the check."""
 import typing as t
 
-from fastapi import Response
+from fastapi import Response, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
+from sqlalchemy.sql.selectable import Select
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Check
-from deepchecks_monitoring.models.alert import Alert, AlertRule
-from deepchecks_monitoring.utils import CountResponse, DataFilter, IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.models.alert import Alert, AlertRule, AlertSeverity
+from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
 
 from .router import router
+
+
+class AlertCheckOptions(BaseModel):
+    """Alert check schema."""
+
+    end_time: str
+    grace_period: t.Optional[bool] = True
 
 
 class AlertCreationSchema(BaseModel):
@@ -29,7 +36,9 @@ class AlertCreationSchema(BaseModel):
 
     name: str
     lookback: int
+    repeat_every: int
     alert_rule: AlertRule
+    alert_severity: t.Optional[AlertSeverity]
     description: t.Optional[str]
     data_filter: t.Optional[DataFilter]
 
@@ -41,7 +50,9 @@ class AlertSchema(BaseModel):
     name: str
     check_id: int
     lookback: int
+    repeat_every: int
     alert_rule: AlertRule
+    alert_severity: t.Optional[AlertSeverity]
     description: t.Optional[str] = None
     data_filter: DataFilter = None
 
@@ -55,7 +66,9 @@ class AlertUpdateSchema(BaseModel):
     """Schema defines the parameters for creating new alert."""
 
     name: t.Optional[str]
-    lookback: t.Optional[str]
+    lookback: t.Optional[int]
+    repeat_every: t.Optional[int]
+    alert_severity: t.Optional[AlertSeverity]
     alert_rule: t.Optional[AlertRule]
     description: t.Optional[str]
     data_filter: t.Optional[DataFilter]
@@ -75,20 +88,48 @@ async def create_alert(
     return {"id": alert.id}
 
 
-@router.get("/alerts/count", response_model=CountResponse)
-@router.get("/models/{model_id}/alerts/count", response_model=CountResponse)
+@router.get("/alerts/count", response_model=t.Dict[AlertSeverity, int])
+@router.get("/models/{model_id}/alerts/count", response_model=t.Dict[AlertSeverity, int])
 async def count_alerts(
     model_id: t.Optional[int] = None,
     session: AsyncSession = AsyncSessionDep
 ):
     """Count alerts."""
-    select_alert = select(Alert)
+    select_alert: Select = select(Alert.alert_severity, func.count(Alert.alert_severity))
     if model_id:
         select_alert = select_alert.join(Alert.check).where(Check.model_id == model_id)
-    results = await session.execute(select(func.count()).select_from(select_alert))
-    total = results.scalars().one()
+    q = select_alert.group_by(Alert.alert_severity)
+    results = await session.execute(q)
+    total = results.all()
+    return dict(total)
 
-    return {"count": total}
+
+@router.get("/alerts/", response_model=t.List[AlertSchema])
+@router.get("/checks/{check_id}/alerts", response_model=t.List[AlertSchema])
+async def get_alerts(
+    check_id: int = None,
+    session: AsyncSession = AsyncSessionDep
+) -> dict:
+    """Return all the alerts for a given check.
+
+    Parameters
+    ----------
+    check_id : int
+        ID of the check.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    List[AlertSchema]
+        All the alerts for a given check.
+    """
+    select_alerts: Select = select(Alert)
+    if check_id is not None:
+        await exists_or_404(session, Check, id=check_id)
+        select_alerts = select_alerts.where(Alert.check_id == check_id)
+    results = await session.execute(select_alerts)
+    return [AlertSchema.from_orm(res) for res in results.scalars().all()]
 
 
 @router.get("/alerts/{alert_id}", response_model=AlertSchema)

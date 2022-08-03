@@ -199,10 +199,7 @@ async def get_models(
         List of models.
     """
     results = await session.execute(select(Model))
-    models = []
-    for res in results.scalars().all():
-        models.append(ModelSchema.from_orm(res))
-    return models
+    return [ModelSchema.from_orm(res) for res in results.scalars().all()]
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata])

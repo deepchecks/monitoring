@@ -13,12 +13,11 @@ from io import StringIO
 
 import pandas as pd
 import pendulum as pdl
-from fastapi import Body, Depends, Response, UploadFile
+from fastapi import Body, Depends, Response, UploadFile, status
 from jsonschema import validate
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
-from starlette import status
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, limit_request_size
 from deepchecks_monitoring.exceptions import BadRequest

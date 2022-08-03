@@ -15,8 +15,8 @@ Revises: fb9160d139d5
 Create Date: 2022-07-27 13:54:50.566870
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 import deepchecks_monitoring

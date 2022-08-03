@@ -10,10 +10,9 @@
 """V1 API of the check."""
 import typing as t
 
-from fastapi import Response
+from fastapi import Response, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Check

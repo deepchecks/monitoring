@@ -50,14 +50,25 @@ async def test_run_check(classification_model_id, classification_model_version_i
     }
     # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    assert response.status_code == 200
+    request = {
+        "name": "checky",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"scorers": ["accuracy"]},
+                   "module_name": "deepchecks.tabular.checks"
+                   },
+    }
+    # Act
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    assert response.status_code == 200
     times = []
-    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0) - pdl.duration(days=1)
+    day_before_curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0) - pdl.duration(days=1)
     for i in [1, 3, 7, 13]:
-        time = curr_time.add(hours=i)
+        time = day_before_curr_time.add(hours=i).isoformat()
         times.append(time)
         request = {
             "_dc_sample_id": str(i),
-            "_dc_time": time.isoformat(),
+            "_dc_time": time,
             "_dc_prediction_value": [0.1, 0.3, 0.6],
             "_dc_prediction_label": "2",
             "_dc_label": "2",
@@ -65,6 +76,7 @@ async def test_run_check(classification_model_id, classification_model_version_i
             "b": "ppppp",
         }
         response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
+        assert response.status_code == 201
     sample = {
         "_dc_prediction_value": [0.1, 0.3, 0.6],
         "_dc_prediction_label": "2",
@@ -74,19 +86,20 @@ async def test_run_check(classification_model_id, classification_model_version_i
     }
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
-    times_in_iso = [time.isoformat() for time in times]
+    assert response.status_code == 200
 
     # test no filter
-    response = client.post("/api/v1/checks/1/run/", json={"lookback": 86400})
+    response = client.post("/api/v1/checks/1/run/lookback", json={"lookback": 86400})
+    assert response.status_code == 200
     json_rsp = response.json()
     assert response.status_code == 200
     assert len(json_rsp["time_labels"]) == 24
     assert len(json_rsp["output"]["1"]) == 24
-    assert set(times_in_iso).issubset(set(json_rsp["time_labels"]))
+    assert set(times).issubset(set(json_rsp["time_labels"]))
     assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 4
 
     # test with filter
-    response = client.post("/api/v1/checks/1/run/",
+    response = client.post("/api/v1/checks/1/run/lookback",
                            json={"lookback": 86400, "filter": {"column": "a", "operator": "greater_than", "value": 14}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
@@ -94,8 +107,16 @@ async def test_run_check(classification_model_id, classification_model_version_i
     assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 2
 
     # test with filter no refrence because of filter
-    response = client.post("/api/v1/checks/1/run/",
+    response = client.post("/api/v1/checks/1/run/lookback",
                            json={"lookback": 86400, "filter": {"column": "a", "operator": "greater_than", "value": 17}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"1": None}
+
+    # test with filter on window
+    response = client.post("/api/v1/checks/2/run/window",
+                           json={"start_time": day_before_curr_time.add(hours=7).isoformat(),
+                                 "end_time": day_before_curr_time.add(hours=9).isoformat(),
+                                 "filter": {"column": "a", "operator": "greater_than", "value": 14}})
+    json_rsp = response.json()
+    assert json_rsp == {"1": {"accuracy": 1.0}}

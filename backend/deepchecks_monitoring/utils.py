@@ -14,10 +14,11 @@ import operator
 import typing as t
 
 import orjson
-from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from deepchecks_monitoring.exceptions import NotFound
 
 if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
@@ -41,8 +42,8 @@ class OperatorsEnum(enum.Enum):
 
     GE = "greater_than_equals"
     GT = "greater_than"
-    LE = "lower_than_equals"
-    LT = "lower_than"
+    LE = "less_than_equals"
+    LT = "less_than"
     CONTAINES = "in"
     EQ = "equals"
     NOT_EQ = "not_equals"
@@ -93,10 +94,7 @@ class ExtendedAsyncSession(AsyncSession):
         result = await self.execute(statement)
         row = result.scalars().first()
         if row is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=message
-            )
+            raise NotFound(message)
         return row
 
 
@@ -165,10 +163,7 @@ async def fetch_or_404(
     if row is None:
         model_name = getattr(model, "__name__", "Entity")
         args = "; ".join(f"{k}={v}" for k, v in kwargs.items())
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error_template.format(entity=model_name, arguments=args)
-        )
+        raise NotFound(error_template.format(entity=model_name, arguments=args))
 
     return row
 
@@ -214,10 +209,7 @@ async def exists_or_404(
     if result.scalar() is None:
         model_name = getattr(model, "__name__", "Entity")
         args = "; ".join(f"{k}={v}" for k, v in kwargs.items())
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error_template.format(entity=model_name, arguments=args)
-        )
+        raise NotFound(error_template.format(entity=model_name, arguments=args))
 
 
 async def not_exists_or_400(
@@ -261,7 +253,4 @@ async def not_exists_or_400(
     if result.scalar() is not None:
         model_name = getattr(model, "__name__", "Entity")
         args = "; ".join(f"{k}={v}" for k, v in kwargs.items())
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error_template.format(entity=model_name.capitalize(), arguments=args)
-        )
+        raise NotFound(error_template.format(entity=model_name.capitalize(), arguments=args))
