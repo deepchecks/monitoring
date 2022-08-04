@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 
-"""updated many models
+"""added event table
 
 Revision ID: 06711abb0d6e
 Revises: c06a732efcc4
@@ -39,6 +39,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.add_column('alerts', sa.Column('repeat_every', sa.Integer(), nullable=False))
+    alert_severity = postgresql.ENUM('LOW', 'MID', 'HIGH', 'CRITICAL', name='alertseverity')
+    alert_severity.create(op.get_bind())
     op.add_column('alerts', sa.Column('alert_severity', sa.Enum('LOW', 'MID', 'HIGH', 'CRITICAL', name='alertseverity'), nullable=False))
     op.add_column('alerts', sa.Column('last_run', sa.DateTime(timezone=True), nullable=True))
     # ### end Alembic commands ###
@@ -50,4 +52,5 @@ def downgrade() -> None:
     op.drop_column('alerts', 'alert_severity')
     op.drop_column('alerts', 'repeat_every')
     op.drop_table('events')
+    op.execute("DROP TYPE alertseverity")
     # ### end Alembic commands ###

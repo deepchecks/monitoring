@@ -63,7 +63,7 @@ class AlertSchema(BaseModel):
 
 
 class AlertUpdateSchema(BaseModel):
-    """Schema defines the parameters for creating new alert."""
+    """Schema defines the parameters for updating alert."""
 
     name: t.Optional[str]
     lookback: t.Optional[int]

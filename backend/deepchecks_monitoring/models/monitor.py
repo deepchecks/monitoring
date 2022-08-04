@@ -31,7 +31,8 @@ class Monitor(Base):
         Column("id", Integer, primary_key=True),
         Column("name", String(50)),
         Column("description", String(200), default=""),
-        Column("check_id", Integer, ForeignKey("checks.id")),
+        Column("check_id", Integer, ForeignKey("checks.id"), nullable=False),
+        Column("dashboard_id", Integer, ForeignKey("dashboards.id", ondelete="SET NULL"), nullable=True),
         Column("data_filter", PydanticType(pydantic_model=DataFilter), nullable=True),
         Column("lookback", Integer),
     )
@@ -39,6 +40,7 @@ class Monitor(Base):
     name: str
     check_id: int
     lookback: int
+    dashboard_id:  Optional[int]
     description: Optional[str] = None
     data_filter: DataFilter = None
     id: int = None
@@ -46,5 +48,6 @@ class Monitor(Base):
     __mapper_args__ = {  # type: ignore
         "properties": {
             "check": relationship("Check"),
+            "dashboard": relationship("Dashboard"),
         }
     }

@@ -37,6 +37,7 @@ class MonitorSchema(BaseModel):
     id: int
     name: str
     check_id: int
+    dashboard_id: t.Optional[int]
     lookback: int
     description: t.Optional[str] = None
     data_filter: DataFilter = None
@@ -53,6 +54,7 @@ class MonitorUpdateSchema(BaseModel):
     name: t.Optional[str]
     lookback: t.Optional[str]
     description: t.Optional[str]
+    dashboard_id: t.Optional[int]
     data_filter: t.Optional[DataFilter]
 
 
