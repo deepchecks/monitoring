@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
-from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
 __all__ = ["create_application"]
@@ -105,6 +105,7 @@ def create_application(
         openapi_url=openapi_url,
         root_path=root_path,
         dependencies=additional_dependencies,
+        openapi_tags=tags_metadata
     )
 
     app.state.settings = settings

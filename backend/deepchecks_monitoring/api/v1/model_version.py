@@ -24,6 +24,7 @@ from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ColumnType, ModelVersion
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -41,7 +42,7 @@ class ModelVersionCreationSchema(BaseModel):
         orm_mode = True
 
 
-@router.post('/models/{model_id}/version', response_model=IdResponse)
+@router.post('/models/{model_id}/version', response_model=IdResponse, tags=[Tags.MODELS])
 async def create_version(
     model_id: int,
     info: ModelVersionCreationSchema,
@@ -124,7 +125,7 @@ async def create_version(
     return {'id': model_version.id}
 
 
-@router.get('/model-versions/{model_version_id}/schema')
+@router.get('/model-versions/{model_version_id}/schema', tags=[Tags.MODELS])
 async def get_schema(
     model_version_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -144,7 +145,7 @@ async def get_schema(
     return model_version.monitor_json_schema
 
 
-@router.get('/model-versions/{model_version_id}/reference-schema')
+@router.get('/model-versions/{model_version_id}/reference-schema', tags=[Tags.MODELS])
 async def get_reference_schema(
     model_version_id: int,
     session: AsyncSession = AsyncSessionDep

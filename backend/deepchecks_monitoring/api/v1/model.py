@@ -25,6 +25,7 @@ from deepchecks_monitoring.models.model_version import ColumnMetadata, ColumnTyp
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.utils import IdResponse, TimeUnit, exists_or_404, fetch_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -62,11 +63,12 @@ class ModelDailyIngestion(TypedDict):
     day: int
 
 
-@router.post("/models", response_model=IdResponse)
+@router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model.",
+             description="Create a new model with its name, task type, and description. Returns the ID of the model.")
 async def create_model(
     model: ModelCreationSchema,
     session: AsyncSession = AsyncSessionDep
-):
+) -> ModelSchema:
     """Create a new model.
 
     Parameters
@@ -87,8 +89,8 @@ async def create_model(
     return {"id": model.id}
 
 
-@router.get("/models/data-ingestion", response_model=t.Dict[int, t.List[ModelDailyIngestion]])
-@router.get("/models/{model_id}/data-ingestion", response_model=t.List[ModelDailyIngestion])
+@router.get("/models/data-ingestion", response_model=t.Dict[int, t.List[ModelDailyIngestion]], tags=[Tags.MODELS])
+@router.get("/models/{model_id}/data-ingestion", response_model=t.List[ModelDailyIngestion], tags=[Tags.MODELS])
 async def retrieve_models_data_ingestion(
     model_id: t.Optional[int] = None,
     time_filter: int = TimeUnit.HOUR * 24,
@@ -159,7 +161,7 @@ async def retrieve_models_data_ingestion(
     return result[model_id] if model_id is not None else result
 
 
-@router.get("/models/{model_id}", response_model=ModelSchema)
+@router.get("/models/{model_id}", response_model=ModelSchema, tags=[Tags.MODELS])
 async def get_model(
     model_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -182,7 +184,7 @@ async def get_model(
     return ModelSchema.from_orm(model)
 
 
-@router.get("/models/", response_model=t.List[ModelSchema])
+@router.get("/models/", response_model=t.List[ModelSchema], tags=[Tags.MODELS])
 async def get_models(
     session: AsyncSession = AsyncSessionDep
 ) -> ModelSchema:
@@ -202,7 +204,7 @@ async def get_models(
     return [ModelSchema.from_orm(res) for res in results.scalars().all()]
 
 
-@router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata])
+@router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
 async def get_model_columns(
     model_id: int,
     session: AsyncSession = AsyncSessionDep

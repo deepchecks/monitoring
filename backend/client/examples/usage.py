@@ -15,20 +15,21 @@ from deepchecks_client import DeepchecksClient
 
 dc_client = DeepchecksClient(host='http://127.0.0.1:5000')
 
-# model_client = dc_client.create_model('my model', 'classification', 'description')
+# model_client = dc_client.create_model('itays model', 'classification', 'description')
 # OR if model already exists
-model_client = dc_client.model_client(model_id=1)
+model_client = dc_client.model_client(model_id=6)
 #
-# version_client = model_client.create_version('v1', features={'a': 'numeric'}, non_features={'b': 'categorical'},
-#                                              feature_importance={'a': 0.9})
-# # OR if version already exists
-version_client = model_client.version_client(model_version_id=1)
-#
-version_client.log_sample(sample_id='x1', timestamp=178947983, prediction_value=[0.2, 0.8], prediction_label='1',
-                          a=333)
-version_client.update_sample(sample_id='x1', label='0', b='cat1')
-#
-ref = pd.DataFrame(data={'a': [1, 2, 3], 'label': ['0', '0', '0']})
-ref_dataset = Dataset(ref, label='label')
-# Still not sure how to get prediction/label, whether inside the dataframe or as prediction=ndarray
-version_client.upload_reference(ref_dataset)
+version_client = model_client.create_version('v1', features={'a': 'numeric'}, non_features={'b': 'categorical'},
+                                             feature_importance={'a': 0.9})
+# # # OR if version already exists
+# # version_client = model_client.version_client(model_version_id=1)
+# #
+# version_client.log_sample(sample_id='x1', timestamp=178947983, prediction_value=[0.2, 0.8], prediction_label='1',
+#                           a=333)
+# version_client.update_sample(sample_id='x1', label='0', b='cat1')
+# #
+# ref = pd.DataFrame(data={'a': [1, 2, 3], 'label': ['0', '0', '0']})
+# ref_dataset = Dataset(ref, label='label')
+# # Still not sure how to get prediction/label, whether inside the dataframe or as prediction=ndarray
+# version_client.upload_reference(ref_dataset)
+

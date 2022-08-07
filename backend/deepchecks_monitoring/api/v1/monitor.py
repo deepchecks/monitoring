@@ -19,6 +19,7 @@ from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -58,7 +59,10 @@ class MonitorUpdateSchema(BaseModel):
     data_filter: t.Optional[DataFilter]
 
 
-@router.post("/checks/{check_id}/monitors", response_model=IdResponse)
+@router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],
+             summary="Create a new monitor.",
+             description="Create a new monitor based on a check. This endpoint requires the "
+                         "name, lookback, data_filter and description of the monitor.",)
 async def create_monitor(
     check_id: int,
     body: MonitorCreationSchema,
@@ -72,7 +76,7 @@ async def create_monitor(
     return {"id": monitor.id}
 
 
-@router.get("/monitors/{monitor_id}", response_model=MonitorSchema)
+@router.get("/monitors/{monitor_id}", response_model=MonitorSchema, tags=[Tags.MONITORS])
 async def get_monitor(
     monitor_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -82,7 +86,7 @@ async def get_monitor(
     return MonitorSchema.from_orm(monitor)
 
 
-@router.put("/monitors/{monitor_id}")
+@router.put("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def update_monitor(
     monitor_id: int,
     body: MonitorUpdateSchema,
@@ -94,7 +98,7 @@ async def update_monitor(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.delete("/monitors/{monitor_id}")
+@router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
     monitor_id: int,
     session: AsyncSession = AsyncSessionDep

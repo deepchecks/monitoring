@@ -24,6 +24,7 @@ from deepchecks_monitoring.models.dashboard import Dashboard
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.utils import exists_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -46,7 +47,7 @@ class DashboardUpdateSchema(BaseModel):
     name: str
 
 
-@router.get("/dashboards/", response_model=DashboardSchema)
+@router.get("/dashboards/", response_model=DashboardSchema, tags=[Tags.MONITORS])
 async def get_dashboard(
     session: AsyncSession = AsyncSessionDep
 ):
@@ -71,7 +72,7 @@ async def get_dashboard(
     return DashboardSchema(id=dashboard.id, name=dashboard.name, monitors=monitors_schem)
 
 
-@router.put("/dashboards/{dashboard_id}")
+@router.put("/dashboards/{dashboard_id}", tags=[Tags.MONITORS])
 async def update_dashboard(
     dashboard_id: int,
     body: DashboardUpdateSchema,
@@ -83,7 +84,7 @@ async def update_dashboard(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.delete("/dashboards/{dashboard_id}")
+@router.delete("/dashboards/{dashboard_id}", tags=[Tags.MONITORS])
 async def delete_dashboard(
     dashboard_id: int,
     session: AsyncSession = AsyncSessionDep

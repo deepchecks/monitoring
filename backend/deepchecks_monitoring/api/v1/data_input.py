@@ -19,6 +19,7 @@ from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
 
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, limit_request_size
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
@@ -28,7 +29,10 @@ from deepchecks_monitoring.utils import fetch_or_404
 from .router import router
 
 
-@router.post("/model-versions/{model_version_id}/data")
+@router.post("/model-versions/{model_version_id}/data", tags=[Tags.DATA],
+             summary="Log inference data per model version.",
+             description="This API logs asynchronously a new sample of the inference data of an existing model version,"
+                         "it requires the actual data and validates it matches the version schema.",)
 async def log_data(
     model_version_id: int,
     data: t.Dict[t.Any, t.Any] = Body(...),
@@ -52,7 +56,7 @@ async def log_data(
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@router.put("/model-versions/{model_version_id}/data")
+@router.put("/model-versions/{model_version_id}/data", tags=[Tags.DATA])
 async def update_data(
     model_version_id: int,
     data: t.Dict[t.Any, t.Any] = Body(...),
@@ -92,7 +96,11 @@ async def update_data(
 
 @router.post(
     "/model-versions/{model_version_id}/reference",
-    dependencies=[Depends(limit_request_size(500_000_000))]
+    dependencies=[Depends(limit_request_size(500_000_000))],
+    tags=[Tags.DATA],
+    summary="Upload reference data for a given model version.",
+    description="This API uploads asynchronously a reference data file for a given model version,"
+                "it requires the actual data and validates it matches the version schema.",
 )
 async def save_reference(
     model_version_id: int,

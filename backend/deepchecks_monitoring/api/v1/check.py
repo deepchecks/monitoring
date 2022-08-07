@@ -29,6 +29,7 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
 from deepchecks_monitoring.models import Check, Model
 from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -72,7 +73,7 @@ class CheckResultSchema(BaseModel):
     time_labels: t.List[str]
 
 
-@router.post('/models/{model_id}/checks', response_model=IdResponse)
+@router.post('/models/{model_id}/checks', response_model=IdResponse, tags=[Tags.CHECKS])
 async def create_check(
     model_id: int,
     check: CheckCreationSchema,
@@ -101,7 +102,7 @@ async def create_check(
     return {'id': check.id}
 
 
-@router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema])
+@router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema], tags=[Tags.CHECKS])
 async def get_checks(
     model_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -127,7 +128,7 @@ async def get_checks(
     return [CheckSchema.from_orm(res) for res in results.scalars().all()]
 
 
-@router.post('/checks/{check_id}/run/lookback', response_model=CheckResultSchema)
+@router.post('/checks/{check_id}/run/lookback', response_model=CheckResultSchema, tags=[Tags.CHECKS])
 async def run_check_lookback(
     check_id: int,
     monitor_options: MonitorOptions,
@@ -223,7 +224,7 @@ async def run_check_lookback(
     return {'output': model_reduces, 'time_labels': time_windows}
 
 
-@router.post('/checks/{check_id}/run/window')
+@router.post('/checks/{check_id}/run/window', tags=[Tags.CHECKS])
 async def get_check_window(
     check_id: int,
     window_options: FilterWindowOptions,

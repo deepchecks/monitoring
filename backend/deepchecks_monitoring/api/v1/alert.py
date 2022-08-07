@@ -21,6 +21,7 @@ from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.alert import Alert, AlertRule, AlertSeverity
 from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -74,7 +75,11 @@ class AlertUpdateSchema(BaseModel):
     data_filter: t.Optional[DataFilter]
 
 
-@router.post("/checks/{check_id}/alerts", response_model=IdResponse)
+@router.post("/checks/{check_id}/alerts", response_model=IdResponse, tags=[Tags.ALERTS],
+             summary="Create new alert on a given check.",
+             description="For creating a new alert, this endpoint requires the following parameters: "
+                         "name, lookback, repeat_every, alert_rule, alert_severity, description, data_filter. "
+                         "Returns the id of the created alert.")
 async def create_alert(
     check_id: int,
     body: AlertCreationSchema,
@@ -88,8 +93,8 @@ async def create_alert(
     return {"id": alert.id}
 
 
-@router.get("/alerts/count", response_model=t.Dict[AlertSeverity, int])
-@router.get("/models/{model_id}/alerts/count", response_model=t.Dict[AlertSeverity, int])
+@router.get("/alerts/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
+@router.get("/models/{model_id}/alerts/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
 async def count_alerts(
     model_id: t.Optional[int] = None,
     session: AsyncSession = AsyncSessionDep
@@ -104,8 +109,8 @@ async def count_alerts(
     return dict(total)
 
 
-@router.get("/alerts/", response_model=t.List[AlertSchema])
-@router.get("/checks/{check_id}/alerts", response_model=t.List[AlertSchema])
+@router.get("/alerts/", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
+@router.get("/checks/{check_id}/alerts", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
 async def get_alerts(
     check_id: int = None,
     session: AsyncSession = AsyncSessionDep
@@ -132,7 +137,7 @@ async def get_alerts(
     return [AlertSchema.from_orm(res) for res in results.scalars().all()]
 
 
-@router.get("/alerts/{alert_id}", response_model=AlertSchema)
+@router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
     alert_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -142,7 +147,11 @@ async def get_alert(
     return AlertSchema.from_orm(alert)
 
 
-@router.put("/alerts/{alert_id}")
+@router.put("/alerts/{alert_id}", tags=[Tags.ALERTS],
+            summary="Update alert by id.",
+            description="For updating an alert, this endpoint requires the following parameters: "
+                        "name, lookback, repeat_every, alert_rule, alert_severity, description, data_filter. "
+                        "Returns 200 if the alert was updated successfully.")
 async def update_alert(
     alert_id: int,
     body: AlertUpdateSchema,
@@ -154,7 +163,7 @@ async def update_alert(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.delete("/alerts/{alert_id}")
+@router.delete("/alerts/{alert_id}", tags=[Tags.ALERTS])
 async def delete_alert(
     alert_id: int,
     session: AsyncSession = AsyncSessionDep

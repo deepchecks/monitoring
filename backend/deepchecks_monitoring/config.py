@@ -11,10 +11,11 @@
 """Module defining the configuration for the deepchecks_monitoring package."""
 import logging
 import pathlib
+from enum import Enum
 
 from pydantic import BaseSettings, PostgresDsn
 
-__all__ = ['Settings']
+__all__ = ['Settings', 'tags_metadata', 'Tags']
 
 
 logger = logging.getLogger(__name__)
@@ -38,3 +39,39 @@ class Settings(BaseSettings):
 
         env_file = '.env'
         env_file_encoding = 'utf-8'
+
+
+class Tags(Enum):
+    """Tags for the deepchecks_monitoring package."""
+
+    MODELS = 'Models'
+    CHECKS = 'Checks'
+    MONITORS = 'Monitors'
+    ALERTS = 'Alerts'
+    DATA = 'Data'
+
+
+tags_metadata = [
+    {
+        'name': Tags.MODELS.value,
+        'description': 'APIs for interacting with model entities.'
+    },
+    {
+        'name': Tags.CHECKS.value,
+        'description': 'APIs for interacting with check entities. Includes adding/updating checks, '
+                       'and retrieving check results.',
+    },
+    {
+        'name': Tags.MONITORS.value,
+        'description': 'APIs for interacting with monitor entities. Includes adding/updating monitors within a '
+                       'dashboard, getting dasbboard data, and retrieving monitor results.',
+    },
+    {
+        'name': Tags.ALERTS.value,
+        'description': 'APIs for interacting with alert entities. Including alerts calculation.'
+    },
+    {
+        'name': Tags.DATA.value,
+        'description': 'APIs for sending data to the deepchecks_monitoring service.'
+    }
+]

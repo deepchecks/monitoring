@@ -21,6 +21,7 @@ from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.event import Event
 from deepchecks_monitoring.utils import CountResponse, exists_or_404, fetch_or_404
 
+from ...config import Tags
 from .router import router
 
 
@@ -39,8 +40,8 @@ class EventSchema(BaseModel):
         orm_mode = True
 
 
-@router.get("/events/count", response_model=CountResponse)
-@router.get("/alerts/{alert_id}/events/count", response_model=CountResponse)
+@router.get("/events/count", response_model=CountResponse, tags=[Tags.ALERTS])
+@router.get("/alerts/{alert_id}/events/count", response_model=CountResponse, tags=[Tags.ALERTS])
 async def count_events(
     alert_id: t.Optional[int] = None,
     session: AsyncSession = AsyncSessionDep
@@ -55,7 +56,7 @@ async def count_events(
     return {"count": total}
 
 
-@router.get("/events/{event_id}", response_model=EventSchema)
+@router.get("/events/{event_id}", response_model=EventSchema, tags=[Tags.ALERTS])
 async def get_event(
     event_id: int,
     session: AsyncSession = AsyncSessionDep
@@ -65,7 +66,7 @@ async def get_event(
     return EventSchema.from_orm(event)
 
 
-@router.delete("/events/{event_id}")
+@router.delete("/events/{event_id}", tags=[Tags.ALERTS])
 async def delete_event(
     event_id: int,
     session: AsyncSession = AsyncSessionDep
