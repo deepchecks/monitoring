@@ -83,12 +83,16 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
     monitor_id = add_monitor(classification_model_check_id, client)
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}")
-    assert response.json() == {"id": 1, "name": "monitory", "check_id": 1, "dashboard_id": None, "lookback": 86400 * 7,
+    assert response.json() == {"id": 1, "name": "monitory", "dashboard_id": None, "lookback": 86400 * 7,
                                "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
+                               "check": {"config": {"class_name": "PerformanceReport",
+                                                    "module_name": "deepchecks.tabular.checks",
+                                                    "params": {"reduce": "mean"}},
+                                         "id": 1, "model_id": 1, "name": "check"},
                                "description": ""}
 
 
-@pytest.mark.asyncio
+@ pytest.mark.asyncio
 async def test_remove_monitor(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
@@ -97,7 +101,7 @@ async def test_remove_monitor(classification_model_check_id, client: TestClient)
     assert response.status_code == 200
 
 
-@pytest.mark.asyncio
+@ pytest.mark.asyncio
 async def test_update_monitor(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)

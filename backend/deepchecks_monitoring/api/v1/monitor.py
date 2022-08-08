@@ -14,12 +14,13 @@ from fastapi import Response, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.api.v1.check import CheckSchema
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
 
-from ...config import Tags
 from .router import router
 
 
@@ -37,7 +38,7 @@ class MonitorSchema(BaseModel):
 
     id: int
     name: str
-    check_id: int
+    check: CheckSchema
     dashboard_id: t.Optional[int]
     lookback: int
     description: t.Optional[str] = None
@@ -83,6 +84,7 @@ async def get_monitor(
 ):
     """Get monitor by id."""
     monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+    monitor.check = await fetch_or_404(session, Check, id=monitor.check_id)
     return MonitorSchema.from_orm(monitor)
 
 
