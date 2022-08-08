@@ -9,6 +9,8 @@
 # ----------------------------------------------------------------------------
 
 """Module defining base functionality for the models."""
+import typing as t
+
 from sqlalchemy import and_, delete, literal, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base
@@ -24,7 +26,7 @@ class BaseClass:
         return and_(*[getattr(cls, k) == v for k, v in kwargs.items()])
 
     @classmethod
-    async def update(cls, session: AsyncSession, model_id: int, values_to_update):
+    async def update(cls, session: AsyncSession, model_id: int, values_to_update: t.Dict):
         result = await session.execute(update(cls).where(cls.where(id=model_id)).values(values_to_update))
         return result
 

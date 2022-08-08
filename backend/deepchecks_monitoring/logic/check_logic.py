@@ -22,14 +22,14 @@ from deepchecks_monitoring.api.v1.alert import AlertCheckOptions
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import NotFound
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
-                                                     filter_monitor_table_by_window_and_data_filter,
-                                                     filter_table_selection_by_data_filter,
+                                                     filter_monitor_table_by_window_and_data_filters,
+                                                     filter_table_selection_by_data_filters,
                                                      get_model_versions_and_task_type_per_time_window,
                                                      get_results_for_active_model_version_sessions_per_window)
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.check import Check
 from deepchecks_monitoring.models.event import Event
-from deepchecks_monitoring.utils import DataFilter, fetch_or_404, make_oparator_func
+from deepchecks_monitoring.utils import DataFilterList, fetch_or_404, make_oparator_func
 
 
 class FilterWindowOptions(BaseModel):
@@ -37,7 +37,7 @@ class FilterWindowOptions(BaseModel):
 
     start_time: str
     end_time: str
-    filter: t.Optional[DataFilter] = None
+    filter: t.Optional[DataFilterList] = None
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
@@ -112,7 +112,7 @@ async def run_check_alert(
         # run check for the relevant window and data filter
         check_alert_check_options = FilterWindowOptions(start_time=start_time.isoformat(),
                                                         end_time=end_time.isoformat(),
-                                                        data_filter=alert.data_filter,
+                                                        data_filter=alert.data_filters,
                                                         model_version_ids=relevant_model_versions)
         check_results = await run_check_window(check.id, check_alert_check_options, session)
 
@@ -188,7 +188,7 @@ async def run_check_window(
             refrence_table = model_version.get_reference_table(session)
             refrence_table_data_session = create_model_version_select_object(task_type, refrence_table, top_feat)
             if window_options.filter:
-                refrence_table_data_session = filter_table_selection_by_data_filter(
+                refrence_table_data_session = filter_table_selection_by_data_filters(
                     refrence_table_data_session, window_options.filter)
             refrence_table_data_session = session.execute(refrence_table_data_session)
         else:
@@ -199,12 +199,12 @@ async def run_check_window(
 
         select_obj = create_model_version_select_object(task_type, test_table, top_feat)
         # create the session
-        filtered_select_obj = filter_monitor_table_by_window_and_data_filter(model_version=model_version,
-                                                                             table_selection=select_obj,
-                                                                             mon_table=test_table,
-                                                                             data_filter=window_options.filter,
-                                                                             start_time=start_time,
-                                                                             end_time=end_time)
+        filtered_select_obj = filter_monitor_table_by_window_and_data_filters(model_version=model_version,
+                                                                              table_selection=select_obj,
+                                                                              mon_table=test_table,
+                                                                              data_filters=window_options.filter,
+                                                                              start_time=start_time,
+                                                                              end_time=end_time)
         if filtered_select_obj is not None:
             test_data_session.append(session.execute(filtered_select_obj))
         else:

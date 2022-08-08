@@ -16,7 +16,7 @@ from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
-from deepchecks_monitoring.utils import DataFilter
+from deepchecks_monitoring.utils import DataFilterList
 
 __all__ = ["Monitor"]
 
@@ -33,7 +33,7 @@ class Monitor(Base):
         Column("description", String(200), default=""),
         Column("check_id", Integer, ForeignKey("checks.id"), nullable=False),
         Column("dashboard_id", Integer, ForeignKey("dashboards.id", ondelete="SET NULL"), nullable=True),
-        Column("data_filter", PydanticType(pydantic_model=DataFilter), nullable=True),
+        Column("data_filters", PydanticType(pydantic_model=DataFilterList), nullable=True),
         Column("lookback", Integer),
     )
 
@@ -42,7 +42,7 @@ class Monitor(Base):
     lookback: int
     dashboard_id:  Optional[int]
     description: Optional[str] = None
-    data_filter: DataFilter = None
+    data_filters: DataFilterList = None
     id: int = None
 
     __mapper_args__ = {  # type: ignore

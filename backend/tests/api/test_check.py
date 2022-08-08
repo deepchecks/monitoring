@@ -100,7 +100,9 @@ async def test_run_check(classification_model_id, classification_model_version_i
 
     # test with filter
     response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"lookback": 86400, "filter": {"column": "a", "operator": "greater_than", "value": 14}})
+                           json={"lookback": 86400,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14},
+                                            {"column": "b", "operator": "equals", "value": "ppppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert len(json_rsp["output"]["1"]) == 24
@@ -108,7 +110,16 @@ async def test_run_check(classification_model_id, classification_model_version_i
 
     # test with filter no refrence because of filter
     response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"lookback": 86400, "filter": {"column": "a", "operator": "greater_than", "value": 17}})
+                           json={"lookback": 86400,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
+    json_rsp = response.json()
+    assert len(json_rsp["time_labels"]) == 24
+    assert json_rsp["output"] == {"1": None}
+    # test with filter no refrence because of filter 2
+    response = client.post("/api/v1/checks/1/run/lookback",
+                           json={"lookback": 86400,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
+                                            {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"1": None}
@@ -117,6 +128,6 @@ async def test_run_check(classification_model_id, classification_model_version_i
     response = client.post("/api/v1/checks/2/run/window",
                            json={"start_time": day_before_curr_time.add(hours=7).isoformat(),
                                  "end_time": day_before_curr_time.add(hours=9).isoformat(),
-                                 "filter": {"column": "a", "operator": "greater_than", "value": 14}})
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14}]}})
     json_rsp = response.json()
     assert json_rsp == {"1": {"accuracy": 1.0}}

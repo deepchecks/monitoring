@@ -15,11 +15,11 @@ def add_monitor(classification_model_check_id, client: TestClient) -> int:
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
-        "data_filter": {
+        "data_filters": {"filters": [{
             "column": "c",
             "operator": "greater_than",
             "value": 10
-        }
+        }]}
     }
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
     return response.json()["id"]
@@ -64,11 +64,11 @@ async def test_add_monitor_with_data_filter(classification_model_check_id, clien
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
-        "data_filter": {
+        "data_filters": {"filters": [{
             "operator": "in",
             "value": ["a", "ff"],
             "column": "meta_col"
-        }
+        }]}
     }
     # Act
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
@@ -84,7 +84,7 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}")
     assert response.json() == {"id": 1, "name": "monitory", "check_id": 1, "dashboard_id": None, "lookback": 86400 * 7,
-                               "data_filter": {"column": "c", "operator": "greater_than", "value": 10},
+                               "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
                                "description": ""}
 
 
@@ -102,11 +102,11 @@ async def test_update_monitor(classification_model_check_id, client: TestClient)
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
     request = {
-        "data_filter": {
+        "data_filters": {"filters": [{
             "operator": "in",
             "value": ["a", "ff"],
             "column": "meta_col"
-        }
+        }]}
     }
     # Act
     response = client.put(f"/api/v1/monitors/{monitor_id}", json=request)

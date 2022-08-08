@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
 
 from ...config import Tags
 from .router import router
@@ -29,7 +29,7 @@ class MonitorCreationSchema(BaseModel):
     name: str
     lookback: int
     description: t.Optional[str]
-    data_filter: t.Optional[DataFilter]
+    data_filters: t.Optional[DataFilterList]
 
 
 class MonitorSchema(BaseModel):
@@ -41,7 +41,7 @@ class MonitorSchema(BaseModel):
     dashboard_id: t.Optional[int]
     lookback: int
     description: t.Optional[str] = None
-    data_filter: DataFilter = None
+    data_filters: DataFilterList = None
 
     class Config:
         """Config for Monitor schema."""
@@ -55,8 +55,8 @@ class MonitorUpdateSchema(BaseModel):
     name: t.Optional[str]
     lookback: t.Optional[str]
     description: t.Optional[str]
+    data_filters: t.Optional[DataFilterList]
     dashboard_id: t.Optional[int]
-    data_filter: t.Optional[DataFilter]
 
 
 @router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],

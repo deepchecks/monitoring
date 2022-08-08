@@ -22,12 +22,12 @@ from sqlalchemy.sql.selectable import Select
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.check_logic import FilterWindowOptions, run_check_window
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
-                                                     filter_monitor_table_by_window_and_data_filter,
-                                                     filter_table_selection_by_data_filter,
+                                                     filter_monitor_table_by_window_and_data_filters,
+                                                     filter_table_selection_by_data_filters,
                                                      get_model_versions_and_task_type_per_time_window,
                                                      get_results_for_active_model_version_sessions_per_window)
 from deepchecks_monitoring.models import Check, Model
-from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
 
 from ...config import Tags
 from .router import router
@@ -63,7 +63,7 @@ class MonitorOptions(BaseModel):
     """Monitor run schema."""
 
     lookback: int
-    filter: t.Optional[DataFilter] = None
+    filter: t.Optional[DataFilterList] = None
 
 
 class CheckResultSchema(BaseModel):
@@ -183,7 +183,7 @@ async def run_check_lookback(
             refrence_table = model_version.get_reference_table(session)
             refrence_table_data_session = create_model_version_select_object(task_type, refrence_table, top_feat)
             if monitor_options.filter:
-                refrence_table_data_session = filter_table_selection_by_data_filter(
+                refrence_table_data_session = filter_table_selection_by_data_filters(
                     refrence_table_data_session, monitor_options.filter)
             refrence_table_data_session = session.execute(refrence_table_data_session)
         else:
@@ -196,12 +196,12 @@ async def run_check_lookback(
         start_time = curr_time - lookback_duration
         # create the session per time window
         while start_time < curr_time:
-            filtered_select_obj = filter_monitor_table_by_window_and_data_filter(model_version=model_version,
-                                                                                 table_selection=select_obj,
-                                                                                 mon_table=test_table,
-                                                                                 data_filter=monitor_options.filter,
-                                                                                 start_time=start_time,
-                                                                                 end_time=start_time + window)
+            filtered_select_obj = filter_monitor_table_by_window_and_data_filters(model_version=model_version,
+                                                                                  table_selection=select_obj,
+                                                                                  mon_table=test_table,
+                                                                                  data_filters=monitor_options.filter,
+                                                                                  start_time=start_time,
+                                                                                  end_time=start_time + window)
             if filtered_select_obj is not None:
                 test_data_sessions.append(session.execute(filtered_select_obj))
             else:

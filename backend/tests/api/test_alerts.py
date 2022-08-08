@@ -79,11 +79,11 @@ async def test_add_alert_with_data_filter(classification_model_check_id, client:
             "value": 100,
             "feature": "some_feature"
         },
-        "data_filter": {
+        "data_filters": {"filters": [{
             "operator": "in",
             "value": ["a", "ff"],
             "column": "meta_col"
-        }
+        }]}
     }
     # Act
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/alerts", json=request)
@@ -100,7 +100,7 @@ async def test_get_alert(classification_model_check_id, client: TestClient):
     response = client.get(f"/api/v1/alerts/{alert_id}")
     assert response.json() == {"id": 1, "name": "alerty", "check_id": 1, "lookback": 86400, "repeat_every": 86400,
                                "alert_rule": {"feature": None, "operator": "greater_than", "value": 100.0},
-                               "description": "", "data_filter": None, "alert_severity": "low"}
+                               "description": "", "data_filters": None, "alert_severity": "low"}
 
 
 @pytest.mark.asyncio
@@ -117,11 +117,11 @@ async def test_update_alert(classification_model_check_id, client: TestClient):
     # Arrange
     alert_id = add_alert(classification_model_check_id, client)
     request = {
-        "data_filter": {
+        "data_filters": {"filters": [{
             "operator": "in",
             "value": ["a", "ff"],
             "column": "meta_col"
-        }
+        }]}
     }
     # Act
     response = client.put(f"/api/v1/alerts/{alert_id}", json=request)

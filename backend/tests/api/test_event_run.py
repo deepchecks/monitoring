@@ -55,11 +55,11 @@ async def test_run_event(classification_model_id, classification_model_version_i
             "value": 0.7,
             "feature": "accuracy"
         },
-        "data_filter": {
+        "data_filters": {"filters": [{
             "operator": "equals",
             "value": "ppppp",
             "column": "b"
-        }
+        }]}
     }
     response = client.post(f"/api/v1/checks/{1}/alerts", json=request)
     assert response.status_code == 200
@@ -74,18 +74,17 @@ async def test_run_event(classification_model_id, classification_model_version_i
 
     # test re-run bad hour value
     ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=5).isoformat()),
-                                                      async_session)
+                                 async_session)
     assert ress == {}
 
     # test re-run good hour value
     ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
-                                                      async_session)
+                                 async_session)
     assert ress == {1: {"event_id": 2, "failed_values": {"1": ["accuracy"]}}}
 
     # test alert update re-run
     await Event.update(async_session, 2,  {"failed_values": {"2": ["accuracy"]}})
 
     ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
-                                                      async_session)
+                                 async_session)
     assert ress == {1: {"event_id": 2, "failed_values": {"1": ["accuracy"], "2": ["accuracy"]}}}
-

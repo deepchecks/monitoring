@@ -20,7 +20,7 @@ from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
-from deepchecks_monitoring.utils import DataFilter, OperatorsEnum
+from deepchecks_monitoring.utils import DataFilterList, OperatorsEnum
 
 if TYPE_CHECKING:
     from deepchecks_monitoring.models.event import Event
@@ -56,7 +56,7 @@ class Alert(Base):
         Column("name", String(50)),
         Column("description", String(200), default=""),
         Column("check_id", Integer, ForeignKey("checks.id")),
-        Column("data_filter", PydanticType(pydantic_model=DataFilter), nullable=True),
+        Column("data_filters", PydanticType(pydantic_model=DataFilterList), nullable=True),
         Column("alert_rule", PydanticType(pydantic_model=AlertRule)),
         Column("lookback", Integer),
         Column("repeat_every", Integer, nullable=False),
@@ -76,7 +76,7 @@ class Alert(Base):
     alert_severity: AlertSeverity
     events: t.List["Event"] = field(default_factory=list)
     description: t.Optional[str] = None
-    data_filter: DataFilter = None
+    data_filters: DataFilterList = None
     last_run: pdl.DateTime = None
     id: int = None
 

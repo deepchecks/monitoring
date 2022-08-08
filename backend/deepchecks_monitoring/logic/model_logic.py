@@ -24,7 +24,7 @@ from sqlalchemy.sql.selectable import Select
 from deepchecks_monitoring.logic.data_tables import (SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL, SAMPLE_PRED_VALUE_COL,
                                                      SAMPLE_TS_COL, get_columns_for_task_type)
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
-from deepchecks_monitoring.utils import DataFilter, make_oparator_func
+from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
 
 async def get_model_versions_and_task_type_per_time_window(session: AsyncSession,
@@ -54,8 +54,9 @@ def create_model_version_select_object(task_type: TaskType, mon_table: Table, to
 def filter_select_object_by_window(select_obj: Select, mon_table: Table,
                                    start_time: pdl.DateTime, end_time: pdl.DateTime, n_samples: int = 10_000) -> Select:
     """Filter select object by window."""
-    return select_obj.where(getattr(mon_table.c, SAMPLE_TS_COL) < end_time,
-                            getattr(mon_table.c, SAMPLE_TS_COL) >= start_time) \
+    filtered_select_obj = select_obj
+    return filtered_select_obj.where(getattr(mon_table.c, SAMPLE_TS_COL) < end_time,
+                                     getattr(mon_table.c, SAMPLE_TS_COL) >= start_time) \
         .order_by(func.random()).limit(n_samples)
 
 
@@ -80,11 +81,13 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
     return dataset, y_pred, y_proba
 
 
-def filter_table_selection_by_data_filter(table_selection: Select, data_filter: DataFilter):
+def filter_table_selection_by_data_filters(table_selection: Select, data_filters: DataFilterList):
     """Filter table selection by data filter."""
-    table_selection = table_selection.where(make_oparator_func(data_filter.operator)(
-        getattr(table_selection.c, data_filter.column), data_filter.value))
-    return table_selection
+    filtered_table_selection = table_selection
+    for data_filter in data_filters.filters:
+        filtered_table_selection = filtered_table_selection.where(make_oparator_func(data_filter.operator)(
+            getattr(table_selection.c, data_filter.column), data_filter.value))
+    return filtered_table_selection
 
 
 async def get_results_for_active_model_version_sessions_per_window(
@@ -137,18 +140,18 @@ async def get_results_for_active_model_version_sessions_per_window(
     return model_reduces
 
 
-def filter_monitor_table_by_window_and_data_filter(model_version: ModelVersion,
-                                                   table_selection: Select,
-                                                   mon_table: Table,
-                                                   data_filter: DataFilter,
-                                                   start_time: pdl.DateTime,
-                                                   end_time: pdl.DateTime):
+def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
+                                                    table_selection: Select,
+                                                    mon_table: Table,
+                                                    data_filters: DataFilterList,
+                                                    start_time: pdl.DateTime,
+                                                    end_time: pdl.DateTime):
     """Filter monitor table by window and data filter."""
     if start_time <= model_version.end_time and end_time >= model_version.start_time:
         select_time_filtered = filter_select_object_by_window(table_selection, mon_table, start_time, end_time)
-        if data_filter:
-            select_time_filtered = filter_table_selection_by_data_filter(
-                select_time_filtered, data_filter)
+        if data_filters:
+            select_time_filtered = filter_table_selection_by_data_filters(
+                select_time_filtered, data_filters)
         return select_time_filtered
     else:
         return None

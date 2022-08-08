@@ -31,6 +31,7 @@ __all__ = [
     "fetch_or_404",
     "TimeUnit",
     "DataFilter",
+    "DataFilterList",
     "OperatorsEnum",
     "make_oparator_func",
     "json_dumps"
@@ -68,6 +69,12 @@ class DataFilter(BaseModel):
     column: str
     operator: OperatorsEnum
     value: t.Any
+
+
+class DataFilterList(BaseModel):
+    """List of data filters."""
+
+    filters: t.List[DataFilter]
 
 
 class IdResponse(BaseModel):

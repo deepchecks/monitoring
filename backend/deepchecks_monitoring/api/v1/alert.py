@@ -19,7 +19,7 @@ from sqlalchemy.sql.selectable import Select
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.alert import Alert, AlertRule, AlertSeverity
-from deepchecks_monitoring.utils import DataFilter, IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
 
 from ...config import Tags
 from .router import router
@@ -41,7 +41,7 @@ class AlertCreationSchema(BaseModel):
     alert_rule: AlertRule
     alert_severity: t.Optional[AlertSeverity]
     description: t.Optional[str]
-    data_filter: t.Optional[DataFilter]
+    data_filters: t.Optional[DataFilterList]
 
 
 class AlertSchema(BaseModel):
@@ -55,7 +55,7 @@ class AlertSchema(BaseModel):
     alert_rule: AlertRule
     alert_severity: t.Optional[AlertSeverity]
     description: t.Optional[str] = None
-    data_filter: DataFilter = None
+    data_filters: DataFilterList = None
 
     class Config:
         """Config for Alert schema."""
@@ -72,7 +72,7 @@ class AlertUpdateSchema(BaseModel):
     alert_severity: t.Optional[AlertSeverity]
     alert_rule: t.Optional[AlertRule]
     description: t.Optional[str]
-    data_filter: t.Optional[DataFilter]
+    data_filters: t.Optional[DataFilterList]
 
 
 @router.post("/checks/{check_id}/alerts", response_model=IdResponse, tags=[Tags.ALERTS],
