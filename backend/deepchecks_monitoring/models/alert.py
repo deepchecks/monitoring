@@ -7,42 +7,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+
 """Module defining the alert ORM model."""
-import enum
 import typing as t
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
 import pendulum as pdl
-from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Table
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from deepchecks_monitoring.models.base import Base
-from deepchecks_monitoring.models.pydantic_type import PydanticType
-from deepchecks_monitoring.utils import DataFilterList, OperatorsEnum
 
-if TYPE_CHECKING:
-    from deepchecks_monitoring.models.event import Event
-
-__all__ = ["AlertRule", "Alert", "AlertSeverity"]
-
-
-class AlertRule(BaseModel):
-    """Rule to define an alert on check result, value must be numeric."""
-
-    feature: t.Optional[str]
-    operator: OperatorsEnum
-    value: float
-
-
-class AlertSeverity(enum.Enum):
-    """Enum for the alert severity."""
-
-    LOW = "low"
-    MID = "mid"
-    HIGH = "high"
-    CRITICAL = "critical"
+__all__ = ["Alert"]
 
 
 @dataclass
@@ -53,36 +30,25 @@ class Alert(Base):
         "alerts",
         Base.metadata,
         Column("id", Integer, primary_key=True),
-        Column("name", String(50)),
-        Column("description", String(200), default=""),
-        Column("check_id", Integer, ForeignKey("checks.id")),
-        Column("data_filters", PydanticType(pydantic_model=DataFilterList), nullable=True),
-        Column("alert_rule", PydanticType(pydantic_model=AlertRule)),
-        Column("lookback", Integer),
-        Column("repeat_every", Integer, nullable=False),
-        Column("alert_severity", Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False),
-        Column("last_run", DateTime(timezone=True), nullable=True),
+        Column("failed_values", JSONB, nullable=False),
+        Column("alert_rule_id", Integer, ForeignKey("alert_rules.id"), nullable=False),
+        Column("created_at", DateTime(timezone=True), default=pdl.now),
+        Column("start_time", DateTime(timezone=True), nullable=False),
+        Column("end_time", DateTime(timezone=True), nullable=False)
     )
-
     __table_args__ = {
         "schema": "default"
     }
 
-    name: str
-    check_id: int
-    lookback: int
-    repeat_every: int
-    alert_rule: AlertRule
-    alert_severity: AlertSeverity
-    events: t.List["Event"] = field(default_factory=list)
-    description: t.Optional[str] = None
-    data_filters: DataFilterList = None
-    last_run: pdl.DateTime = None
+    failed_values: t.Dict[str, t.List[str]]
+    alert_rule_id: int
+    start_time: pdl.DateTime
+    end_time: pdl.DateTime
+    created_at: pdl.DateTime = field(init=False)
     id: int = None
 
     __mapper_args__ = {  # type: ignore
         "properties": {
-            "check": relationship("Check"),
-            "events": relationship("Event"),
+            "alert_rule": relationship("AlertRule"),
         }
     }

@@ -10,71 +10,71 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.models.alert import AlertSeverity
+from deepchecks_monitoring.models.alert_rule import AlertSeverity
 
 
-def add_alert(classification_model_check_id, client: TestClient) -> int:
+def add_alert_rule(classification_model_check_id, client: TestClient) -> int:
     request = {
         "name": "alerty",
         "lookback": 86400,
         "repeat_every": 86400,
         "alert_severity": "low",
-        "alert_rule": {
+        "condition": {
             "operator": "greater_than",
             "value": 100
         }
     }
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alerts", json=request)
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
     return response.json()["id"]
 
 
 @pytest.mark.asyncio
-async def test_add_alert_no_feature(classification_model_check_id, client: TestClient):
+async def test_add_alert_rule_no_feature(classification_model_check_id, client: TestClient):
     # Arrange
     request = {
         "name": "alerty",
         "lookback": 86400,
         "repeat_every": 86400,
-        "alert_rule": {
+        "condition": {
             "operator": "greater_than",
             "value": 100
         }
     }
     # Act
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alerts", json=request)
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
 
 @pytest.mark.asyncio
-async def test_add_alert_with_feature(classification_model_check_id, client: TestClient):
+async def test_add_alert_rule_with_feature(classification_model_check_id, client: TestClient):
     # Arrange
     request = {
         "name": "alerty",
         "lookback": 86400,
         "repeat_every": 86400,
-        "alert_rule": {
+        "condition": {
             "operator": "greater_than",
             "value": 100,
             "feature": "some_feature"
         }
     }
     # Act
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alerts", json=request)
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
 
 @pytest.mark.asyncio
-async def test_add_alert_with_data_filter(classification_model_check_id, client: TestClient):
+async def test_add_alert_rule_with_data_filter(classification_model_check_id, client: TestClient):
     # Arrange
     request = {
         "name": "alerty",
         "lookback": 86400,
         "repeat_every": 86400,
-        "alert_rule": {
+        "condition": {
             "operator": "greater_than",
             "value": 100,
             "feature": "some_feature"
@@ -86,36 +86,36 @@ async def test_add_alert_with_data_filter(classification_model_check_id, client:
         }]}
     }
     # Act
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alerts", json=request)
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
 
 @pytest.mark.asyncio
-async def test_get_alert(classification_model_check_id, client: TestClient):
+async def test_get_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
-    alert_id = add_alert(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(classification_model_check_id, client)
     # Act
-    response = client.get(f"/api/v1/alerts/{alert_id}")
+    response = client.get(f"/api/v1/alert_rules/{alert_rule_id}")
     assert response.json() == {"id": 1, "name": "alerty", "check_id": 1, "lookback": 86400, "repeat_every": 86400,
-                               "alert_rule": {"feature": None, "operator": "greater_than", "value": 100.0},
+                               "condition": {"feature": None, "operator": "greater_than", "value": 100.0},
                                "description": "", "data_filters": None, "alert_severity": "low"}
 
 
 @pytest.mark.asyncio
-async def test_remove_alert(classification_model_check_id, client: TestClient):
+async def test_remove_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
-    alert_id = add_alert(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(classification_model_check_id, client)
     # Act
-    response = client.delete(f"/api/v1/alerts/{alert_id}")
+    response = client.delete(f"/api/v1/alert_rules/{alert_rule_id}")
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
-async def test_update_alert(classification_model_check_id, client: TestClient):
+async def test_update_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
-    alert_id = add_alert(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(classification_model_check_id, client)
     request = {
         "data_filters": {"filters": [{
             "operator": "in",
@@ -124,21 +124,21 @@ async def test_update_alert(classification_model_check_id, client: TestClient):
         }]}
     }
     # Act
-    response = client.put(f"/api/v1/alerts/{alert_id}", json=request)
+    response = client.put(f"/api/v1/alert_rules/{alert_rule_id}", json=request)
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
-async def test_count_alerts(
+async def test_count_alert_rule(
         classification_model_check_id,
         regression_model_check_id,
         client: TestClient):
     # Arrange
-    add_alert(classification_model_check_id, client)
-    add_alert(classification_model_check_id, client)
-    add_alert(regression_model_check_id, client)
+    add_alert_rule(classification_model_check_id, client)
+    add_alert_rule(classification_model_check_id, client)
+    add_alert_rule(regression_model_check_id, client)
     # Act
-    response = client.get("/api/v1/alerts/count")
+    response = client.get("/api/v1/alert_rules/count")
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 3
 
@@ -149,17 +149,17 @@ async def test_count_single_model(
         regression_model_check_id,
         client: TestClient):
     # Arrange
-    add_alert(classification_model_check_id, client)
-    add_alert(classification_model_check_id, client)
-    add_alert(classification_model_check_id, client)
-    add_alert(regression_model_check_id, client)
+    add_alert_rule(classification_model_check_id, client)
+    add_alert_rule(classification_model_check_id, client)
+    add_alert_rule(classification_model_check_id, client)
+    add_alert_rule(regression_model_check_id, client)
     # Act
-    response = client.get(f"/api/v1/models/{classification_model_check_id}/alerts/count")
+    response = client.get(f"/api/v1/models/{classification_model_check_id}/alert_rules/count")
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 3
     # Act
-    response = client.get(f"/api/v1/models/{regression_model_check_id}/alerts/count")
+    response = client.get(f"/api/v1/models/{regression_model_check_id}/alert_rules/count")
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 1

@@ -34,7 +34,9 @@ __all__ = [
     "DataFilterList",
     "OperatorsEnum",
     "make_oparator_func",
-    "json_dumps"
+    "json_dumps",
+    "CountResponse",
+    "IdResponse"
 ]
 
 

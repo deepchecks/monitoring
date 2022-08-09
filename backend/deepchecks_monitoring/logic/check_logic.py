@@ -18,7 +18,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from deepchecks_monitoring.api.v1.alert import AlertCheckOptions
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import NotFound
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
@@ -27,9 +26,16 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      get_model_versions_and_task_type_per_time_window,
                                                      get_results_for_active_model_version_sessions_per_window)
 from deepchecks_monitoring.models.alert import Alert
+from deepchecks_monitoring.models.alert_rule import AlertRule
 from deepchecks_monitoring.models.check import Check
-from deepchecks_monitoring.models.event import Event
 from deepchecks_monitoring.utils import DataFilterList, fetch_or_404, make_oparator_func
+
+
+class AlertCheckOptions(BaseModel):
+    """Alert check schema."""
+
+    end_time: str
+    grace_period: t.Optional[bool] = True
 
 
 class FilterWindowOptions(BaseModel):
@@ -61,26 +67,27 @@ async def run_check_alert(
     Returns
     -------
     t.Dict
-        {<alert_id>: {<event_id>: {<version_id>: [<failed_values>]}}}.
+        {<alert_rule_id>: {<alert_id>: {<version_id>: [<failed_values>]}}}.
     """
     # get the relevant objects from the db
-    check_results = await session.execute(select(Check).where(Check.id == check_id).options(selectinload(Check.alerts)))
+    check_results = await session.execute(select(Check).where(Check.id == check_id)
+                                          .options(selectinload(Check.alert_rules)))
     check: Check = check_results.scalars().first()
 
-    if len(check.alerts) == 0:
-        raise ValueError("No alerts related to the check were found")
+    if len(check.alert_rules) == 0:
+        raise ValueError("No alert rules related to the check were found")
 
     end_time = pdl.parse(alert_check_options.end_time)
 
-    all_events_dict = {}
-    for alert in check.alerts:
-        start_time = end_time - pdl.duration(seconds=alert.lookback)
-        # make sure this event is in the correct window for the alert
-        if alert.last_run is not None and alert.last_run != end_time and \
-                alert.last_run + pdl.duration(seconds=alert.repeat_every) > start_time:
+    all_alerts_dict = {}
+    for alert_rule in check.alert_rules:
+        start_time = end_time - pdl.duration(seconds=alert_rule.lookback)
+        # make sure this alert is in the correct window for the alert rule
+        if alert_rule.last_run is not None and alert_rule.last_run != end_time and \
+                alert_rule.last_run + pdl.duration(seconds=alert_rule.repeat_every) > start_time:
             continue
 
-        await Alert.update(session, alert.id, {"last_run": end_time})
+        await AlertRule.update(session, alert_rule.id, {"last_run": end_time})
 
         # get relevant model_versions for that time window
         model_versions, _ = await get_model_versions_and_task_type_per_time_window(session,
@@ -88,56 +95,57 @@ async def run_check_alert(
                                                                                    start_time,
                                                                                    end_time)
 
-        # get the event for this window (if exists)
-        event_results = await session.execute(select(Event)
-                                              .where(Event.alert_id == alert.id)
-                                              .where(Event.start_time == start_time)
-                                              .where(Event.end_time == end_time))
-        event: Event = event_results.scalars().first()
+        # get the alert for this window (if exists)
+        alert_results = await session.execute(select(Alert)
+                                              .where(Alert.alert_rule_id == alert_rule.id)
+                                              .where(Alert.start_time == start_time)
+                                              .where(Alert.end_time == end_time))
+        alert: Alert = alert_results.scalars().first()
 
-        if event is None:
-            event_dict = {}
+        if alert is None:
+            alert_dict = {}
         else:
-            event_dict = event.failed_values
+            alert_dict = alert.failed_values
 
-        alert_condition_func = make_oparator_func(alert.alert_rule.operator)
-        alert_condition_val = alert.alert_rule.value
+        alert_condition_func = make_oparator_func(alert_rule.condition.operator)
+        alert_condition_val = alert_rule.condition.value
 
         # filter model versions that didn't send newer data (if in the grace period)
         # filter model versions that already have data in the event
         relevant_model_versions: t.List[str] = [
             str(version.id) for version in model_versions
-            if (not alert_check_options.grace_period or version.end_time >= end_time) and version.id not in event_dict]
+            if (not alert_check_options.grace_period or version.end_time >= end_time) and version.id not in alert_dict]
 
         # run check for the relevant window and data filter
         check_alert_check_options = FilterWindowOptions(start_time=start_time.isoformat(),
                                                         end_time=end_time.isoformat(),
-                                                        data_filter=alert.data_filters,
+                                                        data_filter=alert_rule.data_filters,
                                                         model_version_ids=relevant_model_versions)
         check_results = await run_check_window(check.id, check_alert_check_options, session)
 
         # test if any results raise an alert
         for model_version_id, results in check_results.items():
             if results is None:
-                event_dict[str(model_version_id)] = []
+                alert_dict[str(model_version_id)] = []
             failed_vals = []
             for val_name, value in results.items():
-                if alert.alert_rule.feature is None or alert.alert_rule.feature == val_name:
+                if alert_rule.condition.feature is None or alert_rule.condition.feature == val_name:
                     if alert_condition_func(value, alert_condition_val):
                         failed_vals.append(val_name)
-            event_dict[str(model_version_id)] = failed_vals
+            alert_dict[str(model_version_id)] = failed_vals
 
-        if len(event_dict) > 0:
-            if event is not None:
-                if event_dict != event.failed_values:
-                    await Event.update(session, event.id, {"failed_values": event_dict})
+        if len(alert_dict) > 0:
+            if alert is not None:
+                if alert_dict != alert.failed_values:
+                    await Alert.update(session, alert.id, {"failed_values": alert_dict})
             else:
-                event = Event(alert_id=alert.id, start_time=start_time, end_time=end_time, failed_values=event_dict)
-                session.add(event)
+                alert = Alert(alert_rule_id=alert_rule.id, start_time=start_time, end_time=end_time,
+                              failed_values=alert_dict)
+                session.add(alert)
                 await session.flush()
 
-        all_events_dict[alert.id] = {"failed_values": event_dict, "event_id": event.id}
-    return all_events_dict
+        all_alerts_dict[alert_rule.id] = {"failed_values": alert_dict, "alert_id": alert.id}
+    return all_alerts_dict
 
 
 async def run_check_per_window_in_range(

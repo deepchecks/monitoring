@@ -19,7 +19,7 @@ from sqlalchemy.orm import relationship
 from deepchecks_monitoring.models.base import Base
 
 if TYPE_CHECKING:
-    from deepchecks_monitoring.models.alert import Alert
+    from deepchecks_monitoring.models.alert_rule import AlertRule
 
 
 __all__ = ["Check"]
@@ -45,10 +45,10 @@ class Check(Base):
     model_id: int
     id: int = None
     name: Optional[str] = None
-    alerts: List["Alert"] = field(default_factory=list)
+    alert_rules: List["AlertRule"] = field(default_factory=list)
 
     __mapper_args__ = {  # type: ignore
         "properties": {
-            "alerts": relationship("Alert"),
+            "alert_rules": relationship("AlertRule"),
         }
     }

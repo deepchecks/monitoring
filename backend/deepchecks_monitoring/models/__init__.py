@@ -10,11 +10,11 @@
 """Module defining the ORM models."""
 
 from .alert import Alert
+from .alert_rule import AlertRule
 from .check import Check
 from .dashboard import Dashboard
-from .event import Event
 from .model import Model, TaskType
 from .model_version import ColumnType, ModelVersion
 from .monitor import Monitor
 
-__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check', 'Alert', 'Monitor', 'Dashboard', 'Event']
+__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check', 'AlertRule', 'Monitor', 'Dashboard', 'Alert']

@@ -11,13 +11,12 @@ import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.api.v1.alert import AlertCheckOptions
-from deepchecks_monitoring.logic.check_logic import run_check_alert
-from deepchecks_monitoring.models.event import Event
+from deepchecks_monitoring.logic.check_logic import run_check_alert, AlertCheckOptions
+from deepchecks_monitoring.models.alert import Alert
 
 
 @pytest.mark.asyncio
-async def test_run_event(classification_model_id, classification_model_version_id, client: TestClient, async_session):
+async def test_run_alert(classification_model_id, classification_model_version_id, client: TestClient, async_session):
     request = {
         "name": "checky",
         "config": {"class_name": "SingleDatasetPerformance",
@@ -50,7 +49,7 @@ async def test_run_event(classification_model_id, classification_model_version_i
         "name": "alerty",
         "lookback": 3600 * 3,
         "repeat_every": 3600,
-        "alert_rule": {
+        "condition": {
             "operator": "less_than",
             "value": 0.7,
             "feature": "accuracy"
@@ -61,16 +60,16 @@ async def test_run_event(classification_model_id, classification_model_version_i
             "column": "b"
         }]}
     }
-    response = client.post(f"/api/v1/checks/{1}/alerts", json=request)
+    response = client.post("/api/v1/checks/1/alert_rules", json=request)
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
     ress = await run_check_alert(1, AlertCheckOptions(end_time=times[2]), async_session)
-    assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "event_id": 1}}
+    assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "alert_id": 1}}
 
     # test re-run same value
     ress = await run_check_alert(1, AlertCheckOptions(end_time=times[2]), async_session)
-    assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "event_id": 1}}
+    assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "alert_id": 1}}
 
     # test re-run bad hour value
     ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=5).isoformat()),
@@ -80,11 +79,11 @@ async def test_run_event(classification_model_id, classification_model_version_i
     # test re-run good hour value
     ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
                                  async_session)
-    assert ress == {1: {"event_id": 2, "failed_values": {"1": ["accuracy"]}}}
+    assert ress == {1: {"alert_id": 2, "failed_values": {"1": ["accuracy"]}}}
 
     # test alert update re-run
-    await Event.update(async_session, 2,  {"failed_values": {"2": ["accuracy"]}})
+    await Alert.update(async_session, 2, {"failed_values": {"2": ["accuracy"]}})
 
     ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
                                  async_session)
-    assert ress == {1: {"event_id": 2, "failed_values": {"1": ["accuracy"], "2": ["accuracy"]}}}
+    assert ress == {1: {"alert_id": 2, "failed_values": {"1": ["accuracy"], "2": ["accuracy"]}}}
