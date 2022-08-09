@@ -115,3 +115,13 @@ async def test_update_monitor(classification_model_check_id, client: TestClient)
     # Act
     response = client.put(f"/api/v1/monitors/{monitor_id}", json=request)
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_run_monitor(classification_model_check_id, classification_model_version_id, client: TestClient):
+    assert classification_model_version_id == 1
+    # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
+    # Act
+    response = client.get(f"/api/v1/monitors/{monitor_id}/run")
+    assert response.status_code == 200

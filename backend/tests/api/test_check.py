@@ -62,7 +62,8 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     assert response.status_code == 200
     times = []
-    day_before_curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0) - pdl.duration(days=1)
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
     for i in [1, 3, 7, 13]:
         time = day_before_curr_time.add(hours=i).isoformat()
         times.append(time)
@@ -89,7 +90,8 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     assert response.status_code == 200
 
     # test no filter
-    response = client.post("/api/v1/checks/1/run/lookback", json={"lookback": 86400})
+    response = client.post("/api/v1/checks/1/run/lookback", json={"start_time": day_before_curr_time.isoformat(),
+                                                                  "end_time": curr_time.isoformat()})
     assert response.status_code == 200
     json_rsp = response.json()
     assert response.status_code == 200
@@ -100,7 +102,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
 
     # test with filter
     response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"lookback": 86400,
+                           json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14},
                                             {"column": "b", "operator": "equals", "value": "ppppp"}]}})
     json_rsp = response.json()
@@ -110,14 +112,14 @@ async def run_check(classification_model_id, classification_model_version_id, cl
 
     # test with filter no refrence because of filter
     response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"lookback": 86400,
+                           json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"1": None}
     # test with filter no refrence because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"lookback": 86400,
+                           json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
                                             {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()

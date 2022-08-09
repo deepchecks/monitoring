@@ -42,7 +42,7 @@ class AlertSeverity(enum.Enum):
     LOW = "low"
     MID = "mid"
     HIGH = "high"
-    CRITICAL = "Critical"
+    CRITICAL = "critical"
 
 
 @dataclass

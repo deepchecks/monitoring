@@ -81,12 +81,12 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
     return dataset, y_pred, y_proba
 
 
-def filter_table_selection_by_data_filters(table_selection: Select, data_filters: DataFilterList):
+def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select, data_filters: DataFilterList):
     """Filter table selection by data filter."""
     filtered_table_selection = table_selection
     for data_filter in data_filters.filters:
         filtered_table_selection = filtered_table_selection.where(make_oparator_func(data_filter.operator)(
-            getattr(table_selection.c, data_filter.column), data_filter.value))
+            getattr(data_table.c, data_filter.column), data_filter.value))
     return filtered_table_selection
 
 
@@ -150,8 +150,9 @@ def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
     if start_time <= model_version.end_time and end_time >= model_version.start_time:
         select_time_filtered = filter_select_object_by_window(table_selection, mon_table, start_time, end_time)
         if data_filters:
-            select_time_filtered = filter_table_selection_by_data_filters(
-                select_time_filtered, data_filters)
+            select_time_filtered = filter_table_selection_by_data_filters(mon_table,
+                                                                          select_time_filtered,
+                                                                          data_filters)
         return select_time_filtered
     else:
         return None

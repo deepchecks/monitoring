@@ -140,6 +140,104 @@ async def run_check_alert(
     return all_events_dict
 
 
+async def run_check_per_window_in_range(
+    check_id: int,
+    start_time: pdl.DateTime,
+    end_time: pdl.DateTime,
+    window: pdl.DateTime,
+    monitor_filter: DataFilterList,
+    session: AsyncSession
+) -> t.Dict[str, t.Any]:
+    """Run a check on a monitor table per time window in the time range.
+
+    The function gets the relevant model versions and the task type of the check.
+    Then, it creates a session per model version and per time window.
+    The sessions are executed and the results are returned.
+    The results are then used to run the check.
+    The function returns the results of the check and the time windows that were used.
+
+    Parameters
+    ----------
+    check_id : int
+        The id of the check to run.
+    start_time : pdl.DateTime
+        The start time of the check.
+    end_time : pdl.DateTime
+        The end time of the check.
+    window : pdl.DateTime
+        The time window to run the check on.
+    monitor_filter : DataFilterList
+        The data filter to apply on the monitor table.
+    session : AsyncSession
+        The database session to use.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the output of the check and the time labels.
+    """
+    # get the relevant objects from the db
+    check = await fetch_or_404(session, Check, id=check_id)
+    dp_check = BaseCheck.from_config(check.config)
+    if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
+        raise ValueError("incompatible check type")
+
+    model_versions, task_type = \
+        await get_model_versions_and_task_type_per_time_window(session, check, start_time, end_time)
+
+    if len(model_versions) == 0:
+        raise NotFound("No relevant model versions found")
+
+    top_feat, _ = model_versions[0].get_top_features()
+
+    # execute an async session per each model version
+    model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
+    for model_version in model_versions:
+        if isinstance(dp_check, TrainTestBaseCheck):
+            refrence_table = model_version.get_reference_table(session)
+            refrence_table_data_session = create_model_version_select_object(task_type, refrence_table, top_feat)
+            if monitor_filter:
+                refrence_table_data_session = filter_table_selection_by_data_filters(refrence_table,
+                                                                                     refrence_table_data_session,
+                                                                                     monitor_filter)
+            refrence_table_data_session = session.execute(refrence_table_data_session)
+        else:
+            refrence_table_data_session = None
+
+        test_table = model_version.get_monitor_table(session)
+        test_data_sessions = []
+
+        select_obj = create_model_version_select_object(task_type, test_table, top_feat)
+        new_start_time = start_time
+        # create the session per time window
+        while new_start_time < end_time:
+            filtered_select_obj = filter_monitor_table_by_window_and_data_filters(model_version=model_version,
+                                                                                  table_selection=select_obj,
+                                                                                  mon_table=test_table,
+                                                                                  data_filters=monitor_filter,
+                                                                                  start_time=new_start_time,
+                                                                                  end_time=new_start_time + window)
+            if filtered_select_obj is not None:
+                test_data_sessions.append(session.execute(filtered_select_obj))
+            else:
+                test_data_sessions.append(None)
+            new_start_time = new_start_time + window
+        model_versions_sessions.append((refrence_table_data_session, test_data_sessions))
+
+    # get result from active sessions and run the check per each model version
+    model_reduces = await get_results_for_active_model_version_sessions_per_window(model_versions_sessions,
+                                                                                   model_versions,
+                                                                                   dp_check)
+
+    # get the time windows that were used
+    time_windows = []
+    while start_time < end_time:
+        time_windows.append(start_time.isoformat())
+        start_time = start_time + window
+
+    return {"output": model_reduces, "time_labels": time_windows}
+
+
 async def run_check_window(
     check_id: int,
     window_options: FilterWindowOptions,
@@ -188,8 +286,9 @@ async def run_check_window(
             refrence_table = model_version.get_reference_table(session)
             refrence_table_data_session = create_model_version_select_object(task_type, refrence_table, top_feat)
             if window_options.filter:
-                refrence_table_data_session = filter_table_selection_by_data_filters(
-                    refrence_table_data_session, window_options.filter)
+                refrence_table_data_session = filter_table_selection_by_data_filters(refrence_table,
+                                                                                     refrence_table_data_session,
+                                                                                     window_options.filter)
             refrence_table_data_session = session.execute(refrence_table_data_session)
         else:
             refrence_table_data_session = None
