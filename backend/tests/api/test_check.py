@@ -40,7 +40,7 @@ async def test_add_check(classification_model_id, client: TestClient):
 
 
 @pytest.mark.asyncio
-async def test_run_check(classification_model_id, classification_model_version_id, client: TestClient):
+async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky",
         "config": {"class_name": "PerformanceReport",
@@ -131,3 +131,13 @@ async def test_run_check(classification_model_id, classification_model_version_i
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14}]}})
     json_rsp = response.json()
     assert json_rsp == {"1": {"accuracy": 1.0}}
+
+
+@pytest.mark.asyncio
+async def test_run_check(classification_model_id, classification_model_version_id, client: TestClient):
+    await run_check(classification_model_id, classification_model_version_id, client)
+
+
+@pytest.mark.asyncio
+async def test_run_check_no_fi(classification_model_id, classification_model_version_no_fi_id, client: TestClient):
+    await run_check(classification_model_id, classification_model_version_no_fi_id, client)

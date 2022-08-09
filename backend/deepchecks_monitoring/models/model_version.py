@@ -13,6 +13,7 @@ import typing as t
 from dataclasses import dataclass
 from datetime import datetime
 
+import pandas as pd
 import pendulum as pdl
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, ForeignKey, Integer, MetaData, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -120,7 +121,7 @@ class ModelVersion(Base):
         if self.feature_importance:
             feat_dict = dict(sorted(self.feature_importance.items(), key=lambda item: item[1])[:n_top])
             feat = list(feat_dict.keys())
-            return feat, feat_dict
+            return feat, pd.Series(feat_dict)
         return list(self.features.keys())[:n_top], None
 
     def get_reference_table(self, connection) -> Table:

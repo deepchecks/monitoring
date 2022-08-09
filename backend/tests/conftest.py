@@ -123,6 +123,19 @@ async def classification_model_version_id(async_session: AsyncSession, classific
     schema = ModelVersionCreationSchema(
         name="v1",
         features={"a": "numeric", "b": "categorical"},
+        feature_importance={"a": 0.1, "b": 0.5},
+        non_features={"c": "numeric"}
+    )
+    result = await create_version(classification_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
+
+
+@pytest_asyncio.fixture()
+async def classification_model_version_no_fi_id(async_session: AsyncSession, classification_model_id: int):
+    schema = ModelVersionCreationSchema(
+        name="v1",
+        features={"a": "numeric", "b": "categorical"},
         non_features={"c": "numeric"}
     )
     result = await create_version(classification_model_id, schema, async_session)
