@@ -39,7 +39,6 @@ async def test_add_check(classification_model_id, client: TestClient):
     assert resp_json["config"] == request["config"]
 
 
-@pytest.mark.asyncio
 async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky",

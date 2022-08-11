@@ -89,7 +89,7 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
                                                     "module_name": "deepchecks.tabular.checks",
                                                     "params": {"reduce": "mean"}},
                                          "id": 1, "model_id": 1, "name": "check"},
-                               "description": ""}
+                               "description": "", "filter_key": None}
 
 
 @ pytest.mark.asyncio

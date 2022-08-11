@@ -15,13 +15,12 @@ from deepchecks.core.checks import CheckConfig
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.sql.selectable import Select
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.check_logic import FilterWindowOptions, run_check_per_window_in_range, run_check_window
 from deepchecks_monitoring.models import Check, Model
-from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404
+from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
 
 from .router import router
 
@@ -116,7 +115,7 @@ async def get_checks(
         All the checks for a given model.
     """
     await exists_or_404(session, Model, id=model_id)
-    select_checks: Select = select(Check)
+    select_checks = select(Check)
     select_checks = select_checks.where(Check.model_id == model_id)
     results = await session.execute(select_checks)
     return [CheckSchema.from_orm(res) for res in results.scalars().all()]
@@ -187,4 +186,5 @@ async def get_check_window(
     CheckSchema
         Created check.
     """
-    return await run_check_window(check_id, window_options, session)
+    check = await fetch_or_404(session, Check, id=check_id)
+    return await run_check_window(check, window_options, session)

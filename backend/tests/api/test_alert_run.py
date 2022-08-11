@@ -11,12 +11,15 @@ import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.logic.check_logic import run_check_alert, AlertCheckOptions
+from deepchecks_monitoring.logic.check_logic import run_rules_of_monitor, AlertCheckOptions
 from deepchecks_monitoring.models.alert import Alert
+from tests.conftest import add_monitor, add_alert_rule
 
 
 @pytest.mark.asyncio
 async def test_run_alert(classification_model_id, classification_model_version_id, client: TestClient, async_session):
+    # Arrange
+    # add check
     request = {
         "name": "checky",
         "config": {"class_name": "SingleDatasetPerformance",
@@ -24,9 +27,22 @@ async def test_run_alert(classification_model_id, classification_model_version_i
                    "module_name": "deepchecks.tabular.checks"
                    },
     }
-    # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
-    assert response.status_code == 200
+    check_id = response.json()["id"]
+    # add monitor
+    monitor_id = add_monitor(check_id, client, lookback=3600 * 3, filter_key="accuracy", data_filters={
+        "filters": [{
+            "operator": "equals",
+            "value": "ppppp",
+            "column": "b"
+        }]},
+    )
+    add_alert_rule(monitor_id, client, repeat_every=3600, condition={
+            "operator": "less_than",
+            "value": 0.7,
+        }
+    )
+    # Add data
     times = []
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
@@ -45,45 +61,26 @@ async def test_run_alert(classification_model_id, classification_model_version_i
         response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
         assert response.status_code == 201
 
-    request = {
-        "name": "alerty",
-        "lookback": 3600 * 3,
-        "repeat_every": 3600,
-        "condition": {
-            "operator": "less_than",
-            "value": 0.7,
-            "feature": "accuracy"
-        },
-        "data_filters": {"filters": [{
-            "operator": "equals",
-            "value": "ppppp",
-            "column": "b"
-        }]}
-    }
-    response = client.post("/api/v1/checks/1/alert_rules", json=request)
-    assert response.status_code == 200
-    assert response.json()["id"] == 1
-
-    ress = await run_check_alert(1, AlertCheckOptions(end_time=times[2]), async_session)
+    ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=times[2]), async_session)
     assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "alert_id": 1}}
 
     # test re-run same value
-    ress = await run_check_alert(1, AlertCheckOptions(end_time=times[2]), async_session)
+    ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=times[2]), async_session)
     assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "alert_id": 1}}
 
     # test re-run bad hour value
-    ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=5).isoformat()),
-                                 async_session)
+    ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=5).isoformat()),
+                                      async_session)
     assert ress == {}
 
     # test re-run good hour value
-    ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
-                                 async_session)
+    ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
+                                      async_session)
     assert ress == {1: {"alert_id": 2, "failed_values": {"1": ["accuracy"]}}}
 
     # test alert update re-run
     await Alert.update(async_session, 2, {"failed_values": {"2": ["accuracy"]}})
 
-    ress = await run_check_alert(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
-                                 async_session)
+    ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=8).isoformat()),
+                                      async_session)
     assert ress == {1: {"alert_id": 2, "failed_values": {"1": ["accuracy"], "2": ["accuracy"]}}}

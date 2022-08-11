@@ -33,6 +33,7 @@ class MonitorCreationSchema(BaseModel):
     lookback: int
     description: t.Optional[str]
     data_filters: t.Optional[DataFilterList]
+    filter_key: t.Optional[str]
 
 
 class MonitorSchema(BaseModel):
@@ -45,6 +46,7 @@ class MonitorSchema(BaseModel):
     lookback: int
     description: t.Optional[str] = None
     data_filters: DataFilterList = None
+    filter_key: t.Optional[str]
 
     class Config:
         """Config for Monitor schema."""
@@ -60,6 +62,7 @@ class MonitorUpdateSchema(BaseModel):
     description: t.Optional[str]
     data_filters: t.Optional[DataFilterList]
     dashboard_id: t.Optional[int]
+    filter_key: t.Optional[str]
 
 
 @router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],

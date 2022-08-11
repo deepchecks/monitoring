@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
-from tests.conftest import add_alert, add_alert_rule
+from tests.conftest import add_alert, add_alert_rule, add_monitor
 
 
 @pytest.mark.asyncio
@@ -40,14 +40,16 @@ async def test_get_columns_model(classification_model_id, classification_model_v
 @pytest.mark.asyncio
 async def test_get_models(classification_model_check_id, regression_model_check_id, client: TestClient, async_session):
     # Arrange
-    alert_rule_id = add_alert_rule(classification_model_check_id, client)
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session, resolved=False)
-    alert_rule_id = add_alert_rule(regression_model_check_id, client)
+    monitor_id_2 = add_monitor(regression_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id_2, client)
     add_alert(alert_rule_id, async_session, resolved=False)
     add_alert(alert_rule_id, async_session, resolved=False)
-    alert_rule_id = add_alert_rule(regression_model_check_id, client, alert_severity=AlertSeverity.HIGH)
+    alert_rule_id = add_alert_rule(monitor_id_2, client, alert_severity=AlertSeverity.HIGH.value)
     add_alert(alert_rule_id, async_session, resolved=False)
     await async_session.commit()
     # Act

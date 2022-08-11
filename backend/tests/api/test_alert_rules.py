@@ -12,23 +12,24 @@ from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from tests.api.test_alerts import add_alert
-from tests.conftest import add_alert_rule
+from tests.conftest import add_alert_rule, add_monitor
 
 
 @pytest.mark.asyncio
 async def test_add_alert_rule_no_feature(classification_model_check_id, client: TestClient):
     # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
     request = {
         "name": "alerty",
-        "lookback": 86400,
         "repeat_every": 86400,
         "condition": {
             "operator": "greater_than",
             "value": 100
-        }
+        },
+        "alert_severity": "low"
     }
     # Act
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
+    response = client.post(f"/api/v1/monitors/{monitor_id}/alert_rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
@@ -37,43 +38,18 @@ async def test_add_alert_rule_no_feature(classification_model_check_id, client: 
 @pytest.mark.asyncio
 async def test_add_alert_rule_with_feature(classification_model_check_id, client: TestClient):
     # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
     request = {
         "name": "alerty",
-        "lookback": 86400,
         "repeat_every": 86400,
         "condition": {
             "operator": "greater_than",
             "value": 100,
-            "feature": "some_feature"
-        }
-    }
-    # Act
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
-    # Assert
-    assert response.status_code == 200
-    assert response.json()["id"] == 1
-
-
-@pytest.mark.asyncio
-async def test_add_alert_rule_with_data_filter(classification_model_check_id, client: TestClient):
-    # Arrange
-    request = {
-        "name": "alerty",
-        "lookback": 86400,
-        "repeat_every": 86400,
-        "condition": {
-            "operator": "greater_than",
-            "value": 100,
-            "feature": "some_feature"
         },
-        "data_filters": {"filters": [{
-            "operator": "in",
-            "value": ["a", "ff"],
-            "column": "meta_col"
-        }]}
+        "alert_severity": "low"
     }
     # Act
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
+    response = client.post(f"/api/v1/monitors/{monitor_id}/alert_rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
@@ -82,18 +58,20 @@ async def test_add_alert_rule_with_data_filter(classification_model_check_id, cl
 @pytest.mark.asyncio
 async def test_get_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
-    alert_rule_id = add_alert_rule(classification_model_check_id, client)
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client)
     # Act
     response = client.get(f"/api/v1/alert_rules/{alert_rule_id}")
-    assert response.json() == {"id": 1, "name": "alerty", "check_id": 1, "lookback": 86400, "repeat_every": 86400,
-                               "condition": {"feature": None, "operator": "greater_than", "value": 100.0},
-                               "description": "", "data_filters": None, "alert_severity": "low"}
+    assert response.json() == {"id": 1, "name": "alerty", "monitor_id": 1, "repeat_every": 86400,
+                               "condition": {"operator": "greater_than", "value": 100.0},
+                               "alert_severity": "low"}
 
 
 @pytest.mark.asyncio
 async def test_remove_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
-    alert_rule_id = add_alert_rule(classification_model_check_id, client)
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client)
     # Act
     response = client.delete(f"/api/v1/alert_rules/{alert_rule_id}")
     assert response.status_code == 200
@@ -102,13 +80,11 @@ async def test_remove_alert_rule(classification_model_check_id, client: TestClie
 @pytest.mark.asyncio
 async def test_update_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
-    alert_rule_id = add_alert_rule(classification_model_check_id, client)
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client)
     request = {
-        "data_filters": {"filters": [{
-            "operator": "in",
-            "value": ["a", "ff"],
-            "column": "meta_col"
-        }]}
+        "repeat_every": 100000,
+        "condition": {"operator": "greater_than", "value": -0.1}
     }
     # Act
     response = client.put(f"/api/v1/alert_rules/{alert_rule_id}", json=request)
@@ -121,9 +97,11 @@ async def test_count_alert_rule(
         regression_model_check_id,
         client: TestClient):
     # Arrange
-    add_alert_rule(classification_model_check_id, client)
-    add_alert_rule(classification_model_check_id, client)
-    add_alert_rule(regression_model_check_id, client)
+    monitor_id = add_monitor(classification_model_check_id, client)
+    add_alert_rule(monitor_id, client)
+    add_alert_rule(monitor_id, client)
+    monitor_id = add_monitor(regression_model_check_id, client)
+    add_alert_rule(monitor_id, client)
     # Act
     response = client.get("/api/v1/alert_rules/count")
     assert response.status_code == 200
@@ -136,17 +114,19 @@ async def test_count_single_model(
         regression_model_check_id,
         client: TestClient):
     # Arrange
-    add_alert_rule(classification_model_check_id, client)
-    add_alert_rule(classification_model_check_id, client)
-    add_alert_rule(classification_model_check_id, client)
-    add_alert_rule(regression_model_check_id, client)
+    monitor_id_1 = add_monitor(classification_model_check_id, client)
+    add_alert_rule(monitor_id_1, client)
+    add_alert_rule(monitor_id_1, client)
+    add_alert_rule(monitor_id_1, client)
+    monitor_id_2 = add_monitor(regression_model_check_id, client)
+    add_alert_rule(monitor_id_2, client)
     # Act
-    response = client.get(f"/api/v1/models/{classification_model_check_id}/alert_rules/count")
+    response = client.get(f"/api/v1/models/{monitor_id_1}/alert_rules/count")
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 3
     # Act
-    response = client.get(f"/api/v1/models/{regression_model_check_id}/alert_rules/count")
+    response = client.get(f"/api/v1/models/{monitor_id_2}/alert_rules/count")
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 1
@@ -155,11 +135,12 @@ async def test_count_single_model(
 @pytest.mark.asyncio
 async def test_get_alert_rules(classification_model_check_id, client: TestClient, async_session):
     # Arrange
-    alert_rule_id = add_alert_rule(classification_model_check_id, client, alert_severity=AlertSeverity.LOW)
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.LOW.value)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session, resolved=False)
-    alert_rule_id = add_alert_rule(classification_model_check_id, client, alert_severity=AlertSeverity.MID)
+    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.MID.value)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session, resolved=False)
     add_alert(alert_rule_id, async_session, resolved=False)
@@ -168,11 +149,9 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
     response = client.get("/api/v1/alert_rules/")
     # Assert
     assert response.status_code == 200
-    assert response.json() == [{"alert_severity": "low", "alerts_count": 1, "check_id": 1,
-                                "condition": {"feature": None, "operator": "greater_than", "value": 100.0},
-                                "data_filters": None, "description": "", "id": 1, "lookback": 86400, "name": "alerty",
-                                "repeat_every": 86400},
-                               {"alert_severity": "mid", "alerts_count": 2, "check_id": 1,
-                                "condition": {"feature": None, "operator": "greater_than", "value": 100.0},
-                                "data_filters": None, "description": "", "id": 2, "lookback": 86400, "name": "alerty",
-                                "repeat_every": 86400}]
+    assert response.json() == [{"alert_severity": "low", "alerts_count": 1, "monitor_id": 1,
+                                "condition": {"operator": "greater_than", "value": 100.0},
+                                "id": 1, "name": "alerty", "repeat_every": 86400},
+                               {"alert_severity": "mid", "alerts_count": 2, "monitor_id": 1,
+                                "condition": {"operator": "greater_than", "value": 100.0},
+                                "id": 2, "name": "alerty", "repeat_every": 86400}]

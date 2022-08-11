@@ -177,16 +177,26 @@ def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
                             resolved=resolved))
 
 
-def add_alert_rule(check_id, client: TestClient, alert_severity=AlertSeverity.LOW) -> int:
+def add_alert_rule(monitor_id, client: TestClient, **kwargs) -> int:
     request = {
         "name": "alerty",
-        "lookback": 86400,
         "repeat_every": 86400,
-        "alert_severity": alert_severity.value,
+        "alert_severity": AlertSeverity.LOW.value,
         "condition": {
             "operator": "greater_than",
             "value": 100
         }
     }
-    response = client.post(f"/api/v1/checks/{check_id}/alert_rules", json=request)
+    request.update(kwargs)
+    response = client.post(f"/api/v1/monitors/{monitor_id}/alert_rules", json=request)
+    return response.json()["id"]
+
+
+def add_monitor(check_id, client: TestClient, **kwargs):
+    request = {
+        "name": "monitor",
+        "lookback": 1000
+    }
+    request.update(kwargs)
+    response = client.post(f"/api/v1/checks/{check_id}/monitors", json=request)
     return response.json()["id"]

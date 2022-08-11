@@ -16,7 +16,7 @@ from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import NotFound
@@ -25,6 +25,7 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_and_task_type_per_time_window,
                                                      get_results_for_active_model_version_sessions_per_window)
+from deepchecks_monitoring.models import Monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule
 from deepchecks_monitoring.models.check import Check
@@ -47,8 +48,8 @@ class FilterWindowOptions(BaseModel):
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
-async def run_check_alert(
-    check_id: int,
+async def run_rules_of_monitor(
+    monitor_id: int,
     alert_check_options: AlertCheckOptions,
     session: AsyncSession = AsyncSessionDep
 
@@ -57,7 +58,7 @@ async def run_check_alert(
 
     Parameters
     ----------
-    check_id : int
+    monitor_id : int
         ID of the check.
     alert_check_options : AlertCheckOptions
         The alert check options.
@@ -70,18 +71,18 @@ async def run_check_alert(
         {<alert_rule_id>: {<alert_id>: {<version_id>: [<failed_values>]}}}.
     """
     # get the relevant objects from the db
-    check_results = await session.execute(select(Check).where(Check.id == check_id)
-                                          .options(selectinload(Check.alert_rules)))
-    check: Check = check_results.scalars().first()
+    monitor_query = await session.execute(select(Monitor).where(Monitor.id == monitor_id)
+                                          .options(joinedload(Monitor.alert_rules), joinedload(Monitor.check)))
+    monitor: Monitor = monitor_query.scalars().first()
 
-    if len(check.alert_rules) == 0:
-        raise ValueError("No alert rules related to the check were found")
+    if len(monitor.alert_rules) == 0:
+        raise ValueError("No alert rules related to the monitor were found")
 
     end_time = pdl.parse(alert_check_options.end_time)
 
     all_alerts_dict = {}
-    for alert_rule in check.alert_rules:
-        start_time = end_time - pdl.duration(seconds=alert_rule.lookback)
+    for alert_rule in monitor.alert_rules:
+        start_time = end_time - pdl.duration(seconds=monitor.lookback)
         # make sure this alert is in the correct window for the alert rule
         if alert_rule.last_run is not None and alert_rule.last_run != end_time and \
                 alert_rule.last_run + pdl.duration(seconds=alert_rule.repeat_every) > start_time:
@@ -91,7 +92,7 @@ async def run_check_alert(
 
         # get relevant model_versions for that time window
         model_versions, _ = await get_model_versions_and_task_type_per_time_window(session,
-                                                                                   check,
+                                                                                   monitor.check,
                                                                                    start_time,
                                                                                    end_time)
 
@@ -119,9 +120,9 @@ async def run_check_alert(
         # run check for the relevant window and data filter
         check_alert_check_options = FilterWindowOptions(start_time=start_time.isoformat(),
                                                         end_time=end_time.isoformat(),
-                                                        data_filter=alert_rule.data_filters,
+                                                        data_filter=monitor.data_filters,
                                                         model_version_ids=relevant_model_versions)
-        check_results = await run_check_window(check.id, check_alert_check_options, session)
+        check_results = await run_check_window(monitor.check, check_alert_check_options, session)
 
         # test if any results raise an alert
         for model_version_id, results in check_results.items():
@@ -129,7 +130,7 @@ async def run_check_alert(
                 alert_dict[str(model_version_id)] = []
             failed_vals = []
             for val_name, value in results.items():
-                if alert_rule.condition.feature is None or alert_rule.condition.feature == val_name:
+                if monitor.filter_key is None or monitor.filter_key == val_name:
                     if alert_condition_func(value, alert_condition_val):
                         failed_vals.append(val_name)
             alert_dict[str(model_version_id)] = failed_vals
@@ -247,7 +248,7 @@ async def run_check_per_window_in_range(
 
 
 async def run_check_window(
-    check_id: int,
+    check: Check,
     window_options: FilterWindowOptions,
     session: AsyncSession = AsyncSessionDep
 ):
@@ -255,20 +256,13 @@ async def run_check_window(
 
     Parameters
     ----------
-    check_id : int
-        ID of the check.
+    check : Check
     window_options : FilterWindowOptions
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
-
-    Returns
-    -------
-    CheckSchema
-        Created check.
     """
     # get the relevant objects from the db
-    check = await fetch_or_404(session, Check, id=check_id)
     dp_check = BaseCheck.from_config(check.config)
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")

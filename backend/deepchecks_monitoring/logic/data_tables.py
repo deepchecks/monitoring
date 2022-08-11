@@ -24,7 +24,7 @@ SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
 
 __all__ = ["get_json_schema_columns_for_monitor", "get_json_schema_columns_for_model", "get_table_columns_for_model",
            "get_columns_for_task_type", "get_table_columns_for_monitor", "column_types_to_table_columns",
-           "SAMPLE_ID_COL", "SAMPLE_TS_COL"]
+           "SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_LABEL_COL", "SAMPLE_PRED_VALUE_COL"]
 
 
 def get_table_columns_for_monitor() -> t.List[Column]:

@@ -17,7 +17,9 @@ from sqlalchemy import func, literal, select, text, union_all
 from sqlalchemy.orm import selectinload
 from typing_extensions import TypedDict
 
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.logic.alerts_logic import get_alerts_per_model
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.model import TaskType
@@ -25,7 +27,6 @@ from deepchecks_monitoring.models.model_version import ColumnMetadata, ColumnTyp
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.utils import IdResponse, TimeUnit, exists_or_404, fetch_or_404
 
-from ...config import Tags
 from .router import router
 
 
@@ -207,7 +208,7 @@ async def get_models(
         List of models.
     """
     query = await session.execute(select(Model))
-    alerts_counts = await Model.get_alerts_per_model(session)
+    alerts_counts = await get_alerts_per_model(session)
     models = []
     for res in query.scalars().all():
         model = ModelsInfoSchema.from_orm(res)

@@ -20,7 +20,7 @@ from sqlalchemy.orm import relationship
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
-from deepchecks_monitoring.utils import DataFilterList, OperatorsEnum
+from deepchecks_monitoring.utils import OperatorsEnum
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
@@ -28,7 +28,6 @@ __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 class Condition(BaseModel):
     """Condition to define an alert on check result, value must be numeric."""
 
-    feature: t.Optional[str]
     operator: OperatorsEnum
     value: float
 
@@ -51,11 +50,8 @@ class AlertRule(Base):
         Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("name", String(50)),
-        Column("description", String(200), default=""),
-        Column("check_id", Integer, ForeignKey("checks.id")),
-        Column("data_filters", PydanticType(pydantic_model=DataFilterList), nullable=True),
+        Column("monitor_id", Integer, ForeignKey("monitors.id")),
         Column("condition", PydanticType(pydantic_model=Condition)),
-        Column("lookback", Integer),
         Column("repeat_every", Integer, nullable=False),
         Column("alert_severity", Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False),
         Column("last_run", DateTime(timezone=True), nullable=True),
@@ -66,20 +62,17 @@ class AlertRule(Base):
     }
 
     name: str
-    check_id: int
-    lookback: int
+    monitor_id: int
     repeat_every: int
     condition: Condition
     alert_severity: AlertSeverity
     alerts: t.List["Alert"] = field(default_factory=list)
-    description: t.Optional[str] = None
-    data_filters: DataFilterList = None
     last_run: pdl.DateTime = None
     id: int = None
 
     __mapper_args__ = {  # type: ignore
         "properties": {
-            "check": relationship("Check"),
+            "monitor": relationship("Monitor"),
             "alerts": relationship("Alert"),
         }
     }
