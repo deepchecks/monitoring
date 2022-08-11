@@ -13,11 +13,13 @@ import typing as t
 import pendulum as pdl
 from fastapi import Response, status
 from pydantic import BaseModel
+from sqlalchemy import false, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.models.alert import Alert
+from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity
 from deepchecks_monitoring.utils import exists_or_404, fetch_or_404
 
 from .router import router
@@ -38,10 +40,23 @@ class AlertSchema(BaseModel):
         orm_mode = True
 
 
+@router.get("/alerts/count_active", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
+async def count_alerts(
+    session: AsyncSession = AsyncSessionDep
+):
+    """Count alerts."""
+    select_alert = select(AlertRule.alert_severity, func.count()).join(Alert.alert_rule)\
+        .where(Alert.resolved == false())
+    q = select_alert.group_by(AlertRule.alert_severity)
+    results = await session.execute(q)
+    total = results.all()
+    return dict(total)
+
+
 @router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
-    alert_id: int,
-    session: AsyncSession = AsyncSessionDep
+        alert_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Get event by id."""
     event = await fetch_or_404(session, Alert, id=alert_id)
@@ -50,8 +65,8 @@ async def get_alert(
 
 @router.delete("/alerts/{alert_id}", tags=[Tags.ALERTS])
 async def delete_alert(
-    alert_id: int,
-    session: AsyncSession = AsyncSessionDep
+        alert_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Delete event by id."""
     await exists_or_404(session, Alert, id=alert_id)

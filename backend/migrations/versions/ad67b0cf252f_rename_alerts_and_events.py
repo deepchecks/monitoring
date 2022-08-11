@@ -40,7 +40,7 @@ def upgrade() -> None:
     sa.Column('condition', deepchecks_monitoring.models.pydantic_type.PydanticType(astext_type=Text()), nullable=True),
     sa.Column('lookback', sa.Integer(), nullable=True),
     sa.Column('repeat_every', sa.Integer(), nullable=False),
-    sa.Column('alert_severity', sa.Enum('LOW', 'MID', 'HIGH', 'CRITICAL', name='alertseverity'), nullable=False),
+    sa.Column('alert_severity', postgresql.ENUM(name='alertseverity', create_type=False), nullable=False),
     sa.Column('last_run', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['check_id'], ['checks.id'], ),
     sa.PrimaryKeyConstraint('id')

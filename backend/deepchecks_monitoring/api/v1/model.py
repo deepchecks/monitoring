@@ -63,6 +63,12 @@ class ModelDailyIngestion(TypedDict):
     day: int
 
 
+class ModelsInfoSchema(ModelSchema):
+    """Model ingestion record."""
+
+    alerts_count: t.Optional[int]
+
+
 @router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model.",
              description="Create a new model with its name, task type, and description. Returns the ID of the model.")
 async def create_model(
@@ -184,10 +190,10 @@ async def get_model(
     return ModelSchema.from_orm(model)
 
 
-@router.get("/models/", response_model=t.List[ModelSchema], tags=[Tags.MODELS])
+@router.get("/models/", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])
 async def get_models(
     session: AsyncSession = AsyncSessionDep
-) -> ModelSchema:
+):
     """Create a new model.
 
     Parameters
@@ -200,8 +206,14 @@ async def get_models(
     List[ModelSchema]
         List of models.
     """
-    results = await session.execute(select(Model))
-    return [ModelSchema.from_orm(res) for res in results.scalars().all()]
+    query = await session.execute(select(Model))
+    alerts_counts = await Model.get_alerts_per_model(session)
+    models = []
+    for res in query.scalars().all():
+        model = ModelsInfoSchema.from_orm(res)
+        model.alerts_count = alerts_counts.get(model.id, 0)
+        models.append(model)
+    return models
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])

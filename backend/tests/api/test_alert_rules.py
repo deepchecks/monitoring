@@ -11,21 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
-
-
-def add_alert_rule(classification_model_check_id, client: TestClient) -> int:
-    request = {
-        "name": "alerty",
-        "lookback": 86400,
-        "repeat_every": 86400,
-        "alert_severity": "low",
-        "condition": {
-            "operator": "greater_than",
-            "value": 100
-        }
-    }
-    response = client.post(f"/api/v1/checks/{classification_model_check_id}/alert_rules", json=request)
-    return response.json()["id"]
+from tests.api.test_alerts import add_alert
+from tests.conftest import add_alert_rule
 
 
 @pytest.mark.asyncio
@@ -163,3 +150,29 @@ async def test_count_single_model(
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 1
+
+
+@pytest.mark.asyncio
+async def test_get_alert_rules(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    alert_rule_id = add_alert_rule(classification_model_check_id, client, alert_severity=AlertSeverity.LOW)
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    alert_rule_id = add_alert_rule(classification_model_check_id, client, alert_severity=AlertSeverity.MID)
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    await async_session.commit()
+    # Act
+    response = client.get("/api/v1/alert_rules/")
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [{"alert_severity": "low", "alerts_count": 1, "check_id": 1,
+                                "condition": {"feature": None, "operator": "greater_than", "value": 100.0},
+                                "data_filters": None, "description": "", "id": 1, "lookback": 86400, "name": "alerty",
+                                "repeat_every": 86400},
+                               {"alert_severity": "mid", "alerts_count": 2, "check_id": 1,
+                                "condition": {"feature": None, "operator": "greater_than", "value": 100.0},
+                                "data_filters": None, "description": "", "id": 2, "lookback": 86400, "name": "alerty",
+                                "repeat_every": 86400}]

@@ -18,12 +18,14 @@ import testing.postgresql
 from fastapi.testclient import TestClient
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+import pendulum as pdl
 
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.api.v1.model_version import ModelVersionCreationSchema, create_version
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.models import Model, TaskType
+from deepchecks_monitoring.models import Model, TaskType, Alert
+from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.utils import json_dumps
 
@@ -167,3 +169,24 @@ async def regression_model_check_id(async_session: AsyncSession, regression_mode
     result = await create_check(regression_model_id, schema, async_session)
     await async_session.commit()
     return result["id"]
+
+
+def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
+    dt = pdl.from_timestamp(1600000)
+    async_session.add(Alert(failed_values={}, alert_rule_id=alert_rule_id, start_time=dt, end_time=dt,
+                            resolved=resolved))
+
+
+def add_alert_rule(check_id, client: TestClient, alert_severity=AlertSeverity.LOW) -> int:
+    request = {
+        "name": "alerty",
+        "lookback": 86400,
+        "repeat_every": 86400,
+        "alert_severity": alert_severity.value,
+        "condition": {
+            "operator": "greater_than",
+            "value": 100
+        }
+    }
+    response = client.post(f"/api/v1/checks/{check_id}/alert_rules", json=request)
+    return response.json()["id"]

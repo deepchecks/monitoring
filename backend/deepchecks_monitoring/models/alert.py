@@ -13,7 +13,7 @@ import typing as t
 from dataclasses import dataclass, field
 
 import pendulum as pdl
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Table
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Table
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -34,7 +34,8 @@ class Alert(Base):
         Column("alert_rule_id", Integer, ForeignKey("alert_rules.id"), nullable=False),
         Column("created_at", DateTime(timezone=True), default=pdl.now),
         Column("start_time", DateTime(timezone=True), nullable=False),
-        Column("end_time", DateTime(timezone=True), nullable=False)
+        Column("end_time", DateTime(timezone=True), nullable=False),
+        Column("resolved", Boolean, nullable=False, default=False)
     )
     __table_args__ = {
         "schema": "default"
@@ -44,6 +45,7 @@ class Alert(Base):
     alert_rule_id: int
     start_time: pdl.DateTime
     end_time: pdl.DateTime
+    resolved: bool = None
     created_at: pdl.DateTime = field(init=False)
     id: int = None
 

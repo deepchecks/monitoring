@@ -10,6 +10,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from deepchecks_monitoring.models.alert_rule import AlertSeverity
+from tests.conftest import add_alert, add_alert_rule
+
 
 @pytest.mark.asyncio
 async def test_add_model(client: TestClient):
@@ -20,7 +23,8 @@ async def test_add_model(client: TestClient):
     response = client.get("/api/v1/models/")
     assert response.status_code == 200
     resp_json = response.json()
-    assert resp_json[0] == {"id": 1, "name": "44", "task_type": "classification", "description": None}
+    assert resp_json[0] == {"id": 1, "name": "44", "task_type": "classification", "description": None,
+                            "alerts_count": 0}
 
 
 @pytest.mark.asyncio
@@ -31,3 +35,28 @@ async def test_get_columns_model(classification_model_id, classification_model_v
     assert response.json() == {"a": {"type": "numeric", "values": [-9999999, 999999]},
                                "b": {"type": "categorical", "values": ["a", "b", "c"]},
                                "c": {"type": "numeric", "values": [-9999999, 999999]}}
+
+
+@pytest.mark.asyncio
+async def test_get_models(classification_model_check_id, regression_model_check_id, client: TestClient, async_session):
+    # Arrange
+    alert_rule_id = add_alert_rule(classification_model_check_id, client)
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    alert_rule_id = add_alert_rule(regression_model_check_id, client)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    alert_rule_id = add_alert_rule(regression_model_check_id, client, alert_severity=AlertSeverity.HIGH)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    await async_session.commit()
+    # Act
+    response = client.get("/api/v1/models/")
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [
+        {"id": 1, "name": "classification model", "description": "test", "task_type": "classification",
+         "alerts_count": 1},
+        {"id": 2, "name": "regression model", "description": "test", "task_type": "regression",
+         "alerts_count": 3}
+    ]

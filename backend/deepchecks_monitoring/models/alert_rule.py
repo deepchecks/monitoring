@@ -11,19 +11,16 @@
 import enum
 import typing as t
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
 import pendulum as pdl
 from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Table, false, func, select
 from sqlalchemy.orm import relationship
 
+from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
 from deepchecks_monitoring.utils import DataFilterList, OperatorsEnum
-
-if TYPE_CHECKING:
-    from deepchecks_monitoring.models.alert import Alert
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
@@ -86,3 +83,21 @@ class AlertRule(Base):
             "alerts": relationship("Alert"),
         }
     }
+
+    @classmethod
+    async def get_alerts_per_rule(cls, session, ids: t.List[int] = None) -> dict:
+        """Return count of active alerts per alert rule id.
+
+        Parameters
+        ----------
+        ids: List[int], default None
+            alert rules ids to filter by the results
+        """
+        count_alerts = select(AlertRule.id, func.count()).join(AlertRule.alerts) \
+            .where(Alert.resolved == false())
+        if ids:
+            count_alerts = count_alerts.where(AlertRule.id.in_(ids))
+        q = count_alerts.group_by(AlertRule.id)
+        results = await session.execute(q)
+        total = results.all()
+        return dict(total)

@@ -56,6 +56,12 @@ class AlertRuleSchema(BaseModel):
         orm_mode = True
 
 
+class AlertRuleInfoSchema(AlertRuleSchema):
+    """Schema of alert rule info for display."""
+
+    alerts_count: t.Optional[int]
+
+
 class AlertRuleUpdateSchema(BaseModel):
     """Schema defines the parameters for updating alert rule."""
 
@@ -102,12 +108,12 @@ async def count_alert_rules(
     return dict(total)
 
 
-@router.get("/alert_rules/", response_model=t.List[AlertRuleSchema], tags=[Tags.ALERTS])
-@router.get("/checks/{check_id}/alert_rules", response_model=t.List[AlertRuleSchema], tags=[Tags.ALERTS])
+@router.get("/alert_rules/", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
+@router.get("/checks/{check_id}/alert_rules", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
 async def get_alert_rules(
     check_id: int = None,
     session: AsyncSession = AsyncSessionDep
-) -> dict:
+):
     """Return all the alert rules.
 
     Parameters
@@ -122,12 +128,19 @@ async def get_alert_rules(
     List[AlertSchema]
         All the alerts for a given check.
     """
-    select_alerts: Select = select(AlertRule)
+    select_alerts = select(AlertRule)
     if check_id is not None:
         await exists_or_404(session, Check, id=check_id)
         select_alerts = select_alerts.where(AlertRule.check_id == check_id)
+
     results = await session.execute(select_alerts)
-    return [AlertRuleSchema.from_orm(res) for res in results.scalars().all()]
+    alert_rules = [AlertRuleInfoSchema.from_orm(res) for res in results.scalars().all()]
+    ids = [r.id for r in alert_rules]
+    alerts_count = await AlertRule.get_alerts_per_rule(session, ids)
+    for r in alert_rules:
+        r.alerts_count = alerts_count.get(r.id, 0)
+
+    return alert_rules
 
 
 @router.get("/alert_rules/{alert_rule_id}", response_model=AlertRuleSchema, tags=[Tags.ALERTS])

@@ -13,13 +13,13 @@ import enum
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Column, Enum, Integer, String, Table
+from sqlalchemy import Column, Enum, Integer, String, Table, false, func, select
 from sqlalchemy.orm import relationship
 
+from deepchecks_monitoring.models import Alert, AlertRule, Check
 from deepchecks_monitoring.models.base import Base
 
 if TYPE_CHECKING:
-    from deepchecks_monitoring.models.check import Check
     from deepchecks_monitoring.models.model_version import ModelVersion
 
 
@@ -62,3 +62,22 @@ class Model(Base):
             "checks": relationship("Check"),
         }
     }
+
+    @classmethod
+    async def get_alerts_per_model(cls, session) -> dict:
+        """Get count of active alerts per model id.
+
+        Parameters
+        ----------
+        session
+
+        Returns
+        -------
+        dict
+        """
+        count_alerts = select(Check.model_id, func.count()).join(Alert.alert_rule).join(AlertRule.check) \
+            .where(Alert.resolved == false())
+        q = count_alerts.group_by(Check.model_id)
+        results = await session.execute(q)
+        total = results.all()
+        return dict(total)
