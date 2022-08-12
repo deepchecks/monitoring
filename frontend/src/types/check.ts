@@ -1,4 +1,5 @@
 import { ID } from ".";
+import { Filter } from "./monitor";
 
 export interface Check {
   config: {
@@ -14,9 +15,7 @@ export interface Check {
 export interface RunCheckRequest {
   lookback: number;
   filter: {
-    column: string;
-    operator: string;
-    value: string | number;
+    filters: Filter[];
   };
 }
 

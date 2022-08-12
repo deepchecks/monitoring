@@ -14,7 +14,7 @@ import {
   DashboardActive,
   DashboardHover,
 } from "../assets/icon/icon";
-import { ALERTS, ANALISIS, CONFIGURATION, DASHBOARD_ROUTE } from "./routes";
+import { routes } from "./routes";
 
 export interface SidebarInfo {
   text: string;
@@ -27,28 +27,28 @@ export interface SidebarInfo {
 export const sideBarInfo: SidebarInfo[] = [
   {
     text: "My Dashboard",
-    link: DASHBOARD_ROUTE,
+    link: routes.dashboard,
     Icon: Dashboard,
     IconHover: DashboardHover,
     ActivIcon: DashboardActive,
   },
   {
     text: "Alerts",
-    link: ALERTS,
+    link: routes.alerts,
     Icon: Alarm,
     IconHover: AlarmHover,
     ActivIcon: AlarmActive,
   },
   {
     text: "Analysis",
-    link: ANALISIS,
+    link: routes.analysis,
     Icon: Analysis,
     IconHover: AnalysisHover,
     ActivIcon: AnalysisActive,
   },
   {
     text: "Configuration",
-    link: CONFIGURATION,
+    link: routes.configuration,
     Icon: Configuration,
     IconHover: ConfigurationHover,
     ActivIcon: ConfigurationActive,

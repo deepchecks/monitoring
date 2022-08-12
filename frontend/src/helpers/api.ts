@@ -6,14 +6,14 @@ export const API_URL =
 
 export const ApiBreakpoints = {
   ALERT: (alertId: ID) => `/alerts/${alertId}`,
-  ALERTS_COUNT: (modelId: ID) => `/models/${modelId}/alerts/count`,
-  ALERTS_ALL_COUNT: "/alerts/count",
+  ALERTS_COUNT_BY_ID: (modelId: ID) => `/models/${modelId}/alerts/count`,
+  ALERTS_COUNT: "/alerts/count",
   ALERT_CREATE: (checkId: ID) => `/checks/${checkId}/alerts`,
   ALERT_DELETE: (alertId: ID) => `/alerts/${alertId}`,
   ALERT_UPDATE: (alertId: ID) => `/alerts/${alertId}`,
   CHECKS: (modelId: ID) => `/models/${modelId}/checks`,
   CHECKS_CREATE: (modelId: ID) => `/models/${modelId}/checks`,
-  CHECK_RUN: (checkId: ID) => `/checks/${checkId}/run/`,
+  CHECK_RUN: (checkId: ID) => `/checks/${checkId}/run/lookback`,
   MODEL: (modelId: ID) => `/models/${modelId}`,
   MODELS: "/models/",
   MODELS_DATA_INGESTION: (modelId: ID) => `/models/${modelId}/data-ingestion`,
@@ -29,6 +29,8 @@ export const ApiBreakpoints = {
   MODEL_VERSION_UPDATE_DATA: (modelVersionId: ID) =>
     `/model_versions/${modelVersionId}/data`,
   MONITOR: (monitorId: ID) => `/monitors/${monitorId}`,
+  MONITOR_RUN: (monitorId: ID) => `/monitors/${monitorId}/run`,
+  MONITORS_DASHBOARDS: "/dashboards/",
   MONITOR_CREATE: (checkId: ID) => `/checks/${checkId}/monitors`,
   MONITOR_UPDATE: (monitorId: ID) => `/monitors/${monitorId}`,
   MONITOR_DELETE: (monitorId: ID) => `/monitors/${monitorId}`,

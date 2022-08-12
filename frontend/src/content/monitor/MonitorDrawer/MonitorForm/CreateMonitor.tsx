@@ -1,19 +1,24 @@
 import { Box, MenuItem, SelectChangeEvent } from "@mui/material";
 import { useFormik } from "formik";
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { MarkedSelect } from "../../../../components/MarkedSelect/MarkedSelect";
 import { RangePicker } from "../../../../components/RangePicker/RangePicker";
+import { useTypedDispatch, useTypedSelector } from "../../../../store/hooks";
 import {
-  useCheckSelector,
-  useModelSelector,
-  useMonitorSelector,
-  useTypedDispatch,
-} from "../../../../hook/redux";
-import { getChecks, runCheck } from "../../../../store/requests/check";
-import { getColumns, getModels } from "../../../../store/requests/model";
-import { createMonitor } from "../../../../store/requests/monitor";
-import { clearCheckState } from "../../../../store/slices/CheckSlice";
-import { clearColumns } from "../../../../store/slices/ModelSlice";
+  checkSelector,
+  clearChecks,
+  getChecks,
+} from "../../../../store/slices/check/checkSlice";
+import {
+  clearColumns,
+  getColumns,
+  modelSelector,
+} from "../../../../store/slices/model/modelSlice";
+import {
+  clearMonitorGraph,
+  createMonitor,
+  monitorSelector,
+} from "../../../../store/slices/monitor/monitorSlice";
 import { Subcategory } from "../Subcategory/Subcategory";
 import {
   StyledButton,
@@ -22,7 +27,7 @@ import {
   StyledStackInputs,
   StyledTypography,
   StyledTypographyLabel,
-} from "./CreateMonitor.style";
+} from "./MonitorForm.style";
 
 const timeWindow = [
   { label: "1 hour", value: 60 * 60 },
@@ -36,15 +41,13 @@ interface CreateMonitorProps {
 }
 
 export function CreateMonitor({ onClose }: CreateMonitorProps) {
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
 
   const dispatch = useTypedDispatch();
 
-  const { allModels, columns } = useModelSelector();
-  const { checks } = useCheckSelector();
-  const { loading } = useMonitorSelector();
+  const { allModels, columns } = useTypedSelector(modelSelector);
+  const { checks } = useTypedSelector(checkSelector);
+  const { loading } = useTypedSelector(monitorSelector);
 
   const {
     values,
@@ -89,15 +92,17 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
             }, ""),
             lookback: +values.time,
             data_filter: {
-              column: values.column,
-              operator: operator || "in",
-              value: value || values.category,
+              filters: [
+                {
+                  column: values.column,
+                  operator: operator || "in",
+                  value: value || values.category,
+                },
+              ],
             },
           },
         })
       );
-      dispatch(clearCheckState());
-      dispatch(clearColumns());
       formik.resetForm();
       onClose();
     },
@@ -111,18 +116,6 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
     setFieldValue("column", "");
     dispatch(getChecks(+value));
     dispatch(getColumns(+value));
-  };
-
-  const updateGraph = (operator: string, value: string | number) => {
-    dispatch(
-      runCheck({
-        checkId: +values.check,
-        data: {
-          lookback: +values.time,
-          filter: { column: values.column, operator, value },
-        },
-      })
-    );
   };
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
@@ -197,31 +190,9 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
   }, [values.column]);
 
   useEffect(() => {
-    clearTimeout(timer.current);
-
-    if (values.column === "a") {
-      if (values.check && values.time && values.column && values.numericValue) {
-        timer.current = setTimeout(() => {
-          updateGraph("greater_than", values.numericValue);
-        }, 1000);
-      }
-    }
-
-    if (values.column === "b") {
-      if (values.check && values.time && values.column && values.category) {
-        timer.current = setTimeout(() => {
-          updateGraph("in", values.category);
-        }, 1000);
-      }
-    }
-  }, [values.check, values.column, values.category, values.numericValue]);
-
-  useEffect(() => {
-    dispatch(clearCheckState());
+    dispatch(clearChecks());
     dispatch(clearColumns());
-    if (!allModels.length) {
-      dispatch(getModels());
-    }
+    dispatch(clearMonitorGraph());
   }, [dispatch]);
 
   return (

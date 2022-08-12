@@ -1,49 +1,58 @@
-import { Box, styled, Typography } from "@mui/material";
+import { Box, Menu, MenuItem, Select, styled, Typography } from "@mui/material";
+import { Arrow } from "../../../assets/icon/icon";
 
-export const StyledFlexContent = styled(Box)(({ theme }) => ({
-  maxWidth: "512px",
+export const StyledFlexContent = styled(Box)({
   width: "100%",
   minWidth: "428px",
-  minHeight: "446px",
-  borderLeft: "8px solid #F1E9FE",
+  minHeight: 300,
   boxShadow: "0px 0px 25px 2px rgba(0, 0, 0, 0.09)",
+  paddingBottom: "30px",
   borderRadius: "10px",
-  marginBottom: "40px",
-  [theme.breakpoints.down(1944)]: {
-    maxWidth: "32%",
-  },
-  [theme.breakpoints.down(1635)]: {
-    maxWidth: "47%",
-  },
-  "&.fourth": {
-    maxWidth: "47%",
-  },
-  "&.fifth": {
-    maxWidth: "47%",
-    [theme.breakpoints.down(1635)]: {
-      maxWidth: "100% ",
-    },
-  },
-  "&.second": {
-    borderWidth: "0px 0px 8px 8px",
-    borderStyle: "solid",
-    borderColor: "#F1E9FE",
-  },
-  "&.sixs": {
-    maxWidth: "100%!important",
-  },
-  "&.sevn": {
-    maxWidth: "100%!important",
-  },
-}));
+});
 
 export const StyledTypographyTitle = styled(Typography)({
   color: "#3A474E",
   fontWeight: 500,
   fontSize: 18,
-  lineHeight: "160%",
+  lineHeight: "32px",
   textAlign: "left",
-  marginTop: "16px",
-  marginLeft: "16px",
-  marginBottom: "11px",
 });
+
+export const StyledFlexWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  padding: "16px 20px 16px",
+  justifyContent: "space-between",
+  marginBottom: "6px",
+});
+
+export const StyledDiagramWrapper = styled(Box)({
+  padding: "0 40px",
+});
+
+export const StyledMenuItem = styled(MenuItem)({
+  minWidth: 244,
+  padding: "12px",
+  position: "relative",
+});
+
+export const StyledSelect = styled(Select)(({ theme }) => ({
+  marginTop: "40px",
+  minWidth: 150,
+  "& .MuiSelect-icon": {
+    "& + .MuiOutlinedInput-notchedOutline": {
+      border: `1px solid ${theme.palette.grey[50]}`,
+    },
+  },
+}));
+
+export const StyledRootMenu = styled(Menu)({
+  marginTop: "9px",
+  "& .MuiPaper-root": {
+    overflow: "visible",
+  },
+});
+
+export const StyledArrow = styled(Arrow)(({ theme }) => ({
+  fill: theme.palette.text.disabled,
+}));

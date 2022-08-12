@@ -1,4 +1,6 @@
 import { alpha, Components, Theme } from "@mui/material";
+import { CheckboxDefault, CheckboxSelected } from "../../assets/icon/icon";
+import { colors } from "./colors";
 
 export const componentOptions: Components<Theme> = {
   MuiButton: {
@@ -63,7 +65,7 @@ export const componentOptions: Components<Theme> = {
         background: "none",
         letterSpacing: "0.46px",
         boxShadow: "none",
-        color: theme.palette.primary.dark,
+        color: theme.palette.primary.main,
         ":hover": {
           background: theme.palette.primary.light,
         },
@@ -82,6 +84,7 @@ export const componentOptions: Components<Theme> = {
       root: ({ theme }) => ({
         borderRadius: "6px",
         transition: "all 0.3s ease",
+        background: "#F3F5F8",
         ":hover": {
           background: theme.palette.primary.light,
         },
@@ -147,6 +150,93 @@ export const componentOptions: Components<Theme> = {
         color: theme.palette.text.secondary,
         "& + .MuiOutlinedInput-notchedOutline": {
           border: `1px solid ${theme.palette.grey[200]}`,
+        },
+      }),
+    },
+  },
+  MuiMenu: {
+    styleOverrides: {
+      list: {
+        padding: "6px 0 10px",
+      },
+    },
+  },
+  MuiCheckbox: {
+    defaultProps: {
+      icon: <CheckboxDefault />,
+      checkedIcon: <CheckboxSelected />,
+    },
+    styleOverrides: {
+      root: {
+        padding: "3px",
+      },
+    },
+  },
+  MuiSwitch: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        padding: "7px",
+        height: 24,
+        width: 40,
+        overflow: "visible",
+        "& 	.Mui-checked + .MuiSwitch-track": {
+          backgroundColor: theme.palette.primary.contrastText,
+          opacity: 1,
+        },
+      }),
+      switchBase: ({ theme }) => ({
+        padding: "4px",
+        color: theme.palette.grey[100],
+      }),
+      thumb: {
+        width: 16,
+        height: 16,
+        boxShadow:
+          "0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px rgba(0, 0, 0, 0.14), 0px 1px 3px rgba(0, 0, 0, 0.12)",
+      },
+      track: ({ theme }) => ({
+        opacity: 1,
+        backgroundColor: theme.palette.text.disabled,
+      }),
+    },
+  },
+  MuiTooltip: {
+    styleOverrides: {
+      tooltip: {
+        padding: "4px 16px",
+        backgroundColor: colors.neutral.blue,
+        fontSize: 16,
+        lineHeight: "24px",
+        letterSpacing: "0.15px",
+        fontWeight: 400,
+      },
+    },
+  },
+  MuiChip: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        height: 28,
+        backgroundColor: colors.neutral.blue,
+        color: theme.palette.common.white,
+        fontSize: 12,
+        lineHeight: "18px",
+        letterSpacing: "0.1px",
+      }),
+      label: {
+        padding: "0 7px 0 10px",
+      },
+      deletable: ({ theme }) => ({
+        "& .MuiChip-deleteIcon": {
+          margin: "0 7px 0 0",
+          width: 16,
+          height: 16,
+          opacity: 0.7,
+          color: theme.palette.common.white,
+
+          ":hover": {
+            color: theme.palette.common.white,
+            opacity: 1,
+          },
         },
       }),
     },

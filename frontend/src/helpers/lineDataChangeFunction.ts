@@ -98,6 +98,7 @@ type PerCentValue = number[] | any[];
 interface BearValue {
   [key: string | number]: number[];
 }
+
 export const lineDataChangeFunction = () => {
   const label: string[] = [];
   const bearValue: BearValue[] = [];
@@ -150,3 +151,12 @@ export const lineDataChangeFunction = () => {
     })),
   };
 };
+
+export const setGraphColor = (index: number) => ({
+  fill: true,
+  tension: 0.25,
+  pointBorderWidth: 0,
+  borderColor: colors[index],
+  pointHoverBorderWidth: 0,
+  pointHoverRadius: 0,
+});

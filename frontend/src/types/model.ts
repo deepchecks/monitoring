@@ -15,3 +15,14 @@ export interface ModelColumns {
     values: [string, string];
   };
 }
+
+export interface DataIngestion {
+  count: number;
+  day: number;
+}
+
+export interface AllDataIngestion {
+  [key: string]: DataIngestion[];
+}
+
+export type ModelWithAlerts = Model & { count: number };

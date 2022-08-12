@@ -1,8 +1,8 @@
 import { configureStore, Middleware } from "@reduxjs/toolkit";
-import slice from "./slice/slice";
-import checkSlice from "./slices/CheckSlice";
-import modelSlice from "./slices/ModelSlice";
-import monitorSlice from "./slices/MonitorSlice";
+import { alertReducer } from "./slices/alert/alertSlice";
+import { checkReducer } from "./slices/check/checkSlice";
+import { modelReducer } from "./slices/model/modelSlice";
+import { monitorReducer } from "./slices/monitor/monitorSlice";
 
 const reHydrateStore = () => {
   if (localStorage.getItem("applicationState") !== null) {
@@ -20,10 +20,10 @@ const localStorageMiddleware: Middleware =
 
 export const store = configureStore({
   reducer: {
-    slice,
-    check: checkSlice,
-    model: modelSlice,
-    monitor: monitorSlice,
+    alert: alertReducer,
+    check: checkReducer,
+    model: modelReducer,
+    monitor: monitorReducer,
   },
   preloadedState: reHydrateStore(),
   middleware: (getDefaultMiddleware) =>

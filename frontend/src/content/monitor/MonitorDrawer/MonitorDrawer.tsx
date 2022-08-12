@@ -1,7 +1,8 @@
 import { Drawer, DrawerProps } from "@mui/material";
-import { CreateMonitor } from "./CreateMonitor/CreateMonitor";
 import { GraphView } from "./GraphView/GraphView";
 import { StyledStackWrapper } from "./MonitorDrawer.style";
+import { CreateMonitor } from "./MonitorForm/CreateMonitor";
+import { EditMonitor } from "./MonitorForm/EditMonitor";
 
 interface MonitorDrawerProps extends DrawerProps {
   monitorId?: number | string | null;
@@ -16,8 +17,9 @@ export function MonitorDrawer({
   return (
     <Drawer {...props}>
       <StyledStackWrapper direction="row">
-        {monitorId ? null : (
-          // <EditMonitor onClose={closeDrawer} monitorId={monitorId}/>
+        {monitorId ? (
+          <EditMonitor onClose={onClose} monitorId={monitorId} />
+        ) : (
           <CreateMonitor onClose={onClose} />
         )}
         <GraphView onClose={onClose} />

@@ -1,4 +1,11 @@
-import { Box, styled, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Menu,
+  MenuItem,
+  styled,
+  Typography,
+} from "@mui/material";
 
 export const StyledBoxContainer = styled(Box)({
   width: "100%",
@@ -11,17 +18,23 @@ export const StyledBoxWrapper = styled(Box)({
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-start",
-  height: "38px",
   borderRadius: "20px 0px 0px 20px",
   cursor: "pointer",
   color: "#fff",
+  "& svg": {
+    fill: "white",
+  },
   "&:hover": {
     color: "#B17DFF",
-    fill: "#17003E",
+  },
+  "&:hover svg": {
+    fill: "#B17DFF",
+  },
+  "&:hover img": {
+    borderColor: "#B17DFF",
   },
   "&:active": {
     color: "#B17DFF",
-    fill: "#17003E",
   },
 });
 
@@ -47,3 +60,19 @@ export const StyledTypography = styled(Typography)({
   lineHeight: "120%",
   marginLeft: "14px",
 });
+
+export const StyledMenuItem = styled(MenuItem)({
+  minWidth: 244,
+  padding: "12px",
+});
+
+export const StyledMenu = styled(Menu)({
+  "& .MuiPaper-root": {
+    marginLeft: "-20px",
+  },
+});
+
+export const StyledDivider = styled(Divider)(({ theme }) => ({
+  margin: "14px 0 9px !important",
+  borderColor: theme.palette.grey[100],
+}));

@@ -51,8 +51,8 @@ export const lightPaletteOptions: PaletteOptions = {
     300: colors.neutral.grey[300],
   },
   text: {
-    primary: alpha(colors.neutral.black, 0.87),
-    secondary: colors.neutral.darkText,
+    primary: colors.neutral.darkText,
+    secondary: alpha(colors.neutral.black, 0.87),
     disabled: colors.neutral.lightText,
   },
   divider: colors.neutral.darkText,

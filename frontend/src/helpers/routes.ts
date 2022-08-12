@@ -1,14 +1,16 @@
 import DashboardPage from "../pages/DashboardPage/DashboardPage";
 
-export const DASHBOARD_ROUTE = "/dashboard";
-export const ALERTS = "/alerts";
-export const ANALISIS = "/analisis";
-export const CONFIGURATION = "/configuration";
+export const routes = {
+  alerts: "/alerts",
+  analysis: "/analisis",
+  configuration: "/configuration",
+  dashboard: "/dashboard",
+};
 
 export const publicRoutes = [
-  { path: DASHBOARD_ROUTE, Component: DashboardPage },
+  { path: routes.dashboard, Component: DashboardPage },
 ];
 
 export const privateRoutes = [
-  { path: DASHBOARD_ROUTE, Component: DashboardPage },
+  { path: routes.dashboard, Component: DashboardPage },
 ];

@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Arow } from "../../../assets/icon/icon";
+import { Arrow } from "../../../assets/icon/icon";
 import { SidebarInfo } from "../../../helpers/helper";
 import {
   StyledArrowWrapper,
@@ -45,7 +45,7 @@ function SidebarMenuItemComponent({ info, width }: SidebarMenuItemProps) {
           </StyledLeftColumn>
           {info.text === "Analysis" && (
             <StyledArrowWrapper hover={hover}>
-              <Arow />
+              <Arrow />
             </StyledArrowWrapper>
           )}
         </>
