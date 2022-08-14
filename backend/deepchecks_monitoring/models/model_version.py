@@ -10,6 +10,7 @@
 """Module defining the ModelVersion ORM model."""
 import enum
 import typing as t
+from copy import copy
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -55,10 +56,10 @@ class ColumnType(enum.Enum):
     def to_json_schema_type(self):
         """Return the json type of the column type."""
         types_map = {
-            ColumnType.NUMERIC: "number",
-            ColumnType.CATEGORICAL: "string",
-            ColumnType.BOOLEAN: "boolean",
-            ColumnType.TEXT: "string",
+            ColumnType.NUMERIC: ("number", "null"),
+            ColumnType.CATEGORICAL: ("string", "null"),
+            ColumnType.BOOLEAN: ("boolean", "null"),
+            ColumnType.TEXT: ("string", "null"),
         }
         return types_map[self]
 
@@ -189,7 +190,12 @@ def json_schema_property_to_sqlalchemy_type(json_property: t.Dict) -> TypeEngine
         "boolean": Boolean,
         "text": Text,
     }
-    json_type = json_property["type"]
+    json_type = copy(json_property["type"])
+
+    if isinstance(json_type, list):
+        json_type.remove("null")
+        json_type = json_type[0]
+
     if json_type in types_map:
         return types_map[json_type]
     elif json_type == "string":

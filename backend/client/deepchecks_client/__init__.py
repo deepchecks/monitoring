@@ -92,10 +92,10 @@ class DeepchecksModelVersionClient:
     ):
         self.session = session
         self.model_version_id = model_version_id
-        response = self.session.get(f'model-versions/{model_version_id}/schema')
+        response = requests.get(urljoin(session.base_url, f'model-versions/{model_version_id}/schema'))
         response.raise_for_status()
         self.schema = response.json()
-        response = self.session.get(f'model-versions/{model_version_id}/reference-schema')
+        response = requests.get(urljoin(session.base_url, f'model-versions/{model_version_id}/reference-schema'))
         response.raise_for_status()
         self.ref_schema = response.json()
 
@@ -143,8 +143,8 @@ class DeepchecksModelVersionClient:
 
         validate(instance=sample, schema=self.schema)
 
-        self.session.post(
-            f'model-versions/{self.model_version_id}/data',
+        requests.post(
+            urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/data'),
             json=sample
         ).raise_for_status()
 
@@ -168,17 +168,17 @@ class DeepchecksModelVersionClient:
         data = dataset.features_columns.copy()
         if dataset.label_name:
             data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = dataset.label_col
-        if prediction_value:
+        if prediction_value is not None:
             data[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = prediction_value
-        if prediction_label:
+        if prediction_label is not None:
             data[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = prediction_label
 
         for (_, row) in data.iterrows():
             item = row.to_dict()
             validate(schema=self.ref_schema, instance=item)
 
-        self.session.post(
-            f'model-versions/{self.model_version_id}/reference',
+        requests.post(
+            urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/reference'),
             files={'file': data.to_json(orient='table', index=False)}
         ).raise_for_status()
 
@@ -206,8 +206,8 @@ class DeepchecksModelVersionClient:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         validate(instance=update, schema=optional_columns_schema)
-        self.session.put(
-            f'model-versions/{self.model_version_id}/data',
+        requests.put(
+            urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/data'),
             json=update
         ).raise_for_status()
 
@@ -232,7 +232,7 @@ class DeepchecksModelClient:
         session: requests.Session
     ):
         self.session = session
-        response = self.session.get(f'models/{model_id}')
+        response = requests.get(urljoin(session.base_url,f'models/{model_id}'))
         response.raise_for_status()
         self.model = response.json()
 
@@ -291,7 +291,7 @@ class DeepchecksModelClient:
                     raise Exception(f'value of non_features must be one of {ColumnType.values()} but got {value}')
 
         # Send request
-        response = self.session.post(f'models/{self.model["id"]}/version', json={
+        response = requests.post(urljoin(self.session.base_url, f'models/{self.model["id"]}/version'), json={
             'name': name,
             'features': features,
             'non_features': non_features or {},
@@ -339,12 +339,12 @@ class DeepchecksClient:
             self.session = session
             self.host = session.base_url  # type: ignore
         elif host is not None:
-            self.host = host + '/api/v1'
-            self.session = HttpSession(base_url=host)
+            self.host = host + '/api/v1/'
+            self.session = HttpSession(base_url=self.host)
         else:
             raise ValueError('"host" or "session" parameter must be provided')
 
-        self.session.get('say-hello')
+        requests.get(urljoin(self.host, 'say-hello'))
 
     def create_model(self, name: str, task_type: str, description: Optional[str] = None) -> DeepchecksModelClient:
         """Create a new model.
@@ -365,7 +365,7 @@ class DeepchecksClient:
         """
         if task_type not in TaskType.values():
             raise Exception(f'task_type must be one of {TaskType.values()}')
-        response = self.session.post('models', json={
+        response = requests.post(urljoin(self.host, 'models'), json={
             'name': name,
             'task_type': task_type,
             'description': description

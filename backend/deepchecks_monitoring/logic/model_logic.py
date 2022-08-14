@@ -11,6 +11,7 @@
 """Module defining utility functions for specific db objects."""
 import typing as t
 
+import numpy as np
 import pandas as pd
 import pendulum as pdl
 from deepchecks import BaseCheck, Dataset, SingleDatasetBaseCheck, TrainTestBaseCheck
@@ -65,20 +66,20 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
     """Dataframe_to_dataset_and_pred."""
     if df is None:
         return None, None, None
-
+    y_pred = None
+    y_proba = None
     if SAMPLE_PRED_LABEL_COL in df.columns:
-        y_pred = df[SAMPLE_PRED_LABEL_COL]
+        if not df[SAMPLE_PRED_LABEL_COL].isna().all():
+            y_pred = df[SAMPLE_PRED_LABEL_COL].to_list()
         df.drop(SAMPLE_PRED_LABEL_COL, inplace=True, axis=1)
-    else:
-        y_pred = None
     if SAMPLE_PRED_VALUE_COL in df.columns:
-        y_proba = df[SAMPLE_PRED_VALUE_COL]
+        if not df[SAMPLE_PRED_VALUE_COL].isna().all():
+            y_proba = df[SAMPLE_PRED_VALUE_COL].to_list()
         df.drop(SAMPLE_PRED_VALUE_COL, inplace=True, axis=1)
-    else:
-        y_proba = None
+
     cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1] == 'categorical']
     dataset = Dataset(df, label=SAMPLE_LABEL_COL, cat_features=cat_features)
-    return dataset, y_pred, y_proba
+    return dataset, np.array(y_pred), np.array(y_proba)
 
 
 def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select, data_filters: DataFilterList):
@@ -126,11 +127,13 @@ async def get_results_for_active_model_version_sessions_per_window(
                 test_data_dataframe, model_version.features, top_feat)
             if isinstance(dp_check, SingleDatasetBaseCheck):
                 reduced = dp_check.run(test_ds, feature_importance=feat_imp,
-                                       y_pred_train=test_pred, y_proba_train=test_proba).reduce_output()
+                                       y_pred_train=test_pred, y_proba_train=test_proba,
+                                       with_display=False).reduce_output()
             elif isinstance(dp_check, TrainTestBaseCheck):
                 reduced = dp_check.run(refrence_table_ds, test_ds, feature_importance=feat_imp,
                                        y_pred_train=refrence_table_pred, y_proba_train=refrence_table_proba,
-                                       y_pred_test=test_pred, y_proba_test=test_proba).reduce_output()
+                                       y_pred_test=test_pred, y_proba_test=test_proba,
+                                       with_display=False).reduce_output()
             else:
                 raise ValueError('incompatible check type')
 

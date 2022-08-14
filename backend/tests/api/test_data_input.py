@@ -58,9 +58,9 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
             "_dc_prediction_value": {"items": {"type": "number"}, "type": "array"},
             "_dc_sample_id": {"type": "string"},
             "_dc_time": {"format": "datetime", "type": "string"},
-            "a": {"type": "number"},
-            "b": {"type": "string"},
-            "c": {"type": "number"}
+            "a": {"type": ["number", "null"]},
+            "b": {"type": ["string", "null"]},
+            "c": {"type": ["number", "null"]}
         },
         "required": ["a", "b", "_dc_sample_id", "_dc_time"],
         "type": "object"

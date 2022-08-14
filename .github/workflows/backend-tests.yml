@@ -95,7 +95,7 @@ jobs:
       with:
         requirements: 'backend/requirements-all.txt'
         fail: 'Copyleft,Other,Error'
-        exclude: '(psycopg2.*2\.9\.3|pyzmq.*23\.2\.0|debugpy.*1\.6\.2|certifi.*2022\.6\.15|tqdm.*4\.64\.0|webencodings.*0\.5\.1|torch.*1\.10\.2.*|torchaudio.*0\.10\.2.*|torchvision.*0\.11\.3.*|terminado.*0\.15\.0|deepchecks.*)'
+        exclude: '(psycopg2.*2\.9\.3|pyzmq.*23\.2\.1|debugpy.*1\.6\.2|certifi.*2022\.6\.15|tqdm.*4\.64\.0|webencodings.*0\.5\.1|torch.*1\.10\.2.*|torchaudio.*0\.10\.2.*|torchvision.*0\.11\.3.*|terminado.*0\.15\.0|deepchecks.*)'
         # psycopg2 is LGPL 2
         # pyzmq is Revised BSD https://github.com/zeromq/pyzmq/blob/main/examples/LICENSE
         # debugpy is MIT https://github.com/microsoft/debugpy/blob/main/LICENSE

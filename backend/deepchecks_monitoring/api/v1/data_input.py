@@ -11,6 +11,7 @@
 import typing as t
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 import pendulum as pdl
 from fastapi import Body, Depends, Response, UploadFile, status
@@ -85,10 +86,10 @@ async def update_data(
     validate(instance=data, schema=optional_columns_schema)
 
     sample_id = data.pop(SAMPLE_ID_COL)
-
+    table = model_version.get_monitor_table(session)
     await session.execute(
-        update(model_version.get_monitor_table(session))
-        .where(SAMPLE_ID_COL == sample_id).values(data)
+        update(table)
+        .where(table.c[SAMPLE_ID_COL] == sample_id).values(data)
     )
 
     return Response(status_code=status.HTTP_200_OK)
@@ -123,13 +124,17 @@ async def save_reference(
 
     contents = await file.read()
     data = pd.read_json(StringIO(contents.decode()), orient="table")
+    data = data.replace(np.NaN, pd.NA).where(data.notnull(), None)
     if len(data) > 100_000:
         raise BadRequest(f"Maximum number of samples allowed for reference is 100,000 but got: {len(data)}")
 
     items = []
     for (_, row) in data.iterrows():
         item = row.to_dict()
-        validate(schema=model_version.reference_json_schema, instance=item)
+        try:
+            validate(schema=model_version.reference_json_schema, instance=item)
+        except Exception as e:
+            raise BadRequest(f"Invalid reference data: {e}") from e
         items.append(item)
 
     await session.execute(ref_table.insert(), items)

@@ -13,7 +13,7 @@ import typing as t
 
 from fastapi import HTTPException, status
 
-__all__ = ['BadRequest', 'NotFound', 'InternalError', 'ContentLengthRequired', 'RequestTooLarge']
+__all__ = ['BaseHTTPException', 'BadRequest', 'NotFound', 'InternalError', 'ContentLengthRequired', 'RequestTooLarge']
 
 
 class BaseHTTPException(abc.ABC, HTTPException):
