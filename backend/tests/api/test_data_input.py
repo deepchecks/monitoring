@@ -62,7 +62,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
             "b": {"type": ["string", "null"]},
             "c": {"type": ["number", "null"]}
         },
-        "required": ["a", "b", "_dc_sample_id", "_dc_time"],
+        "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction_label"],
         "type": "object"
     }
 
@@ -70,7 +70,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
 @pytest.mark.asyncio
 async def test_send_reference_features(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -80,7 +80,7 @@ async def test_send_reference_features(client: TestClient, classification_model_
 @pytest.mark.asyncio
 async def test_send_reference_features_and_labels(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp"}
+    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -90,7 +90,7 @@ async def test_send_reference_features_and_labels(client: TestClient, classifica
 @pytest.mark.asyncio
 async def test_send_reference_features_and_non_features(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "c": 42}
+    sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction_label": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -100,7 +100,7 @@ async def test_send_reference_features_and_non_features(client: TestClient, clas
 @pytest.mark.asyncio
 async def test_send_reference_too_many_samples(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100_001)
     # Assert
@@ -111,7 +111,7 @@ async def test_send_reference_too_many_samples(client: TestClient, classificatio
 @pytest.mark.asyncio
 async def test_send_reference_twice(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
     # Act
     send_reference_request(client, classification_model_version_id, [sample] * 100)
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)

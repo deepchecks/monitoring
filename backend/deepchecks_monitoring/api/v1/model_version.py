@@ -60,7 +60,7 @@ async def create_version(
         SQLAlchemy session.
     """
     # TODO: all this logic must be implemented (encapsulated) within Model type
-    model = await fetch_or_404(session, Model, id=model_id)
+    model: Model = await fetch_or_404(session, Model, id=model_id)
 
     # Validate features importance have all the features
     if info.feature_importance:
@@ -75,7 +75,7 @@ async def create_version(
         raise BadRequest(f'Can\'t use same column name in both features and non_features: {intersects_names}')
 
     monitor_cols = get_json_schema_columns_for_monitor()
-    model_related_cols = get_json_schema_columns_for_model(model.task_type)
+    model_related_cols, required_model_cols = get_json_schema_columns_for_model(model.task_type)
     # Validate no intersections between user columns and dc columns
     saved_keys = set(monitor_cols.keys()) | set(model_related_cols.keys())
     intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.non_features.keys()))
@@ -90,12 +90,12 @@ async def create_version(
     monitor_table_schema = {
         'type': 'object',
         'properties': {**monitor_cols, **features_props, **non_features_props, **model_related_cols},
-        'required': list(features_props.keys()) + list(monitor_cols.keys())
+        'required': list(features_props.keys()) + list(monitor_cols.keys()) + required_model_cols
     }
     reference_table_schema = {
         'type': 'object',
         'properties': {**features_props, **non_features_props, **model_related_cols},
-        'required': list(features_props.keys())
+        'required': list(features_props.keys()) + required_model_cols
     }
 
     # Create columns for data tables

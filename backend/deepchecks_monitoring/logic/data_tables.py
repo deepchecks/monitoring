@@ -89,7 +89,7 @@ def get_columns_for_task_type(task_type: TaskType) -> t.Dict:
         raise Exception(f"Not supported task type {task_type}")
 
 
-def get_json_schema_columns_for_model(task_type: TaskType) -> t.Dict:
+def get_json_schema_columns_for_model(task_type: TaskType) -> t.Tuple[t.Dict, t.List]:
     """Get deepchecks' saved columns to be used in json schema based on given task type.
 
     Parameters
@@ -98,20 +98,20 @@ def get_json_schema_columns_for_model(task_type: TaskType) -> t.Dict:
 
     Returns
     -------
-    Dict
-        Items to be inserted into json schema
+    Tuple[Dict, List]
+        Columns for the json schema, and list of required columns
     """
     if task_type == TaskType.REGRESSION:
         return {
             SAMPLE_LABEL_COL: {"type": "number"},
             SAMPLE_PRED_VALUE_COL: {"type": "number"}
-        }
+        }, [SAMPLE_PRED_VALUE_COL]
     elif task_type == TaskType.CLASSIFICATION:
         return {
             SAMPLE_LABEL_COL: {"type": "string"},
             SAMPLE_PRED_LABEL_COL: {"type": "string"},
             SAMPLE_PRED_VALUE_COL: {"type": "array", "items": {"type": "number"}}
-        }
+        }, [SAMPLE_PRED_LABEL_COL]
     else:
         raise Exception(f"Not supported task type {task_type}")
 
