@@ -9,12 +9,18 @@
 # ----------------------------------------------------------------------------
 """V1 API of the model version."""
 import typing as t
+from io import StringIO
 
+import pendulum as pdl
+from deepchecks.tabular.datasets.classification import iris
+from deepchecks.tabular.suites.default_suites import data_integrity
 from pydantic import BaseModel
 from sqlalchemy import MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
+from starlette.responses import HTMLResponse
 
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_tables import (column_types_to_table_columns, get_json_schema_columns_for_model,
@@ -24,7 +30,7 @@ from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ColumnType, ModelVersion
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404
 
-from ...config import Tags
+from .check import MonitorOptions
 from .router import router
 
 
@@ -163,3 +169,36 @@ async def get_reference_schema(
     """
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
     return model_version.reference_json_schema
+
+
+@router.post('/model-versions/{model_version_id}/suite-run', tags=[Tags.CHECKS], response_class=HTMLResponse)
+async def run_suite_on_model_version(
+    model_version_id: int,
+    monitor_options: MonitorOptions,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Run suite (all checks defined) on given model version.
+
+    Parameters
+    ----------
+    model_version_id
+    monitor_options
+    session
+
+    Returns
+    -------
+    HTML of the suite result.
+    """
+    await fetch_or_404(session, ModelVersion, id=model_version_id)
+    _: pdl.DateTime = pdl.parse(monitor_options.start_time)
+    _: pdl.DateTime = pdl.parse(monitor_options.end_time)
+
+    train, test = iris.load_data()
+    model = iris.load_fitted_model()
+
+    result = data_integrity().run(train, test, model=model)
+    buffer = StringIO()
+    result.save_as_html(buffer, connected=True)
+    html = buffer.getvalue()
+
+    return HTMLResponse(content=html, status_code=200)
