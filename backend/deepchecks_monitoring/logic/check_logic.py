@@ -84,11 +84,12 @@ async def run_rules_of_monitor(
     for alert_rule in monitor.alert_rules:
         start_time = end_time - pdl.duration(seconds=monitor.lookback)
         # make sure this alert is in the correct window for the alert rule
-        if alert_rule.last_run is not None and alert_rule.last_run != end_time and \
-                alert_rule.last_run + pdl.duration(seconds=alert_rule.repeat_every) > start_time:
+        if alert_rule.last_run is not None and \
+                (alert_rule.last_run - end_time).total_seconds() % alert_rule.repeat_every != 0:
             continue
 
-        await AlertRule.update(session, alert_rule.id, {"last_run": end_time})
+        if alert_rule.last_run is None or alert_rule.last_run < end_time:
+            await AlertRule.update(session, alert_rule.id, {"last_run": end_time})
 
         # get relevant model_versions for that time window
         model_versions, _ = await get_model_versions_and_task_type_per_time_window(session,
@@ -145,7 +146,7 @@ async def run_rules_of_monitor(
                 session.add(alert)
                 await session.flush()
 
-        all_alerts_dict[alert_rule.id] = {"failed_values": alert_dict, "alert_id": alert.id}
+            all_alerts_dict[alert_rule.id] = {"failed_values": alert_dict, "alert_id": alert.id}
     return all_alerts_dict
 
 

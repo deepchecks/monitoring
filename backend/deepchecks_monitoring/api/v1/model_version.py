@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy import MetaData, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql.ddl import CreateIndex
 from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
@@ -121,12 +122,18 @@ async def create_version(
         column_types_to_table_columns(info.non_features)
     monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns)
     await session.execute(CreateTable(monitor_table))
+    # Create indices
+    for index in monitor_table.indexes:
+        await session.execute(CreateIndex(index))
 
     # Reference data table
     reference_table_columns = get_table_columns_for_model(model.task_type) + \
         column_types_to_table_columns(info.features) + column_types_to_table_columns(info.non_features)
     reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns)
     await session.execute(CreateTable(reference_table))
+    # Create indices
+    for index in reference_table.indexes:
+        await session.execute(CreateIndex(index))
 
     return {'id': model_version.id}
 

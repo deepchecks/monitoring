@@ -24,25 +24,25 @@ def send_reference_request(client, model_version_id, dicts: list):
 
 @pytest.mark.asyncio
 async def test_log_data(client: TestClient, classification_model_version_id: int):
-    request = {
+    request = [{
         "_dc_sample_id": "a000",
         "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
         "_dc_prediction_value": [0.1, 0.3, 0.6],
         "_dc_prediction_label": "2",
         "a": 11.1,
         "b": "ppppp",
-    }
+    }]
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
     assert response.status_code == 201, response.json()
 
 
 @pytest.mark.asyncio
 async def test_update_data(client: TestClient, classification_model_version_id: int):
-    request = {
+    request = [{
         "_dc_sample_id": "a000",
         "_dc_label": "1",
         "c": 0
-    }
+    }]
     response = client.put(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
     assert response.status_code == 200, response.json()
 

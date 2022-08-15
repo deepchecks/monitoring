@@ -70,16 +70,16 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
     y_proba = None
     if SAMPLE_PRED_LABEL_COL in df.columns:
         if not df[SAMPLE_PRED_LABEL_COL].isna().all():
-            y_pred = df[SAMPLE_PRED_LABEL_COL].to_list()
+            y_pred = np.array(df[SAMPLE_PRED_LABEL_COL].to_list())
         df.drop(SAMPLE_PRED_LABEL_COL, inplace=True, axis=1)
     if SAMPLE_PRED_VALUE_COL in df.columns:
         if not df[SAMPLE_PRED_VALUE_COL].isna().all():
-            y_proba = df[SAMPLE_PRED_VALUE_COL].to_list()
+            y_proba = np.array(df[SAMPLE_PRED_VALUE_COL].to_list())
         df.drop(SAMPLE_PRED_VALUE_COL, inplace=True, axis=1)
 
     cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1] == 'categorical']
     dataset = Dataset(df, label=SAMPLE_LABEL_COL, cat_features=cat_features)
-    return dataset, np.array(y_pred), np.array(y_proba)
+    return dataset, y_pred, y_proba
 
 
 def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select, data_filters: DataFilterList):

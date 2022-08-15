@@ -98,6 +98,7 @@ class DeepchecksModelVersionClient:
         response = requests.get(urljoin(session.base_url, f'model-versions/{model_version_id}/reference-schema'))
         response.raise_for_status()
         self.ref_schema = response.json()
+        self._log_samples = []
 
     def log_sample(self,
                    sample_id: str,
@@ -143,10 +144,15 @@ class DeepchecksModelVersionClient:
 
         validate(instance=sample, schema=self.schema)
 
+        self._log_samples.append(sample)
+
+    def send(self):
+        """Send all the aggregated samples."""
         requests.post(
             urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/data'),
-            json=sample
+            json=self._log_samples
         ).raise_for_status()
+        self._log_samples.clear()
 
     def upload_reference(
         self,
@@ -208,7 +214,7 @@ class DeepchecksModelVersionClient:
         validate(instance=update, schema=optional_columns_schema)
         requests.put(
             urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/data'),
-            json=update
+            json=[update]
         ).raise_for_status()
 
 

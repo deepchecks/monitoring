@@ -8,8 +8,9 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the monitor ORM model."""
-from dataclasses import dataclass
-from typing import Optional
+import typing as t
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
@@ -17,6 +18,9 @@ from sqlalchemy.orm import relationship
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
 from deepchecks_monitoring.utils import DataFilterList
+
+if TYPE_CHECKING:
+    from deepchecks_monitoring.models.alert_rule import AlertRule
 
 __all__ = ["Monitor"]
 
@@ -41,8 +45,9 @@ class Monitor(Base):
     name: str
     check_id: int
     lookback: int
-    dashboard_id:  Optional[int]
-    description: Optional[str] = None
+    dashboard_id:  t.Optional[int]
+    description: t.Optional[str] = None
+    alert_rules: t.List["AlertRule"] = field(default_factory=list)
     data_filters: DataFilterList = None
     filter_key: str = None
     id: int = None

@@ -15,8 +15,8 @@ Revises: 47b0e3008c9d
 Create Date: 2022-08-09 16:15:29.176750
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
 

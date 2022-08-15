@@ -12,19 +12,19 @@ import asyncio
 import typing as t
 
 import dotenv
+import pendulum as pdl
 import pytest
 import pytest_asyncio
 import testing.postgresql
 from fastapi.testclient import TestClient
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-import pendulum as pdl
 
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.api.v1.model_version import ModelVersionCreationSchema, create_version
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.models import Model, TaskType, Alert
+from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.utils import json_dumps
@@ -200,3 +200,21 @@ def add_monitor(check_id, client: TestClient, **kwargs):
     request.update(kwargs)
     response = client.post(f"/api/v1/checks/{check_id}/monitors", json=request)
     return response.json()["id"]
+
+
+def add_classification_data(model_version_id, client: TestClient):
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    data = []
+    for i, hours in enumerate([1, 3, 4, 5, 7]):
+        time = day_before_curr_time.add(hours=hours).isoformat()
+        data.append({
+            "_dc_sample_id": str(i),
+            "_dc_time": time,
+            "_dc_prediction_value": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+            "_dc_prediction_label": "2" if i % 2 else "1",
+            "_dc_label": "2",
+            "a": 10 + i,
+            "b": "ppppp",
+        })
+    client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)

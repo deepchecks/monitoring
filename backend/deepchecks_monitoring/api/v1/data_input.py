@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 from fastapi import Body, Depends, Response, UploadFile, status
-from jsonschema import validate
-from sqlalchemy import insert, select, update
+from jsonschema.validators import validate
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
 
@@ -32,14 +32,14 @@ from .router import router
 
 @router.post("/model-versions/{model_version_id}/data", tags=[Tags.DATA],
              summary="Log inference data per model version.",
-             description="This API logs asynchronously a new sample of the inference data of an existing model version,"
-                         "it requires the actual data and validates it matches the version schema.",)
-async def log_data(
+             description="This API logs asynchronously a batch of new samples of the inference data of an existing "
+                         "model version, it requires the actual data and validates it matches the version schema.",)
+async def log_data_batch(
     model_version_id: int,
-    data: t.Dict[t.Any, t.Any] = Body(...),
+    data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
     session: AsyncSession = AsyncSessionDep
 ) -> Response:
-    """Insert single data sample.
+    """Insert batch data samples.
 
     Parameters
     ----------
@@ -47,23 +47,32 @@ async def log_data(
     data
     session
     """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    validate(instance=data, schema=model_version.monitor_json_schema)
-    # Asyncpg unlike psycopg2, must get for datetime columns a python datetime object
-    data[SAMPLE_TS_COL] = request_timestamp = pdl.parse(data[SAMPLE_TS_COL])
-    insert_statement = insert(model_version.get_monitor_table(session)).values(**data)
-    await session.execute(insert_statement)
-    await model_version.update_timestamps(request_timestamp, session)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    if len(data) == 0:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Got empty list")
+
+    max_timestamp = None
+    min_timestamp = None
+    for sample in data:
+        validate(schema=model_version.monitor_json_schema, instance=sample)
+        # Timestamp is passed as string, convert it to datetime
+        sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])
+        max_timestamp = sample[SAMPLE_TS_COL] if max_timestamp is None else max(max_timestamp, sample[SAMPLE_TS_COL])
+        min_timestamp = sample[SAMPLE_TS_COL] if min_timestamp is None else min(min_timestamp, sample[SAMPLE_TS_COL])
+
+    monitor_table = model_version.get_monitor_table(session)
+    await session.execute(monitor_table.insert(), data)
+    await model_version.update_timestamps(min_timestamp, max_timestamp, session)
     return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.put("/model-versions/{model_version_id}/data", tags=[Tags.DATA])
-async def update_data(
+async def update_data_batch(
     model_version_id: int,
-    data: t.Dict[t.Any, t.Any] = Body(...),
+    data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
     session: AsyncSession = AsyncSessionDep
 ):
-    """Update a single data sample.
+    """Update data samples.
 
     Parameters
     ----------
@@ -71,7 +80,9 @@ async def update_data(
     data
     session
     """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    if len(data) == 0:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Got empty list")
 
     json_schema = model_version.monitor_json_schema
     required_columns = set(json_schema["required"])
@@ -83,14 +94,14 @@ async def update_data(
         "required": [SAMPLE_ID_COL]
     }
 
-    validate(instance=data, schema=optional_columns_schema)
-
-    sample_id = data.pop(SAMPLE_ID_COL)
     table = model_version.get_monitor_table(session)
-    await session.execute(
-        update(table)
-        .where(table.c[SAMPLE_ID_COL] == sample_id).values(data)
-    )
+
+    for sample in data:
+        validate(schema=optional_columns_schema, instance=sample)
+        sample_id = sample.pop(SAMPLE_ID_COL)
+        await session.execute(
+            update(table).where(table.c[SAMPLE_ID_COL] == sample_id).values(sample)
+        )
 
     return Response(status_code=status.HTTP_200_OK)
 
@@ -116,7 +127,7 @@ async def save_reference(
     file
     session
     """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     ref_table = model_version.get_reference_table(session)
     count_result = await session.execute(select(count()).select_from(ref_table))
     if count_result.scalar() > 0:

@@ -10,6 +10,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.conftest import add_classification_data
+
 
 def add_monitor(classification_model_check_id, client: TestClient) -> int:
     request = {
@@ -119,9 +121,9 @@ async def test_update_monitor(classification_model_check_id, client: TestClient)
 
 @pytest.mark.asyncio
 async def test_run_monitor(classification_model_check_id, classification_model_version_id, client: TestClient):
-    assert classification_model_version_id == 1
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
+    add_classification_data(classification_model_version_id, client)
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}/run")
     assert response.status_code == 200

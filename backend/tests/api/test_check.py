@@ -66,7 +66,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     for i in [1, 3, 7, 13]:
         time = day_before_curr_time.add(hours=i).isoformat()
         times.append(time)
-        request = {
+        request = [{
             "_dc_sample_id": str(i),
             "_dc_time": time,
             "_dc_prediction_value": [0.1, 0.3, 0.6],
@@ -74,7 +74,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "_dc_label": "2",
             "a": 10 + i,
             "b": "ppppp",
-        }
+        }]
         response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
         assert response.status_code == 201
     sample = {

@@ -73,8 +73,8 @@ class ModelVersion(Base):
         Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("name", String(100)),
-        Column("start_time", DateTime(timezone=True), default=pdl.datetime(1970, 1, 1)),
-        Column("end_time", DateTime(timezone=True), default=pdl.datetime(3000, 1, 1)),
+        Column("start_time", DateTime(timezone=True), default=pdl.datetime(3000, 1, 1)),
+        Column("end_time", DateTime(timezone=True), default=pdl.datetime(1970, 1, 1)),
         Column("monitor_json_schema", JSONB),
         Column("reference_json_schema", JSONB),
         Column("features", JSONB),
@@ -131,7 +131,7 @@ class ModelVersion(Base):
         columns = json_schema_to_columns(self.reference_json_schema)
         return Table(self.get_reference_table_name(), metadata, *columns)
 
-    async def update_timestamps(self, timestamp: datetime, session: AsyncSession):
+    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamp.
 
         Parameters
@@ -143,10 +143,10 @@ class ModelVersion(Base):
         """
         # Running an update with min/max in order to prevent race condition when running in parallel
         ts_updates = {}
-        if self.start_time > timestamp:
-            ts_updates[ModelVersion.start_time] = func.least(ModelVersion.start_time, timestamp)
-        if self.end_time < timestamp:
-            ts_updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, timestamp)
+        if self.start_time > min_timestamp:
+            ts_updates[ModelVersion.start_time] = func.least(ModelVersion.start_time, min_timestamp)
+        if self.end_time < max_timestamp:
+            ts_updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
 
         # Update min/max timestamp of version only if needed
         if ts_updates:
