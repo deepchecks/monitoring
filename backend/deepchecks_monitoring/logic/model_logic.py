@@ -22,8 +22,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from deepchecks_monitoring.logic.data_tables import (SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL, SAMPLE_PRED_VALUE_COL,
-                                                     SAMPLE_TS_COL, get_columns_for_task_type)
+from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL,
+                                                     SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL, get_columns_for_task_type)
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
@@ -56,9 +56,9 @@ def filter_select_object_by_window(select_obj: Select, mon_table: Table,
                                    start_time: pdl.DateTime, end_time: pdl.DateTime, n_samples: int = 10_000) -> Select:
     """Filter select object by window."""
     filtered_select_obj = select_obj
-    return filtered_select_obj.where(getattr(mon_table.c, SAMPLE_TS_COL) < end_time,
-                                     getattr(mon_table.c, SAMPLE_TS_COL) >= start_time) \
-        .order_by(func.random()).limit(n_samples)
+    return filtered_select_obj.where(mon_table.c[SAMPLE_TS_COL] < end_time,
+                                     mon_table.c[SAMPLE_TS_COL] >= start_time) \
+        .order_by(func.md5(mon_table.c[SAMPLE_ID_COL])).limit(n_samples)
 
 
 def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: t.Dict, top_feat: t.List[str]) -> \

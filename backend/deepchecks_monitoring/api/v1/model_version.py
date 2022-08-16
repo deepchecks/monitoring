@@ -15,7 +15,7 @@ import pendulum as pdl
 from deepchecks.tabular.datasets.classification import iris
 from deepchecks.tabular.suites.default_suites import data_integrity
 from pydantic import BaseModel
-from sqlalchemy import MetaData, Table
+from sqlalchemy import Index, MetaData, Table, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.ddl import CreateIndex
@@ -24,7 +24,8 @@ from starlette.responses import HTMLResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.data_tables import (column_types_to_table_columns, get_json_schema_columns_for_model,
+from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, column_types_to_table_columns,
+                                                     get_json_schema_columns_for_model,
                                                      get_json_schema_columns_for_monitor, get_table_columns_for_model,
                                                      get_table_columns_for_monitor)
 from deepchecks_monitoring.models.model import Model
@@ -120,7 +121,8 @@ async def create_version(
     # Monitor data table
     monitor_table_columns = meta_columns + task_related_columns + column_types_to_table_columns(info.features) + \
         column_types_to_table_columns(info.non_features)
-    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns)
+    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns,
+                          Index('md5_index', text(f'md5({SAMPLE_ID_COL})')))
     await session.execute(CreateTable(monitor_table))
     # Create indices
     for index in monitor_table.indexes:
