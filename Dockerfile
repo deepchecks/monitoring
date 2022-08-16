@@ -41,11 +41,15 @@ WORKDIR /code
 #     "chromium-chromedriver" \
 #     "xmlsec"
 
-
+ARG GPU_BUILD
+RUN if [ -z "$GPU_BUILD" ]; then pip install -q "torch==1.11.0+cpu" "torchvision==0.12.0+cpu" "torchaudio==0.11.0+cpu" \
+			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; else pip install -e "torch==1.11.0+cu111" "torchvision==0.12.0+cu111" "torchaudio==0.11.0" \
+		 	 -f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; fi;
 COPY backend/requirements.txt ./
 RUN pip install -U pip \
     && \
-    pip install -r requirements.txt --compile --no-cache-dir 
+    pip install pyinstrument && \
+    pip install -r requirements.txt --compile --no-cache-dir
     # && \
     # apk del .build-deps
 

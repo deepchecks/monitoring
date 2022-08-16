@@ -29,7 +29,7 @@ async def test_add_alert_rule_no_feature(classification_model_check_id, client: 
         "alert_severity": "low"
     }
     # Act
-    response = client.post(f"/api/v1/monitors/{monitor_id}/alert_rules", json=request)
+    response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
@@ -49,7 +49,7 @@ async def test_add_alert_rule_with_feature(classification_model_check_id, client
         "alert_severity": "low"
     }
     # Act
-    response = client.post(f"/api/v1/monitors/{monitor_id}/alert_rules", json=request)
+    response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=request)
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
@@ -61,7 +61,7 @@ async def test_get_alert_rule(classification_model_check_id, client: TestClient)
     monitor_id = add_monitor(classification_model_check_id, client)
     alert_rule_id = add_alert_rule(monitor_id, client)
     # Act
-    response = client.get(f"/api/v1/alert_rules/{alert_rule_id}")
+    response = client.get(f"/api/v1/alert-rules/{alert_rule_id}")
     assert response.json() == {"id": 1, "name": "alerty", "monitor_id": 1, "repeat_every": 86400,
                                "condition": {"operator": "greater_than", "value": 100.0},
                                "alert_severity": "low"}
@@ -73,7 +73,7 @@ async def test_remove_alert_rule(classification_model_check_id, client: TestClie
     monitor_id = add_monitor(classification_model_check_id, client)
     alert_rule_id = add_alert_rule(monitor_id, client)
     # Act
-    response = client.delete(f"/api/v1/alert_rules/{alert_rule_id}")
+    response = client.delete(f"/api/v1/alert-rules/{alert_rule_id}")
     assert response.status_code == 200
 
 
@@ -87,7 +87,7 @@ async def test_update_alert_rule(classification_model_check_id, client: TestClie
         "condition": {"operator": "greater_than", "value": -0.1}
     }
     # Act
-    response = client.put(f"/api/v1/alert_rules/{alert_rule_id}", json=request)
+    response = client.put(f"/api/v1/alert-rules/{alert_rule_id}", json=request)
     assert response.status_code == 200
 
 
@@ -103,7 +103,7 @@ async def test_count_alert_rule(
     monitor_id = add_monitor(regression_model_check_id, client)
     add_alert_rule(monitor_id, client)
     # Act
-    response = client.get("/api/v1/alert_rules/count")
+    response = client.get("/api/v1/alert-rules/count")
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 3
 
@@ -121,12 +121,12 @@ async def test_count_single_model(
     monitor_id_2 = add_monitor(regression_model_check_id, client)
     add_alert_rule(monitor_id_2, client)
     # Act
-    response = client.get(f"/api/v1/models/{monitor_id_1}/alert_rules/count")
+    response = client.get(f"/api/v1/models/{monitor_id_1}/alert-rules/count")
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 3
     # Act
-    response = client.get(f"/api/v1/models/{monitor_id_2}/alert_rules/count")
+    response = client.get(f"/api/v1/models/{monitor_id_2}/alert-rules/count")
     # Assert
     assert response.status_code == 200
     assert response.json()[AlertSeverity.LOW.value] == 1
@@ -146,7 +146,7 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
     add_alert(alert_rule_id, async_session, resolved=False)
     await async_session.commit()
     # Act
-    response = client.get("/api/v1/alert_rules/")
+    response = client.get("/api/v1/alert-rules/")
     # Assert
     assert response.status_code == 200
     assert response.json() == [{"alert_severity": "low", "alerts_count": 1, "monitor_id": 1,
@@ -155,3 +155,24 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
                                {"alert_severity": "mid", "alerts_count": 2, "monitor_id": 1,
                                 "condition": {"operator": "greater_than", "value": 100.0},
                                 "id": 2, "name": "alerty", "repeat_every": 86400}]
+
+
+@pytest.mark.asyncio
+async def test_resolve_all_alerts_of_alert_rule(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.LOW.value)
+    alert1 = add_alert(alert_rule_id, async_session, resolved=False)
+    alert2 = add_alert(alert_rule_id, async_session, resolved=False)
+    alert3 = add_alert(alert_rule_id, async_session, resolved=False)
+    await async_session.commit()
+    # Act
+    response = client.post(f"/api/v1/alert-rules/{alert_rule_id}/resolve-all")
+    # Assert
+    assert response.status_code == 200
+    await async_session.refresh(alert1)
+    await async_session.refresh(alert2)
+    await async_session.refresh(alert3)
+    assert alert1.resolved is True
+    assert alert2.resolved is True
+    assert alert3.resolved is True

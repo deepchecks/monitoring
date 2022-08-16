@@ -10,7 +10,7 @@
 
 """Module defining the alert ORM model."""
 import typing as t
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import pendulum as pdl
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Table
@@ -46,7 +46,7 @@ class Alert(Base):
     start_time: pdl.DateTime
     end_time: pdl.DateTime
     resolved: bool = None
-    created_at: pdl.DateTime = field(init=False)
+    created_at: pdl.DateTime = None
     id: int = None
 
     __mapper_args__ = {  # type: ignore

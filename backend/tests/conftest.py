@@ -173,8 +173,9 @@ async def regression_model_check_id(async_session: AsyncSession, regression_mode
 
 def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
     dt = pdl.from_timestamp(1600000)
-    async_session.add(Alert(failed_values={}, alert_rule_id=alert_rule_id, start_time=dt, end_time=dt,
-                            resolved=resolved))
+    alert = Alert(failed_values={}, alert_rule_id=alert_rule_id, start_time=dt, end_time=dt, resolved=resolved)
+    async_session.add(alert)
+    return alert
 
 
 def add_alert_rule(monitor_id, client: TestClient, **kwargs) -> int:
@@ -188,7 +189,7 @@ def add_alert_rule(monitor_id, client: TestClient, **kwargs) -> int:
         }
     }
     request.update(kwargs)
-    response = client.post(f"/api/v1/monitors/{monitor_id}/alert_rules", json=request)
+    response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=request)
     return response.json()["id"]
 
 

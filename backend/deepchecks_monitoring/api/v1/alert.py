@@ -31,7 +31,9 @@ class AlertSchema(BaseModel):
     id: int
     alert_rule_id: int
     failed_values: t.Dict[str, t.List[str]]
-    date: pdl.DateTime
+    start_time: pdl.DateTime
+    end_time: pdl.DateTime
+    resolved: bool
     created_at: pdl.DateTime
 
     class Config:
@@ -53,12 +55,23 @@ async def count_alerts(
     return dict(total)
 
 
+@router.post("/alerts/{alert_id}/resolve", tags=[Tags.ALERTS])
+async def resolve_alert(
+        alert_id: int,
+        session: AsyncSession = AsyncSessionDep
+):
+    """Resolve alert by id."""
+    await exists_or_404(session, Alert, id=alert_id)
+    await Alert.update(session, alert_id, {Alert.resolved: True})
+    return Response(status_code=status.HTTP_200_OK)
+
+
 @router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
         alert_id: int,
         session: AsyncSession = AsyncSessionDep
 ):
-    """Get event by id."""
+    """Get alert by id."""
     event = await fetch_or_404(session, Alert, id=alert_id)
     return AlertSchema.from_orm(event)
 
@@ -68,7 +81,7 @@ async def delete_alert(
         alert_id: int,
         session: AsyncSession = AsyncSessionDep
 ):
-    """Delete event by id."""
+    """Delete alert by id."""
     await exists_or_404(session, Alert, id=alert_id)
     await Alert.delete(session, alert_id)
     return Response(status_code=status.HTTP_200_OK)
