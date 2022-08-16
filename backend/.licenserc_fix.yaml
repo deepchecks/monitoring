@@ -27,4 +27,4 @@ header:
 
 dependency:
   files:
-    - deepchecks_api/requirements.txt
+    - requirements.txt

@@ -11,13 +11,17 @@
 import typing as t
 
 import pendulum as pdl
-from deepchecks.core.checks import CheckConfig
-from pydantic import BaseModel
+from deepchecks.core import BaseCheck
+from fastapi import Body, Depends, Query
+from pydantic import BaseModel, validator
+from sqlalchemy import and_, delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.check_logic import (FilterWindowOptions, MonitorOptions, run_check_per_window_in_range,
                                                      run_check_window)
 from deepchecks_monitoring.models import Check, Model
@@ -26,10 +30,19 @@ from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
 from .router import router
 
 
+class CheckConfigSchema(TypedDict):
+    """Check instance config schema."""
+
+    module_name: str
+    class_name: str
+    params: t.Dict[t.Any, t.Any]
+    # version: str
+
+
 class CheckCreationSchema(BaseModel):
     """Check schema."""
 
-    config: CheckConfig
+    config: CheckConfigSchema
     name: t.Optional[str] = None
 
     class Config:
@@ -37,14 +50,26 @@ class CheckCreationSchema(BaseModel):
 
         orm_mode = True
 
+    @validator('config')
+    def validate_configuration(cls, config):  # pylint: disable=no-self-argument
+        """Validate check configuration."""
+        try:
+            # 'from_config' will raise an ValueError if config is incorrect
+            BaseCheck.from_config(config)
+            return config
+        except TypeError as error:
+            # 'from_config' will raise a TypeError if it does not able to
+            # import given module/class from the config
+            raise ValueError(error.args[0]) from error
+
 
 class CheckSchema(BaseModel):
     """Schema for the check."""
 
-    config: CheckConfig
+    config: CheckConfigSchema
     model_id: int
     id: int
-    name: str = None
+    name: t.Optional[str] = None
 
     class Config:
         """Config for Alert schema."""
@@ -59,12 +84,26 @@ class CheckResultSchema(BaseModel):
     time_labels: t.List[str]
 
 
-@router.post('/models/{model_id}/checks', response_model=IdResponse, tags=[Tags.CHECKS])
+def extract_checks(body: t.Any = Body(...)) -> t.Union[CheckCreationSchema, t.List[CheckCreationSchema]]:
+    """Parse request body and return check or list of checks schemas."""
+    if isinstance(body, dict):
+        return CheckCreationSchema(**body)
+    elif isinstance(body, list):
+        return [CheckCreationSchema(**it) for it in body]
+    else:
+        raise BadRequest('Expected to receive an object or a list')
+
+
+@router.post(
+    '/models/{model_id}/checks',
+    response_model=t.Union[IdResponse, t.List[IdResponse]],
+    tags=[Tags.CHECKS]
+)
 async def create_check(
     model_id: int,
-    check: CheckCreationSchema,
+    checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]] = Depends(extract_checks),
     session: AsyncSession = AsyncSessionDep
-) -> dict:
+) -> t.Union[t.Dict[t.Any, t.Any], t.List[t.Dict[t.Any, t.Any]]]:
     """Create a new check.
 
     Parameters
@@ -82,10 +121,60 @@ async def create_check(
         The check id.
     """
     await exists_or_404(session, Model, id=model_id)
-    check = Check(model_id=model_id, **check.dict(exclude_none=True))
-    session.add(check)
-    await session.flush()
-    return {'id': check.id}
+
+    if isinstance(checks, CheckCreationSchema):
+        check = Check(model_id=model_id, **checks.dict(exclude_none=True))
+        session.add(check)
+        try:
+            await session.flush()
+        except IntegrityError as error:
+            raise BadRequest('Model check name duplication') from error
+        return IdResponse.from_orm(check).dict()
+
+    check_entities = []
+    output = []
+
+    for check in checks:
+        check = Check(model_id=model_id, **check.dict(exclude_none=True))
+        check_entities.append(check)
+        session.add(check)
+
+    try:
+        await session.flush()
+    except IntegrityError as error:
+        raise BadRequest('Model check name duplication') from error
+
+    for check in check_entities:
+        await session.refresh(check)
+        output.append(IdResponse.from_orm(check).dict())
+
+    return output
+
+
+@router.delete('/models/{model_id}/checks/{check_id}', tags=[Tags.CHECKS])
+async def delete_check(
+    model_id: int,
+    check_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Delete check instance by identifier."""
+    await exists_or_404(session, Model, id=model_id)
+    await exists_or_404(session, Check, id=check_id)
+    await Check.delete(session, check_id)
+
+
+@router.delete('/models/{model_id}/checks', tags=[Tags.CHECKS])
+async def delete_check_by_name(
+    model_id: int,
+    names: t.List[str] = Query(...),
+    session: AsyncSession = AsyncSessionDep
+):
+    """Delete check instances by name."""
+    await exists_or_404(session, Model, id=model_id)
+    await session.execute(delete(Check).where(and_(
+        Check.model_id == model_id,
+        Check.name.in_(names)
+    )))
 
 
 @router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema], tags=[Tags.CHECKS])

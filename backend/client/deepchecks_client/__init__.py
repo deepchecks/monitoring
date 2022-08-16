@@ -12,13 +12,17 @@
 import enum
 from datetime import datetime
 from importlib.metadata import version
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import numpy as np
 import pendulum as pdl
 import requests
-from deepchecks import Dataset
+from deepchecks.core.checks import BaseCheck, ReduceMixin
+from deepchecks.tabular import Dataset
+from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
+                                       TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
+from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from jsonschema import validate
 
 __all__ = ['DeepchecksClient']
@@ -65,9 +69,9 @@ class HttpSession(requests.Session):
         super().__init__(*args, **kwargs)
         self.base_url = base_url
 
-    def request(self, *args, url: str, **kwargs) -> requests.Response:
+    def request(self, method, url, *args, **kwargs) -> requests.Response:
         url = urljoin(self.base_url, url)
-        return super().request(*args, url=url, **kwargs)
+        return super().request(method, url, *args, **kwargs)
 
 
 class DeepchecksModelVersionClient:
@@ -92,10 +96,10 @@ class DeepchecksModelVersionClient:
     ):
         self.session = session
         self.model_version_id = model_version_id
-        response = requests.get(urljoin(session.base_url, f'model-versions/{model_version_id}/schema'))
+        response = self.session.get(f'model-versions/{model_version_id}/schema')
         response.raise_for_status()
         self.schema = response.json()
-        response = requests.get(urljoin(session.base_url, f'model-versions/{model_version_id}/reference-schema'))
+        response = self.session.get(f'model-versions/{model_version_id}/reference-schema')
         response.raise_for_status()
         self.ref_schema = response.json()
         self._log_samples = []
@@ -148,8 +152,8 @@ class DeepchecksModelVersionClient:
 
     def send(self):
         """Send all the aggregated samples."""
-        requests.post(
-            urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/data'),
+        self.session.post(
+            f'model-versions/{self.model_version_id}/data',
             json=self._log_samples
         ).raise_for_status()
         self._log_samples.clear()
@@ -183,8 +187,8 @@ class DeepchecksModelVersionClient:
             item = row.to_dict()
             validate(schema=self.ref_schema, instance=item)
 
-        requests.post(
-            urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/reference'),
+        self.session.post(
+            f'model-versions/{self.model_version_id}/reference',
             files={'file': data.to_json(orient='table', index=False)}
         ).raise_for_status()
 
@@ -212,8 +216,8 @@ class DeepchecksModelVersionClient:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         validate(instance=update, schema=optional_columns_schema)
-        requests.put(
-            urljoin(self.session.base_url, f'model-versions/{self.model_version_id}/data'),
+        self.session.put(
+            f'model-versions/{self.model_version_id}/data',
             json=[update]
         ).raise_for_status()
 
@@ -238,7 +242,7 @@ class DeepchecksModelClient:
         session: requests.Session
     ):
         self.session = session
-        response = requests.get(urljoin(session.base_url,f'models/{model_id}'))
+        response = self.session.get(f'models/{model_id}')
         response.raise_for_status()
         self.model = response.json()
 
@@ -297,7 +301,7 @@ class DeepchecksModelClient:
                     raise Exception(f'value of non_features must be one of {ColumnType.values()} but got {value}')
 
         # Send request
-        response = requests.post(urljoin(self.session.base_url, f'models/{self.model["id"]}/version'), json={
+        response = self.session.post(f'models/{self.model["id"]}/version', json={
             'name': name,
             'features': features,
             'non_features': non_features or {},
@@ -319,10 +323,52 @@ class DeepchecksModelClient:
         DeepchecksModelVersionClient
         """
         return DeepchecksModelVersionClient(model_version_id, session=self.session)
+    
+    def add_default_checks(self):
+        """Add default list of checks for the model."""
+        return self.add_checks(checks={
+            'Single Dataset Performance': SingleDatasetPerformance(),
+            'Train-Test Feature Drift': TrainTestFeatureDrift(),
+            'Train-Test Prediction Drift': TrainTestPredictionDrift(),
+            'Train-Test Label Drift': TrainTestLabelDrift(),
+            'Train-Test Category Mismatch': CategoryMismatchTrainTest(),
+            'Train-Test New Label': NewLabelTrainTest(),
+            'Percent Of Nulls': PercentOfNulls()
+        })
 
-    def add_check(self):
+    def add_checks(self, checks: Dict[str, BaseCheck]):
         """Add new check for the model."""
-        pass
+        serialized_checks = []
+        
+        for name, check in checks.items():
+            if not isinstance(check, ReduceMixin):
+                raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
+            serialized_checks.append({'name': name, 'config': check.config()})
+        
+        self.session.post(
+            url=f'models/{self.model["id"]}/checks',
+            json=serialized_checks
+        ).raise_for_status()
+    
+    def get_checks(self) -> Dict[str, BaseCheck]:
+        """Return list of check instances."""
+        response = self.session.get(f'models/{self.model["id"]}/checks')
+        response.raise_for_status()
+        data = response.json()
+
+        if not isinstance(data, list):
+            raise ValueError('Expected server to return a list of check configs.')
+        
+        return {
+            it['name']: BaseCheck.from_config(it['config'])
+            for it in data
+        }
+    
+    def delete_checks(self, names: List[str]):
+        self.session.delete(
+            f'models/{self.model["id"]}/checks',
+            params={'names': names}
+        ).raise_for_status()
 
 
 class DeepchecksClient:
@@ -350,9 +396,15 @@ class DeepchecksClient:
         else:
             raise ValueError('"host" or "session" parameter must be provided')
 
-        requests.get(urljoin(self.host, 'say-hello'))
+        self.session.get('say-hello').raise_for_status()
 
-    def create_model(self, name: str, task_type: str, description: Optional[str] = None) -> DeepchecksModelClient:
+    def create_model(
+        self, 
+        name: str, 
+        task_type: str, 
+        description: Optional[str] = None,
+        checks: Optional[Dict[str, BaseCheck]] = None
+    ) -> DeepchecksModelClient:
         """Create a new model.
 
         Parameters
@@ -371,14 +423,19 @@ class DeepchecksClient:
         """
         if task_type not in TaskType.values():
             raise Exception(f'task_type must be one of {TaskType.values()}')
-        response = requests.post(urljoin(self.host, 'models'), json={
+        response = self.session.post('models', json={
             'name': name,
             'task_type': task_type,
             'description': description
         })
         response.raise_for_status()
         model_id = response.json()['id']
-        return self.model_client(model_id)
+        model = self.model_client(model_id)
+        if checks is not None:
+            model.add_checks(checks)
+        else:
+            model.add_default_checks()
+        return model
 
     def model_client(self, model_id: int) -> DeepchecksModelClient:
         """Get client to interact with a specific model.

@@ -19,7 +19,7 @@ from tests.conftest import add_classification_data
 async def test_add_check(classification_model_id, client: TestClient):
     # Arrange
     request = {
-        "name": "checky",
+        "name": "checky v1",
         "config": {"class_name": "PerformanceReport",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
@@ -42,7 +42,7 @@ async def test_add_check(classification_model_id, client: TestClient):
 
 async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
-        "name": "checky",
+        "name": "checky v2",
         "config": {"class_name": "PerformanceReport",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
@@ -52,7 +52,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     assert response.status_code == 200
     request = {
-        "name": "checky",
+        "name": "checky v3",
         "config": {"class_name": "SingleDatasetPerformance",
                    "params": {"scorers": ["accuracy"]},
                    "module_name": "deepchecks.tabular.checks"

@@ -84,11 +84,21 @@ class IdResponse(BaseModel):
 
     id: int
 
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
 
 class CountResponse(BaseModel):
     """Schema defines a response containing only count."""
 
     count: int
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
 
 
 class ExtendedAsyncSession(AsyncSession):

@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional
 
 from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
-from sqlalchemy import Column, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -36,7 +36,8 @@ class Check(Base):
         Column("id", Integer, primary_key=True),
         Column("name", String(50)),
         Column("config", JSONB),
-        Column("model_id", Integer, ForeignKey("models.id"))
+        Column("model_id", Integer, ForeignKey("models.id")),
+        UniqueConstraint("name", "model_id")
     )
     __table_args__ = {
         "schema": "default"
@@ -44,7 +45,7 @@ class Check(Base):
 
     config: dict
     model_id: int
-    id: int = None
+    id: Optional[int] = None
     name: Optional[str] = None
     monitors: List["Monitor"] = field(default_factory=list)
 
