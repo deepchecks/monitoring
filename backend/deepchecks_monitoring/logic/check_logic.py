@@ -13,6 +13,9 @@ import typing as t
 
 import pendulum as pdl
 from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
+from deepchecks.tabular.suite import Suite as TabularSuite
+from deepchecks.vision.suite import Suite as VisionSuite
+from pandas import DataFrame
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,12 +23,12 @@ from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import NotFound
-from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
+from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object, dataframe_to_dataset_and_pred,
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
-                                                     get_model_versions_and_task_type_per_time_window,
+                                                     get_model_versions_for_time_range,
                                                      get_results_for_active_model_version_sessions_per_window)
-from deepchecks_monitoring.models import Monitor
+from deepchecks_monitoring.models import ModelVersion, Monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule
 from deepchecks_monitoring.models.check import Check
@@ -39,12 +42,25 @@ class AlertCheckOptions(BaseModel):
     grace_period: t.Optional[bool] = True
 
 
-class FilterWindowOptions(BaseModel):
+class MonitorOptions(BaseModel):
+    """Monitor run schema."""
+
+    end_time: str
+    start_time: str
+    filter: t.Optional[DataFilterList] = None
+
+    def start_time_dt(self) -> pdl.DateTime:
+        """Get start time as datetime object."""
+        return pdl.parse(self.start_time)
+
+    def end_time_dt(self) -> pdl.DateTime:
+        """Get end time as datetime object."""
+        return pdl.parse(self.end_time)
+
+
+class FilterWindowOptions(MonitorOptions):
     """Window with filter run schema."""
 
-    start_time: str
-    end_time: str
-    filter: t.Optional[DataFilterList] = None
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
@@ -92,10 +108,10 @@ async def run_rules_of_monitor(
             await AlertRule.update(session, alert_rule.id, {"last_run": end_time})
 
         # get relevant model_versions for that time window
-        model_versions, _ = await get_model_versions_and_task_type_per_time_window(session,
-                                                                                   monitor.check,
-                                                                                   start_time,
-                                                                                   end_time)
+        model_versions = await get_model_versions_for_time_range(session,
+                                                                 monitor.check,
+                                                                 start_time,
+                                                                 end_time)
 
         # get the alert for this window (if exists)
         alert_results = await session.execute(select(Alert)
@@ -155,7 +171,7 @@ async def run_check_per_window_in_range(
     start_time: pdl.DateTime,
     end_time: pdl.DateTime,
     window: pdl.DateTime,
-    monitor_filter: DataFilterList,
+    monitor_filter: t.Optional[DataFilterList],
     session: AsyncSession
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
@@ -176,7 +192,7 @@ async def run_check_per_window_in_range(
         The end time of the check.
     window : pdl.DateTime
         The time window to run the check on.
-    monitor_filter : DataFilterList
+    monitor_filter : t.Optional[DataFilterList]
         The data filter to apply on the monitor table.
     session : AsyncSession
         The database session to use.
@@ -187,18 +203,18 @@ async def run_check_per_window_in_range(
         A dictionary containing the output of the check and the time labels.
     """
     # get the relevant objects from the db
-    check = await fetch_or_404(session, Check, id=check_id)
+    check: Check = await fetch_or_404(session, Check, id=check_id)
     dp_check = BaseCheck.from_config(check.config)
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
 
-    model_versions, task_type = \
-        await get_model_versions_and_task_type_per_time_window(session, check, start_time, end_time)
+    model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = model_versions[0].get_top_features()
+    task_type = model_versions[0].model.task_type
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
@@ -224,7 +240,7 @@ async def run_check_per_window_in_range(
             filtered_select_obj = filter_monitor_table_by_window_and_data_filters(model_version=model_version,
                                                                                   table_selection=select_obj,
                                                                                   mon_table=test_table,
-                                                                                  data_filters=monitor_filter,
+                                                                                  data_filter=monitor_filter,
                                                                                   start_time=new_start_time,
                                                                                   end_time=new_start_time + window)
             if filtered_select_obj is not None:
@@ -264,20 +280,19 @@ async def run_check_window(
         SQLAlchemy session.
     """
     # get the relevant objects from the db
-    dp_check = BaseCheck.from_config(check.config)
-    if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
-        raise ValueError("incompatible check type")
+    dp_check = check.initialize_check()
 
-    start_time = pdl.parse(window_options.start_time)
-    end_time = pdl.parse(window_options.end_time)
+    start_time = window_options.start_time_dt()
+    end_time = window_options.end_time_dt()
 
-    model_versions, task_type = \
-        await get_model_versions_and_task_type_per_time_window(session, check, start_time, end_time)
+    model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = model_versions[0].get_top_features()
+
+    load_reference = isinstance(dp_check, TrainTestBaseCheck)
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
@@ -285,34 +300,11 @@ async def run_check_window(
         if window_options.model_version_ids is not None and \
                 model_version.id not in window_options.model_version_ids:
             continue
-        if isinstance(dp_check, TrainTestBaseCheck):
-            refrence_table = model_version.get_reference_table(session)
-            refrence_table_data_session = create_model_version_select_object(task_type, refrence_table, top_feat)
-            if window_options.filter:
-                refrence_table_data_session = filter_table_selection_by_data_filters(refrence_table,
-                                                                                     refrence_table_data_session,
-                                                                                     window_options.filter)
-            refrence_table_data_session = session.execute(refrence_table_data_session)
-        else:
-            refrence_table_data_session = None
 
-        test_table = model_version.get_monitor_table(session)
-        test_data_session = []
+        test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options,
+                                                        with_reference=load_reference)
 
-        select_obj = create_model_version_select_object(task_type, test_table, top_feat)
-        # create the session
-        filtered_select_obj = filter_monitor_table_by_window_and_data_filters(model_version=model_version,
-                                                                              table_selection=select_obj,
-                                                                              mon_table=test_table,
-                                                                              data_filters=window_options.filter,
-                                                                              start_time=start_time,
-                                                                              end_time=end_time)
-        if filtered_select_obj is not None:
-            test_data_session.append(session.execute(filtered_select_obj))
-        else:
-            test_data_session.append(None)
-
-        model_versions_sessions.append((refrence_table_data_session, test_data_session))
+        model_versions_sessions.append((ref_session, [test_session]))
 
     # get result from active sessions and run the check per each model version
     model_reduces_per_window = await get_results_for_active_model_version_sessions_per_window(model_versions_sessions,
@@ -323,3 +315,110 @@ async def run_check_window(
     for model_id, reduces_per_window in model_reduces_per_window.items():
         model_reduces[model_id] = None if reduces_per_window is None else reduces_per_window[0]
     return model_reduces
+
+
+async def run_suite_for_model_version(
+    model_version: ModelVersion,
+    window_options: MonitorOptions,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Run a check for each time window by lookback.
+
+    Parameters
+    ----------
+    model_version : ModelVersion
+    window_options : MonitorOptions
+        The window options.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+    """
+    checks = model_version.model.checks
+    checks_instances = [c.initialize_check() for c in checks]
+
+    suite_name = f"{model_version.name} from {window_options.start_time} to {window_options.end_time}"
+    # Get the module (tabular or vision)
+    module = checks_instances[0].__module__.split(".")[1]
+    if module == "tabular":
+        suite = TabularSuite(suite_name, *checks_instances)
+    elif module == "vision":
+        suite = VisionSuite(suite_name, *checks_instances)
+    else:
+        raise Exception(f"Not supported module {module}")
+
+    top_feat, feat_imp = model_version.get_top_features()
+    load_reference = any((isinstance(c, TrainTestBaseCheck) for c in checks_instances))
+
+    test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options,
+                                                    with_reference=load_reference)
+
+    test_session_result = await test_session
+    test_df = DataFrame.from_dict(test_session_result.all())
+    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version.features, top_feat)
+    if ref_session:
+        ref_session_result = await ref_session
+        ref_df = DataFrame.from_dict(ref_session_result.all())
+        reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+            ref_df, model_version.features, top_feat)
+
+        return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
+                         y_pred_train=reference_pred, y_proba_train=reference_proba,
+                         y_pred_test=test_pred, y_proba_test=test_proba,
+                         with_display=True)
+    else:
+        # In case of single dataset we must pass it as train
+        return suite.run(train_dataset=test_dataset, feature_importance=feat_imp,
+                         y_pred_train=test_pred, y_proba_train=test_proba, with_display=True)
+
+
+def load_data_for_check(
+    model_version: ModelVersion,
+    session: AsyncSession,
+    features: t.List[str],
+    options: MonitorOptions,
+    with_reference=True
+) -> t.Tuple[t.Coroutine, t.Optional[t.Coroutine]]:
+    """Return sessions of the data load for the given model version.
+
+    Parameters
+    ----------
+    model_version
+    session
+    features
+    options
+    with_reference: bool
+        Whether to load reference
+
+    Returns
+    -------
+    Tuple[Coroutine, t.Optional[Coroutine]]
+        First routine is test session, Second routine is reference session
+    """
+    task_type = model_version.model.task_type
+    if with_reference:
+        reference_table = model_version.get_reference_table(session)
+        reference_table_data_session = create_model_version_select_object(task_type, reference_table, features)
+        if options.filter:
+            reference_table_data_session = filter_table_selection_by_data_filters(reference_table,
+                                                                                  reference_table_data_session,
+                                                                                  options.filter)
+        reference_table_data_session = session.execute(reference_table_data_session)
+    else:
+        reference_table_data_session = None
+
+    test_table = model_version.get_monitor_table(session)
+    select_obj = create_model_version_select_object(task_type, test_table, features)
+    # create the session
+    filtered_select_obj = filter_monitor_table_by_window_and_data_filters(
+        model_version=model_version,
+        table_selection=select_obj,
+        mon_table=test_table,
+        start_time=options.start_time_dt(),
+        end_time=options.end_time_dt(),
+        data_filter=options.filter
+    )
+    if filtered_select_obj is not None:
+        test_data_session = session.execute(filtered_select_obj)
+    else:
+        test_data_session = None
+
+    return test_data_session, reference_table_data_session

@@ -128,6 +128,7 @@ def json_dumps(data) -> str:
 async def fetch_or_404(
     session: AsyncSession,
     model: t.Type[A],
+    options=None,
     **kwargs
 ) -> A:
     """Fetch the first row that matches provided criteria or raise "No Found" exxception if `None` was returned.
@@ -138,6 +139,7 @@ async def fetch_or_404(
         sqlalchemy async sessions instance
     model : Type[Base]
         model class
+    options
     error_template : Optional[str], default None
         template of an exception message (possible keys: entity, arguments)
     **kwargs : Any
@@ -166,7 +168,7 @@ async def fetch_or_404(
         "'{entity}' with next set of arguments does not exist: {arguments}"
     ))
 
-    result = await model.filter_by(session, **kwargs)
+    result = await model.filter_by(session, options, **kwargs)
     row = result.scalars().first()
 
     if row is None:

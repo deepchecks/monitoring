@@ -18,9 +18,10 @@ from sqlalchemy.future import select
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.logic.check_logic import FilterWindowOptions, run_check_per_window_in_range, run_check_window
+from deepchecks_monitoring.logic.check_logic import (FilterWindowOptions, MonitorOptions, run_check_per_window_in_range,
+                                                     run_check_window)
 from deepchecks_monitoring.models import Check, Model
-from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
 
 from .router import router
 
@@ -49,14 +50,6 @@ class CheckSchema(BaseModel):
         """Config for Alert schema."""
 
         orm_mode = True
-
-
-class MonitorOptions(BaseModel):
-    """Monitor run schema."""
-
-    end_time: str
-    start_time: str
-    filter: t.Optional[DataFilterList] = None
 
 
 class CheckResultSchema(BaseModel):

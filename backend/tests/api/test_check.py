@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.api.test_data_input import send_reference_request
+from tests.conftest import add_classification_data
 
 
 @pytest.mark.asyncio
@@ -142,3 +143,28 @@ async def test_run_check(classification_model_id, classification_model_version_i
 @pytest.mark.asyncio
 async def test_run_check_no_fi(classification_model_id, classification_model_version_no_fi_id, client: TestClient):
     await run_check(classification_model_id, classification_model_version_no_fi_id, client)
+
+
+@pytest.mark.asyncio
+async def test_run_suite(classification_model_id, classification_model_version_id, client: TestClient):
+    # Arrange
+    # add 2 checks
+    request = {
+        "name": "checky",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"scorers": ["accuracy", "f1_macro"]},
+                   "module_name": "deepchecks.tabular.checks"
+                   },
+    }
+    client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+
+    # Add data
+    add_classification_data(classification_model_version_id, client)
+
+    # Act
+    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/suite-run",
+        json={"start_time": pdl.now().subtract(days=1).isoformat(), "end_time": pdl.now().isoformat()}
+    )
+
+    assert response.status_code == 200

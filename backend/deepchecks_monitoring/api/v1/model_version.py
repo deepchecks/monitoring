@@ -11,12 +11,10 @@
 import typing as t
 from io import StringIO
 
-import pendulum as pdl
-from deepchecks.tabular.datasets.classification import iris
-from deepchecks.tabular.suites.default_suites import data_integrity
 from pydantic import BaseModel
 from sqlalchemy import Index, MetaData, Table, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.ddl import CreateIndex
 from starlette.responses import HTMLResponse
@@ -24,6 +22,7 @@ from starlette.responses import HTMLResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.logic.check_logic import run_suite_for_model_version
 from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, column_types_to_table_columns,
                                                      get_json_schema_columns_for_model,
                                                      get_json_schema_columns_for_monitor, get_table_columns_for_model,
@@ -198,14 +197,10 @@ async def run_suite_on_model_version(
     -------
     HTML of the suite result.
     """
-    await fetch_or_404(session, ModelVersion, id=model_version_id)
-    _: pdl.DateTime = pdl.parse(monitor_options.start_time)
-    _: pdl.DateTime = pdl.parse(monitor_options.end_time)
+    options = joinedload(ModelVersion.model).joinedload(Model.checks)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=options, id=model_version_id)
 
-    train, test = iris.load_data()
-    model = iris.load_fitted_model()
-
-    result = data_integrity().run(train, test, model=model)
+    result = await run_suite_for_model_version(model_version, monitor_options, session)
     buffer = StringIO()
     result.save_as_html(buffer, connected=True)
     html = buffer.getvalue()

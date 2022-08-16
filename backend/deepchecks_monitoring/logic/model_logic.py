@@ -28,19 +28,19 @@ from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
 
-async def get_model_versions_and_task_type_per_time_window(session: AsyncSession,
-                                                           check: Check,
-                                                           start_time: pdl.DateTime,
-                                                           end_time: pdl.DateTime) -> \
-        t.Tuple[t.List[ModelVersion], TaskType]:
-    """Get model versions and task type per time window."""
+async def get_model_versions_for_time_range(session: AsyncSession,
+                                            check: Check,
+                                            start_time: pdl.DateTime,
+                                            end_time: pdl.DateTime) -> t.List[ModelVersion]:
+    """Get model versions for a time window."""
     model_results = await session.execute(select(Model).where(Model.id == check.model_id)
-                                          .options(selectinload(Model.versions)))
+                                          .options(selectinload(Model.versions)
+                                                   .options(selectinload(ModelVersion.model))))
     model: Model = model_results.scalars().first()
     model_versions: t.List[ModelVersion] = sorted(filter(
         lambda version: start_time <= version.end_time and end_time >= version.start_time, model.versions),
         key=lambda version: version.end_time, reverse=True)
-    return model_versions, model.task_type
+    return model_versions
 
 
 def create_model_version_select_object(task_type: TaskType, mon_table: Table, top_feat: t.List[str]) -> Select:
@@ -62,7 +62,7 @@ def filter_select_object_by_window(select_obj: Select, mon_table: Table,
 
 
 def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: t.Dict, top_feat: t.List[str]) -> \
-        t.Tuple[Dataset, pd.Series, pd.Series]:
+        t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None:
         return None, None, None
@@ -146,16 +146,16 @@ async def get_results_for_active_model_version_sessions_per_window(
 def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
                                                     table_selection: Select,
                                                     mon_table: Table,
-                                                    data_filters: DataFilterList,
                                                     start_time: pdl.DateTime,
-                                                    end_time: pdl.DateTime):
+                                                    end_time: pdl.DateTime,
+                                                    data_filter: t.Optional[DataFilterList] = None):
     """Filter monitor table by window and data filter."""
     if start_time <= model_version.end_time and end_time >= model_version.start_time:
         select_time_filtered = filter_select_object_by_window(table_selection, mon_table, start_time, end_time)
-        if data_filters:
+        if data_filter:
             select_time_filtered = filter_table_selection_by_data_filters(mon_table,
                                                                           select_time_filtered,
-                                                                          data_filters)
+                                                                          data_filter)
         return select_time_filtered
     else:
         return None

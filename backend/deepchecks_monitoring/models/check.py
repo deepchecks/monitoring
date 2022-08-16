@@ -12,6 +12,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional
 
+from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -52,3 +53,15 @@ class Check(Base):
             "monitors": relationship("Monitor"),
         }
     }
+
+    def initialize_check(self):
+        """Initialize an instance of Deepchecks' check.
+
+        Returns
+        -------
+        Deepchecks' check.
+        """
+        dp_check = BaseCheck.from_config(self.config)
+        if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
+            raise ValueError("incompatible check type")
+        return dp_check

@@ -31,8 +31,12 @@ class BaseClass:
         return result
 
     @classmethod
-    async def filter_by(cls, session: AsyncSession, **filter_by):
-        result = await session.execute(select(cls).where(cls.where(**filter_by)))
+    async def filter_by(cls, session: AsyncSession, options=None, **filter_by):
+        query = select(cls).where(cls.where(**filter_by))
+        if options:
+            options = options if isinstance(options, t.List) else [options]
+            query = query.options(*options)
+        result = await session.execute(query)
         return result
 
     @classmethod

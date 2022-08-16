@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 import pytest
 from fastapi.testclient import TestClient
-import pendulum as pdl
 
 
 @pytest.mark.asyncio
@@ -30,16 +29,6 @@ async def test_add_model_version(classification_model_id, client: TestClient):
 
     # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
-
-    # Assert
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_run_suite_on_model_version(classification_model_version_id, client: TestClient):
-    # Act
-    request = {"end_time": pdl.now().isoformat(), "start_time": pdl.now().subtract(days=1).isoformat()}
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/suite-run", json=request)
 
     # Assert
     assert response.status_code == 200
