@@ -53,7 +53,7 @@ RUN pip install -U pip \
     # && \
     # apk del .build-deps
 
-RUN pip install uvicorn
+RUN pip install uvicorn pyinstrument
 
 RUN adduser --system --group deepchecks
 

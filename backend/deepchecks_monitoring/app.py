@@ -15,8 +15,9 @@ import jsonschema.exceptions
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from pyinstrument import Profiler
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -124,6 +125,19 @@ def create_application(
     if additional_routers is not None:
         for r in additional_routers:
             app.include_router(r)
+
+    if settings.debug_mode:
+        @app.middleware("http")
+        async def profile_request(request: Request, call_next):
+            profiling = request.query_params.get("profile", False)
+            if profiling:
+                profiler = Profiler()
+                profiler.start()
+                await call_next(request)
+                profiler.stop()
+                return HTMLResponse(profiler.output_html())
+            else:
+                return await call_next(request)
 
     @app.exception_handler(jsonschema.exceptions.ValidationError)
     async def _(_: Request, exc: jsonschema.exceptions.ValidationError):

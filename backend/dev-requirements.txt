@@ -15,3 +15,4 @@ pyhamcrest
 coveralls
 tox
 httpx
+pyinstrument

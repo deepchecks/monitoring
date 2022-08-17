@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     async_database_uri: PostgresDsn
     echo_sql: bool = True
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
-
+    debug_mode: bool = False
     # jwt_secret_key: str = Field(..., env='SECRET_KEY')
     # jwt_algorithm: str = Field(..., env='ALGORITHM')
     # jwt_access_token_expire_minutes: int = Field(..., env='ACCESS_TOKEN_EXPIRE_MINUTES')
