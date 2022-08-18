@@ -1,16 +1,17 @@
 import { Button, Stack, Typography } from "@mui/material";
+import { memo } from "react";
 import { CloseIcon } from "../../../../assets/icon/icon";
 import DiagramLine from "../../../../components/DiagramLine/DiagramLine";
 import { useTypedSelector } from "../../../../store/hooks";
-import { monitorSelector } from "../../../../store/slices/monitor/monitorSlice";
+import { checkGraphSelector } from "../../../../store/slices/check/checkSlice";
 import { StyledBoxWrapper, StyledGraphWrapper } from "./GraphView.style";
 
 interface GraphViewProps {
   onClose: () => void | undefined;
 }
 
-export function GraphView({ onClose }: GraphViewProps) {
-  const { graph } = useTypedSelector(monitorSelector);
+function GraphViewComponent({ onClose }: GraphViewProps) {
+  const graph = useTypedSelector(checkGraphSelector);
   const closeDrawer = () => {
     onClose();
   };
@@ -33,3 +34,5 @@ export function GraphView({ onClose }: GraphViewProps) {
     </StyledBoxWrapper>
   );
 }
+
+export const GraphView = memo(GraphViewComponent);

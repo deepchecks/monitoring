@@ -3,11 +3,11 @@ import {
   createDraftSafeSelector,
   createSlice,
 } from "@reduxjs/toolkit";
-import axios from "axios";
-import AlertService from "../../../services/AlertSective";
+import { ChartData } from "chart.js";
+import dayjs from "dayjs";
+import { setGraphColor } from "../../../helpers/lineDataChangeFunction";
 import ModelService from "../../../services/ModelSecrive";
 import { ID } from "../../../types";
-import { AlertsCount } from "../../../types/alert";
 import { AllDataIngestion, Model, ModelColumns } from "../../../types/model";
 import { RootState } from "../../store";
 import { InitialStateType } from "./modelTypes";
@@ -24,17 +24,7 @@ export const initialState: InitialStateType = {
 export const getModels = createAsyncThunk("model/getModels", async () => {
   try {
     const response = await ModelService.getModels();
-    const models = axios.all(
-      response.data.map(async (model) => {
-        const res = await AlertService.getAlertsCountById(model.id);
-        const count = Object.keys(res.data).reduce(
-          (acc, key) => acc + res.data[key as keyof AlertsCount],
-          0
-        );
-        return { ...model, count };
-      })
-    );
-    return models;
+    return response.data;
   } catch (err) {
     if (err instanceof Error) {
       throw new Error(err.message);
@@ -60,11 +50,11 @@ export const getColumns = createAsyncThunk(
   }
 );
 
-export const getAllDataIntestion = createAsyncThunk(
+export const getAllDataIngestion = createAsyncThunk(
   "model/getAllDataIntestion",
-  async (_, { rejectWithValue }) => {
+  async (timeFilter: number, { rejectWithValue }) => {
     try {
-      const response = await ModelService.getAllDataIntestion();
+      const response = await ModelService.getAllDataIntestion(timeFilter);
       return response.data;
     } catch (err) {
       if (err instanceof Error) {
@@ -105,14 +95,14 @@ export const modelSlice = createSlice({
     builder.addCase(getColumns.rejected, (state) => {
       state.loading = false;
     });
-    builder.addCase(getAllDataIntestion.pending, (state) => {
+    builder.addCase(getAllDataIngestion.pending, (state) => {
       state.loading = true;
     });
-    builder.addCase(getAllDataIntestion.fulfilled, (state, { payload }) => {
+    builder.addCase(getAllDataIngestion.fulfilled, (state, { payload }) => {
       state.loading = false;
       state.allDataIngestion = payload;
     });
-    builder.addCase(getAllDataIntestion.rejected, (state) => {
+    builder.addCase(getAllDataIngestion.rejected, (state) => {
       state.loading = false;
     });
   },
@@ -123,6 +113,29 @@ const modelState = (state: RootState) => state.model;
 export const modelSelector = createDraftSafeSelector(
   modelState,
   (state) => state
+);
+
+export const modelGraphSelector = createDraftSafeSelector(
+  modelState,
+  (state): ChartData<"line", any> => {
+    if (!Object.keys(state.allDataIngestion).length) {
+      return {
+        datasets: [],
+      };
+    }
+
+    return {
+      datasets: Object.entries(state.allDataIngestion).map(
+        ([key, item], index) => ({
+          data: item.map(({ count, day }) => ({
+            x: dayjs(new Date(day)).format("MMM. DD (HH:mm:ss)"),
+            y: count,
+          })),
+          ...setGraphColor(key, index),
+        })
+      ),
+    };
+  }
 );
 
 export const { clearColumns } = modelSlice.actions;

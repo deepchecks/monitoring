@@ -1,13 +1,8 @@
-import {
-  AllDataIngestion,
-  Model,
-  ModelColumns,
-  ModelWithAlerts,
-} from "../../../types/model";
+import { AllDataIngestion, Model, ModelColumns } from "../../../types/model";
 
 export interface InitialStateType {
   allDataIngestion: AllDataIngestion;
-  allModels: ModelWithAlerts[];
+  allModels: Model[];
   columns: ModelColumns;
   model: Model;
   error: string;

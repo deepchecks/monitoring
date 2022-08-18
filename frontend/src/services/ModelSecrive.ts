@@ -12,7 +12,9 @@ export default class ModelService {
     return $api(ApiBreakpoints.MODEL_COLUMNS(modelId));
   }
 
-  static async getAllDataIntestion(): Promise<AxiosResponse<AllDataIngestion>> {
-    return $api(ApiBreakpoints.MODELS_ALL_DATA_INGESTION);
+  static async getAllDataIntestion(
+    timeFilter: number
+  ): Promise<AxiosResponse<AllDataIngestion>> {
+    return $api(ApiBreakpoints.MODELS_ALL_DATA_INGESTION(timeFilter));
   }
 }

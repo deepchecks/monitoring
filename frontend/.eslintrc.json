@@ -37,6 +37,8 @@
       { "props": true, "ignorePropertyModificationsFor": ["state"] }
     ],
     "no-shadow": "off",
-    "camelcase": "off"
+    "camelcase": "off",
+    "default-param-last": "off",
+    "no-plusplus": "off"
   }
 }

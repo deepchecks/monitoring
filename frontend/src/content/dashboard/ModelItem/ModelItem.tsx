@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import { ModelWithAlerts } from "../../../types/model";
+import { Model } from "../../../types/model";
 import {
   StyledAlert,
   StyledContainer,
@@ -10,7 +10,7 @@ import {
 
 interface ModelItemProps {
   border?: boolean;
-  model: ModelWithAlerts;
+  model: Model;
 }
 
 export function ModelItem({ border = false, model }: ModelItemProps) {
@@ -24,7 +24,7 @@ export function ModelItem({ border = false, model }: ModelItemProps) {
           </StyledTypographyDate>
         </Box>
         <StyledAlert>
-          <StyledCounter variant="h4">{model.count}</StyledCounter>
+          <StyledCounter variant="h4">{model.alerts_count}</StyledCounter>
         </StyledAlert>
       </StyledModelInfo>
     </StyledContainer>

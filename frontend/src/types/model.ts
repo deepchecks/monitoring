@@ -1,19 +1,28 @@
 export interface Model {
+  alerts_count: number;
   id: number | string;
   description?: string;
   name: string;
   task_type?: string;
 }
 
+export enum ColumnType {
+  string = "categorical",
+  number = "numeric",
+}
+
+export interface Categorical {
+  type: ColumnType.string;
+  values: [string, string];
+}
+
+export interface Numeric {
+  type: ColumnType.number;
+  values: [number, number];
+}
+
 export interface ModelColumns {
-  a: {
-    type: string;
-    values: [number, number];
-  };
-  b: {
-    type: string;
-    values: [string, string];
-  };
+  [key: string]: Categorical | Numeric;
 }
 
 export interface DataIngestion {
@@ -24,5 +33,3 @@ export interface DataIngestion {
 export interface AllDataIngestion {
   [key: string]: DataIngestion[];
 }
-
-export type ModelWithAlerts = Model & { count: number };

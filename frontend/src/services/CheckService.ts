@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import { $api, ApiBreakpoints } from "../helpers/api";
-import { ID } from "../types";
-import { Check, CheckGraph, RunCheckRequest } from "../types/check";
+import { ChartResponse, ID } from "../types";
+import { Check, RunCheckRequest } from "../types/check";
 
 export default class CheckService {
   static async getChecks(modelId: ID): Promise<AxiosResponse<Check[]>> {
@@ -20,7 +20,7 @@ export default class CheckService {
   static async runCheck(
     checkID: ID,
     data: RunCheckRequest
-  ): Promise<AxiosResponse<CheckGraph>> {
+  ): Promise<AxiosResponse<ChartResponse>> {
     return $api.post(ApiBreakpoints.CHECK_RUN(checkID), { ...data });
   }
 }

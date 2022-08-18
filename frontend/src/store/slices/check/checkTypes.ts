@@ -1,13 +1,12 @@
-import { ChartData } from "chart.js";
-import { ID } from "../../../types";
-import { Check, CheckGraph, RunCheckRequest } from "../../../types/check";
+import { ChartResponse, ID } from "../../../types";
+import { Check, RunCheckRequest } from "../../../types/check";
 
 export interface InitialStateType {
-  charts: CheckGraph[];
+  charts: ChartResponse[];
   checks: Check[];
   error: string;
   loading: boolean;
-  graph: ChartData<"line">;
+  graph: ChartResponse;
 }
 
 export interface RunCheckOptions {

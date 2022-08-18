@@ -1,24 +1,23 @@
 import { Box, MenuItem, SelectChangeEvent } from "@mui/material";
 import { useFormik } from "formik";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { MarkedSelect } from "../../../../components/MarkedSelect/MarkedSelect";
 import { RangePicker } from "../../../../components/RangePicker/RangePicker";
 import { useTypedDispatch, useTypedSelector } from "../../../../store/hooks";
 import {
   checkSelector,
-  clearChecks,
   getChecks,
+  runCheck,
 } from "../../../../store/slices/check/checkSlice";
 import {
-  clearColumns,
   getColumns,
   modelSelector,
 } from "../../../../store/slices/model/modelSlice";
 import {
-  clearMonitorGraph,
   createMonitor,
   monitorSelector,
 } from "../../../../store/slices/monitor/monitorSlice";
+import { ColumnType } from "../../../../types/model";
 import { Subcategory } from "../Subcategory/Subcategory";
 import {
   StyledButton,
@@ -33,7 +32,7 @@ const timeWindow = [
   { label: "1 hour", value: 60 * 60 },
   { label: "1 day", value: 60 * 60 * 24 },
   { label: "1 week", value: 60 * 60 * 24 * 7 },
-  { label: "1 month", value: 60 * 60 * 24 * 7 * 31 },
+  { label: "1 month", value: 60 * 60 * 24 * 31 },
 ];
 
 interface CreateMonitorProps {
@@ -42,6 +41,7 @@ interface CreateMonitorProps {
 
 export function CreateMonitor({ onClose }: CreateMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
 
   const dispatch = useTypedDispatch();
 
@@ -69,14 +69,18 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
       let operator;
       let value;
 
-      if (values.column === "a") {
-        operator = "greater_than";
-        value = values.numericValue;
-      }
+      const column = columns[values.column];
 
-      if (values.column === "b") {
-        operator = "in";
-        value = values.category;
+      if (column) {
+        if (column.type === ColumnType.number) {
+          operator = "greater_than";
+          value = values.numericValue;
+        }
+
+        if (column.type === ColumnType.string) {
+          operator = "in";
+          value = values.category;
+        }
       }
 
       dispatch(
@@ -108,6 +112,32 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
     },
   });
 
+  const updateGraph = (operator = "", value: string | number = "") => {
+    if (!operator) {
+      dispatch(
+        runCheck({
+          checkId: +values.check,
+          data: {
+            start_time: new Date(Date.now() - +values.time * 1000),
+            end_time: new Date(),
+          },
+        })
+      );
+      return;
+    }
+
+    dispatch(
+      runCheck({
+        checkId: +values.check,
+        data: {
+          start_time: new Date(Date.now() - +values.time * 1000),
+          end_time: new Date(),
+          filter: { filters: [{ column: values.column, operator, value }] },
+        },
+      })
+    );
+  };
+
   const handleModelChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as string;
     handleChange(event);
@@ -132,68 +162,107 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
   };
 
   const handleInputBlur = () => {
-    if (+values.numericValue < columns.a.values[0]) {
-      setFieldValue("numericValue", columns.a.values[0]);
-    } else if (+values.numericValue > columns.a.values[1]) {
-      setFieldValue("numericValue", columns.a.values[1]);
+    if (+values.numericValue < columns[values.column].values[0]) {
+      setFieldValue("numericValue", columns[values.column].values[0]);
+    } else if (+values.numericValue > columns[values.column].values[1]) {
+      setFieldValue("numericValue", columns[values.column].values[1]);
     }
   };
 
   useMemo(() => {
-    if (values.column === "b") {
-      setColumnComponent(
-        <Subcategory>
-          <MarkedSelect
-            label="Select category"
-            size="small"
-            disabled={!columns.b.values.length}
-            fullWidth
-            {...getFieldProps("category")}
-          >
-            {columns.b.values.map((col, index) => (
-              <MenuItem key={index} value={col}>
-                {col}
-              </MenuItem>
-            ))}
-          </MarkedSelect>
-        </Subcategory>
-      );
-      return;
-    }
+    if (values.column) {
+      const column = columns[values.column];
 
-    if (values.column === "a") {
-      setColumnComponent(
-        <Box mt="39px">
-          <StyledTypographyLabel>Select Value</StyledTypographyLabel>
-          <RangePicker
-            onChange={handleSliderChange}
-            handleInputBlur={handleInputBlur}
-            handleInputChange={handleInputChange}
-            name="numericValue"
-            value={+values.numericValue || 0}
-            min={columns.a.values[0]}
-            max={columns.a.values[1]}
-            valueLabelDisplay="auto"
-          />
-        </Box>
-      );
-      return;
-    }
+      if (column.type === ColumnType.string) {
+        setColumnComponent(
+          <Subcategory>
+            <MarkedSelect
+              label="Select category"
+              size="small"
+              disabled={!columns[values.column].values.length}
+              fullWidth
+              {...getFieldProps("category")}
+            >
+              {columns[values.column].values.map((col, index) => (
+                <MenuItem key={index} value={col}>
+                  {col}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+          </Subcategory>
+        );
+        return;
+      }
 
-    setColumnComponent(null);
+      if (column.type === ColumnType.number) {
+        setColumnComponent(
+          <Box mt="39px">
+            <StyledTypographyLabel>Select Value</StyledTypographyLabel>
+            <RangePicker
+              onChange={handleSliderChange}
+              handleInputBlur={handleInputBlur}
+              handleInputChange={handleInputChange}
+              name="numericValue"
+              value={+values.numericValue || 0}
+              min={column.values[0]}
+              max={column.values[1]}
+              valueLabelDisplay="auto"
+            />
+          </Box>
+        );
+        return;
+      }
+
+      setColumnComponent(null);
+    }
   }, [values.column, values.category, values.numericValue]);
 
   useEffect(() => {
-    if (values.column === "b") {
-      setFieldValue("category", columns.b.values[0]);
+    const column = columns[values.column];
+    if (column && column.type === ColumnType.string) {
+      setFieldValue("category", column.values[0]);
     }
   }, [values.column]);
 
   useEffect(() => {
-    dispatch(clearChecks());
-    dispatch(clearColumns());
-    dispatch(clearMonitorGraph());
-  }, [dispatch]);
+    clearTimeout(timer.current);
+    const column = columns[values.column];
+
+    if (!column && values.check && values.time) {
+      updateGraph();
+    }
+
+    if (column) {
+      if (column.type === ColumnType.number) {
+        if (
+          values.check &&
+          values.time &&
+          values.column &&
+          values.numericValue
+        ) {
+          timer.current = setTimeout(() => {
+            updateGraph("greater_than", values.numericValue);
+          }, 500);
+        }
+      }
+
+      if (column.type === ColumnType.string) {
+        if (values.check && values.time && values.column && values.category) {
+          updateGraph("in", values.category);
+        }
+      }
+    }
+
+    return () => {
+      clearTimeout(timer.current);
+    };
+  }, [
+    values.check,
+    values.column,
+    values.category,
+    values.numericValue,
+    values.time,
+  ]);
 
   return (
     <form onSubmit={formik.handleSubmit}>

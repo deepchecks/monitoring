@@ -4,12 +4,11 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import axios from "axios";
-import { setGraphColor } from "../../../helpers/lineDataChangeFunction";
+import { parseDataForChart } from "../../../helpers/parseDataForChart";
 import MonitorService from "../../../services/MonitorService";
-import { ID } from "../../../types";
+import { ChartResponse, ID } from "../../../types";
 import { Monitor } from "../../../types/monitor";
 import { RootState } from "../../store";
-import { initGraph } from "./monitorHelpers";
 import {
   CreateMonitorOptions,
   InitialStateType,
@@ -21,7 +20,7 @@ export const initialState: InitialStateType = {
   dashboards: { id: 0, name: "", monitors: [] },
   error: "",
   loading: false,
-  graph: initGraph,
+  graph: {} as ChartResponse,
   monitor: {} as Monitor,
 };
 
@@ -44,10 +43,10 @@ export const getMonitor = createAsyncThunk(
 export const getMonitors = createAsyncThunk("monitor/getMonitors", async () => {
   try {
     const monitors = await MonitorService.getMonitors();
+
     const charts = await axios.all(
       monitors.data.monitors.map(async ({ id }) => {
         const res = await MonitorService.runMonitor(id);
-
         return res.data;
       })
     );
@@ -96,9 +95,9 @@ export const runMonitor = createAsyncThunk(
 
 export const updateMonitor = createAsyncThunk(
   "monitor/updateMonitor",
-  async ({ checkId, monitor }: UpdateMonitorOptions) => {
+  async ({ monitorId, monitor }: UpdateMonitorOptions) => {
     try {
-      const response = await MonitorService.updateMonitor(checkId, monitor);
+      const response = await MonitorService.updateMonitor(monitorId, monitor);
       return response.data;
     } catch (err) {
       if (err instanceof Error) {
@@ -134,7 +133,7 @@ export const monitorSlice = createSlice({
       state.monitor = {} as Monitor;
     },
     clearMonitorGraph: (state) => {
-      state.graph = initGraph;
+      state.graph = {} as ChartResponse;
     },
   },
   extraReducers: (builder) => {
@@ -173,11 +172,7 @@ export const monitorSlice = createSlice({
     builder.addCase(getMonitors.fulfilled, (state, { payload }) => {
       state.loading = false;
       state.dashboards = payload.dashboard;
-      state.charts = payload.charts.map((data, index) => ({
-        datasets: data.output[3],
-        labels: data.time_labels,
-        ...setGraphColor(index),
-      }));
+      state.charts = payload.charts;
     });
     builder.addCase(getMonitors.rejected, (state) => {
       state.loading = false;
@@ -187,9 +182,7 @@ export const monitorSlice = createSlice({
     });
     builder.addCase(runMonitor.fulfilled, (state, { payload }) => {
       state.loading = false;
-      state.graph = payload.output[3]
-        ? { datasets: payload.output[3], labels: payload.time_labels }
-        : initGraph;
+      state.graph = payload;
     });
     builder.addCase(runMonitor.rejected, (state) => {
       state.loading = false;
@@ -211,6 +204,30 @@ const monitorState = (state: RootState) => state.monitor;
 export const monitorSelector = createDraftSafeSelector(
   monitorState,
   (state) => state
+);
+
+export const monitorChartsSelector = createDraftSafeSelector(
+  monitorState,
+  (state) => {
+    if (!state.charts.length) {
+      return [];
+    }
+
+    return state.charts.map((chart) => parseDataForChart(chart));
+  }
+);
+
+export const monitorGraphSelector = createDraftSafeSelector(
+  monitorState,
+  (state) => {
+    if (!Object.keys(state.graph).length) {
+      return {
+        datasets: [],
+      };
+    }
+
+    return parseDataForChart(state.graph);
+  }
 );
 
 export const { clearMonitorGraph } = monitorSlice.actions;

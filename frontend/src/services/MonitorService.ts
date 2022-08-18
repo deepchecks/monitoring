@@ -1,7 +1,6 @@
 import { AxiosResponse } from "axios";
 import { $api, ApiBreakpoints } from "../helpers/api";
-import { ID } from "../types";
-import { CheckGraph } from "../types/check";
+import { ChartResponse, ID } from "../types";
 import { DashboardType, Monitor, MonitorRequest } from "../types/monitor";
 
 export default class MonitorService {
@@ -37,7 +36,9 @@ export default class MonitorService {
     );
   }
 
-  static async runMonitor(monitorID: ID): Promise<AxiosResponse<CheckGraph>> {
+  static async runMonitor(
+    monitorID: ID
+  ): Promise<AxiosResponse<ChartResponse>> {
     return $api(ApiBreakpoints.MONITOR_RUN(monitorID));
   }
 }

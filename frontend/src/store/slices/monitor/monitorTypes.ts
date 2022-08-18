@@ -1,14 +1,13 @@
-import { ChartData } from "chart.js";
-import { ID } from "../../../types";
+import { ChartResponse, ID } from "../../../types";
 import { DashboardType, Monitor, MonitorRequest } from "../../../types/monitor";
 
 export interface InitialStateType {
-  charts: ChartData<"line">[];
+  charts: ChartResponse[];
   dashboards: DashboardType;
   error: string;
   loading: boolean;
   monitor: Monitor;
-  graph: ChartData<"line">;
+  graph: ChartResponse;
 }
 
 export interface CreateMonitorOptions {
@@ -17,6 +16,6 @@ export interface CreateMonitorOptions {
 }
 
 export interface UpdateMonitorOptions {
-  checkId: ID;
+  monitorId: ID;
   monitor: MonitorRequest;
 }

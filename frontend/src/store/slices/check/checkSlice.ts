@@ -4,11 +4,12 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import axios from "axios";
+import { ChartData } from "chart.js";
+import { parseDataForChart } from "../../../helpers/parseDataForChart";
 import CheckService from "../../../services/CheckService";
-import { ID } from "../../../types";
+import { ChartResponse, ID } from "../../../types";
 import { Monitor } from "../../../types/monitor";
 import { RootState } from "../../store";
-import { initGraph } from "./checkHelpers";
 import {
   CreateCheckOptions,
   InitialStateType,
@@ -20,7 +21,7 @@ export const initialState: InitialStateType = {
   checks: [],
   error: "",
   loading: false,
-  graph: initGraph,
+  graph: {} as ChartResponse,
 };
 
 export const getChecks = createAsyncThunk(
@@ -62,7 +63,8 @@ export const runChecks = createAsyncThunk(
       const response = axios.all(
         monitors.map(async ({ check, lookback, data_filter }) => {
           const res = await CheckService.runCheck(check.id, {
-            lookback,
+            start_time: new Date(Date.now() - lookback),
+            end_time: new Date(),
             filter: data_filter,
           });
 
@@ -100,8 +102,9 @@ export const checkSlice = createSlice({
   name: "check",
   initialState,
   reducers: {
-    clearChecks: (state) => {
+    clearCheckState: (state) => {
       state.checks = [];
+      state.graph = {} as ChartResponse;
     },
   },
   extraReducers: (builder) => {
@@ -120,9 +123,7 @@ export const checkSlice = createSlice({
     });
     builder.addCase(runCheck.fulfilled, (state, { payload }) => {
       state.loading = false;
-      state.graph = payload.output[3]
-        ? { datasets: payload.output[3], labels: payload.time_labels }
-        : initGraph;
+      state.graph = payload;
     });
     builder.addCase(runCheck.rejected, (state) => {
       state.loading = false;
@@ -147,6 +148,19 @@ export const checkSelector = createDraftSafeSelector(
   (state) => state
 );
 
-export const { clearChecks } = checkSlice.actions;
+export const checkGraphSelector = createDraftSafeSelector(
+  checkState,
+  (state): ChartData<"line"> => {
+    if (!Object.keys(state.graph).length) {
+      return {
+        datasets: [],
+      };
+    }
+
+    return parseDataForChart(state.graph);
+  }
+);
+
+export const { clearCheckState } = checkSlice.actions;
 
 export const checkReducer = checkSlice.reducer;

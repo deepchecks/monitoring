@@ -43,6 +43,7 @@ const months: string[] = [
   "Nov",
   "Dec",
 ];
+
 const colors: string[] = [
   "#0B76B7",
   "#01A9DB",
@@ -67,6 +68,24 @@ const colors: string[] = [
   "#FF6F2C",
   "#E08D00",
   "#FCB400",
+];
+
+export const graphColors = [
+  "#00F0FF",
+  "#B9D8E2",
+  "#64A6CB",
+  "#7ABFFF",
+  "#BAA9A0",
+  "#00CCFF",
+  "#6099C2",
+  "#66E0FF",
+  "#0088FF",
+  "#2F6CA2",
+  "#0044FF",
+  "#668FFF",
+  "#4800FF",
+  "#AB90EF",
+  "#0065FF",
 ];
 
 export const gradientColors: string[][] = [
@@ -94,6 +113,7 @@ export const gradientColors: string[][] = [
   ["rgba(224, 141, 0, 0)", "rgba(224, 141, 0, 0.1)"],
   ["rgba(252, 180, 0, 0)", "rgba(252, 180, 0, 0.1)"],
 ];
+
 type PerCentValue = number[] | any[];
 interface BearValue {
   [key: string | number]: number[];
@@ -152,11 +172,13 @@ export const lineDataChangeFunction = () => {
   };
 };
 
-export const setGraphColor = (index: number) => ({
+export const setGraphColor = (label: string, index: number) => ({
+  label,
   fill: true,
   tension: 0.25,
   pointBorderWidth: 0,
-  borderColor: colors[index],
+  borderColor: graphColors[index],
   pointHoverBorderWidth: 0,
   pointHoverRadius: 0,
+  hidden: false,
 });

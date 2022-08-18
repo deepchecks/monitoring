@@ -1,8 +1,7 @@
-import { Box } from "@mui/material";
+import { alpha, Box, useTheme } from "@mui/material";
 import { Chart, ChartArea, ChartData, registerables } from "chart.js";
-import { useEffect, useRef, useState } from "react";
+import { memo, useRef } from "react";
 import { Line } from "react-chartjs-2";
-import { gradientColors } from "../../helpers/lineDataChangeFunction";
 
 Chart.register(...registerables);
 
@@ -22,42 +21,72 @@ export interface DiagramLineProps {
   data: ChartData<"line">;
 }
 
-export default function DiagramLine({ data }: DiagramLineProps) {
+function DiagramLine({ data }: DiagramLineProps) {
   const chartRef = useRef<Chart<"line", number[], string>>();
-  const [chartData, setChartData] = useState(data);
+  const theme = useTheme();
 
-  useEffect(() => {
+  const getNewData = () => {
     const char = chartRef.current;
 
     if (!char) {
-      return;
+      return data;
     }
 
-    setChartData({
+    return {
       ...data,
-      datasets: data.datasets.map((el, i) => ({
+      datasets: data.datasets.map((el) => ({
         ...el,
         backgroundColor: createGradient(
           char.ctx,
           char.chartArea,
-          gradientColors[i][0],
-          gradientColors[i][1]
+          alpha(el.borderColor as string, 0),
+          alpha(el.borderColor as string, 0.1)
         ),
       })),
-    });
-  }, [chartRef, data]);
+    };
+  };
 
   return (
     <Box>
       <Line
-        data={chartData}
+        data={getNewData()}
         ref={chartRef}
         updateMode="active"
         options={{
           responsive: true,
           plugins: {
             legend: {
-              display: false,
+              display: true,
+              position: "bottom",
+              align: "end",
+              labels: {
+                usePointStyle: true,
+                textAlign: "center",
+                generateLabels: (chart) => {
+                  const { data } = chart;
+                  if (data && data.labels?.length && data.datasets.length) {
+                    return data.datasets.map(
+                      ({ label, borderColor }, index) => ({
+                        datasetIndex: index,
+                        text: label as string,
+                        textColor: theme.palette.text.primary,
+                        fillStyle: borderColor as string,
+                        strokeStyle: borderColor as string,
+                        pointStyle: "rectRounded",
+                        textAlign: "center",
+                        hidden: !chart.isDatasetVisible(index),
+                      })
+                    );
+                  }
+
+                  return [];
+                },
+                boxWidth: 6,
+                boxHeight: 6,
+                font: {
+                  size: 12,
+                },
+              },
             },
           },
           scales: {
@@ -72,3 +101,5 @@ export default function DiagramLine({ data }: DiagramLineProps) {
     </Box>
   );
 }
+
+export default memo(DiagramLine);

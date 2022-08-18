@@ -13,15 +13,9 @@ export interface Check {
 }
 
 export interface RunCheckRequest {
-  lookback: number;
-  filter: {
+  start_time: Date | string;
+  end_time: Date | string;
+  filter?: {
     filters: Filter[];
   };
-}
-
-export interface CheckGraph {
-  output: {
-    3: [];
-  };
-  time_labels: string[];
 }

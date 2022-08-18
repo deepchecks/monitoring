@@ -3,7 +3,7 @@ import {
   createDraftSafeSelector,
   createSlice,
 } from "@reduxjs/toolkit";
-import AlertService from "../../../services/AlertSective";
+import AlertService from "../../../services/AlertService";
 import { ID } from "../../../types";
 import { RootState } from "../../store";
 import { initCount } from "./alertHelpers";

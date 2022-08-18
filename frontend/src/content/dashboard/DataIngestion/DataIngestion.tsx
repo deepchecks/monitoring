@@ -1,56 +1,69 @@
-import { Box, MenuItem, SelectChangeEvent, Typography } from "@mui/material";
-import { ChartData } from "chart.js";
-import { memo, useState } from "react";
+import { Box, MenuItem, SelectChangeEvent } from "@mui/material";
+import { useEffect, useState } from "react";
 import DiagramLine from "../../../components/DiagramLine/DiagramLine";
+import { useTypedDispatch, useTypedSelector } from "../../../store/hooks";
+import {
+  getAllDataIngestion,
+  modelGraphSelector,
+  modelSelector,
+} from "../../../store/slices/model/modelSlice";
 import {
   StyledDiagramWrapper,
   StyledFlexContent,
   StyledFlexWrapper,
   StyledFooter,
-  StyledGraphColor,
-  StyledGrid,
-  StyledModel,
   StyledSelect,
   StyledTypographyTitle,
 } from "./DataIngestion.style";
 
-interface DataIngestionProps {
-  data: ChartData<"line">;
-  title: string;
-}
+const times = [
+  { label: "Last day", value: 60 * 60 * 24 * 1000 },
+  { label: "Last 7 days", value: 60 * 60 * 24 * 7 * 1000 },
+  { label: "Last month", value: 60 * 60 * 24 * 31 * 1000 },
+];
 
-function DataIngestionComponent({ data, title }: DataIngestionProps) {
-  const [time, setTime] = useState("Last 7 days");
+const initTime = times[1].value;
+
+export function DataIngestion() {
+  const [time, setTime] = useState(initTime.toString());
+  const { loading } = useTypedSelector(modelSelector);
+  const dataIngestion = useTypedSelector(modelGraphSelector);
+
+  const dispatch = useTypedDispatch();
 
   const handleTime = (event: SelectChangeEvent<unknown>) => {
-    setTime(event.target.value as string);
+    const value = event.target.value as string;
+    setTime(value);
   };
+
+  useEffect(() => {
+    dispatch(getAllDataIngestion(+time));
+  }, [dispatch, time]);
 
   return (
     <StyledFlexContent>
       <Box>
         <StyledFlexWrapper>
-          <StyledTypographyTitle>{title}</StyledTypographyTitle>
+          <StyledTypographyTitle>Data Ingest Status</StyledTypographyTitle>
         </StyledFlexWrapper>
         <StyledDiagramWrapper>
-          <DiagramLine data={data} />
+          <DiagramLine data={dataIngestion} />
           <StyledFooter>
-            <StyledSelect value={time} onChange={handleTime} size="small">
-              <MenuItem value="Last 7 days">Last 7 days</MenuItem>
-            </StyledSelect>
-            <StyledGrid>
-              {data.datasets.map((data) => (
-                <StyledModel key={data.label}>
-                  <StyledGraphColor graphColor={data.borderColor as string} />
-                  <Typography variant="body2">{data.label}</Typography>
-                </StyledModel>
+            <StyledSelect
+              value={time}
+              onChange={handleTime}
+              size="small"
+              disabled={loading}
+            >
+              {times.map(({ label, value }) => (
+                <MenuItem value={value.toString()} key={label}>
+                  {label}
+                </MenuItem>
               ))}
-            </StyledGrid>
+            </StyledSelect>
           </StyledFooter>
         </StyledDiagramWrapper>
       </Box>
     </StyledFlexContent>
   );
 }
-
-export const DataIngestion = memo(DataIngestionComponent);

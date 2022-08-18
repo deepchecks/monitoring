@@ -1,7 +1,7 @@
 import { List } from "@mui/material";
 import { useState } from "react";
 import { SearchField } from "../../../components/SearchField/SearchField";
-import { ModelWithAlerts } from "../../../types/model";
+import { Model } from "../../../types/model";
 import { ModelItem } from "../ModelItem/ModelItem";
 import {
   StyledButton,
@@ -11,7 +11,7 @@ import {
 } from "./ModelList.style";
 
 interface ModelListProps {
-  models: ModelWithAlerts[];
+  models: Model[];
 }
 
 const initRange = 3;

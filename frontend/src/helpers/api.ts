@@ -6,8 +6,10 @@ export const API_URL =
 
 export const ApiBreakpoints = {
   ALERT: (alertId: ID) => `/alerts/${alertId}`,
-  ALERTS_COUNT_BY_ID: (modelId: ID) => `/models/${modelId}/alerts/count`,
-  ALERTS_COUNT: "/alerts/count",
+  ALERTS: "/alerts/",
+  ALERT_RULES_COUNT_BY_ID: (modelId: ID) =>
+    `/models/${modelId}/alert_rules/count`,
+  ALERTS_ACTIVE_COUNT: "/alerts/count_active",
   ALERT_CREATE: (checkId: ID) => `/checks/${checkId}/alerts`,
   ALERT_DELETE: (alertId: ID) => `/alerts/${alertId}`,
   ALERT_UPDATE: (alertId: ID) => `/alerts/${alertId}`,
@@ -17,7 +19,8 @@ export const ApiBreakpoints = {
   MODEL: (modelId: ID) => `/models/${modelId}`,
   MODELS: "/models/",
   MODELS_DATA_INGESTION: (modelId: ID) => `/models/${modelId}/data-ingestion`,
-  MODELS_ALL_DATA_INGESTION: "/models/data-ingestion",
+  MODELS_ALL_DATA_INGESTION: (timeFilter: number) =>
+    `/models/data-ingestion?time_filter=${timeFilter}`,
   MODEL_COLUMNS: (modelId: ID) => `/models/${modelId}/columns`,
   MODEL_VERSION: (modelId: ID) => `/models/${modelId}/version`,
   MODEL_VERSION_LOG_DATA: (modelVersionId: ID) =>
