@@ -9,53 +9,38 @@
 # ----------------------------------------------------------------------------
 """Module defining the monitor ORM model."""
 import typing as t
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
 from deepchecks_monitoring.utils import DataFilterList
 
-if TYPE_CHECKING:
-    from deepchecks_monitoring.models.alert_rule import AlertRule
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.models.alert_rule import AlertRule  # pylint: disable=unused-import
+    from deepchecks_monitoring.models.check import Check  # pylint: disable=unused-import
+    from deepchecks_monitoring.models.dashboard import Dashboard  # pylint: disable=unused-import
 
 __all__ = ["Monitor"]
 
 
-@dataclass
 class Monitor(Base):
     """ORM model for the monitor."""
 
-    __table__ = Table(
-        "monitors",
-        Base.metadata,
-        Column("id", Integer, primary_key=True),
-        Column("name", String(50)),
-        Column("description", String(200), default=""),
-        Column("check_id", Integer, ForeignKey("checks.id"), nullable=False),
-        Column("dashboard_id", Integer, ForeignKey("dashboards.id", ondelete="SET NULL"), nullable=True),
-        Column("data_filters", PydanticType(pydantic_model=DataFilterList), nullable=True),
-        Column("lookback", Integer),
-        Column("filter_key", String(50), default=None, nullable=True),
-    )
+    __tablename__ = "monitors"
 
-    name: str
-    check_id: int
-    lookback: int
-    dashboard_id:  t.Optional[int]
-    description: t.Optional[str] = None
-    alert_rules: t.List["AlertRule"] = field(default_factory=list)
-    data_filters: DataFilterList = None
-    filter_key: str = None
-    id: int = None
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    description = Column(String(200), default="")
+    data_filters = Column(PydanticType(pydantic_model=DataFilterList), nullable=True)
+    lookback = Column(Integer)
+    filter_key = Column(String(50), default=None, nullable=True)
 
-    __mapper_args__ = {  # type: ignore
-        "properties": {
-            "check": relationship("Check"),
-            "dashboard": relationship("Dashboard"),
-            "alert_rules": relationship("AlertRule")
-        }
-    }
+    check_id = Column(Integer, ForeignKey("checks.id"), nullable=False)
+    check: Mapped["Check"] = relationship("Check")
+
+    dashboard_id = Column(Integer, ForeignKey("dashboards.id", ondelete="SET NULL"), nullable=True)
+    dashboard: Mapped[t.Optional["Dashboard"]] = relationship("Dashboard")
+
+    alert_rules: Mapped[t.List["AlertRule"]] = relationship("AlertRule")

@@ -8,41 +8,24 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the Dashboard ORM model."""
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional
+import typing as t
 
-from sqlalchemy import Column, Integer, String, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
 
-if TYPE_CHECKING:
-    from deepchecks_monitoring.models.monitor import Monitor
-
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.models.monitor import Monitor  # pylint: disable=unused-import
 
 __all__ = ["Dashboard"]
 
 
-@dataclass
 class Dashboard(Base):
     """ORM model for the dashboard."""
 
-    __table__ = Table(
-        "dashboards",
-        Base.metadata,
-        Column("id", Integer, primary_key=True),
-        Column("name", String(50)),
-    )
-    __table_args__ = {
-        "schema": "default"
-    }
+    __tablename__ = "dashboards"
 
-    id: int = None
-    name: Optional[str] = None
-    monitors: List["Monitor"] = field(default_factory=list)
-
-    __mapper_args__ = {  # type: ignore
-        "properties": {
-            "monitors": relationship("Monitor"),
-        }
-    }
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor")

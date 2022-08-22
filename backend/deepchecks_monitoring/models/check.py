@@ -9,51 +9,35 @@
 # ----------------------------------------------------------------------------
 
 """Module defining the check ORM model."""
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional
+import typing as t
 
 from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
 
-if TYPE_CHECKING:
-    from deepchecks_monitoring.models.monitor import Monitor
-
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.models import Model, Monitor  # pylint: disable=unused-import
 
 __all__ = ["Check"]
 
 
-@dataclass
 class Check(Base):
     """ORM model for the check."""
 
-    __table__ = Table(
-        "checks",
-        Base.metadata,
-        Column("id", Integer, primary_key=True),
-        Column("name", String(50)),
-        Column("config", JSONB),
-        Column("model_id", Integer, ForeignKey("models.id")),
-        UniqueConstraint("name", "model_id")
-    )
-    __table_args__ = {
-        "schema": "default"
-    }
+    __tablename__ = "checks"
+    __table_args__ = (UniqueConstraint("name", "model_id"),)
 
-    config: dict
-    model_id: int
-    id: Optional[int] = None
-    name: Optional[str] = None
-    monitors: List["Monitor"] = field(default_factory=list)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    config = Column(JSONB)
 
-    __mapper_args__ = {  # type: ignore
-        "properties": {
-            "monitors": relationship("Monitor"),
-        }
-    }
+    model_id = Column(Integer, ForeignKey("models.id"))
+    model: Mapped[t.Optional["Model"]] = relationship("Model")
+
+    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor")
 
     def initialize_check(self):
         """Initialize an instance of Deepchecks' check.

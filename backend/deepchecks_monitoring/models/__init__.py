@@ -8,7 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the ORM models."""
-
 from .alert import Alert
 from .alert_rule import AlertRule
 from .check import Check

@@ -7,20 +7,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """Module defining the model ORM model."""
 import enum
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional
+import typing as t
 
-from sqlalchemy import Column, Enum, Integer, String, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Enum, Integer, String
+from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
 
-if TYPE_CHECKING:
-    from deepchecks_monitoring.models.check import Check
-    from deepchecks_monitoring.models.model_version import ModelVersion
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.models.check import Check  # pylint: disable=unused-import
+    from deepchecks_monitoring.models.model_version import ModelVersion  # pylint: disable=unused-import
 
 
 __all__ = ["TaskType", "Model"]
@@ -33,32 +31,15 @@ class TaskType(enum.Enum):
     CLASSIFICATION = "classification"
 
 
-@dataclass
 class Model(Base):
     """ORM model for the model."""
 
-    __table__ = Table(
-        "models",
-        Base.metadata,
-        Column("id", Integer, primary_key=True),
-        Column("name", String(50)),
-        Column("description", String(200)),
-        Column("task_type", Enum(TaskType))
-    )
-    __table_args__ = {
-        "schema": "default"
-    }
+    __tablename__ = "models"
 
-    id: int = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    task_type: Optional[TaskType] = None
-    versions: List["ModelVersion"] = field(default_factory=list)
-    checks: List["Check"] = field(default_factory=list)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    description = Column(String(200))
+    task_type = Column(Enum(TaskType))
 
-    __mapper_args__ = {  # type: ignore
-        "properties": {
-            "versions": relationship("ModelVersion"),
-            "checks": relationship("Check"),
-        }
-    }
+    versions: Mapped[t.List["ModelVersion"]] = relationship("ModelVersion")
+    checks: Mapped[t.List["Check"]] = relationship("Check")

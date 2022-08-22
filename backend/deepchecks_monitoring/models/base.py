@@ -56,4 +56,4 @@ class BaseClass:
 
 
 # declarative base class
-Base = declarative_base(cls=BaseClass)
+Base = t.cast(t.Any, declarative_base(cls=BaseClass))

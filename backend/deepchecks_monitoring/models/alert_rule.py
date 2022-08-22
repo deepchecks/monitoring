@@ -10,17 +10,18 @@
 """Module defining the alert rule ORM model."""
 import enum
 import typing as t
-from dataclasses import dataclass, field
 
-import pendulum as pdl
 from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Table, false, func, select
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, false, func, select
+from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
 from deepchecks_monitoring.utils import OperatorsEnum
+
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.models.monitor import Monitor  # pylint: disable=unused-import
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
@@ -41,41 +42,23 @@ class AlertSeverity(enum.Enum):
     CRITICAL = "critical"
 
 
-@dataclass
 class AlertRule(Base):
     """ORM model for the alert rule."""
 
-    __table__ = Table(
-        "alert_rules",
-        Base.metadata,
-        Column("id", Integer, primary_key=True),
-        Column("name", String(50)),
-        Column("monitor_id", Integer, ForeignKey("monitors.id")),
-        Column("condition", PydanticType(pydantic_model=Condition)),
-        Column("repeat_every", Integer, nullable=False),
-        Column("alert_severity", Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False),
-        Column("last_run", DateTime(timezone=True), nullable=True),
-    )
+    __tablename__ = "alert_rules"
 
-    __table_args__ = {
-        "schema": "default"
-    }
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
 
-    name: str
-    monitor_id: int
-    repeat_every: int
-    condition: Condition
-    alert_severity: AlertSeverity
-    alerts: t.List["Alert"] = field(default_factory=list)
-    last_run: pdl.DateTime = None
-    id: int = None
+    condition = Column(PydanticType(pydantic_model=Condition))
+    repeat_every = Column(Integer, nullable=False)
+    alert_severity = Column(Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False)
+    last_run = Column(DateTime(timezone=True), nullable=True)
 
-    __mapper_args__ = {  # type: ignore
-        "properties": {
-            "monitor": relationship("Monitor"),
-            "alerts": relationship("Alert"),
-        }
-    }
+    monitor_id = Column(Integer, ForeignKey("monitors.id"))
+    monitor: Mapped[t.Optional["Monitor"]] = relationship("Monitor")
+
+    alerts: Mapped[t.List["Alert"]] = relationship("Alert")
 
     @classmethod
     async def get_alerts_per_rule(cls, session, ids: t.List[int] = None) -> dict:

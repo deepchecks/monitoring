@@ -11,7 +11,6 @@
 import enum
 import typing as t
 from copy import copy
-from dataclasses import dataclass
 from datetime import datetime
 
 import pandas as pd
@@ -19,11 +18,14 @@ import pendulum as pdl
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, ForeignKey, Integer, MetaData, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql.type_api import TypeEngine
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.models.base import Base
+
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.models import Model  # pylint: disable=unused-import
 
 __all__ = ["ColumnType", "ModelVersion", "ColumnMetadata"]
 
@@ -64,44 +66,23 @@ class ColumnType(enum.Enum):
         return types_map[self]
 
 
-@dataclass
 class ModelVersion(Base):
     """ORM model for the model version."""
 
-    __table__ = Table(
-        "model_versions",
-        Base.metadata,
-        Column("id", Integer, primary_key=True),
-        Column("name", String(100)),
-        Column("start_time", DateTime(timezone=True), default=pdl.datetime(3000, 1, 1)),
-        Column("end_time", DateTime(timezone=True), default=pdl.datetime(1970, 1, 1)),
-        Column("monitor_json_schema", JSONB),
-        Column("reference_json_schema", JSONB),
-        Column("features", JSONB),
-        Column("non_features", JSONB),
-        Column("feature_importance", JSONB, nullable=True),
-        Column("model_id", Integer, ForeignKey("models.id"))
-    )
-    __table_args__ = {
-        "schema": "default"
-    }
+    __tablename__ = "model_versions"
 
-    name: str
-    model_id: int
-    monitor_json_schema: t.Dict[t.Any, t.Any]
-    reference_json_schema: t.Dict[t.Any, t.Any]
-    features: t.Dict[str, ColumnType]
-    non_features: t.Dict[str, ColumnType]
-    feature_importance: t.Optional[t.Dict[str, float]]
-    start_time: t.Optional[datetime] = None
-    end_time: t.Optional[datetime] = None
-    id: t.Optional[int] = None
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    start_time = Column(DateTime(timezone=True), default=pdl.datetime(3000, 1, 1))
+    end_time = Column(DateTime(timezone=True), default=pdl.datetime(1970, 1, 1))
+    monitor_json_schema = Column(JSONB)
+    reference_json_schema = Column(JSONB)
+    features = Column(JSONB)
+    non_features = Column(JSONB)
+    feature_importance = Column(JSONB, nullable=True)
 
-    __mapper_args__ = {  # type: ignore
-        "properties": {
-            "model": relationship("Model"),
-        }
-    }
+    model_id = Column(Integer, ForeignKey("models.id"))
+    model: Mapped[t.Optional["Model"]] = relationship("Model")
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""
