@@ -14,6 +14,7 @@ import {
   CreateCheckOptions,
   InitialStateType,
   RunCheckOptions,
+  RunSuiteOptions,
 } from "./checkTypes";
 
 export const initialState: InitialStateType = {
@@ -82,6 +83,22 @@ export const runChecks = createAsyncThunk(
   }
 );
 
+export const runSuite = createAsyncThunk(
+  "check/runSuite",
+  async ({ modelVersionId, data }: RunSuiteOptions) => {
+    try {
+      const response = await CheckService.runSuite(modelVersionId, data);
+      return response.data;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new Error(err.message);
+      }
+
+      throw new Error("Error");
+    }
+  }
+);
+
 export const createCheck = createAsyncThunk(
   "check/createCheck",
   async ({ modelId, data }: CreateCheckOptions) => {
@@ -136,6 +153,15 @@ export const checkSlice = createSlice({
       state.charts = payload;
     });
     builder.addCase(runChecks.rejected, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(runSuite.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(runSuite.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(runSuite.rejected, (state) => {
       state.loading = false;
     });
   },

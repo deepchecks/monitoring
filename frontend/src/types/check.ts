@@ -1,5 +1,4 @@
-import { ID } from ".";
-import { Filter } from "./monitor";
+import { Filter, ID } from ".";
 
 export interface Check {
   config: {

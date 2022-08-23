@@ -2,13 +2,21 @@ interface ChartSvgProps {
   first?: boolean;
   second?: boolean;
   third?: boolean;
+  height?: number;
+  width?: number;
 }
 
-export function ChartSvg({ first, second, third }: ChartSvgProps) {
+export function ChartSvg({
+  first,
+  second,
+  third,
+  width = 21,
+  height = 24,
+}: ChartSvgProps) {
   return (
     <svg
-      width="21"
-      height="24"
+      width={width}
+      height={height}
       viewBox="0 0 21 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

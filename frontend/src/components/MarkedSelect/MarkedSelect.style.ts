@@ -4,15 +4,9 @@ export const StyledInputLabel = styled(InputLabel)(({ theme }) => ({
   color: theme.palette.text.disabled,
 }));
 
-export const StyledSelect = styled(Select)(({ theme }) => ({
+export const StyledSelect = styled(Select)({
   minWidth: 200,
   "& .MuiSvgIcon-root": {
     display: "none",
   },
-  "&.Mui-focused": {
-    color: theme.palette.primary.main,
-  },
-  "&:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: `${theme.palette.primary.main} !important`,
-  },
-}));
+});

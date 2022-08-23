@@ -18,3 +18,8 @@ export interface CreateCheckOptions {
   modelId: ID;
   data: Check;
 }
+
+export interface RunSuiteOptions {
+  modelVersionId: ID;
+  data: RunCheckRequest;
+}

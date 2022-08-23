@@ -1,3 +1,5 @@
+import { colors as pointColor } from "./theme/colors";
+
 interface Output {
   [key: string]: string[] | any[];
 }
@@ -174,11 +176,10 @@ export const lineDataChangeFunction = () => {
 
 export const setGraphColor = (label: string, index: number) => ({
   label,
-  fill: true,
-  tension: 0.25,
-  pointBorderWidth: 0,
   borderColor: graphColors[index],
-  pointHoverBorderWidth: 0,
-  pointHoverRadius: 0,
+  pointBorderColor: "rgba(0, 0, 0, 0)",
+  pointBackgroundColor: "rgba(0, 0, 0, 0)",
+  pointHoverBackgroundColor: "rgb(255, 255, 255)",
+  pointHoverBorderColor: pointColor.primary.violet[400],
   hidden: false,
 });

@@ -6,3 +6,9 @@ export interface ChartResponse {
   };
   time_labels: string[];
 }
+
+export interface Filter {
+  column: string;
+  operator: string;
+  value: string | number;
+}

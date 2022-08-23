@@ -1,5 +1,5 @@
 import { Box, styled } from "@mui/material";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Sidebar from "../components/Sidebar/Sidebar";
 import { BACKGROUND_COLOR_MAX_WIDTH } from "../helpers/colors/color";
 import { privateRoutes, publicRoutes } from "../helpers/routes";
@@ -17,6 +17,11 @@ const StyledContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
+const StyledContent = styled(Box)({
+  marginLeft: "237px",
+  width: "100%",
+});
+
 const StyledFlexWrapper = styled(Box)({
   display: "flex",
   height: "100%",
@@ -29,16 +34,18 @@ export default function MyRouts() {
     <StyledContainer>
       <StyledFlexWrapper>
         <Sidebar />
-        <Routes>
-          {isAuth
-            ? privateRoutes.map(({ Component, path }) => (
-                <Route key={path} path={path} element={<Component />} />
-              ))
-            : publicRoutes.map(({ Component, path }) => (
-                <Route key={path} path={path} element={<Component />} />
-              ))}
-          {/* <Route path="*" element={<Navigate to="/dashboard" />} /> */}
-        </Routes>
+        <StyledContent>
+          <Routes>
+            {isAuth
+              ? privateRoutes.map(({ Component, path }) => (
+                  <Route key={path} path={path} element={<Component />} />
+                ))
+              : publicRoutes.map(({ Component, path }) => (
+                  <Route key={path} path={path} element={<Component />} />
+                ))}
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </StyledContent>
       </StyledFlexWrapper>
     </StyledContainer>
   );

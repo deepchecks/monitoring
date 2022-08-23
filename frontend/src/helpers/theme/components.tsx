@@ -1,4 +1,5 @@
 import { alpha, Components, Theme } from "@mui/material";
+import type {} from "@mui/x-date-pickers/themeAugmentation";
 import { CheckboxDefault, CheckboxSelected } from "../../assets/icon/icon";
 import { colors } from "./colors";
 
@@ -146,6 +147,14 @@ export const componentOptions: Components<Theme> = {
   },
   MuiSelect: {
     styleOverrides: {
+      select: ({ theme }) => ({
+        "&.Mui-focused": {
+          color: theme.palette.primary.main,
+        },
+        "&:hover .MuiOutlinedInput-notchedOutline": {
+          borderColor: `${theme.palette.primary.main} !important`,
+        },
+      }),
       icon: ({ theme }) => ({
         color: theme.palette.text.secondary,
         "& + .MuiOutlinedInput-notchedOutline": {
@@ -237,6 +246,33 @@ export const componentOptions: Components<Theme> = {
             color: theme.palette.common.white,
             opacity: 1,
           },
+        },
+      }),
+    },
+  },
+  MuiBreadcrumbs: {
+    styleOverrides: {
+      separator: ({ theme }) => ({
+        margin: "0 10px",
+        color: theme.palette.text.primary,
+      }),
+    },
+  },
+  MuiDatePicker: {
+    styleOverrides: {
+      root: {
+        backgroundColor: "red",
+        "& button": {
+          backgroundColor: "black",
+        },
+      },
+    },
+  },
+  MuiFormControl: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        "& label": {
+          color: theme.palette.text.disabled,
         },
       }),
     },

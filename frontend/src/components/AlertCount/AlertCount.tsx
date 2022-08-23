@@ -1,22 +1,22 @@
-import { useTheme } from "@mui/material";
+import { Typography, useTheme } from "@mui/material";
 import { memo, useState } from "react";
 import { ChartSvg } from "../../assets/icon/chart";
+import { Criticality } from "../../types/alert";
 import {
   StyledBoxWrapper,
+  StyledCriticality,
   StyledTypographyMessage,
-  StyledTypographyTitle,
+  StyledValueWrapper,
 } from "./AlertCount.style";
 
 interface AlertCountComponentProps {
-  criticality: "critical" | "high" | "medium" | "low";
+  criticality: Criticality;
   count: number;
-  message: string;
 }
 
 function AlertCountComponent({
   criticality = "high",
   count,
-  message,
 }: AlertCountComponentProps) {
   const theme = useTheme();
 
@@ -24,7 +24,7 @@ function AlertCountComponent({
     low: {
       color: theme.palette.error.contrastText,
     },
-    medium: {
+    mid: {
       color: theme.palette.error.light,
       first: true,
     },
@@ -45,9 +45,13 @@ function AlertCountComponent({
 
   return (
     <StyledBoxWrapper bgColor={color}>
-      <ChartSvg {...criticalityRange} />
-      <StyledTypographyTitle>{count}</StyledTypographyTitle>
-      <StyledTypographyMessage>{message}</StyledTypographyMessage>
+      <StyledCriticality bgColor={color}>
+        <ChartSvg {...criticalityRange} width={18} height={16} />
+      </StyledCriticality>
+      <StyledValueWrapper textColor={color}>
+        <Typography variant="h5">{count}</Typography>
+        <StyledTypographyMessage>{criticality}</StyledTypographyMessage>
+      </StyledValueWrapper>
     </StyledBoxWrapper>
   );
 }

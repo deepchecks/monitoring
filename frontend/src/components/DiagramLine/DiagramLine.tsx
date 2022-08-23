@@ -2,6 +2,7 @@ import { alpha, Box, useTheme } from "@mui/material";
 import { Chart, ChartArea, ChartData, registerables } from "chart.js";
 import { memo, useRef } from "react";
 import { Line } from "react-chartjs-2";
+import { colors } from "../../helpers/theme/colors";
 
 Chart.register(...registerables);
 
@@ -19,9 +20,72 @@ function createGradient(
 
 export interface DiagramLineProps {
   data: ChartData<"line">;
+  threshold?: number;
 }
 
-function DiagramLine({ data }: DiagramLineProps) {
+const setThreshold = (threshold: number) => ({
+  id: "setThreshold",
+  beforeDatasetsDraw(chart: Chart<"line", number[], string>) {
+    const {
+      ctx,
+      chartArea: { left, right },
+      scales: { y },
+    } = chart;
+
+    if (!y) return;
+    const yOffset = y.getPixelForValue(threshold);
+
+    ctx.beginPath();
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    ctx.moveTo(left, yOffset);
+    ctx.lineTo(right, yOffset);
+    ctx.stroke();
+    ctx.restore();
+    ctx.setLineDash([6, 0]);
+    ctx.save();
+
+    const angle = Math.PI / 180;
+    const text = "critical";
+    ctx.translate(0, 0);
+    ctx.font = "12px Roboto";
+    ctx.fillStyle = "red";
+    ctx.direction = "inherit";
+    ctx.textAlign = "center";
+    ctx.rotate(270 * angle);
+    ctx.fillText(text, -yOffset, right + 10);
+    ctx.restore();
+  },
+});
+
+const columnSelection = {
+  id: "columnSelection",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  beforeDatasetsDraw(chart: any) {
+    if (!chart.tooltip) return;
+    const {
+      ctx,
+      chartArea: { bottom, top },
+      tooltip,
+    } = chart;
+    // eslint-disable-next-line no-underscore-dangle
+    const { _active: active } = tooltip;
+
+    if (active[0]) {
+      ctx.beginPath();
+      // eslint-disable-next-line prefer-destructuring
+      ctx.strokeStyle = colors.primary.violet[400];
+      ctx.lineWidth = 4;
+      ctx.moveTo(active[0].element.x, top);
+      ctx.lineTo(active[0].element.x, bottom);
+      ctx.stroke();
+      ctx.restore();
+    }
+  },
+};
+
+function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
   const chartRef = useRef<Chart<"line", number[], string>>();
   const theme = useTheme();
 
@@ -51,9 +115,28 @@ function DiagramLine({ data }: DiagramLineProps) {
       <Line
         data={getNewData()}
         ref={chartRef}
-        updateMode="active"
         options={{
           responsive: true,
+          layout: {
+            padding: {
+              right: threshold ? 15 : 0,
+            },
+          },
+          elements: {
+            point: {
+              radius: 0,
+              hoverRadius: 6,
+              hitRadius: 10,
+              hoverBorderWidth: 4,
+            },
+            line: {
+              tension: 0.4,
+              fill: true,
+            },
+          },
+          interaction: {
+            mode: "index",
+          },
           plugins: {
             legend: {
               display: true,
@@ -88,6 +171,14 @@ function DiagramLine({ data }: DiagramLineProps) {
                 },
               },
             },
+            tooltip: {
+              callbacks: {
+                labelColor: (context) => ({
+                  backgroundColor: context.dataset?.borderColor as string,
+                  borderColor: context.dataset?.borderColor as string,
+                }),
+              },
+            },
           },
           scales: {
             x: {
@@ -97,6 +188,11 @@ function DiagramLine({ data }: DiagramLineProps) {
             },
           },
         }}
+        plugins={
+          threshold
+            ? [setThreshold(threshold), columnSelection]
+            : [columnSelection]
+        }
       />
     </Box>
   );
