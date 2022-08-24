@@ -31,9 +31,9 @@ class Alert(Base):
     id = Column(Integer, primary_key=True)
     failed_values = Column(JSONB, nullable=False)
     created_at = Column(DateTime(timezone=True), default=pdl.now)
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    end_time = Column(DateTime(timezone=True), nullable=False)
-    resolved = Column(Boolean, nullable=False, default=False)
+    start_time = Column(DateTime(timezone=True), nullable=False, index=True)
+    end_time = Column(DateTime(timezone=True), nullable=False, index=True)
+    resolved = Column(Boolean, nullable=False, default=False, index=True)
 
     alert_rule_id = Column(Integer, ForeignKey("alert_rules.id"), nullable=False)
-    alert_rule: Mapped["AlertRule"] = relationship("AlertRule")
+    alert_rule: Mapped["AlertRule"] = relationship("AlertRule", back_populates="alerts")

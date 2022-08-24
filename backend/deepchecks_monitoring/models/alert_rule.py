@@ -11,8 +11,9 @@
 import enum
 import typing as t
 
+import sqlalchemy as sa
 from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, false, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.alert import Alert
@@ -47,21 +48,25 @@ class AlertRule(Base):
 
     __tablename__ = "alert_rules"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50))
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String(50))
 
-    condition = Column(PydanticType(pydantic_model=Condition))
-    repeat_every = Column(Integer, nullable=False)
-    alert_severity = Column(Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False)
-    last_run = Column(DateTime(timezone=True), nullable=True)
+    condition = sa.Column(PydanticType(pydantic_model=Condition))
+    repeat_every = sa.Column(sa.Integer, nullable=False)
+    alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
+    last_run = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
-    monitor_id = Column(Integer, ForeignKey("monitors.id"))
-    monitor: Mapped[t.Optional["Monitor"]] = relationship("Monitor")
+    monitor_id = sa.Column(sa.Integer, sa.ForeignKey("monitors.id"))
+    monitor: Mapped[t.Optional["Monitor"]] = relationship("Monitor", back_populates="alert_rules")
 
-    alerts: Mapped[t.List["Alert"]] = relationship("Alert")
+    alerts: Mapped[t.List["Alert"]] = relationship("Alert", back_populates="alert_rule")
 
     @classmethod
-    async def get_alerts_per_rule(cls, session, ids: t.List[int] = None) -> dict:
+    async def get_alerts_per_rule(
+        cls,
+        session: AsyncSession,
+        ids: t.Optional[t.List[int]] = None
+    ) -> t.Dict[int, int]:
         """Return count of active alerts per alert rule id.
 
         Parameters
@@ -69,11 +74,20 @@ class AlertRule(Base):
         ids: List[int], default None
             alert rules ids to filter by the results
         """
-        count_alerts = select(AlertRule.id, func.count()).join(AlertRule.alerts) \
-            .where(Alert.resolved == false())
-        if ids:
-            count_alerts = count_alerts.where(AlertRule.id.in_(ids))
-        q = count_alerts.group_by(AlertRule.id)
-        results = await session.execute(q)
-        total = results.all()
-        return dict(total)
+        q = UnresolvedAlertsCount
+
+        if ids is not None:
+            q = q.where(Alert.alert_rule_id.in_(ids))
+
+        results = (await session.execute(q)).all()
+        return {r.alert_rule_id: r.alerts_count for r in results}
+
+
+UnresolvedAlertsCount = (
+    sa.select(
+        Alert.alert_rule_id.label("alert_rule_id"),
+        sa.func.count(Alert.id).label("alerts_count")
+    )
+    .where(Alert.resolved.is_(False))
+    .group_by(Alert.alert_rule_id)
+)

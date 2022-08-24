@@ -82,7 +82,7 @@ class ModelVersion(Base):
     feature_importance = Column(JSONB, nullable=True)
 
     model_id = Column(Integer, ForeignKey("models.id"))
-    model: Mapped[t.Optional["Model"]] = relationship("Model")
+    model: Mapped[t.Optional["Model"]] = relationship("Model", back_populates="versions")
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""

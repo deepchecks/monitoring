@@ -9,8 +9,9 @@
 # ----------------------------------------------------------------------------
 """V1 API of the alert rules."""
 import typing as t
+from datetime import datetime
 
-from fastapi import Response, status
+from fastapi import Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +54,8 @@ class AlertRuleSchema(BaseModel):
 class AlertRuleInfoSchema(AlertRuleSchema):
     """Schema of alert rule info for display."""
 
-    alerts_count: t.Optional[int]
+    model_id: int
+    alerts_count: int = 0
 
 
 class AlertRuleUpdateSchema(BaseModel):
@@ -96,10 +98,20 @@ async def count_alert_rules(
     return dict(total)
 
 
-@router.get("/alert-rules/", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
+@router.get("/alert-rules", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
 @router.get("/monitors/{monitor_id}/alert-rules", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
 async def get_alert_rules(
-    monitor_id: int = None,
+    monitor_id: t.Optional[int] = None,
+    start: t.Optional[datetime] = Query(default=None),
+    end: t.Optional[datetime] = Query(default=None),
+    models: t.List[int] = Query(default=[]),
+    severity: t.List[AlertSeverity] = Query(default=[]),
+    sortby: t.List[t.Literal[
+        "severity:asc",
+        "severity:desc",
+        "alert-window:asc",
+        "alert-window:desc"
+    ]] = Query(default=[]),
     session: AsyncSession = AsyncSessionDep
 ):
     """Return all the alert rules.
@@ -116,19 +128,74 @@ async def get_alert_rules(
     List[AlertSchema]
         All the alerts for a given monitor.
     """
-    select_alerts = select(AlertRule)
+    alerts_info = (
+        select(
+            Alert.alert_rule_id.label("alert_rule_id"),
+            func.count(Alert.id).label("alerts_count"),
+            func.max(Alert.end_time).label("max_end_time")
+        )
+        .where(Alert.resolved.is_(False))
+        .group_by(Alert.alert_rule_id)
+    )
+
+    if start is not None:
+        alerts_info = alerts_info.where(Alert.start_time >= start)
+    if end is not None:
+        alerts_info = alerts_info.where(Alert.end_time <= end)
+
+    alerts_info = alerts_info.subquery()
+
+    severity_index = func.array_position(
+        func.enum_range(AlertRule.alert_severity),
+        AlertRule.alert_severity
+    ).label("severity_index")
+
+    q = (
+        select(
+            AlertRule.id,
+            AlertRule.name,
+            AlertRule.condition,
+            AlertRule.alert_severity,
+            AlertRule.repeat_every,
+            AlertRule.monitor_id,
+            Check.model_id,
+            alerts_info.c.alerts_count,
+            severity_index
+        )
+        .join(AlertRule.monitor)
+        .join(Monitor.check)
+        .join(Check.model)
+        .join(alerts_info, alerts_info.c.alert_rule_id == AlertRule.id)
+    )
+
     if monitor_id is not None:
         await exists_or_404(session, Monitor, id=monitor_id)
-        select_alerts = select_alerts.where(AlertRule.monitor_id == monitor_id)
+        q = q.where(AlertRule.monitor_id == monitor_id)
 
-    results = await session.execute(select_alerts)
-    alert_rules_info = [AlertRuleInfoSchema.from_orm(res) for res in results.scalars().all()]
-    ids = [ari.id for ari in alert_rules_info]
-    alerts_count = await AlertRule.get_alerts_per_rule(session, ids)
-    for ari in alert_rules_info:
-        ari.alerts_count = alerts_count.get(ari.id, 0)
+    if models:
+        q = q.where(Check.model_id.in_(models))
+    if severity:
+        q = q.where(AlertRule.alert_severity.in_(severity))
 
-    return alert_rules_info
+    # TODO:
+    # refactor, need a better way of describing and applying sorting parameters
+    # NOTE:
+    # highest severities have a bigger index: LOW-1, MID-2, HIGH-3, CRITICAL-4
+    if not sortby:
+        q = q.order_by(severity_index.desc(), alerts_info.c.max_end_time.desc())
+    else:
+        if "severity:asc" in sortby:
+            q = q.order_by(severity_index.asc())
+        if "severity:desc" in sortby:
+            q = q.order_by(severity_index.desc())
+        if "alert-window:asc" in sortby:
+            q = q.order_by(alerts_info.c.max_end_time.asc())
+        if "alert-window:desc" in sortby:
+            q = q.order_by(alerts_info.c.max_end_time.desc())
+
+    results = (await session.execute(q)).all()
+    results = [AlertRuleInfoSchema.from_orm(row) for row in results]
+    return results
 
 
 @router.get("/alert-rules/{alert_rule_id}", response_model=AlertRuleSchema, tags=[Tags.ALERTS])

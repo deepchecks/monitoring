@@ -146,15 +146,31 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
     add_alert(alert_rule_id, async_session, resolved=False)
     await async_session.commit()
     # Act
-    response = client.get("/api/v1/alert-rules/")
+    response = client.get("/api/v1/alert-rules")
     # Assert
     assert response.status_code == 200
-    assert response.json() == [{"alert_severity": "low", "alerts_count": 1, "monitor_id": 1,
-                                "condition": {"operator": "greater_than", "value": 100.0},
-                                "id": 1, "name": "alerty", "repeat_every": 86400},
-                               {"alert_severity": "mid", "alerts_count": 2, "monitor_id": 1,
-                                "condition": {"operator": "greater_than", "value": 100.0},
-                                "id": 2, "name": "alerty", "repeat_every": 86400}]
+    assert response.json() == [
+        {
+            "id": 2,
+            "name": "alerty",
+            "monitor_id": 1,
+            "repeat_every": 86400,
+            "condition": {"operator": "greater_than", "value": 100.0},
+            "alert_severity": "mid",
+            "model_id": 1,
+            "alerts_count": 2,
+        },
+        {
+            "id": 1,
+            "name": "alerty",
+            "monitor_id": 1,
+            "repeat_every": 86400,
+            "condition": {"operator": "greater_than", "value": 100.0},
+            "alert_severity": "low",
+            "model_id": 1,
+            "alerts_count": 1
+        }
+    ]
 
 
 @pytest.mark.asyncio

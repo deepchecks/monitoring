@@ -28,4 +28,4 @@ class Dashboard(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
-    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor")
+    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor", back_populates="dashboard")

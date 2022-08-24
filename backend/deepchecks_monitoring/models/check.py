@@ -35,9 +35,9 @@ class Check(Base):
     config = Column(JSONB)
 
     model_id = Column(Integer, ForeignKey("models.id"))
-    model: Mapped[t.Optional["Model"]] = relationship("Model")
+    model: Mapped[t.Optional["Model"]] = relationship("Model", back_populates="checks")
 
-    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor")
+    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor", back_populates="check")
 
     def initialize_check(self):
         """Initialize an instance of Deepchecks' check.
