@@ -8,62 +8,36 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the ModelVersion ORM model."""
-import enum
 import typing as t
-from copy import copy
+from collections import defaultdict
 from datetime import datetime
+from itertools import chain
 
 import pandas as pd
 import pendulum as pdl
-from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, ForeignKey, Integer, MetaData, String, Table, Text, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.sql.type_api import TypeEngine
 from typing_extensions import TypedDict
 
+from deepchecks_monitoring.logic.data_tables import ColumnType, column_types_to_table_columns
 from deepchecks_monitoring.models.base import Base
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.models import Model  # pylint: disable=unused-import
 
-__all__ = ["ColumnType", "ModelVersion", "ColumnMetadata"]
+__all__ = ["ModelVersion", "ColumnMetadata", "update_statistics_from_sample"]
+
+
+CATEGORICAL_STATISTICS_VALUES_LIMIT = 50
 
 
 class ColumnMetadata(TypedDict):
     """TypedDict containing relavant column metadata."""
 
-    type: "ColumnType"
+    type: ColumnType
     values: t.Optional[t.Union[t.Tuple[int, int], t.Tuple[bool, bool], t.List[t.Any], None]]
-
-
-class ColumnType(enum.Enum):
-    """Enum containing possible types of data."""
-
-    NUMERIC = "numeric"
-    CATEGORICAL = "categorical"
-    BOOLEAN = "boolean"
-    TEXT = "text"
-
-    def to_sqlalchemy_type(self):
-        """Return the SQLAlchemy type of the data type."""
-        types_map = {
-            ColumnType.NUMERIC: Float,
-            ColumnType.CATEGORICAL: Text,
-            ColumnType.BOOLEAN: Boolean,
-            ColumnType.TEXT: Text,
-        }
-        return types_map[self]
-
-    def to_json_schema_type(self):
-        """Return the json type of the column type."""
-        types_map = {
-            ColumnType.NUMERIC: ("number", "null"),
-            ColumnType.CATEGORICAL: ("string", "null"),
-            ColumnType.BOOLEAN: ("boolean", "null"),
-            ColumnType.TEXT: ("string", "null"),
-        }
-        return types_map[self]
 
 
 class ModelVersion(Base):
@@ -77,9 +51,12 @@ class ModelVersion(Base):
     end_time = Column(DateTime(timezone=True), default=pdl.datetime(1970, 1, 1))
     monitor_json_schema = Column(JSONB)
     reference_json_schema = Column(JSONB)
-    features = Column(JSONB)
-    non_features = Column(JSONB)
+    features_columns = Column(JSONB)
+    non_features_columns = Column(JSONB)
+    model_columns = Column(JSONB)
+    meta_columns = Column(JSONB)
     feature_importance = Column(JSONB, nullable=True)
+    statistics = Column(JSONB)
 
     model_id = Column(Integer, ForeignKey("models.id"))
     model: Mapped[t.Optional["Model"]] = relationship("Model", back_populates="versions")
@@ -91,8 +68,10 @@ class ModelVersion(Base):
     def get_monitor_table(self, connection) -> Table:
         """Get table object of the monitor table."""
         metadata = MetaData(bind=connection)
-        columns = json_schema_to_columns(self.monitor_json_schema)
-        return Table(self.get_monitor_table_name(), metadata, *columns)
+        columns = {**self.features_columns, **self.non_features_columns, **self.model_columns, **self.meta_columns}
+        columns = {name: ColumnType(col_type) for name, col_type in columns.items()}
+        columns_sqlalchemy = column_types_to_table_columns(columns)
+        return Table(self.get_monitor_table_name(), metadata, *columns_sqlalchemy)
 
     def get_reference_table_name(self) -> str:
         """Get name of reference table."""
@@ -104,13 +83,15 @@ class ModelVersion(Base):
             feat_dict = dict(sorted(self.feature_importance.items(), key=lambda item: item[1])[:n_top])
             feat = list(feat_dict.keys())
             return feat, pd.Series(feat_dict)
-        return list(self.features.keys())[:n_top], None
+        return list(self.features_columns.keys())[:n_top], None
 
     def get_reference_table(self, connection) -> Table:
         """Get table object of the reference table."""
         metadata = MetaData(bind=connection)
-        columns = json_schema_to_columns(self.reference_json_schema)
-        return Table(self.get_reference_table_name(), metadata, *columns)
+        columns_in_ref = {**self.features_columns, **self.non_features_columns, **self.model_columns}
+        columns = {name: ColumnType(col_type) for name, col_type in columns_in_ref.items()}
+        columns_sqlalchemy = column_types_to_table_columns(columns)
+        return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamp.
@@ -129,63 +110,53 @@ class ModelVersion(Base):
         if self.end_time < max_timestamp:
             ts_updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
 
-        # Update min/max timestamp of version only if needed
         if ts_updates:
             await ModelVersion.update(session, self.id, ts_updates)
 
-
-def json_schema_to_columns(schema: t.Dict) -> t.List[Column]:
-    """Translate a given json schema into corresponding SqlAlchemy table columns.
-
-    Parameters
-    ----------
-    schema: Dict
-        Json schema
-
-    Returns
-    -------
-    List[Columns]
-        List of columns to be used in order to generate Table object
-    """
-    columns = []
-    for col_name, col_info in schema["properties"].items():
-        columns.append(Column(col_name, json_schema_property_to_sqlalchemy_type(col_info)))
-    return columns
+    async def update_statistics(self, new_statistics: dict, session: AsyncSession):
+        """Update the statistics with a lock on the row."""
+        # Locking the row before updating to prevent race condition, since we are updating json column.
+        # after a commit the row will be unlocked
+        locked_model_version_query = await session.execute(select(ModelVersion).filter(ModelVersion.id == self.id)
+                                                           .with_for_update())
+        locked_model_version = locked_model_version_query.scalar()
+        # Statistics might have changed by another concurrent insert, so unify the latest statistics from the db
+        # with the updated statistics
+        # NOTE: in order to update json column with ORM the `unify_statistics` must return a new dict instance
+        locked_model_version.statistics = unify_statistics(locked_model_version.statistics, new_statistics)
 
 
-def json_schema_property_to_sqlalchemy_type(json_property: t.Dict) -> TypeEngine:
-    """Translate a given property inside json schema object to an SqlAlchemy type.
+def update_statistics_from_sample(statistics: dict, sample: dict):
+    """Update statistics dict inplace, using the sample given."""
+    for col in statistics.keys():
+        if sample.get(col) is None:
+            continue
+        col_value = sample[col]
+        stats_info = statistics[col]
+        if "max" in stats_info:
+            stats_info["max"] = col_value if stats_info["max"] is None else max((stats_info["max"], col_value))
+        if "min" in stats_info:
+            stats_info["min"] = col_value if stats_info["min"] is None else min((stats_info["min"], col_value))
+        if ("values" in stats_info and col_value not in stats_info["values"] and
+                len(stats_info["values"]) < CATEGORICAL_STATISTICS_VALUES_LIMIT):
+            stats_info["values"].append(col_value)
 
-    Parameters
-    ----------
-    json_property: Dict
 
-    Returns
-    -------
-    TypeEngine
-        An SqlAlchemy type
-
-    """
-    types_map = {
-        "number": Float,
-        "boolean": Boolean,
-        "text": Text,
-    }
-    json_type = copy(json_property["type"])
-
-    if isinstance(json_type, list):
-        json_type.remove("null")
-        json_type = json_type[0]
-
-    if json_type in types_map:
-        return types_map[json_type]
-    elif json_type == "string":
-        str_format = json_property.get("format")
-        if str_format == "datetime":
-            return DateTime(timezone=True)
-        return Text
-    elif json_type == "array":
-        items_property = json_property["items"]
-        return ARRAY(json_schema_property_to_sqlalchemy_type(items_property))
-    else:
-        raise Exception(f"unknown json type {json_type}")
+def unify_statistics(original_statistics: dict, added_statistics: dict):
+    cols = set(original_statistics.keys()).union(added_statistics.keys())
+    unified_dict = defaultdict(dict)
+    for col in cols:
+        col_stats = [original_statistics[col], added_statistics[col]]
+        if any(("max" in v for v in col_stats)):
+            max_values = [v["max"] for v in col_stats if v["max"] is not None]
+            unified_dict[col]["max"] = max(max_values) if max_values else None
+        if any(("min" in v for v in col_stats)):
+            min_values = [v["min"] for v in col_stats if v["min"] is not None]
+            unified_dict[col]["min"] = min(min_values) if min_values else None
+        if any(("values" in v for v in col_stats)):
+            if len(original_statistics[col]) < CATEGORICAL_STATISTICS_VALUES_LIMIT:
+                values = list(set(chain(*(v["values"] for v in col_stats))))[:CATEGORICAL_STATISTICS_VALUES_LIMIT]
+            else:
+                values = original_statistics[col]
+            unified_dict[col]["values"] = values
+    return unified_dict

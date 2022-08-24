@@ -9,11 +9,12 @@
 # ----------------------------------------------------------------------------
 
 """Module defining the dynamic tables metadata for the monitoring package."""
+import enum
 import typing as t
 
-from sqlalchemy import ARRAY, Column, DateTime, Float, String
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Text
 
-from deepchecks_monitoring.models import ColumnType, TaskType
+from deepchecks_monitoring.models import TaskType
 
 SAMPLE_ID_COL = "_dc_sample_id"
 SAMPLE_TS_COL = "_dc_time"
@@ -22,74 +23,61 @@ SAMPLE_PRED_VALUE_COL = "_dc_prediction_value"
 SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
 
 
-__all__ = ["get_json_schema_columns_for_monitor", "get_json_schema_columns_for_model", "get_table_columns_for_model",
-           "get_columns_for_task_type", "get_table_columns_for_monitor", "column_types_to_table_columns",
-           "SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_LABEL_COL", "SAMPLE_PRED_VALUE_COL"]
+__all__ = ["SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_LABEL_COL", "SAMPLE_PRED_VALUE_COL",
+           "get_model_columns_by_type", "column_types_to_table_columns", "ColumnType"]
 
 
-def get_table_columns_for_monitor() -> t.List[Column]:
-    """Get the columns for the data table.
+class ColumnType(enum.Enum):
+    """Enum containing possible types of data."""
 
-    Returns
-    -------
-    List[Column]
-        list of meta-columns
-    """
-    return [
-        Column(SAMPLE_ID_COL, String(30), primary_key=True),
-        Column(SAMPLE_TS_COL, DateTime(timezone=True), index=True),
-    ]
+    NUMERIC = "numeric"
+    CATEGORICAL = "categorical"
+    BOOLEAN = "boolean"
+    TEXT = "text"
+    ARRAY_FLOAT = "array_float"
+    DATETIME = "datetime"
 
+    def to_sqlalchemy_type(self):
+        """Return the SQLAlchemy type of the data type."""
+        types_map = {
+            ColumnType.NUMERIC: Float,
+            ColumnType.CATEGORICAL: Text,
+            ColumnType.BOOLEAN: Boolean,
+            ColumnType.TEXT: Text,
+            ColumnType.ARRAY_FLOAT: ARRAY(Float),
+            ColumnType.DATETIME: DateTime(timezone=True)
+        }
+        return types_map[self]
 
-def get_table_columns_for_model(task_type: TaskType) -> t.List[Column]:
-    """Get the columns for the data table based on the task type.
+    def to_json_schema_type(self, nullable=False):
+        """Return the json type of the column type."""
+        types_map = {
+            ColumnType.NUMERIC: {"type": "number"},
+            ColumnType.CATEGORICAL: {"type": "string"},
+            ColumnType.BOOLEAN: {"type": "boolean"},
+            ColumnType.TEXT: {"type": "string"},
+            ColumnType.ARRAY_FLOAT: {"type": "array", "items": {"type": "number"}},
+            ColumnType.DATETIME: {"type": "string", "format": "datetime"}
+        }
+        schema = types_map[self]
+        if nullable:
+            schema["type"] = (schema["type"], "null")
+        return schema
 
-    Parameters
-    ----------
-    task_type : TaskType
-        The task type. Currently one of `TaskType.REGRESSION` or `TaskType.CLASSIFICATION`.
-
-    Returns
-    -------
-    List[Column]
-        list of meta-columns
-    """
-    if task_type == TaskType.REGRESSION:
-        return [
-            Column(SAMPLE_LABEL_COL, Float, index=True),
-            Column(SAMPLE_PRED_VALUE_COL, Float, index=True)
-        ]
-    elif task_type == TaskType.CLASSIFICATION:
-        return [
-            Column(SAMPLE_LABEL_COL, String, index=True),
-            Column(SAMPLE_PRED_LABEL_COL, String, index=True),
-            Column(SAMPLE_PRED_VALUE_COL, ARRAY(Float), index=True)
-        ]
-    else:
-        raise Exception(f"Not supported task type {task_type}")
-
-
-def get_columns_for_task_type(task_type: TaskType) -> t.Dict:
-    """Get deepchecks' saved columns to be used in the table based on given task type.
-
-    Parameters
-    ----------
-    task_type
-
-    Returns
-    -------
-    List
-        The columns name in the table.
-    """
-    if task_type == TaskType.REGRESSION:
-        return [SAMPLE_LABEL_COL, SAMPLE_PRED_VALUE_COL]
-    elif task_type == TaskType.CLASSIFICATION:
-        return [SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL, SAMPLE_PRED_VALUE_COL]
-    else:
-        raise Exception(f"Not supported task type {task_type}")
+    def to_statistics_stub(self):
+        """Generate an empty statistics dict for given column type."""
+        types_map = {
+            ColumnType.NUMERIC: {"min": None, "max": None},
+            ColumnType.CATEGORICAL: {"values": []},
+            ColumnType.BOOLEAN: {"values": []},
+            ColumnType.TEXT: None,
+            ColumnType.ARRAY_FLOAT: None,
+            ColumnType.DATETIME: None
+        }
+        return types_map[self]
 
 
-def get_json_schema_columns_for_model(task_type: TaskType) -> t.Tuple[t.Dict, t.List]:
+def get_model_columns_by_type(task_type: TaskType) -> t.Tuple[t.Dict[str, ColumnType], t.List]:
     """Get deepchecks' saved columns to be used in json schema based on given task type.
 
     Parameters
@@ -103,33 +91,20 @@ def get_json_schema_columns_for_model(task_type: TaskType) -> t.Tuple[t.Dict, t.
     """
     if task_type == TaskType.REGRESSION:
         return {
-            SAMPLE_LABEL_COL: {"type": "number"},
-            SAMPLE_PRED_VALUE_COL: {"type": "number"}
+            SAMPLE_LABEL_COL: ColumnType.NUMERIC,
+            SAMPLE_PRED_VALUE_COL: ColumnType.NUMERIC
         }, [SAMPLE_PRED_VALUE_COL]
     elif task_type == TaskType.CLASSIFICATION:
         return {
-            SAMPLE_LABEL_COL: {"type": "string"},
-            SAMPLE_PRED_LABEL_COL: {"type": "string"},
-            SAMPLE_PRED_VALUE_COL: {"type": "array", "items": {"type": "number"}}
+            SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
+            SAMPLE_PRED_LABEL_COL: ColumnType.CATEGORICAL,
+            SAMPLE_PRED_VALUE_COL: ColumnType.ARRAY_FLOAT
         }, [SAMPLE_PRED_LABEL_COL]
     else:
         raise Exception(f"Not supported task type {task_type}")
 
 
-def get_json_schema_columns_for_monitor() -> t.Dict:
-    """Get deepchecks' saved columns to be used in json schema for monitoring table.
-
-    Returns
-    -------
-    Dict
-    """
-    return {
-        SAMPLE_ID_COL: {"type": "string"},
-        SAMPLE_TS_COL: {"type": "string", "format": "datetime"}
-    }
-
-
-def column_types_to_table_columns(column_types: t.Dict[str, ColumnType]) -> t.List[Column]:
+def column_types_to_table_columns(column_types: t.Dict[str, ColumnType], primary_key=SAMPLE_ID_COL) -> t.List[Column]:
     """Get sqlalchemy columns from columns types sent from the user (out of ColumnDataType).
 
     All columns also have index defined on them for faster querying
@@ -137,9 +112,11 @@ def column_types_to_table_columns(column_types: t.Dict[str, ColumnType]) -> t.Li
     Parameters
     ----------
     column_types
+    primary_key
 
     Returns
     -------
     List[sqlalchemy.Column]
     """
-    return [Column(name, data_type.to_sqlalchemy_type(), index=True) for name, data_type in column_types.items()]
+    return [Column(name, data_type.to_sqlalchemy_type(), index=True, primary_key=(name == primary_key))
+            for name, data_type in column_types.items()]

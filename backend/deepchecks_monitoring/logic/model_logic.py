@@ -23,8 +23,8 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
 from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL,
-                                                     SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL, get_columns_for_task_type)
-from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
+                                                     SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL)
+from deepchecks_monitoring.models import Check, Model, ModelVersion
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
 
@@ -43,12 +43,11 @@ async def get_model_versions_for_time_range(session: AsyncSession,
     return model_versions
 
 
-def create_model_version_select_object(task_type: TaskType, mon_table: Table, top_feat: t.List[str]) -> Select:
+def create_model_version_select_object(model_version: ModelVersion, mon_table: Table, top_feat: t.List[str]) -> Select:
     """Create model version select object."""
-    existing_feat = [feat_name for feat_name in top_feat if hasattr(mon_table.c, feat_name)]
-    select_obj: Select = select(*([getattr(mon_table.c, feat_name) for feat_name in existing_feat] +
-                                  [getattr(mon_table.c, task_col) for task_col in
-                                   get_columns_for_task_type(task_type)]))
+    existing_feat_columns = [mon_table.c[feat_name] for feat_name in top_feat if feat_name in mon_table.c]
+    model_columns = [mon_table.c[col] for col in model_version.model_columns.keys()]
+    select_obj: Select = select(*existing_feat_columns, *model_columns)
     return select_obj
 
 
@@ -118,13 +117,13 @@ async def get_results_for_active_model_version_sessions_per_window(
             refrence_table_data_dataframe = None
         reduced_outs = []
         refrence_table_ds, refrence_table_pred, refrence_table_proba = dataframe_to_dataset_and_pred(
-            refrence_table_data_dataframe, model_version.features, top_feat)
+            refrence_table_data_dataframe, model_version.features_columns, top_feat)
         for test_data_dataframe in test_data_dataframes:
             if test_data_dataframe.empty:
                 reduced_outs.append(None)
                 continue
             test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
-                test_data_dataframe, model_version.features, top_feat)
+                test_data_dataframe, model_version.features_columns, top_feat)
             if isinstance(dp_check, SingleDatasetBaseCheck):
                 reduced = dp_check.run(test_ds, feature_importance=feat_imp,
                                        y_pred_train=test_pred, y_proba_train=test_proba,

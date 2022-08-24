@@ -245,7 +245,7 @@ async def get_model_columns(
 
     column_dict: t.Dict[str, ColumnMetadata] = {}
 
-    for col in list(latest_version.features.items()) + list(latest_version.non_features.items()):
+    for col in list(latest_version.features_columns.items()) + list(latest_version.non_features_columns.items()):
         col_name, col_type = col
         values = None
         if col_type == ColumnType.BOOLEAN.value:

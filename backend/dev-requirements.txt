@@ -16,3 +16,4 @@ coveralls
 tox
 httpx
 pyinstrument
+deepdiff

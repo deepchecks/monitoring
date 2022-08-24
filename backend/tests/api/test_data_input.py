@@ -11,7 +11,9 @@ import pandas as pd
 import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
-
+from sqlalchemy import select
+from deepchecks_monitoring.models import ModelVersion
+from deepdiff import DeepDiff
 
 def send_reference_request(client, model_version_id, dicts: list):
     df = pd.DataFrame(data=dicts)
@@ -129,3 +131,70 @@ async def test_send_reference_too_large(client: TestClient, classification_model
 
     # Assert
     assert response.status_code == 413
+
+
+@pytest.mark.asyncio
+async def test_statistics(client: TestClient, classification_model_version_id: int, async_session):
+    # Arrange
+    request = [
+        {
+            "_dc_sample_id": "1",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction_value": [0.1, 0.3, 0.6],
+            "_dc_prediction_label": "2",
+            "a": 11.1,
+            "b": "cat",
+        },
+        {
+            "_dc_sample_id": "2",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction_value": [0.1, 0.3, 0.6],
+            "_dc_prediction_label": "2",
+            "a": -1,
+            "b": "something",
+        },
+        {
+            "_dc_sample_id": "3",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction_value": [0.1, 0.3, 0.6],
+            "_dc_prediction_label": "2",
+            "a": 3,
+            "b": "cat",
+        }
+    ]
+
+    # Act
+    client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
+    # Assert
+    query = await async_session.execute(select(ModelVersion).where(ModelVersion.id == classification_model_version_id))
+    model_version = query.scalar()
+    diff = DeepDiff(model_version.statistics, {
+        "a": {"max": 11.1, "min": -1},
+        "b": {"values": ["something", "cat"]},
+        "c": {"max": None, "min": None},
+        "_dc_label": {"values": []},
+        "_dc_prediction_label": {"values": ["2"]}
+    }, ignore_order=True)
+    assert not diff
+
+    # Test update
+    # Arrange
+    request = [
+        {
+            "_dc_sample_id": "1",
+            "_dc_label": "2",
+            "c": 100
+        }
+    ]
+    # Act
+    client.put(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
+
+    await async_session.refresh(model_version)
+    diff = DeepDiff(model_version.statistics, {
+        "a": {"max": 11.1, "min": -1},
+        "b": {"values": ["something", "cat"]},
+        "c": {"max": 100, "min": 100},
+        "_dc_label": {"values": ["2"]},
+        "_dc_prediction_label": {"values": ["2"]}
+    }, ignore_order=True)
+    assert not diff

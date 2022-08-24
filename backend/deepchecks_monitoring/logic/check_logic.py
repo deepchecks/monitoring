@@ -214,14 +214,13 @@ async def run_check_per_window_in_range(
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = model_versions[0].get_top_features()
-    task_type = model_versions[0].model.task_type
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
     for model_version in model_versions:
         if isinstance(dp_check, TrainTestBaseCheck):
             refrence_table = model_version.get_reference_table(session)
-            refrence_table_data_session = create_model_version_select_object(task_type, refrence_table, top_feat)
+            refrence_table_data_session = create_model_version_select_object(model_version, refrence_table, top_feat)
             if monitor_filter:
                 refrence_table_data_session = filter_table_selection_by_data_filters(refrence_table,
                                                                                      refrence_table_data_session,
@@ -233,7 +232,7 @@ async def run_check_per_window_in_range(
         test_table = model_version.get_monitor_table(session)
         test_data_sessions = []
 
-        select_obj = create_model_version_select_object(task_type, test_table, top_feat)
+        select_obj = create_model_version_select_object(model_version, test_table, top_feat)
         new_start_time = start_time
         # create the session per time window
         while new_start_time < end_time:
@@ -353,12 +352,13 @@ async def run_suite_for_model_version(
 
     test_session_result = await test_session
     test_df = DataFrame.from_dict(test_session_result.all())
-    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version.features, top_feat)
+    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version.features_columns,
+                                                                        top_feat)
     if ref_session:
         ref_session_result = await ref_session
         ref_df = DataFrame.from_dict(ref_session_result.all())
         reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-            ref_df, model_version.features, top_feat)
+            ref_df, model_version.features_columns, top_feat)
 
         return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
                          y_pred_train=reference_pred, y_proba_train=reference_proba,
@@ -393,10 +393,9 @@ def load_data_for_check(
     Tuple[Coroutine, t.Optional[Coroutine]]
         First routine is test session, Second routine is reference session
     """
-    task_type = model_version.model.task_type
     if with_reference:
         reference_table = model_version.get_reference_table(session)
-        reference_table_data_session = create_model_version_select_object(task_type, reference_table, features)
+        reference_table_data_session = create_model_version_select_object(model_version, reference_table, features)
         if options.filter:
             reference_table_data_session = filter_table_selection_by_data_filters(reference_table,
                                                                                   reference_table_data_session,
@@ -406,7 +405,7 @@ def load_data_for_check(
         reference_table_data_session = None
 
     test_table = model_version.get_monitor_table(session)
-    select_obj = create_model_version_select_object(task_type, test_table, features)
+    select_obj = create_model_version_select_object(model_version, test_table, features)
     # create the session
     filtered_select_obj = filter_monitor_table_by_window_and_data_filters(
         model_version=model_version,

@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """V1 API of the data input."""
+import copy
 import typing as t
 from io import StringIO
 
@@ -25,6 +26,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, limit_request_si
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import ModelVersion
+from deepchecks_monitoring.models.model_version import update_statistics_from_sample
 from deepchecks_monitoring.utils import fetch_or_404
 
 from .router import router
@@ -53,16 +55,20 @@ async def log_data_batch(
 
     max_timestamp = None
     min_timestamp = None
+    updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in data:
         validate(schema=model_version.monitor_json_schema, instance=sample)
         # Timestamp is passed as string, convert it to datetime
         sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])
         max_timestamp = sample[SAMPLE_TS_COL] if max_timestamp is None else max(max_timestamp, sample[SAMPLE_TS_COL])
         min_timestamp = sample[SAMPLE_TS_COL] if min_timestamp is None else min(min_timestamp, sample[SAMPLE_TS_COL])
+        update_statistics_from_sample(updated_statistics, sample)
 
     monitor_table = model_version.get_monitor_table(session)
     await session.execute(monitor_table.insert(), data)
     await model_version.update_timestamps(min_timestamp, max_timestamp, session)
+    if model_version.statistics != updated_statistics:
+        await model_version.update_statistics(updated_statistics, session)
     return Response(status_code=status.HTTP_201_CREATED)
 
 
@@ -95,13 +101,18 @@ async def update_data_batch(
     }
 
     table = model_version.get_monitor_table(session)
+    updated_statistics = copy.deepcopy(model_version.statistics)
 
     for sample in data:
         validate(schema=optional_columns_schema, instance=sample)
         sample_id = sample.pop(SAMPLE_ID_COL)
+        update_statistics_from_sample(updated_statistics, sample)
         await session.execute(
             update(table).where(table.c[SAMPLE_ID_COL] == sample_id).values(sample)
         )
+
+    if model_version.statistics != updated_statistics:
+        await model_version.update_statistics(updated_statistics, session)
 
     return Response(status_code=status.HTTP_200_OK)
 

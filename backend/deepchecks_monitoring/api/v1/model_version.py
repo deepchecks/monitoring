@@ -23,10 +23,8 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.check_logic import run_suite_for_model_version
-from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, column_types_to_table_columns,
-                                                     get_json_schema_columns_for_model,
-                                                     get_json_schema_columns_for_monitor, get_table_columns_for_model,
-                                                     get_table_columns_for_monitor)
+from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_TS_COL, column_types_to_table_columns,
+                                                     get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ColumnType, ModelVersion
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404
@@ -81,46 +79,54 @@ async def create_version(
     if intersects_names:
         raise BadRequest(f'Can\'t use same column name in both features and non_features: {intersects_names}')
 
-    monitor_cols = get_json_schema_columns_for_monitor()
-    model_related_cols, required_model_cols = get_json_schema_columns_for_model(model.task_type)
+    # Create meta columns
+    meta_columns = {
+        SAMPLE_ID_COL: ColumnType.TEXT,
+        SAMPLE_TS_COL: ColumnType.DATETIME
+    }
+    model_related_cols, required_model_cols = get_model_columns_by_type(model.task_type)
     # Validate no intersections between user columns and dc columns
-    saved_keys = set(monitor_cols.keys()) | set(model_related_cols.keys())
+    saved_keys = set(meta_columns.keys()) | set(model_related_cols.keys())
     intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.non_features.keys()))
     if intersects_columns:
         raise BadRequest(f'Can\'t use the following names for columns: {intersects_columns}')
 
-    # Create json schema
-    features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in info.features.items()}
-    non_features_props = {name: {'type': data_type.to_json_schema_type()} for name, data_type in
-                          info.non_features.items()}
+    monitor_table_columns = {**meta_columns, **model_related_cols, **info.non_features, **info.features}
+    ref_table_columns = {**model_related_cols, **info.non_features, **info.features}
 
+    # Create json schema
+    nullable_columns = list(info.features.keys()) + list(info.non_features.keys())
     monitor_table_schema = {
         'type': 'object',
-        'properties': {**monitor_cols, **features_props, **non_features_props, **model_related_cols},
-        'required': list(features_props.keys()) + list(monitor_cols.keys()) + required_model_cols
+        'properties': {name: data_type.to_json_schema_type(nullable=name in nullable_columns)
+                       for name, data_type in monitor_table_columns.items()},
+        'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols
     }
     reference_table_schema = {
         'type': 'object',
-        'properties': {**features_props, **non_features_props, **model_related_cols},
-        'required': list(features_props.keys()) + required_model_cols
+        'properties': {name: data_type.to_json_schema_type(nullable=name in nullable_columns)
+                       for name, data_type in ref_table_columns.items()},
+        'required': list(info.features.keys()) + required_model_cols
     }
 
-    # Create columns for data tables
-    task_related_columns = get_table_columns_for_model(model.task_type)
-    meta_columns = get_table_columns_for_monitor()
-
+    # Create statistics info
+    empty_statistics = {col: data_type.to_statistics_stub() for col, data_type in monitor_table_columns.items()
+                        if data_type.to_statistics_stub() is not None}
     # Save version entity
-    model_version = ModelVersion(name=info.name, model_id=model_id, monitor_json_schema=monitor_table_schema,
-                                 reference_json_schema=reference_table_schema, features=info.features,
-                                 non_features=info.non_features, feature_importance=info.feature_importance)
+    model_version = ModelVersion(
+        name=info.name, model_id=model_id, monitor_json_schema=monitor_table_schema,
+        reference_json_schema=reference_table_schema, features_columns=info.features,
+        non_features_columns=info.non_features, meta_columns=meta_columns, model_columns=model_related_cols,
+        feature_importance=info.feature_importance, statistics=empty_statistics
+    )
     session.add(model_version)
-    # flushing to get an id for the model version
+    # flushing to get an id for the model version, used to create the monitor + reference table names.
     await session.flush()
 
     # Monitor data table
-    monitor_table_columns = meta_columns + task_related_columns + column_types_to_table_columns(info.features) + \
-        column_types_to_table_columns(info.non_features)
-    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns,
+    montior_table_columns_sqlalchemy = column_types_to_table_columns(monitor_table_columns)
+    # using md5 hash index in queries to get random order of samples, so adding index for it
+    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *montior_table_columns_sqlalchemy,
                           Index('md5_index', text(f'md5({SAMPLE_ID_COL})')))
     await session.execute(CreateTable(monitor_table))
     # Create indices
@@ -128,9 +134,8 @@ async def create_version(
         await session.execute(CreateIndex(index))
 
     # Reference data table
-    reference_table_columns = get_table_columns_for_model(model.task_type) + \
-        column_types_to_table_columns(info.features) + column_types_to_table_columns(info.non_features)
-    reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns)
+    reference_table_columns_sqlalchemy = column_types_to_table_columns(ref_table_columns)
+    reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns_sqlalchemy)
     await session.execute(CreateTable(reference_table))
     # Create indices
     for index in reference_table.indexes:
