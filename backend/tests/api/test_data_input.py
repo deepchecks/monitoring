@@ -10,10 +10,12 @@
 import pandas as pd
 import pendulum as pdl
 import pytest
+from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+
 from deepchecks_monitoring.models import ModelVersion
-from deepdiff import DeepDiff
+
 
 def send_reference_request(client, model_version_id, dicts: list):
     df = pd.DataFrame(data=dicts)

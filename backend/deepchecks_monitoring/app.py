@@ -76,6 +76,7 @@ def create_application(
     resources_provider: t.Optional[ResourcesProvider] = None,
     additional_routers: t.Optional[t.Sequence[APIRouter]] = None,
     additional_dependencies: t.Optional[t.Sequence[Depends]] = None,
+    routers_dependencies: t.Optional[t.Dict[str, t.Sequence[Depends]]] = None,
 ) -> FastAPI:
     """Create the application.
 
@@ -120,7 +121,8 @@ def create_application(
         allow_credentials=True,
     )
 
-    app.include_router(v1_router)
+    routers_dependencies = routers_dependencies or {}
+    app.include_router(v1_router, dependencies=routers_dependencies.get("v1") or [])
 
     if additional_routers is not None:
         for r in additional_routers:
