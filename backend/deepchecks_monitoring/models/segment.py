@@ -10,15 +10,24 @@
 """Module defining the Segment ORM model."""
 import typing as t
 
-from sqlalchemy import JSON, Column, ForeignKey, Integer, String
+from pydantic import BaseModel
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
+from deepchecks_monitoring.models.pydantic_type import PydanticType
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.models.model import Model  # pylint: disable=unused-import
 
 __all__ = ["Segment"]
+
+
+class SegmentFilter(BaseModel):
+    """Segment filter schema."""
+
+    column: str
+    value: t.Any
 
 
 class Segment(Base):
@@ -28,7 +37,7 @@ class Segment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), nullable=False)
-    rule = Column(JSON, nullable=False)
+    rule = Column(PydanticType(pydantic_model=SegmentFilter), nullable=False)
 
     model_id = Column(Integer, ForeignKey("model.id"))
     model: Mapped[t.Optional["Model"]] = relationship("Model")

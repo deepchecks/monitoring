@@ -33,8 +33,28 @@ class Condition(BaseModel):
     operator: OperatorsEnum
     value: float
 
+    def __str__(self) -> str:
+        """Return condition string representatio."""
+        if self.operator == OperatorsEnum.EQ:
+            op = "=="
+        elif self.operator == OperatorsEnum.NOT_EQ:
+            op = "!="
+        elif self.operator == OperatorsEnum.GT:
+            op = ">"
+        elif self.operator == OperatorsEnum.GE:
+            op = ">="
+        elif self.operator == OperatorsEnum.LT:
+            op = "<"
+        elif self.operator == OperatorsEnum.LE:
+            op = "<="
+        elif self.operator == OperatorsEnum.CONTAINS:
+            op = "in"
+        else:
+            raise TypeError(f"Unknown operator - {self.operator}")
+        return f"Result {op} {self.value}"
 
-class AlertSeverity(enum.Enum):
+
+class AlertSeverity(str, enum.Enum):
     """Enum for the alert severity."""
 
     LOW = "low"
@@ -47,16 +67,19 @@ class AlertRule(Base):
     """ORM model for the alert rule."""
 
     __tablename__ = "alert_rules"
+    __table_args__ = (
+        sa.UniqueConstraint("name", "monitor_id"),
+        sa.CheckConstraint("repeat_every >= 0"),
+    )
 
     id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String(50))
-
+    name = sa.Column(sa.String(50), nullable=False)
     condition = sa.Column(PydanticType(pydantic_model=Condition))
     repeat_every = sa.Column(sa.Integer, nullable=False)
     alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
     last_run = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
-    monitor_id = sa.Column(sa.Integer, sa.ForeignKey("monitors.id"))
+    monitor_id = sa.Column(sa.Integer, sa.ForeignKey("monitors.id"), nullable=False)
     monitor: Mapped[t.Optional["Monitor"]] = relationship("Monitor", back_populates="alert_rules")
 
     alerts: Mapped[t.List["Alert"]] = relationship("Alert", back_populates="alert_rule")

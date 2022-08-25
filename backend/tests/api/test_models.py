@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import pytest
+import randomname
 from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
@@ -41,16 +42,25 @@ async def test_get_columns_model(classification_model_id, classification_model_v
 async def test_get_models(classification_model_check_id, regression_model_check_id, client: TestClient, async_session):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client)
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session, resolved=False)
     monitor_id_2 = add_monitor(regression_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id_2, client)
+
+    alert_rule_id = add_alert_rule(monitor_id, client, name=randomname.get_name())
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session)
+    add_alert(alert_rule_id, async_session, resolved=False)
+
+    alert_rule_id = add_alert_rule(monitor_id_2, client, name=randomname.get_name())
     add_alert(alert_rule_id, async_session, resolved=False)
     add_alert(alert_rule_id, async_session, resolved=False)
-    alert_rule_id = add_alert_rule(monitor_id_2, client, alert_severity=AlertSeverity.HIGH.value)
+
+    alert_rule_id = add_alert_rule(
+        monitor_id_2,
+        client,
+        alert_severity=AlertSeverity.HIGH.value,
+        name=randomname.get_name()
+    )
     add_alert(alert_rule_id, async_session, resolved=False)
+
     await async_session.commit()
     # Act
     response = client.get("/api/v1/models/")

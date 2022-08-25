@@ -17,6 +17,7 @@ import pytest
 import pytest_asyncio
 import testing.postgresql
 from fastapi.testclient import TestClient
+from requests import Response
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
@@ -178,7 +179,12 @@ def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
     return alert
 
 
-def add_alert_rule(monitor_id, client: TestClient, **kwargs) -> int:
+def add_alert_rule(
+    monitor_id: int,
+    client: TestClient,
+    expected_status_code: int = 200,
+    **kwargs
+) -> t.Union[int, Response]:
     request = {
         "name": "alerty",
         "repeat_every": 86400,
@@ -190,7 +196,18 @@ def add_alert_rule(monitor_id, client: TestClient, **kwargs) -> int:
     }
     request.update(kwargs)
     response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=request)
-    return response.json()["id"]
+
+    if not 200 <= expected_status_code <= 299:
+        assert response.status_code == expected_status_code, (response.status_code, response.json())
+        return response
+
+    assert response.status_code == expected_status_code, (response.status_code, response.json())
+
+    data = response.json()
+    assert isinstance(data, dict), (response.status_code, data)
+    assert "id" in data and isinstance(data["id"], int), (response.status_code, data)
+
+    return data["id"]
 
 
 def add_monitor(check_id, client: TestClient, **kwargs):

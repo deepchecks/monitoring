@@ -47,7 +47,7 @@ class OperatorsEnum(enum.Enum):
     GT = "greater_than"
     LE = "less_than_equals"
     LT = "less_than"
-    CONTAINES = "in"
+    CONTAINS = "in"
     EQ = "equals"
     NOT_EQ = "not_equals"
 

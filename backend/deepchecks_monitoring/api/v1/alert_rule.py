@@ -11,13 +11,16 @@
 import typing as t
 from datetime import datetime
 
+from asyncpg.exceptions import UniqueViolationError
 from fastapi import Query, Response, status
-from pydantic import BaseModel
-from sqlalchemy import func, select, update
+from pydantic import BaseModel, Field
+from sqlalchemy import func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.exceptions import BadRequest, InternalError
 from deepchecks_monitoring.models import Alert, Check, Monitor
 from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity, Condition
 from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
@@ -29,10 +32,10 @@ from .router import router
 class AlertRuleCreationSchema(BaseModel):
     """Schema defines the parameters for creating new alert rule."""
 
-    name: str
-    repeat_every: int
     condition: Condition
-    alert_severity: t.Optional[AlertSeverity]
+    repeat_every: int = Field(ge=0)
+    alert_severity: AlertSeverity = AlertSeverity.MID
+    name: t.Optional[str] = None
 
 
 class AlertRuleSchema(BaseModel):
@@ -67,19 +70,47 @@ class AlertRuleUpdateSchema(BaseModel):
     condition: t.Optional[Condition]
 
 
-@router.post("/monitors/{monitor_id}/alert-rules", response_model=IdResponse, tags=[Tags.ALERTS],
-             summary="Create new alert rule on a given monitor.")
+@router.post(
+    "/monitors/{monitor_id}/alert-rules",
+    response_model=IdResponse,
+    tags=[Tags.ALERTS],
+    summary="Create new alert rule on a given monitor."
+)
 async def create_alert_rule(
     monitor_id: int,
-    body: AlertRuleCreationSchema,
+    alert_rule: AlertRuleCreationSchema,
     session: AsyncSession = AsyncSessionDep
 ):
     """Create new alert rule on a given check."""
-    await exists_or_404(session, Monitor, id=monitor_id)
-    alert = AlertRule(monitor_id=monitor_id, **body.dict(exclude_none=True))
-    session.add(alert)
-    await session.flush()
-    return {"id": alert.id}
+    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+
+    monitor_name = t.cast(str, monitor.name).capitalize()
+    level = alert_rule.alert_severity.upper()
+    criteria = str(alert_rule.condition)
+
+    alert_rule.name = (
+        f"{monitor_name} Alert (level:{level}): {criteria}"
+        if alert_rule.name is None
+        else alert_rule.name
+    )
+    stm = insert(AlertRule).values(
+        monitor_id=monitor_id,
+        **alert_rule.dict(exclude_none=True)
+    ).returning(AlertRule.id)
+
+    try:
+        rule_id = (await session.execute(stm)).scalar_one()
+        return {"id": rule_id}
+    except IntegrityError as error:
+        await session.rollback()
+        origin = getattr(error, "orig", None)
+        sqlstate = getattr(origin, "sqlstate", 0)
+        exception = (
+            BadRequest("AlertRule name must be unique")
+            if isinstance(origin, UniqueViolationError) or sqlstate == UniqueViolationError.sqlstate
+            else InternalError("Internal error")
+        )
+        raise exception from error
 
 
 @router.get("/alert-rules/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
