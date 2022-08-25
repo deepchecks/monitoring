@@ -23,10 +23,10 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.check_logic import run_suite_for_model_version
-from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_TS_COL, column_types_to_table_columns,
-                                                     get_model_columns_by_type)
+from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType,
+                                                     column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model
-from deepchecks_monitoring.models.model_version import ColumnType, ModelVersion
+from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404
 
 from .check import MonitorOptions

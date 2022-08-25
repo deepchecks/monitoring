@@ -37,7 +37,7 @@ class ColumnMetadata(TypedDict):
     """TypedDict containing relavant column metadata."""
 
     type: ColumnType
-    values: t.Optional[t.Union[t.Tuple[int, int], t.Tuple[bool, bool], t.List[t.Any], None]]
+    stats: dict
 
 
 class ModelVersion(Base):
@@ -154,9 +154,9 @@ def unify_statistics(original_statistics: dict, added_statistics: dict):
             min_values = [v["min"] for v in col_stats if v["min"] is not None]
             unified_dict[col]["min"] = min(min_values) if min_values else None
         if any(("values" in v for v in col_stats)):
-            if len(original_statistics[col]) < CATEGORICAL_STATISTICS_VALUES_LIMIT:
+            if len(original_statistics[col]["values"]) < CATEGORICAL_STATISTICS_VALUES_LIMIT:
                 values = list(set(chain(*(v["values"] for v in col_stats))))[:CATEGORICAL_STATISTICS_VALUES_LIMIT]
             else:
-                values = original_statistics[col]
+                values = original_statistics[col]["values"]
             unified_dict[col]["values"] = values
     return unified_dict

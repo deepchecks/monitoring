@@ -16,7 +16,7 @@ import {
   updateMonitor,
 } from "../../../../store/slices/monitor/monitorSlice";
 import { ID } from "../../../../types";
-import { ColumnType } from "../../../../types/model";
+import { Numeric, Categorical, ColumnType } from "../../../../types/model";
 import { Subcategory } from "../Subcategory/Subcategory";
 import {
   StyledButton,
@@ -146,18 +146,20 @@ export function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
   };
 
   const handleInputBlur = () => {
-    if (+values.numericValue < columns[values.column].values[0]) {
-      setFieldValue("numericValue", columns[values.column].values[0]);
-    } else if (+values.numericValue > columns[values.column].values[1]) {
-      setFieldValue("numericValue", columns[values.column].values[1]);
+    const column = columns[values.column] as Numeric;
+    if (+values.numericValue < column.min) {
+      setFieldValue("numericValue", column.min);
+    } else if (+values.numericValue > column.max) {
+      setFieldValue("numericValue", column.max);
     }
   };
 
   useMemo(() => {
     if (values.column) {
-      const column = columns[values.column];
+      let column = columns[values.column];
 
       if (column.type === ColumnType.string) {
+        column = column as Categorical;
         setColumnComponent(
           <Subcategory>
             <MarkedSelect
@@ -179,6 +181,7 @@ export function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
       }
 
       if (column.type === ColumnType.number) {
+        column = column as Numeric;
         setColumnComponent(
           <Box mt="39px">
             <StyledTypographyLabel>Select Value</StyledTypographyLabel>
@@ -188,8 +191,8 @@ export function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
               handleInputChange={handleInputChange}
               name="numericValue"
               value={+values.numericValue || 0}
-              min={column.values[0]}
-              max={column.values[1]}
+              min={column.min}
+              max={column.max}
               valueLabelDisplay="auto"
             />
           </Box>

@@ -18,7 +18,8 @@ export interface Categorical {
 
 export interface Numeric {
   type: ColumnType.number;
-  values: [number, number];
+  min: number;
+  max: number;
 }
 
 export interface ModelColumns {

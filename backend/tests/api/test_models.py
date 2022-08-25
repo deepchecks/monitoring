@@ -10,6 +10,7 @@
 import pytest
 import randomname
 from fastapi.testclient import TestClient
+from deepdiff import DeepDiff
 
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from tests.conftest import add_alert, add_alert_rule, add_monitor
@@ -33,9 +34,13 @@ async def test_get_columns_model(classification_model_id, classification_model_v
     response = client.get(f"/api/v1/models/{classification_model_id}/columns")
     assert classification_model_version_id == 1
     assert response.status_code == 200
-    assert response.json() == {"a": {"type": "numeric", "values": [-9999999, 999999]},
-                               "b": {"type": "categorical", "values": ["a", "b", "c"]},
-                               "c": {"type": "numeric", "values": [-9999999, 999999]}}
+    diff = DeepDiff(response.json(), {
+        "a": {"type": "numeric", "stats": {"max": None, "min": None}},
+        "b": {"type": "categorical", "stats": {"values": []}},
+        "c": {"type": "numeric", "stats": {"max": None, "min": None}}
+    },
+        ignore_order=True)
+    assert not diff
 
 
 @pytest.mark.asyncio

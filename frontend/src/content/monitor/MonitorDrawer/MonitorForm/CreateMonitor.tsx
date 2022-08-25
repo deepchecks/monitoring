@@ -17,7 +17,7 @@ import {
   createMonitor,
   monitorSelector,
 } from "../../../../store/slices/monitor/monitorSlice";
-import { ColumnType } from "../../../../types/model";
+import { Numeric, Categorical, ColumnType } from "../../../../types/model";
 import { Subcategory } from "../Subcategory/Subcategory";
 import {
   StyledButton,
@@ -162,28 +162,30 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
   };
 
   const handleInputBlur = () => {
-    if (+values.numericValue < columns[values.column].values[0]) {
-      setFieldValue("numericValue", columns[values.column].values[0]);
-    } else if (+values.numericValue > columns[values.column].values[1]) {
-      setFieldValue("numericValue", columns[values.column].values[1]);
+    const column = columns[values.column] as Numeric;
+    if (+values.numericValue < column.min) {
+      setFieldValue("numericValue", column.min);
+    } else if (+values.numericValue > column.max) {
+      setFieldValue("numericValue", column.max);
     }
   };
 
   useMemo(() => {
     if (values.column) {
-      const column = columns[values.column];
+      let column = columns[values.column];
 
       if (column.type === ColumnType.string) {
+        column = column as Categorical;
         setColumnComponent(
           <Subcategory>
             <MarkedSelect
               label="Select category"
               size="small"
-              disabled={!columns[values.column].values.length}
+              disabled={!column.values.length}
               fullWidth
               {...getFieldProps("category")}
             >
-              {columns[values.column].values.map((col, index) => (
+              {column.values.map((col, index) => (
                 <MenuItem key={index} value={col}>
                   {col}
                 </MenuItem>
@@ -195,6 +197,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
       }
 
       if (column.type === ColumnType.number) {
+        column = column as Numeric;
         setColumnComponent(
           <Box mt="39px">
             <StyledTypographyLabel>Select Value</StyledTypographyLabel>
@@ -204,8 +207,8 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
               handleInputChange={handleInputChange}
               name="numericValue"
               value={+values.numericValue || 0}
-              min={column.values[0]}
-              max={column.values[1]}
+              min={column.min}
+              max={column.max}
               valueLabelDisplay="auto"
             />
           </Box>

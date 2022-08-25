@@ -23,7 +23,7 @@ from deepchecks_monitoring.logic.alerts_logic import get_alerts_per_model
 from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.model import TaskType
-from deepchecks_monitoring.models.model_version import ColumnMetadata, ColumnType, ModelVersion
+from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.utils import IdResponse, TimeUnit, exists_or_404, fetch_or_404
 
@@ -221,8 +221,8 @@ async def get_models(
 async def get_model_columns(
     model_id: int,
     session: AsyncSession = AsyncSessionDep
-) -> ModelSchema:
-    """Create a new model.
+):
+    """Get statistics of columns for model.
 
     Parameters
     ----------
@@ -245,14 +245,7 @@ async def get_model_columns(
 
     column_dict: t.Dict[str, ColumnMetadata] = {}
 
-    for col in list(latest_version.features_columns.items()) + list(latest_version.non_features_columns.items()):
-        col_name, col_type = col
-        values = None
-        if col_type == ColumnType.BOOLEAN.value:
-            values = [True, False]
-        elif col_type == ColumnType.CATEGORICAL.value:
-            values = ["a", "b", "c"]
-        elif col_type == ColumnType.NUMERIC.value:
-            values = [-9999999, 999999]
-        column_dict[col_name] = ColumnMetadata(type=col_type, values=values)
+    return_columns = list(latest_version.features_columns.items()) + list(latest_version.non_features_columns.items())
+    for (col_name, col_type) in return_columns:
+        column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
     return column_dict
