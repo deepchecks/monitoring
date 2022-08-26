@@ -10,14 +10,17 @@
 #
 """Module containing deepchecks monitoring client."""
 import enum
+import json
 from datetime import datetime
 from importlib.metadata import version
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 from urllib.parse import urljoin
 
 import numpy as np
 import pendulum as pdl
 import requests
+from requests import Response, HTTPError
+from requests.exceptions import JSONDecodeError
 from deepchecks.core.checks import BaseCheck, ReduceMixin
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
@@ -96,14 +99,18 @@ class DeepchecksModelVersionClient:
     ):
         self.session = session
         self.model_version_id = model_version_id
-        response = self.session.get(f'model-versions/{model_version_id}/schema')
-        response.raise_for_status()
-        self.schema = response.json()
-        response = self.session.get(f'model-versions/{model_version_id}/reference-schema')
-        response.raise_for_status()
-        self.ref_schema = response.json()
         self._log_samples = []
-
+        
+        self.schema = maybe_raise(
+            self.session.get(f'model-versions/{model_version_id}/schema'),
+            msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) schema.\n{{error}}"
+        ).json()
+        
+        self.ref_schema = maybe_raise(
+            self.session.get(f'model-versions/{model_version_id}/reference-schema'),
+            msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) reference schema.\n{{error}}"
+        ).json()
+        
     def log_sample(self,
                    sample_id: str,
                    timestamp: Union[datetime, int, None] = None,
@@ -131,7 +138,7 @@ class DeepchecksModelVersionClient:
                 # If no timezone in datetime, assumed to be UTC and converted to local timezone
                 timestamp = pdl.instance(timestamp, pdl.local_timezone())
             else:
-                raise Exception(f'Not supported timestamp type: {type(timestamp)}')
+                raise TypeError(f'Not supported timestamp type: {type(timestamp)}')
         else:
             timestamp = pdl.now()
 
@@ -152,10 +159,13 @@ class DeepchecksModelVersionClient:
 
     def send(self):
         """Send all the aggregated samples."""
-        self.session.post(
-            f'model-versions/{self.model_version_id}/data',
-            json=self._log_samples
-        ).raise_for_status()
+        maybe_raise(
+            self.session.post(
+                f'model-versions/{self.model_version_id}/data',
+                json=self._log_samples
+            ),
+            msg="Samples upload failure.\n{error}"
+        )
         self._log_samples.clear()
 
     def upload_reference(
@@ -173,7 +183,7 @@ class DeepchecksModelVersionClient:
         prediction_label: np.ndarray
         """
         if len(dataset) > 100_000:
-            raise Exception('Maximum size allowed for reference data is 100,000')
+            raise ValueError('Maximum size allowed for reference data is 100,000')
 
         data = dataset.features_columns.copy()
         if dataset.label_name:
@@ -187,10 +197,13 @@ class DeepchecksModelVersionClient:
             item = row.to_dict()
             validate(schema=self.ref_schema, instance=item)
 
-        self.session.post(
-            f'model-versions/{self.model_version_id}/reference',
-            files={'file': data.to_json(orient='table', index=False)}
-        ).raise_for_status()
+        maybe_raise(
+            self.session.post(
+                f'model-versions/{self.model_version_id}/reference',
+                files={'file': data.to_json(orient='table', index=False)}
+            ),
+            msg="Reference upload failure.\n{error}"
+        )
 
     def update_sample(self, sample_id: str, label=None, **values):
         """Update sample. Possible to update only non_features and label.
@@ -216,10 +229,14 @@ class DeepchecksModelVersionClient:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         validate(instance=update, schema=optional_columns_schema)
-        self.session.put(
-            f'model-versions/{self.model_version_id}/data',
-            json=[update]
-        ).raise_for_status()
+        
+        maybe_raise(
+            self.session.put(
+                f'model-versions/{self.model_version_id}/data',
+                json=[update]
+            ),
+            msg="Sample update failure.\n{error}"
+        )
 
 
 class DeepchecksModelClient:
@@ -242,9 +259,10 @@ class DeepchecksModelClient:
         session: requests.Session
     ):
         self.session = session
-        response = self.session.get(f'models/{model_id}')
-        response.raise_for_status()
-        self.model = response.json()
+        self.model = maybe_raise(
+            self.session.get(f'models/{model_id}'),
+            msg=f"Failed to obtaine Model(id:{model_id}).\n{{error}}"
+        ).json()
 
     def create_version(
         self,
@@ -270,45 +288,47 @@ class DeepchecksModelClient:
         """
         # Start with validation
         if not isinstance(features, dict):
-            raise Exception('features must be a dict')
+            raise ValueError('features must be a dict')
         for key, value in features.items():
             if not isinstance(key, str):
-                raise Exception(f'key of features must be of type str but got: {type(key)}')
+                raise ValueError(f'key of features must be of type str but got: {type(key)}')
             if value not in ColumnType.values():
-                raise Exception(f'value of features must be one of {ColumnType.values()} but got {value}')
+                raise ValueError(f'value of features must be one of {ColumnType.values()} but got {value}')
 
         if feature_importance:
             if not isinstance(feature_importance, dict):
-                raise Exception('feature_importance must be a dict')
+                raise ValueError('feature_importance must be a dict')
             symmetric_diff = set(feature_importance.keys()).symmetric_difference(features.keys())
             if symmetric_diff:
-                raise Exception(f'feature_importance and features must contain the same keys, found not shared keys: '
+                raise ValueError(f'feature_importance and features must contain the same keys, found not shared keys: '
                                 f'{symmetric_diff}')
             if any((not isinstance(v, float) for v in feature_importance.values())):
-                raise Exception('feature_importance must contain only values of type float')
+                raise ValueError('feature_importance must contain only values of type float')
 
         if non_features:
             if not isinstance(non_features, dict):
-                raise Exception('non_features must be a dict')
+                raise ValueError('non_features must be a dict')
             intersection = set(non_features.keys()).intersection(features.keys())
             if intersection:
-                raise Exception(f'features and non_features must contain different keys, found shared keys: '
+                raise ValueError(f'features and non_features must contain different keys, found shared keys: '
                                 f'{intersection}')
             for key, value in features.items():
                 if not isinstance(key, str):
-                    raise Exception(f'key of non_features must be of type str but got: {type(key)}')
+                    raise ValueError(f'key of non_features must be of type str but got: {type(key)}')
                 if value not in ColumnType.values():
-                    raise Exception(f'value of non_features must be one of {ColumnType.values()} but got {value}')
+                    raise ValueError(f'value of non_features must be one of {ColumnType.values()} but got {value}')
 
-        # Send request
-        response = self.session.post(f'models/{self.model["id"]}/version', json={
-            'name': name,
-            'features': features,
-            'non_features': non_features or {},
-            'feature_importance': feature_importance or {}
-        })
-        response.raise_for_status()
-        model_version_id = response.json()['id']
+        response = maybe_raise(
+            self.session.post(f'models/{self.model["id"]}/version', json={
+                'name': name,
+                'features': features,
+                'non_features': non_features or {},
+                'feature_importance': feature_importance or {}
+            }),
+            msg="Failed to create new model version.\n{error}"
+        ).json()
+
+        model_version_id = response['id']
         return self.version_client(model_version_id)
 
     def version_client(self, model_version_id: int) -> DeepchecksModelVersionClient:
@@ -345,16 +365,22 @@ class DeepchecksModelClient:
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
             serialized_checks.append({'name': name, 'config': check.config()})
         
-        self.session.post(
-            url=f'models/{self.model["id"]}/checks',
-            json=serialized_checks
-        ).raise_for_status()
+        maybe_raise(
+            self.session.post(
+                url=f'models/{self.model["id"]}/checks',
+                json=serialized_checks
+            ),
+            msg="Failed to create new check instances.\n{error}"
+        )
     
     def get_checks(self) -> Dict[str, BaseCheck]:
         """Return list of check instances."""
-        response = self.session.get(f'models/{self.model["id"]}/checks')
-        response.raise_for_status()
-        data = response.json()
+        model_id = self.model["id"]
+        
+        data = maybe_raise(
+            self.session.get(f'models/{self.model["id"]}/checks'),
+            msg=f"Failed to obtaine Model(id:{model_id}) checks.\n{{error}}"
+        ).json()
 
         if not isinstance(data, list):
             raise ValueError('Expected server to return a list of check configs.')
@@ -365,10 +391,14 @@ class DeepchecksModelClient:
         }
     
     def delete_checks(self, names: List[str]):
-        self.session.delete(
-            f'models/{self.model["id"]}/checks',
-            params={'names': names}
-        ).raise_for_status()
+        model_id = self.model["id"]
+        maybe_raise(
+            self.session.delete(
+                f'models/{model_id}/checks',
+                params={'names': names}
+            ),
+            msg=f"Failed to drop Model(id:{model_id}) checks.\n{{error}}"
+        )
 
 
 class DeepchecksClient:
@@ -396,7 +426,11 @@ class DeepchecksClient:
         else:
             raise ValueError('"host" or "session" parameter must be provided')
 
-        self.session.get('say-hello').raise_for_status()
+        maybe_raise(
+            self.session.get('say-hello'),
+            msg="Server not available.\n{error}"
+        )
+        
 
     def create_model(
         self, 
@@ -422,19 +456,25 @@ class DeepchecksClient:
             Client to interact with the created model.
         """
         if task_type not in TaskType.values():
-            raise Exception(f'task_type must be one of {TaskType.values()}')
-        response = self.session.post('models', json={
-            'name': name,
-            'task_type': task_type,
-            'description': description
-        })
-        response.raise_for_status()
-        model_id = response.json()['id']
+            raise ValueError(f'task_type must be one of {TaskType.values()}')
+        
+        response = maybe_raise(
+            self.session.post('models', json={
+                'name': name,
+                'task_type': task_type,
+                'description': description
+            }),
+            msg="Failed to create a new model instance.\n{error}"
+        ).json()
+        
+        model_id = response['id']
         model = self.model_client(model_id)
+        
         if checks is not None:
             model.add_checks(checks)
         else:
             model.add_default_checks()
+        
         return model
 
     def model_client(self, model_id: int) -> DeepchecksModelClient:
@@ -451,3 +491,75 @@ class DeepchecksClient:
             Client to interact with the model.
         """
         return DeepchecksModelClient(model_id, session=self.session)
+
+
+def maybe_raise(
+    response: Response,
+    expected: Union[int, Tuple[int, int]] = (200, 299),
+    msg: Optional[str] = None
+) -> Response:
+    """Verify response status and raise an HTTPError if got unexpected status code.
+    
+    Parameters
+    ==========
+    response : Response
+        http response instance
+    expected : Union[int, Tuple[int, int]] , default (200, 299)
+        HTTP status code that is expected to receive 
+    msg: Optional[str] , default None
+        error message to show in case of unexpected status code,
+        next template parameters available: 
+        - status (HTTP status code)
+        - reason (HTTP reason message)
+        - url (request url)
+        - body (response payload if available)
+        - error (default error message that will include all previous parameters)
+
+    Returns
+    =======
+    Respoonse
+    """
+    status = response.status_code
+    url = response.url
+    reason = response.reason
+
+    error_template = "Error: {status} {reason} url {url}.\nBody:\n{body}"
+    client_error_template = "{status} Client Error: {reason} for url: {url}.\nBody:\n{body}"
+    server_error_template = "{status} Server Internal Error: {reason} for url: {url}.\nBody:\n{body}"
+
+    def select_template(status):
+        if 400 <= status <= 499:
+            return client_error_template
+        elif 500 <= status <= 599:
+            return server_error_template
+        else:
+            return error_template
+        
+    def process_body():
+        try:
+            return json.dumps(response.json(), indent=3)
+        except JSONDecodeError:
+            return
+
+    if isinstance(expected, int) and status != expected:
+        body = process_body()
+        error = select_template(status).format(status=status, reason=reason, url=url, body=body)
+        raise HTTPError(
+            error
+            if msg is None
+            else msg.format(status=status, reason=reason, url=url, body=body, error=error)
+        )
+
+    if isinstance(expected, (tuple, list)) and not (expected[0] <= status <= expected[1]):
+        body = process_body()
+        error = select_template(status).format(status=status, reason=reason, url=url, body=body)
+        raise HTTPError(
+            error
+            if msg is None
+            else msg.format(status=status, reason=reason, url=url, body=body, error=error)
+        )
+
+    return response
+
+
+    
