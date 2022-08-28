@@ -33,6 +33,7 @@ class MonitorCreationSchema(BaseModel):
 
     name: str
     lookback: int
+    dashboard_id: t.Optional[int]
     description: t.Optional[str]
     data_filters: t.Optional[DataFilterList]
     filter_key: t.Optional[str]

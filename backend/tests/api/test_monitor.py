@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from tests.conftest import add_classification_data, add_alert_rule
 
 
-def add_monitor(classification_model_check_id, client: TestClient) -> int:
+def add_monitor(classification_model_check_id, client: TestClient, dashboard_id = None) -> int:
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
@@ -23,6 +23,8 @@ def add_monitor(classification_model_check_id, client: TestClient) -> int:
             "value": 10
         }]}
     }
+    if dashboard_id is not None:
+        request["dashboard_id"] = dashboard_id
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
     return response.json()["id"]
 
@@ -82,11 +84,15 @@ async def test_add_monitor_with_data_filter(classification_model_check_id, clien
 @pytest.mark.asyncio
 async def test_get_monitor(classification_model_check_id, client: TestClient):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
+    # create dashboard
+    response = client.get("/api/v1/dashboards/")
+    assert response.status_code == 200
+
+    monitor_id = add_monitor(classification_model_check_id, client, dashboard_id=1)
     add_alert_rule(monitor_id, client)
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}")
-    assert response.json() == {"id": 1, "name": "monitory", "dashboard_id": None, "lookback": 86400 * 7,
+    assert response.json() == {"id": 1, "name": "monitory", "dashboard_id": 1, "lookback": 86400 * 7,
                                "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
                                "check": {"config": {"class_name": "PerformanceReport",
                                                     "module_name": "deepchecks.tabular.checks",
