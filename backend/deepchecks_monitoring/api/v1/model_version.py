@@ -127,7 +127,7 @@ async def create_version(
     montior_table_columns_sqlalchemy = column_types_to_table_columns(monitor_table_columns)
     # using md5 hash index in queries to get random order of samples, so adding index for it
     monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *montior_table_columns_sqlalchemy,
-                          Index('md5_index', text(f'md5({SAMPLE_ID_COL})')))
+                          Index(f'_{model_version.get_monitor_table_name()}_md5_index', text(f'md5({SAMPLE_ID_COL})')))
     await session.execute(CreateTable(monitor_table))
     # Create indices
     for index in monitor_table.indexes:

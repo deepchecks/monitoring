@@ -12,7 +12,7 @@
 import enum
 import typing as t
 
-from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Text
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, Text
 
 from deepchecks_monitoring.models import TaskType
 
@@ -31,20 +31,24 @@ class ColumnType(enum.Enum):
     """Enum containing possible types of data."""
 
     NUMERIC = "numeric"
+    INTEGER = "integer"
     CATEGORICAL = "categorical"
     BOOLEAN = "boolean"
     TEXT = "text"
     ARRAY_FLOAT = "array_float"
+    ARRAY_FLOAT_2D = "array_float_2d"
     DATETIME = "datetime"
 
     def to_sqlalchemy_type(self):
         """Return the SQLAlchemy type of the data type."""
         types_map = {
             ColumnType.NUMERIC: Float,
+            ColumnType.INTEGER: Integer,
             ColumnType.CATEGORICAL: Text,
             ColumnType.BOOLEAN: Boolean,
             ColumnType.TEXT: Text,
             ColumnType.ARRAY_FLOAT: ARRAY(Float),
+            ColumnType.ARRAY_FLOAT_2D: ARRAY(Float),
             ColumnType.DATETIME: DateTime(timezone=True)
         }
         return types_map[self]
@@ -53,10 +57,12 @@ class ColumnType(enum.Enum):
         """Return the json type of the column type."""
         types_map = {
             ColumnType.NUMERIC: {"type": "number"},
+            ColumnType.INTEGER: {"type": "integer"},
             ColumnType.CATEGORICAL: {"type": "string"},
             ColumnType.BOOLEAN: {"type": "boolean"},
             ColumnType.TEXT: {"type": "string"},
             ColumnType.ARRAY_FLOAT: {"type": "array", "items": {"type": "number"}},
+            ColumnType.ARRAY_FLOAT_2D: {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
             ColumnType.DATETIME: {"type": "string", "format": "datetime"}
         }
         schema = types_map[self]
@@ -68,10 +74,12 @@ class ColumnType(enum.Enum):
         """Generate an empty statistics dict for given column type."""
         types_map = {
             ColumnType.NUMERIC: {"min": None, "max": None},
+            ColumnType.INTEGER: {"min": None, "max": None},
             ColumnType.CATEGORICAL: {"values": []},
             ColumnType.BOOLEAN: {"values": []},
             ColumnType.TEXT: None,
             ColumnType.ARRAY_FLOAT: None,
+            ColumnType.ARRAY_FLOAT_2D: None,
             ColumnType.DATETIME: None
         }
         return types_map[self]
@@ -100,6 +108,16 @@ def get_model_columns_by_type(task_type: TaskType) -> t.Tuple[t.Dict[str, Column
             SAMPLE_PRED_LABEL_COL: ColumnType.CATEGORICAL,
             SAMPLE_PRED_VALUE_COL: ColumnType.ARRAY_FLOAT
         }, [SAMPLE_PRED_LABEL_COL]
+    elif task_type == TaskType.VISION_CLASSIFICATION:
+        return {
+            SAMPLE_LABEL_COL: ColumnType.INTEGER,
+            SAMPLE_PRED_VALUE_COL: ColumnType.ARRAY_FLOAT
+        }, [SAMPLE_PRED_VALUE_COL]
+    elif task_type == TaskType.VISION_DETECTION:
+        return {
+            SAMPLE_LABEL_COL: ColumnType.ARRAY_FLOAT_2D,
+            SAMPLE_PRED_VALUE_COL: ColumnType.ARRAY_FLOAT_2D
+        }, [SAMPLE_PRED_VALUE_COL]
     else:
         raise Exception(f"Not supported task type {task_type}")
 

@@ -113,6 +113,24 @@ async def classification_model_id(async_session: AsyncSession):
 
 
 @pytest_asyncio.fixture()
+async def classification_vision_model_id(async_session: AsyncSession):
+    model = Model(name="vision classification model", description="test", task_type=TaskType.VISION_CLASSIFICATION)
+    async_session.add(model)
+    await async_session.commit()
+    await async_session.refresh(model)
+    return model.id
+
+
+@pytest_asyncio.fixture()
+async def detection_vision_model_id(async_session: AsyncSession):
+    model = Model(name="vision detection model", description="test", task_type=TaskType.VISION_DETECTION)
+    async_session.add(model)
+    await async_session.commit()
+    await async_session.refresh(model)
+    return model.id
+
+
+@pytest_asyncio.fixture()
 async def regression_model_id(async_session: AsyncSession):
     model = Model(name="regression model", description="test", task_type=TaskType.REGRESSION)
     async_session.add(model)
@@ -130,6 +148,30 @@ async def classification_model_version_id(async_session: AsyncSession, classific
         non_features={"c": "numeric"}
     )
     result = await create_version(classification_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
+
+
+@pytest_asyncio.fixture()
+async def detection_vision_model_version_id(async_session: AsyncSession, detection_vision_model_id: int):
+    schema = ModelVersionCreationSchema(
+        name="v1",
+        features={"images Aspect Ratio": "numeric", "partial_images Aspect Ratio": "array_float"},
+        non_features={}
+    )
+    result = await create_version(detection_vision_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
+
+
+@pytest_asyncio.fixture()
+async def classification_vision_model_version_id(async_session: AsyncSession, classification_vision_model_id: int):
+    schema = ModelVersionCreationSchema(
+        name="v1",
+        features={"images Aspect Ratio": "numeric"},
+        non_features={}
+    )
+    result = await create_version(classification_vision_model_id, schema, async_session)
     await async_session.commit()
     return result["id"]
 

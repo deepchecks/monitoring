@@ -11,25 +11,57 @@
 """Module containing deepchecks monitoring client."""
 import enum
 import json
+from collections import defaultdict
 from datetime import datetime
 from importlib.metadata import version
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 import numpy as np
+import pandas as pd
 import pendulum as pdl
 import requests
-from requests import Response, HTTPError
-from requests.exceptions import JSONDecodeError
+import torch
 from deepchecks.core.checks import BaseCheck, ReduceMixin
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
                                        TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
+from deepchecks.utils.dataframes import un_numpy
+from deepchecks.vision import VisionData
+from deepchecks.vision.task_type import TaskType as VisTaskType
+from deepchecks.vision.utils.image_properties import default_image_properties
+from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from jsonschema import validate
+from requests import HTTPError, Response
+from requests.exceptions import JSONDecodeError
+
+from client.deepchecks_client.utils import calc_image_bbox_props, create_static_properties
 
 __all__ = ['DeepchecksClient']
 __version__ = version("deepchecks_client")
+
+
+def _un_tensor(*tensors: torch.Tensor):
+    un_tensored = []
+    for tensor in tensors:
+        un_tensored.append(tensor.cpu().detach().numpy().tolist())
+    if len(un_tensored) == 1:
+        return un_tensored[0]
+    return un_tensored
+
+
+def _create_timestamp(timestamp):
+    if timestamp:
+        if isinstance(timestamp, int):
+            return pdl.from_timestamp(timestamp, pdl.local_timezone())
+        elif isinstance(timestamp, datetime):
+            # If no timezone in datetime, assumed to be UTC and converted to local timezone
+            return pdl.instance(timestamp, pdl.local_timezone())
+        else:
+            raise Exception(f'Not supported timestamp type: {type(timestamp)}')
+    else:
+        return pdl.now()
 
 
 class TaskType(enum.Enum):
@@ -37,6 +69,8 @@ class TaskType(enum.Enum):
 
     REGRESSION = "regression"
     CLASSIFICATION = "classification"
+    VISION_CLASSIFICATION = "vision_classification"
+    VISION_DETECTION = "vision_detection"
 
     @classmethod
     def values(cls):
@@ -47,9 +81,13 @@ class ColumnType(enum.Enum):
     """Enum containing possible types of data."""
 
     NUMERIC = "numeric"
+    INTEGER = "integer"
     CATEGORICAL = "categorical"
     BOOLEAN = "boolean"
     TEXT = "text"
+    ARRAY_FLOAT = "array_float"
+    ARRAY_FLOAT_2D = "array_float_2d"
+    DATETIME = "datetime"
 
     @classmethod
     def values(cls):
@@ -86,6 +124,8 @@ class DeepchecksModelVersionClient:
         The deepchecks monitoring API host.
     model_version_id: int
         The id of the model version.
+    image_properties : Optional[List[Dict[str, Any]]]
+        The image properties to use for the reference.
     """
 
     model_version_id: int
@@ -93,24 +133,28 @@ class DeepchecksModelVersionClient:
     ref_schema: dict
 
     def __init__(
-        self,
-        model_version_id: int,
-        session: requests.Session
+            self,
+            model_version_id: int,
+            model: dict,
+            session: requests.Session,
+            image_properties: Optional[List[Dict[str, Any]]],
     ):
         self.session = session
+        self.model = model
         self.model_version_id = model_version_id
+        self.image_properties = image_properties
         self._log_samples = []
-        
+
         self.schema = maybe_raise(
             self.session.get(f'model-versions/{model_version_id}/schema'),
             msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) schema.\n{{error}}"
         ).json()
-        
+
         self.ref_schema = maybe_raise(
             self.session.get(f'model-versions/{model_version_id}/reference-schema'),
             msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) reference schema.\n{{error}}"
         ).json()
-        
+
     def log_sample(self,
                    sample_id: str,
                    timestamp: Union[datetime, int, None] = None,
@@ -131,16 +175,7 @@ class DeepchecksModelVersionClient:
         values
             All features of the sample and optional non_features
         """
-        if timestamp:
-            if isinstance(timestamp, int):
-                timestamp = pdl.from_timestamp(timestamp, pdl.local_timezone())
-            elif isinstance(timestamp, datetime):
-                # If no timezone in datetime, assumed to be UTC and converted to local timezone
-                timestamp = pdl.instance(timestamp, pdl.local_timezone())
-            else:
-                raise TypeError(f'Not supported timestamp type: {type(timestamp)}')
-        else:
-            timestamp = pdl.now()
+        timestamp = _create_timestamp(timestamp)
 
         sample = {
             DeepchecksColumns.SAMPLE_ID_COL.value: sample_id,
@@ -157,6 +192,51 @@ class DeepchecksModelVersionClient:
 
         self._log_samples.append(sample)
 
+    def log_vision_sample(self,
+                          sample_id: str,
+                          img: np.ndarray,
+                          label,
+                          timestamp: Union[datetime, int, None] = None,
+                          prediction_value=None):
+        """Send sample for the model version.
+
+        Parameters
+        ----------
+        sample_id: str
+        timestamp: Union[datetime, int]
+            If no timezone info is provided on the datetime assumes local timezone.
+        prediction_value
+            Prediction value if exists
+        label
+            label
+        """
+        timestamp = _create_timestamp(timestamp)
+        task_type = TaskType(self.model['task_type'])
+        vis_task_type = \
+            VisTaskType.CLASSIFICATION if task_type == TaskType.VISION_CLASSIFICATION else VisTaskType.OBJECT_DETECTION
+        image_props, bbox_props = \
+            calc_image_bbox_props([img], [label], vis_task_type, self.image_properties)
+        prop_vals = {}
+        if image_props:
+            for prop_name, prop_val in image_props.items():
+                prop_vals[PropertiesInputType.IMAGES.value + prop_name] = un_numpy(prop_val[0])
+        if bbox_props:
+            for prop_name, prop_val in bbox_props.items():
+                prop_vals[PropertiesInputType.PARTIAL_IMAGES.value + prop_name] = un_numpy(prop_val[0])
+        sample = {
+            DeepchecksColumns.SAMPLE_ID_COL.value: sample_id,
+            DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
+            **prop_vals
+        }
+
+        if prediction_value is not None:
+            sample[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = _un_tensor(prediction_value)
+        sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = _un_tensor(label)
+
+        validate(instance=sample, schema=self.schema)
+
+        self._log_samples.append(sample)
+
     def send(self):
         """Send all the aggregated samples."""
         maybe_raise(
@@ -168,11 +248,53 @@ class DeepchecksModelVersionClient:
         )
         self._log_samples.clear()
 
+    def upload_vision_reference(
+            self,
+            vision_data: VisionData,
+            predictions: Optional[Dict[int, torch.Tensor]] = None):
+        """Upload reference data. Possible to upload only once for a given model version.
+
+        Parameters
+        ----------
+        vision_data: VisionData
+            The vision data that containes the refrense data.
+        predictions: Optional[Dict[int, np.ndarray]]
+            The predictions for the refrence data in format {<index>: <prediction>}.
+        """
+        if len(vision_data) > 100_000:
+            raise Exception('Maximum size allowed for reference data is 100,000')
+
+        static_props = create_static_properties(vision_data, self.image_properties)
+
+        data = defaultdict(dict)
+        for i, batch in enumerate(vision_data):
+            indexes = list(vision_data.data_loader.batch_sampler)[i]
+            labels = dict(zip(indexes, vision_data.batch_to_labels(batch)))
+            for ind in indexes:
+                data[ind][DeepchecksColumns.SAMPLE_LABEL_COL.value] = _un_tensor(labels[ind])
+                if predictions:
+                    data[ind][DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = \
+                        _un_tensor(predictions[ind])
+                props = static_props[ind]
+                for prop_type in props.keys():
+                    for prop_name in props[prop_type].keys():
+                        data[ind][prop_type + ' ' + prop_name] = props[prop_type][prop_name]
+
+        data = pd.DataFrame(data).T
+        for (_, row) in data.iterrows():
+            item = row.to_dict()
+            validate(schema=self.ref_schema, instance=item)
+
+        self.session.post(
+            f'model-versions/{self.model_version_id}/reference',
+            files={'file': data.to_json(orient='table', index=False)}
+        ).raise_for_status()
+
     def upload_reference(
-        self,
-        dataset: Dataset,
-        prediction_value: Optional[np.ndarray] = None,
-        prediction_label: Optional[np.ndarray] = None
+            self,
+            dataset: Dataset,
+            prediction_value: Optional[np.ndarray] = None,
+            prediction_label: Optional[np.ndarray] = None
     ):
         """Upload reference data. Possible to upload only once for a given model version.
 
@@ -229,7 +351,7 @@ class DeepchecksModelVersionClient:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         validate(instance=update, schema=optional_columns_schema)
-        
+
         maybe_raise(
             self.session.put(
                 f'model-versions/{self.model_version_id}/data',
@@ -254,9 +376,9 @@ class DeepchecksModelClient:
     model: dict
 
     def __init__(
-        self,
-        model_id: int,
-        session: requests.Session
+            self,
+            model_id: int,
+            session: requests.Session
     ):
         self.session = session
         self.model = maybe_raise(
@@ -264,12 +386,55 @@ class DeepchecksModelClient:
             msg=f"Failed to obtaine Model(id:{model_id}).\n{{error}}"
         ).json()
 
+    def create_vision_version(
+            self,
+            name: str,
+            vision_data: VisionData,
+            image_properties: List[Dict[str, Any]] = default_image_properties
+    ) -> DeepchecksModelVersionClient:
+        """Create a new model version for vision data.
+
+        Parameters
+        ----------
+        name : str
+            The name of the new version.
+        vision_data : VisionData
+            The vision data to use as reference.
+        image_properties : List[Dict[str, Any]]
+            The image properties to use for the reference.
+
+        Returns
+        -------
+        DeepchecksModelVersionClient
+            Client to interact with the newly created version.
+        """
+        # Start with validation
+        if not isinstance(image_properties, list):
+            raise Exception('image properties must be a list')
+
+        features = {}
+        for prop in image_properties:
+            prop_name = prop['name']
+            features[PropertiesInputType.IMAGES.value + prop_name] = ColumnType.NUMERIC.value
+            if vision_data.task_type == VisTaskType.OBJECT_DETECTION:
+                features[PropertiesInputType.PARTIAL_IMAGES.value + prop_name] = ColumnType.ARRAY_FLOAT.value
+
+        # Send request
+        response = self.session.post(f'models/{self.model["id"]}/version', json={
+            'name': name,
+            'features': features,
+            'non_features': {},
+        })
+        response.raise_for_status()
+        model_version_id = response.json()['id']
+        return self.version_client(model_version_id, image_properties=image_properties)
+
     def create_version(
-        self,
-        name: str,
-        features: Dict[str, str],
-        non_features: Optional[Dict[str, str]] = None,
-        feature_importance: Optional[Dict[str, float]] = None
+            self,
+            name: str,
+            features: Dict[str, str],
+            non_features: Optional[Dict[str, str]] = None,
+            feature_importance: Optional[Dict[str, float]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version.
 
@@ -301,7 +466,7 @@ class DeepchecksModelClient:
             symmetric_diff = set(feature_importance.keys()).symmetric_difference(features.keys())
             if symmetric_diff:
                 raise ValueError(f'feature_importance and features must contain the same keys, found not shared keys: '
-                                f'{symmetric_diff}')
+                                 f'{symmetric_diff}')
             if any((not isinstance(v, float) for v in feature_importance.values())):
                 raise ValueError('feature_importance must contain only values of type float')
 
@@ -311,7 +476,7 @@ class DeepchecksModelClient:
             intersection = set(non_features.keys()).intersection(features.keys())
             if intersection:
                 raise ValueError(f'features and non_features must contain different keys, found shared keys: '
-                                f'{intersection}')
+                                 f'{intersection}')
             for key, value in features.items():
                 if not isinstance(key, str):
                     raise ValueError(f'key of non_features must be of type str but got: {type(key)}')
@@ -331,19 +496,25 @@ class DeepchecksModelClient:
         model_version_id = response['id']
         return self.version_client(model_version_id)
 
-    def version_client(self, model_version_id: int) -> DeepchecksModelVersionClient:
+    def version_client(self,
+                       model_version_id: int,
+                       image_properties: Optional[List[Dict[str, Any]]] = None) \
+            -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model.
 
         Parameters
         ----------
         model_version_id: int
+        image_properties : Optional[List[Dict[str, Any]]]
+            The image properties to use for the reference.
 
         Returns
         -------
         DeepchecksModelVersionClient
         """
-        return DeepchecksModelVersionClient(model_version_id, session=self.session)
-    
+        return DeepchecksModelVersionClient(model_version_id, self.model,
+                                            session=self.session, image_properties=image_properties)
+
     def add_default_checks(self):
         """Add default list of checks for the model."""
         return self.add_checks(checks={
@@ -359,12 +530,12 @@ class DeepchecksModelClient:
     def add_checks(self, checks: Dict[str, BaseCheck]):
         """Add new check for the model."""
         serialized_checks = []
-        
+
         for name, check in checks.items():
             if not isinstance(check, ReduceMixin):
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
             serialized_checks.append({'name': name, 'config': check.config()})
-        
+
         maybe_raise(
             self.session.post(
                 url=f'models/{self.model["id"]}/checks',
@@ -372,11 +543,11 @@ class DeepchecksModelClient:
             ),
             msg="Failed to create new check instances.\n{error}"
         )
-    
+
     def get_checks(self) -> Dict[str, BaseCheck]:
         """Return list of check instances."""
         model_id = self.model["id"]
-        
+
         data = maybe_raise(
             self.session.get(f'models/{self.model["id"]}/checks'),
             msg=f"Failed to obtaine Model(id:{model_id}) checks.\n{{error}}"
@@ -384,12 +555,12 @@ class DeepchecksModelClient:
 
         if not isinstance(data, list):
             raise ValueError('Expected server to return a list of check configs.')
-        
+
         return {
             it['name']: BaseCheck.from_config(it['config'])
             for it in data
         }
-    
+
     def delete_checks(self, names: List[str]):
         model_id = self.model["id"]
         maybe_raise(
@@ -413,9 +584,9 @@ class DeepchecksClient:
     host: str
 
     def __init__(
-        self,
-        host: Optional[str] = None,
-        session: Optional[HttpSession] = None
+            self,
+            host: Optional[str] = None,
+            session: Optional[HttpSession] = None
     ):
         if session is not None and hasattr(session, 'base_url'):
             self.session = session
@@ -430,14 +601,13 @@ class DeepchecksClient:
             self.session.get('say-hello'),
             msg="Server not available.\n{error}"
         )
-        
 
     def create_model(
-        self, 
-        name: str, 
-        task_type: str, 
-        description: Optional[str] = None,
-        checks: Optional[Dict[str, BaseCheck]] = None
+            self,
+            name: str,
+            task_type: str,
+            description: Optional[str] = None,
+            checks: Optional[Dict[str, BaseCheck]] = None
     ) -> DeepchecksModelClient:
         """Create a new model.
 
@@ -457,7 +627,7 @@ class DeepchecksClient:
         """
         if task_type not in TaskType.values():
             raise ValueError(f'task_type must be one of {TaskType.values()}')
-        
+
         response = maybe_raise(
             self.session.post('models', json={
                 'name': name,
@@ -466,15 +636,15 @@ class DeepchecksClient:
             }),
             msg="Failed to create a new model instance.\n{error}"
         ).json()
-        
+
         model_id = response['id']
         model = self.model_client(model_id)
-        
+
         if checks is not None:
             model.add_checks(checks)
         else:
             model.add_default_checks()
-        
+
         return model
 
     def model_client(self, model_id: int) -> DeepchecksModelClient:
@@ -499,7 +669,7 @@ def maybe_raise(
     msg: Optional[str] = None
 ) -> Response:
     """Verify response status and raise an HTTPError if got unexpected status code.
-    
+
     Parameters
     ==========
     response : Response
@@ -534,7 +704,7 @@ def maybe_raise(
             return server_error_template
         else:
             return error_template
-        
+
     def process_body():
         try:
             return json.dumps(response.json(), indent=3)
@@ -560,6 +730,3 @@ def maybe_raise(
         )
 
     return response
-
-
-    

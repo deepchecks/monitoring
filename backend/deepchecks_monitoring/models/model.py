@@ -29,6 +29,8 @@ class TaskType(enum.Enum):
 
     REGRESSION = "regression"
     CLASSIFICATION = "classification"
+    VISION_CLASSIFICATION = "vision_classification"
+    VISION_DETECTION = "vision_detection"
 
 
 class Model(Base):

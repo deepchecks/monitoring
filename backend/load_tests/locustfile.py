@@ -7,7 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-from locust import HttpUser, task, between
+from locust import HttpUser, between, task
+
 
 class User(HttpUser):
     wait_time = between(1, 5)

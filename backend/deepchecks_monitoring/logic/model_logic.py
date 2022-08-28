@@ -10,21 +10,29 @@
 
 """Module defining utility functions for specific db objects."""
 import typing as t
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-from deepchecks import BaseCheck, Dataset, SingleDatasetBaseCheck, TrainTestBaseCheck
+import torch
+from deepchecks.core import BaseCheck
+from deepchecks.tabular import Dataset
+from deepchecks.tabular import base_checks as tabular_base_checks
+from deepchecks.vision import VisionData
+from deepchecks.vision import base_checks as vision_base_checks
 from sqlalchemy import Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
+from torch.utils.data import DataLoader
 
 from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL,
                                                      SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL)
-from deepchecks_monitoring.models import Check, Model, ModelVersion
+from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
+from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
 
@@ -81,6 +89,38 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
     return dataset, y_pred, y_proba
 
 
+def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_type: TaskType) \
+        -> t.Tuple[VisionData, t.Dict[int, torch.Tensor], t.Dict[int, t.Any]]:
+    """Dataframe_to_dataset_and_pred."""
+    if df is None:
+        return None, None, None
+
+    df.reset_index(drop=True, inplace=True)
+    if task_type == TaskType.VISION_DETECTION:
+        labels = df[SAMPLE_LABEL_COL].apply(torch.Tensor).to_dict()
+    else:
+        labels = df[SAMPLE_LABEL_COL].to_dict()
+    df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
+
+    preds = df[SAMPLE_PRED_VALUE_COL].apply(torch.Tensor).to_dict()
+    df.drop(SAMPLE_PRED_VALUE_COL, inplace=True, axis=1)
+
+    if df.empty:
+        static_props = None
+    else:
+        static_props = defaultdict(dict)
+        for col in df.columns:
+            prop_type, prop_name = col.split(' ', 1)
+            for ind, item in df[col].items():
+                if static_props[ind].get(prop_type) is None:
+                    static_props[ind][prop_type] = {prop_name: item}
+                else:
+                    static_props[ind][prop_type][prop_name] = item
+
+    data_loader = DataLoader(LabelVisionDataset(labels), batch_size=len(labels), collate_fn=list)
+    return TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader), preds, static_props
+
+
 def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select, data_filters: DataFilterList):
     """Filter table selection by data filter."""
     filtered_table_selection = table_selection
@@ -96,6 +136,9 @@ async def get_results_for_active_model_version_sessions_per_window(
         dp_check: BaseCheck) -> t.Dict[int, t.Dict[str, float]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = model_versions[0].get_top_features()
+    task_type = model_versions[0].model.task_type
+    is_vision_check = isinstance(dp_check,
+                                 (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
 
     model_reduces = {}
     for model_versions_session, model_version in zip(model_versions_sessions, model_versions):
@@ -116,22 +159,42 @@ async def get_results_for_active_model_version_sessions_per_window(
         else:
             refrence_table_data_dataframe = None
         reduced_outs = []
-        refrence_table_ds, refrence_table_pred, refrence_table_proba = dataframe_to_dataset_and_pred(
-            refrence_table_data_dataframe, model_version.features_columns, top_feat)
+        if not is_vision_check:
+            refrence_table_ds, refrence_table_pred, refrence_table_proba = dataframe_to_dataset_and_pred(
+                refrence_table_data_dataframe, model_version.features_columns, top_feat)
+        else:
+            refrence_table_ds, refrence_table_pred, refrence_table_props = dataframe_to_vision_data_pred_props(
+                refrence_table_data_dataframe, task_type)
+
         for test_data_dataframe in test_data_dataframes:
             if test_data_dataframe.empty:
                 reduced_outs.append(None)
                 continue
-            test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
-                test_data_dataframe, model_version.features_columns, top_feat)
-            if isinstance(dp_check, SingleDatasetBaseCheck):
+            if not is_vision_check:
+                test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(test_data_dataframe,
+                                                                               model_version.features_columns,
+                                                                               top_feat)
+            else:
+                test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(test_data_dataframe,
+                                                                                     task_type)
+                # 1/0
+            if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 reduced = dp_check.run(test_ds, feature_importance=feat_imp,
                                        y_pred_train=test_pred, y_proba_train=test_proba,
                                        with_display=False).reduce_output()
-            elif isinstance(dp_check, TrainTestBaseCheck):
+            elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
                 reduced = dp_check.run(refrence_table_ds, test_ds, feature_importance=feat_imp,
                                        y_pred_train=refrence_table_pred, y_proba_train=refrence_table_proba,
                                        y_pred_test=test_pred, y_proba_test=test_proba,
+                                       with_display=False).reduce_output()
+            elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
+                reduced = dp_check.run(test_ds,
+                                       train_predictions=test_pred, train_properties=test_props,
+                                       with_display=False).reduce_output()
+            elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
+                reduced = dp_check.run(refrence_table_ds, test_ds,
+                                       train_predictions=refrence_table_pred, train_properties=refrence_table_props,
+                                       test_predictions=test_pred, test_properties=test_props,
                                        with_display=False).reduce_output()
             else:
                 raise ValueError('incompatible check type')

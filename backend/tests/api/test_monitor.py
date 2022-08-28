@@ -10,7 +10,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.conftest import add_classification_data, add_alert_rule
+from tests.conftest import add_alert_rule, add_classification_data
 
 
 def add_monitor(classification_model_check_id, client: TestClient, dashboard_id = None) -> int:
