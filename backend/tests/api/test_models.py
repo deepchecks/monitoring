@@ -9,9 +9,11 @@
 # ----------------------------------------------------------------------------
 import pytest
 import randomname
+import pendulum as pdl
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 
+from deepchecks_monitoring.models import ModelVersion
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from tests.conftest import add_alert, add_alert_rule, add_monitor
 
@@ -26,7 +28,7 @@ async def test_add_model(client: TestClient):
     assert response.status_code == 200
     resp_json = response.json()
     assert resp_json[0] == {"id": 1, "name": "44", "task_type": "classification", "description": None,
-                            "alerts_count": 0}
+                            "alerts_count": 0, "latest_time": None}
 
 
 @pytest.mark.asyncio
@@ -73,7 +75,25 @@ async def test_get_models(classification_model_check_id, regression_model_check_
     assert response.status_code == 200
     assert response.json() == [
         {"id": 1, "name": "classification model", "description": "test", "task_type": "classification",
-         "alerts_count": 1},
+         "alerts_count": 1, "latest_time": None},
         {"id": 2, "name": "regression model", "description": "test", "task_type": "regression",
-         "alerts_count": 3}
+         "alerts_count": 3, "latest_time": None}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_get_models_latest_time(classification_model_id, client: TestClient, async_session):
+    # Arrange
+    time = pdl.now()
+    async_session.add(ModelVersion(name="a", end_time=time.subtract(days=1), model_id=classification_model_id))
+    async_session.add(ModelVersion(name="b", end_time=time, model_id=classification_model_id))
+    async_session.add(ModelVersion(name="c", end_time=time.subtract(days=2), model_id=classification_model_id))
+    await async_session.commit()
+    # Act
+    response = client.get("/api/v1/models/")
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [
+        {"id": 1, "name": "classification model", "description": "test", "task_type": "classification",
+         "alerts_count": 0, "latest_time": time.int_timestamp},
     ]

@@ -69,6 +69,12 @@ class MonitorUpdateSchema(BaseModel):
     filter_key: t.Optional[str]
 
 
+class MonitorRunSchema(BaseModel):
+    """Schema defines the parameters for creating new monitor."""
+
+    end_time: t.Optional[str]
+
+
 @router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],
              summary="Create a new monitor.",
              description="Create a new monitor based on a check. This endpoint requires the "
@@ -121,9 +127,10 @@ async def delete_monitor(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.get("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])
+@router.post("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])
 async def run_monitor_lookback(
     monitor_id: int,
+    body: MonitorRunSchema,
     session: AsyncSession = AsyncSessionDep
 ):
     """Run a monitor for each time window by lookback.
@@ -132,6 +139,7 @@ async def run_monitor_lookback(
     ----------
     monitor_id : int
         ID of the monitor.
+    body
     session : AsyncSession, optional
         SQLAlchemy session.
 
@@ -142,8 +150,11 @@ async def run_monitor_lookback(
     """
     monitor = await fetch_or_404(session, Monitor, id=monitor_id)
 
+    if body.end_time:
+        end_time = pdl.parse(body.end_time)
+    else:
+        end_time: pdl.DateTime = pdl.now().add(minutes=30).set(minute=0, second=0, microsecond=0)
     # get the time window size
-    curr_time: pdl.DateTime = pdl.now().add(minutes=30).set(minute=0, second=0, microsecond=0)
     lookback_duration = pdl.duration(seconds=monitor.lookback)
     if lookback_duration < pdl.duration(days=2):
         window = pdl.duration(hours=1)
@@ -154,8 +165,8 @@ async def run_monitor_lookback(
 
     return await run_check_per_window_in_range(
         monitor.check_id,
-        curr_time - lookback_duration,
-        curr_time,
+        end_time - lookback_duration,
+        end_time,
         window,
         monitor.data_filters,
         session

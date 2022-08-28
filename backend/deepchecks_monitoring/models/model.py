@@ -43,5 +43,6 @@ class Model(Base):
     description = Column(String(200))
     task_type = Column(Enum(TaskType))
 
-    versions: Mapped[t.List["ModelVersion"]] = relationship("ModelVersion", back_populates="model")
+    versions: Mapped[t.List["ModelVersion"]] = relationship("ModelVersion", back_populates="model",
+                                                            order_by="desc(ModelVersion.end_time)")
     checks: Mapped[t.List["Check"]] = relationship("Check", back_populates="model")

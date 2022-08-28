@@ -68,6 +68,7 @@ class ModelsInfoSchema(ModelSchema):
     """Model ingestion record."""
 
     alerts_count: t.Optional[int]
+    latest_time: t.Optional[int]
 
 
 @router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model.",
@@ -75,7 +76,7 @@ class ModelsInfoSchema(ModelSchema):
 async def create_model(
     model: ModelCreationSchema,
     session: AsyncSession = AsyncSessionDep
-) -> ModelSchema:
+):
     """Create a new model.
 
     Parameters
@@ -85,10 +86,6 @@ async def create_model(
     session : AsyncSession
         SQLAlchemy session.
 
-    Returns
-    -------
-    ModelSchema
-        Created model.
     """
     model = Model(**model.dict(exclude_none=True))
     session.add(model)
@@ -204,15 +201,16 @@ async def get_models(
 
     Returns
     -------
-    List[ModelSchema]
+    List[ModelsInfoSchema]
         List of models.
     """
-    query = await session.execute(select(Model))
+    query = await session.execute(select(Model).options(selectinload(Model.versions).load_only(ModelVersion.end_time)))
     alerts_counts = await get_alerts_per_model(session)
     models = []
-    for res in query.scalars().all():
-        model = ModelsInfoSchema.from_orm(res)
+    for db_model in query.scalars().all():
+        model = ModelsInfoSchema.from_orm(db_model)
         model.alerts_count = alerts_counts.get(model.id, 0)
+        model.latest_time = int(db_model.versions[0].end_time.timestamp()) if db_model.versions else None
         models.append(model)
     return models
 

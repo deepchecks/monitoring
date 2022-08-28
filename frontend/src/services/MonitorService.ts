@@ -39,6 +39,6 @@ export default class MonitorService {
   static async runMonitor(
     monitorID: ID
   ): Promise<AxiosResponse<ChartResponse>> {
-    return $api(ApiBreakpoints.MONITOR_RUN(monitorID));
+    return $api.post(ApiBreakpoints.MONITOR_RUN(monitorID), {'end_time': null});
   }
 }

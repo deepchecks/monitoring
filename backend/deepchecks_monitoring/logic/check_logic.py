@@ -170,7 +170,7 @@ async def run_check_per_window_in_range(
     check_id: int,
     start_time: pdl.DateTime,
     end_time: pdl.DateTime,
-    window: pdl.DateTime,
+    window: pdl.Duration,
     monitor_filter: t.Optional[DataFilterList],
     session: AsyncSession
 ) -> t.Dict[str, t.Any]:

@@ -140,5 +140,5 @@ async def test_run_monitor(classification_model_check_id, classification_model_v
     monitor_id = add_monitor(classification_model_check_id, client)
     add_classification_data(classification_model_version_id, client)
     # Act
-    response = client.get(f"/api/v1/monitors/{monitor_id}/run")
+    response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={})
     assert response.status_code == 200
