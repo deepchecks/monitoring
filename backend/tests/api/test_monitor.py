@@ -10,7 +10,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.conftest import add_classification_data
+from tests.conftest import add_classification_data, add_alert_rule
 
 
 def add_monitor(classification_model_check_id, client: TestClient) -> int:
@@ -83,6 +83,7 @@ async def test_add_monitor_with_data_filter(classification_model_check_id, clien
 async def test_get_monitor(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
+    add_alert_rule(monitor_id, client)
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}")
     assert response.json() == {"id": 1, "name": "monitory", "dashboard_id": None, "lookback": 86400 * 7,
@@ -91,10 +92,18 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
                                                     "module_name": "deepchecks.tabular.checks",
                                                     "params": {"reduce": "mean"}},
                                          "id": 1, "model_id": 1, "name": "check"},
-                               "description": "", "filter_key": None}
+                               "description": "", "filter_key": None,
+                               "alert_rules": [{
+                                   "alert_severity": "low",
+                                   "condition": {"operator": "greater_than", "value": 100.0},
+                                   "id": 1,
+                                   "monitor_id": 1,
+                                   "name": "alerty",
+                                   "repeat_every": 86400}
+                               ]}
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_remove_monitor(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
@@ -103,7 +112,7 @@ async def test_remove_monitor(classification_model_check_id, client: TestClient)
     assert response.status_code == 200
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_update_monitor(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)

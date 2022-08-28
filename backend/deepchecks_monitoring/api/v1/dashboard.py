@@ -14,18 +14,17 @@ from fastapi import Response
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql import Select
 from starlette import status
 
 from deepchecks_monitoring.api.v1.monitor import MonitorSchema
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.models.check import Check
 from deepchecks_monitoring.models.dashboard import Dashboard
 from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import exists_or_404
 
-from ...config import Tags
 from .router import router
 
 
@@ -54,7 +53,9 @@ async def get_dashboard(
 ):
     """Get dashboard by if exists, if not then create it. Add top 5 unassigned monitors to the dashboard if empty."""
     # get the dashboard or create it
-    dashboard = (await session.execute(select(Dashboard).options(selectinload(Dashboard.monitors)))).scalars().first()
+    monitor_options = (joinedload(Monitor.check), selectinload(Monitor.alert_rules))
+    dashboard_options = joinedload(Dashboard.monitors).options(*monitor_options)
+    dashboard = (await session.execute(select(Dashboard).options(dashboard_options))).scalars().first()
     if dashboard is None:
         dashboard = Dashboard()
         session.add(dashboard)
@@ -64,13 +65,12 @@ async def get_dashboard(
         monitors = dashboard.monitors
 
     if len(monitors) == 0:
-        mon_select: Select = select(Monitor)
+        mon_select: Select = select(Monitor).options(*monitor_options)
         mon_select = mon_select.where(Monitor.dashboard_id.is_(None)).limit(5)
         monitors = (await session.execute(mon_select)).scalars().all()
         for monitor in monitors:
             await Monitor.update(session, monitor.id, {"dashboard_id": dashboard.id})
-    for monitor in monitors:
-        monitor.check = await fetch_or_404(session, Check, id=monitor.check_id)
+
     monitors_schem = [MonitorSchema.from_orm(monitor) for monitor in monitors]
     return DashboardSchema(id=dashboard.id, name=dashboard.name, monitors=monitors_schem)
 

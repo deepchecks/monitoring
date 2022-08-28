@@ -14,7 +14,9 @@ import pendulum as pdl
 from fastapi import Response, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
+from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
@@ -47,6 +49,7 @@ class MonitorSchema(BaseModel):
     description: t.Optional[str] = None
     data_filters: DataFilterList = None
     filter_key: t.Optional[str]
+    alert_rules: t.List[AlertRuleSchema]
 
     class Config:
         """Config for Monitor schema."""
@@ -88,8 +91,9 @@ async def get_monitor(
     session: AsyncSession = AsyncSessionDep
 ):
     """Get monitor by id."""
-    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
-    monitor.check = await fetch_or_404(session, Check, id=monitor.check_id)
+    options = (joinedload(Monitor.check), joinedload(Monitor.alert_rules))
+    query = await Monitor.filter_by(session, options=options, id=monitor_id)
+    monitor = query.scalar()
     return MonitorSchema.from_orm(monitor)
 
 
