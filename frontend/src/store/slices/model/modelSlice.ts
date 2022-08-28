@@ -55,7 +55,12 @@ export const getAllDataIngestion = createAsyncThunk(
   async (timeFilter: number, { rejectWithValue }) => {
     try {
       const response = await ModelService.getAllDataIntestion(timeFilter);
-      return response.data;
+      const keys = Object.keys(response.data)
+
+      return Object.fromEntries(Object.entries(response.data).map(([key, value]) => {
+        const newVal = value.map(item => ({ count: item.count, day: item.day*1000 }));
+        return [key, newVal]
+      }));
     } catch (err) {
       if (err instanceof Error) {
         return rejectWithValue(err.message);

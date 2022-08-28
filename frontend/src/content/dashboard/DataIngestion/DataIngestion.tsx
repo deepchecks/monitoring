@@ -17,9 +17,9 @@ import {
 } from "./DataIngestion.style";
 
 const times = [
-  { label: "Last day", value: 60 * 60 * 24 * 1000 },
-  { label: "Last 7 days", value: 60 * 60 * 24 * 7 * 1000 },
-  { label: "Last month", value: 60 * 60 * 24 * 31 * 1000 },
+  { label: "Last day", value: 60 * 60 * 24 },
+  { label: "Last 7 days", value: 60 * 60 * 24 * 7 },
+  { label: "Last month", value: 60 * 60 * 24 * 31 },
 ];
 
 const initTime = times[1].value;
@@ -44,7 +44,7 @@ export function DataIngestion() {
     <StyledFlexContent>
       <Box>
         <StyledFlexWrapper>
-          <StyledTypographyTitle>Data Ingest Status</StyledTypographyTitle>
+          <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
         </StyledFlexWrapper>
         <StyledDiagramWrapper>
           <DiagramLine data={dataIngestion} />
