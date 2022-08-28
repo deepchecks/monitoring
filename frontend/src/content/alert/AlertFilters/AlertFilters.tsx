@@ -1,54 +1,164 @@
-import { Button, MenuItem, Stack, TextField } from "@mui/material";
-import { useState } from "react";
+import {
+  Button,
+  MenuItem,
+  SelectChangeEvent,
+  Stack,
+  TextField,
+} from "@mui/material";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Sort } from "../../../assets/icon/icon";
 import { DatePicker } from "../../../components/DatePicker/DatePicker";
 import { SelectPrimary } from "../../../components/SelectPrimary/SelectPrimary";
-import { useSelector } from "../../../hook/useSelector";
-import { useTypedSelector } from "../../../store/hooks";
+import { useTypedDispatch, useTypedSelector } from "../../../store/hooks";
+import {
+  alertSelector,
+  getAlertRules,
+} from "../../../store/slices/alert/alertSlice";
 import { modelSelector } from "../../../store/slices/model/modelSlice";
+import { AlertRulesParams, Criticality, SortBy } from "../../../types/alert";
 import {
   StyledDateWrapper,
   StyledDivider,
   StyledMainWrapper,
 } from "./AlertFilters.style";
 
-const severityList = ["All", "Critical", "High", "Mid", "Low"];
+const severityList = [
+  { label: "All", value: "All" },
+  { label: "Critical", value: "critical" },
+  { label: "High", value: "high" },
+  { label: "Mid", value: "mid" },
+  { label: "Low", value: "low" },
+];
 
 export function AlertFilters() {
-  const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(new Date());
-  const [model, handleModelChange] = useSelector("All");
-  const [severity, handleSeverityChange] = useSelector("All");
+  const location = useLocation();
+  const state = location.state as { modelId: number } | null;
+  const [startDate, setStartDate] = useState<Date | null>(
+    new Date(Date.now() - 60 * 60 * 24 * 7 * 1000)
+  );
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now()));
+  const [sortedBy, setSortedBy] = useState<SortBy | null>(null);
+  const [params, setParams] = useState<AlertRulesParams>(() => {
+    const options: AlertRulesParams = {};
+    if (state) {
+      options.models = state.modelId;
+    }
+    return {
+      start: startDate?.toISOString(),
+      end: endDate?.toISOString(),
+      ...options,
+    };
+  });
 
+  const dispatch = useTypedDispatch();
+
+  const [model, setModel] = useState<number>(state ? state.modelId : -1);
+  const [severity, setSeverity] = useState<Criticality | "All">("All");
   const { allModels } = useTypedSelector(modelSelector);
+  const { loading } = useTypedSelector(alertSelector);
 
-  const handleStartDateChange = (newValue: Date | null) => {
-    setStartDate(newValue);
+  const handleModelChange = (event: SelectChangeEvent<number | unknown>) => {
+    const currentModel = event.target.value as number;
+    setModel(currentModel);
+    if (currentModel === -1 && params.models) {
+      setParams((prevParams) => {
+        const currentParams = { ...prevParams };
+        delete currentParams.models;
+        return currentParams;
+      });
+      return;
+    }
+    setParams((prevParams) => ({ ...prevParams, models: currentModel }));
   };
 
-  const handleEndDateChange = (newValue: Date | null) => {
-    setEndDate(newValue);
+  const handleSeverityChange = (event: SelectChangeEvent<unknown>) => {
+    const currentSeverity = event.target.value as Criticality | "All";
+    setSeverity(currentSeverity);
+    if (currentSeverity === "All" && params.severity) {
+      setParams((prevParams) => {
+        const currentParams = { ...prevParams };
+        delete currentParams.severity;
+        return currentParams;
+      });
+      return;
+    }
+    setParams((prevParams) => ({
+      ...prevParams,
+      severity: currentSeverity as Criticality,
+    }));
   };
+
+  const handleStartDateChange = (currentStartDate: Date | null) => {
+    if (currentStartDate && startDate && currentStartDate < startDate) {
+      setStartDate(currentStartDate);
+      setParams((prevParams) => ({
+        ...prevParams,
+        start: currentStartDate.toISOString(),
+      }));
+    }
+  };
+
+  const handleEndDateChange = (currentEndDate: Date | null) => {
+    if (currentEndDate && startDate && currentEndDate > startDate) {
+      setEndDate(currentEndDate);
+      setParams((prevParams) => ({
+        ...prevParams,
+        end: currentEndDate.toISOString(),
+      }));
+    }
+  };
+
+  const clickSort = () => {
+    let sort: SortBy | null = null;
+    setSortedBy((prevSortedBy) => {
+      if (prevSortedBy) {
+        return sort;
+      }
+      sort = "severity:asc";
+      return sort;
+    });
+
+    if (sort) {
+      setParams((prevParams) => ({
+        ...prevParams,
+        sortby: sort as SortBy,
+      }));
+      return;
+    }
+
+    setParams((prevParams) => {
+      const currentParams = { ...prevParams };
+      delete currentParams.sortby;
+      return currentParams;
+    });
+  };
+
+  useEffect(() => {
+    dispatch(getAlertRules(params));
+  }, [model, severity, startDate, endDate, sortedBy]);
 
   return (
     <StyledMainWrapper>
       <Stack direction="row">
         <StyledDateWrapper>
           <DatePicker
-            inputFormat="dd MMM yyyy"
+            inputFormat="DD MMM YYYY"
             onChange={handleStartDateChange}
             value={startDate}
             label="Start Date"
             disableMaskedInput
+            disabled={loading}
             renderInput={(params) => <TextField {...params} size="small" />}
           />
           -
           <DatePicker
-            inputFormat="dd MMM yyyy"
+            inputFormat="DD MMM YYYY"
             onChange={handleEndDateChange}
             value={endDate}
             label="End Date"
             disableMaskedInput
+            disabled={loading}
             renderInput={(params) => <TextField {...params} size="small" />}
           />
         </StyledDateWrapper>
@@ -59,8 +169,9 @@ export function AlertFilters() {
             onChange={handleModelChange}
             size="small"
             value={model}
+            disabled={loading}
           >
-            <MenuItem value="All">All</MenuItem>
+            <MenuItem value={-1}>All</MenuItem>
             {allModels.map(({ id, name }) => (
               <MenuItem value={id} key={id}>
                 {name}
@@ -72,16 +183,22 @@ export function AlertFilters() {
             onChange={handleSeverityChange}
             size="small"
             value={severity}
+            disabled={loading}
           >
-            {severityList.map((item) => (
-              <MenuItem value={item} key={item}>
-                {item}
+            {severityList.map(({ label, value }) => (
+              <MenuItem value={value} key={label}>
+                {label}
               </MenuItem>
             ))}
           </SelectPrimary>
         </Stack>
       </Stack>
-      <Button variant="text" startIcon={<Sort />}>
+      <Button
+        variant="text"
+        startIcon={<Sort />}
+        onClick={clickSort}
+        disabled={loading}
+      >
         Sort
       </Button>
     </StyledMainWrapper>

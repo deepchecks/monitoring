@@ -6,7 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 import AlertService from "../../../services/AlertService";
 import { ID } from "../../../types";
-import { AlertRule } from "../../../types/alert";
+import { AlertRule, AlertRulesParams } from "../../../types/alert";
 import { setLoading } from "../../helpers";
 import { RootState } from "../../store";
 import { initCount } from "./alertHelpers";
@@ -23,9 +23,9 @@ export const initialState: InitialStateType = {
 
 export const getAlertRules = createAsyncThunk(
   "check/getAlertRules",
-  async (_, { rejectWithValue }) => {
+  async (params: AlertRulesParams, { rejectWithValue }) => {
     try {
-      const response = await AlertService.getAlertRules();
+      const response = await AlertService.getAlertRules(params);
       return response.data;
     } catch (err) {
       if (err instanceof Error) {

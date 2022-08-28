@@ -1,7 +1,6 @@
 import { Box, Button, styled, Typography } from "@mui/material";
 
 export const StyledFlexContent = styled(Box)(() => ({
-  maxWidth: "512px",
   width: "100%",
   minWidth: "428px",
   minHeight: "446px",

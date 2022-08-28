@@ -10,7 +10,7 @@ import { memo, useState } from "react";
 import { MenuVertical } from "../../../assets/icon/icon";
 import DiagramLine from "../../../components/DiagramLine/DiagramLine";
 import { Submenu } from "../../../components/Submenu/Submenu";
-import { ID } from "../../../types";
+import { GraphData, ID } from "../../../types";
 import {
   StyledArrow,
   StyledDiagramWrapper,
@@ -23,7 +23,7 @@ import {
 } from "./GraphicsSection.style";
 
 interface GraphicsSectionProps {
-  data: ChartData<"line">;
+  data: ChartData<"line", GraphData>;
   monitorId: ID;
   onOpen: (id: ID) => void;
   title: string;

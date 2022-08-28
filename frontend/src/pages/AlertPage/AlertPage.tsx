@@ -9,7 +9,6 @@ import { AlertRuleItem } from "../../content/alert/AlertRuleItem/AlertRuleItem";
 import { useTypedDispatch, useTypedSelector } from "../../store/hooks";
 import {
   alertSelector,
-  getAlertRules,
   getAlertsByAlertRuleId,
   getAlertsCount,
   resolveAllAlerts,
@@ -28,57 +27,6 @@ import {
   StyledList,
   StyledListItem,
 } from "./AlertPage.style";
-
-// const mockAlertRules: AlertRule[] = [
-//   {
-//     id: 0,
-//     name: "string",
-//     monitor_id: 0,
-//     repeat_every: 0,
-//     condition: {
-//       operator: "greater_than_equals",
-//       value: 0,
-//     },
-//     alerts_count: 0,
-//     alert_severity: "critical",
-//   },
-//   {
-//     id: 1,
-//     name: "string",
-//     monitor_id: 0,
-//     repeat_every: 0,
-//     condition: {
-//       operator: "greater_than_equals",
-//       value: 0,
-//     },
-//     alerts_count: 0,
-//     alert_severity: "high",
-//   },
-//   {
-//     id: 3,
-//     name: "string",
-//     monitor_id: 0,
-//     repeat_every: 0,
-//     condition: {
-//       operator: "greater_than_equals",
-//       value: 0,
-//     },
-//     alerts_count: 0,
-//     alert_severity: "mid",
-//   },
-//   {
-//     id: 4,
-//     name: "string",
-//     monitor_id: 0,
-//     repeat_every: 0,
-//     condition: {
-//       operator: "greater_than_equals",
-//       value: 0,
-//     },
-//     alerts_count: 0,
-//     alert_severity: "low",
-//   },
-// ];
 
 const snackbarPosition = {
   vertical: "bottom",
@@ -137,8 +85,6 @@ export default function AlertPage() {
     if (count) {
       dispatch(getAlertsCount());
     }
-
-    dispatch(getAlertRules());
   }, []);
 
   return (

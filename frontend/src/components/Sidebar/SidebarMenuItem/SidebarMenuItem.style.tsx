@@ -59,20 +59,20 @@ interface StyledArrowWrapperProps {
   hover: boolean;
 }
 
-export const StyledArrowWrapper = styled(Box)<StyledArrowWrapperProps>(
-  ({ hover, theme }) => ({
-    width: 16,
-    height: 16,
-    borderRadius: "50%",
-    marginRight: "30px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: hover
-      ? theme.palette.primary.dark
-      : theme.palette.primary.contrastText,
-    "& svg": {
-      fill: hover ? colors.primary.violet[600] : theme.palette.common.black,
-    },
-  })
-);
+export const StyledArrowWrapper = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "hover",
+})<StyledArrowWrapperProps>(({ hover, theme }) => ({
+  width: 16,
+  height: 16,
+  borderRadius: "50%",
+  marginRight: "30px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: hover
+    ? theme.palette.primary.dark
+    : theme.palette.primary.contrastText,
+  "& svg": {
+    fill: hover ? colors.primary.violet[600] : theme.palette.common.black,
+  },
+}));

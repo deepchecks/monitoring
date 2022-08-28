@@ -1,11 +1,26 @@
 import { AxiosResponse } from "axios";
 import { $api, ApiBreakpoints } from "../helpers/api";
 import { ID } from "../types";
-import { Alert, AlertRule, AlertsCount } from "../types/alert";
+import {
+  Alert,
+  AlertRule,
+  AlertRulesParams,
+  AlertsCount,
+} from "../types/alert";
 
 export default class AlertService {
-  static async getAlertRules(): Promise<AxiosResponse<AlertRule[]>> {
-    return $api(ApiBreakpoints.ALERT_RULES);
+  static async getAlertRules(
+    options: AlertRulesParams = {} as AlertRulesParams
+  ): Promise<AxiosResponse<AlertRule[]>> {
+    const params = new URLSearchParams();
+
+    if (Object.keys(options).length) {
+      Object.entries(options).forEach(([key, value]) => {
+        params.append(key, value);
+      });
+    }
+
+    return $api(ApiBreakpoints.ALERT_RULES, { params });
   }
 
   static async getAlertsByAlertRuleId(

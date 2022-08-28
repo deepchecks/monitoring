@@ -7,7 +7,7 @@ import axios from "axios";
 import { ChartData } from "chart.js";
 import { parseDataForChart } from "../../../helpers/parseDataForChart";
 import CheckService from "../../../services/CheckService";
-import { ChartResponse, ID } from "../../../types";
+import { ChartResponse, GraphData, ID } from "../../../types";
 import { Monitor } from "../../../types/monitor";
 import { RootState } from "../../store";
 import {
@@ -176,7 +176,7 @@ export const checkSelector = createDraftSafeSelector(
 
 export const checkGraphSelector = createDraftSafeSelector(
   checkState,
-  (state): ChartData<"line"> => {
+  (state): ChartData<"line", GraphData> => {
     if (!Object.keys(state.graph).length) {
       return {
         datasets: [],

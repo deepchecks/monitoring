@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Arrow } from "../../../assets/icon/icon";
-import { SidebarInfo } from "../../../helpers/helper";
+import { SidebarInfo } from "../../../helpers/sideBarInfo";
 import {
   StyledArrowWrapper,
   StyledLeftColumn,

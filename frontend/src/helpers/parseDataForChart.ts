@@ -1,9 +1,11 @@
 import { ChartData } from "chart.js";
 import dayjs from "dayjs";
-import { ChartResponse } from "../types";
-import { setGraphColor } from "./lineDataChangeFunction";
+import { ChartResponse, GraphData } from "../types";
+import { setGraphOptions } from "./setGraphOptions";
 
-export const parseDataForChart = (graph: ChartResponse): ChartData<"line"> => ({
+export const parseDataForChart = (
+  graph: ChartResponse
+): ChartData<"line", GraphData> => ({
   datasets: Object.keys(graph.output)
     .map((key) => {
       let counter = 0;
@@ -11,7 +13,7 @@ export const parseDataForChart = (graph: ChartResponse): ChartData<"line"> => ({
         return [];
       }
 
-      const lines: { [key: string]: number[] } = {};
+      const lines: { [key: string]: (number | null)[] } = {};
 
       if (
         graph.output[key][0] &&
@@ -26,7 +28,7 @@ export const parseDataForChart = (graph: ChartResponse): ChartData<"line"> => ({
             const [key] = Object.keys(item);
             return item[key];
           }),
-          ...setGraphColor(key, counter++),
+          ...setGraphOptions(key, counter++),
         };
       }
 
@@ -44,7 +46,7 @@ export const parseDataForChart = (graph: ChartResponse): ChartData<"line"> => ({
 
       return Object.keys(lines).map((lineKey) => ({
         data: lines[lineKey],
-        ...setGraphColor(lineKey, counter++),
+        ...setGraphOptions(lineKey, counter++),
       }));
     })
     .flat(2),

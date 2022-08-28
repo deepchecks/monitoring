@@ -7,7 +7,7 @@ export const API_URL =
 export const ApiBreakpoints = {
   ALERT: (alertId: ID) => `/alerts/${alertId}`,
   ALERTS: "/alerts/",
-  ALERT_RULES: "/alert-rules/",
+  ALERT_RULES: "/alert-rules",
   ALERT_RULES_ALERTS: (alertRuleId: ID) => `/alert-rules/${alertRuleId}/alerts`,
   ALERT_RULES_RESOLVE_ALL_ALERTS: (alertRuleId: ID) =>
     `/alert-rules/${alertRuleId}/resolve-all`,

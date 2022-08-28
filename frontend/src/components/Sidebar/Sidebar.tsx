@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 
 import profileImg from "../../assets/icon/profileImg.jpg";
-import { sideBarInfo, SidebarInfo } from "../../helpers/helper";
+import { sideBarInfo, SidebarInfo } from "../../helpers/sideBarInfo";
 import useWindowResize from "../../hook/windowsize";
 import DeepCheckLogo from "../Logo/DeepCheckLogo";
 import { StyledBoxWrapper } from "./Sidebar.style";

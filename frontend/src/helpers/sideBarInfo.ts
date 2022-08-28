@@ -1,4 +1,3 @@
-// import { Alarm, Analysis, Caonfiguration, Dashboard } from "../assets/icon/icon"
 import { FC } from "react";
 import {
   Alarm,

@@ -4,9 +4,10 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import axios from "axios";
+import { ChartData } from "chart.js";
 import { parseDataForChart } from "../../../helpers/parseDataForChart";
 import MonitorService from "../../../services/MonitorService";
-import { ChartResponse, ID } from "../../../types";
+import { ChartResponse, GraphData, ID } from "../../../types";
 import { Monitor } from "../../../types/monitor";
 import { RootState } from "../../store";
 import {
@@ -219,7 +220,7 @@ export const monitorChartsSelector = createDraftSafeSelector(
 
 export const monitorGraphSelector = createDraftSafeSelector(
   monitorState,
-  (state) => {
+  (state): ChartData<"line", GraphData> => {
     if (!Object.keys(state.graph).length) {
       return {
         datasets: [],

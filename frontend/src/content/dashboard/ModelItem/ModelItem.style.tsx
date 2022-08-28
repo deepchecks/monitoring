@@ -1,21 +1,17 @@
-import {
-  alpha,
-  Box,
-  ListItem,
-  ListItemProps,
-  styled,
-  Typography,
-} from "@mui/material";
+import { alpha, Box, ListItem, styled, Typography } from "@mui/material";
+import { Link } from "react-router-dom";
 
 interface StyledContainerProps {
   isBorder?: boolean;
 }
 
-export const StyledContainer = styled(
-  (
-    { isBorder, ...props }: ListItemProps & StyledContainerProps // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => <ListItem {...props} />
-)<StyledContainerProps>(({ isBorder = false, theme }) => {
+export const StyledContainer = styled(ListItem)({
+  padding: 0,
+});
+
+export const StyledLink = styled(Link, {
+  shouldForwardProp: (prop) => prop !== "isBorder",
+})<StyledContainerProps>(({ isBorder = false, theme }) => {
   const style = isBorder
     ? {
         border: `1px dashed ${theme.palette.text.disabled}`,
@@ -23,8 +19,11 @@ export const StyledContainer = styled(
       }
     : {};
   return {
+    textDecoration: "none",
     padding: "21px 30px",
     cursor: "pointer",
+    color: "inherit",
+    width: "100%",
     ":hover": {
       backgroundColor: theme.palette.grey[100],
     },

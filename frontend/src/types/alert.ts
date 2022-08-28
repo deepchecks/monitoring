@@ -2,6 +2,12 @@ import { ID } from ".";
 
 export type Criticality = "low" | "mid" | "high" | "critical";
 
+export type SortBy =
+  | "severity:asc"
+  | "severity:sesc"
+  | "alert-window: asc"
+  | "alert-window:desc";
+
 export interface Alert {
   id: ID;
   alert_rule_id: ID;
@@ -25,6 +31,14 @@ export interface AlertRule {
   };
   alert_severity: Criticality;
   alerts_count: 0;
+}
+
+export interface AlertRulesParams {
+  start?: Date | string;
+  end?: Date | string;
+  models?: number;
+  severity?: Criticality;
+  sortby?: SortBy;
 }
 
 export type AlertsCount = {

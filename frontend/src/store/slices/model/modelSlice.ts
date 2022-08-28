@@ -3,9 +3,9 @@ import {
   createDraftSafeSelector,
   createSlice,
 } from "@reduxjs/toolkit";
-import { ChartData } from "chart.js";
+import { ChartData, ChartDataset } from "chart.js";
 import dayjs from "dayjs";
-import { setGraphColor } from "../../../helpers/lineDataChangeFunction";
+import { setGraphOptions } from "../../../helpers/setGraphOptions";
 import ModelService from "../../../services/ModelSecrive";
 import { ID } from "../../../types";
 import { AllDataIngestion, Model, ModelColumns } from "../../../types/model";
@@ -117,23 +117,36 @@ export const modelSelector = createDraftSafeSelector(
 
 export const modelGraphSelector = createDraftSafeSelector(
   modelState,
-  (state): ChartData<"line", any> => {
+  (state): ChartData<"line", { x: string; y: number }[]> => {
     if (!Object.keys(state.allDataIngestion).length) {
       return {
         datasets: [],
       };
     }
 
-    return {
-      datasets: Object.entries(state.allDataIngestion).map(
-        ([key, item], index) => ({
-          data: item.map(({ count, day }) => ({
-            x: dayjs(new Date(day)).format("MMM. DD (HH:mm:ss)"),
+    const datasets: ChartDataset<"line", { x: string; y: number }[]>[] = [];
+    const labels: (string | number)[] = [];
+
+    Object.entries(state.allDataIngestion).forEach(([key, item], index) => {
+      const itemSorted = [...item].sort((a, b) => a.day - b.day);
+
+      datasets.push({
+        data: itemSorted.map(({ count, day }) => {
+          labels.push(day);
+          return {
+            x: dayjs(day).format("MMM. DD (HH:mm:ss)"),
             y: count,
-          })),
-          ...setGraphColor(key, index),
-        })
-      ),
+          };
+        }),
+        ...setGraphOptions(key, index),
+      });
+    });
+
+    return {
+      datasets,
+      labels: labels
+        .sort((a, b) => (a as number) - (b as number))
+        .map((day) => dayjs(day).format("MMM. DD (HH:mm:ss)")),
     };
   }
 );

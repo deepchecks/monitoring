@@ -1,10 +1,20 @@
 import { alpha, Box, useTheme } from "@mui/material";
-import { Chart, ChartArea, ChartData, registerables } from "chart.js";
+import {
+  Chart,
+  ChartArea,
+  ChartData,
+  ChartEvent,
+  registerables,
+} from "chart.js";
+import "chartjs-adapter-dayjs-3";
+import zoomPlugin from "chartjs-plugin-zoom";
 import { memo, useRef } from "react";
 import { Line } from "react-chartjs-2";
 import { colors } from "../../helpers/theme/colors";
+import { GraphData } from "../../types";
+import { addSpace, drawCircle, setThreshold } from "./helpers";
 
-Chart.register(...registerables);
+Chart.register(...registerables, zoomPlugin);
 
 function createGradient(
   ctx: CanvasRenderingContext2D,
@@ -19,76 +29,14 @@ function createGradient(
 }
 
 export interface DiagramLineProps {
-  data: ChartData<"line">;
+  data: ChartData<"line", GraphData>;
   threshold?: number;
 }
 
-const setThreshold = (threshold: number) => ({
-  id: "setThreshold",
-  beforeDatasetsDraw(chart: Chart<"line", number[], string>) {
-    const {
-      ctx,
-      chartArea: { left, right },
-      scales: { y },
-    } = chart;
-
-    if (!y) return;
-    const yOffset = y.getPixelForValue(threshold);
-
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6, 6]);
-    ctx.moveTo(left, yOffset);
-    ctx.lineTo(right, yOffset);
-    ctx.stroke();
-    ctx.restore();
-    ctx.setLineDash([6, 0]);
-    ctx.save();
-
-    const angle = Math.PI / 180;
-    const text = "critical";
-    ctx.translate(0, 0);
-    ctx.font = "12px Roboto";
-    ctx.fillStyle = "red";
-    ctx.direction = "inherit";
-    ctx.textAlign = "center";
-    ctx.rotate(270 * angle);
-    ctx.fillText(text, -yOffset, right + 10);
-    ctx.restore();
-  },
-});
-
-const columnSelection = {
-  id: "columnSelection",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  beforeDatasetsDraw(chart: any) {
-    if (!chart.tooltip) return;
-    const {
-      ctx,
-      chartArea: { bottom, top },
-      tooltip,
-    } = chart;
-    // eslint-disable-next-line no-underscore-dangle
-    const { _active: active } = tooltip;
-
-    if (active[0]) {
-      ctx.beginPath();
-      // eslint-disable-next-line prefer-destructuring
-      ctx.strokeStyle = colors.primary.violet[400];
-      ctx.lineWidth = 4;
-      ctx.moveTo(active[0].element.x, top);
-      ctx.lineTo(active[0].element.x, bottom);
-      ctx.stroke();
-      ctx.restore();
-    }
-  },
-};
-
 function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
   const chartRef = useRef<Chart<"line", number[], string>>();
+  const range = { min: 0, max: 0 };
   const theme = useTheme();
-
   const getNewData = () => {
     const char = chartRef.current;
 
@@ -98,15 +46,37 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
 
     return {
       ...data,
-      datasets: data.datasets.map((el) => ({
-        ...el,
-        backgroundColor: createGradient(
-          char.ctx,
-          char.chartArea,
-          alpha(el.borderColor as string, 0),
-          alpha(el.borderColor as string, 0.1)
-        ),
-      })),
+      datasets: data.datasets.map((el) => {
+        el.data.forEach((item) => {
+          if (typeof item === "number") {
+            if (item < range.min) {
+              range.min = item;
+            }
+
+            if (item > range.max) {
+              range.max = item;
+            }
+            return;
+          }
+          if (item && typeof item === "object") {
+            if (item.y < range.min) {
+              range.min = item.y;
+            }
+            if (item.y > range.max) {
+              range.max = item.y;
+            }
+          }
+        });
+        return {
+          ...el,
+          backgroundColor: createGradient(
+            char.ctx,
+            char.chartArea,
+            alpha(el.borderColor as string, 0),
+            alpha(el.borderColor as string, 0.1)
+          ),
+        };
+      }),
     };
   };
 
@@ -127,15 +97,12 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               radius: 0,
               hoverRadius: 6,
               hitRadius: 10,
-              hoverBorderWidth: 4,
+              hoverBorderWidth: 3,
             },
             line: {
               tension: 0.4,
               fill: true,
             },
-          },
-          interaction: {
-            mode: "index",
           },
           plugins: {
             legend: {
@@ -172,11 +139,43 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               },
             },
             tooltip: {
+              backgroundColor: colors.neutral.blue,
+              padding: {
+                bottom: 4,
+                left: 16,
+                right: 16,
+                top: 4,
+              },
+              boxPadding: 5,
               callbacks: {
                 labelColor: (context) => ({
                   backgroundColor: context.dataset?.borderColor as string,
                   borderColor: context.dataset?.borderColor as string,
                 }),
+                title: (context) => context[0].formattedValue,
+                label: (context) => `${context.label} | Model Version 1.2`,
+              },
+            },
+            zoom: {
+              limits: {
+                y: {
+                  min: range.min - addSpace(range.min),
+                  max: range.max + addSpace(range.max),
+                  minRange: (range.max - range.min) / 2,
+                },
+              },
+              pan: {
+                enabled: true,
+                mode: "xy",
+              },
+              zoom: {
+                wheel: {
+                  enabled: false,
+                },
+                pinch: {
+                  enabled: false,
+                },
+                mode: "xy",
               },
             },
           },
@@ -185,13 +184,24 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               grid: {
                 display: false,
               },
+              max: 15,
             },
+            y: {
+              min: range.min - addSpace(range.min),
+              max: range.max + addSpace(range.max),
+            },
+          },
+          onClick(event: ChartEvent & { chart: any }) {
+            const { chart } = event;
+            chart.options.plugins.zoom.zoom.wheel.enabled =
+              !chart.options.plugins.zoom.zoom.wheel.enabled;
+            chart.options.plugins.zoom.zoom.pinch.enabled =
+              !chart.options.plugins.zoom.zoom.pinch.enabled;
+            chart.update();
           },
         }}
         plugins={
-          threshold
-            ? [setThreshold(threshold), columnSelection]
-            : [columnSelection]
+          threshold ? [setThreshold(threshold), drawCircle] : [drawCircle]
         }
       />
     </Box>
