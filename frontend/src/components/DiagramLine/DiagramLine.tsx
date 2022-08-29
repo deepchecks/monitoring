@@ -31,9 +31,10 @@ function createGradient(
 export interface DiagramLineProps {
   data: ChartData<"line", GraphData>;
   threshold?: number;
+  minTimeUnit?: any;
 }
 
-function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
+function DiagramLine({ data, threshold = 0, minTimeUnit="day" }: DiagramLineProps) {
   const chartRef = useRef<Chart<"line", number[], string>>();
   const range = { min: 0, max: 0 };
   const theme = useTheme();
@@ -170,7 +171,7 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               },
               zoom: {
                 wheel: {
-                  enabled: true,
+                  enabled: false,
                 },
               //   pinch: {
               //     enabled: false,
@@ -184,7 +185,11 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               grid: {
                 display: false,
               },
-              max: 15,
+              // max: 15,
+              type: 'timeseries',
+              time: {
+                minUnit: minTimeUnit
+              }
             },
             y: {
               min: range.min,

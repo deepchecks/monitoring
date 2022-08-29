@@ -58,7 +58,7 @@ export default function DashboardPage() {
             <DataIngestion />
           </Grid>
           {charts.map((props, index) => (
-            <Grid item xs={index > 2 ? 12 : 4} key={index}>
+            <Grid item xs={4} key={index}>
               <GraphicsSection
                 data={props}
                 monitorId={dashboards.monitors[index]?.id || 1}
