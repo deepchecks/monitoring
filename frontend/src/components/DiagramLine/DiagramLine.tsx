@@ -159,7 +159,7 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
             zoom: {
               limits: {
                 y: {
-                  min: range.min - addSpace(range.min),
+                  min: range.min,
                   max: range.max + addSpace(range.max),
                   minRange: (range.max - range.min) / 2,
                 },
@@ -170,11 +170,11 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               },
               zoom: {
                 wheel: {
-                  enabled: false,
+                  enabled: true,
                 },
-                pinch: {
-                  enabled: false,
-                },
+              //   pinch: {
+              //     enabled: false,
+              //   },
                 mode: "xy",
               },
             },
@@ -187,18 +187,18 @@ function DiagramLine({ data, threshold = 0 }: DiagramLineProps) {
               max: 15,
             },
             y: {
-              min: range.min - addSpace(range.min),
-              max: range.max + addSpace(range.max),
+              min: range.min,
+              max: range.max + (range.max - range.min)*0.3,
             },
           },
-          onClick(event: ChartEvent & { chart: any }) {
-            const { chart } = event;
-            chart.options.plugins.zoom.zoom.wheel.enabled =
-              !chart.options.plugins.zoom.zoom.wheel.enabled;
-            chart.options.plugins.zoom.zoom.pinch.enabled =
-              !chart.options.plugins.zoom.zoom.pinch.enabled;
-            chart.update();
-          },
+          // onClick(event: ChartEvent & { chart: any }) {
+          //   const { chart } = event;
+          //   chart.options.plugins.zoom.zoom.wheel.enabled =
+          //     !chart.options.plugins.zoom.zoom.wheel.enabled;
+          //   chart.options.plugins.zoom.zoom.pinch.enabled =
+          //     !chart.options.plugins.zoom.zoom.pinch.enabled;
+          //   chart.update();
+          // },
         }}
         plugins={
           threshold ? [setThreshold(threshold), drawCircle] : [drawCircle]

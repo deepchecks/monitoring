@@ -113,8 +113,14 @@ export function Header({ onClose }: HeaderProps) {
           end_time: alert.end_time,
           filter: monitor.data_filter,
         },
-      })
-    );
+      })).then((response) => {
+        const suiteOutput = response.payload as string;
+        const winUrl = URL.createObjectURL(
+          new Blob([suiteOutput], { type: "text/html" })
+        );
+      
+        window.open(winUrl);
+      });
   };
 
   const handleModelVersionIdChange = (event: SelectChangeEvent<unknown>) => {
