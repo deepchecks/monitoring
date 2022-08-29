@@ -35,7 +35,7 @@ export function AlertFilters() {
   const location = useLocation();
   const state = location.state as { modelId: number } | null;
   const [startDate, setStartDate] = useState<Date | null>(
-    new Date(Date.now() - 60 * 60 * 24 * 7 * 1000)
+    new Date(Date.now() - 60 * 60 * 24 * 365 * 1000)
   );
   const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now()));
   const [sortedBy, setSortedBy] = useState<SortBy | null>(null);
