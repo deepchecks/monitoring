@@ -11,6 +11,7 @@
 """Module containing deepchecks monitoring client."""
 import enum
 import json
+import warnings
 from collections import defaultdict
 from datetime import datetime
 from importlib.metadata import version
@@ -184,9 +185,9 @@ class DeepchecksModelVersionClient:
         }
 
         if prediction_value:
-            sample[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = prediction_value
+            sample[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = un_numpy(prediction_value)
         if prediction_label:
-            sample[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = prediction_label
+            sample[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = str(prediction_label)
 
         validate(instance=sample, schema=self.schema)
 
@@ -304,16 +305,19 @@ class DeepchecksModelVersionClient:
         prediction_value: np.ndarray
         prediction_label: np.ndarray
         """
-        if len(dataset) > 100_000:
-            raise ValueError('Maximum size allowed for reference data is 100,000')
-
         data = dataset.features_columns.copy()
         if dataset.label_name:
-            data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = dataset.label_col
+            data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = dataset.label_col.apply(str)
         if prediction_value is not None:
-            data[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = prediction_value
+            if isinstance(prediction_value, pd.DataFrame):
+                prediction_value = np.asarray(prediction_value)
+            data[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = un_numpy(prediction_value)
         if prediction_label is not None:
-            data[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = prediction_label
+            data[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = [str(x) for x in prediction_label]
+
+        if len(dataset) > 100_000:
+            data = data.sample(100000)
+            warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
 
         for (_, row) in data.iterrows():
             item = row.to_dict()
@@ -664,9 +668,9 @@ class DeepchecksClient:
 
 
 def maybe_raise(
-    response: Response,
-    expected: Union[int, Tuple[int, int]] = (200, 299),
-    msg: Optional[str] = None
+        response: Response,
+        expected: Union[int, Tuple[int, int]] = (200, 299),
+        msg: Optional[str] = None
 ) -> Response:
     """Verify response status and raise an HTTPError if got unexpected status code.
 
