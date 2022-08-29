@@ -21,7 +21,7 @@ from deepchecks.tabular import Dataset
 from deepchecks.tabular import base_checks as tabular_base_checks
 from deepchecks.vision import VisionData
 from deepchecks.vision import base_checks as vision_base_checks
-from sqlalchemy import Table
+from sqlalchemy import VARCHAR, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -60,12 +60,21 @@ def create_model_version_select_object(model_version: ModelVersion, mon_table: T
 
 
 def filter_select_object_by_window(select_obj: Select, mon_table: Table,
-                                   start_time: pdl.DateTime, end_time: pdl.DateTime, n_samples: int = 10_000) -> Select:
+                                   start_time: pdl.DateTime, end_time: pdl.DateTime) -> Select:
     """Filter select object by window."""
     filtered_select_obj = select_obj
     return filtered_select_obj.where(mon_table.c[SAMPLE_TS_COL] < end_time,
-                                     mon_table.c[SAMPLE_TS_COL] >= start_time) \
-        .order_by(func.md5(mon_table.c[SAMPLE_ID_COL])).limit(n_samples)
+                                     mon_table.c[SAMPLE_TS_COL] >= start_time)
+
+
+def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000) -> Select:
+    """Sample randomly on a select object by id/row number md5."""
+    sampled_select_obj = select_obj
+    if SAMPLE_ID_COL in mon_table.c:
+        order_func = func.md5(mon_table.c[SAMPLE_ID_COL])
+    else:
+        order_func = func.md5(func.cast(func.row_number().over(), VARCHAR))
+    return sampled_select_obj.order_by(order_func).limit(n_samples)
 
 
 def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: t.Dict, top_feat: t.List[str]) -> \
@@ -143,28 +152,28 @@ async def get_results_for_active_model_version_sessions_per_window(
     model_reduces = {}
     for model_versions_session, model_version in zip(model_versions_sessions, model_versions):
         test_data_dataframes: t.List[pd.DataFrame] = []
-        refrence_table_data_session, test_data_sessions = model_versions_session
-        for test_data_session in test_data_sessions:
-            if test_data_session is None:
+        reference_query, test_queries = model_versions_session
+        for test_query in test_queries:
+            if test_query is None:
                 test_data_dataframes.append(pd.DataFrame())
             else:
-                test_data_session = await test_data_session
-                test_data_dataframes.append(pd.DataFrame.from_dict(test_data_session.all()))
-        if refrence_table_data_session is not None:
-            refrence_table_data_session = await refrence_table_data_session
-            refrence_table_data_dataframe = pd.DataFrame.from_dict(refrence_table_data_session.all())
-            if refrence_table_data_dataframe.empty:
+                test_query = await test_query
+                test_data_dataframes.append(pd.DataFrame.from_dict(test_query.all()))
+        if reference_query is not None:
+            reference_query = await reference_query
+            reference_table_data_dataframe = pd.DataFrame.from_dict(reference_query.all())
+            if reference_table_data_dataframe.empty:
                 model_reduces[model_version.id] = None
                 continue
         else:
-            refrence_table_data_dataframe = None
+            reference_table_data_dataframe = None
         reduced_outs = []
         if not is_vision_check:
-            refrence_table_ds, refrence_table_pred, refrence_table_proba = dataframe_to_dataset_and_pred(
-                refrence_table_data_dataframe, model_version.features_columns, top_feat)
+            reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
+                reference_table_data_dataframe, model_version.features_columns, top_feat)
         else:
-            refrence_table_ds, refrence_table_pred, refrence_table_props = dataframe_to_vision_data_pred_props(
-                refrence_table_data_dataframe, task_type)
+            reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
+                reference_table_data_dataframe, task_type)
 
         for test_data_dataframe in test_data_dataframes:
             if test_data_dataframe.empty:
@@ -183,8 +192,8 @@ async def get_results_for_active_model_version_sessions_per_window(
                                        y_pred_train=test_pred, y_proba_train=test_proba,
                                        with_display=False).reduce_output()
             elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
-                reduced = dp_check.run(refrence_table_ds, test_ds, feature_importance=feat_imp,
-                                       y_pred_train=refrence_table_pred, y_proba_train=refrence_table_proba,
+                reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
+                                       y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                                        y_pred_test=test_pred, y_proba_test=test_proba,
                                        with_display=False).reduce_output()
             elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
@@ -192,8 +201,8 @@ async def get_results_for_active_model_version_sessions_per_window(
                                        train_predictions=test_pred, train_properties=test_props,
                                        with_display=False).reduce_output()
             elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
-                reduced = dp_check.run(refrence_table_ds, test_ds,
-                                       train_predictions=refrence_table_pred, train_properties=refrence_table_props,
+                reduced = dp_check.run(reference_table_ds, test_ds,
+                                       train_predictions=reference_table_pred, train_properties=reference_table_props,
                                        test_predictions=test_pred, test_properties=test_props,
                                        with_display=False).reduce_output()
             else:
@@ -218,6 +227,6 @@ def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
             select_time_filtered = filter_table_selection_by_data_filters(mon_table,
                                                                           select_time_filtered,
                                                                           data_filter)
-        return select_time_filtered
+        return random_sample(select_time_filtered, mon_table)
     else:
         return None

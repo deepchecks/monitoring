@@ -110,14 +110,14 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     assert len(json_rsp["output"]["1"]) == 24
     assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 2
 
-    # test with filter no refrence because of filter
+    # test with filter no reference because of filter
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"1": None}
-    # test with filter no refrence because of filter 2
+    # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
@@ -241,7 +241,7 @@ async def test_run_check_vision(classification_vision_model_id,
     assert len(json_rsp["output"]["1"]) == 24
     assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 2
 
-    # test with filter no refrence because of filter
+    # test with filter no reference because of filter
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
@@ -249,7 +249,7 @@ async def test_run_check_vision(classification_vision_model_id,
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"1": None}
-    # test with filter no refrence because of filter 2
+    # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "images Aspect Ratio",

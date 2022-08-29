@@ -260,7 +260,7 @@ class DeepchecksModelVersionClient:
         vision_data: VisionData
             The vision data that containes the refrense data.
         predictions: Optional[Dict[int, np.ndarray]]
-            The predictions for the refrence data in format {<index>: <prediction>}.
+            The predictions for the reference data in format {<index>: <prediction>}.
         """
         if len(vision_data) > 100_000:
             raise Exception('Maximum size allowed for reference data is 100,000')

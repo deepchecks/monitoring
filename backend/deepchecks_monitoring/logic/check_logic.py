@@ -27,7 +27,8 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
-                                                     get_results_for_active_model_version_sessions_per_window)
+                                                     get_results_for_active_model_version_sessions_per_window,
+                                                     random_sample)
 from deepchecks_monitoring.models import ModelVersion, Monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule
@@ -219,18 +220,18 @@ async def run_check_per_window_in_range(
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
     for model_version in model_versions:
         if isinstance(dp_check, TrainTestBaseCheck):
-            refrence_table = model_version.get_reference_table(session)
-            refrence_table_data_session = create_model_version_select_object(model_version, refrence_table, top_feat)
+            reference_table = model_version.get_reference_table(session)
+            reference_query = create_model_version_select_object(model_version, reference_table, top_feat)
             if monitor_filter:
-                refrence_table_data_session = filter_table_selection_by_data_filters(refrence_table,
-                                                                                     refrence_table_data_session,
-                                                                                     monitor_filter)
-            refrence_table_data_session = session.execute(refrence_table_data_session)
+                reference_query = filter_table_selection_by_data_filters(reference_table,
+                                                                         reference_query,
+                                                                         monitor_filter)
+            reference_query = session.execute(random_sample(reference_query, reference_table))
         else:
-            refrence_table_data_session = None
+            reference_query = None
 
         test_table = model_version.get_monitor_table(session)
-        test_data_sessions = []
+        test_queries = []
 
         select_obj = create_model_version_select_object(model_version, test_table, top_feat)
         new_start_time = start_time
@@ -243,11 +244,11 @@ async def run_check_per_window_in_range(
                                                                                   start_time=new_start_time,
                                                                                   end_time=new_start_time + window)
             if filtered_select_obj is not None:
-                test_data_sessions.append(session.execute(filtered_select_obj))
+                test_queries.append(session.execute(filtered_select_obj))
             else:
-                test_data_sessions.append(None)
+                test_queries.append(None)
             new_start_time = new_start_time + window
-        model_versions_sessions.append((refrence_table_data_session, test_data_sessions))
+        model_versions_sessions.append((reference_query, test_queries))
 
     # get result from active sessions and run the check per each model version
     model_reduces = await get_results_for_active_model_version_sessions_per_window(model_versions_sessions,
@@ -395,14 +396,14 @@ def load_data_for_check(
     """
     if with_reference:
         reference_table = model_version.get_reference_table(session)
-        reference_table_data_session = create_model_version_select_object(model_version, reference_table, features)
+        reference_query = create_model_version_select_object(model_version, reference_table, features)
         if options.filter:
-            reference_table_data_session = filter_table_selection_by_data_filters(reference_table,
-                                                                                  reference_table_data_session,
-                                                                                  options.filter)
-        reference_table_data_session = session.execute(reference_table_data_session)
+            reference_query = filter_table_selection_by_data_filters(reference_table,
+                                                                     reference_query,
+                                                                     options.filter)
+        reference_query = session.execute(random_sample(reference_query, reference_table))
     else:
-        reference_table_data_session = None
+        reference_query = None
 
     test_table = model_version.get_monitor_table(session)
     select_obj = create_model_version_select_object(model_version, test_table, features)
@@ -416,8 +417,8 @@ def load_data_for_check(
         data_filter=options.filter
     )
     if filtered_select_obj is not None:
-        test_data_session = session.execute(filtered_select_obj)
+        test_query = session.execute(filtered_select_obj)
     else:
-        test_data_session = None
+        test_query = None
 
-    return test_data_session, reference_table_data_session
+    return test_query, reference_query
