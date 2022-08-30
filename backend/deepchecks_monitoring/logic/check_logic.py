@@ -24,6 +24,7 @@ from sqlalchemy.orm import joinedload
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import NotFound
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object, dataframe_to_dataset_and_pred,
+                                                     dataframe_to_vision_data_pred_props,
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
@@ -338,9 +339,12 @@ async def run_suite_for_model_version(
     suite_name = f"{model_version.name} from {window_options.start_time} to {window_options.end_time}"
     # Get the module (tabular or vision)
     module = checks_instances[0].__module__.split(".")[1]
+
     if module == "tabular":
+        is_tabular = True
         suite = TabularSuite(suite_name, *checks_instances)
     elif module == "vision":
+        is_tabular = False
         suite = VisionSuite(suite_name, *checks_instances)
     else:
         raise Exception(f"Not supported module {module}")
@@ -353,22 +357,46 @@ async def run_suite_for_model_version(
 
     test_session_result = await test_session
     test_df = DataFrame.from_dict(test_session_result.all())
-    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version.features_columns,
-                                                                        top_feat)
+
+    if is_tabular:
+        test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
+            test_df, model_version.features_columns, top_feat)
+    else:
+        test_dataset, test_pred, test_props = dataframe_to_vision_data_pred_props(
+            test_df, model_version.model.task_type)
+
     if ref_session:
         ref_session_result = await ref_session
         ref_df = DataFrame.from_dict(ref_session_result.all())
-        reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-            ref_df, model_version.features_columns, top_feat)
-
-        return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
-                         y_pred_train=reference_pred, y_proba_train=reference_proba,
-                         y_pred_test=test_pred, y_proba_test=test_proba,
-                         with_display=True)
+        if is_tabular:
+            reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+                ref_df, model_version.features_columns, top_feat)
+        else:
+            reference_dataset, reference_pred, reference_props = dataframe_to_vision_data_pred_props(
+                ref_df, model_version.model.task_type)
+        if is_tabular:
+            suite: TabularSuite
+            return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
+                             y_pred_train=reference_pred, y_proba_train=reference_proba,
+                             y_pred_test=test_pred, y_proba_test=test_proba,
+                             with_display=True)
+        else:
+            suite: VisionSuite
+            return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset,
+                             train_predictions=reference_pred, train_properties=reference_props,
+                             test_predictions=test_pred, test_properties=test_props,
+                             with_display=True)
     else:
         # In case of single dataset we must pass it as train
-        return suite.run(train_dataset=test_dataset, feature_importance=feat_imp,
-                         y_pred_train=test_pred, y_proba_train=test_proba, with_display=True)
+        if is_tabular:
+            suite: TabularSuite
+            return suite.run(train_dataset=test_dataset, feature_importance=feat_imp,
+                             y_pred_train=test_pred, y_proba_train=test_proba, with_display=True)
+        else:
+            suite: VisionSuite
+            return suite.run(train_dataset=test_dataset,
+                             train_predictions=test_pred, train_properties=test_props,
+                             with_display=True)
 
 
 def load_data_for_check(

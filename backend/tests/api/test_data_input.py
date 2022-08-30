@@ -7,7 +7,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-import pandas as pd
 import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
@@ -15,15 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from deepchecks_monitoring.models import ModelVersion
-
-
-def send_reference_request(client, model_version_id, dicts: list):
-    df = pd.DataFrame(data=dicts)
-    data = df.to_json(orient="table", index=False)
-    return client.post(
-        f"/api/v1/model-versions/{model_version_id}/reference",
-        files={"file": ("data.json", data)}
-    )
+from tests.conftest import send_reference_request
 
 
 @pytest.mark.asyncio

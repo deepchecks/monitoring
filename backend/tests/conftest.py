@@ -12,6 +12,7 @@ import asyncio
 import typing as t
 
 import dotenv
+import pandas as pd
 import pendulum as pdl
 import pytest
 import pytest_asyncio
@@ -272,4 +273,31 @@ def add_classification_data(model_version_id, client: TestClient):
             "a": 10 + i,
             "b": "ppppp",
         })
-    client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
+    resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
+    return resp
+
+
+def add_vision_classification_data(model_version_id, client: TestClient):
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    data = []
+    for i in [1, 3, 7, 13]:
+        time = day_before_curr_time.add(hours=i).isoformat()
+        for j in range(10):
+            data.append({
+                "_dc_sample_id": f"{i} {j}",
+                "_dc_time": time,
+                "_dc_prediction_value": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+                "_dc_label": 2,
+                "images Aspect Ratio": 0.677 / i,
+            })
+    resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
+    return resp
+
+def send_reference_request(client, model_version_id, dicts: list):
+    df = pd.DataFrame(data=dicts)
+    data = df.to_json(orient="table", index=False)
+    return client.post(
+        f"/api/v1/model-versions/{model_version_id}/reference",
+        files={"file": ("data.json", data)}
+    )
