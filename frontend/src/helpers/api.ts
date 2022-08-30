@@ -2,7 +2,7 @@ import axios from "axios";
 import { ID } from "../types";
 
 export const API_URL =
-  "http://api-v2-mon-1978135218.eu-west-1.elb.amazonaws.com/api/v1";
+  "https://mon-demo-083122.deepchecks.com/api/v1";
 
 export const ApiBreakpoints = {
   ALERT: (alertId: ID) => `/alerts/${alertId}`,
