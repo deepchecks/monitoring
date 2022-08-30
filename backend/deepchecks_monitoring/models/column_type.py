@@ -7,24 +7,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
-"""Module defining the dynamic tables metadata for the monitoring package."""
+"""Module defining the column types in we support in db for the data ingestion."""
 import enum
 import typing as t
 
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, Text
 
-from deepchecks_monitoring.models import TaskType
+from deepchecks_monitoring.models.model import TaskType
+
+__all__ = ["SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_VALUE_COL", "SAMPLE_PRED_LABEL_COL",
+           "ColumnType", "get_model_columns_by_type", "column_types_to_table_columns"]
+
 
 SAMPLE_ID_COL = "_dc_sample_id"
 SAMPLE_TS_COL = "_dc_time"
 SAMPLE_LABEL_COL = "_dc_label"
 SAMPLE_PRED_VALUE_COL = "_dc_prediction_value"
 SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
-
-
-__all__ = ["SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_LABEL_COL", "SAMPLE_PRED_VALUE_COL",
-           "get_model_columns_by_type", "column_types_to_table_columns", "ColumnType"]
 
 
 class ColumnType(enum.Enum):

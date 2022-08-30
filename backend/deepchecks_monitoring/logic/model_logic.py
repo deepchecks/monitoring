@@ -29,10 +29,10 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 from torch.utils.data import DataLoader
 
-from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL,
-                                                     SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
+from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL,
+                                                      SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
 

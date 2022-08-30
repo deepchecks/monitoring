@@ -77,7 +77,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "b": "ppppp",
         }]
         response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-        assert response.status_code == 201
+        assert response.status_code == 200
     sample = {
         "_dc_prediction_value": [0.1, 0.3, 0.6],
         "_dc_prediction_label": "2",
@@ -210,7 +210,7 @@ async def test_run_check_vision(classification_vision_model_id,
                 "images Aspect Ratio": 0.677 / i,
             })
         response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/data", json=request)
-        assert response.status_code == 201
+        assert response.status_code == 200
     sample = {
         "_dc_prediction_value": [0.1, 0.3, 0.6],
         "_dc_label": 2,
@@ -312,7 +312,7 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                 "partial_images Aspect Ratio": [0.677 / i, 0.9 / i],
             })
         response = client.post(f"/api/v1/model-versions/{detection_vision_model_version_id}/data", json=request)
-        assert response.status_code == 201
+        assert response.status_code == 200
     sample = {
         "_dc_prediction_value": [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
         "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],

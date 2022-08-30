@@ -21,8 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 from typing_extensions import TypedDict
 
-from deepchecks_monitoring.logic.data_tables import ColumnType, column_types_to_table_columns
 from deepchecks_monitoring.models.base import Base
+from deepchecks_monitoring.models.column_type import ColumnType, column_types_to_table_columns
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.models import Model  # pylint: disable=unused-import

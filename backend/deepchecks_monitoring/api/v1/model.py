@@ -20,8 +20,8 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.alerts_logic import get_alerts_per_model
-from deepchecks_monitoring.logic.data_tables import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models import Model
+from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession

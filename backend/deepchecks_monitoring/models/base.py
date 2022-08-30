@@ -49,11 +49,6 @@ class BaseClass:
         result = await session.execute(delete(cls).where(cls.where(id=model_id)))
         return result
 
-    @classmethod
-    async def get(cls, session: AsyncSession, model_id: int):
-        result = await session.execute(select(cls).where(cls.where(id=model_id)))
-        return result.scalar()
-
 
 # declarative base class
 Base = t.cast(t.Any, declarative_base(cls=BaseClass))

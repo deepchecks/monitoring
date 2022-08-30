@@ -8,24 +8,28 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the app."""
+import asyncio
 import typing as t
 from contextlib import asynccontextmanager
 
 import jsonschema.exceptions
+from aiokafka import AIOKafkaProducer
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from kafka import KafkaAdminClient
 from pyinstrument import Profiler
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
+from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
-__all__ = ["create_application"]
+__all__ = ["create_application", "ResourcesProvider"]
 
 
 class ResourcesProvider:
@@ -36,6 +40,8 @@ class ResourcesProvider:
     def __init__(self, settings: Settings):
         self.settings = settings
         self._async_database_engine: t.Optional[AsyncEngine] = None
+        self._kafka_producer: t.Optional[AIOKafkaProducer] = None
+        self._kafka_admin: t.Optional[KafkaAdminClient] = None
 
     @property
     def async_database_engine(self) -> AsyncEngine:
@@ -67,6 +73,25 @@ class ResourcesProvider:
             finally:
                 await session.close()
 
+    @property
+    async def kafka_producer(self) -> t.Optional[AIOKafkaProducer]:
+        """Return kafka producer."""
+        if self.settings.kafka_host is None:
+            return None
+        if self._kafka_producer is None:
+            self._kafka_producer = AIOKafkaProducer(**self.settings.kafka_params)
+            await self._kafka_producer.start()
+        return self._kafka_producer
+
+    @property
+    def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
+        """Return kafka admin client. Used to manage kafka cluser."""
+        if self.settings.kafka_host is None:
+            return None
+        if self._kafka_admin is None:
+            self._kafka_admin = KafkaAdminClient(**self.settings.kafka_params)
+        return self._kafka_admin
+
 
 def create_application(
     title: str = "Deepchecks Monitoring",
@@ -77,6 +102,7 @@ def create_application(
     additional_routers: t.Optional[t.Sequence[APIRouter]] = None,
     additional_dependencies: t.Optional[t.Sequence[Depends]] = None,
     routers_dependencies: t.Optional[t.Dict[str, t.Sequence[Depends]]] = None,
+    data_ingestion_backend: t.Optional[DataIngestionBackend] = None,
 ) -> FastAPI:
     """Create the application.
 
@@ -90,10 +116,13 @@ def create_application(
         url root path
     settings : Optional[Settings], default None
         settings for the application
+    resources_provider
     additional_routers : Optional[Sequence[APIRouter]] , default None
         list of additional routers to include
     additional_dependencies : Optional[Sequence[Depends]] , default None
         list of additional dependencies
+    routers_dependencies
+    data_ingestion_backend
 
     Returns
     -------
@@ -112,6 +141,8 @@ def create_application(
 
     app.state.settings = settings
     app.state.resources_provider = resources_provider or ResourcesProvider(settings)
+    app.state.data_ingestion_backend = data_ingestion_backend or DataIngestionBackend(app.state.settings,
+                                                                                      app.state.resources_provider)
 
     app.add_middleware(
         CORSMiddleware,
@@ -153,5 +184,10 @@ def create_application(
         return RedirectResponse(url="/index.html")
 
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute())))
+
+    @app.on_event("startup")
+    async def app_startup():
+        if app.state.data_ingestion_backend.use_kafka:
+            asyncio.create_task(app.state.data_ingestion_backend.consume_from_kafka())
 
     return app

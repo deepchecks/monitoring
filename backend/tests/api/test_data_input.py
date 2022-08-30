@@ -37,7 +37,7 @@ async def test_log_data(client: TestClient, classification_model_version_id: int
         "b": "ppppp",
     }]
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    assert response.status_code == 201, response.json()
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio

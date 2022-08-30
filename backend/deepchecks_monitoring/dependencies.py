@@ -13,6 +13,8 @@ import typing as t
 
 import fastapi
 from fastapi import Request
+from kafka import KafkaAdminClient
+from pydantic import BaseSettings
 
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
 
@@ -20,7 +22,7 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.app import ResourcesProvider
     from deepchecks_monitoring.utils import ExtendedAsyncSession
 
-__all__ = ["AsyncSessionDep", "limit_request_size"]
+__all__ = ["AsyncSessionDep", "limit_request_size", "KafkaAdminDep", "SettingsDep", "DataIngestionDep"]
 
 
 async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["ExtendedAsyncSession"]:
@@ -41,8 +43,25 @@ async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["Extend
         yield session
 
 
-AsyncSessionDep = fastapi.Depends(get_async_session)
+def get_kafka_admin(request: fastapi.Request) -> t.Optional[KafkaAdminClient]:
+    resources_provider = t.cast("ResourcesProvider", request.app.state.resources_provider)
+    return resources_provider.kafka_admin
 
+
+def get_settings(request: fastapi.Request) -> BaseSettings:
+    state = request.app.state
+    return state.settings
+
+
+def get_data_ingestion_backend(request: fastapi.Request):
+    state = request.app.state
+    return state.data_ingestion_backend
+
+
+AsyncSessionDep = fastapi.Depends(get_async_session)
+KafkaAdminDep = fastapi.Depends(get_kafka_admin)
+SettingsDep = fastapi.Depends(get_settings)
+DataIngestionDep = fastapi.Depends(get_data_ingestion_backend)
 
 # Examples of how to use those dependencies:
 #

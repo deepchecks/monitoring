@@ -22,7 +22,6 @@ from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
-from deepchecks_monitoring.api.v1.model_version import ModelVersionCreationSchema, create_version
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Alert, Model, TaskType
@@ -140,52 +139,48 @@ async def regression_model_id(async_session: AsyncSession):
 
 
 @pytest_asyncio.fixture()
-async def classification_model_version_id(async_session: AsyncSession, classification_model_id: int):
-    schema = ModelVersionCreationSchema(
-        name="v1",
-        features={"a": "numeric", "b": "categorical"},
-        feature_importance={"a": 0.1, "b": 0.5},
-        non_features={"c": "numeric"}
-    )
-    result = await create_version(classification_model_id, schema, async_session)
-    await async_session.commit()
-    return result["id"]
+async def classification_model_version_id(classification_model_id: int, client):
+    request = {
+        "name": "v1",
+        "features": {"a": "numeric", "b": "categorical"},
+        "feature_importance": {"a": 0.1, "b": 0.5},
+        "non_features": {"c": "numeric"}
+    }
+    response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
+    return response.json()["id"]
 
 
 @pytest_asyncio.fixture()
-async def detection_vision_model_version_id(async_session: AsyncSession, detection_vision_model_id: int):
-    schema = ModelVersionCreationSchema(
-        name="v1",
-        features={"images Aspect Ratio": "numeric", "partial_images Aspect Ratio": "array_float"},
-        non_features={}
-    )
-    result = await create_version(detection_vision_model_id, schema, async_session)
-    await async_session.commit()
-    return result["id"]
+async def detection_vision_model_version_id(detection_vision_model_id: int, client):
+    request = {
+        "name": "v1",
+        "features": {"images Aspect Ratio": "numeric", "partial_images Aspect Ratio": "array_float"},
+        "non_features": {}
+    }
+    response = client.post(f"/api/v1/models/{detection_vision_model_id}/version", json=request)
+    return response.json()["id"]
 
 
 @pytest_asyncio.fixture()
-async def classification_vision_model_version_id(async_session: AsyncSession, classification_vision_model_id: int):
-    schema = ModelVersionCreationSchema(
-        name="v1",
-        features={"images Aspect Ratio": "numeric"},
-        non_features={}
-    )
-    result = await create_version(classification_vision_model_id, schema, async_session)
-    await async_session.commit()
-    return result["id"]
+async def classification_vision_model_version_id(classification_vision_model_id: int, client):
+    request = {
+        "name": "v1",
+        "features": {"images Aspect Ratio": "numeric"},
+        "non_features": {}
+    }
+    response = client.post(f"/api/v1/models/{classification_vision_model_id}/version", json=request)
+    return response.json()["id"]
 
 
 @pytest_asyncio.fixture()
-async def classification_model_version_no_fi_id(async_session: AsyncSession, classification_model_id: int):
-    schema = ModelVersionCreationSchema(
-        name="v1",
-        features={"a": "numeric", "b": "categorical"},
-        non_features={"c": "numeric"}
-    )
-    result = await create_version(classification_model_id, schema, async_session)
-    await async_session.commit()
-    return result["id"]
+async def classification_model_version_no_fi_id(classification_model_id: int, client):
+    request = {
+        "name": "v1",
+        "features": {"a": "numeric", "b": "categorical"},
+        "non_features": {"c": "numeric"}
+    }
+    response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
+    return response.json()["id"]
 
 
 @pytest_asyncio.fixture()

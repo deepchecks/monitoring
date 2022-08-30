@@ -11,9 +11,10 @@
 from .alert import Alert
 from .alert_rule import AlertRule
 from .check import Check
+from .column_type import ColumnType
 from .dashboard import Dashboard
 from .model import Model, TaskType
-from .model_version import ColumnType, ModelVersion
+from .model_version import ModelVersion
 from .monitor import Monitor
 
-__all__ = ['Model', 'ModelVersion', 'TaskType', 'ColumnType', 'Check', 'AlertRule', 'Monitor', 'Dashboard', 'Alert']
+__all__ = ['Model', 'ModelVersion', 'TaskType', 'Check', 'AlertRule', 'Monitor', 'Dashboard', 'Alert', 'ColumnType']

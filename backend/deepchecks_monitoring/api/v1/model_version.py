@@ -11,6 +11,9 @@
 import typing as t
 from io import StringIO
 
+import fastapi
+from kafka import KafkaAdminClient
+from kafka.admin import NewTopic
 from pydantic import BaseModel
 from sqlalchemy import Index, MetaData, Table, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,11 +23,12 @@ from sqlalchemy.sql.ddl import CreateIndex
 from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, DataIngestionDep, KafkaAdminDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.check_logic import run_suite_for_model_version
-from deepchecks_monitoring.logic.data_tables import (SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType,
-                                                     column_types_to_table_columns, get_model_columns_by_type)
+from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType,
+                                                      column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404
@@ -49,20 +53,28 @@ class ModelVersionCreationSchema(BaseModel):
 
 @router.post('/models/{model_id}/version', response_model=IdResponse, tags=[Tags.MODELS])
 async def create_version(
+    request: fastapi.Request,
     model_id: int,
     info: ModelVersionCreationSchema,
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
+    kafka_admin: KafkaAdminClient = KafkaAdminDep,
+    settings=SettingsDep,
+    data_ingest: DataIngestionBackend = DataIngestionDep
 ):
     """Create a new model version.
 
     Parameters
     ----------
+    request
     model_id : int
         ID of the model.
     info : VersionInfo
         Information about the model version.
     session : AsyncSession, optional
         SQLAlchemy session.
+    kafka_admin
+    settings
+    data_ingest
     """
     # TODO: all this logic must be implemented (encapsulated) within Model type
     model: Model = await fetch_or_404(session, Model, id=model_id)
@@ -140,6 +152,14 @@ async def create_version(
     # Create indices
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))
+
+    # Create kafka topic
+    if data_ingest.use_kafka:
+        # We want to digest the message in the order they are sent, so using single partition.
+        topic = NewTopic(name=data_ingest.generate_topic_name(model_version, request),
+                         num_partitions=1,
+                         replication_factor=settings.kafka_replication_factor)
+        kafka_admin.create_topics([topic])
 
     return {'id': model_version.id}
 
