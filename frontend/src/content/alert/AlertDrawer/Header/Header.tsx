@@ -63,10 +63,10 @@ export function Header({ onClose }: HeaderProps) {
 
   const info = [
     name,
-    "Drift check",
-    "Feature",
-    `Drift ${columnMap[condition.operator]} ${condition.value}`,
-    repeat_every,
+    monitor.check.name,
+    "-",
+    `Value ${columnMap[condition.operator]} ${condition.value}`,
+    repeat_every===86400 ? "Day" : repeat_every,
   ];
 
   const [criticalityMap] = useState({
