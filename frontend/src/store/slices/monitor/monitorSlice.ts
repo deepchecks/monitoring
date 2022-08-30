@@ -8,11 +8,12 @@ import { ChartData } from "chart.js";
 import { parseDataForChart } from "../../../helpers/parseDataForChart";
 import MonitorService from "../../../services/MonitorService";
 import { ChartResponse, GraphData, ID } from "../../../types";
-import { Monitor } from "../../../types/monitor";
+import { DashboardType, Monitor } from "../../../types/monitor";
 import { RootState } from "../../store";
 import {
   CreateMonitorOptions,
   InitialStateType,
+  RunMonitorOptions,
   UpdateMonitorOptions,
 } from "./monitorTypes";
 
@@ -41,13 +42,21 @@ export const getMonitor = createAsyncThunk(
   }
 );
 
-export const getMonitors = createAsyncThunk("monitor/getMonitors", async () => {
+export const getMonitors = createAsyncThunk<
+  { charts: ChartResponse[]; dashboard: DashboardType },
+  void,
+  { state: RootState }
+>("monitor/getMonitors", async (_, { getState }) => {
   try {
     const monitors = await MonitorService.getMonitors();
 
     const charts = await axios.all(
-      monitors.data.monitors.map(async ({ id }) => {
-        const res = await MonitorService.runMonitor(id);
+      monitors.data.monitors.map(async ({ id, check: { model_id } }) => {
+        const res = await MonitorService.runMonitor(id, {
+          end_time: new Date(
+            getState().model.modelsMap[model_id].latest_time * 1000
+          ),
+        });
         return res.data;
       })
     );
@@ -80,9 +89,11 @@ export const createMonitor = createAsyncThunk(
 
 export const runMonitor = createAsyncThunk(
   "monitor/runMonitor",
-  async (monitorId: ID) => {
+  async ({ monitorId, endTime }: RunMonitorOptions) => {
     try {
-      const response = await MonitorService.runMonitor(monitorId);
+      const response = await MonitorService.runMonitor(monitorId, {
+        end_time: new Date(endTime * 1000),
+      });
       return response.data;
     } catch (err) {
       if (err instanceof Error) {

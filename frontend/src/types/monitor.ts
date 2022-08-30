@@ -44,3 +44,7 @@ export interface DashboardType {
   name: string;
   monitors: Monitor[];
 }
+
+export interface RunMonitorRequest {
+  end_time: Date;
+}

@@ -1,7 +1,12 @@
 import { AxiosResponse } from "axios";
 import { $api, ApiBreakpoints } from "../helpers/api";
 import { ChartResponse, ID } from "../types";
-import { DashboardType, Monitor, MonitorRequest } from "../types/monitor";
+import {
+  DashboardType,
+  Monitor,
+  MonitorRequest,
+  RunMonitorRequest,
+} from "../types/monitor";
 
 export default class MonitorService {
   static async getMonitor(monitorId: ID): Promise<AxiosResponse<Monitor>> {
@@ -16,9 +21,10 @@ export default class MonitorService {
     checkId: ID,
     monitor: MonitorRequest
   ): Promise<AxiosResponse<{ id: number | string }>> {
-    return $api.post<{ id: string }>(ApiBreakpoints.MONITOR_CREATE(checkId), {
-      ...monitor,
-    });
+    return $api.post<{ id: string }>(
+      ApiBreakpoints.MONITOR_CREATE(checkId),
+      monitor
+    );
   }
 
   static async updateMonitor(
@@ -37,8 +43,9 @@ export default class MonitorService {
   }
 
   static async runMonitor(
-    monitorID: ID
+    monitorID: ID,
+    body: RunMonitorRequest
   ): Promise<AxiosResponse<ChartResponse>> {
-    return $api.post(ApiBreakpoints.MONITOR_RUN(monitorID), {'end_time': null});
+    return $api.post(ApiBreakpoints.MONITOR_RUN(monitorID), body);
   }
 }

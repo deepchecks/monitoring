@@ -61,9 +61,8 @@ export default function DashboardPage() {
             <Grid item xs={4} key={index}>
               <GraphicsSection
                 data={props}
-                monitorId={dashboards.monitors[index]?.id || 1}
+                monitor={dashboards.monitors[index]}
                 onOpen={hanleOpenMonitorDrawer}
-                title={dashboards.monitors[index]?.name}
               />
             </Grid>
           ))}

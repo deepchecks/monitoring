@@ -6,16 +6,21 @@ import {
   Typography,
 } from "@mui/material";
 import { ChartData } from "chart.js";
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { MenuVertical } from "../../../assets/icon/icon";
 import DiagramLine from "../../../components/DiagramLine/DiagramLine";
 import { Submenu } from "../../../components/Submenu/Submenu";
+import { useTypedSelector } from "../../../store/hooks";
+import { modelSelector } from "../../../store/slices/model/modelSlice";
 import { GraphData, ID } from "../../../types";
+import { Monitor } from "../../../types/monitor";
 import {
   StyledArrow,
   StyledDiagramWrapper,
+  StyledDivider,
   StyledFlexContent,
   StyledFlexWrapper,
+  StyledInfo,
   StyledMenuItem,
   StyledRootMenu,
   StyledSelect,
@@ -24,16 +29,14 @@ import {
 
 interface GraphicsSectionProps {
   data: ChartData<"line", GraphData>;
-  monitorId: ID;
+  monitor: Monitor;
   onOpen: (id: ID) => void;
-  title: string;
 }
 
 function GraphicsSectionComponent({
   data,
-  monitorId,
+  monitor,
   onOpen,
-  title,
 }: GraphicsSectionProps) {
   const [hover, setHover] = useState<boolean>(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<null | HTMLElement>(
@@ -43,6 +46,19 @@ function GraphicsSectionComponent({
 
   const [time, setTime] = useState("Last 7 days");
   const openRootMenu = Boolean(anchorElRootMenu);
+
+  const { allModels } = useTypedSelector(modelSelector);
+
+  const modelName = useMemo(() => {
+    let name;
+    allModels.forEach((model) => {
+      if (model.id === monitor.check.model_id) {
+        name = model.name;
+      }
+    });
+
+    return name;
+  }, [allModels, monitor.check.model_id]);
 
   const handleTime = (event: SelectChangeEvent<unknown>) => {
     setTime(event.target.value as string);
@@ -70,7 +86,7 @@ function GraphicsSectionComponent({
   };
 
   const handleOpenEditMonitor = () => {
-    onOpen(monitorId);
+    onOpen(monitor.id);
     setAnchorElRootMenu(null);
   };
 
@@ -78,19 +94,26 @@ function GraphicsSectionComponent({
     <>
       <StyledFlexContent onMouseOver={onMouseOver} onMouseLeave={onMouseLeave}>
         <StyledFlexWrapper>
-          <StyledTypographyTitle>{title}</StyledTypographyTitle>
+          <StyledTypographyTitle>{monitor.name}</StyledTypographyTitle>
           {(hover || openRootMenu) && (
             <IconButton onClick={handleOpenRootMenu} size="small">
               <MenuVertical />
             </IconButton>
           )}
         </StyledFlexWrapper>
+        <StyledInfo>
+          <Typography variant="subtitle2">Model: {modelName}</Typography>
+          <StyledDivider orientation="vertical" flexItem />
+          <Typography variant="subtitle2">
+            Check: {monitor.check.name}
+          </Typography>
+        </StyledInfo>
         <StyledDiagramWrapper>
           <DiagramLine data={data} />
 
-          <StyledSelect value={time} onChange={handleTime} size="small">
+          {/* <StyledSelect value={time} onChange={handleTime} size="small">
             <MenuItem value="Last 7 days">Last 7 days</MenuItem>
-          </StyledSelect>
+          </StyledSelect> */}
         </StyledDiagramWrapper>
       </StyledFlexContent>
       <StyledRootMenu

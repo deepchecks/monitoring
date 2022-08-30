@@ -1,8 +1,7 @@
 import axios from "axios";
 import { ID } from "../types";
 
-export const API_URL =
-  "https://mon-demo-083122.deepchecks.com/api/v1";
+export const API_URL = "https://mon-demo-083122.deepchecks.com/api/v1";
 
 export const ApiBreakpoints = {
   ALERT: (alertId: ID) => `/alerts/${alertId}`,

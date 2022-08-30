@@ -31,6 +31,7 @@ export interface AlertRule {
   };
   alert_severity: Criticality;
   alerts_count: 0;
+  model_id: number;
 }
 
 export interface AlertRulesParams {

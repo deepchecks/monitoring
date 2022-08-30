@@ -1,5 +1,5 @@
 export interface Model {
-  latest_time?: number;
+  latest_time: number;
   alerts_count: number;
   id: number | string;
   description?: string;

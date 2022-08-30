@@ -19,3 +19,8 @@ export interface UpdateMonitorOptions {
   monitorId: ID;
   monitor: MonitorRequest;
 }
+
+export interface RunMonitorOptions {
+  monitorId: ID;
+  endTime: number;
+}

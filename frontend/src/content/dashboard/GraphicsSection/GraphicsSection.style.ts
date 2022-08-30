@@ -1,4 +1,12 @@
-import { Box, Menu, MenuItem, Select, styled, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Menu,
+  MenuItem,
+  Select,
+  styled,
+  Typography,
+} from "@mui/material";
 import { Arrow } from "../../../assets/icon/icon";
 
 export const StyledFlexContent = styled(Box)({
@@ -18,12 +26,23 @@ export const StyledTypographyTitle = styled(Typography)({
   textAlign: "left",
 });
 
+export const StyledInfo = styled(Box)({
+  display: "flex",
+  flexWrap: "wrap",
+  padding: "6px 20px 16px",
+});
+
+export const StyledDivider = styled(Divider)({
+  margin: "0 6px",
+  height: "10px",
+  alignSelf: "center",
+});
+
 export const StyledFlexWrapper = styled(Box)({
   display: "flex",
   alignItems: "center",
-  padding: "16px 20px 16px",
+  padding: "16px 20px 0",
   justifyContent: "space-between",
-  marginBottom: "6px",
 });
 
 export const StyledDiagramWrapper = styled(Box)({

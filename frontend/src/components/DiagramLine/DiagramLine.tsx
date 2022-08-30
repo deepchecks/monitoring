@@ -1,11 +1,5 @@
 import { alpha, Box, useTheme } from "@mui/material";
-import {
-  Chart,
-  ChartArea,
-  ChartData,
-  ChartEvent,
-  registerables,
-} from "chart.js";
+import { Chart, ChartArea, ChartData, registerables, TimeUnit } from "chart.js";
 import "chartjs-adapter-dayjs-3";
 import zoomPlugin from "chartjs-plugin-zoom";
 import { memo, useRef } from "react";
@@ -31,10 +25,14 @@ function createGradient(
 export interface DiagramLineProps {
   data: ChartData<"line", GraphData>;
   threshold?: number;
-  minTimeUnit?: any;
+  minTimeUnit?: TimeUnit;
 }
 
-function DiagramLine({ data, threshold = 0, minTimeUnit="day" }: DiagramLineProps) {
+function DiagramLine({
+  data,
+  threshold = 0,
+  minTimeUnit = "day",
+}: DiagramLineProps) {
   const chartRef = useRef<Chart<"line", number[], string>>();
   const range = { min: 0, max: 0 };
   const theme = useTheme();
@@ -173,9 +171,9 @@ function DiagramLine({ data, threshold = 0, minTimeUnit="day" }: DiagramLineProp
                 wheel: {
                   enabled: false,
                 },
-              //   pinch: {
-              //     enabled: false,
-              //   },
+                //   pinch: {
+                //     enabled: false,
+                //   },
                 mode: "xy",
               },
             },
@@ -186,24 +184,16 @@ function DiagramLine({ data, threshold = 0, minTimeUnit="day" }: DiagramLineProp
                 display: false,
               },
               // max: 15,
-              type: 'timeseries',
+              type: "timeseries",
               time: {
-                minUnit: minTimeUnit
-              }
+                minUnit: minTimeUnit,
+              },
             },
             y: {
               min: range.min,
-              max: range.max + (range.max - range.min)*0.3,
+              max: range.max + (range.max - range.min) * 0.3,
             },
           },
-          // onClick(event: ChartEvent & { chart: any }) {
-          //   const { chart } = event;
-          //   chart.options.plugins.zoom.zoom.wheel.enabled =
-          //     !chart.options.plugins.zoom.zoom.wheel.enabled;
-          //   chart.options.plugins.zoom.zoom.pinch.enabled =
-          //     !chart.options.plugins.zoom.zoom.pinch.enabled;
-          //   chart.update();
-          // },
         }}
         plugins={
           threshold ? [setThreshold(threshold), drawCircle] : [drawCircle]

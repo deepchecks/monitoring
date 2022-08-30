@@ -16,7 +16,7 @@ import {
   updateMonitor,
 } from "../../../../store/slices/monitor/monitorSlice";
 import { ID } from "../../../../types";
-import { Numeric, Categorical, ColumnType } from "../../../../types/model";
+import { Categorical, ColumnType, Numeric } from "../../../../types/model";
 import { Subcategory } from "../Subcategory/Subcategory";
 import {
   StyledButton,
@@ -57,7 +57,7 @@ export function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
 
   const dispatch = useTypedDispatch();
 
-  const { columns } = useTypedSelector(modelSelector);
+  const { columns, modelsMap } = useTypedSelector(modelSelector);
   const { loading, monitor } = useTypedSelector(monitorSelector);
   const { values, getFieldProps, setFieldValue, ...formik } = useFormik({
     initialValues: {
@@ -213,7 +213,12 @@ export function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
 
   useEffect(() => {
     dispatch(getMonitor(monitorId));
-    dispatch(runMonitor(monitorId));
+    dispatch(
+      runMonitor({
+        monitorId,
+        endTime: modelsMap[monitor.check.model_id].latest_time,
+      })
+    );
   }, [dispatch]);
 
   useEffect(() => {

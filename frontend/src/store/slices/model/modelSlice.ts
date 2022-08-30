@@ -10,21 +10,31 @@ import ModelService from "../../../services/ModelSecrive";
 import { ID } from "../../../types";
 import { AllDataIngestion, Model, ModelColumns } from "../../../types/model";
 import { RootState } from "../../store";
-import { InitialStateType } from "./modelTypes";
+import { GetModelsReturn, InitialStateType, ModelsMap } from "./modelTypes";
 
 export const initialState: InitialStateType = {
   allDataIngestion: {} as AllDataIngestion,
   allModels: [],
   columns: {} as ModelColumns,
   model: {} as Model,
+  modelsMap: {},
   error: "",
   loading: false,
 };
 
-export const getModels = createAsyncThunk("model/getModels", async () => {
+export const getModels = createAsyncThunk<
+  GetModelsReturn,
+  void,
+  { state: RootState }
+>("model/getModels", async () => {
   try {
     const response = await ModelService.getModels();
-    return response.data;
+    const modelsMap: ModelsMap = {};
+    response.data.forEach((model) => {
+      modelsMap[model.id] = model;
+    });
+
+    return { models: response.data, modelsMap };
   } catch (err) {
     if (err instanceof Error) {
       throw new Error(err.message);
@@ -55,12 +65,16 @@ export const getAllDataIngestion = createAsyncThunk(
   async (timeFilter: number, { rejectWithValue }) => {
     try {
       const response = await ModelService.getAllDataIntestion(timeFilter);
-      const keys = Object.keys(response.data)
 
-      return Object.fromEntries(Object.entries(response.data).map(([key, value]) => {
-        const newVal = value.map(item => ({ count: item.count, day: item.day*1000 }));
-        return [key, newVal]
-      }));
+      return Object.fromEntries(
+        Object.entries(response.data).map(([key, value]) => {
+          const newVal = value.map((item) => ({
+            count: item.count,
+            day: item.day * 1000,
+          }));
+          return [key, newVal];
+        })
+      );
     } catch (err) {
       if (err instanceof Error) {
         return rejectWithValue(err.message);
@@ -83,10 +97,14 @@ export const modelSlice = createSlice({
     builder.addCase(getModels.pending, (state) => {
       state.loading = true;
     });
-    builder.addCase(getModels.fulfilled, (state, { payload }) => {
-      state.loading = false;
-      state.allModels = payload;
-    });
+    builder.addCase(
+      getModels.fulfilled,
+      (state, { payload: { models, modelsMap } }) => {
+        state.loading = false;
+        state.allModels = models;
+        state.modelsMap = modelsMap;
+      }
+    );
     builder.addCase(getModels.rejected, (state) => {
       state.loading = false;
     });

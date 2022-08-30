@@ -21,15 +21,16 @@ export default class CheckService {
     checkID: ID,
     data: RunCheckRequest
   ): Promise<AxiosResponse<ChartResponse>> {
-    return $api.post(ApiBreakpoints.CHECK_RUN(checkID), { ...data });
+    return $api.post(ApiBreakpoints.CHECK_RUN(checkID), data);
   }
 
   static async runSuite(
     modelVersionId: ID,
     data: RunCheckRequest
-  ): Promise<AxiosResponse<ChartResponse>> {
-    return $api.post(ApiBreakpoints.MODEL_VERSION_SUITE_RUN(modelVersionId), {
-      ...data,
-    });
+  ): Promise<AxiosResponse<string>> {
+    return $api.post(
+      ApiBreakpoints.MODEL_VERSION_SUITE_RUN(modelVersionId),
+      data
+    );
   }
 }

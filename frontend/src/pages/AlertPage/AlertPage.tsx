@@ -14,7 +14,7 @@ import {
   resolveAllAlerts,
   setAlertRule,
 } from "../../store/slices/alert/alertSlice";
-import { getModels } from "../../store/slices/model/modelSlice";
+import { getModels, modelSelector } from "../../store/slices/model/modelSlice";
 import {
   clearMonitorGraph,
   getMonitor,
@@ -34,10 +34,11 @@ const snackbarPosition = {
 } as const;
 
 export default function AlertPage() {
-  const { alertRules, count, error } = useTypedSelector(alertSelector);
   const [open, setOpen] = useState(false);
   const [openAlertDrawer, setOpenAlertDrawer] = useState<boolean>(false);
   const [notification, setNotification] = useState<boolean>(false);
+  const { alertRules, count, error } = useTypedSelector(alertSelector);
+  const { modelsMap } = useTypedSelector(modelSelector);
 
   const dispatch = useTypedDispatch();
 
@@ -46,7 +47,12 @@ export default function AlertPage() {
       dispatch(getAlertsByAlertRuleId(alertRule.id));
       dispatch(setAlertRule(alertRule));
       dispatch(getMonitor(alertRule.monitor_id));
-      dispatch(runMonitor(alertRule.monitor_id));
+      dispatch(
+        runMonitor({
+          monitorId: alertRule.monitor_id,
+          endTime: modelsMap[alertRule.model_id].latest_time,
+        })
+      );
       setOpenAlertDrawer(true);
     },
     [setOpenAlertDrawer]

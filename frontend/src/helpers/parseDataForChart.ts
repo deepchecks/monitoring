@@ -15,35 +15,32 @@ export const parseDataForChart = (
 
       const lines: { [key: string]: (number | null)[] } = {};
 
-      if (
-        graph.output[key][0] &&
-        Object.keys(graph.output[key][0]).length === 1
+      for (
+        let i = 0;
+        !Object.keys(lines).length || i < graph.output[key].length;
+        i++
       ) {
-        return {
-          data: graph.output[key].map((item) => {
-            if (!item) {
-              return null;
-            }
-
-            const [key] = Object.keys(item);
-            return item[key];
-          }),
-          ...setGraphOptions(key, counter++),
-        };
+        graph.output[key].forEach((item) => {
+          if (item) {
+            Object.keys(item).forEach((itemKey) => {
+              lines[itemKey] = [];
+            });
+          }
+        });
       }
 
       graph.output[key].forEach((item) => {
         if (item) {
           Object.keys(item).forEach((itemKey) => {
-            if (lines[itemKey]) {
-              lines[itemKey].push(item[itemKey]);
-            } else {
-              lines[itemKey] = [item[itemKey]];
-            }
+            lines[itemKey].push(item[itemKey]);
           });
+          return;
         }
-      });
 
+        Object.keys(lines).forEach((itemKey) => {
+          lines[itemKey].push(null);
+        });
+      });
       return Object.keys(lines).map((lineKey) => ({
         data: lines[lineKey],
         ...setGraphOptions(lineKey, counter++),
