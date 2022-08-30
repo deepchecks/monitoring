@@ -107,13 +107,17 @@ class DeepchecksColumns(enum.Enum):
 
 class HttpSession(requests.Session):
 
-    def __init__(self, *args, base_url: str, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, base_url: str, token=None) -> None:
+        super().__init__()
         self.base_url = base_url
+        self.token = token
 
     def request(self, method, url, *args, **kwargs) -> requests.Response:
         url = urljoin(self.base_url, url)
-        return super().request(method, url, *args, **kwargs)
+        headers = kwargs.get('headers', {})
+        if self.token:
+            headers['Authorization'] = f'Basic {self.token}'
+        return super().request(method, url, *args, headers=headers, **kwargs)
 
 
 class DeepchecksModelVersionClient:
@@ -589,17 +593,11 @@ class DeepchecksClient:
 
     def __init__(
             self,
-            host: Optional[str] = None,
-            session: Optional[HttpSession] = None
+            host: str,
+            token: Optional[str] = None
     ):
-        if session is not None and hasattr(session, 'base_url'):
-            self.session = session
-            self.host = session.base_url  # type: ignore
-        elif host is not None:
-            self.host = host + '/api/v1/'
-            self.session = HttpSession(base_url=self.host)
-        else:
-            raise ValueError('"host" or "session" parameter must be provided')
+        self.host = host + '/api/v1/'
+        self.session = HttpSession(base_url=self.host, token=token)
 
         maybe_raise(
             self.session.get('say-hello'),
