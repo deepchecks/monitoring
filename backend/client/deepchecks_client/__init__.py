@@ -23,7 +23,8 @@ import pandas as pd
 import pendulum as pdl
 import requests
 import torch
-from deepchecks.core.checks import BaseCheck, ReduceMixin
+from deepchecks.core.checks import BaseCheck
+from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
                                        TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
@@ -107,7 +108,7 @@ class DeepchecksColumns(enum.Enum):
 
 class HttpSession(requests.Session):
 
-    def __init__(self, base_url: str, token=None) -> None:
+    def __init__(self, base_url: str, token=None):
         super().__init__()
         self.base_url = base_url
         self.token = token
@@ -165,6 +166,7 @@ class DeepchecksModelVersionClient:
                    timestamp: Union[datetime, int, None] = None,
                    prediction_value=None,
                    prediction_label=None,
+                   true_label=None,
                    **values):
         """Send sample for the model version.
 
@@ -177,6 +179,8 @@ class DeepchecksModelVersionClient:
             Prediction value if exists
         prediction_label
             Prediction label if exists
+        true_label
+            True label of sample
         values
             All features of the sample and optional non_features
         """
@@ -188,9 +192,13 @@ class DeepchecksModelVersionClient:
             **values
         }
 
-        if prediction_value:
+        if true_label and TaskType(self.model['task_type']) == TaskType.CLASSIFICATION:
+            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(true_label)
+        elif true_label and TaskType(self.model['task_type']) == TaskType.REGRESSION:
+            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = float(true_label)
+        if prediction_value is not None:
             sample[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = un_numpy(prediction_value)
-        if prediction_label:
+        if prediction_label is not None:
             sample[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = str(prediction_label)
 
         validate(instance=sample, schema=self.schema)
@@ -224,10 +232,10 @@ class DeepchecksModelVersionClient:
         prop_vals = {}
         if image_props:
             for prop_name, prop_val in image_props.items():
-                prop_vals[PropertiesInputType.IMAGES.value + prop_name] = un_numpy(prop_val[0])
+                prop_vals[PropertiesInputType.IMAGES.value + ' ' + prop_name] = un_numpy(prop_val[0])
         if bbox_props:
             for prop_name, prop_val in bbox_props.items():
-                prop_vals[PropertiesInputType.PARTIAL_IMAGES.value + prop_name] = un_numpy(prop_val[0])
+                prop_vals[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = un_numpy(prop_val[0])
         sample = {
             DeepchecksColumns.SAMPLE_ID_COL.value: sample_id,
             DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
@@ -310,8 +318,11 @@ class DeepchecksModelVersionClient:
         prediction_label: np.ndarray
         """
         data = dataset.features_columns.copy()
-        if dataset.label_name:
-            data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = dataset.label_col.apply(str)
+        if dataset.has_label():
+            if dataset.label_type.value == 'regression':
+                data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
+            else:
+                data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(str))
         if prediction_value is not None:
             if isinstance(prediction_value, pd.DataFrame):
                 prediction_value = np.asarray(prediction_value)
@@ -423,9 +434,9 @@ class DeepchecksModelClient:
         features = {}
         for prop in image_properties:
             prop_name = prop['name']
-            features[PropertiesInputType.IMAGES.value + prop_name] = ColumnType.NUMERIC.value
+            features[PropertiesInputType.IMAGES.value + ' ' + prop_name] = ColumnType.NUMERIC.value
             if vision_data.task_type == VisTaskType.OBJECT_DETECTION:
-                features[PropertiesInputType.PARTIAL_IMAGES.value + prop_name] = ColumnType.ARRAY_FLOAT.value
+                features[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = ColumnType.ARRAY_FLOAT.value
 
         # Send request
         response = self.session.post(f'models/{self.model["id"]}/version', json={

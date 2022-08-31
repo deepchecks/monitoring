@@ -19,6 +19,7 @@ import torch
 from deepchecks.core import BaseCheck
 from deepchecks.tabular import Dataset
 from deepchecks.tabular import base_checks as tabular_base_checks
+from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision import VisionData
 from deepchecks.vision import base_checks as vision_base_checks
 from sqlalchemy import VARCHAR, Table
@@ -208,7 +209,7 @@ async def get_results_for_active_model_version_sessions_per_window(
             else:
                 raise ValueError('incompatible check type')
 
-            reduced_outs.append(reduced)
+            reduced_outs.append(dict({(key, un_numpy(value)) for key, value in reduced.items()}))
         model_reduces[model_version.id] = reduced_outs
 
     return model_reduces
