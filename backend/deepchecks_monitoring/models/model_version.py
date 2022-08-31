@@ -26,6 +26,7 @@ from deepchecks_monitoring.models.column_type import ColumnType, column_types_to
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.models import Model  # pylint: disable=unused-import
+    from deepchecks_monitoring.models.ingestion_errors import IngestionError  # pylint: disable=unused-import
 
 __all__ = ["ModelVersion", "ColumnMetadata", "update_statistics_from_sample"]
 
@@ -59,6 +60,8 @@ class ModelVersion(Base):
 
     model_id = Column(Integer, ForeignKey("models.id"))
     model: Mapped[t.Optional["Model"]] = relationship("Model", back_populates="versions")
+
+    ingestion_errors: Mapped[t.List["IngestionError"]] = relationship("IngestionError", back_populates="model_version")
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""
