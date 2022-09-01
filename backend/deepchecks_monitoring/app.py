@@ -31,6 +31,8 @@ from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
 __all__ = ["create_application", "ResourcesProvider"]
 
+from starlette.responses import FileResponse
+
 
 class ResourcesProvider:
     """Provider of resources."""
@@ -186,9 +188,7 @@ def create_application(
         else:
             # On not-existing route returns the index, and let the frontend handle the incorrect path.
             path = settings.assets_folder.absolute() / "index.html"
-            with open(path) as f:
-                html = f.read()
-            return HTMLResponse(content=html)
+            return FileResponse(path)
 
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 
