@@ -179,6 +179,17 @@ def create_application(
             content={"error": exc.message},
         )
 
+    @app.exception_handler(404)
+    async def custom_404_handler(request: Request, _):
+        if request.url.path.startswith("/api/"):
+            return
+        else:
+            # On not-existing route returns the index, and let the frontend handle the incorrect path.
+            path = settings.assets_folder.absolute() / "index.html"
+            with open(path) as f:
+                html = f.read()
+            return HTMLResponse(content=html)
+
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 
     @app.on_event("startup")
