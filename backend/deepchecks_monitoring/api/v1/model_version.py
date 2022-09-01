@@ -107,16 +107,16 @@ async def create_version(
     ref_table_columns = {**model_related_cols, **info.non_features, **info.features}
 
     # Create json schema
-    nullable_columns = list(info.features.keys()) + list(info.non_features.keys())
+    not_null_columns = list(meta_columns.keys()) + required_model_cols
     monitor_table_schema = {
         'type': 'object',
-        'properties': {name: data_type.to_json_schema_type(nullable=name in nullable_columns)
+        'properties': {name: data_type.to_json_schema_type(nullable=name not in not_null_columns)
                        for name, data_type in monitor_table_columns.items()},
         'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols
     }
     reference_table_schema = {
         'type': 'object',
-        'properties': {name: data_type.to_json_schema_type(nullable=name in nullable_columns)
+        'properties': {name: data_type.to_json_schema_type(nullable=name not in not_null_columns)
                        for name, data_type in ref_table_columns.items()},
         'required': list(info.features.keys()) + required_model_cols
     }

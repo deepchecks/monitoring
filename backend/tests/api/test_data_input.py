@@ -32,6 +32,31 @@ async def test_log_data(client: TestClient, classification_model_version_id: int
 
 
 @pytest.mark.asyncio
+async def test_log_data_different_columns_in_samples(client: TestClient, classification_model_version_id: int):
+    request = [
+        {
+            "_dc_sample_id": "a000",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction_value": [0.1, 0.3, 0.6],
+            "_dc_prediction_label": "2",
+            "a": 11.1,
+            "b": "ppppp",
+            "c": 11
+        },
+        {
+            "_dc_sample_id": "a001",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction_value": [0.1, 0.3, 0.6],
+            "_dc_prediction_label": "2",
+            "a": 11.1,
+            "b": "ppppp"
+        }
+    ]
+    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_update_data(client: TestClient, classification_model_version_id: int):
     request = [{
         "_dc_sample_id": "a000",
@@ -48,9 +73,9 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
     assert response.status_code == 200
     assert response.json() == {
         "properties": {
-            "_dc_label": {"type": "string"},
+            "_dc_label": {"type": ["string", "null"]},
             "_dc_prediction_label": {"type": "string"},
-            "_dc_prediction_value": {"items": {"type": "number"}, "type": "array"},
+            "_dc_prediction_value": {"items": {"type": "number"}, "type": ["array", "null"]},
             "_dc_sample_id": {"type": "string"},
             "_dc_time": {"format": "datetime", "type": "string"},
             "a": {"type": ["number", "null"]},

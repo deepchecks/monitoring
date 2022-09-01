@@ -49,6 +49,9 @@ async def log_data(
     min_timestamp = None
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in data:
+        # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
+        # to make sure all samples have same set of fields.
+        model_version.fill_optional_fields(sample)
         validate(schema=model_version.monitor_json_schema, instance=sample)
         # Timestamp is passed as string, convert it to datetime
         sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])

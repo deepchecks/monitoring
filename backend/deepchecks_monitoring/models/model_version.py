@@ -63,6 +63,16 @@ class ModelVersion(Base):
 
     ingestion_errors: Mapped[t.List["IngestionError"]] = relationship("IngestionError", back_populates="model_version")
 
+    _optional_fields: t.List[str] = None
+
+    @property
+    def optional_fields(self) -> t.List[str]:
+        """Fields of monitor schema with are optional."""
+        if self._optional_fields is None:
+            self._optional_fields = list(set(self.monitor_json_schema["properties"].keys()) -
+                                         set(self.monitor_json_schema["required"]))
+        return self._optional_fields
+
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""
         return f"model_{self.model_id}_monitor_data_{self.id}"
@@ -126,6 +136,13 @@ class ModelVersion(Base):
         # with the updated statistics
         # NOTE: in order to update json column with ORM the `unify_statistics` must return a new dict instance
         locked_model_version.statistics = unify_statistics(locked_model_version.statistics, new_statistics)
+
+    def fill_optional_fields(self, sample: dict):
+        """Add to given sample all the optional fields which are missing, with value of None. Used to enable multi \
+        insert on samples."""
+        for field in self.optional_fields:
+            if field not in sample:
+                sample[field] = None
 
 
 def update_statistics_from_sample(statistics: dict, sample: dict):
