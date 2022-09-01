@@ -17,7 +17,7 @@ from aiokafka import AIOKafkaProducer
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from kafka import KafkaAdminClient
 from pyinstrument import Profiler
@@ -179,11 +179,7 @@ def create_application(
             content={"error": exc.message},
         )
 
-    @app.get("/")
-    async def _():
-        return RedirectResponse(url="/index.html")
-
-    app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute())))
+    app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 
     @app.on_event("startup")
     async def app_startup():
