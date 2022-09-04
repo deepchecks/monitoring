@@ -69,8 +69,8 @@ async def run_check(classification_model_id, classification_model_version_id, cl
         request = [{
             "_dc_sample_id": str(i),
             "_dc_time": time,
-            "_dc_prediction_value": [0.1, 0.3, 0.6],
-            "_dc_prediction_label": "2",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
             "_dc_label": "2",
             "a": 10 + i,
             "b": "ppppp",
@@ -78,8 +78,8 @@ async def run_check(classification_model_id, classification_model_version_id, cl
         response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
         assert response.status_code == 200
     sample = {
-        "_dc_prediction_value": [0.1, 0.3, 0.6],
-        "_dc_prediction_label": "2",
+        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+        "_dc_prediction": "2",
         "_dc_label": "2",
         "a": 16.1,
         "b": "ppppp",
@@ -214,7 +214,7 @@ async def test_run_check_vision(classification_vision_model_id,
         "name": "checky v3",
         "config": {"class_name": "SingleDatasetPerformance",
                    "params": {"scorers": ["accuracy"]},
-                   "module_name": "deepchecks.tabular.checks"
+                   "module_name": "deepchecks.vision.checks"
                    },
     }
     # Act
@@ -231,14 +231,14 @@ async def test_run_check_vision(classification_vision_model_id,
             request.append({
                 "_dc_sample_id": f"{i} {j}",
                 "_dc_time": time,
-                "_dc_prediction_value": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+                "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
                 "_dc_label": 2,
                 "images Aspect Ratio": 0.677 / i,
             })
         response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/data", json=request)
         assert response.status_code == 200
     sample = {
-        "_dc_prediction_value": [0.1, 0.3, 0.6],
+        "_dc_prediction": [0.1, 0.3, 0.6],
         "_dc_label": 2,
         "images Aspect Ratio": 0.677,
     }
@@ -330,7 +330,7 @@ async def test_run_check_vision_detection(detection_vision_model_id,
             request.append({
                 "_dc_sample_id": f"{i} {j}",
                 "_dc_time": time,
-                "_dc_prediction_value":
+                "_dc_prediction":
                 [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]]
                 if i % 2 else [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
                 "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
@@ -340,7 +340,7 @@ async def test_run_check_vision_detection(detection_vision_model_id,
         response = client.post(f"/api/v1/model-versions/{detection_vision_model_version_id}/data", json=request)
         assert response.status_code == 200
     sample = {
-        "_dc_prediction_value": [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
+        "_dc_prediction": [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
         "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
         "images Aspect Ratio": 0.677,
         "partial_images Aspect Ratio": [0.677, 0.9],

@@ -22,8 +22,8 @@ async def test_log_data(client: TestClient, classification_model_version_id: int
     request = [{
         "_dc_sample_id": "a000",
         "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-        "_dc_prediction_value": [0.1, 0.3, 0.6],
-        "_dc_prediction_label": "2",
+        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+        "_dc_prediction": "2",
         "a": 11.1,
         "b": "ppppp",
     }]
@@ -37,8 +37,8 @@ async def test_log_data_different_columns_in_samples(client: TestClient, classif
         {
             "_dc_sample_id": "a000",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-            "_dc_prediction_value": [0.1, 0.3, 0.6],
-            "_dc_prediction_label": "2",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
             "a": 11.1,
             "b": "ppppp",
             "c": 11
@@ -46,8 +46,8 @@ async def test_log_data_different_columns_in_samples(client: TestClient, classif
         {
             "_dc_sample_id": "a001",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-            "_dc_prediction_value": [0.1, 0.3, 0.6],
-            "_dc_prediction_label": "2",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
             "a": 11.1,
             "b": "ppppp"
         }
@@ -74,15 +74,15 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
     assert response.json() == {
         "properties": {
             "_dc_label": {"type": ["string", "null"]},
-            "_dc_prediction_label": {"type": "string"},
-            "_dc_prediction_value": {"items": {"type": "number"}, "type": ["array", "null"]},
+            "_dc_prediction": {"type": "string"},
+            "_dc_prediction_probabilities": {"items": {"type": "number"}, "type": ["array", "null"]},
             "_dc_sample_id": {"type": "string"},
             "_dc_time": {"format": "datetime", "type": "string"},
             "a": {"type": ["number", "null"]},
             "b": {"type": ["string", "null"]},
             "c": {"type": ["number", "null"]}
         },
-        "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction_label"],
+        "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction"],
         "type": "object"
     }
 
@@ -90,7 +90,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
 @pytest.mark.asyncio
 async def test_send_reference_features(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -100,7 +100,7 @@ async def test_send_reference_features(client: TestClient, classification_model_
 @pytest.mark.asyncio
 async def test_send_reference_features_and_labels(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
+    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -110,7 +110,7 @@ async def test_send_reference_features_and_labels(client: TestClient, classifica
 @pytest.mark.asyncio
 async def test_send_reference_features_and_non_features(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction_label": "1"}
+    sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -120,7 +120,7 @@ async def test_send_reference_features_and_non_features(client: TestClient, clas
 @pytest.mark.asyncio
 async def test_send_reference_too_many_samples(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100_001)
     # Assert
@@ -131,7 +131,7 @@ async def test_send_reference_too_many_samples(client: TestClient, classificatio
 @pytest.mark.asyncio
 async def test_send_reference_twice(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction_label": "1"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
     # Act
     send_reference_request(client, classification_model_version_id, [sample] * 100)
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
@@ -158,24 +158,24 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         {
             "_dc_sample_id": "1",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-            "_dc_prediction_value": [0.1, 0.3, 0.6],
-            "_dc_prediction_label": "2",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
             "a": 11.1,
             "b": "cat",
         },
         {
             "_dc_sample_id": "2",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-            "_dc_prediction_value": [0.1, 0.3, 0.6],
-            "_dc_prediction_label": "2",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
             "a": -1,
             "b": "something",
         },
         {
             "_dc_sample_id": "3",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-            "_dc_prediction_value": [0.1, 0.3, 0.6],
-            "_dc_prediction_label": "2",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
             "a": 3,
             "b": "cat",
         }
@@ -191,7 +191,7 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         "b": {"values": ["something", "cat"]},
         "c": {"max": None, "min": None},
         "_dc_label": {"values": []},
-        "_dc_prediction_label": {"values": ["2"]}
+        "_dc_prediction": {"values": ["2"]}
     }, ignore_order=True)
     assert not diff
 
@@ -213,6 +213,6 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         "b": {"values": ["something", "cat"]},
         "c": {"max": 100, "min": 100},
         "_dc_label": {"values": ["2"]},
-        "_dc_prediction_label": {"values": ["2"]}
+        "_dc_prediction": {"values": ["2"]}
     }, ignore_order=True)
     assert not diff

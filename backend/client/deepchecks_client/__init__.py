@@ -102,8 +102,8 @@ class DeepchecksColumns(enum.Enum):
     SAMPLE_ID_COL = "_dc_sample_id"
     SAMPLE_TS_COL = "_dc_time"
     SAMPLE_LABEL_COL = "_dc_label"
-    SAMPLE_PRED_VALUE_COL = "_dc_prediction_value"
-    SAMPLE_PRED_LABEL_COL = "_dc_prediction_label"
+    SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
+    SAMPLE_PRED_COL = "_dc_prediction"
 
 
 class HttpSession(requests.Session):
@@ -164,9 +164,9 @@ class DeepchecksModelVersionClient:
     def log_sample(self,
                    sample_id: str,
                    timestamp: Union[datetime, int, None] = None,
-                   prediction_value=None,
-                   prediction_label=None,
-                   true_label=None,
+                   prediction_proba=None,
+                   prediction=None,
+                   label=None,
                    **values):
         """Send sample for the model version.
 
@@ -175,11 +175,11 @@ class DeepchecksModelVersionClient:
         sample_id: str
         timestamp: Union[datetime, int]
             If no timezone info is provided on the datetime assumes local timezone.
-        prediction_value
+        prediction_proba
             Prediction value if exists
-        prediction_label
+        prediction
             Prediction label if exists
-        true_label
+        label
             True label of sample
         values
             All features of the sample and optional non_features
@@ -192,14 +192,21 @@ class DeepchecksModelVersionClient:
             **values
         }
 
-        if true_label and TaskType(self.model['task_type']) == TaskType.CLASSIFICATION:
-            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(true_label)
-        elif true_label and TaskType(self.model['task_type']) == TaskType.REGRESSION:
-            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = float(true_label)
-        if prediction_value is not None:
-            sample[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = un_numpy(prediction_value)
-        if prediction_label is not None:
-            sample[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = str(prediction_label)
+        if prediction is None:
+            raise Exception('Model prediction must be provided when logging a sample')
+
+        if TaskType(self.model['task_type']) == TaskType.CLASSIFICATION:
+            if label is not None:
+                sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
+            if prediction_proba is not None:
+                sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_proba)
+            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = str(prediction)
+        elif TaskType(self.model['task_type']) == TaskType.REGRESSION:
+            if label is not None:
+                sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = float(label)
+            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = float(prediction)
+        else:
+            raise Exception(f'Unknown task type provided')
 
         validate(instance=sample, schema=self.schema)
 
@@ -210,15 +217,16 @@ class DeepchecksModelVersionClient:
                           img: np.ndarray,
                           label,
                           timestamp: Union[datetime, int, None] = None,
-                          prediction_value=None):
+                          prediction=None):
         """Send sample for the model version.
 
         Parameters
         ----------
         sample_id: str
+        img
         timestamp: Union[datetime, int]
             If no timezone info is provided on the datetime assumes local timezone.
-        prediction_value
+        prediction
             Prediction value if exists
         label
             label
@@ -242,8 +250,8 @@ class DeepchecksModelVersionClient:
             **prop_vals
         }
 
-        if prediction_value is not None:
-            sample[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = _un_tensor(prediction_value)
+        if prediction is not None:
+            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = _un_tensor(prediction)
         sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = _un_tensor(label)
 
         validate(instance=sample, schema=self.schema)
@@ -286,8 +294,7 @@ class DeepchecksModelVersionClient:
             for ind in indexes:
                 data[ind][DeepchecksColumns.SAMPLE_LABEL_COL.value] = _un_tensor(labels[ind])
                 if predictions:
-                    data[ind][DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = \
-                        _un_tensor(predictions[ind])
+                    data[ind][DeepchecksColumns.SAMPLE_PRED_COL.value] = _un_tensor(predictions[ind])
                 props = static_props[ind]
                 for prop_type in props.keys():
                     for prop_name in props[prop_type].keys():
@@ -306,29 +313,35 @@ class DeepchecksModelVersionClient:
     def upload_reference(
             self,
             dataset: Dataset,
-            prediction_value: Optional[np.ndarray] = None,
-            prediction_label: Optional[np.ndarray] = None
+            prediction_proba: Optional[np.ndarray] = None,
+            prediction: np.ndarray = None
     ):
         """Upload reference data. Possible to upload only once for a given model version.
 
         Parameters
         ----------
         dataset: deepchecks.tabular.Dataset
-        prediction_value: np.ndarray
-        prediction_label: np.ndarray
+        prediction_proba: np.ndarray
+        prediction: np.ndarray
         """
+        if prediction is None:
+            raise Exception('Model predictions on the reference data is required')
+
         data = dataset.features_columns.copy()
-        if dataset.has_label():
-            if dataset.label_type.value == 'regression':
+        if dataset.label_type.value == 'regression':
+            if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
-            else:
+            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [float(x) for x in prediction]
+        else:
+            if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(str))
-        if prediction_value is not None:
-            if isinstance(prediction_value, pd.DataFrame):
-                prediction_value = np.asarray(prediction_value)
-            data[DeepchecksColumns.SAMPLE_PRED_VALUE_COL.value] = un_numpy(prediction_value)
-        if prediction_label is not None:
-            data[DeepchecksColumns.SAMPLE_PRED_LABEL_COL.value] = [str(x) for x in prediction_label]
+            if prediction_proba is None:
+                raise Exception('Model predictions probabilities on the reference data is required for '
+                                'classification task type')
+            elif isinstance(prediction_proba, pd.DataFrame):
+                prediction_proba = np.asarray(prediction_proba)
+            data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_proba)
+            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [str(x) for x in prediction]
 
         if len(dataset) > 100_000:
             data = data.sample(100000)

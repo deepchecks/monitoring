@@ -32,8 +32,8 @@ from torch.utils.data import DataLoader
 
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
-from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_LABEL_COL,
-                                                      SAMPLE_PRED_VALUE_COL, SAMPLE_TS_COL)
+from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                      SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
 
@@ -85,14 +85,14 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
         return None, None, None
     y_pred = None
     y_proba = None
-    if SAMPLE_PRED_LABEL_COL in df.columns:
-        if not df[SAMPLE_PRED_LABEL_COL].isna().all():
-            y_pred = np.array(df[SAMPLE_PRED_LABEL_COL].to_list())
-        df.drop(SAMPLE_PRED_LABEL_COL, inplace=True, axis=1)
-    if SAMPLE_PRED_VALUE_COL in df.columns:
-        if not df[SAMPLE_PRED_VALUE_COL].isna().all():
-            y_proba = np.array(df[SAMPLE_PRED_VALUE_COL].to_list())
-        df.drop(SAMPLE_PRED_VALUE_COL, inplace=True, axis=1)
+    if SAMPLE_PRED_COL in df.columns:
+        if not df[SAMPLE_PRED_COL].isna().all():
+            y_pred = np.array(df[SAMPLE_PRED_COL].to_list())
+        df.drop(SAMPLE_PRED_COL, inplace=True, axis=1)
+    if SAMPLE_PRED_PROBA_COL in df.columns:
+        if not df[SAMPLE_PRED_PROBA_COL].isna().all():
+            y_proba = np.array(df[SAMPLE_PRED_PROBA_COL].to_list())
+        df.drop(SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
 
     cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1] == 'categorical']
     dataset = Dataset(df, label=SAMPLE_LABEL_COL, cat_features=cat_features)
@@ -112,8 +112,8 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_ty
         labels = df[SAMPLE_LABEL_COL].to_dict()
     df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
 
-    preds = df[SAMPLE_PRED_VALUE_COL].apply(torch.Tensor).to_dict()
-    df.drop(SAMPLE_PRED_VALUE_COL, inplace=True, axis=1)
+    preds = df[SAMPLE_PRED_COL].apply(torch.Tensor).to_dict()
+    df.drop(SAMPLE_PRED_COL, inplace=True, axis=1)
 
     if df.empty:
         static_props = None

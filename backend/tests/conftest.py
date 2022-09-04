@@ -267,8 +267,8 @@ def add_classification_data(model_version_id, client: TestClient):
         data.append({
             "_dc_sample_id": str(i),
             "_dc_time": time,
-            "_dc_prediction_value": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
-            "_dc_prediction_label": "2" if i % 2 else "1",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+            "_dc_prediction": "2" if i % 2 else "1",
             "_dc_label": "2",
             "a": 10 + i,
             "b": "ppppp",
@@ -287,7 +287,7 @@ def add_vision_classification_data(model_version_id, client: TestClient):
             data.append({
                 "_dc_sample_id": f"{i} {j}",
                 "_dc_time": time,
-                "_dc_prediction_value": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+                "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
                 "_dc_label": 2,
                 "images Aspect Ratio": 0.677 / i,
             })

@@ -27,7 +27,7 @@ version_client = model_client.version_client(model_version_id=1)
 
 # Upload samples
 for i in range(100):
-    version_client.log_sample(sample_id=f'x{i}', timestamp=178947983, prediction_value=[0.2, 0.8], prediction_label='1',
+    version_client.log_sample(sample_id=f'x{i}', timestamp=178947983, prediction_proba=[0.2, 0.8], prediction='1',
                               a=333)
 # Send to server
 version_client.send()

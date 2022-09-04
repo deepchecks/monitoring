@@ -35,7 +35,7 @@ class LabelVisionDataset(TorchDataset):
 
 class _MyClassificationVisionData(ClassificationData):
     def batch_to_labels(self, batch) -> torch.Tensor:
-        return torch.Tensor(batch)
+        return torch.IntTensor(batch)
 
 
 class _MyDetectionVisionData(DetectionData):
