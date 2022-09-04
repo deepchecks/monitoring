@@ -17,7 +17,7 @@ from aiokafka import AIOKafkaProducer
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from kafka import KafkaAdminClient
 from pyinstrument import Profiler
@@ -182,9 +182,9 @@ def create_application(
         )
 
     @app.exception_handler(404)
-    async def custom_404_handler(request: Request, _):
+    async def custom_404_handler(request: Request, exc):
         if request.url.path.startswith("/api/"):
-            return
+            return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
         else:
             # On not-existing route returns the index, and let the frontend handle the incorrect path.
             path = settings.assets_folder.absolute() / "index.html"
