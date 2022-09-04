@@ -4,6 +4,7 @@ import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Sidebar } from './components/Sidebar';
+import { CompleteDetails } from './pages/CompleteDetails';
 import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GlobalStateProvider } from './Context';
@@ -62,6 +63,7 @@ const App = () => {
                 <Route path="/analysis" element={<div>analysis placeholder...</div>} />
                 <Route path="/configuration" element={<DashboardPage />} />
               </Route>
+              <Route path="/complete-details" element={<CompleteDetails />} />
             </Routes>
           </StatsTimeProvider>
         </GlobalStateProvider>
