@@ -20,6 +20,8 @@ from fastapi.params import Depends
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from kafka import KafkaAdminClient
+from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pyinstrument import Profiler
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -55,6 +57,8 @@ class ResourcesProvider:
             echo=self.settings.echo_sql,
             json_serializer=json_dumps
         )
+        if self.settings.instrument_telemetry:
+            AsyncPGInstrumentor().instrument()
         return self._async_database_engine
 
     @asynccontextmanager
@@ -196,5 +200,9 @@ def create_application(
     async def app_startup():
         if app.state.data_ingestion_backend.use_kafka:
             asyncio.create_task(app.state.data_ingestion_backend.consume_from_kafka())
+
+    # Add telemetry
+    if settings.instrument_telemetry:
+        FastAPIInstrumentor.instrument_app(app)
 
     return app
