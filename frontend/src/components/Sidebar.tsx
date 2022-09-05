@@ -22,7 +22,7 @@ export const Sidebar = () => {
       }}
     >
       <Box sx={{ width: 1 }}>
-        <Logo width={width} onClick={() => undefined} />
+        <Logo />
         <Box sx={{ mt: '54px', pl: '14px' }}>
           {sideBarInfo &&
             sideBarInfo.map((info: SidebarInfo) => <SidebarMenuItem key={info.link} info={info} width={width} />)}

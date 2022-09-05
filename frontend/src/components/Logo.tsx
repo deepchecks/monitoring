@@ -1,24 +1,21 @@
 import React, { FC } from 'react';
 import { Box } from '@mui/material';
-import { Logo as LargeLogo, Logoin1280 as MediumLogo } from '../assets/logo';
-
+import { Logo as LargeLogo, ColoredLogo } from '../assets/logo';
+// isColored property is used on CompleteDetails page
 interface LogoProps {
-  onClick: () => void;
-  width: number;
+  isColored?: boolean;
 }
 
-export const Logo: FC<LogoProps> = ({ onClick, width }) => (
+export const Logo: FC<LogoProps> = ({ isColored }) => (
   <Box
-    onClick={() => {
-      onClick();
-    }}
     sx={{
       display: 'flex',
       justifyContent: 'center',
       paddingTop: '40px',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      width: isColored ? '280px' : 'unset'
     }}
   >
-    {width > 1381 ? <LargeLogo /> : <MediumLogo />}
+    {isColored ? <ColoredLogo /> : <LargeLogo />}
   </Box>
 );
