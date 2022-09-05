@@ -201,8 +201,9 @@ def create_application(
         if app.state.data_ingestion_backend.use_kafka:
             asyncio.create_task(app.state.data_ingestion_backend.consume_from_kafka())
 
-    # Add telemetry
-    if settings.instrument_telemetry:
-        FastAPIInstrumentor.instrument_app(app)
+        # Add telemetry
+        if settings.instrument_telemetry:
+            FastAPIInstrumentor.instrument_app(app)
+            AsyncPGInstrumentor().instrument()
 
     return app
