@@ -204,6 +204,5 @@ def create_application(
         # Add telemetry
         if settings.instrument_telemetry:
             FastAPIInstrumentor.instrument_app(app)
-            # AsyncPGInstrumentor().instrument()
 
     return app
