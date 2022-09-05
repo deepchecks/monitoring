@@ -15,7 +15,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { useGetCompleteDetailsApiV1UsersCompleteDetailsGet } from '../api/generated';
 
 // Services:
-import { postCompleteDetails } from '../services/userService';
+import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../services/userService';
 import { Loader } from 'components/Loader';
 import { Alert } from '@mui/material';
 
@@ -24,25 +24,38 @@ export const CompleteDetails = () => {
 
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('');
-  const [isInvited, setIsInvited] = useState(false);
+  const [acceptInvite, setAcceptInvite] = useState(false);
 
   useEffect(() => {
+    if (completeDetailsData?.user_full_name && completeDetailsData?.organization_name) {
+      window.location.href = window.location.origin;
+      return;
+    }
+
     setFullName(completeDetailsData?.user_full_name ? completeDetailsData.user_full_name : '');
     setOrganization(completeDetailsData?.organization_name ? completeDetailsData.organization_name : '');
-    setIsInvited(completeDetailsData?.invitation ? true : false);
+    setAcceptInvite(completeDetailsData?.invitation ? true : false);
   }, [completeDetailsData]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!fullName || !organization) {
-      console.log('Please fill in your details');
+
+    if (acceptInvite && fullName) {
+      // if acceptInvite remains true, send only full_name & accept_invite: true
+      const res = await postCompleteDetailsAndAcceptInvite({
+        fullName,
+        acceptInvite
+      });
+      console.log('accepted invite res:~~~~', res);
       return;
     }
 
-    // if accept_invite remains true, send only full_name & accept_invite: true
-    // else send fullName & organization
-
-    postCompleteDetails({ fullName, organization });
+    if (fullName && organization) {
+      // else send fullName & organization
+      const res = await postCompleteDetails({ fullName, organization });
+      console.log('new organization res:~~~', res);
+      return;
+    }
   };
 
   if (isLoading) return <Loader />;
@@ -63,7 +76,7 @@ export const CompleteDetails = () => {
           >
             <Logo isColored={true} />
             <Typography sx={{ fontWeight: 300 }}>Some extra details so we can help you better.</Typography>
-            {isInvited ? (
+            {acceptInvite ? (
               <Alert
                 severity="info"
                 sx={{
@@ -98,7 +111,7 @@ export const CompleteDetails = () => {
                     margin: '0 auto'
                   }}
                   onClick={() => {
-                    setIsInvited(false);
+                    setAcceptInvite(false);
                   }}
                 >
                   Click here
@@ -135,8 +148,8 @@ export const CompleteDetails = () => {
                 label="Organization"
                 type="text"
                 id="organization"
-                disabled={isInvited}
-                value={isInvited ? completeDetailsData?.invitation?.org_name : ''}
+                disabled={acceptInvite}
+                value={acceptInvite ? completeDetailsData?.invitation?.org_name : organization}
                 onChange={ev => setOrganization(ev.target.value)}
               />
               <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2, height: '56px', width: '306px' }}>
