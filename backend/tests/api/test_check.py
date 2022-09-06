@@ -103,7 +103,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14},
-                                            {"column": "b", "operator": "equals", "value": "ppppp"}]}})
+                                            {"column": "b", "operator": "contains", "value": "ppppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert len(json_rsp["output"]["1"]) == 24

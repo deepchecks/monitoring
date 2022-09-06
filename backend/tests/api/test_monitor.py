@@ -69,7 +69,7 @@ async def test_add_monitor_with_data_filter(classification_model_check_id, clien
         "name": "monitory",
         "lookback": 86400 * 7,
         "data_filters": {"filters": [{
-            "operator": "in",
+            "operator": "contains",
             "value": ["a", "ff"],
             "column": "meta_col"
         }]}
@@ -124,7 +124,7 @@ async def test_update_monitor(classification_model_check_id, client: TestClient)
     monitor_id = add_monitor(classification_model_check_id, client)
     request = {
         "data_filters": {"filters": [{
-            "operator": "in",
+            "operator": "contains",
             "value": ["a", "ff"],
             "column": "meta_col"
         }]}

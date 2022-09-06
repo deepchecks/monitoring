@@ -48,7 +48,7 @@ class Condition(BaseModel):
         elif self.operator == OperatorsEnum.LE:
             op = "<="
         elif self.operator == OperatorsEnum.CONTAINS:
-            op = "in"
+            op = "contains"
         else:
             raise TypeError(f"Unknown operator - {self.operator}")
         return f"Result {op} {self.value}"
