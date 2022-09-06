@@ -58,10 +58,23 @@ class ModelVersion(Base):
     feature_importance = Column(JSONB, nullable=True)
     statistics = Column(JSONB)
 
-    model_id = Column(Integer, ForeignKey("models.id"))
-    model: Mapped[t.Optional["Model"]] = relationship("Model", back_populates="versions")
+    model_id = Column(
+        Integer,
+        ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    model: Mapped[t.Optional["Model"]] = relationship(
+        "Model",
+        back_populates="versions"
+    )
 
-    ingestion_errors: Mapped[t.List["IngestionError"]] = relationship("IngestionError", back_populates="model_version")
+    ingestion_errors: Mapped[t.List["IngestionError"]] = relationship(
+        "IngestionError",
+        back_populates="model_version",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
 
     _optional_fields: t.List[str] = None
 

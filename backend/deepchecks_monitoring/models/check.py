@@ -34,10 +34,23 @@ class Check(Base):
     name = Column(String(50))
     config = Column(JSONB)
 
-    model_id = Column(Integer, ForeignKey("models.id"))
-    model: Mapped[t.Optional["Model"]] = relationship("Model", back_populates="checks")
+    model_id = Column(
+        Integer,
+        ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    model: Mapped[t.Optional["Model"]] = relationship(
+        "Model",
+        back_populates="checks"
+    )
 
-    monitors: Mapped[t.List["Monitor"]] = relationship("Monitor", back_populates="check")
+    monitors: Mapped[t.List["Monitor"]] = relationship(
+        "Monitor",
+        back_populates="check",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True
+    )
 
     def initialize_check(self):
         """Initialize an instance of Deepchecks' check.

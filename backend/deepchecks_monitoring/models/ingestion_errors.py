@@ -34,5 +34,12 @@ class IngestionError(Base):
     samples = Column(ARRAY(String))
     error = Column(String)
 
-    model_version_id = Column(Integer, ForeignKey("model_versions.id"), nullable=False)
-    model_version: Mapped["ModelVersion"] = relationship("ModelVersion", back_populates="ingestion_errors")
+    model_version_id = Column(
+        Integer,
+        ForeignKey("model_versions.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    model_version: Mapped["ModelVersion"] = relationship(
+        "ModelVersion",
+        back_populates="ingestion_errors"
+    )

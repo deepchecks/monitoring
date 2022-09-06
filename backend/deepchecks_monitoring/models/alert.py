@@ -35,5 +35,12 @@ class Alert(Base):
     end_time = Column(DateTime(timezone=True), nullable=False, index=True)
     resolved = Column(Boolean, nullable=False, default=False, index=True)
 
-    alert_rule_id = Column(Integer, ForeignKey("alert_rules.id"), nullable=False)
-    alert_rule: Mapped["AlertRule"] = relationship("AlertRule", back_populates="alerts")
+    alert_rule_id = Column(
+        Integer,
+        ForeignKey("alert_rules.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    alert_rule: Mapped["AlertRule"] = relationship(
+        "AlertRule",
+        back_populates="alerts"
+    )

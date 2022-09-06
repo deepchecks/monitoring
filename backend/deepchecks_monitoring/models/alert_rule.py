@@ -79,10 +79,22 @@ class AlertRule(Base):
     alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
     last_run = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
-    monitor_id = sa.Column(sa.Integer, sa.ForeignKey("monitors.id"), nullable=False)
-    monitor: Mapped[t.Optional["Monitor"]] = relationship("Monitor", back_populates="alert_rules")
-
-    alerts: Mapped[t.List["Alert"]] = relationship("Alert", back_populates="alert_rule")
+    monitor_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("monitors.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    monitor: Mapped[t.Optional["Monitor"]] = relationship(
+        "Monitor",
+        back_populates="alert_rules"
+    )
+    alerts: Mapped[t.List["Alert"]] = relationship(
+        "Alert",
+        back_populates="alert_rule",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True
+    )
 
     @classmethod
     async def get_alerts_per_rule(

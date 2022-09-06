@@ -37,10 +37,30 @@ class Monitor(Base):
     lookback = Column(Integer)
     filter_key = Column(String(50), default=None, nullable=True)
 
-    check_id = Column(Integer, ForeignKey("checks.id"), nullable=False)
-    check: Mapped["Check"] = relationship("Check", back_populates="monitors")
+    check_id = Column(
+        Integer,
+        ForeignKey("checks.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    check: Mapped["Check"] = relationship(
+        "Check",
+        back_populates="monitors"
+    )
 
-    dashboard_id = Column(Integer, ForeignKey("dashboards.id", ondelete="SET NULL"), nullable=True)
-    dashboard: Mapped[t.Optional["Dashboard"]] = relationship("Dashboard", back_populates="monitors")
+    dashboard_id = Column(
+        Integer,
+        ForeignKey("dashboards.id", ondelete="SET NULL", onupdate="RESTRICT"),
+        nullable=True
+    )
+    dashboard: Mapped[t.Optional["Dashboard"]] = relationship(
+        "Dashboard",
+        back_populates="monitors"
+    )
 
-    alert_rules: Mapped[t.List["AlertRule"]] = relationship("AlertRule", back_populates="monitor")
+    alert_rules: Mapped[t.List["AlertRule"]] = relationship(
+        "AlertRule",
+        back_populates="monitor",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True
+    )
