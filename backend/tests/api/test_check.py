@@ -39,6 +39,22 @@ async def test_add_check(classification_model_id, client: TestClient):
     assert resp_json["config"] == request["config"]
 
 
+@pytest.mark.asyncio
+async def test_add_check_list(classification_model_id, client: TestClient):
+    # Arrange
+    confi = {"class_name": "PerformanceReport",
+             "params": {"reduce": "mean"},
+             "module_name": "deepchecks.tabular.checks"
+             }
+    request = [{"name": "checky v1", "config": confi}, {"name": "checky v2", "config": confi}]
+
+    # Act
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [{"id": 1}, {"id": 2}]
+
+
 async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky v2",
@@ -197,6 +213,7 @@ async def test_run_suite_vision(classification_vision_model_id, classification_v
 
     assert response.status_code == 200
 
+
 @pytest.mark.asyncio
 async def test_run_check_vision(classification_vision_model_id,
                                 classification_vision_model_version_id, client: TestClient):
@@ -280,8 +297,8 @@ async def test_run_check_vision(classification_vision_model_id,
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0},
-                                                         {"column": "images Aspect Ratio",
-                                                          "operator": "equals", "value": 2}]}})
+                                                        {"column": "images Aspect Ratio",
+                                                         "operator": "equals", "value": 2}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"1": None}
@@ -367,5 +384,5 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0}]}})
     json_rsp = response.json()
-    assert json_rsp =={"1": {"Average Precision_42": 0.0, "Average Precision_51": 0.0,
-                             "Average Recall_42": 0.0, "Average Recall_51": 0.0}}
+    assert json_rsp == {"1": {"Average Precision_42": 0.0, "Average Precision_51": 0.0,
+                              "Average Recall_42": 0.0, "Average Recall_51": 0.0}}

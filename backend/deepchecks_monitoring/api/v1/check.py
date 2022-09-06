@@ -12,7 +12,7 @@ import typing as t
 
 import pendulum as pdl
 from deepchecks.core import BaseCheck
-from fastapi import Body, Depends, Query
+from fastapi import Query
 from pydantic import BaseModel, validator
 from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import IntegrityError
@@ -84,24 +84,13 @@ class CheckResultSchema(BaseModel):
     time_labels: t.List[str]
 
 
-def extract_checks(body: t.Any = Body(...)) -> t.Union[CheckCreationSchema, t.List[CheckCreationSchema]]:
-    """Parse request body and return check or list of checks schemas."""
-    if isinstance(body, dict):
-        return CheckCreationSchema(**body)
-    elif isinstance(body, list):
-        return [CheckCreationSchema(**it) for it in body]
-    else:
-        raise BadRequest('Expected to receive an object or a list')
-
-
-@router.post(
-    '/models/{model_id}/checks',
-    response_model=t.Union[IdResponse, t.List[IdResponse]],
-    tags=[Tags.CHECKS]
-)
+@router.post('/models/{model_id}/checks',
+             response_model=t.Union[IdResponse, t.List[IdResponse]],
+             tags=[Tags.CHECKS]
+             )
 async def create_check(
     model_id: int,
-    checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]] = Depends(extract_checks),
+    checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]],
     session: AsyncSession = AsyncSessionDep
 ) -> t.Union[t.Dict[t.Any, t.Any], t.List[t.Dict[t.Any, t.Any]]]:
     """Create a new check.

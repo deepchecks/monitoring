@@ -92,7 +92,8 @@ tags_metadata = [
     },
     {
         'name': Tags.ALERTS.value,
-        'description': 'APIs for interacting with alert entities. Including alerts calculation.'
+        'description': 'APIs for interacting with alert/alert-rule entities. Includes adding/updating alert-rules, '
+                       'and retrieving/counting active alerts results.'
     },
     {
         'name': Tags.DATA.value,
