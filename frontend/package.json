@@ -2,7 +2,6 @@
   "name": "ts-front",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://127.0.0.1:8000",
   "dependencies": {
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
@@ -27,8 +26,7 @@
   },
   "scripts": {
     "dev": "env-cmd -f .env.development concurrently yarn:codegen yarn:start",
-    "prestart": "react-scripts build",
-    "start": "react-scripts start",
+    "start": "HTTPS=true react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
