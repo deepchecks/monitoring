@@ -31,6 +31,10 @@ export type LogDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem = { [ke
 
 export type DeleteCheckByNameApiV1ModelsModelIdChecksDeleteParams = { names: string[] };
 
+export type CreateCheckApiV1ModelsModelIdChecksPost200 = IdResponse | IdResponse[];
+
+export type CreateCheckApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | CheckCreationSchema[];
+
 export type GetAlertRulesApiV1AlertRulesGetSortbyItem =
   typeof GetAlertRulesApiV1AlertRulesGetSortbyItem[keyof typeof GetAlertRulesApiV1AlertRulesGetSortbyItem];
 
@@ -86,6 +90,15 @@ export interface ValidationError {
   type: string;
 }
 
+export interface UserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: OrganizationSchema;
+}
+
 /**
  * Enum containing supported task types.
  */
@@ -94,6 +107,11 @@ export type TaskType = unknown;
 export interface OrganizationUpdateSchema {
   slack_notification_levels?: AlertSeverity[];
   email_notification_levels?: AlertSeverity[];
+}
+
+export interface OrganizationSchema {
+  id: number;
+  name: string;
 }
 
 /**
@@ -170,7 +188,7 @@ export interface ModelsInfoSchema {
 
 export type ModelVersionCreationSchemaFeatureImportance = { [key: string]: number };
 
-export type ModelVersionCreationSchemaNonFeatures = { [key: string]: ColumnType };
+export type ModelVersionCreationSchemaFeatures = { [key: string]: ColumnType };
 
 /**
  * Schema defines the parameters for creating new model version.
@@ -228,8 +246,6 @@ export interface InvitationCreationSchema {
 export interface IdResponse {
   id: number;
 }
-
-export type CreateCheckApiV1ModelsModelIdChecksPost200 = IdResponse | IdResponse[];
 
 export interface HTTPValidationError {
   detail?: ValidationError[];
@@ -308,7 +324,7 @@ export interface CompleteDetailsSchema {
  */
 export type ColumnType = unknown;
 
-export type ModelVersionCreationSchemaFeatures = { [key: string]: ColumnType };
+export type ModelVersionCreationSchemaNonFeatures = { [key: string]: ColumnType };
 
 export type ColumnMetadataStats = { [key: string]: any };
 
@@ -342,6 +358,14 @@ export interface CheckSchema {
   config: CheckConfigSchema;
   model_id: number;
   id: number;
+  name?: string;
+}
+
+/**
+ * Check schema.
+ */
+export interface CheckCreationSchema {
+  config: CheckConfigSchema;
   name?: string;
 }
 
@@ -1158,7 +1182,7 @@ int
  */
 export const createCheckApiV1ModelsModelIdChecksPost = (
   modelId: number,
-  createCheckApiV1ModelsModelIdChecksPostBody: unknown
+  createCheckApiV1ModelsModelIdChecksPostBody: CreateCheckApiV1ModelsModelIdChecksPostBody
 ) =>
   customInstance<CreateCheckApiV1ModelsModelIdChecksPost200>({
     url: `/api/v1/models/${modelId}/checks`,
@@ -1170,7 +1194,7 @@ export const createCheckApiV1ModelsModelIdChecksPost = (
 export type CreateCheckApiV1ModelsModelIdChecksPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof createCheckApiV1ModelsModelIdChecksPost>>
 >;
-export type CreateCheckApiV1ModelsModelIdChecksPostMutationBody = unknown;
+export type CreateCheckApiV1ModelsModelIdChecksPostMutationBody = CreateCheckApiV1ModelsModelIdChecksPostBody;
 export type CreateCheckApiV1ModelsModelIdChecksPostMutationError = ErrorType<HTTPValidationError>;
 
 export const useCreateCheckApiV1ModelsModelIdChecksPost = <
@@ -1180,7 +1204,7 @@ export const useCreateCheckApiV1ModelsModelIdChecksPost = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createCheckApiV1ModelsModelIdChecksPost>>,
     TError,
-    { modelId: number; data: unknown },
+    { modelId: number; data: CreateCheckApiV1ModelsModelIdChecksPostBody },
     TContext
   >;
 }) => {
@@ -1188,7 +1212,7 @@ export const useCreateCheckApiV1ModelsModelIdChecksPost = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createCheckApiV1ModelsModelIdChecksPost>>,
-    { modelId: number; data: unknown }
+    { modelId: number; data: CreateCheckApiV1ModelsModelIdChecksPostBody }
   > = props => {
     const { modelId, data } = props ?? {};
 
@@ -1198,7 +1222,7 @@ export const useCreateCheckApiV1ModelsModelIdChecksPost = <
   return useMutation<
     Awaited<ReturnType<typeof createCheckApiV1ModelsModelIdChecksPost>>,
     TError,
-    { modelId: number; data: unknown },
+    { modelId: number; data: CreateCheckApiV1ModelsModelIdChecksPostBody },
     TContext
   >(mutationFn, mutationOptions);
 };
@@ -2884,6 +2908,83 @@ export const useUpdateCompleteDetailsApiV1UsersCompleteDetailsPost = <
     { data: CompleteDetailsUpdateSchema },
     TContext
   >(mutationFn, mutationOptions);
+};
+
+/**
+ * @summary Leave Organization
+ */
+export const leaveOrganizationApiV1UsersLeaveOrganizationPost = () =>
+  customInstance<unknown>({ url: `/api/v1/users/leave-organization`, method: 'post' });
+
+export type LeaveOrganizationApiV1UsersLeaveOrganizationPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>
+>;
+
+export type LeaveOrganizationApiV1UsersLeaveOrganizationPostMutationError = ErrorType<unknown>;
+
+export const useLeaveOrganizationApiV1UsersLeaveOrganizationPost = <
+  TError = ErrorType<unknown>,
+  TVariables = void,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
+    TError,
+    TVariables,
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
+    TVariables
+  > = () => leaveOrganizationApiV1UsersLeaveOrganizationPost();
+
+  return useMutation<
+    Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
+    TError,
+    TVariables,
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Retrieve user details
+ * @summary Retrieve User Info
+ */
+export const retrieveUserInfoApiV1UsersMeGet = (signal?: AbortSignal) =>
+  customInstance<UserSchema>({ url: `/api/v1/users/me`, method: 'get', signal });
+
+export const getRetrieveUserInfoApiV1UsersMeGetQueryKey = () => [`/api/v1/users/me`];
+
+export type RetrieveUserInfoApiV1UsersMeGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveUserInfoApiV1UsersMeGet>>
+>;
+export type RetrieveUserInfoApiV1UsersMeGetQueryError = ErrorType<unknown>;
+
+export const useRetrieveUserInfoApiV1UsersMeGet = <
+  TData = Awaited<ReturnType<typeof retrieveUserInfoApiV1UsersMeGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveUserInfoApiV1UsersMeGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetrieveUserInfoApiV1UsersMeGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveUserInfoApiV1UsersMeGet>>> = ({ signal }) =>
+    retrieveUserInfoApiV1UsersMeGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof retrieveUserInfoApiV1UsersMeGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
 };
 
 /**
