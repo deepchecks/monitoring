@@ -68,8 +68,16 @@ const useMonitorsData = () => {
         end_time: new Date(modelsMap[monitor.check.model_id]?.latest_time * 1000)
       });
     });
-    Promise.all(monitorFetchers)
-      .then(monitors => monitors.map(parseMonitorDataForChart))
+    Promise.allSettled(monitorFetchers)
+      .then(monitors => monitors.map(result => {
+        if (result.status == 'fulfilled') {
+          return parseMonitorDataForChart(result.value)
+        }
+        else {
+          console.log("Error fetching monitor" + result)
+          return {labels: [], datasets: []};
+        }
+      } ))
       .then(setChartDataList);
   }, [dashboards]);
 

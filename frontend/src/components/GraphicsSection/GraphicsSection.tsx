@@ -110,7 +110,7 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
         <StyledMenuItem onClick={handleOpenEditMonitor}>
           <Typography variant="body2">Edit</Typography>
         </StyledMenuItem>
-        <StyledMenuItem onClick={handleOpenSubmenu}>
+        {/* <StyledMenuItem onClick={handleOpenSubmenu}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" width={1}>
             <Typography variant="body2">Change width</Typography>
             <StyledArrow fill="black" />
@@ -126,7 +126,7 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
               <Typography variant="body2">ThreeColumns</Typography>
             </StyledMenuItem>
           </Submenu>
-        </StyledMenuItem>
+        </StyledMenuItem> */}
       </StyledRootMenu>
     </>
   );
