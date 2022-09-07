@@ -25,7 +25,7 @@ from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_CO
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, TimeUnit, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, TimeUnit, fetch_or_404
 
 from .router import router
 
@@ -237,12 +237,13 @@ async def get_model_columns(
     Dict[str, ColumnMetadata]
         Column name and metadata (type and value if available).
     """
-    await exists_or_404(session, Model, id=model_id)
-    model_results = await session.execute(select(Model).where(Model.id == model_id)
-                                          .options(selectinload(Model.versions)))
-    model: Model = model_results.scalars().first()
-    model_versions: t.List[ModelVersion] = sorted(model.versions, key=lambda version: version.end_time, reverse=True)
-    latest_version = model_versions[0]
+    options = selectinload(Model.versions)
+    model = await fetch_or_404(session, Model, id=model_id, options=options)
+    # If model is new and there are no versions, return empty dict
+    if len(model.versions) == 0:
+        return {}
+
+    latest_version = model.versions[0]
 
     column_dict: t.Dict[str, ColumnMetadata] = {}
 

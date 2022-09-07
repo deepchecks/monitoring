@@ -46,6 +46,13 @@ async def test_get_columns_model(classification_model_id, classification_model_v
 
 
 @pytest.mark.asyncio
+async def test_get_columns_model_without_versions(classification_model_id, client: TestClient):
+    response = client.get(f"/api/v1/models/{classification_model_id}/columns")
+    assert response.status_code == 200
+    assert response.json() == {}
+
+
+@pytest.mark.asyncio
 async def test_get_models(classification_model_check_id, regression_model_check_id, client: TestClient, async_session):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
