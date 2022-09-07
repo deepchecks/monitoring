@@ -102,8 +102,8 @@ class ModelVersion(Base):
         """Get name of reference table."""
         return f"model_{self.model_id}_ref_data_{self.id}"
 
-    def get_top_features(self, n_top: int = 30) -> t.Tuple[t.List[str], t.Dict[str, float]]:
-        """Get top n features sorted by feature importence and the feature_importance."""
+    def get_top_features(self, n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
+        """Get top n features sorted by feature importance and the feature_importance."""
         if self.feature_importance:
             feat_dict = dict(sorted(self.feature_importance.items(), key=lambda item: item[1])[:n_top])
             feat = list(feat_dict.keys())

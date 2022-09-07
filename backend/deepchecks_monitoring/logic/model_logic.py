@@ -40,16 +40,14 @@ from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 async def get_model_versions_for_time_range(session: AsyncSession,
                                             check: Check,
                                             start_time: pdl.DateTime,
-                                            end_time: pdl.DateTime) -> t.List[ModelVersion]:
+                                            end_time: pdl.DateTime) -> t.Tuple[Model, t.List[ModelVersion]]:
     """Get model versions for a time window."""
     model_results = await session.execute(select(Model).where(Model.id == check.model_id)
-                                          .options(selectinload(Model.versions)
-                                                   .options(selectinload(ModelVersion.model))))
+                                          .options(selectinload(Model.versions)))
     model: Model = model_results.scalars().first()
-    model_versions: t.List[ModelVersion] = sorted(filter(
-        lambda version: start_time <= version.end_time and end_time >= version.start_time, model.versions),
-        key=lambda version: version.end_time, reverse=True)
-    return model_versions
+    model_versions: t.List[ModelVersion] = [version for version in model.versions
+                                            if start_time <= version.end_time and end_time >= version.start_time]
+    return model, model_versions
 
 
 def create_model_version_select_object(model_version: ModelVersion, mon_table: Table, top_feat: t.List[str]) -> Select:
@@ -140,43 +138,33 @@ def filter_table_selection_by_data_filters(data_table: Table, table_selection: S
     return filtered_table_selection
 
 
-async def get_results_for_active_model_version_sessions_per_window(
-        model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]],
+async def get_results_for_model_versions_per_window(
+        model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[pd.DataFrame]]],
         model_versions: t.List[ModelVersion],
+        model: Model,
         dp_check: BaseCheck) -> t.Dict[int, t.Dict[str, float]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = model_versions[0].get_top_features()
-    task_type = model_versions[0].model.task_type
+    task_type = model.task_type
     is_vision_check = isinstance(dp_check,
                                  (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
 
     model_reduces = {}
-    for model_versions_session, model_version in zip(model_versions_sessions, model_versions):
-        test_data_dataframes: t.List[pd.DataFrame] = []
-        reference_query, test_queries = model_versions_session
-        for test_query in test_queries:
-            if test_query is None:
-                test_data_dataframes.append(pd.DataFrame())
-            else:
-                test_query = await test_query
-                test_data_dataframes.append(pd.DataFrame.from_dict(test_query.all()))
-        if reference_query is not None:
-            reference_query = await reference_query
-            reference_table_data_dataframe = pd.DataFrame.from_dict(reference_query.all())
-            if reference_table_data_dataframe.empty:
-                model_reduces[model_version.id] = None
-                continue
-        else:
-            reference_table_data_dataframe = None
+    for (reference_table_dataframe, test_dataframes), model_version in zip(model_versions_dataframes, model_versions):
+        # If we have empty reference skip the run
+        if reference_table_dataframe is not None and reference_table_dataframe.empty:
+            model_reduces[model_version.id] = None
+            continue
+
         reduced_outs = []
         if not is_vision_check:
             reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-                reference_table_data_dataframe, model_version.features_columns, top_feat)
+                reference_table_dataframe, model_version.features_columns, top_feat)
         else:
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_data_dataframe, task_type)
+                reference_table_dataframe, task_type)
 
-        for test_data_dataframe in test_data_dataframes:
+        for test_data_dataframe in test_dataframes:
             if test_data_dataframe.empty:
                 reduced_outs.append(None)
                 continue

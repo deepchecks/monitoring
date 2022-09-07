@@ -21,6 +21,7 @@ from fastapi.testclient import TestClient
 from requests import Response
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.app import create_application
@@ -28,7 +29,7 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from deepchecks_monitoring.models.base import Base
-from deepchecks_monitoring.utils import json_dumps
+from deepchecks_monitoring.utils import json_dumps, ExtendedAsyncSession
 
 dotenv.load_dotenv()
 
@@ -69,11 +70,16 @@ async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterat
 @pytest_asyncio.fixture()
 async def async_session(async_engine: AsyncEngine):
     """Get async sqlalchemy session instance."""
-    async with AsyncSession(async_engine) as session:
+    session_factory = sessionmaker(
+        async_engine,
+        class_=ExtendedAsyncSession,
+        expire_on_commit=False
+    )
+    async with session_factory() as session:
         try:
             yield session
             await session.commit()
-        except BaseException as error:
+        except Exception as error:
             await session.rollback()
             raise error
         finally:

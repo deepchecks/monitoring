@@ -192,7 +192,9 @@ def create_application(
         else:
             # On not-existing route returns the index, and let the frontend handle the incorrect path.
             path = settings.assets_folder.absolute() / "index.html"
-            return FileResponse(path)
+            if path.exists():
+                return FileResponse(path)
+            return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
 
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 

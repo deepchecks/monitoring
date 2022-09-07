@@ -11,6 +11,7 @@
 """Module defining utility functions for check running."""
 import typing as t
 
+import pandas as pd
 import pendulum as pdl
 from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.tabular.suite import Suite as TabularSuite
@@ -28,8 +29,7 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
-                                                     get_results_for_active_model_version_sessions_per_window,
-                                                     random_sample)
+                                                     get_results_for_model_versions_per_window, random_sample)
 from deepchecks_monitoring.models import ModelVersion, Monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule
@@ -58,12 +58,6 @@ class MonitorOptions(BaseModel):
     def end_time_dt(self) -> pdl.DateTime:
         """Get end time as datetime object."""
         return pdl.parse(self.end_time)
-
-
-class FilterWindowOptions(MonitorOptions):
-    """Window with filter run schema."""
-
-    model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
 async def run_rules_of_monitor(
@@ -110,10 +104,7 @@ async def run_rules_of_monitor(
             await AlertRule.update(session, alert_rule.id, {"last_run": end_time})
 
         # get relevant model_versions for that time window
-        model_versions = await get_model_versions_for_time_range(session,
-                                                                 monitor.check,
-                                                                 start_time,
-                                                                 end_time)
+        model, model_versions = await get_model_versions_for_time_range(session, monitor.check, start_time, end_time)
 
         # get the alert for this window (if exists)
         alert_results = await session.execute(select(Alert)
@@ -132,16 +123,17 @@ async def run_rules_of_monitor(
 
         # filter model versions that didn't send newer data (if in the grace period)
         # filter model versions that already have data in the event
-        relevant_model_versions: t.List[str] = [
-            str(version.id) for version in model_versions
-            if (not alert_check_options.grace_period or version.end_time >= end_time) and version.id not in alert_dict]
+        relevant_model_versions = [
+            version for version in model_versions if
+            (not alert_check_options.grace_period or version.end_time >= end_time) and version.id not in alert_dict
+        ]
 
         # run check for the relevant window and data filter
-        check_alert_check_options = FilterWindowOptions(start_time=start_time.isoformat(),
-                                                        end_time=end_time.isoformat(),
-                                                        data_filter=monitor.data_filters,
-                                                        model_version_ids=relevant_model_versions)
-        check_results = await run_check_window(monitor.check, check_alert_check_options, session)
+        check_alert_check_options = MonitorOptions(start_time=start_time.isoformat(),
+                                                   end_time=end_time.isoformat(),
+                                                   data_filter=monitor.data_filters)
+        check_results = await run_check_window(monitor.check, check_alert_check_options, session, model=model,
+                                               model_versions=relevant_model_versions)
 
         # test if any results raise an alert
         for model_version_id, results in check_results.items():
@@ -210,7 +202,7 @@ async def run_check_per_window_in_range(
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
 
-    model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
+    model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
@@ -251,10 +243,16 @@ async def run_check_per_window_in_range(
             new_start_time = new_start_time + window
         model_versions_sessions.append((reference_query, test_queries))
 
+    # Complete queries and then commit the connection, to release back to the pool (since the check might take long time
+    # to run, and we don't want to unnecessarily hold the connection)
+    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    await session.commit()
+
     # get result from active sessions and run the check per each model version
-    model_reduces = await get_results_for_active_model_version_sessions_per_window(model_versions_sessions,
-                                                                                   model_versions,
-                                                                                   dp_check)
+    model_reduces = await get_results_for_model_versions_per_window(model_version_dataframes,
+                                                                    model_versions,
+                                                                    model,
+                                                                    dp_check)
 
     # get the time windows that were used
     time_windows = []
@@ -267,26 +265,25 @@ async def run_check_per_window_in_range(
 
 async def run_check_window(
     check: Check,
-    window_options: FilterWindowOptions,
-    session: AsyncSession = AsyncSessionDep
+    monitor_options: MonitorOptions,
+    session: AsyncSession,
+    model,
+    model_versions
 ):
     """Run a check for each time window by lookback.
 
     Parameters
     ----------
     check : Check
-    window_options : FilterWindowOptions
+    monitor_options : MonitorOptions
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
+    model
+    model_versions
     """
     # get the relevant objects from the db
     dp_check = check.initialize_check()
-
-    start_time = window_options.start_time_dt()
-    end_time = window_options.end_time_dt()
-
-    model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
@@ -298,19 +295,21 @@ async def run_check_window(
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
     for model_version in model_versions:
-        if window_options.model_version_ids is not None and \
-                model_version.id not in window_options.model_version_ids:
-            continue
-
-        test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options,
+        test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
                                                         with_reference=load_reference)
 
         model_versions_sessions.append((ref_session, [test_session]))
 
+    # Complete queries and then commit the connection, to release back to the pool (since the check might take long time
+    # to run, and we don't want to unnecessarily hold the connection)
+    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    await session.commit()
+
     # get result from active sessions and run the check per each model version
-    model_reduces_per_window = await get_results_for_active_model_version_sessions_per_window(model_versions_sessions,
-                                                                                              model_versions,
-                                                                                              dp_check)
+    model_reduces_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
+                                                                               model_versions,
+                                                                               model,
+                                                                               dp_check)
     # the original function is more general and runs it per window, we have only 1 window here
     model_reduces = {}
     for model_id, reduces_per_window in model_reduces_per_window.items():
@@ -358,6 +357,16 @@ async def run_suite_for_model_version(
     test_session_result = await test_session
     test_df = DataFrame.from_dict(test_session_result.all())
 
+    if ref_session:
+        ref_session_result = await ref_session
+        ref_df = DataFrame.from_dict(ref_session_result.all())
+    else:
+        ref_df = None
+
+    # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily for
+    # a long time
+    await session.commit()
+
     if is_tabular:
         test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
             test_df, model_version.features_columns, top_feat)
@@ -365,9 +374,7 @@ async def run_suite_for_model_version(
         test_dataset, test_pred, test_props = dataframe_to_vision_data_pred_props(
             test_df, model_version.model.task_type)
 
-    if ref_session:
-        ref_session_result = await ref_session
-        ref_df = DataFrame.from_dict(ref_session_result.all())
+    if ref_df:
         if is_tabular:
             reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
                 ref_df, model_version.features_columns, top_feat)
@@ -450,3 +457,24 @@ def load_data_for_check(
         test_query = None
 
     return test_query, reference_query
+
+
+async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]]):
+    """Complete all the async queries and transforms them into dataframes."""
+    model_version_dataframes = []
+    for (reference_query, test_queries) in model_versions_sessions:
+        test_data_dataframes: t.List[pd.DataFrame] = []
+        for test_query in test_queries:
+            if test_query is None:
+                test_data_dataframes.append(pd.DataFrame())
+            else:
+                test_query = await test_query
+                test_data_dataframes.append(pd.DataFrame.from_dict(test_query.all()))
+        if reference_query is not None:
+            reference_query = await reference_query
+            reference_table_data_dataframe = pd.DataFrame.from_dict(reference_query.all())
+        else:
+            reference_table_data_dataframe = None
+
+        model_version_dataframes.append((reference_table_data_dataframe, test_data_dataframes))
+    return model_version_dataframes

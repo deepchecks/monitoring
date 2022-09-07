@@ -22,8 +22,8 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.check_logic import (FilterWindowOptions, MonitorOptions, run_check_per_window_in_range,
-                                                     run_check_window)
+from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range, run_check_window
+from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.models import Check, Model
 from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
 
@@ -238,7 +238,7 @@ async def run_standalone_check_per_window_in_range(
 @router.post('/checks/{check_id}/run/window', tags=[Tags.CHECKS])
 async def get_check_window(
     check_id: int,
-    window_options: FilterWindowOptions,
+    monitor_options: MonitorOptions,
     session: AsyncSession = AsyncSessionDep
 ):
     """Run a check for the time window.
@@ -247,7 +247,7 @@ async def get_check_window(
     ----------
     check_id : int
         ID of the check.
-    window_options : FilterWindowOptions
+    monitor_options : MonitorOptions
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
@@ -257,5 +257,8 @@ async def get_check_window(
     CheckSchema
         Created check.
     """
-    check = await fetch_or_404(session, Check, id=check_id)
-    return await run_check_window(check, window_options, session)
+    check: Check = await fetch_or_404(session, Check, id=check_id)
+    start_time = monitor_options.start_time_dt()
+    end_time = monitor_options.end_time_dt()
+    model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
+    return await run_check_window(check, monitor_options, session, model, model_versions)
