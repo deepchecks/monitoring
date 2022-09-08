@@ -37,8 +37,9 @@ from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from jsonschema import validate
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
+from deepchecks.vision.utils.label_prediction_properties import DEFAULT_OBJECT_DETECTION_LABEL_PROPERTIES
 
-from client.deepchecks_client.utils import calc_image_bbox_props, create_static_properties
+from deepchecks_client.utils import calc_image_bbox_props, create_static_properties
 
 __all__ = ['DeepchecksClient']
 __version__ = version("deepchecks_client")
@@ -530,7 +531,7 @@ class DeepchecksModelClient:
 
     def version_client(self,
                        model_version_id: int,
-                       image_properties: Optional[List[Dict[str, Any]]] = None) \
+                       image_properties: Optional[List[Dict[str, Any]]] = default_image_properties) \
             -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model.
 
