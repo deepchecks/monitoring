@@ -25,6 +25,8 @@ import { ReactComponent as PencilDrawing } from './pencilDrawing.svg';
 import { ReactComponent as Checkmark } from './checkmark.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
+import { ReactComponent as UserInvite} from './userInvite.svg'
+import { ReactComponent as EmailIcon } from './email.svg';
 
 export {
   Alarm,
@@ -53,5 +55,7 @@ export {
   Rewind,
   SearchIcon,
   Sort,
-  PencilDrawing
+  PencilDrawing,
+  UserInvite,
+  EmailIcon
 };
