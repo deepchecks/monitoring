@@ -1,12 +1,12 @@
-import React, { useRef } from 'react';
 import { alpha, Box, useTheme } from '@mui/material';
 import { Chart, ChartArea, ChartData, registerables, TimeUnit } from 'chart.js';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import React, { useRef } from 'react';
 import { Line } from 'react-chartjs-2';
-import { colors } from '../theme/colors';
-import { GraphData } from '../helpers/types';
 import { addSpace, drawCircle, setThreshold } from '../helpers/diagramLine';
+import { GraphData } from '../helpers/types';
+import { colors } from '../theme/colors';
 
 Chart.register(...registerables, zoomPlugin);
 
@@ -84,7 +84,8 @@ function DiagramLine({ data, threshold = 0, minTimeUnit = 'day' }: DiagramLinePr
           },
           elements: {
             point: {
-              radius: 0,
+              borderWidth: 2,
+              radius: 4,
               hoverRadius: 6,
               hitRadius: 10,
               hoverBorderWidth: 3

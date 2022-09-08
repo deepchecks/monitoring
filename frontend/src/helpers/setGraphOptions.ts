@@ -21,8 +21,8 @@ export const graphColors = [
 export const setGraphOptions = (label: string, index: number) => ({
   label,
   borderColor: graphColors[index],
-  pointBorderColor: 'rgba(0, 0, 0, 0)',
-  pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+  pointBorderColor: '#fff',
+  pointBackgroundColor: graphColors[index],
   pointHoverBackgroundColor: 'rgb(255, 255, 255)',
   pointHoverBorderColor: pointColor.primary.violet[400],
   hidden: false
