@@ -1,7 +1,6 @@
 import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import { APP_URL, BASE_API } from '../config';
 
-export const AXIOS_INSTANCE = Axios.create({ baseURL: BASE_API, withCredentials: true });
+export const AXIOS_INSTANCE = Axios.create({ baseURL: process.env.REACT_APP_BASE_API, withCredentials: true });
 
 // Adding an axios interceptor that will handle unauthorized users & users with incomplete details:
 AXIOS_INSTANCE.interceptors.response.use(
@@ -9,7 +8,11 @@ AXIOS_INSTANCE.interceptors.response.use(
   error => {
     const { response } = error;
     if (response.status === 401) {
-      window.location.href = `${BASE_API}/api/v1/auth/login/auth0?return_uri=${encodeURIComponent(APP_URL!)}`;
+      let redirectLocation = `${process.env.REACT_APP_BASE_API}/api/v1/auth/login/auth0`
+      if (process.env.REACT_APP_LOCAL_URL) {
+        redirectLocation += `?return_uri=${encodeURIComponent(process.env.REACT_APP_LOCAL_URL!)}`
+      }
+      window.location.href = redirectLocation;
     } else if (response.status === 403 && response.headers['x-substatus'] === '10') {
       // Complete details...
       window.location.href = '/complete-details';
