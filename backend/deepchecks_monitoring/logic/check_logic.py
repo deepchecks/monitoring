@@ -374,7 +374,7 @@ async def run_suite_for_model_version(
         test_dataset, test_pred, test_props = dataframe_to_vision_data_pred_props(
             test_df, model_version.model.task_type)
 
-    if ref_df:
+    if ref_df is not None:
         if is_tabular:
             reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
                 ref_df, model_version.features_columns, top_feat)
