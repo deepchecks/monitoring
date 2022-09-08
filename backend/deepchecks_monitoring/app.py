@@ -9,9 +9,11 @@
 # ----------------------------------------------------------------------------
 """Module defining the app."""
 import asyncio
+import logging
 import typing as t
 from contextlib import asynccontextmanager
 
+import deepchecks
 import jsonschema.exceptions
 from aiokafka import AIOKafkaProducer
 from fastapi import APIRouter, FastAPI, Request, status
@@ -206,5 +208,8 @@ def create_application(
         # Add telemetry
         if settings.instrument_telemetry:
             FastAPIInstrumentor.instrument_app(app)
+
+    # Set deepchecks testing library logging verbosity to error to not spam the logs
+    deepchecks.set_verbosity(logging.ERROR)
 
     return app

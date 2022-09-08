@@ -62,7 +62,7 @@ def event_loop() -> t.Generator:
 @pytest_asyncio.fixture(scope="function")
 async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
     url = postgres.url().replace("postgresql", "postgresql+asyncpg")
-    engine = create_async_engine(url, echo=True, json_serializer=json_dumps)
+    engine = create_async_engine(url, echo=False, json_serializer=json_dumps)
     yield engine
     await engine.dispose()
 
