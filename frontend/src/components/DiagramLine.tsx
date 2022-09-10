@@ -99,7 +99,7 @@ function DiagramLine({ data, threshold = 0, minTimeUnit = 'day' }: DiagramLinePr
             legend: {
               display: true,
               position: 'bottom',
-              align: 'end',
+              align: 'start',
               labels: {
                 usePointStyle: true,
                 textAlign: 'center',

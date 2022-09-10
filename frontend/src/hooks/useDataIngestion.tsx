@@ -3,9 +3,11 @@ import dayjs from 'dayjs';
 import { useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet } from '../api/generated';
 import useStatsTime from './useStatsTime';
 import { setGraphColor } from '../helpers/graphColors';
+import useModelsMap from './useModelsMap';
 
 const useDataIngestion = () => {
   const [statsTime] = useStatsTime();
+  const modelsMap = useModelsMap();
 
   const { data = [], isLoading } = useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet({
     time_filter: statsTime.value
@@ -21,7 +23,7 @@ const useDataIngestion = () => {
               x: dayjs(new Date(day * 1_000)).format('MMM. DD (HH:mm:ss)'),
               y: count
             })),
-          ...setGraphColor(key, index)
+          ...setGraphColor(modelsMap[key].name, index)
         })) ?? [],
       labels: Object.entries(data)
         .flatMap(([_, items]) => items.map(item => item.day * 1_000))
