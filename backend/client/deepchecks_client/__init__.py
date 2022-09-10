@@ -29,7 +29,6 @@ from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
                                        TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
-from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision import VisionData
 from deepchecks.vision.task_type import TaskType as VisTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
@@ -45,15 +44,6 @@ __all__ = ['DeepchecksClient']
 __version__ = version("deepchecks_client")
 
 
-def _un_tensor(*tensors: torch.Tensor):
-    un_tensored = []
-    for tensor in tensors:
-        un_tensored.append(tensor.cpu().detach().numpy().tolist())
-    if len(un_tensored) == 1:
-        return un_tensored[0]
-    return un_tensored
-
-
 def _create_timestamp(timestamp):
     if timestamp:
         if isinstance(timestamp, int):
@@ -65,6 +55,28 @@ def _create_timestamp(timestamp):
             raise Exception(f'Not supported timestamp type: {type(timestamp)}')
     else:
         return pdl.now()
+
+
+class DeepchecksEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.generic):
+            if np.isnan(obj):
+                return None
+            return obj.item()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, torch.Tensor):
+            tensor_values = obj.cpu().detach().numpy().tolist()
+            return tuple([self.default(v) for v in tensor_values])
+        if isinstance(obj, dict):
+            return {k: self.default(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return tuple([self.default(v) for v in obj])
+        return obj
 
 
 class TaskType(enum.Enum):
@@ -116,7 +128,7 @@ class HttpSession(requests.Session):
 
     def request(self, method, url, *args, **kwargs) -> requests.Response:
         url = urljoin(self.base_url, url)
-        headers = kwargs.get('headers', {})
+        headers = kwargs.pop('headers') if 'headers' in kwargs else {}
         if self.token:
             headers['Authorization'] = f'Basic {self.token}'
         return super().request(method, url, *args, headers=headers, **kwargs)
@@ -200,7 +212,7 @@ class DeepchecksModelVersionClient:
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
             if prediction_proba is not None:
-                sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_proba)
+                sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = prediction_proba
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = str(prediction)
         elif TaskType(self.model['task_type']) == TaskType.REGRESSION:
             if label is not None:
@@ -209,6 +221,8 @@ class DeepchecksModelVersionClient:
         else:
             raise Exception(f'Unknown task type provided')
 
+        # Make the sample json-compatible
+        sample = DeepchecksEncoder().default(sample)
         validate(instance=sample, schema=self.schema)
 
         self._log_samples.append(sample)
@@ -241,10 +255,10 @@ class DeepchecksModelVersionClient:
         prop_vals = {}
         if image_props:
             for prop_name, prop_val in image_props.items():
-                prop_vals[PropertiesInputType.IMAGES.value + ' ' + prop_name] = un_numpy(prop_val[0])
+                prop_vals[PropertiesInputType.IMAGES.value + ' ' + prop_name] = prop_val[0]
         if bbox_props:
             for prop_name, prop_val in bbox_props.items():
-                prop_vals[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = un_numpy(prop_val[0])
+                prop_vals[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = prop_val[0]
         sample = {
             DeepchecksColumns.SAMPLE_ID_COL.value: sample_id,
             DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
@@ -252,9 +266,11 @@ class DeepchecksModelVersionClient:
         }
 
         if prediction is not None:
-            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = _un_tensor(prediction)
-        sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = _un_tensor(label)
+            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = prediction
+        sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
+        # Make the sample json-compatible
+        sample = DeepchecksEncoder().default(sample)
         validate(instance=sample, schema=self.schema)
 
         self._log_samples.append(sample)
@@ -341,7 +357,7 @@ class DeepchecksModelVersionClient:
                                 'classification task type')
             elif isinstance(prediction_proba, pd.DataFrame):
                 prediction_proba = np.asarray(prediction_proba)
-            data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_proba)
+            data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = prediction_proba
             data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [str(x) for x in prediction]
 
         if len(dataset) > 100_000:
@@ -383,6 +399,8 @@ class DeepchecksModelVersionClient:
         if label:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
+        # Make the update json-compatible
+        update = DeepchecksEncoder().default(update)
         validate(instance=update, schema=optional_columns_schema)
 
         maybe_raise(
