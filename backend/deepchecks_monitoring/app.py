@@ -158,6 +158,7 @@ def create_application(
         allow_methods=["*"],
         allow_headers=["*"],
         allow_credentials=True,
+        expose_headers=["*"],
     )
 
     routers_dependencies = routers_dependencies or {}
