@@ -35,7 +35,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   useEffect(() => {
     if (!user || isUserDetailsComplete) return;
     navigate('/complete-details');
-  }, [isUserDetailsComplete]);
+  }, [user, isUserDetailsComplete]);
 
   const value = { user, isUserDetailsComplete };
 
