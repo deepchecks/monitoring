@@ -15,7 +15,7 @@ import type {
 } from '@tanstack/react-query';
 import { customInstance } from '../services/customAxios';
 import type { ErrorType } from '../services/customAxios';
-export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error: string; state: string };
+export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error?: string; state?: string };
 
 export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: ColumnMetadata };
 
@@ -188,6 +188,8 @@ export interface ModelsInfoSchema {
 
 export type ModelVersionCreationSchemaFeatureImportance = { [key: string]: number };
 
+export type ModelVersionCreationSchemaNonFeatures = { [key: string]: ColumnType };
+
 export type ModelVersionCreationSchemaFeatures = { [key: string]: ColumnType };
 
 /**
@@ -268,16 +270,6 @@ export interface DataFilterList {
 }
 
 /**
- * Window with filter run schema.
- */
-export interface FilterWindowOptions {
-  end_time: string;
-  start_time: string;
-  filter?: DataFilterList;
-  model_version_ids?: number[];
-}
-
-/**
  * Schema defines the parameters for updating a dashboard.
  */
 export interface DashboardUpdateSchema {
@@ -323,8 +315,6 @@ export interface CompleteDetailsSchema {
  * Enum containing possible types of data.
  */
 export type ColumnType = unknown;
-
-export type ModelVersionCreationSchemaNonFeatures = { [key: string]: ColumnType };
 
 export type ColumnMetadataStats = { [key: string]: any };
 
@@ -1441,7 +1431,7 @@ Parameters
 ----------
 check_id : int
     ID of the check.
-window_options : FilterWindowOptions
+monitor_options : MonitorOptions
     The window options.
 session : AsyncSession, optional
     SQLAlchemy session.
@@ -1452,21 +1442,18 @@ CheckSchema
     Created check.
  * @summary Get Check Window
  */
-export const getCheckWindowApiV1ChecksCheckIdRunWindowPost = (
-  checkId: number,
-  filterWindowOptions: FilterWindowOptions
-) =>
+export const getCheckWindowApiV1ChecksCheckIdRunWindowPost = (checkId: number, monitorOptions: MonitorOptions) =>
   customInstance<unknown>({
     url: `/api/v1/checks/${checkId}/run/window`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
-    data: filterWindowOptions
+    data: monitorOptions
   });
 
 export type GetCheckWindowApiV1ChecksCheckIdRunWindowPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getCheckWindowApiV1ChecksCheckIdRunWindowPost>>
 >;
-export type GetCheckWindowApiV1ChecksCheckIdRunWindowPostMutationBody = FilterWindowOptions;
+export type GetCheckWindowApiV1ChecksCheckIdRunWindowPostMutationBody = MonitorOptions;
 export type GetCheckWindowApiV1ChecksCheckIdRunWindowPostMutationError = ErrorType<HTTPValidationError>;
 
 export const useGetCheckWindowApiV1ChecksCheckIdRunWindowPost = <
@@ -1476,7 +1463,7 @@ export const useGetCheckWindowApiV1ChecksCheckIdRunWindowPost = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof getCheckWindowApiV1ChecksCheckIdRunWindowPost>>,
     TError,
-    { checkId: number; data: FilterWindowOptions },
+    { checkId: number; data: MonitorOptions },
     TContext
   >;
 }) => {
@@ -1484,7 +1471,7 @@ export const useGetCheckWindowApiV1ChecksCheckIdRunWindowPost = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof getCheckWindowApiV1ChecksCheckIdRunWindowPost>>,
-    { checkId: number; data: FilterWindowOptions }
+    { checkId: number; data: MonitorOptions }
   > = props => {
     const { checkId, data } = props ?? {};
 
@@ -1494,7 +1481,7 @@ export const useGetCheckWindowApiV1ChecksCheckIdRunWindowPost = <
   return useMutation<
     Awaited<ReturnType<typeof getCheckWindowApiV1ChecksCheckIdRunWindowPost>>,
     TError,
-    { checkId: number; data: FilterWindowOptions },
+    { checkId: number; data: MonitorOptions },
     TContext
   >(mutationFn, mutationOptions);
 };
