@@ -205,6 +205,15 @@ async def get_results_for_model_versions_per_window(
 
         model_reduces[model_version.id] = reduced_outs
 
+    # return the reduced result with strings as keys
+    for reduced_results in model_reduces.values():
+        for reduced_res in reduced_results:
+            if reduced_res is not None:
+                for val_name, val_value in list(reduced_res.items()):
+                    if (isinstance(val_name, list)):
+                        reduced_res[' '.join(val_name)] = val_value
+                        del reduced_res[val_name]
+
     return model_reduces
 
 
