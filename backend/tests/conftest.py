@@ -193,7 +193,7 @@ async def classification_model_version_no_fi_id(classification_model_id: int, cl
 @pytest_asyncio.fixture()
 async def classification_model_check_id(async_session: AsyncSession, classification_model_id: int):
     schema = CheckCreationSchema(name="check", config={
-        "class_name": "TrainTestPerformance",
+        "class_name": "PerformanceReport",
         "params": {"reduce": "mean"},
         "module_name": "deepchecks.tabular.checks"
     })
@@ -206,7 +206,7 @@ async def classification_model_check_id(async_session: AsyncSession, classificat
 @pytest_asyncio.fixture()
 async def regression_model_check_id(async_session: AsyncSession, regression_model_id: int):
     schema = CheckCreationSchema(name="check", config={
-        "class_name": "TrainTestPerformance",
+        "class_name": "PerformanceReport",
         "params": {"reduce": "mean"},
         "module_name": "deepchecks.tabular.checks"
     })

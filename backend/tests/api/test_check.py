@@ -19,7 +19,7 @@ async def test_add_check(classification_model_id, client: TestClient):
     # Arrange
     request = {
         "name": "checky v1",
-        "config": {"class_name": "SingleDatasetPerformance",
+        "config": {"class_name": "PerformanceReport",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
                    },
@@ -42,7 +42,7 @@ async def test_add_check(classification_model_id, client: TestClient):
 @pytest.mark.asyncio
 async def test_add_check_list(classification_model_id, client: TestClient):
     # Arrange
-    confi = {"class_name": "SingleDatasetPerformance",
+    confi = {"class_name": "PerformanceReport",
              "params": {"reduce": "mean"},
              "module_name": "deepchecks.tabular.checks"
              }
@@ -58,7 +58,7 @@ async def test_add_check_list(classification_model_id, client: TestClient):
 async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky v2",
-        "config": {"class_name": "SingleDatasetPerformance",
+        "config": {"class_name": "PerformanceReport",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
                    },
