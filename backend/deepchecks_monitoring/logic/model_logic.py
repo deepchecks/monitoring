@@ -17,6 +17,7 @@ import pandas as pd
 import pendulum as pdl
 import torch
 from deepchecks.core import BaseCheck
+from deepchecks.core.errors import DeepchecksBaseError
 from deepchecks.tabular import Dataset
 from deepchecks.tabular import base_checks as tabular_base_checks
 from deepchecks.utils.dataframes import un_numpy
@@ -175,29 +176,33 @@ async def get_results_for_model_versions_per_window(
             else:
                 test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(test_data_dataframe,
                                                                                      task_type)
-                # 1/0
-            if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
-                reduced = dp_check.run(test_ds, feature_importance=feat_imp,
-                                       y_pred_train=test_pred, y_proba_train=test_proba,
-                                       with_display=False).reduce_output()
-            elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
-                reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
-                                       y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
-                                       y_pred_test=test_pred, y_proba_test=test_proba,
-                                       with_display=False).reduce_output()
-            elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
-                reduced = dp_check.run(test_ds,
-                                       train_predictions=test_pred, train_properties=test_props,
-                                       with_display=False).reduce_output()
-            elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
-                reduced = dp_check.run(reference_table_ds, test_ds,
-                                       train_predictions=reference_table_pred, train_properties=reference_table_props,
-                                       test_predictions=test_pred, test_properties=test_props,
-                                       with_display=False).reduce_output()
-            else:
-                raise ValueError('incompatible check type')
+            try:
+                if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
+                    reduced = dp_check.run(test_ds, feature_importance=feat_imp,
+                                           y_pred_train=test_pred, y_proba_train=test_proba,
+                                           with_display=False).reduce_output()
+                elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
+                    reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
+                                           y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
+                                           y_pred_test=test_pred, y_proba_test=test_proba,
+                                           with_display=False).reduce_output()
+                elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
+                    reduced = dp_check.run(test_ds,
+                                           train_predictions=test_pred, train_properties=test_props,
+                                           with_display=False).reduce_output()
+                elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
+                    reduced = dp_check.run(reference_table_ds, test_ds,
+                                           train_predictions=reference_table_pred,
+                                           train_properties=reference_table_props,
+                                           test_predictions=test_pred, test_properties=test_props,
+                                           with_display=False).reduce_output()
+                else:
+                    raise ValueError('incompatible check type')
 
-            reduced_outs.append(dict({(key, un_numpy(value)) for key, value in reduced.items()}))
+                reduced_outs.append(dict({(key, un_numpy(value)) for key, value in reduced.items()}))
+            except DeepchecksBaseError:
+                reduced_outs.append(None)
+
         model_reduces[model_version.id] = reduced_outs
 
     return model_reduces
