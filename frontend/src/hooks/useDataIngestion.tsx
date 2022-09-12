@@ -9,8 +9,10 @@ const useDataIngestion = () => {
   const [statsTime] = useStatsTime();
   const modelsMap = useModelsMap();
 
+  const latestTime = Math.max(...Object.values(modelsMap).map(o => o.latest_time ? o.latest_time : 0))
   const { data = [], isLoading } = useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet({
-    time_filter: statsTime.value
+    time_filter: statsTime.value,
+    end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined
   });
 
   const graphData = useMemo(

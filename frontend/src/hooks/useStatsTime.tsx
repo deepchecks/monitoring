@@ -20,7 +20,7 @@ const statTimes: StatTime[] = [
   { label: 'Last month', value: 60 * 60 * 24 * 31 }
 ].map((item, i) => ({ ...item, id: i.toString() }));
 
-const DEFAULT_STAT_TIME = statTimes[1];
+const DEFAULT_STAT_TIME = statTimes[2];
 
 const StatTimeContext = createContext<StatsTimeContext | null>(null);
 

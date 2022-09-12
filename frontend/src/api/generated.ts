@@ -21,13 +21,35 @@ export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: Co
 
 export type RetrieveModelsDataIngestionApiV1ModelsDataIngestionGet200 = { [key: string]: ModelDailyIngestion[] };
 
-export type RetrieveModelsDataIngestionApiV1ModelsDataIngestionGetParams = { model_id?: number; time_filter?: number };
+export type RetrieveModelsDataIngestionApiV1ModelsDataIngestionGetParams = {
+  model_id?: number;
+  time_filter?: number;
+  end_time?: string;
+};
 
-export type RetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGetParams = { time_filter?: number };
+export type RetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGetParams = {
+  time_filter?: number;
+  end_time?: string;
+};
 
 export type UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem = { [key: string]: any };
 
 export type LogDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem = { [key: string]: any };
+
+export type GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem =
+  typeof GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem[keyof typeof GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem = {
+  severityasc: 'severity:asc',
+  severitydesc: 'severity:desc'
+} as const;
+
+export type GetAllAlertRulesApiV1ConfigAlertRulesGetParams = {
+  models?: number[];
+  severity?: AlertSeverity[];
+  sortby?: GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem[];
+};
 
 export type DeleteCheckByNameApiV1ModelsModelIdChecksDeleteParams = { names: string[] };
 
@@ -435,6 +457,20 @@ export interface AlertRuleCreationSchema {
   repeat_every: number;
   alert_severity?: AlertSeverity;
   name?: string;
+}
+
+/**
+ * Schema for the alert rule.
+ */
+export interface AlertRuleConfigSchema {
+  id: number;
+  name: string;
+  check_name: string;
+  repeat_every: number;
+  alert_severity?: AlertSeverity;
+  total_alerts: number;
+  non_resolved_alerts: number;
+  recent_alert: string;
 }
 
 /**
@@ -1484,6 +1520,67 @@ export const useGetCheckWindowApiV1ChecksCheckIdRunWindowPost = <
     { checkId: number; data: MonitorOptions },
     TContext
   >(mutationFn, mutationOptions);
+};
+
+/**
+ * Return all alert rules for the configuration screen.
+
+Parameters
+----------
+models : list, optional
+    The list of models to filter by.
+severity : list, optional
+    The list of severities to filter by.
+sortby : list, optional
+    The list of columns to sort by.
+session : AsyncSession, optional
+    The database connection.
+
+Returns
+-------
+list
+    The list of alert rules.
+ * @summary Get All Alert Rules
+ */
+export const getAllAlertRulesApiV1ConfigAlertRulesGet = (
+  params?: GetAllAlertRulesApiV1ConfigAlertRulesGetParams,
+  signal?: AbortSignal
+) => customInstance<AlertRuleConfigSchema[]>({ url: `/api/v1/config/alert-rules`, method: 'get', params, signal });
+
+export const getGetAllAlertRulesApiV1ConfigAlertRulesGetQueryKey = (
+  params?: GetAllAlertRulesApiV1ConfigAlertRulesGetParams
+) => [`/api/v1/config/alert-rules`, ...(params ? [params] : [])];
+
+export type GetAllAlertRulesApiV1ConfigAlertRulesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAllAlertRulesApiV1ConfigAlertRulesGet>>
+>;
+export type GetAllAlertRulesApiV1ConfigAlertRulesGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useGetAllAlertRulesApiV1ConfigAlertRulesGet = <
+  TData = Awaited<ReturnType<typeof getAllAlertRulesApiV1ConfigAlertRulesGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  params?: GetAllAlertRulesApiV1ConfigAlertRulesGetParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getAllAlertRulesApiV1ConfigAlertRulesGet>>, TError, TData>;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAllAlertRulesApiV1ConfigAlertRulesGetQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAllAlertRulesApiV1ConfigAlertRulesGet>>> = ({ signal }) =>
+    getAllAlertRulesApiV1ConfigAlertRulesGet(params, signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getAllAlertRulesApiV1ConfigAlertRulesGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
 };
 
 /**

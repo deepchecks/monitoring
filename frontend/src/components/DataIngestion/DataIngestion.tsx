@@ -20,7 +20,7 @@ export const DataIngestion = (): JSX.Element => {
     <StyledFlexContent>
       <Box>
         <StyledFlexWrapper>
-          <StyledTypographyTitle>Data Ingest Status</StyledTypographyTitle>
+          <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
         </StyledFlexWrapper>
         <StyledDiagramWrapper>
           {isLoading ? <Loader sx={{ height: DIAGRAM_HEIGHT }} /> : <DiagramLine data={graphData} />}

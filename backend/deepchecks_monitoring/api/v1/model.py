@@ -11,6 +11,7 @@
 import typing as t
 from collections import defaultdict
 
+import pendulum as pdl
 from pydantic import BaseModel
 from sqlalchemy import Integer as SQLInteger
 from sqlalchemy import func, literal, select, text, union_all
@@ -98,14 +99,15 @@ async def create_model(
 async def retrieve_models_data_ingestion(
     model_id: t.Optional[int] = None,
     time_filter: int = TimeUnit.HOUR * 24,
+    end_time: t.Optional[str] = None,
     session: AsyncSession = AsyncSessionDep
 ) -> t.Union[
     t.Dict[int, t.List[ModelDailyIngestion]],
     t.List[ModelDailyIngestion]
 ]:
     """Retrieve models data ingestion status."""
-    def is_within_dateframe(col):
-        return col > text(f"(current_timestamp - interval '{time_filter} seconds')")
+    def is_within_dateframe(col, end_time):
+        return col > text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
 
     def truncate_date(col):
         return func.cast(func.extract("epoch", func.date_trunc("day", col)), SQLInteger)
@@ -115,6 +117,11 @@ async def retrieve_models_data_ingestion(
 
     def sample_timestamp(columns):
         return getattr(columns, SAMPLE_TS_COL)
+
+    if end_time:
+        end_time = pdl.parse(end_time)
+    else:
+        end_time: pdl.DateTime = pdl.now().add(minutes=30).set(minute=0, second=0, microsecond=0)
 
     if model_id is not None:
         models = [
@@ -144,7 +151,7 @@ async def retrieve_models_data_ingestion(
             literal(model_id).label("model_id"),
             sample_id(table.c).label("sample_id"),
             truncate_date(sample_timestamp(table.c)).label("day"))
-        .where(is_within_dateframe(sample_timestamp(table.c)))
+        .where(is_within_dateframe(sample_timestamp(table.c), end_time))
         .distinct()
         for model_id, table in tables
     ))
