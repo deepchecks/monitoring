@@ -25,11 +25,10 @@ from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from jsonschema import validate
 
-from client.deepchecks_client.core import client as core_client
-from client.deepchecks_client.core.client import DeepchecksColumns
-from client.deepchecks_client.core.utils import create_timestamp, maybe_raise
-from client.deepchecks_client.vision.utils import (DeepchecksVisionEncoder, calc_image_bbox_props,
-                                                   create_static_properties)
+from deepchecks_client.core import client as core_client
+from deepchecks_client.core.client import DeepchecksColumns
+from deepchecks_client.core.utils import create_timestamp, maybe_raise
+from deepchecks_client.vision.utils import (DeepchecksVisionEncoder, calc_image_bbox_props, create_static_properties)
 from deepchecks_monitoring.models.column_type import ColumnType
 from deepchecks_monitoring.models.model import TaskType
 

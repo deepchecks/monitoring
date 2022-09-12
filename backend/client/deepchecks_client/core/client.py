@@ -19,9 +19,9 @@ from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from jsonschema import validate
 
-from client.deepchecks_client.core.utils import DeepchecksEncoder, maybe_raise
+from deepchecks_client.core.utils import DeepchecksEncoder, maybe_raise
 
-__all__ = ['DeepchecksClient', 'ColumnType', 'TaskType']
+__all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")
 
 
@@ -204,10 +204,6 @@ class DeepchecksModelClient:
         versions = self.get_versions()
         return versions.get(model_version_name)
 
-    def version(self) -> DeepchecksModelVersionClient:
-        """Get or create a model version."""
-        raise NotImplementedError
-
     def _version_client(self) -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model."""
         raise NotImplementedError
@@ -369,8 +365,8 @@ class DeepchecksClient:
         DeepchecksModelClient
             Client to interact with the model.
         """    
-        from client.deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
-        from client.deepchecks_client.vision.client import DeepchecksModelClient as VisionDeepchecksModelClient
+        from deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
+        from deepchecks_client.vision.client import DeepchecksModelClient as VisionDeepchecksModelClient
 
         if self._model_clients.get(model_id) is None:
             if 'vision' in task_type:

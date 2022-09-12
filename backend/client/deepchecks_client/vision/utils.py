@@ -17,7 +17,7 @@ from deepchecks.vision.utils.image_functions import crop_image
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
 
-from client.deepchecks_client.core.utils import DeepchecksEncoder
+from deepchecks_client.core.utils import DeepchecksEncoder
 
 
 class DeepchecksVisionEncoder(DeepchecksEncoder):
@@ -27,6 +27,7 @@ class DeepchecksVisionEncoder(DeepchecksEncoder):
             tensor_values = obj.cpu().detach().numpy().tolist()
             return tuple([self.default(v) for v in tensor_values])
         return obj
+
 
 def create_static_predictions(vision_data: VisionData, model, device):
     static_pred = {}

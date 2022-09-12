@@ -22,9 +22,9 @@ from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from jsonschema import validate
 
-from client.deepchecks_client.core import client as core_client
-from client.deepchecks_client.core.client import ColumnType, DeepchecksColumns, TaskType
-from client.deepchecks_client.core.utils import DeepchecksEncoder, create_timestamp, maybe_raise
+from deepchecks_client.core import client as core_client
+from deepchecks_client.core.client import ColumnType, DeepchecksColumns, TaskType
+from deepchecks_client.core.utils import DeepchecksEncoder, create_timestamp, maybe_raise
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
