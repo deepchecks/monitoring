@@ -17,31 +17,35 @@ from tests.api.test_monitor import add_monitor
 
 
 @pytest.mark.asyncio
-async def test_get_dashboard(classification_model_check_id, client: TestClient):
-    response = client.get("/api/v1/dashboards/")
+async def test_get_dashboard_one_check(classification_model_check_id, client: TestClient):
+    resp_json = client.get('/api/v1/dashboards/').json()
+    assert resp_json['id'] == 1
+    assert resp_json['monitors'][0]['id'] == 1
+    assert len(resp_json['monitors']) == 1
+    assert resp_json['monitors'][0]['check']['id'] == classification_model_check_id
 
-    assert response.json() == {"id": 1, "name": None, "monitors": []}
-    assert add_monitor(classification_model_check_id, client) == 1
-
-    response = client.get("/api/v1/dashboards/")
-    resp_json = response.json()
-    assert resp_json["id"] == 1
-    assert resp_json["monitors"][0]["id"] == 1
-
-    response = client.get("/api/v1/dashboards/")
-    resp_json = response.json()
-    assert resp_json["id"] == 1
-    assert resp_json["monitors"][0]["id"] == 1
+    resp_json = client.get('/api/v1/dashboards/').json()
+    assert resp_json['id'] == 1
+    assert len(resp_json['monitors']) == 1
+    assert resp_json['monitors'][0]['id'] == 1
 
 
 @pytest.mark.asyncio
-async def test_add_dashboard_monitor(classification_model_check_id, client: TestClient, async_session):
-    response = client.get("/api/v1/dashboards/")
+async def test_get_dashboard_empty(classification_model_feature_check_id, client: TestClient):
+    resp_json = client.get('/api/v1/dashboards/').json()
+    assert classification_model_feature_check_id == 1
+    assert resp_json['id'] == 1
+    assert len(resp_json['monitors']) == 0
 
-    assert response.json() == {"id": 1, "name": None, "monitors": []}
-    assert add_monitor(classification_model_check_id, client) == 1
 
-    response = client.put("/api/v1/monitors/1", json={"dashboard_id": 1})
+@pytest.mark.asyncio
+async def test_add_dashboard_monitor(classification_model_feature_check_id, client: TestClient, async_session):
+    response = client.get('/api/v1/dashboards/')
+
+    assert response.json() == {'id': 1, 'name': None, 'monitors': []}
+    assert add_monitor(classification_model_feature_check_id, client) == 1
+
+    response = client.put('/api/v1/monitors/1', json={'dashboard_id': 1})
     assert response.status_code == 200
 
     # assert monitor was added
@@ -54,14 +58,14 @@ async def test_add_dashboard_monitor(classification_model_check_id, client: Test
 @pytest.mark.asyncio
 async def test_remove_dashboard(client: TestClient):
     # Arrange
-    client.get("/api/v1/dashboards/")
+    client.get('/api/v1/dashboards/')
     # Act
-    response = client.delete("/api/v1/dashboards/1")
+    response = client.delete('/api/v1/dashboards/1')
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
 async def test_update_dashboard(client: TestClient):
-    client.get("/api/v1/dashboards/")
-    response = client.put("/api/v1/dashboards/1", json={"name": "dashy"})
+    client.get('/api/v1/dashboards/')
+    response = client.put('/api/v1/dashboards/1', json={'name': 'dashy'})
     assert response.status_code == 200

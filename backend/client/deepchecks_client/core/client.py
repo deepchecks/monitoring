@@ -208,12 +208,12 @@ class DeepchecksModelClient:
         """Get client to interact with a given version of the model."""
         raise NotImplementedError
 
-    def add_default_checks(self):
-        """Add default list of checks for the model."""
+    def _add_default_checks(self) -> t.Dict[str, int]:
+        """Add default checks to the model based on its task type."""
         raise NotImplementedError
 
-    def add_checks(self, checks: t.Dict[str, BaseCheck]):
-        """Add new check for the model."""
+    def add_checks(self, checks: t.Dict[str, BaseCheck]) -> t.Dict[str, int]:
+        """Add new checks for the model and returns their checks' id."""
         serialized_checks = []
 
         for name, check in checks.items():
@@ -221,21 +221,22 @@ class DeepchecksModelClient:
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
             serialized_checks.append({'name': name, 'config': check.config()})
 
-        maybe_raise(
+        response = maybe_raise(
             self.session.post(
                 url=f'models/{self.model["id"]}/checks',
                 json=serialized_checks
             ),
             msg="Failed to create new check instances.\n{error}"
         )
+        return {serialized_checks[idx]['name']: int(d['id']) for idx, d in enumerate(response.json())}
 
     def get_checks(self) -> t.Dict[str, BaseCheck]:
-        """Return list of check instances."""
+        """Return dictionary of check instances."""
         model_id = self.model["id"]
 
         data = maybe_raise(
             self.session.get(f'models/{self.model["id"]}/checks'),
-            msg=f"Failed to obtaine Model(id:{model_id}) checks.\n{{error}}"
+            msg=f"Failed to obtain Model(id:{model_id}) checks.\n{{error}}"
         ).json()
 
         if not isinstance(data, list):
@@ -252,7 +253,7 @@ class DeepchecksModelClient:
 
         model_versions = maybe_raise(
             self.session.get(f'models/{self.model["id"]}/versions'),
-            msg=f"Failed to obtaine Model(id:{model_id}) checks.\n{{error}}"
+            msg=f"Failed to obtain Model(id:{model_id}) checks.\n{{error}}"
         ).json()
 
         if not isinstance(model_versions, list):
@@ -339,7 +340,7 @@ class DeepchecksClient:
             if checks is not None:
                 model.add_checks(checks)
             else:
-                model.add_default_checks()
+                model._add_default_checks()
         else:
             if checks is not None:
                 new_checks = {}

@@ -92,7 +92,7 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
     add_alert_rule(monitor_id, client)
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}")
-    assert response.json() == {"id": 1, "name": "monitory", "dashboard_id": 1, "lookback": 86400 * 7,
+    assert response.json() == {"id": 2, "name": "monitory", "dashboard_id": 1, "lookback": 86400 * 7,
                                "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
                                "check": {"config": {"class_name": "SingleDatasetPerformance",
                                                     "module_name": "deepchecks.tabular.checks",
@@ -103,7 +103,7 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
                                    "alert_severity": "low",
                                    "condition": {"operator": "greater_than", "value": 100.0},
                                    "id": 1,
-                                   "monitor_id": 1,
+                                   "monitor_id": 2,
                                    "name": "alerty",
                                    "repeat_every": 86400}
                                ]}

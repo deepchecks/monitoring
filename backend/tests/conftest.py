@@ -224,6 +224,7 @@ async def classification_model_feature_check_id(async_session: AsyncSession, cla
     await async_session.commit()
     return result["id"]
 
+
 @pytest_asyncio.fixture()
 async def classification_vision_model_property_check_id(async_session: AsyncSession,
                                                         classification_vision_model_id: int):
@@ -236,6 +237,7 @@ async def classification_vision_model_property_check_id(async_session: AsyncSess
     result = await create_check(classification_vision_model_id, schema, async_session)
     await async_session.commit()
     return result["id"]
+
 
 @pytest_asyncio.fixture()
 async def regression_model_check_id(async_session: AsyncSession, regression_model_id: int):
@@ -265,11 +267,11 @@ def random_string(n=5):
 
 
 def add_check(
-    model_id: int,
-    client: TestClient,
-    expected_status_code: int = 200,
-    name: t.Optional[str] = None,
-    config: t.Optional[t.Dict[str, t.Any]] = None
+        model_id: int,
+        client: TestClient,
+        expected_status_code: int = 200,
+        name: t.Optional[str] = None,
+        config: t.Optional[t.Dict[str, t.Any]] = None
 ) -> t.Union[int, Response]:
     payload = {}
     payload["name"] = name or randomname.get_name()
@@ -298,12 +300,12 @@ def add_check(
 
 
 def add_model_version(
-    model_id: int,
-    client: TestClient,
-    expected_status_code: int = 200,
-    name: t.Optional[str] = None,
-    features: t.Optional[t.Dict[str, str]] = None,
-    non_features: t.Optional[t.Dict[str, str]] = None,
+        model_id: int,
+        client: TestClient,
+        expected_status_code: int = 200,
+        name: t.Optional[str] = None,
+        features: t.Optional[t.Dict[str, str]] = None,
+        non_features: t.Optional[t.Dict[str, str]] = None,
 ) -> t.Union[int, Response]:
     payload = {}
     payload["name"] = name or randomname.get_name()
@@ -367,9 +369,9 @@ def add_monitor(check_id, client: TestClient, **kwargs):
 
 
 def add_classification_data(
-    model_version_id: int,
-    client: TestClient,
-    daterange: t.Optional[t.Sequence[pdl.DateTime]] = None
+        model_version_id: int,
+        client: TestClient,
+        daterange: t.Optional[t.Sequence[pdl.DateTime]] = None
 ):
     if daterange is None:
         curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
@@ -410,7 +412,6 @@ def add_vision_classification_data(model_version_id, client: TestClient):
             })
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
     return resp, day_before_curr_time, curr_time
-
 
 
 def send_reference_request(client, model_version_id, dicts: list):

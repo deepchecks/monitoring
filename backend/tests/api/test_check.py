@@ -293,10 +293,7 @@ async def test_run_check_vision(classification_vision_model_id,
                    "module_name": "deepchecks.vision.checks"
                    },
     }
-    # Act
-    response = client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=request)
-    assert response.status_code == 200
-    request = {
+    request2 = {
         "name": "checky v3",
         "config": {"class_name": "SingleDatasetPerformance",
                    "params": {"scorers": ["accuracy"]},
@@ -304,7 +301,7 @@ async def test_run_check_vision(classification_vision_model_id,
                    },
     }
     # Act
-    response = client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=request)
+    response = client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=[request, request2])
     assert response.status_code == 200
     times = []
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)

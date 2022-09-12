@@ -274,14 +274,18 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 DeepchecksModelVersionClient(model_version_id, self.model, session=self.session)
         return self._model_version_clients[model_version_id]
 
-    def add_default_checks(self):
-        """Add default list of checks for the model."""
-        return self.add_checks(checks={
-            'Single Dataset Performance': SingleDatasetPerformance(),
-            'Train-Test Feature Drift': TrainTestFeatureDrift(),
-            'Train-Test Prediction Drift': TrainTestPredictionDrift(),
-            'Train-Test Label Drift': TrainTestLabelDrift(),
+    def _add_default_checks(self):
+        """Add default list of checks for a tabular model."""
+        checks = {
+            'Feature Drift': TrainTestFeatureDrift(),
+            'Prediction Drift': TrainTestPredictionDrift(),
+            'Label Drift': TrainTestLabelDrift(),
             'Train-Test Category Mismatch': CategoryMismatchTrainTest(),
-            'Train-Test New Label': NewLabelTrainTest(),
             'Percent Of Nulls': PercentOfNulls()
-        })
+        }
+
+        if TaskType(self.model['task_type']) in [TaskType.BINARY, TaskType.MULTICLASS]:
+            checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
+        else:
+            checks['Performance'] = SingleDatasetPerformance(scorers={'RMSE': 'rmse'})
+        return self.add_checks(checks=checks)

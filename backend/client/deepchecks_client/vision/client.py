@@ -19,7 +19,8 @@ import pandas as pd
 import requests
 import torch
 from deepchecks.vision import VisionData
-from deepchecks.vision.checks import SingleDatasetPerformance, TrainTestLabelDrift, TrainTestPredictionDrift
+from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerformance, TrainTestLabelDrift,
+                                      TrainTestPredictionDrift)
 from deepchecks.vision.task_type import TaskType as VisTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
@@ -290,10 +291,16 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                                              image_properties=image_properties)
         return self._model_version_clients[model_version_id]
 
-    def add_default_checks(self):
-        """Add default list of checks for the model."""
-        return self.add_checks(checks={
-            'Single Dataset Performance': SingleDatasetPerformance(),
-            'Train-Test Prediction Drift': TrainTestPredictionDrift(),
-            'Train-Test Label Drift': TrainTestLabelDrift(),
-        })
+    def _add_default_checks(self):
+        """Add default list of checks for a vision model."""
+        checks = {
+            'Property Drift': ImagePropertyDrift(),
+            'Prediction Drift': TrainTestPredictionDrift(),
+            'Label Drift': TrainTestLabelDrift(),
+        }
+
+        if TaskType(self.model['task_type']) == TaskType.VISION_CLASSIFICATION:
+            checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
+        elif TaskType(self.model['task_type']) == TaskType.VISION_DETECTION:
+            checks['Performance'] = SingleDatasetPerformance(scorers={'Precision': 'precision_macro'})
+        return self.add_checks(checks=checks)
