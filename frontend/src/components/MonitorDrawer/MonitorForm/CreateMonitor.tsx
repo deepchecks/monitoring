@@ -1,33 +1,26 @@
-import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, MenuItem, SelectChangeEvent } from '@mui/material';
 import { useFormik } from 'formik';
+import React, { ReactNode, useRef, useState } from 'react';
 import { MarkedSelect } from '../../MarkedSelect';
-import { RangePicker } from '../../RangePicker';
 // import { useTypedDispatch, useTypedSelector } from '../../../../store/hooks';
 // import { checkSelector, getChecks, runCheck } from '../../../../store/slices/check/checkSlice';
 // import { getColumns, modelSelector } from '../../../../store/slices/model/modelSlice';
 // import { createMonitor, monitorSelector } from '../../../../store/slices/monitor/monitorSlice';
-import { Numeric, ColumnType, ModelColumns } from '../../../helpers/types/model';
-import { ID } from '../../../helpers/types';
-import { Subcategory } from '../Subcategory';
+import {
+  MonitorCreationSchema,
+  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
+  useGetChecksApiV1ModelsModelIdChecksGet,
+  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
+  useGetModelsApiV1ModelsGet
+} from 'api/generated';
+import { ColumnType, ModelColumns, Numeric } from '../../../helpers/types/model';
 import {
   StyledButton,
   StyledButtonWrapper,
   StyledStackContainer,
   StyledStackInputs,
-  StyledTypography,
-  StyledTypographyLabel
+  StyledTypography
 } from './MonitorForm.style';
-import {
-  useGetModelsApiV1ModelsGet,
-  useGetChecksApiV1ModelsModelIdChecksGet,
-  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
-  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
-  CreateMonitorApiV1ChecksCheckIdMonitorsPostMutationResult,
-  MonitorCreationSchema,
-  createMonitorApiV1ChecksCheckIdMonitorsPost,
-  MonitorSchema
-} from 'api/generated';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
@@ -122,8 +115,8 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
             }
           ]
         },
-        dashboard_id: 1,
-        filter_key: 'hardcoded_filter_key'
+        dashboard_id: 1
+        // filter_key: 'hardcoded_filter_key'
       };
 
       createMonitor.mutate({ checkId: parseInt(values.check), data: monitorSchema });

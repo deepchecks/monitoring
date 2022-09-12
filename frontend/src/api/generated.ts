@@ -4,17 +4,17 @@
  * Enterprise Deepchecks Monitoring
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery, useMutation } from '@tanstack/react-query';
 import type {
-  UseQueryOptions,
-  UseMutationOptions,
-  QueryFunction,
   MutationFunction,
-  UseQueryResult,
-  QueryKey
+  QueryFunction,
+  QueryKey,
+  UseMutationOptions,
+  UseQueryOptions,
+  UseQueryResult
 } from '@tanstack/react-query';
-import { customInstance } from '../services/customAxios';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ErrorType } from '../services/customAxios';
+import { customInstance } from '../services/customAxios';
 export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error?: string; state?: string };
 
 export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: ColumnMetadata };
@@ -142,30 +142,28 @@ export interface OrganizationSchema {
 export type OperatorsEnum = unknown;
 
 /**
- * Schema defines the parameters for creating new monitor.
+ * Schema defines a response containing only id and name.
  */
-export interface MonitorUpdateSchema {
-  name?: string;
-  lookback?: string;
-  description?: string;
-  data_filters?: DataFilterList;
-  dashboard_id?: number;
-  filter_key?: string;
+export interface NameIdResponse {
+  id: number;
+  name: string;
 }
 
 /**
- * Schema for the monitor.
+ * List of data filters.
  */
-export interface MonitorSchema {
-  id: number;
+export interface MonitorValueConf {
   name: string;
-  check: CheckSchema;
-  dashboard_id?: number;
-  lookback: number;
-  description?: string;
-  data_filters?: DataFilterList;
-  filter_key?: string;
-  alert_rules: AlertRuleSchema[];
+  is_agg?: boolean;
+}
+
+/**
+ * List of data filters.
+ */
+export interface MonitorTypeConf {
+  type: string;
+  values?: MonitorValueConf[];
+  is_agg_shown?: boolean;
 }
 
 /**
@@ -175,25 +173,22 @@ export interface MonitorRunSchema {
   end_time?: string;
 }
 
+export type MonitorCheckConfSchemaCheckConf = { [key: string]: any };
+
 /**
- * Monitor run schema.
+ * List of data filters.
  */
-export interface MonitorOptions {
-  end_time: string;
-  start_time: string;
-  filter?: DataFilterList;
+export interface MonitorCheckConfSchema {
+  check_conf: MonitorCheckConfSchemaCheckConf;
+  res_conf?: string[];
 }
 
 /**
- * Schema defines the parameters for creating new monitor.
+ * List of data filters.
  */
-export interface MonitorCreationSchema {
-  name: string;
-  lookback: number;
-  dashboard_id?: number;
-  description?: string;
-  data_filters?: DataFilterList;
-  filter_key?: string;
+export interface MonitorCheckConf {
+  check_conf?: MonitorTypeConf[];
+  res_conf?: MonitorTypeConf;
 }
 
 /**
@@ -289,6 +284,55 @@ export interface DataFilter {
  */
 export interface DataFilterList {
   filters: DataFilter[];
+}
+
+/**
+ * Schema defines the parameters for creating new monitor.
+ */
+export interface MonitorUpdateSchema {
+  name?: string;
+  lookback?: string;
+  description?: string;
+  data_filters?: DataFilterList;
+  dashboard_id?: number;
+  additional_kwargs?: MonitorCheckConfSchema;
+}
+
+/**
+ * Schema for the monitor.
+ */
+export interface MonitorSchema {
+  id: number;
+  name: string;
+  check: CheckSchema;
+  dashboard_id?: number;
+  lookback: number;
+  description?: string;
+  data_filters?: DataFilterList;
+  additional_kwargs?: MonitorCheckConfSchema;
+  alert_rules: AlertRuleSchema[];
+}
+
+/**
+ * Monitor run schema.
+ */
+export interface MonitorOptions {
+  end_time: string;
+  start_time: string;
+  filter?: DataFilterList;
+  additional_kwargs?: MonitorCheckConfSchema;
+}
+
+/**
+ * Schema defines the parameters for creating new monitor.
+ */
+export interface MonitorCreationSchema {
+  name: string;
+  lookback: number;
+  dashboard_id?: number;
+  description?: string;
+  data_filters?: DataFilterList;
+  additional_kwargs?: MonitorCheckConfSchema;
 }
 
 /**
@@ -447,6 +491,7 @@ export interface AlertRuleInfoSchema {
   alert_severity?: AlertSeverity;
   model_id: number;
   alerts_count?: number;
+  max_end_time: string;
 }
 
 /**
@@ -1523,6 +1568,59 @@ export const useGetCheckWindowApiV1ChecksCheckIdRunWindowPost = <
 };
 
 /**
+ * Get the check configuration info and the possible values for the parameters.
+
+Parameters
+----------
+check_id : int
+    ID of the check.
+session : AsyncSession, optional
+    SQLAlchemy session.
+
+Returns
+-------
+MonitorCheckConf
+    the check configuration info and the possible values for the parameters.
+ * @summary Get Check Info
+ */
+export const getCheckInfoApiV1ChecksCheckIdInfoGet = (checkId: number, signal?: AbortSignal) =>
+  customInstance<MonitorCheckConf>({ url: `/api/v1/checks/${checkId}/info`, method: 'get', signal });
+
+export const getGetCheckInfoApiV1ChecksCheckIdInfoGetQueryKey = (checkId: number) => [`/api/v1/checks/${checkId}/info`];
+
+export type GetCheckInfoApiV1ChecksCheckIdInfoGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCheckInfoApiV1ChecksCheckIdInfoGet>>
+>;
+export type GetCheckInfoApiV1ChecksCheckIdInfoGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useGetCheckInfoApiV1ChecksCheckIdInfoGet = <
+  TData = Awaited<ReturnType<typeof getCheckInfoApiV1ChecksCheckIdInfoGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  checkId: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getCheckInfoApiV1ChecksCheckIdInfoGet>>, TError, TData>;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCheckInfoApiV1ChecksCheckIdInfoGetQueryKey(checkId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCheckInfoApiV1ChecksCheckIdInfoGet>>> = ({ signal }) =>
+    getCheckInfoApiV1ChecksCheckIdInfoGet(checkId, signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getCheckInfoApiV1ChecksCheckIdInfoGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    { enabled: !!checkId, ...queryOptions }
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
  * Return all alert rules for the configuration screen.
 
 Parameters
@@ -2132,7 +2230,7 @@ export const useSaveReferenceApiV1ModelVersionsModelVersionIdReferencePost = <
  * Create a new model with its name, task type, and description. Returns the ID of the model.
  * @summary Create a new model.
  */
-export const createModelApiV1ModelsPost = (modelCreationSchema: ModelCreationSchema) =>
+export const getCreateModelApiV1ModelsPost = (modelCreationSchema: ModelCreationSchema) =>
   customInstance<IdResponse>({
     url: `/api/v1/models`,
     method: 'post',
@@ -2140,15 +2238,18 @@ export const createModelApiV1ModelsPost = (modelCreationSchema: ModelCreationSch
     data: modelCreationSchema
   });
 
-export type CreateModelApiV1ModelsPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createModelApiV1ModelsPost>>
+export type GetCreateModelApiV1ModelsPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getCreateModelApiV1ModelsPost>>
 >;
-export type CreateModelApiV1ModelsPostMutationBody = ModelCreationSchema;
-export type CreateModelApiV1ModelsPostMutationError = ErrorType<HTTPValidationError>;
+export type GetCreateModelApiV1ModelsPostMutationBody = ModelCreationSchema;
+export type GetCreateModelApiV1ModelsPostMutationError = ErrorType<HTTPValidationError>;
 
-export const useCreateModelApiV1ModelsPost = <TError = ErrorType<HTTPValidationError>, TContext = unknown>(options?: {
+export const useGetCreateModelApiV1ModelsPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createModelApiV1ModelsPost>>,
+    Awaited<ReturnType<typeof getCreateModelApiV1ModelsPost>>,
     TError,
     { data: ModelCreationSchema },
     TContext
@@ -2157,16 +2258,16 @@ export const useCreateModelApiV1ModelsPost = <TError = ErrorType<HTTPValidationE
   const { mutation: mutationOptions } = options ?? {};
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createModelApiV1ModelsPost>>,
+    Awaited<ReturnType<typeof getCreateModelApiV1ModelsPost>>,
     { data: ModelCreationSchema }
   > = props => {
     const { data } = props ?? {};
 
-    return createModelApiV1ModelsPost(data);
+    return getCreateModelApiV1ModelsPost(data);
   };
 
   return useMutation<
-    Awaited<ReturnType<typeof createModelApiV1ModelsPost>>,
+    Awaited<ReturnType<typeof getCreateModelApiV1ModelsPost>>,
     TError,
     { data: ModelCreationSchema },
     TContext
@@ -2346,6 +2447,66 @@ export const useGetModelApiV1ModelsModelIdGet = <
 
 Parameters
 ----------
+model_id : int
+    Model to return.
+session : AsyncSession, optional
+    SQLAlchemy session.
+
+Returns
+-------
+NameIdResponse
+    Created model.
+ * @summary Get Versions Per Model
+ */
+export const getVersionsPerModelApiV1ModelsModelIdVersionsGet = (modelId: number, signal?: AbortSignal) =>
+  customInstance<NameIdResponse[]>({ url: `/api/v1/models/${modelId}/versions`, method: 'get', signal });
+
+export const getGetVersionsPerModelApiV1ModelsModelIdVersionsGetQueryKey = (modelId: number) => [
+  `/api/v1/models/${modelId}/versions`
+];
+
+export type GetVersionsPerModelApiV1ModelsModelIdVersionsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVersionsPerModelApiV1ModelsModelIdVersionsGet>>
+>;
+export type GetVersionsPerModelApiV1ModelsModelIdVersionsGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useGetVersionsPerModelApiV1ModelsModelIdVersionsGet = <
+  TData = Awaited<ReturnType<typeof getVersionsPerModelApiV1ModelsModelIdVersionsGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVersionsPerModelApiV1ModelsModelIdVersionsGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVersionsPerModelApiV1ModelsModelIdVersionsGetQueryKey(modelId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getVersionsPerModelApiV1ModelsModelIdVersionsGet>>> = ({
+    signal
+  }) => getVersionsPerModelApiV1ModelsModelIdVersionsGet(modelId, signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getVersionsPerModelApiV1ModelsModelIdVersionsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    { enabled: !!modelId, ...queryOptions }
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Create a new model.
+
+Parameters
+----------
 session : AsyncSession, optional
     SQLAlchemy session.
 
@@ -2462,9 +2623,9 @@ session : AsyncSession, optional
 kafka_admin
 settings
 data_ingest
- * @summary Create Version
+ * @summary Get Or Create Version
  */
-export const createVersionApiV1ModelsModelIdVersionPost = (
+export const getOrCreateVersionApiV1ModelsModelIdVersionPost = (
   modelId: number,
   modelVersionCreationSchema: ModelVersionCreationSchema
 ) =>
@@ -2475,18 +2636,18 @@ export const createVersionApiV1ModelsModelIdVersionPost = (
     data: modelVersionCreationSchema
   });
 
-export type CreateVersionApiV1ModelsModelIdVersionPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createVersionApiV1ModelsModelIdVersionPost>>
+export type GetOrCreateVersionApiV1ModelsModelIdVersionPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getOrCreateVersionApiV1ModelsModelIdVersionPost>>
 >;
-export type CreateVersionApiV1ModelsModelIdVersionPostMutationBody = ModelVersionCreationSchema;
-export type CreateVersionApiV1ModelsModelIdVersionPostMutationError = ErrorType<HTTPValidationError>;
+export type GetOrCreateVersionApiV1ModelsModelIdVersionPostMutationBody = ModelVersionCreationSchema;
+export type GetOrCreateVersionApiV1ModelsModelIdVersionPostMutationError = ErrorType<HTTPValidationError>;
 
-export const useCreateVersionApiV1ModelsModelIdVersionPost = <
+export const useGetOrCreateVersionApiV1ModelsModelIdVersionPost = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createVersionApiV1ModelsModelIdVersionPost>>,
+    Awaited<ReturnType<typeof getOrCreateVersionApiV1ModelsModelIdVersionPost>>,
     TError,
     { modelId: number; data: ModelVersionCreationSchema },
     TContext
@@ -2495,16 +2656,16 @@ export const useCreateVersionApiV1ModelsModelIdVersionPost = <
   const { mutation: mutationOptions } = options ?? {};
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createVersionApiV1ModelsModelIdVersionPost>>,
+    Awaited<ReturnType<typeof getOrCreateVersionApiV1ModelsModelIdVersionPost>>,
     { modelId: number; data: ModelVersionCreationSchema }
   > = props => {
     const { modelId, data } = props ?? {};
 
-    return createVersionApiV1ModelsModelIdVersionPost(modelId, data);
+    return getOrCreateVersionApiV1ModelsModelIdVersionPost(modelId, data);
   };
 
   return useMutation<
-    Awaited<ReturnType<typeof createVersionApiV1ModelsModelIdVersionPost>>,
+    Awaited<ReturnType<typeof getOrCreateVersionApiV1ModelsModelIdVersionPost>>,
     TError,
     { modelId: number; data: ModelVersionCreationSchema },
     TContext
@@ -2694,6 +2855,68 @@ export const useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPo
     { modelVersionId: number; data: MonitorOptions },
     TContext
   >(mutationFn, mutationOptions);
+};
+
+/**
+ * Return json schema of the model version data to use in validation on client-side.
+
+Parameters
+----------
+model_version_id
+session
+
+Returns
+-------
+json schema of the model version
+ * @summary Get Count Samples
+ */
+export const getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet = (
+  modelVersionId: number,
+  signal?: AbortSignal
+) => customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}/count-samples`, method: 'get', signal });
+
+export const getGetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGetQueryKey = (modelVersionId: number) => [
+  `/api/v1/model-versions/${modelVersionId}/count-samples`
+];
+
+export type GetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet>>
+>;
+export type GetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useGetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet = <
+  TData = Awaited<ReturnType<typeof getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelVersionId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGetQueryKey(modelVersionId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet>>
+  > = ({ signal }) => getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet(modelVersionId, signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!modelVersionId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
 };
 
 /**

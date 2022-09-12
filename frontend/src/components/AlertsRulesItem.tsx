@@ -1,10 +1,17 @@
 import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/material';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import useModelsMap from 'hooks/useModelsMap';
 import React, { memo, useState } from 'react';
+import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
-import { AlertRuleInfoSchema, AlertSeverity } from '../api/generated';
-import { Criticality } from './AlertCount';
 import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
+import { Criticality } from './AlertCount';
+import { Loader } from './Loader';
+
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
 export type AlertRuleItemProps = {
   alertRule: AlertRuleInfoSchema;
@@ -17,13 +24,19 @@ const titles = ['Model', 'Check', 'Condition', 'Check Frequency'];
 export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }: AlertRuleItemProps) => {
   const [hover, setHover] = useState<boolean>(false);
 
-  const { alerts_count, alert_severity, condition, name, repeat_every } = alertRule;
+  const modelsMap = useModelsMap();
+
+  const { alerts_count, alert_severity, condition, name, repeat_every, max_end_time, model_id } = alertRule;
+
+  const { data: monitor = null, isLoading: isMonitorLoading } = useGetMonitorApiV1MonitorsMonitorIdGet(
+    alertRule.monitor_id
+  );
 
   const data = [
-    name,
-    name,
-    `drift ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
-    repeat_every
+    modelsMap[model_id].name,
+    monitor?.check?.name,
+    `value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
+    dayjs.duration(repeat_every, 'seconds').humanize()
   ];
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -39,6 +52,8 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   const onMouseOver = () => setHover(true);
   const onMouseLeave = () => setHover(false);
 
+  if (isMonitorLoading) return <Loader />;
+
   return (
     <StyledMainWrapper onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} onClick={handleOpenDrawer}>
       <StyledCriticality criticality={alert_severity}>
@@ -47,7 +62,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
       </StyledCriticality>
       <StyledDescription>
         <Typography variant="h5">{name}</Typography>
-        <Typography variant="body2">Latest alert: {dayjs(new Date()).format('MMM. DD, YYYY')}</Typography>
+        <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('MMM. DD, YYYY')}</Typography>
       </StyledDescription>
       <StyledDivider orientation="vertical" flexItem />
       <StyledInfo>
@@ -161,7 +176,7 @@ const StyledProperty = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  minWidth: 200
+  width: 215
 });
 
 const StyledTitle = styled(Typography)(({ theme }) => ({

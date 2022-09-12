@@ -1,4 +1,4 @@
-import { createContext, useContext, FC } from 'react';
+import React, { createContext, FC, useContext } from 'react';
 
 interface ContextInterface {
   dashboard_id: number;
