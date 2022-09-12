@@ -9,6 +9,8 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=redefined-outer-name
 import asyncio
+import random
+import string
 import typing as t
 
 import dotenv
@@ -16,6 +18,7 @@ import pandas as pd
 import pendulum as pdl
 import pytest
 import pytest_asyncio
+import randomname
 import testing.postgresql
 from fastapi.testclient import TestClient
 from requests import Response
@@ -25,6 +28,7 @@ from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.app import create_application
+from deepchecks_monitoring.bgtasks.task import Base as TasksBase
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
@@ -43,8 +47,11 @@ def postgres():
 @pytest.fixture(scope="function")
 def application(postgres):
     database_uri = postgres.url()
-    async_database_uri = postgres.url().replace("postgresql", "postgresql+asyncpg")
-    settings = Settings(database_uri=database_uri, async_database_uri=async_database_uri)  # type: ignore
+    # async_database_uri = postgres.url().replace("postgresql", "postgresql+asyncpg")
+    settings = Settings(
+        database_uri=database_uri,
+        # async_database_uri=async_database_uri
+    )  # type: ignore
     app = create_application(settings=settings)
     return app
 
@@ -91,6 +98,7 @@ async def reset_database(async_engine):
     async with async_engine.begin() as conn:
         # First remove ORM tables
         await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(TasksBase.metadata.drop_all)
 
         # Second, remove generated tables (leftovers)
         def drop_all_tables(c):
@@ -100,6 +108,7 @@ async def reset_database(async_engine):
 
         await conn.run_sync(drop_all_tables)
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(TasksBase.metadata.create_all)
         await conn.commit()
 
 
@@ -223,6 +232,74 @@ def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
     return alert
 
 
+def random_string(n=5):
+    return "".join(
+        random.choice(string.ascii_lowercase)
+        for it in range(n)
+    )
+
+
+def add_check(
+    model_id: int,
+    client: TestClient,
+    expected_status_code: int = 200,
+    name: t.Optional[str] = None,
+    config: t.Optional[t.Dict[str, t.Any]] = None
+) -> t.Union[int, Response]:
+    payload = {}
+    payload["name"] = name or randomname.get_name()
+    payload["config"] = config or {
+        "class_name": "SingleDatasetPerformance",
+        "params": {"scorers": ["accuracy", "f1_macro"]},
+        "module_name": "deepchecks.tabular.checks"
+    }
+
+    response = client.post(
+        f"/api/v1/models/{model_id}/checks",
+        json=payload
+    )
+
+    if not 200 <= expected_status_code <= 299:
+        assert response.status_code == expected_status_code, (response.status_code, response.json())
+        return response
+
+    assert response.status_code == expected_status_code
+
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "id" in data and isinstance(data["id"], int)
+    # TODO: verify whether check was actually created
+    return data["id"]
+
+
+def add_model_version(
+    model_id: int,
+    client: TestClient,
+    expected_status_code: int = 200,
+    name: t.Optional[str] = None,
+    features: t.Optional[t.Dict[str, str]] = None,
+    non_features: t.Optional[t.Dict[str, str]] = None,
+) -> t.Union[int, Response]:
+    payload = {}
+    payload["name"] = name or randomname.get_name()
+    payload["features"] = features if features is not None else {"a": "numeric", "b": "categorical"}
+    payload["non_features"] = non_features if non_features is not None else {"c": "numeric"}
+
+    response = client.post(f"/api/v1/models/{model_id}/version", json=payload)
+
+    if not 200 <= expected_status_code <= 299:
+        assert response.status_code == expected_status_code, (response.status_code, response.json())
+        return response
+
+    assert response.status_code == expected_status_code
+
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "id" in data and isinstance(data["id"], int)
+    # TODO: verify whether version was actually created
+    return data["id"]
+
+
 def add_alert_rule(
     monitor_id: int,
     client: TestClient,
@@ -264,12 +341,20 @@ def add_monitor(check_id, client: TestClient, **kwargs):
     return response.json()["id"]
 
 
-def add_classification_data(model_version_id, client: TestClient):
-    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
-    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+def add_classification_data(
+    model_version_id: int,
+    client: TestClient,
+    daterange: t.Optional[t.Sequence[pdl.DateTime]] = None
+):
+    if daterange is None:
+        curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+        day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+        daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
+
     data = []
-    for i, hours in enumerate([1, 3, 4, 5, 7]):
-        time = day_before_curr_time.add(hours=hours).isoformat()
+
+    for i, date in enumerate(daterange):
+        time = date.isoformat()
         data.append({
             "_dc_sample_id": str(i),
             "_dc_time": time,
@@ -279,6 +364,7 @@ def add_classification_data(model_version_id, client: TestClient):
             "a": 10 + i,
             "b": "ppppp",
         })
+
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
     return resp
 
@@ -299,6 +385,7 @@ def add_vision_classification_data(model_version_id, client: TestClient):
             })
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
     return resp
+
 
 def send_reference_request(client, model_version_id, dicts: list):
     df = pd.DataFrame(data=dicts)

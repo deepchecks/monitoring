@@ -7,10 +7,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 """Module defining the configuration for the deepchecks_monitoring package."""
-import logging
 import pathlib
+import typing as t
 from enum import Enum
 
 from aiokafka.helpers import create_ssl_context
@@ -19,19 +18,24 @@ from pydantic import BaseSettings, PostgresDsn
 __all__ = ['Settings', 'tags_metadata', 'Tags']
 
 
-logger = logging.getLogger(__name__)
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
 
 class KafkaSettings(BaseSettings):
     """Settings for kafka usage for data ingestion."""
 
-    kafka_host: str = None
-    kafka_security_protocol: str = None
-    kafka_sasl_mechanism: str = None
-    kafka_username: str = None
-    kafka_password: str = None
+    kafka_host: t.Optional[str] = None
+    kafka_security_protocol: t.Optional[str] = None
+    kafka_sasl_mechanism: t.Optional[str] = None
+    kafka_username: t.Optional[str] = None
+    kafka_password: t.Optional[str] = None
     kafka_replication_factor: int = 1
+
+    class Config:
+        """Settings configuration."""
+
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
 
     @property
     def kafka_params(self):
@@ -45,18 +49,32 @@ class KafkaSettings(BaseSettings):
         }
 
 
-class Settings(KafkaSettings):
-    """Settings for the deepchecks_monitoring package."""
+class DatabaseSettigns(BaseSettings):
+    """Database settings."""
 
     database_uri: PostgresDsn
-    async_database_uri: PostgresDsn
     echo_sql: bool = True
+
+    class Config:
+        """Settings configuration."""
+
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+    @property
+    def async_database_uri(self) -> PostgresDsn:
+        return t.cast(PostgresDsn, self.database_uri.replace(
+            'postgresql',
+            'postgresql+asyncpg'
+        ))
+
+
+class Settings(DatabaseSettigns, KafkaSettings):
+    """Settings for the deepchecks_monitoring package."""
+
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     debug_mode: bool = False
     instrument_telemetry: bool = False
-    # jwt_secret_key: str = Field(..., env='SECRET_KEY')
-    # jwt_algorithm: str = Field(..., env='ALGORITHM')
-    # jwt_access_token_expire_minutes: int = Field(..., env='ACCESS_TOKEN_EXPIRE_MINUTES')
 
     class Config:
         """Config for the deepchecks_monitoring package."""

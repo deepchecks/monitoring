@@ -77,14 +77,17 @@ class AlertRule(Base):
     condition = sa.Column(PydanticType(pydantic_model=Condition))
     repeat_every = sa.Column(sa.Integer, nullable=False)
     alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
+
+    # TODO: rename to latest_schedule
     last_run = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, server_default=sa.func.now())
 
     monitor_id = sa.Column(
         sa.Integer,
         sa.ForeignKey("monitors.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
-    monitor: Mapped[t.Optional["Monitor"]] = relationship(
+    monitor: Mapped["Monitor"] = relationship(
         "Monitor",
         back_populates="alert_rules"
     )

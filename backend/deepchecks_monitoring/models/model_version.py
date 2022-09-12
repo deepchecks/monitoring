@@ -65,7 +65,7 @@ class ModelVersion(Base):
         ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
-    model: Mapped[t.Optional["Model"]] = relationship(
+    model: Mapped["Model"] = relationship(
         "Model",
         back_populates="versions"
     )

@@ -23,3 +23,8 @@ Affero
 Asyncpg
 dataset
 severities
+opentelemetry
+Instrumentor
+toplevel
+ExtendedAsyncSession
+10MB

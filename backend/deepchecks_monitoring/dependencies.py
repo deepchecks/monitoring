@@ -19,7 +19,7 @@ from pydantic import BaseSettings
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.app import ResourcesProvider
+    from deepchecks_monitoring.resources import ResourcesProvider
     from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 __all__ = ["AsyncSessionDep", "limit_request_size", "KafkaAdminDep", "SettingsDep", "DataIngestionDep"]

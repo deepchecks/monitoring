@@ -11,94 +11,25 @@
 import asyncio
 import logging
 import typing as t
-from contextlib import asynccontextmanager
 
 import deepchecks
 import jsonschema.exceptions
-from aiokafka import AIOKafkaProducer
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from kafka import KafkaAdminClient
-from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+# from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pyinstrument import Profiler
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from starlette.responses import FileResponse
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
+from deepchecks_monitoring.resources import ResourcesProvider
 
-__all__ = ["create_application", "ResourcesProvider"]
-
-from starlette.responses import FileResponse
-
-
-class ResourcesProvider:
-    """Provider of resources."""
-
-    settings: Settings
-
-    def __init__(self, settings: Settings):
-        self.settings = settings
-        self._async_database_engine: t.Optional[AsyncEngine] = None
-        self._kafka_producer: t.Optional[AIOKafkaProducer] = None
-        self._kafka_admin: t.Optional[KafkaAdminClient] = None
-
-    @property
-    def async_database_engine(self) -> AsyncEngine:
-        """Return async sqlalchemy database engine."""
-        if self._async_database_engine:
-            return self._async_database_engine
-        self._async_database_engine = create_async_engine(
-            str(self.settings.async_database_uri),
-            echo=self.settings.echo_sql,
-            json_serializer=json_dumps
-        )
-        if self.settings.instrument_telemetry:
-            AsyncPGInstrumentor().instrument()
-        return self._async_database_engine
-
-    @asynccontextmanager
-    async def create_async_database_session(self) -> t.AsyncIterator[ExtendedAsyncSession]:
-        """Create async sqlalchemy database session."""
-        session_factory = sessionmaker(
-            self.async_database_engine,
-            class_=ExtendedAsyncSession,
-            expire_on_commit=False
-        )
-        async with session_factory() as session:
-            try:
-                yield session
-                await session.commit()
-            except Exception as error:
-                await session.rollback()
-                raise error
-            finally:
-                await session.close()
-
-    @property
-    async def kafka_producer(self) -> t.Optional[AIOKafkaProducer]:
-        """Return kafka producer."""
-        if self.settings.kafka_host is None:
-            return None
-        if self._kafka_producer is None:
-            self._kafka_producer = AIOKafkaProducer(**self.settings.kafka_params)
-            await self._kafka_producer.start()
-        return self._kafka_producer
-
-    @property
-    def kafka_admin(self) -> t.Optional[KafkaAdminClient]:
-        """Return kafka admin client. Used to manage kafka cluser."""
-        if self.settings.kafka_host is None:
-            return None
-        if self._kafka_admin is None:
-            self._kafka_admin = KafkaAdminClient(**self.settings.kafka_params)
-        return self._kafka_admin
+__all__ = ["create_application"]
 
 
 def create_application(
