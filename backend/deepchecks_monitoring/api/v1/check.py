@@ -12,20 +12,24 @@ import typing as t
 
 import pendulum as pdl
 from deepchecks.core import BaseCheck
+from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
 from pydantic import BaseModel, validator
 from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range, run_check_window
+from deepchecks_monitoring.logic.check_logic import (MonitorOptions, get_feature_property_info, get_metric_class_info,
+                                                     run_check_per_window_in_range, run_check_window)
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.models import Check, Model
-from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.utils import IdResponse, MonitorCheckConf, exists_or_404, fetch_or_404
 
 from .router import router
 
@@ -231,7 +235,8 @@ async def run_standalone_check_per_window_in_range(
         end_time,
         window,
         monitor_options.filter,
-        session
+        session,
+        monitor_options.additional_kwargs
     )
 
 
@@ -262,3 +267,43 @@ async def get_check_window(
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
     return await run_check_window(check, monitor_options, session, model, model_versions)
+
+
+@router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])
+async def get_check_info(
+    check_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Get the check configuration info and the possible values for the parameters.
+
+    Parameters
+    ----------
+    check_id : int
+        ID of the check.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    MonitorCheckConf
+        the check configuration info and the possible values for the parameters.
+    """
+    check = await fetch_or_404(session, Check, id=check_id)
+    dp_check = BaseCheck.from_config(check.config)
+    latest_version_query = (select(ModelVersion)
+                            .where(ModelVersion.model_id == check.model_id)
+                            .order_by(ModelVersion.end_time.desc()).limit(1)
+                            .options(selectinload(ModelVersion.model)))
+    latest_version: ModelVersion = (await session.execute(latest_version_query)).scalars().first()
+    if latest_version is None:
+        model: Model = (await session.execute(select(Model).where(Model.id == check.model_id))).scalars().first()
+    else:
+        model: Model = latest_version.model
+
+    if isinstance(dp_check, ReduceMetricClassMixin):
+        check_parameter_conf = get_metric_class_info(latest_version, model)
+    elif isinstance(dp_check, (ReduceFeatureMixin, ReducePropertyMixin)):
+        check_parameter_conf = get_feature_property_info(latest_version, check, dp_check)
+    else:
+        check_parameter_conf = {'check_conf': None, 'res_conf': None}
+    return check_parameter_conf

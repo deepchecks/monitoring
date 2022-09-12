@@ -94,11 +94,11 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
     response = client.get(f"/api/v1/monitors/{monitor_id}")
     assert response.json() == {"id": 1, "name": "monitory", "dashboard_id": 1, "lookback": 86400 * 7,
                                "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
-                               "check": {"config": {"class_name": "TrainTestPerformance",
+                               "check": {"config": {"class_name": "SingleDatasetPerformance",
                                                     "module_name": "deepchecks.tabular.checks",
                                                     "params": {"reduce": "mean"}},
                                          "id": 1, "model_id": 1, "name": "check"},
-                               "description": "", "filter_key": None,
+                               "description": "", "additional_kwargs": None,
                                "alert_rules": [{
                                    "alert_severity": "low",
                                    "condition": {"operator": "greater_than", "value": 100.0},

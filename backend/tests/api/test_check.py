@@ -55,6 +55,128 @@ async def test_add_check_list(classification_model_id, client: TestClient):
     assert response.json() == [{"id": 1}, {"id": 2}]
 
 
+@pytest.mark.asyncio
+async def test_metric_check_w_res_conf(classification_model_check_id, classification_model_version_id,
+                                       client: TestClient):
+    assert add_classification_data(classification_model_version_id, client).status_code == 200
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["1"]}})
+    assert response.json() == {"1": {"F1 Per Class 1": 0.0}}
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["2"]}})
+    assert response.json() == {"1": {"F1 Per Class 2": 0.3333333333333333}}
+
+
+@pytest.mark.asyncio
+async def test_metric_check_info_no_model_version(classification_model_check_id, client: TestClient):
+    response = client.get(f"/api/v1/checks/{classification_model_check_id}/info")
+
+    assert response.status_code == 200
+    assert response.json() == {"check_conf":
+                               [{"is_agg_shown": None,
+                                 "type": "scorer",
+                                 "values": [{"is_agg": True, "name": "Accuracy"},
+                                            {"is_agg": True, "name": "Precision Macro"},
+                                            {"is_agg": True, "name": "Recall Macro"},
+                                            {"is_agg": False, "name": "Precision Per Class"},
+                                            {"is_agg": False, "name": "Recall Per Class"},
+                                            {"is_agg": False, "name": "F1 Per Class"},
+                                            {"is_agg": False, "name": "Roc Auc Per Class"},
+                                            {"is_agg": False, "name": "Fpr Per Class"},
+                                            {"is_agg": True, "name": "Fpr Macro"},
+                                            {"is_agg": True, "name": "Fpr Micro"},
+                                            {"is_agg": True, "name": "Fpr Weighted"},
+                                            {"is_agg": False, "name": "Fnr Per Class"},
+                                            {"is_agg": True, "name": "Fnr Macro"},
+                                            {"is_agg": True, "name": "Fnr Micro"},
+                                            {"is_agg": True, "name": "Fnr Weighted"},
+                                            {"is_agg": False, "name": "Tnr Per Class"},
+                                            {"is_agg": True, "name": "Tnr Macro"},
+                                            {"is_agg": True, "name": "Tnr Micro"},
+                                            {"is_agg": True, "name": "Tnr Weighted"}]}],
+                               "res_conf": {"type": "class", "values": None, "is_agg_shown": False}}
+
+
+@pytest.mark.asyncio
+async def test_metric_check_info_w_model_version(classification_model_check_id, classification_model_version_id,
+                                                 client: TestClient):
+    add_classification_data(classification_model_version_id, client)
+    response = client.get(f"/api/v1/checks/{classification_model_check_id}/info")
+
+    assert response.status_code == 200
+    assert response.json()["check_conf"] == [{"is_agg_shown": None,
+                                              "type": "scorer",
+                                              "values": [{"is_agg": True, "name": "Accuracy"},
+                                                         {"is_agg": True, "name": "Precision Macro"},
+                                                         {"is_agg": True, "name": "Recall Macro"},
+                                                         {"is_agg": False, "name": "Precision Per Class"},
+                                                         {"is_agg": False, "name": "Recall Per Class"},
+                                                         {"is_agg": False, "name": "F1 Per Class"},
+                                                         {"is_agg": False, "name": "Roc Auc Per Class"},
+                                                         {"is_agg": False, "name": "Fpr Per Class"},
+                                                         {"is_agg": True, "name": "Fpr Macro"},
+                                                         {"is_agg": True, "name": "Fpr Micro"},
+                                                         {"is_agg": True, "name": "Fpr Weighted"},
+                                                         {"is_agg": False, "name": "Fnr Per Class"},
+                                                         {"is_agg": True, "name": "Fnr Macro"},
+                                                         {"is_agg": True, "name": "Fnr Micro"},
+                                                         {"is_agg": True, "name": "Fnr Weighted"},
+                                                         {"is_agg": False, "name": "Tnr Per Class"},
+                                                         {"is_agg": True, "name": "Tnr Macro"},
+                                                         {"is_agg": True, "name": "Tnr Micro"},
+                                                         {"is_agg": True, "name": "Tnr Weighted"}]}]
+    res_conf_json = response.json()["res_conf"]
+    assert res_conf_json["type"] == "class"
+    assert res_conf_json["is_agg_shown"] is False
+    assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
+        sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
+
+
+@ pytest.mark.asyncio
+async def test_property_check_info(classification_vision_model_property_check_id,
+                                   classification_vision_model_version_id,
+                                   client: TestClient):
+    add_vision_classification_data(classification_vision_model_version_id, client)
+    response = client.get(f"/api/v1/checks/{classification_vision_model_property_check_id}/info")
+
+    assert response.status_code == 200
+    assert response.json() == {"check_conf":
+                               [{"is_agg_shown": None, "type": "aggregation method",
+                                 "values": [{"name": "mean", "is_agg": True},
+                                            {"name": "max", "is_agg": True},
+                                            {"name": "none", "is_agg": False}]},
+                                   {"type": "image property",
+                                    "values": [{"is_agg": None, "name": "Aspect Ratio"}], "is_agg_shown": False}],
+                               "res_conf": None}
+
+
+@ pytest.mark.asyncio
+async def test_feature_check_info(classification_model_feature_check_id, classification_model_version_id,
+                                  client: TestClient):
+    add_classification_data(classification_model_version_id, client)
+    response = client.get(f"/api/v1/checks/{classification_model_feature_check_id}/info")
+
+    assert response.status_code == 200
+    assert response.json() == {"check_conf":
+                               [{"is_agg_shown": None, "type": "aggregation method",
+                                 "values": [{"name": "mean", "is_agg": True},
+                                            {"name": "max", "is_agg": True},
+                                            {"name": "none", "is_agg": False},
+                                            {"name": "weighted", "is_agg": True},
+                                            {"name": "l2_weighted", "is_agg": True}]},
+                                {"type": "feature",
+                                 "values": [{"is_agg": None, "name": "a"},
+                                            {"is_agg": None, "name": "b"}],
+                                 "is_agg_shown": False}],
+                               "res_conf": None}
+
+
 async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky v2",
@@ -145,9 +267,10 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     response = client.post("/api/v1/checks/2/run/window",
                            json={"start_time": day_before_curr_time.add(hours=7).isoformat(),
                                  "end_time": day_before_curr_time.add(hours=9).isoformat(),
-                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14}]}})
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14}]},
+                                 "additional_kwargs": {"check_conf": {"scorer": ["recall_macro"]}}})
     json_rsp = response.json()
-    assert json_rsp == {"1": {"accuracy": 1.0}}
+    assert json_rsp == {"1": {"recall_macro": 1.0}}
 
 
 @pytest.mark.asyncio
@@ -384,5 +507,5 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0}]}})
     json_rsp = response.json()
-    assert json_rsp == {"1": {"Average Precision_42": 0.0, "Average Precision_51": 0.0,
-                              "Average Recall_42": 0.0, "Average Recall_51": 0.0}}
+    assert json_rsp == {"1": {"Average Precision 42": 0.0, "Average Precision 51": 0.0,
+                              "Average Recall 42": 0.0, "Average Recall 51": 0.0}}

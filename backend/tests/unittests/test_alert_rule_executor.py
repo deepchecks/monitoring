@@ -39,7 +39,7 @@ async def test_alert_executor(
         check_id,
         client,
         lookback=TimeUnit.DAY * 3,
-        filter_key="accuracy",
+        additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
         data_filters={
             "filters": [{
                 "operator": "equals",
@@ -104,14 +104,14 @@ async def test_alert_scheduling(
             check_id,
             client,
             lookback=TimeUnit.DAY * 3,
-            filter_key="accuracy",
+            additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals","value": "ppppp", "column": "b"}]}
         ),
         add_monitor(
             check_id,
             client,
             lookback=TimeUnit.HOUR * 2,
-            filter_key="accuracy",
+            additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         )
     ]

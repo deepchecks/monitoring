@@ -30,12 +30,14 @@ async def test_run_alert(classification_model_id, classification_model_version_i
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     check_id = response.json()["id"]
     # add monitor
-    monitor_id = add_monitor(check_id, client, lookback=3600 * 3, filter_key="accuracy", data_filters={
-        "filters": [{
-            "operator": "equals",
-            "value": "ppppp",
-            "column": "b"
-        }]},
+    monitor_id = add_monitor(check_id, client, lookback=3600 * 3,
+        additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
+        data_filters={
+            "filters": [{
+                "operator": "equals",
+                "value": "ppppp",
+                "column": "b"
+            }]},
     )
     add_alert_rule(monitor_id, client, repeat_every=3600 * 2, condition={
             "operator": "less_than",

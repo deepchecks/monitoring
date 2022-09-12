@@ -23,6 +23,7 @@ Affero
 Asyncpg
 dataset
 severities
+mixin
 opentelemetry
 Instrumentor
 toplevel

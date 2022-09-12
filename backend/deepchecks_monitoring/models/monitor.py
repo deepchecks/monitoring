@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.pydantic_type import PydanticType
-from deepchecks_monitoring.utils import DataFilterList
+from deepchecks_monitoring.utils import DataFilterList, MonitorCheckConfSchema
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.models.alert_rule import AlertRule  # pylint: disable=unused-import
@@ -35,7 +35,7 @@ class Monitor(Base):
     description = Column(String(200), default="")
     data_filters = Column(PydanticType(pydantic_model=DataFilterList), nullable=True)
     lookback = Column(Integer)
-    filter_key = Column(String(50), default=None, nullable=True)
+    additional_kwargs = Column(PydanticType(pydantic_model=MonitorCheckConfSchema), default=None, nullable=True)
 
     check_id = Column(
         Integer,

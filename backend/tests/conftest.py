@@ -120,7 +120,7 @@ def client(application) -> t.Iterator[TestClient]:
 
 @pytest_asyncio.fixture()
 async def classification_model_id(async_session: AsyncSession):
-    model = Model(name="classification model", description="test", task_type=TaskType.CLASSIFICATION)
+    model = Model(name="classification model", description="test", task_type=TaskType.MULTICLASS)
     async_session.add(model)
     await async_session.commit()
     await async_session.refresh(model)
@@ -202,7 +202,7 @@ async def classification_model_version_no_fi_id(classification_model_id: int, cl
 @pytest_asyncio.fixture()
 async def classification_model_check_id(async_session: AsyncSession, classification_model_id: int):
     schema = CheckCreationSchema(name="check", config={
-        "class_name": "TrainTestPerformance",
+        "class_name": "SingleDatasetPerformance",
         "params": {"reduce": "mean"},
         "module_name": "deepchecks.tabular.checks"
     })
@@ -211,6 +211,31 @@ async def classification_model_check_id(async_session: AsyncSession, classificat
     await async_session.commit()
     return result["id"]
 
+
+@pytest_asyncio.fixture()
+async def classification_model_feature_check_id(async_session: AsyncSession, classification_model_id: int):
+    schema = CheckCreationSchema(name="check", config={
+        "class_name": "CategoryMismatchTrainTest",
+        "params": {},
+        "module_name": "deepchecks.tabular.checks"
+    })
+
+    result = await create_check(classification_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
+
+@pytest_asyncio.fixture()
+async def classification_vision_model_property_check_id(async_session: AsyncSession,
+                                                        classification_vision_model_id: int):
+    schema = CheckCreationSchema(name="check", config={
+        "class_name": "ImagePropertyDrift",
+        "params": {},
+        "module_name": "deepchecks.vision.checks"
+    })
+
+    result = await create_check(classification_vision_model_id, schema, async_session)
+    await async_session.commit()
+    return result["id"]
 
 @pytest_asyncio.fixture()
 async def regression_model_check_id(async_session: AsyncSession, regression_model_id: int):
@@ -360,7 +385,7 @@ def add_classification_data(
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
             "_dc_prediction": "2" if i % 2 else "1",
-            "_dc_label": "2",
+            "_dc_label": "2" if i != 1 else "1",
             "a": 10 + i,
             "b": "ppppp",
         })

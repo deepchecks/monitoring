@@ -30,7 +30,7 @@ if t.TYPE_CHECKING:
 
 __all__ = ["ModelVersion", "ColumnMetadata", "update_statistics_from_sample"]
 
-CATEGORICAL_STATISTICS_VALUES_LIMIT = 50
+CATEGORICAL_STATISTICS_VALUES_LIMIT = 200
 
 
 class ColumnMetadata(TypedDict):

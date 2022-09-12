@@ -23,7 +23,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.check_logic import run_check_per_window_in_range
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import DataFilterList, IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404, fetch_or_404
 
 from .router import router
 
@@ -36,7 +36,7 @@ class MonitorCreationSchema(BaseModel):
     dashboard_id: t.Optional[int]
     description: t.Optional[str]
     data_filters: t.Optional[DataFilterList]
-    filter_key: t.Optional[str]
+    additional_kwargs: t.Optional[MonitorCheckConfSchema]
 
 
 class MonitorSchema(BaseModel):
@@ -48,8 +48,8 @@ class MonitorSchema(BaseModel):
     dashboard_id: t.Optional[int]
     lookback: int
     description: t.Optional[str] = None
-    data_filters: DataFilterList = None
-    filter_key: t.Optional[str]
+    data_filters: t.Optional[DataFilterList] = None
+    additional_kwargs: t.Optional[MonitorCheckConfSchema]
     alert_rules: t.List[AlertRuleSchema]
 
     class Config:
@@ -66,7 +66,7 @@ class MonitorUpdateSchema(BaseModel):
     description: t.Optional[str]
     data_filters: t.Optional[DataFilterList]
     dashboard_id: t.Optional[int]
-    filter_key: t.Optional[str]
+    additional_kwargs: t.Optional[MonitorCheckConfSchema]
 
 
 class MonitorRunSchema(BaseModel):
@@ -169,5 +169,6 @@ async def run_monitor_lookback(
         end_time,
         window,
         monitor.data_filters,
-        session
+        session,
+        monitor.additional_kwargs,
     )

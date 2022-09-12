@@ -28,7 +28,8 @@ class TaskType(enum.Enum):
     """Enum containing supported task types."""
 
     REGRESSION = "regression"
-    CLASSIFICATION = "classification"
+    BINARY = "binary"
+    MULTICLASS = "multiclass"
     VISION_CLASSIFICATION = "vision_classification"
     VISION_DETECTION = "vision_detection"
 

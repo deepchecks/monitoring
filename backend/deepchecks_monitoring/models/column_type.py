@@ -101,7 +101,7 @@ def get_model_columns_by_type(task_type: TaskType) -> t.Tuple[t.Dict[str, Column
             SAMPLE_LABEL_COL: ColumnType.NUMERIC,
             SAMPLE_PRED_COL: ColumnType.NUMERIC
         }, [SAMPLE_PRED_COL]
-    elif task_type == TaskType.CLASSIFICATION:
+    elif task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
         return {
             SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
             SAMPLE_PRED_COL: ColumnType.CATEGORICAL,

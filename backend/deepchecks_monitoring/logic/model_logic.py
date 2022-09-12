@@ -35,7 +35,13 @@ from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                       SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL)
-from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
+from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConfSchema,
+                                         make_oparator_func)
+
+
+def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
+    for kwarg_type, kwarg_val in model_config.check_conf.items():
+        check_conf['params'][CheckParameterTypeEnum(kwarg_type).to_kwarg_name()] = kwarg_val
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -94,7 +100,11 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
         df.drop(SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
 
     cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1] == 'categorical']
-    dataset = Dataset(df, label=SAMPLE_LABEL_COL, cat_features=cat_features)
+    if df[SAMPLE_LABEL_COL].isna().all():
+        df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
+        dataset = Dataset(df, cat_features=cat_features)
+    else:
+        dataset = Dataset(df, label=SAMPLE_LABEL_COL, cat_features=cat_features)
     return dataset, y_pred, y_proba
 
 
@@ -143,8 +153,14 @@ async def get_results_for_model_versions_per_window(
         model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[pd.DataFrame]]],
         model_versions: t.List[ModelVersion],
         model: Model,
-        dp_check: BaseCheck) -> t.Dict[int, t.Dict[str, float]]:
+        dp_check: BaseCheck,
+        additional_kwargs: MonitorCheckConfSchema) -> t.Dict[int, t.Dict[str, float]]:
     """Get results for active model version sessions per window."""
+    if additional_kwargs is not None:
+        check_conf = dp_check.config()
+        _check_kwarg_filter(check_conf, additional_kwargs)
+        dp_check = BaseCheck.from_config(check_conf)
+
     top_feat, feat_imp = model_versions[0].get_top_features()
     task_type = model.task_type
     is_vision_check = isinstance(dp_check,
@@ -204,6 +220,36 @@ async def get_results_for_model_versions_per_window(
                 reduced_outs.append(None)
 
         model_reduces[model_version.id] = reduced_outs
+
+    # filter values
+    if additional_kwargs is not None and additional_kwargs.res_conf is not None:
+        for reduced_results in model_reduces.values():
+            if reduced_results is not None:
+                for reduced_res in reduced_results:
+                    if reduced_res is not None:
+                        for val_name in list(reduced_res.keys()):
+                            has_value = False
+                            # check per each allowed value in the filter
+                            for value in additional_kwargs.res_conf:
+                                # if we have a filter on the result key we first check if the key is tuple
+                                # if it is tuple we check the last value, if not we check regularly
+                                if (isinstance(val_name, tuple) and val_name[-1] == value) \
+                                        or val_name == value:
+                                    has_value = True
+                                    break
+                            if not has_value:
+                                del reduced_res[val_name]
+
+    # return the reduced result with strings as keys
+    for reduced_results in model_reduces.values():
+        if reduced_results is not None:
+            for reduced_res in reduced_results:
+                if reduced_res is not None:
+                    for val_name, val_value in list(reduced_res.items()):
+                        # if the key tuple we need to return the values as strings
+                        if isinstance(val_name, tuple):
+                            reduced_res[' '.join(val_name)] = val_value
+                            del reduced_res[val_name]
 
     return model_reduces
 

@@ -14,8 +14,13 @@ import typing as t
 import pandas as pd
 import pendulum as pdl
 from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
+from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReducePropertyMixin
+from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
+                                                     regression_scorers_higher_is_better_dict)
 from deepchecks.tabular.suite import Suite as TabularSuite
+from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
 from deepchecks.vision.suite import Suite as VisionSuite
+from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from pandas import DataFrame
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -34,7 +39,10 @@ from deepchecks_monitoring.models import ModelVersion, Monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule
 from deepchecks_monitoring.models.check import Check
-from deepchecks_monitoring.utils import DataFilterList, fetch_or_404, make_oparator_func
+from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL
+from deepchecks_monitoring.models.model import Model, TaskType
+from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
+                                         MonitorCheckConfSchema, fetch_or_404, make_oparator_func)
 
 
 class AlertCheckOptions(BaseModel):
@@ -50,6 +58,7 @@ class MonitorOptions(BaseModel):
     end_time: str
     start_time: str
     filter: t.Optional[DataFilterList] = None
+    additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
 
     def start_time_dt(self) -> pdl.DateTime:
         """Get start time as datetime object."""
@@ -58,6 +67,90 @@ class MonitorOptions(BaseModel):
     def end_time_dt(self) -> pdl.DateTime:
         """Get end time as datetime object."""
         return pdl.parse(self.end_time)
+
+
+class FilterWindowOptions(MonitorOptions):
+    """Window with filter run schema."""
+
+    model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
+
+
+def _get_properties_by_type(property_type: PropertiesInputType, vision_features):
+    props = []
+    for feat in vision_features:
+        prop_type, prop_name = feat.split(" ", 1)
+        if prop_type == property_type.value:
+            props.append({"name": prop_name})
+    return props
+
+
+def _metric_name_pretify(metric_name: str) -> str:
+    return str.title(metric_name.replace("_", " "))
+
+
+def _metric_api_listify(metric_names: t.List[str], ignore_binary: bool = True):
+    """Convert metric names to be check/info api compatible."""
+    metric_list = []
+    for metric_name in metric_names:
+        # the metric_name split is a workaround for vision metrics as the default metric dict contains binary scorers
+        if not ignore_binary or len(metric_name.split("_")) != 1:
+            metric_list.append({"name": _metric_name_pretify(metric_name),
+                                "is_agg": "per_class" not in metric_name})
+    return metric_list
+
+
+def get_metric_class_info(latest_version: ModelVersion, model: Model) -> MonitorCheckConf:
+    """Get check info for checks that are instance of ReduceMetricClassMixin."""
+    classes = None if latest_version is None else latest_version.statistics.get(SAMPLE_LABEL_COL, {}).get("values")
+    if classes is not None:
+        classes = [{"name": class_name} for class_name in classes]
+    # get the scorers by task type
+    if model.task_type in [TaskType.VISION_CLASSIFICATION, TaskType.MULTICLASS]:
+        scorers = _metric_api_listify(multiclass_scorers_dict, ignore_binary=False)
+        # vision classification tasks support the tabular metrics too
+        if model.task_type == TaskType.VISION_CLASSIFICATION:
+            scorers += _metric_api_listify(classification_dict.keys())
+    elif model.task_type == TaskType.REGRESSION:
+        scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True}
+                   for scorer_name in regression_scorers_higher_is_better_dict.values()]
+    elif model.task_type == TaskType.BINARY:
+        scorers = [{"name": scorer_name, "is_agg": True}
+                   for scorer_name in binary_scorers_dict.keys()]  # pylint: disable=C0201 # noqa
+    elif model.task_type == TaskType.VISION_DETECTION:
+        scorers = _metric_api_listify(detection_dict.keys())
+    return {"check_conf": [{"type": CheckParameterTypeEnum.SCORER.value, "values": scorers}],
+            "res_conf": {"type": CheckParameterTypeEnum.CLASS.value, "values": classes, "is_agg_shown": False}}
+
+
+def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_check: BaseCheck) -> MonitorCheckConf:
+    """Get check info for checks that are instance of ReduceFeatureMixin or ReducePropertyMixin."""
+    feat_names = [] if latest_version is None else latest_version.get_top_features()[0]
+    aggs_names = ["mean", "max", "none"]
+    # FeatureMixin has additional aggregation options
+    if isinstance(dp_check, ReduceFeatureMixin):
+        aggs_names += ["weighted", "l2_weighted"]
+    aggs = [{"name": agg_name, "is_agg": agg_name != "none"} for agg_name in aggs_names]
+    check_parameter_conf = {"check_conf": [{"type": CheckParameterTypeEnum.AGGREGATION_METHOD.value,
+                                            "values": aggs}], "res_conf": None}
+    if isinstance(dp_check, ReduceFeatureMixin):
+        feature_values = [{"name": feat_name} for feat_name in feat_names]
+        check_parameter_conf["check_conf"].append({"type": CheckParameterTypeEnum.FEATURE.value,
+                                                   "values": feature_values, "is_agg_shown": False})
+    if isinstance(dp_check, ReducePropertyMixin):
+        # all those checks are of type property but use different property type (maybe we should refactor in deepchecks)
+        if "Image" in check.config["class_name"]:
+            property_type = PropertiesInputType.IMAGES
+            property_type_name = CheckParameterTypeEnum.IMAGE_PROPERTY.value
+        elif "Label" in check.config["class_name"]:
+            property_type = PropertiesInputType.LABELS
+            property_type_name = CheckParameterTypeEnum.LABEL_PROPERTY.value
+        elif "Prediction" in check.config["class_name"]:
+            property_type = PropertiesInputType.PREDICTIONS
+            property_type_name = CheckParameterTypeEnum.PREDICTION_PROPERTY.value
+        check_parameter_conf["check_conf"] \
+            .append({"type": property_type_name,
+                     "values": _get_properties_by_type(property_type, feat_names), "is_agg_shown": False})
+    return check_parameter_conf
 
 
 async def run_rules_of_monitor(
@@ -131,7 +224,8 @@ async def run_rules_of_monitor(
         # run check for the relevant window and data filter
         check_alert_check_options = MonitorOptions(start_time=start_time.isoformat(),
                                                    end_time=end_time.isoformat(),
-                                                   data_filter=monitor.data_filters)
+                                                   data_filter=monitor.data_filters,
+                                                   additional_kwargs=monitor.additional_kwargs)
         check_results = await run_check_window(monitor.check, check_alert_check_options, session, model=model,
                                                model_versions=relevant_model_versions)
 
@@ -141,9 +235,8 @@ async def run_rules_of_monitor(
                 alert_dict[str(model_version_id)] = []
             failed_vals = []
             for val_name, value in results.items():
-                if monitor.filter_key is None or monitor.filter_key == val_name:
-                    if alert_condition_func(value, alert_condition_val):
-                        failed_vals.append(val_name)
+                if alert_condition_func(value, alert_condition_val):
+                    failed_vals.append(val_name)
             alert_dict[str(model_version_id)] = failed_vals
 
         if len(alert_dict) > 0:
@@ -166,7 +259,8 @@ async def run_check_per_window_in_range(
     end_time: pdl.DateTime,
     window: pdl.Duration,
     monitor_filter: t.Optional[DataFilterList],
-    session: AsyncSession
+    session: AsyncSession,
+    additional_kwargs: t.Optional[MonitorCheckConfSchema],
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
 
@@ -198,7 +292,9 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    dp_check = BaseCheck.from_config(check.config)
+    check_conf = check.config
+    dp_check = BaseCheck.from_config(check_conf)
+
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
 
@@ -252,7 +348,8 @@ async def run_check_per_window_in_range(
     model_reduces = await get_results_for_model_versions_per_window(model_version_dataframes,
                                                                     model_versions,
                                                                     model,
-                                                                    dp_check)
+                                                                    dp_check,
+                                                                    additional_kwargs)
 
     # get the time windows that were used
     time_windows = []
@@ -309,7 +406,8 @@ async def run_check_window(
     model_reduces_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
                                                                                model_versions,
                                                                                model,
-                                                                               dp_check)
+                                                                               dp_check,
+                                                                               monitor_options.additional_kwargs)
     # the original function is more general and runs it per window, we have only 1 window here
     model_reduces = {}
     for model_id, reduces_per_window in model_reduces_per_window.items():

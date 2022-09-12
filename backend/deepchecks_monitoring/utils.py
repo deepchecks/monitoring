@@ -37,6 +37,7 @@ __all__ = [
     "json_dumps",
     "CountResponse",
     "IdResponse",
+    "CheckParameterTypeEnum",
     "NameIdResponse",
 ]
 
@@ -51,6 +52,31 @@ class OperatorsEnum(enum.Enum):
     CONTAINS = "contains"
     EQ = "equals"
     NOT_EQ = "not_equals"
+
+
+class CheckParameterTypeEnum(enum.Enum):
+    """Supported customizable parameter types in checks."""
+
+    FEATURE = "feature"
+    SCORER = "scorer"
+    AGGREGATION_METHOD = "aggregation method"
+    CLASS = "class"
+    IMAGE_PROPERTY = "image property"
+    LABEL_PROPERTY = "label property"
+    PREDICTION_PROPERTY = "prediction property"
+
+    def to_kwarg_name(self):
+        """Return the SQLAlchemy type of the data type."""
+        types_map = {
+            CheckParameterTypeEnum.FEATURE: "columns",
+            CheckParameterTypeEnum.SCORER: "scorers",
+            CheckParameterTypeEnum.AGGREGATION_METHOD: "aggregation_method",
+            CheckParameterTypeEnum.CLASS: "class_list_to_show",
+            CheckParameterTypeEnum.IMAGE_PROPERTY: "image_properties",
+            CheckParameterTypeEnum.LABEL_PROPERTY: "label_properties",
+            CheckParameterTypeEnum.PREDICTION_PROPERTY: "prediction_properties",
+        }
+        return types_map[self]
 
 
 def make_oparator_func(oparator_enum: OperatorsEnum) -> t.Callable[[t.Any, t.Any], bool]:
@@ -80,6 +106,38 @@ class DataFilterList(BaseModel):
     """List of data filters."""
 
     filters: t.List[DataFilter]
+
+
+class MonitorValueConf(BaseModel):
+    """List of data filters."""
+
+    name: str
+    is_agg: t.Optional[bool]
+
+
+class MonitorTypeConf(BaseModel):
+    """List of data filters."""
+
+    type: str
+    values: t.Union[t.List[MonitorValueConf], None]
+    is_agg_shown: t.Optional[bool]
+
+
+class MonitorCheckConf(BaseModel):
+    """List of data filters."""
+
+    check_conf: t.Union[t.List[MonitorTypeConf], None]
+    res_conf: t.Union[MonitorTypeConf, None]
+
+
+class MonitorCheckConfSchema(BaseModel):
+    """List of data filters."""
+
+    check_conf: t.Dict[CheckParameterTypeEnum, t.Any]
+    res_conf: t.Union[t.List[str], None]
+
+    class Config:
+        use_enum_values = True
 
 
 class IdResponse(BaseModel):

@@ -20,14 +20,14 @@ from tests.conftest import add_alert, add_alert_rule, add_monitor
 
 @pytest.mark.asyncio
 async def test_add_model(client: TestClient):
-    response = client.post("/api/v1/models", json={"name": "44", "task_type": "classification"})
+    response = client.post("/api/v1/models", json={"name": "44", "task_type": "multiclass"})
     assert response.status_code == 200
     assert response.json() == {"id": 1}
 
     response = client.get("/api/v1/models/")
     assert response.status_code == 200
     resp_json = response.json()
-    assert resp_json[0] == {"id": 1, "name": "44", "task_type": "classification", "description": None,
+    assert resp_json[0] == {"id": 1, "name": "44", "task_type": "multiclass", "description": None,
                             "alerts_count": 0, "latest_time": None}
 
 
@@ -81,7 +81,7 @@ async def test_get_models(classification_model_check_id, regression_model_check_
     # Assert
     assert response.status_code == 200
     assert response.json() == [
-        {"id": 1, "name": "classification model", "description": "test", "task_type": "classification",
+        {"id": 1, "name": "classification model", "description": "test", "task_type": "multiclass",
          "alerts_count": 1, "latest_time": None},
         {"id": 2, "name": "regression model", "description": "test", "task_type": "regression",
          "alerts_count": 3, "latest_time": None}
@@ -101,6 +101,6 @@ async def test_get_models_latest_time(classification_model_id, client: TestClien
     # Assert
     assert response.status_code == 200
     assert response.json() == [
-        {"id": 1, "name": "classification model", "description": "test", "task_type": "classification",
+        {"id": 1, "name": "classification model", "description": "test", "task_type": "multiclass",
          "alerts_count": 0, "latest_time": time.int_timestamp},
     ]
