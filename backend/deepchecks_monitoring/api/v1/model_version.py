@@ -246,3 +246,27 @@ async def run_suite_on_model_version(
     html = buffer.getvalue()
 
     return HTMLResponse(content=html, status_code=200)
+
+
+@router.get('/model-versions/{model_version_id}/count-samples', tags=[Tags.MODELS])
+async def get_count_samples(
+    model_version_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Return json schema of the model version data to use in validation on client-side.
+
+    Parameters
+    ----------
+    model_version_id
+    session
+
+    Returns
+    -------
+    json schema of the model version
+    """
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    count_sql = 'select count(1) from {}'
+    mon_count = (await session.execute(text(count_sql.format(model_version.get_monitor_table_name())))).scalar()
+    ref_count = (await session.execute(text(count_sql.format(model_version.get_reference_table_name())))).scalar()
+
+    return {'monitor_count': mon_count, 'reference_count': ref_count}

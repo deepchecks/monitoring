@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import send_reference_request, add_classification_data
 
 
 @pytest.mark.asyncio
@@ -33,6 +34,7 @@ async def test_add_model_version(classification_model_id, client: TestClient):
     # Assert
     assert response.status_code == 200
 
+
 @pytest.mark.asyncio
 async def test_add_another_model_version(classification_model_id, classification_model_version_id, client: TestClient):
     # Arrange
@@ -56,6 +58,7 @@ async def test_add_another_model_version(classification_model_id, classification
     assert response.status_code == 200
     assert response.json()["id"] != classification_model_version_id
 
+
 @pytest.mark.asyncio
 async def test_get_model_version_same_features(classification_model_id,
                                                classification_model_version_id, client: TestClient):
@@ -72,10 +75,11 @@ async def test_get_model_version_same_features(classification_model_id,
     # Assert
     assert response.json() == {"id": classification_model_version_id}
 
+
 # pylint: disable=W0613 # noqa
 @pytest.mark.asyncio
-async def test_get_model_version_diffrent_features(classification_model_id,
-                                                   classification_model_version_id, client: TestClient):
+async def test_get_model_version_different_features(classification_model_id,
+                                                    classification_model_version_id, client: TestClient):
     # Arrange
     request = {
         "name": "v1",
@@ -89,3 +93,17 @@ async def test_get_model_version_diffrent_features(classification_model_id,
     assert response.status_code == 400
     assert response.content == \
         b'{"detail":"A model version with the name \\"v1\\" already exists but with different features"}'
+
+
+@pytest.mark.asyncio
+async def test_count_tables(client: TestClient, classification_model_version_id: int):
+    # Arrange
+    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
+    send_reference_request(client, classification_model_version_id, [sample] * 100)
+    add_classification_data(classification_model_version_id, client)
+    # Act
+    response = client.get(f"/api/v1/model-versions/{classification_model_version_id}/count-samples")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == {"monitor_count": 5, "reference_count": 100}
