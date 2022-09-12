@@ -29,8 +29,7 @@ from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import DeepchecksColumns
 from deepchecks_client.core.utils import create_timestamp, maybe_raise
 from deepchecks_client.vision.utils import (DeepchecksVisionEncoder, calc_image_bbox_props, create_static_properties)
-from deepchecks_monitoring.models.column_type import ColumnType
-from deepchecks_monitoring.models.model import TaskType
+from deepchecks_client.core import ColumnType, TaskType
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
