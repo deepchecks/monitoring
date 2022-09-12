@@ -179,6 +179,7 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
             "alert_severity": "mid",
             "model_id": 1,
             "alerts_count": 2,
+            "max_end_time": "1970-01-19T12:26:40+00:00"
         },
         {
             "id": 1,
@@ -188,7 +189,8 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
             "condition": {"operator": "greater_than", "value": 100.0},
             "alert_severity": "low",
             "model_id": 1,
-            "alerts_count": 1
+            "alerts_count": 1,
+            "max_end_time": "1970-01-19T12:26:40+00:00"
         }
     ]
 

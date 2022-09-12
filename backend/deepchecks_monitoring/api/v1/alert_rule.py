@@ -11,6 +11,7 @@
 import typing as t
 from datetime import datetime
 
+import pendulum as pdl
 from asyncpg.exceptions import UniqueViolationError
 from fastapi import Query, Response, status
 from pydantic import BaseModel, Field
@@ -59,6 +60,7 @@ class AlertRuleInfoSchema(AlertRuleSchema):
 
     model_id: int
     alerts_count: int = 0
+    max_end_time: pdl.DateTime
 
 
 class AlertRuleUpdateSchema(BaseModel):
@@ -191,6 +193,7 @@ async def get_alert_rules(
             AlertRule.monitor_id,
             Check.model_id,
             alerts_info.c.alerts_count,
+            alerts_info.c.max_end_time,
             severity_index
         )
         .join(AlertRule.monitor)
