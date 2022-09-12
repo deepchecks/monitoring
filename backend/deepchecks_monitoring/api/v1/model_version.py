@@ -25,8 +25,8 @@ from starlette.responses import HTMLResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, DataIngestionDep, KafkaAdminDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.check_logic import run_suite_for_model_version
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType,
                                                       column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model

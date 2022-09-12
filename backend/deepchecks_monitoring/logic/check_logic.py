@@ -17,11 +17,8 @@ from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReducePropertyMixin
 from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
                                                      regression_scorers_higher_is_better_dict)
-from deepchecks.tabular.suite import Suite as TabularSuite
 from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
-from deepchecks.vision.suite import Suite as VisionSuite
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-from pandas import DataFrame
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,8 +26,7 @@ from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import NotFound
-from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object, dataframe_to_dataset_and_pred,
-                                                     dataframe_to_vision_data_pred_props,
+from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
@@ -114,8 +110,7 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
         scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True}
                    for scorer_name in regression_scorers_higher_is_better_dict.values()]
     elif model.task_type == TaskType.BINARY:
-        scorers = [{"name": scorer_name, "is_agg": True}
-                   for scorer_name in binary_scorers_dict.keys()]  # pylint: disable=C0201 # noqa
+        scorers = [{"name": scorer_name, "is_agg": True} for scorer_name in binary_scorers_dict]
     elif model.task_type == TaskType.VISION_DETECTION:
         scorers = _metric_api_listify(detection_dict.keys())
     return {"check_conf": [{"type": CheckParameterTypeEnum.SCORER.value, "values": scorers}],
@@ -154,9 +149,9 @@ def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_che
 
 
 async def run_rules_of_monitor(
-    monitor_id: int,
-    alert_check_options: AlertCheckOptions,
-    session: AsyncSession = AsyncSessionDep
+        monitor_id: int,
+        alert_check_options: AlertCheckOptions,
+        session: AsyncSession = AsyncSessionDep
 
 ):
     """Run a check in the time window for each alert and create event accordingly.
@@ -254,13 +249,13 @@ async def run_rules_of_monitor(
 
 
 async def run_check_per_window_in_range(
-    check_id: int,
-    start_time: pdl.DateTime,
-    end_time: pdl.DateTime,
-    window: pdl.Duration,
-    monitor_filter: t.Optional[DataFilterList],
-    session: AsyncSession,
-    additional_kwargs: t.Optional[MonitorCheckConfSchema],
+        check_id: int,
+        start_time: pdl.DateTime,
+        end_time: pdl.DateTime,
+        window: pdl.Duration,
+        monitor_filter: t.Optional[DataFilterList],
+        session: AsyncSession,
+        additional_kwargs: t.Optional[MonitorCheckConfSchema],
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
 
@@ -361,11 +356,11 @@ async def run_check_per_window_in_range(
 
 
 async def run_check_window(
-    check: Check,
-    monitor_options: MonitorOptions,
-    session: AsyncSession,
-    model,
-    model_versions
+        check: Check,
+        monitor_options: MonitorOptions,
+        session: AsyncSession,
+        model,
+        model_versions
 ):
     """Run a check for each time window by lookback.
 
@@ -415,101 +410,12 @@ async def run_check_window(
     return model_reduces
 
 
-async def run_suite_for_model_version(
-    model_version: ModelVersion,
-    window_options: MonitorOptions,
-    session: AsyncSession = AsyncSessionDep
-):
-    """Run a check for each time window by lookback.
-
-    Parameters
-    ----------
-    model_version : ModelVersion
-    window_options : MonitorOptions
-        The window options.
-    session : AsyncSession, optional
-        SQLAlchemy session.
-    """
-    checks = model_version.model.checks
-    checks_instances = [c.initialize_check() for c in checks]
-
-    suite_name = f"{model_version.name} from {window_options.start_time} to {window_options.end_time}"
-    # Get the module (tabular or vision)
-    module = checks_instances[0].__module__.split(".")[1]
-
-    if module == "tabular":
-        is_tabular = True
-        suite = TabularSuite(suite_name, *checks_instances)
-    elif module == "vision":
-        is_tabular = False
-        suite = VisionSuite(suite_name, *checks_instances)
-    else:
-        raise Exception(f"Not supported module {module}")
-
-    top_feat, feat_imp = model_version.get_top_features()
-    load_reference = any((isinstance(c, TrainTestBaseCheck) for c in checks_instances))
-
-    test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options,
-                                                    with_reference=load_reference)
-
-    test_session_result = await test_session
-    test_df = DataFrame.from_dict(test_session_result.all())
-
-    if ref_session:
-        ref_session_result = await ref_session
-        ref_df = DataFrame.from_dict(ref_session_result.all())
-    else:
-        ref_df = None
-
-    # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily for
-    # a long time
-    await session.commit()
-
-    if is_tabular:
-        test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
-            test_df, model_version.features_columns, top_feat)
-    else:
-        test_dataset, test_pred, test_props = dataframe_to_vision_data_pred_props(
-            test_df, model_version.model.task_type)
-
-    if ref_df is not None:
-        if is_tabular:
-            reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-                ref_df, model_version.features_columns, top_feat)
-        else:
-            reference_dataset, reference_pred, reference_props = dataframe_to_vision_data_pred_props(
-                ref_df, model_version.model.task_type)
-        if is_tabular:
-            suite: TabularSuite
-            return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
-                             y_pred_train=reference_pred, y_proba_train=reference_proba,
-                             y_pred_test=test_pred, y_proba_test=test_proba,
-                             with_display=True)
-        else:
-            suite: VisionSuite
-            return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset,
-                             train_predictions=reference_pred, train_properties=reference_props,
-                             test_predictions=test_pred, test_properties=test_props,
-                             with_display=True)
-    else:
-        # In case of single dataset we must pass it as train
-        if is_tabular:
-            suite: TabularSuite
-            return suite.run(train_dataset=test_dataset, feature_importance=feat_imp,
-                             y_pred_train=test_pred, y_proba_train=test_proba, with_display=True)
-        else:
-            suite: VisionSuite
-            return suite.run(train_dataset=test_dataset,
-                             train_predictions=test_pred, train_properties=test_props,
-                             with_display=True)
-
-
 def load_data_for_check(
-    model_version: ModelVersion,
-    session: AsyncSession,
-    features: t.List[str],
-    options: MonitorOptions,
-    with_reference=True
+        model_version: ModelVersion,
+        session: AsyncSession,
+        features: t.List[str],
+        options: MonitorOptions,
+        with_reference=True
 ) -> t.Tuple[t.Coroutine, t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
 

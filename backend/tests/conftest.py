@@ -326,10 +326,10 @@ def add_model_version(
 
 
 def add_alert_rule(
-    monitor_id: int,
-    client: TestClient,
-    expected_status_code: int = 200,
-    **kwargs
+        monitor_id: int,
+        client: TestClient,
+        expected_status_code: int = 200,
+        **kwargs
 ) -> t.Union[int, Response]:
     request = {
         "name": "alerty",
@@ -391,7 +391,7 @@ def add_classification_data(
         })
 
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
-    return resp
+    return resp, daterange[0], daterange[len(daterange) - 1]
 
 
 def add_vision_classification_data(model_version_id, client: TestClient):
@@ -409,7 +409,8 @@ def add_vision_classification_data(model_version_id, client: TestClient):
                 "images Aspect Ratio": 0.677 / i,
             })
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
-    return resp
+    return resp, day_before_curr_time, curr_time
+
 
 
 def send_reference_request(client, model_version_id, dicts: list):

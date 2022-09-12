@@ -58,7 +58,7 @@ async def test_add_check_list(classification_model_id, client: TestClient):
 @pytest.mark.asyncio
 async def test_metric_check_w_res_conf(classification_model_check_id, classification_model_version_id,
                                        client: TestClient):
-    assert add_classification_data(classification_model_version_id, client).status_code == 200
+    assert add_classification_data(classification_model_version_id, client)[0].status_code == 200
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
@@ -79,27 +79,27 @@ async def test_metric_check_info_no_model_version(classification_model_check_id,
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                               [{"is_agg_shown": None,
-                                 "type": "scorer",
-                                 "values": [{"is_agg": True, "name": "Accuracy"},
-                                            {"is_agg": True, "name": "Precision Macro"},
-                                            {"is_agg": True, "name": "Recall Macro"},
-                                            {"is_agg": False, "name": "Precision Per Class"},
-                                            {"is_agg": False, "name": "Recall Per Class"},
-                                            {"is_agg": False, "name": "F1 Per Class"},
-                                            {"is_agg": False, "name": "Roc Auc Per Class"},
-                                            {"is_agg": False, "name": "Fpr Per Class"},
-                                            {"is_agg": True, "name": "Fpr Macro"},
-                                            {"is_agg": True, "name": "Fpr Micro"},
-                                            {"is_agg": True, "name": "Fpr Weighted"},
-                                            {"is_agg": False, "name": "Fnr Per Class"},
-                                            {"is_agg": True, "name": "Fnr Macro"},
-                                            {"is_agg": True, "name": "Fnr Micro"},
-                                            {"is_agg": True, "name": "Fnr Weighted"},
-                                            {"is_agg": False, "name": "Tnr Per Class"},
-                                            {"is_agg": True, "name": "Tnr Macro"},
-                                            {"is_agg": True, "name": "Tnr Micro"},
-                                            {"is_agg": True, "name": "Tnr Weighted"}]}],
+                                   [{"is_agg_shown": None,
+                                     "type": "scorer",
+                                     "values": [{"is_agg": True, "name": "Accuracy"},
+                                                {"is_agg": True, "name": "Precision Macro"},
+                                                {"is_agg": True, "name": "Recall Macro"},
+                                                {"is_agg": False, "name": "Precision Per Class"},
+                                                {"is_agg": False, "name": "Recall Per Class"},
+                                                {"is_agg": False, "name": "F1 Per Class"},
+                                                {"is_agg": False, "name": "Roc Auc Per Class"},
+                                                {"is_agg": False, "name": "Fpr Per Class"},
+                                                {"is_agg": True, "name": "Fpr Macro"},
+                                                {"is_agg": True, "name": "Fpr Micro"},
+                                                {"is_agg": True, "name": "Fpr Weighted"},
+                                                {"is_agg": False, "name": "Fnr Per Class"},
+                                                {"is_agg": True, "name": "Fnr Macro"},
+                                                {"is_agg": True, "name": "Fnr Micro"},
+                                                {"is_agg": True, "name": "Fnr Weighted"},
+                                                {"is_agg": False, "name": "Tnr Per Class"},
+                                                {"is_agg": True, "name": "Tnr Macro"},
+                                                {"is_agg": True, "name": "Tnr Micro"},
+                                                {"is_agg": True, "name": "Tnr Weighted"}]}],
                                "res_conf": {"type": "class", "values": None, "is_agg_shown": False}}
 
 
@@ -135,10 +135,10 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False
     assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
-        sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
+           sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_property_check_info(classification_vision_model_property_check_id,
                                    classification_vision_model_version_id,
                                    client: TestClient):
@@ -147,16 +147,16 @@ async def test_property_check_info(classification_vision_model_property_check_id
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                               [{"is_agg_shown": None, "type": "aggregation method",
-                                 "values": [{"name": "mean", "is_agg": True},
-                                            {"name": "max", "is_agg": True},
-                                            {"name": "none", "is_agg": False}]},
-                                   {"type": "image property",
-                                    "values": [{"is_agg": None, "name": "Aspect Ratio"}], "is_agg_shown": False}],
+                                   [{"is_agg_shown": None, "type": "aggregation method",
+                                     "values": [{"name": "mean", "is_agg": True},
+                                                {"name": "max", "is_agg": True},
+                                                {"name": "none", "is_agg": False}]},
+                                    {"type": "image property",
+                                     "values": [{"is_agg": None, "name": "Aspect Ratio"}], "is_agg_shown": False}],
                                "res_conf": None}
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_feature_check_info(classification_model_feature_check_id, classification_model_version_id,
                                   client: TestClient):
     add_classification_data(classification_model_version_id, client)
@@ -164,16 +164,16 @@ async def test_feature_check_info(classification_model_feature_check_id, classif
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                               [{"is_agg_shown": None, "type": "aggregation method",
-                                 "values": [{"name": "mean", "is_agg": True},
-                                            {"name": "max", "is_agg": True},
-                                            {"name": "none", "is_agg": False},
-                                            {"name": "weighted", "is_agg": True},
-                                            {"name": "l2_weighted", "is_agg": True}]},
-                                {"type": "feature",
-                                 "values": [{"is_agg": None, "name": "a"},
-                                            {"is_agg": None, "name": "b"}],
-                                 "is_agg_shown": False}],
+                                   [{"is_agg_shown": None, "type": "aggregation method",
+                                     "values": [{"name": "mean", "is_agg": True},
+                                                {"name": "max", "is_agg": True},
+                                                {"name": "none", "is_agg": False},
+                                                {"name": "weighted", "is_agg": True},
+                                                {"name": "l2_weighted", "is_agg": True}]},
+                                    {"type": "feature",
+                                     "values": [{"is_agg": None, "name": "a"},
+                                                {"is_agg": None, "name": "b"}],
+                                     "is_agg_shown": False}],
                                "res_conf": None}
 
 
@@ -241,7 +241,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14},
-                                            {"column": "b", "operator": "contains", "value": "ppppp"}]}})
+                                                        {"column": "b", "operator": "contains", "value": "ppppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert len(json_rsp["output"]["1"]) == 24
@@ -258,7 +258,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
-                                            {"column": "b", "operator": "equals", "value": "pppp"}]}})
+                                                        {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
     assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 0
@@ -281,60 +281,6 @@ async def test_run_check(classification_model_id, classification_model_version_i
 @pytest.mark.asyncio
 async def test_run_check_no_fi(classification_model_id, classification_model_version_no_fi_id, client: TestClient):
     await run_check(classification_model_id, classification_model_version_no_fi_id, client)
-
-
-@pytest.mark.asyncio
-async def test_run_suite(classification_model_id, classification_model_version_id, client: TestClient):
-    # Arrange
-    # add 2 checks
-    request = {
-        "name": "checky",
-        "config": {"class_name": "SingleDatasetPerformance",
-                   "params": {"scorers": ["accuracy", "f1_macro"]},
-                   "module_name": "deepchecks.tabular.checks"
-                   },
-    }
-    client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
-    client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
-
-    # Add data
-    add_classification_data(classification_model_version_id, client)
-
-    # Act
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/suite-run",
-                           json={"start_time": pdl.now().subtract(days=1).isoformat(),
-                                 "end_time": pdl.now().isoformat()}
-                           )
-
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_run_suite_vision(classification_vision_model_id, classification_vision_model_version_id,
-                                client: TestClient):
-    # Arrange
-    # add 2 checks
-    request = {
-        "name": "checky",
-        "config": {"class_name": "SingleDatasetPerformance",
-                   "params": {},
-                   "module_name": "deepchecks.vision.checks"
-                   },
-    }
-    client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=request)
-    client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=request)
-
-    # Add data
-    resp = add_vision_classification_data(classification_vision_model_version_id, client)
-    assert resp.status_code == 200
-
-    # Act
-    response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/suite-run",
-                           json={"start_time": pdl.now().subtract(days=1).isoformat(),
-                                 "end_time": pdl.now().isoformat()}
-                           )
-
-    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -471,8 +417,8 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                 "_dc_sample_id": f"{i} {j}",
                 "_dc_time": time,
                 "_dc_prediction":
-                [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]]
-                if i % 2 else [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
+                    [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]]
+                    if i % 2 else [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
                 "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
                 "images Aspect Ratio": 0.677 / i,
                 "partial_images Aspect Ratio": [0.677 / i, 0.9 / i],

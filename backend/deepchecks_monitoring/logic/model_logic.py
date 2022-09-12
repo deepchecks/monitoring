@@ -86,7 +86,7 @@ def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000)
 def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: t.Dict, top_feat: t.List[str]) -> \
         t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
-    if df is None:
+    if df is None or len(df) == 0:
         return None, None, None
     y_pred = None
     y_proba = None
@@ -111,7 +111,7 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
 def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_type: TaskType) \
         -> t.Tuple[VisionData, t.Dict[int, torch.Tensor], t.Dict[int, t.Any]]:
     """Dataframe_to_dataset_and_pred."""
-    if df is None:
+    if df is None or len(df) == 0:
         return None, None, None
 
     df.reset_index(drop=True, inplace=True)
