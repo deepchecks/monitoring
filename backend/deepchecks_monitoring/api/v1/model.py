@@ -121,7 +121,7 @@ async def retrieve_models_data_ingestion(
     if end_time:
         end_time = pdl.parse(end_time)
     else:
-        end_time: pdl.DateTime = pdl.now().add(minutes=30).set(minute=0, second=0, microsecond=0)
+        end_time: pdl.DateTime = pdl.now()
 
     if model_id is not None:
         models = [
