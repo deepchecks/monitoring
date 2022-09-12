@@ -11,7 +11,7 @@
 """updated filter way and added model task type
 
 Revision ID: a04f0f00b5f0
-Revises: b75212c5da00
+Revises: 7c9e3307dffc
 Create Date: 2022-09-11 13:36:23.996790
 
 """
@@ -19,12 +19,12 @@ import sqlalchemy as sa
 from alembic import op
 
 import deepchecks_monitoring.models.pydantic_type
-from backend.deepchecks_monitoring.models.model import TaskType
+from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model import Model
 
 # revision identifiers, used by Alembic.
 revision = 'a04f0f00b5f0'
-down_revision = 'b75212c5da00'
+down_revision = '7c9e3307dffc'
 branch_labels = None
 depends_on = None
 
