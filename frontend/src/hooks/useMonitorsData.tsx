@@ -19,7 +19,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
 
       const lines: { [key: string]: (number | null)[] } = {};
 
-      for (let i = 0; !Object.keys(lines).length || i < graph.output[key].length; i++) {
+      for (let i = 0; i < graph.output[key].length; i++) {
         graph.output[key].forEach((item: any) => {
           if (item) {
             Object.keys(item).forEach(itemKey => {
