@@ -10,7 +10,8 @@
 
 """Module defining the v1 API of the app."""
 
-from . import alert, alert_rule, check, dashboard, data_input, model, model_version, monitor
+from . import alert, alert_rule, check, configuration, dashboard, data_input, model, model_version, monitor
 from .router import router
 
-__all__ = ['router', 'model', 'model_version', 'data_input', 'check', 'alert', 'monitor', 'dashboard', 'alert_rule']
+__all__ = ['router', 'model', 'model_version', 'data_input', 'check', 'alert', 'monitor', 'dashboard', 'alert_rule',
+           'configuration']

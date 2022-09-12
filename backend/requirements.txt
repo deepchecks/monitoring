@@ -12,6 +12,6 @@ orjson==3.7.7
 python-multipart==0.0.5
 jinja2==3.1.2
 aiokafka==0.7.2
-deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
+deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@8dde8ef1e298f457692c621a9982e58ac1b0d77a
 opentelemetry-instrumentation-asyncpg
 opentelemetry-instrumentation-fastapi

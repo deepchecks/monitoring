@@ -19,7 +19,7 @@ async def test_add_check(classification_model_id, client: TestClient):
     # Arrange
     request = {
         "name": "checky v1",
-        "config": {"class_name": "PerformanceReport",
+        "config": {"class_name": "SingleDatasetPerformance",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
                    },
@@ -42,7 +42,7 @@ async def test_add_check(classification_model_id, client: TestClient):
 @pytest.mark.asyncio
 async def test_add_check_list(classification_model_id, client: TestClient):
     # Arrange
-    confi = {"class_name": "PerformanceReport",
+    confi = {"class_name": "SingleDatasetPerformance",
              "params": {"reduce": "mean"},
              "module_name": "deepchecks.tabular.checks"
              }
@@ -58,7 +58,7 @@ async def test_add_check_list(classification_model_id, client: TestClient):
 async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
     request = {
         "name": "checky v2",
-        "config": {"class_name": "PerformanceReport",
+        "config": {"class_name": "SingleDatasetPerformance",
                    "params": {"reduce": "mean"},
                    "module_name": "deepchecks.tabular.checks"
                    },
@@ -131,7 +131,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert json_rsp["output"] == {"1": None}
+    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 1
     # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
@@ -139,7 +139,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                             {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert json_rsp["output"] == {"1": None}
+    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 0
 
     # test with filter on window
     response = client.post("/api/v1/checks/2/run/window",
