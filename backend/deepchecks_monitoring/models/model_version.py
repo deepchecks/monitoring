@@ -15,7 +15,7 @@ from itertools import chain
 
 import pandas as pd
 import pendulum as pdl
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, func, select
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
@@ -44,7 +44,9 @@ class ModelVersion(Base):
     """ORM model for the model version."""
 
     __tablename__ = "model_versions"
-
+    __table_args__ = (
+        UniqueConstraint("model_id", "name"),
+    )
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     start_time = Column(DateTime(timezone=True), default=pdl.datetime(3000, 1, 1))

@@ -39,7 +39,7 @@ class Model(Base):
     __tablename__ = "models"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(50))
+    name = Column(String(50), unique=True)
     description = Column(String(200))
     task_type = Column(Enum(TaskType))
 

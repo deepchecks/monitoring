@@ -15,7 +15,7 @@ import fastapi
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from pydantic import BaseModel
-from sqlalchemy import Index, MetaData, Table, text
+from sqlalchemy import Index, MetaData, Table, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import CreateTable
@@ -52,7 +52,7 @@ class ModelVersionCreationSchema(BaseModel):
 
 
 @router.post('/models/{model_id}/version', response_model=IdResponse, tags=[Tags.MODELS])
-async def create_version(
+async def get_or_create_version(
     request: fastapi.Request,
     model_id: int,
     info: ModelVersionCreationSchema,
@@ -78,7 +78,22 @@ async def create_version(
     """
     # TODO: all this logic must be implemented (encapsulated) within Model type
     model: Model = await fetch_or_404(session, Model, id=model_id)
-
+    model_version: ModelVersion = (await session.execute(
+        select(ModelVersion).where(ModelVersion.name == info.name, ModelVersion.model_id == model_id))
+    ).scalars().first()
+    if model_version is not None:
+        if model_version.features_columns != {key: val.value for key, val in info.features.items()}:
+            raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
+                             'different features')
+        if info.non_features is not None and \
+                model_version.non_features_columns != {key: val.value for key, val in info.non_features.items()}:
+            raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
+                             'different non features')
+        if info.feature_importance is not None and \
+                model_version.feature_importance != info.feature_importance:
+            raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
+                             'different feature importance')
+        return {'id': model_version.id}
     # Validate features importance have all the features
     if info.feature_importance:
         mutual_exclusive_keys = set(info.features.keys()).symmetric_difference(info.feature_importance.keys())

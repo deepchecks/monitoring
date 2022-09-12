@@ -20,13 +20,14 @@ from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.alerts_logic import get_alerts_per_model
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, TimeUnit, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, fetch_or_404
 
 from .router import router
 
@@ -74,8 +75,8 @@ class ModelsInfoSchema(ModelSchema):
 
 @router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model.",
              description="Create a new model with its name, task type, and description. Returns the ID of the model.")
-async def create_model(
-    model: ModelCreationSchema,
+async def get_create_model(
+    model_schema: ModelCreationSchema,
     session: AsyncSession = AsyncSessionDep
 ):
     """Create a new model.
@@ -88,9 +89,18 @@ async def create_model(
         SQLAlchemy session.
 
     """
-    model = Model(**model.dict(exclude_none=True))
-    session.add(model)
-    await session.flush()
+    model = (await session.execute(select(Model).where(Model.name == model_schema.name))).scalars().first()
+    if model is not None:
+        if model.task_type != model_schema.task_type:
+            raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
+                             f"'{model_schema.task_type} and not the task type '{model.task_type}'")
+        if model_schema.description is not None and model.description != model_schema.description:
+            raise BadRequest(f"A model with the name '{model.name}' already exists but with the description "
+                             f"'{model_schema.description} and not the description '{model.description}'")
+    else:
+        model = Model(**model_schema.dict(exclude_none=True))
+        session.add(model)
+        await session.flush()
     return {"id": model.id}
 
 
@@ -196,6 +206,33 @@ async def get_model(
     """
     model = await fetch_or_404(session, Model, id=model_id)
     return ModelSchema.from_orm(model)
+
+
+@router.get("/models/{model_id}/versions", response_model=t.List[NameIdResponse], tags=[Tags.MODELS])
+async def get_versions_per_model(
+    model_id: int,
+    session: AsyncSession = AsyncSessionDep
+) -> ModelSchema:
+    """Create a new model.
+
+    Parameters
+    ----------
+    model_id : int
+        Model to return.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    NameIdResponse
+        Created model.
+    """
+    model_versions = (await session.execute(
+        select(ModelVersion.id, ModelVersion.name).where(ModelVersion.model_id == model_id))
+    ).all()
+    if model_versions is None:
+        return []
+    return [NameIdResponse.from_orm(model_version) for model_version in model_versions]
 
 
 @router.get("/models/", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])

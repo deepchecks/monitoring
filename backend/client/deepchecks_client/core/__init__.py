@@ -8,3 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+"""Module defining the core client functionality."""
+from deepchecks_client.core.client import ColumnType, DeepchecksClient, TaskType
+
+__all__ = ['DeepchecksClient', 'ColumnType', 'TaskType']

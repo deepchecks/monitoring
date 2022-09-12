@@ -11,11 +11,22 @@
 #
 import math
 
+import torch
 from deepchecks.vision.task_type import TaskType
 from deepchecks.vision.utils.image_functions import crop_image
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
 
+from client.deepchecks_client.core.utils import DeepchecksEncoder
+
+
+class DeepchecksVisionEncoder(DeepchecksEncoder):
+    def default(self, obj):
+        obj = super().default(obj)
+        if isinstance(obj, torch.Tensor):
+            tensor_values = obj.cpu().detach().numpy().tolist()
+            return tuple([self.default(v) for v in tensor_values])
+        return obj
 
 def create_static_predictions(vision_data: VisionData, model, device):
     static_pred = {}
@@ -33,7 +44,7 @@ def _vision_props_to_static_format(indexes, vision_props):
 
 def calc_image_bbox_props(batch_imgs, batch_labels, task_type, image_properties):
     image_props = calc_vision_properties(batch_imgs, image_properties)
-    if task_type == TaskType.OBJECT_DETECTION:
+    if task_type == TaskType.OBJECT_DETECTION and batch_labels is not None:
         bbox_props_list = []
         count = 0
         for img, labels in zip(batch_imgs, batch_labels):

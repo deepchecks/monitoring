@@ -29,7 +29,7 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from deepchecks_monitoring.models.base import Base
-from deepchecks_monitoring.utils import json_dumps, ExtendedAsyncSession
+from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
 dotenv.load_dotenv()
 

@@ -36,7 +36,8 @@ __all__ = [
     "make_oparator_func",
     "json_dumps",
     "CountResponse",
-    "IdResponse"
+    "IdResponse",
+    "NameIdResponse",
 ]
 
 
@@ -85,6 +86,18 @@ class IdResponse(BaseModel):
     """Schema defines a response containing only id."""
 
     id: int
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+class NameIdResponse(BaseModel):
+    """Schema defines a response containing only id and name."""
+
+    id: int
+    name: str
 
     class Config:
         """Schema config."""
