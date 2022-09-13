@@ -14,11 +14,13 @@ import copy
 import json
 import logging
 import typing as t
+from contextlib import asynccontextmanager
 
 import asyncpg.exceptions
 import fastapi
 import jsonschema.exceptions
 import pendulum as pdl
+import sqlalchemy.exc
 from aiokafka import AIOKafkaConsumer
 from jsonschema.validators import validate
 from sqlalchemy import update
@@ -30,6 +32,8 @@ from deepchecks_monitoring.models.ingestion_errors import IngestionError
 from deepchecks_monitoring.models.model_version import update_statistics_from_sample
 
 __all__ = ["DataIngestionBackend", "log_data", "update_data"]
+
+from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 
 async def log_data(
@@ -138,10 +142,11 @@ class DataIngestionBackend:
         """
         return f"data-{model_version.id}"
 
+    @asynccontextmanager
     async def get_session(
         self,
         topic  # pylint: disable=unused-argument
-    ) -> AsyncSession:
+    ) -> t.AsyncIterator[ExtendedAsyncSession]:
         """Get session object based on the given topic.
 
         Parameters
@@ -153,7 +158,8 @@ class DataIngestionBackend:
         -------
         AsyncSession
         """
-        return await self.resources_provider.create_async_database_session()
+        async with self.resources_provider.create_async_database_session() as s:
+            yield s
 
     async def log(
         self,
@@ -234,15 +240,22 @@ class DataIngestionBackend:
                                 await self.handle_messages(tp, messages)
                                 # Commit progress only for this partition
                                 await consumer.commit({tp: messages[-1].offset + 1})
-                            except asyncpg.exceptions.PostgresConnectionError as e:
-                                # In case of connection error does not commit the kafka messages, in order to try again
+                            except (sqlalchemy.exc.SQLAlchemyError, jsonschema.exceptions.ValidationError) as e:
                                 self.logger.exception(e)
-                            except (asyncpg.exceptions.PostgresError, jsonschema.exceptions.ValidationError) as e:
-                                # In case of postgres error (which is not connection) or json validation error,
-                                # commit the messages and saves the error to db
-                                self.logger.exception(e)
-                                await self.save_failed_messages(tp, messages, e)
-                                await consumer.commit({tp: messages[-1].offset + 1})
+                                # Sqlalchemy wraps the asyncpg exceptions in orig field
+                                if hasattr(e, "orig"):
+                                    e = e.orig
+
+                                if isinstance(e, asyncpg.exceptions.PostgresConnectionError):
+                                    # In case of connection error does not commit the kafka messages, in order to try
+                                    # again
+                                    continue
+                                else:
+                                    # In case of postgres error (which is not connection) or json validation error,
+                                    # commit the messages and saves the error to db
+                                    await self.save_failed_messages(tp, messages, e)
+                                    await consumer.commit({tp: messages[-1].offset + 1})
+
             except Exception as e:  # pylint: disable=broad-except
                 self.logger.exception(e)
             # If consumer fails sleep 30 seconds and tried again
@@ -255,28 +268,23 @@ class DataIngestionBackend:
         messages_data = [json.loads(m.value) for m in messages]
         log_samples = [m["data"] for m in messages_data if m["type"] == "log"]
         update_samples = [m["data"] for m in messages_data if m["type"] == "update"]
-        session = await self.get_session(tp)
-        if session is None:
-            return
-        model_version = await session.get(ModelVersion, model_version_id)
-        if model_version is None:
-            return
-        if log_samples:
-            await log_data(model_version, log_samples, session)
-        if update_samples:
-            await update_data(model_version, update_samples, session)
-        await session.commit()
-        await session.close()
+        async with self.get_session(tp) as session:
+            if session is None:
+                return
+            model_version = await session.get(ModelVersion, model_version_id)
+            if model_version is None:
+                return
+            if log_samples:
+                await log_data(model_version, log_samples, session)
+            if update_samples:
+                await update_data(model_version, update_samples, session)
 
     async def save_failed_messages(self, tp, messages, exception):
         """Handle messages failed to be saved to the database."""
-        session = await self.get_session(tp)
-        topic = tp.topic
-        model_version_id = int(topic[topic.rfind("-") + 1:])
-        messages_data = [json.loads(m.value)["data"] for m in messages]
-        ids = [m.get(SAMPLE_ID_COL) for m in messages_data]
-        session.add(IngestionError(samples_ids=ids, samples=messages_data[:5], error=str(exception),
-                                   model_version_id=model_version_id))
-        # Save error to db
-        await session.commit()
-        await session.close()
+        async with self.get_session(tp) as session:
+            topic = tp.topic
+            model_version_id = int(topic[topic.rfind("-") + 1:])
+            messages_data = [m.value.decode() for m in messages[:5]]
+            ids = [json.loads(m)["data"].get(SAMPLE_ID_COL) for m in messages_data]
+            session.add(IngestionError(samples_ids=ids, samples=messages_data, error=str(exception),
+                                       model_version_id=model_version_id))
