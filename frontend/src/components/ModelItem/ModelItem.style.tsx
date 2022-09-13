@@ -1,21 +1,17 @@
 import React from 'react';
 import { alpha, Box, ListItem, ListItemProps, styled, Typography } from '@mui/material';
 
-interface StyledContainerProps {
-  isBorder?: boolean;
-}
-
 export const StyledContainer = styled(
   (
-    { isBorder, ...props }: ListItemProps & StyledContainerProps // eslint-disable-line @typescript-eslint/no-unused-vars
+    { ...props }: ListItemProps // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => <ListItem {...props} />
-)<StyledContainerProps>(({ isBorder = false, theme }) => {
-  const style = isBorder
-    ? {
-        border: `1px dashed ${theme.palette.text.disabled}`,
-        borderRight: 'none'
-      }
-    : {};
+)(({ theme }) => {
+  const style = {
+    ':last-of-type': {
+      border: 'none'
+    },
+    borderBottom: `1px dashed ${theme.palette.text.disabled}`
+  };
   return {
     padding: '21px 30px',
     cursor: 'pointer',

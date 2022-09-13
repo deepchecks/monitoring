@@ -2,9 +2,6 @@ import { Box, Menu, MenuItem, Select, styled, Typography, Divider } from '@mui/m
 import { Arrow } from '../../assets/icon/icon';
 
 export const StyledFlexContent = styled(Box)({
-  width: '100%',
-  minWidth: '428px',
-  minHeight: 300,
   boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
   paddingBottom: '30px',
   borderRadius: '10px'

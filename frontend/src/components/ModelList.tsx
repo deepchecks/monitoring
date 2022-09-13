@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { List, Box, Button, Typography } from '@mui/material';
 import { useState } from 'react';
 import { SearchField } from './SearchField';
@@ -14,28 +14,39 @@ const initRange = 3;
 export function ModelList({ models }: ModelListProps) {
   const [range, setRange] = useState<number>(initRange);
 
+  const [filteredModels, setFilteredModels] = useState(models);
+
+  const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    if (!value) setFilteredModels(models);
+    setFilteredModels(models.filter(({ name }) => name.includes(value)));
+  };
+
   const handleRange = () => {
     setRange(prevRange => {
       const currentRange = prevRange + initRange;
 
-      if (currentRange < models.length) {
+      if (currentRange < filteredModels.length) {
         return currentRange;
       }
 
-      return models.length;
+      return filteredModels.length;
     });
   };
+
+  useEffect(() => {
+    setFilteredModels(models);
+  }, [models]);
 
   return (
     <Box
       sx={{
         width: '100%',
-        minHeight: '446px',
+        height: '520px',
         boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
         borderRadius: '10px',
         marginBottom: '40px',
-        borderLeft: '8px solid rgba(239, 76, 54, 0.5)',
-        height: '100%'
+        borderLeft: '8px solid rgba(239, 76, 54, 0.5)'
       }}
     >
       <Typography
@@ -58,22 +69,23 @@ export function ModelList({ models }: ModelListProps) {
           padding: '20px 30px 20px 22px'
         }}
       >
-        <SearchField size="small" fullWidth />
+        <SearchField size="small" fullWidth onChange={onSearch} />
       </Box>
-      <List>
-        {models.slice(0, range).map((model, index) => (
-          <ModelItem key={index} border={index === 1} model={model} />
+      <List sx={{ height: '370px', overflowY: 'auto' }}>
+        {filteredModels.slice(0, range).map((model, index) => (
+          <ModelItem key={index} model={model} />
         ))}
-        {range < models.length && (
+        {range < filteredModels.length && (
           <Button
             sx={{
               padding: '8px',
+              borderRadius: '4px',
               marginLeft: '30px'
             }}
             variant="text"
             onClick={handleRange}
           >
-            See all (+{models.length - range})
+            See all (+{filteredModels.length - range})
           </Button>
         )}
       </List>
