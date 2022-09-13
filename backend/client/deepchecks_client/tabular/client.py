@@ -70,7 +70,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if prediction is None:
             raise Exception('Model prediction must be provided when logging a sample')
 
-        if TaskType(self.model['task_type']) == TaskType.CLASSIFICATION:
+        if TaskType(self.model['task_type']) in [TaskType.MULTICLASS, TaskType.BINARY]:
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
             if prediction_proba is not None:
@@ -105,7 +105,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             raise Exception('Model predictions on the reference data is required')
 
         data = dataset.features_columns.copy()
-        if dataset.label_type.value == 'regression':
+        if self.model['task_type'] == TaskType.REGRESSION.value:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
             data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [float(x) for x in prediction]
@@ -250,7 +250,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     'name': name,
                     'features': features,
                     'non_features': non_features or {},
-                    'feature_importance': feature_importance or {}
+                    'feature_importance': feature_importance
                 }),
                 msg="Failed to create new model version.\n{error}"
             ).json()

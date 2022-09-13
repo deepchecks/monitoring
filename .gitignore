@@ -162,3 +162,5 @@ cython_debug/
 
 frontend/yarn.lock
 frontend/package-lock.json
+
+.DS_Store

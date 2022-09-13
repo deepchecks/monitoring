@@ -10,7 +10,9 @@
 #
 #
 import math
+import sys
 
+import numpy as np
 import torch
 from deepchecks.vision.task_type import TaskType
 from deepchecks.vision.utils.image_functions import crop_image
@@ -24,8 +26,10 @@ class DeepchecksEncoder(CoreDeepcheckEncoder):
     @classmethod
     def encode(cls, obj):
         if isinstance(obj, torch.Tensor):
-            tensor_values = obj.cpu().detach().numpy().tolist()
-            return tuple([cls.encode(v) for v in tensor_values])
+            if len(obj.shape) > 0:
+                tensor_values = obj.cpu().detach().numpy().tolist()
+                return tuple(tensor_values)
+            return obj.cpu().detach().item()
         return super().encode(obj)
 
 
@@ -51,11 +55,12 @@ def calc_image_bbox_props(batch_imgs, batch_labels, task_type, image_properties)
         for img, labels in zip(batch_imgs, batch_labels):
             imgs = []
             for label in labels:
-                label = label.cpu().detach().numpy()
+                label = np.array(CoreDeepcheckEncoder().encode(label))
                 bbox = label[1:]
                 # make sure image is not out of bounds
-                if math.floor(bbox[2]) == 0 or math.floor(bbox[3]) == 0 or math.floor(bbox[2]) + min(math.floor(bbox[0]), 0) -1 <= 0 or \
-                        math.floor(bbox[3]) <= 0 + min(math.floor(bbox[1]), 0) -1:
+                if math.floor(bbox[2]) == 0 or math.floor(bbox[3]) == 0 or \
+                    math.floor(bbox[2]) + min(math.floor(bbox[0]), 0) - 1 <= 0 or \
+                        math.floor(bbox[3]) <= 0 + min(math.floor(bbox[1]), 0) - 1:
                     continue
                 imgs.append(crop_image(img, *bbox))
             count += len(imgs)

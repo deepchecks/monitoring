@@ -7,11 +7,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import json
+
 import pendulum as pdl
 import pytest
-import json
-from fastapi.testclient import TestClient
 from deepdiff import DeepDiff
+from fastapi.testclient import TestClient
 
 from tests.conftest import add_classification_data, add_vision_classification_data, send_reference_request
 

@@ -10,6 +10,7 @@
 #
 """Module containing deepchecks monitoring client."""
 import enum
+import sys
 import typing as t
 from importlib.metadata import version
 from urllib.parse import urljoin
@@ -17,7 +18,6 @@ from urllib.parse import urljoin
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-
 from deepchecks_client.core.utils import maybe_raise
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
@@ -28,7 +28,8 @@ class TaskType(enum.Enum):
     """Enum containing supported task types."""
 
     REGRESSION = "regression"
-    CLASSIFICATION = "classification"
+    MULTICLASS = "multiclass"
+    BINARY = "binary"
     VISION_CLASSIFICATION = "vision_classification"
     VISION_DETECTION = "vision_detection"
 
@@ -186,6 +187,7 @@ class DeepchecksModelClient:
         for name, check in checks.items():
             if not isinstance(check, ReduceMixin):
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
+            sys.stderr.write(f"{check.config()}\n")
             serialized_checks.append({'name': name, 'config': check.config()})
 
         response = maybe_raise(
@@ -279,7 +281,7 @@ class DeepchecksClient:
         name: str
             Display name of the model.
         task_type
-            Task type of the model, one of: # TODO
+            Task type of the model, one of the values in TaskType
         description
             Additional description for the model
         checks

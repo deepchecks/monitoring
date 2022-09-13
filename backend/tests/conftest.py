@@ -12,20 +12,28 @@ import asyncio
 import random
 import string
 import typing as t
+from copy import copy
 
 import dotenv
+import numpy as np
 import pandas as pd
 import pendulum as pdl
 import pytest
 import pytest_asyncio
 import randomname
 import testing.postgresql
+import torch
+from deepchecks.vision import ClassificationData, DetectionData
 from fastapi.testclient import TestClient
 from requests import Response
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset as TorchDataset
 
+from client.deepchecks_client.core.client import DeepchecksClient
+from client.deepchecks_client.core.utils import maybe_raise
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.task import Base as TasksBase
@@ -118,6 +126,62 @@ def client(application) -> t.Iterator[TestClient]:
         yield client
 
 
+@pytest.fixture()
+def deepchecks_sdk_client(client: TestClient):
+    # pylint: disable=super-init-not-called
+    class DeepchecksTestClient(DeepchecksClient):
+        def __init__(
+            self,
+        ):
+            self.host = "http://test/api/v1/"
+            self.session = copy(client)
+            self.session.base_url = self.host
+            self._model_clients = {}
+
+            maybe_raise(
+                self.session.get("say-hello"),
+                msg="Server not available.\n{error}"
+            )
+    return DeepchecksTestClient()
+
+
+@pytest.fixture()
+# pylint: disable=unused-argument
+def multiclass_model_version_client(classification_model_id,
+                                    classification_model_version_id,
+                                    deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value)
+    return model_client.version("v1")
+
+
+@pytest.fixture()
+# pylint: disable=unused-argument
+def regression_model_version_client(regression_model_id,
+                                    regression_model_version_id,
+                                    deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="regression model", task_type=TaskType.REGRESSION.value)
+    return model_client.version("v1")
+
+
+@pytest.fixture()
+# pylint: disable=unused-argument
+def vision_classification_model_version_client(classification_vision_model_id,
+                                               classification_vision_model_version_id,
+                                               deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="vision classification model",
+                                               task_type=TaskType.VISION_CLASSIFICATION.value)
+    return model_client.version("v1")
+
+
+@pytest.fixture()
+# pylint: disable=unused-argument
+def detection_vision_model_version_client(detection_vision_model_id,
+                                          detection_vision_model_version_id,
+                                          deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="vision detection model", task_type=TaskType.VISION_DETECTION.value)
+    return model_client.version("v1")
+
+
 @pytest_asyncio.fixture()
 async def classification_model_id(async_session: AsyncSession):
     model = Model(name="classification model", description="test", task_type=TaskType.MULTICLASS)
@@ -152,6 +216,18 @@ async def regression_model_id(async_session: AsyncSession):
     await async_session.commit()
     await async_session.refresh(model)
     return model.id
+
+
+@pytest_asyncio.fixture()
+async def regression_model_version_id(regression_model_id: int, client):
+    request = {
+        "name": "v1",
+        "features": {"a": "numeric", "b": "categorical"},
+        "feature_importance": {"a": 0.1, "b": 0.5},
+        "non_features": {"c": "numeric"}
+    }
+    response = client.post(f"/api/v1/models/{regression_model_id}/version", json=request)
+    return response.json()["id"]
 
 
 @pytest_asyncio.fixture()
@@ -421,3 +497,68 @@ def send_reference_request(client, model_version_id, dicts: list):
         f"/api/v1/model-versions/{model_version_id}/reference",
         files={"file": ("data.json", data)}
     )
+
+
+def _batch_collate(batch):
+    imgs, labels = zip(*batch)
+    return list(imgs), list(labels)
+
+
+class _VisionDataset(TorchDataset):
+    """Simple dataset class to supply labels."""
+
+    def __init__(self, imgs, labels) -> None:
+        self.labels = labels
+        self.imgs = imgs
+
+    def __getitem__(self, index) -> torch.Tensor:
+        """Get label by index."""
+        return self.imgs[index], self.labels[index]
+
+    def __len__(self) -> int:
+        """Get length by the amount of labels."""
+        return len(self.labels)
+
+
+class _MyClassificationVisionData(ClassificationData):
+    def batch_to_labels(self, batch) -> torch.Tensor:
+        return torch.IntTensor(batch[1])
+
+    def batch_to_images(self, batch):
+        return batch[0]
+
+
+class _MyDetectionVisionData(DetectionData):
+    def batch_to_labels(self, batch) -> t.List[torch.Tensor]:
+        tens_list = []
+        for arr in batch[1]:
+            tens_list.append(torch.Tensor(arr))
+        return tens_list
+
+    def batch_to_images(self, batch):
+        return batch[0]
+
+
+@pytest_asyncio.fixture()
+def vision_classification_and_prediction():
+    imgs = [np.array([[[1, 2, 0], [3, 4, 0]]]),
+            np.array([[[1, 3, 5]]]),
+            np.array([[[7, 9, 0], [9, 6, 0]]])]
+    labels = [2, 0, 1]
+    predictions = {0: [0.1, 0.3, 0.6], 1: [0.6, 0.3, 0.1], 2: [0.1, 0.6, 0.3]}
+    data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
+    return _MyClassificationVisionData(data_loader), predictions
+
+
+@pytest_asyncio.fixture()
+def vision_detection_and_prediction():
+    imgs = [np.array([[[1, 2, 0], [3, 4, 0]]]),
+            np.array([[[1, 3, 5]]]),
+            np.array([[[7, 9, 0], [9, 6, 0], [9, 6, 0]],
+                     [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
+                     [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
+                     [[7, 9, 0], [9, 6, 0], [9, 6, 0]]])]
+    labels = [[[1, 0, 0, 1, 1]], [[0, 0, 0, 1, 1]], [[2, 0, 0, 2, 2]]]
+    predictions = {0: [[0, 0, 1, 1, 0.6, 2]], 1: [[0, 0, 1, 1, 0.6, 2]], 2: [[0, 0, 2, 2, 0.6, 2]]}
+    data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
+    return _MyDetectionVisionData(data_loader), predictions

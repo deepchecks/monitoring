@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+import sys
 import typing as t
 import warnings
 from collections import defaultdict
@@ -24,11 +25,11 @@ from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerforman
 from deepchecks.vision.task_type import TaskType as VisTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
+from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import DeepchecksColumns
-from deepchecks_client.core.utils import create_timestamp, maybe_raise, DeepchecksJsonValidator
-from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_image_bbox_props, create_static_properties)
-from deepchecks_client.core import ColumnType, TaskType
+from deepchecks_client.core.utils import DeepchecksJsonValidator, create_timestamp, maybe_raise
+from deepchecks_client.vision.utils import DeepchecksEncoder, calc_image_bbox_props, create_static_properties
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -301,4 +302,4 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
         elif TaskType(self.model['task_type']) == TaskType.VISION_DETECTION:
             checks['Performance'] = SingleDatasetPerformance(scorers={'Precision': 'precision_macro'})
-        return self.add_checks(checks=checks)
+        return self.add_checks(checks={})

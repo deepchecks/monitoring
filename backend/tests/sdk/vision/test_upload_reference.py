@@ -1,0 +1,58 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+import pytest
+from sqlalchemy import select
+
+from client.deepchecks_client.vision.client import DeepchecksModelVersionClient
+from deepchecks_monitoring.models.model_version import ModelVersion
+
+
+@pytest.mark.asyncio
+async def test_classification_upload_reference(vision_classification_model_version_client: DeepchecksModelVersionClient,
+                                               vision_classification_and_prediction,
+                                               async_session):
+    vision_classification_model_version_client.upload_reference(*vision_classification_and_prediction)
+
+    model_version_query = await async_session.execute(
+        select(ModelVersion)
+        .where(ModelVersion.id ==
+               vision_classification_model_version_client.model_version_id)
+    )
+    model_version: ModelVersion = model_version_query.scalars().first()
+
+    ref_table = model_version.get_reference_table(async_session)
+    ref_arr = (await async_session.execute(select(ref_table))).all()
+    assert ref_arr == [
+        (0.5, 2, [0.1, 0.30000000000000004, 0.6000000000000001]),
+        (1.0, 0, [0.6000000000000001, 0.30000000000000004, 0.1]),
+        (0.5, 1, [0.1, 0.6000000000000001, 0.30000000000000004]),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_detection_upload_reference(detection_vision_model_version_client: DeepchecksModelVersionClient,
+                                          vision_detection_and_prediction,
+                                          async_session):
+    detection_vision_model_version_client.upload_reference(*vision_detection_and_prediction)
+
+    model_version_query = await async_session.execute(
+        select(ModelVersion)
+        .where(ModelVersion.id ==
+               detection_vision_model_version_client.model_version_id)
+    )
+    model_version: ModelVersion = model_version_query.scalars().first()
+
+    ref_table = model_version.get_reference_table(async_session)
+    ref_arr = (await async_session.execute(select(ref_table))).all()
+    assert ref_arr == [
+        (0.5, [], [[1, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6000000000000001, 2]]),
+        (1, [], [[0, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6000000000000001, 2]]),
+        (1.3333333333000001, [1], [[2, 0, 0, 2, 2]], [[0, 0, 2, 2, 0.6000000000000001, 2]]),
+    ]

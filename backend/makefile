@@ -149,6 +149,7 @@ requirements: $(ENV)
 
 dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
+	@$(PIP) install -q -e ./client
 	@$(PIP) install -q -r ./dev-requirements.txt
 
 
