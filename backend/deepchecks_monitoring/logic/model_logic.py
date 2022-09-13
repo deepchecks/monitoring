@@ -170,7 +170,7 @@ async def get_results_for_model_versions_per_window(
     for (reference_table_dataframe, test_dataframes), model_version in zip(model_versions_dataframes, model_versions):
         # If we have empty reference skip the run
         if reference_table_dataframe is not None and reference_table_dataframe.empty:
-            model_reduces[model_version.id] = None
+            model_reduces[model_version.name] = None
             continue
 
         reduced_outs = []
@@ -219,7 +219,7 @@ async def get_results_for_model_versions_per_window(
             except DeepchecksBaseError:
                 reduced_outs.append(None)
 
-        model_reduces[model_version.id] = reduced_outs
+        model_reduces[model_version.name] = reduced_outs
 
     # filter values
     if additional_kwargs is not None and additional_kwargs.res_conf is not None:

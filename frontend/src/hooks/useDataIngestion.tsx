@@ -22,17 +22,17 @@ const useDataIngestion = () => {
           data: item
             .sort((a, b) => a.day - b.day)
             .map(({ count, day }) => ({
-              x: dayjs(new Date(day * 1_000)).format('MMM. DD (HH:mm:ss)'),
+              x: dayjs(new Date(day * 1_000)).format('MMM. DD YYYY'),
               y: count
             })),
-          ...setGraphColor(modelsMap[key].name, index)
+          ...setGraphColor(modelsMap ? modelsMap[key].name : key, index)
         })) ?? [],
       labels: Object.entries(data)
         .flatMap(([_, items]) => items.map(item => item.day * 1_000))
         .sort()
-        .map(day => dayjs(day).format('MMM. DD (HH:mm:ss)'))
+        .map(day => dayjs(day).format('MMM. DD YYYY'))
     }),
-    [data]
+    [data, modelsMap]
   );
 
   return {

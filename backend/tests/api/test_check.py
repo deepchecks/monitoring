@@ -65,12 +65,12 @@ async def test_metric_check_w_res_conf(classification_model_check_id, classifica
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["1"]}})
-    assert response.json() == {"1": {"F1 Per Class 1": 0.0}}
+    assert response.json() == {"v1": {"F1 Per Class 1": 0.0}}
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["2"]}})
-    assert response.json() == {"1": {"F1 Per Class 2": 0.3333333333333333}}
+    assert response.json() == {"v1": {"F1 Per Class 2": 0.3333333333333333}}
 
 
 @pytest.mark.asyncio
@@ -83,9 +83,16 @@ async def test_metric_check_info_no_model_version(classification_model_check_id,
                                      "type": "scorer",
                                      "values": [{"is_agg": True, "name": "Accuracy"},
                                                 {"is_agg": True, "name": "Precision Macro"},
-                                                {"is_agg": True, "name": "Recall Macro"},
+                                                {"is_agg": True, "name": "Precision Micro"},
+                                                {"is_agg": True, "name": "Precision Weighted"},
                                                 {"is_agg": False, "name": "Precision Per Class"},
+                                                {"is_agg": True, "name": "Recall Macro"},
+                                                {"is_agg": True, "name": "Recall Micro"},
+                                                {"is_agg": True, "name": "Recall Weighted"},
                                                 {"is_agg": False, "name": "Recall Per Class"},
+                                                {"is_agg": True, "name": "F1 Macro"},
+                                                {"is_agg": True, "name": "F1 Micro"},
+                                                {"is_agg": True, "name": "F1 Weighted"},
                                                 {"is_agg": False, "name": "F1 Per Class"},
                                                 {"is_agg": False, "name": "Roc Auc Per Class"},
                                                 {"is_agg": False, "name": "Fpr Per Class"},
@@ -114,9 +121,16 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
                                               "type": "scorer",
                                               "values": [{"is_agg": True, "name": "Accuracy"},
                                                          {"is_agg": True, "name": "Precision Macro"},
-                                                         {"is_agg": True, "name": "Recall Macro"},
+                                                         {"is_agg": True, "name": "Precision Micro"},
+                                                         {"is_agg": True, "name": "Precision Weighted"},
                                                          {"is_agg": False, "name": "Precision Per Class"},
+                                                         {"is_agg": True, "name": "Recall Macro"},
+                                                         {"is_agg": True, "name": "Recall Micro"},
+                                                         {"is_agg": True, "name": "Recall Weighted"},
                                                          {"is_agg": False, "name": "Recall Per Class"},
+                                                         {"is_agg": True, "name": "F1 Macro"},
+                                                         {"is_agg": True, "name": "F1 Micro"},
+                                                         {"is_agg": True, "name": "F1 Weighted"},
                                                          {"is_agg": False, "name": "F1 Per Class"},
                                                          {"is_agg": False, "name": "Roc Auc Per Class"},
                                                          {"is_agg": False, "name": "Fpr Per Class"},
@@ -233,9 +247,9 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     json_rsp = response.json()
     assert response.status_code == 200
     assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["1"]) == 24
+    assert len(json_rsp["output"]["v1"]) == 24
     assert set(times).issubset(set(json_rsp["time_labels"]))
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 4
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
 
     # test with filter
     response = client.post("/api/v1/checks/1/run/lookback",
@@ -244,8 +258,8 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                                         {"column": "b", "operator": "contains", "value": "ppppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["1"]) == 24
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 2
+    assert len(json_rsp["output"]["v1"]) == 24
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 2
 
     # test with filter no reference because of filter
     response = client.post("/api/v1/checks/1/run/lookback",
@@ -253,7 +267,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 1
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 1
     # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
@@ -261,7 +275,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                                         {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 0
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 0
 
     # test with filter on window
     response = client.post("/api/v1/checks/2/run/window",
@@ -270,7 +284,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14}]},
                                  "additional_kwargs": {"check_conf": {"scorer": ["recall_macro"]}}})
     json_rsp = response.json()
-    assert json_rsp == {"1": {"recall_macro": 1.0}}
+    assert json_rsp == {"v1": {"recall_macro": 1.0}}
 
 
 @pytest.mark.asyncio
@@ -336,9 +350,9 @@ async def test_run_check_vision(classification_vision_model_id,
     json_rsp = response.json()
     assert response.status_code == 200
     assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["1"]) == 24
+    assert len(json_rsp["output"]["v1"]) == 24
     assert set(times).issubset(set(json_rsp["time_labels"]))
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 4
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
 
     # test with filter
     response = client.post("/api/v1/checks/1/run/lookback",
@@ -347,8 +361,8 @@ async def test_run_check_vision(classification_vision_model_id,
                                                          "operator": "greater_than", "value": 0.2}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["1"]) == 24
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 2
+    assert len(json_rsp["output"]["v1"]) == 24
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 2
 
     # test with filter no reference because of filter
     response = client.post("/api/v1/checks/1/run/lookback",
@@ -357,7 +371,7 @@ async def test_run_check_vision(classification_vision_model_id,
                                                          "operator": "greater_than", "value": 1}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert json_rsp["output"] == {"1": None}
+    assert json_rsp["output"] == {"v1": None}
     # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
@@ -367,7 +381,7 @@ async def test_run_check_vision(classification_vision_model_id,
                                                          "operator": "equals", "value": 2}]}})
     json_rsp = response.json()
     assert len(json_rsp["time_labels"]) == 24
-    assert json_rsp["output"] == {"1": None}
+    assert json_rsp["output"] == {"v1": None}
 
     # test with filter on window
     response = client.post("/api/v1/checks/2/run/window",
@@ -376,7 +390,7 @@ async def test_run_check_vision(classification_vision_model_id,
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0}]}})
     json_rsp = response.json()
-    assert json_rsp == {"1": {"accuracy": 1.0}}
+    assert json_rsp == {"v1": {"accuracy": 1.0}}
 
 
 @pytest.mark.asyncio
@@ -439,9 +453,9 @@ async def test_run_check_vision_detection(detection_vision_model_id,
     json_rsp = response.json()
     assert response.status_code == 200
     assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["1"]) == 24
+    assert len(json_rsp["output"]["v1"]) == 24
     assert set(times).issubset(set(json_rsp["time_labels"]))
-    assert len([out for out in json_rsp["output"]["1"] if out is not None]) == 4
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
 
     # test with filter on window
     response = client.post("/api/v1/checks/2/run/window",
@@ -450,5 +464,5 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0}]}})
     json_rsp = response.json()
-    assert json_rsp == {"1": {"Average Precision 42": 0.0, "Average Precision 51": 0.0,
-                              "Average Recall 42": 0.0, "Average Recall 51": 0.0}}
+    assert json_rsp == {"v1": {"Average Precision 42": 0.0, "Average Precision 51": 0.0,
+                               "Average Recall 42": 0.0, "Average Recall 51": 0.0}}

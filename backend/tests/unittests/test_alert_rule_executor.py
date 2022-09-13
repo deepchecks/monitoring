@@ -83,7 +83,7 @@ async def test_alert_executor(
 
     assert isinstance(result, Alert), result
     assert isinstance(result.failed_values, dict), result.failed_values
-    assert result.failed_values == {"1": ["accuracy"], "2": ["accuracy"]}, result.failed_values
+    assert result.failed_values == {"v1": ["accuracy"], "v2": ["accuracy"]}, result.failed_values
 
 
 @pytest.mark.asyncio
@@ -160,5 +160,5 @@ async def test_alert_scheduling(
     assert len([it for it in tasks if it.status == TaskStatus.COMPLETED]) > 0
 
     for alert in alerts:
-        assert alert.failed_values == {"1": ["accuracy"]}, alert
+        assert alert.failed_values == {"v1": ["accuracy"]}, alert
         assert alert.alert_rule_id == 1

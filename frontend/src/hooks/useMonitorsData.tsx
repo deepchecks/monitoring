@@ -23,7 +23,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
         graph.output[key].forEach((item: any) => {
           if (item) {
             Object.keys(item).forEach(itemKey => {
-              lines[itemKey] = [];
+              lines[`${key}: ${itemKey}`] = [];
             });
           }
         });
@@ -32,7 +32,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
       graph.output[key].forEach((item: any) => {
         if (item) {
           Object.keys(item).forEach(itemKey => {
-            lines[itemKey].push(item[itemKey]);
+            lines[`${key}: ${itemKey}`].push(item[itemKey]);
           });
           return;
         }
@@ -47,7 +47,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
       }));
     })
     .flat(2),
-  labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD'))
+  labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD YYYY'))
 });
 
 const useMonitorsData = () => {
@@ -58,7 +58,7 @@ const useMonitorsData = () => {
   const monitors = useMemo(() => dashboards?.monitors ?? [], [dashboards]);
 
   useEffect(() => {
-    if (!monitors) return;
+    if (!monitors || !modelsMap) return;
 
     const monitorFetchers = monitors.map(monitor => {
       console.log({ monitor, modelsMap });
@@ -79,7 +79,7 @@ const useMonitorsData = () => {
         }
       } ))
       .then(setChartDataList);
-  }, [dashboards]);
+  }, [dashboards, modelsMap]);
 
   return { monitors, chartDataList };
 };

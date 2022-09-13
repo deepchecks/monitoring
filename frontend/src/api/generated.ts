@@ -4,17 +4,17 @@
  * Enterprise Deepchecks Monitoring
  * OpenAPI spec version: 0.1.0
  */
+import { useQuery, useMutation } from '@tanstack/react-query';
 import type {
-  MutationFunction,
-  QueryFunction,
-  QueryKey,
-  UseMutationOptions,
   UseQueryOptions,
-  UseQueryResult
+  UseMutationOptions,
+  QueryFunction,
+  MutationFunction,
+  UseQueryResult,
+  QueryKey
 } from '@tanstack/react-query';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import type { ErrorType } from '../services/customAxios';
 import { customInstance } from '../services/customAxios';
+import type { ErrorType } from '../services/customAxios';
 export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error?: string; state?: string };
 
 export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: ColumnMetadata };

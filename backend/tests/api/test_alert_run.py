@@ -50,12 +50,12 @@ async def test_run_alert(classification_model_id, classification_model_version_i
     day_before_curr_time = pdl.now().set(minute=0, second=0, microsecond=0) - pdl.duration(days=1)
     ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=4).isoformat()),
                                       async_session)
-    assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "alert_id": 1}}
+    assert ress == {1: {"failed_values": {"v1": ["accuracy"]}, "alert_id": 1}}
 
     # test re-run same value
     ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=4).isoformat()),
                                       async_session)
-    assert ress == {1: {"failed_values": {"1": ["accuracy"]}, "alert_id": 1}}
+    assert ress == {1: {"failed_values": {"v1": ["accuracy"]}, "alert_id": 1}}
 
     # test re-run bad hour value
     ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=5).isoformat()),
@@ -65,11 +65,11 @@ async def test_run_alert(classification_model_id, classification_model_version_i
     # test re-run good hour value
     ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=6).isoformat()),
                                       async_session)
-    assert ress == {1: {"alert_id": 2, "failed_values": {"1": ["accuracy"]}}}
+    assert ress == {1: {"alert_id": 2, "failed_values": {"v1": ["accuracy"]}}}
 
     # test alert update re-run
-    await Alert.update(async_session, 2, {"failed_values": {"2": ["accuracy"]}})
+    await Alert.update(async_session, 2, {"failed_values": {"v2": ["accuracy"]}})
 
     ress = await run_rules_of_monitor(1, AlertCheckOptions(end_time=day_before_curr_time.add(hours=6).isoformat()),
                                       async_session)
-    assert ress == {1: {"alert_id": 2, "failed_values": {"1": ["accuracy"], "2": ["accuracy"]}}}
+    assert ress == {1: {"alert_id": 2, "failed_values": {"v1": ["accuracy"], "v2": ["accuracy"]}}}

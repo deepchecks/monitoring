@@ -1,6 +1,6 @@
 import React, { memo, useState, useMemo, useEffect } from 'react';
 import { IconButton, Stack, Typography } from '@mui/material';
-import { ChartData } from 'chart.js';
+import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
 import { MenuVertical } from '../../assets/icon/icon.js';
 import DiagramLine from '../DiagramLine';
 import { Submenu } from '../Submenu';
@@ -17,6 +17,7 @@ import {
   StyledInfo
 } from './GraphicsSection.style';
 import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
+import { _DeepPartialObject } from 'chart.js/types/utils.js';
 
 interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
@@ -32,6 +33,12 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
   const [openSubmenu, setOpenSubmenu] = useState<boolean>(false);
 
   const openRootMenu = Boolean(anchorElRootMenu);
+
+  const filterMap : { [key: string]: string} = {
+    greater_than: '>',
+    equals: '=',
+    contains: 'in'
+  }
 
   const modelName = useMemo(() => {
     let name;
@@ -71,6 +78,13 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
     setAnchorElRootMenu(null);
   };
 
+  const tooltipCallbacks : _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<"line">, TooltipItem<"line">>> = {
+    label: (context : TooltipItem<'line'>) => {
+      console.log(context)
+      return `${context.label} | Model Version ${context.dataset.label?.split(':')[0]}`
+    }
+  };
+  
   return (
     <>
       <StyledFlexContent onMouseOver={onMouseOver} onMouseLeave={onMouseLeave}>
@@ -86,9 +100,22 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
           <Typography variant="subtitle2">Model: {modelName}</Typography>
           <StyledDivider orientation="vertical" flexItem />
           <Typography variant="subtitle2">Check: {monitor.check.name}</Typography>
+          { monitor.data_filters ? (
+            <>
+              <StyledDivider orientation="vertical" flexItem />
+              <Typography variant="subtitle2">
+                <>
+                  Filter: {monitor.data_filters.filters[0].column} {filterMap[monitor.data_filters.filters[0].operator as string]} {monitor.data_filters.filters[0].value}
+                </>
+              </Typography> 
+            </>
+          )
+          : 
+          ''
+          }
         </StyledInfo>
         <StyledDiagramWrapper>
-          <DiagramLine data={data} />
+          <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} />
         </StyledDiagramWrapper>
       </StyledFlexContent>
       <StyledRootMenu

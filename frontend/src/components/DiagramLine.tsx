@@ -1,5 +1,6 @@
 import { alpha, Box, useTheme } from '@mui/material';
-import { Chart, ChartArea, ChartData, registerables, TimeUnit } from 'chart.js';
+import { Chart, ChartArea, ChartData, registerables, TimeUnit, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
+import { _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import React, { useRef } from 'react';
@@ -21,12 +22,27 @@ export interface DiagramLineProps {
   data: ChartData<'line', GraphData>;
   threshold?: number;
   minTimeUnit?: TimeUnit;
+  tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<"line">, TooltipItem<"line">>>;
 }
 
-function DiagramLine({ data, threshold = 0, minTimeUnit = 'day' }: DiagramLineProps) {
+const defaultTooltipCallbacks : _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<"line">, TooltipItem<"line">>> = {
+  labelColor: (context : TooltipItem<'line'>) => ({
+    backgroundColor: context.dataset?.borderColor as string,
+    borderColor: context.dataset?.borderColor as string
+  }),
+  title: (context : TooltipItem<'line'>[]) => context[0].formattedValue,
+  label: (context : TooltipItem<'line'>) => {
+    console.log(context)
+    return `${context.label}`
+  }
+}
+
+function DiagramLine({ data, threshold = 0, minTimeUnit = 'day', tooltipCallbacks = defaultTooltipCallbacks}: DiagramLineProps) {
   const chartRef = useRef<Chart<'line', number[], string>>();
   const range = { min: 0, max: 0 };
   const theme = useTheme();
+  const _tCallbacks = {...defaultTooltipCallbacks, ...tooltipCallbacks};
+
   const getNewData = () => {
     const char = chartRef.current;
 
@@ -136,14 +152,7 @@ function DiagramLine({ data, threshold = 0, minTimeUnit = 'day' }: DiagramLinePr
                 top: 4
               },
               boxPadding: 5,
-              callbacks: {
-                labelColor: context => ({
-                  backgroundColor: context.dataset?.borderColor as string,
-                  borderColor: context.dataset?.borderColor as string
-                }),
-                title: context => context[0].formattedValue,
-                label: context => `${context.label} | Model Version 1.2`
-              }
+              callbacks: _tCallbacks
             },
             zoom: {
               limits: {
