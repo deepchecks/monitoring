@@ -16,7 +16,6 @@ from deepchecks.vision.task_type import TaskType
 from deepchecks.vision.utils.image_functions import crop_image
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
-
 from deepchecks_client.core.utils import DeepchecksEncoder
 
 

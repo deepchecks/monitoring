@@ -20,10 +20,9 @@ from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainT
                                        TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
-
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import ColumnType, DeepchecksColumns, TaskType
-from deepchecks_client.core.utils import DeepchecksEncoder, create_timestamp, maybe_raise, DeepchecksJsonValidator
+from deepchecks_client.core.utils import DeepchecksEncoder, DeepchecksJsonValidator, create_timestamp, maybe_raise
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):

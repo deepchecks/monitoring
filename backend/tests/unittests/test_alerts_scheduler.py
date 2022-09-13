@@ -11,6 +11,7 @@ import typing as t
 from datetime import timedelta
 
 import anyio
+import pendulum as pdl
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -22,51 +23,45 @@ from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity
 
 @pytest.mark.asyncio
 async def test_alert_rules_scheduler_query(async_engine: AsyncEngine):
+    # == Prepare
     async with async_engine.connect() as c:
         # droping contraint to make testing easier
+        await drop_alert_rules_constraint(c, "alert_rules_monitor_id_fkey")
+
         async with c.begin():
-            await c.execute(sa.text(
-                "ALTER TABLE public.alert_rules "
-                "DROP CONSTRAINT alert_rules_monitor_id_fkey"
-            ))
-        async with c.begin():
-            task_id = await c.scalar(
+            alert_rule = (await c.execute(
                 sa.insert(AlertRule).values(
                     name="Test alert",
                     condition={"value": 1, "operator": "equals"},
-                    repeat_every=10,  # seconds
+                    repeat_every=5,  # seconds
                     alert_severity=AlertSeverity.CRITICAL,
                     monitor_id=1,
-                ).returning(AlertRule.id)
-            )
+                ).returning(AlertRule)
+            )).first()
 
-        await anyio.sleep(20)
+        await anyio.sleep(11)
 
-        tasks = (await c.execute(EnqueueTasks)).all()
+        async with c.begin():
+            await c.execute(EnqueueTasks)
 
-    reference = f"AlertRule:{task_id}"
-    priority = list(AlertSeverity).index(AlertSeverity.CRITICAL) + 1
+    # == Assert
+    async with async_engine.connect() as c:
+        tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
+        tasks = t.cast(t.List[Task], (await c.execute(tasks_query)).all())
 
+    assert alert_rule is not None
     assert len(tasks) >= 2
-
-    for task in tasks:
-        assert task.reference == reference
-        assert task.name.startswith(reference)
-        assert task.queue == "alert-rules"
-        assert task.priority == priority
+    assert_tasks(t.cast(t.Sequence[Task], tasks), t.cast(AlertRule, alert_rule), TaskStatus.SCHEDULED)
 
 
 @pytest.mark.asyncio
 async def test_alert_rules_scheduler(async_engine: AsyncEngine):
+    # == Prepare
     async with async_engine.connect() as c:
         # droping contraint to make testing easier
+        await drop_alert_rules_constraint(c, "alert_rules_monitor_id_fkey")
         async with c.begin():
-            await c.execute(sa.text(
-                "ALTER TABLE public.alert_rules "
-                "DROP CONSTRAINT alert_rules_monitor_id_fkey"
-            ))
-        async with c.begin():
-            task_id = await c.scalar(
+            alert_rule = (await c.execute(
                 sa.insert(AlertRule).values(
                     id=111,
                     name="Test alert",
@@ -74,48 +69,41 @@ async def test_alert_rules_scheduler(async_engine: AsyncEngine):
                     repeat_every=10,  # seconds
                     alert_severity=AlertSeverity.CRITICAL,
                     monitor_id=1,
-                ).returning(AlertRule.id)
-            )
+                ).returning(AlertRule)
+            )).first()
 
+    assert alert_rule is not None
+
+    # == Act
     async with anyio.create_task_group() as g:
         g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=10).run)
         await anyio.sleep(35)
         g.cancel_scope.cancel()
 
+    # == Assert
     async with async_engine.connect() as c:
-        tasks = (await c.execute(sa.select(Task))).all()
+        tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
+        tasks = t.cast(t.List[Task], (await c.execute(tasks_query)).all())
 
-    reference = f"AlertRule:{task_id}"
-    priority = list(AlertSeverity).index(AlertSeverity.CRITICAL) + 1
+        assert len(tasks) == 4
+        assert_tasks(t.cast(t.Sequence[Task], tasks), t.cast(AlertRule, alert_rule), TaskStatus.SCHEDULED)
 
-    assert len(tasks) == 4
-
-    for task in tasks:
-        assert task.status == TaskStatus.SCHEDULED
-        assert task.reference == reference
-        assert task.name.startswith(reference)
-        assert task.priority == priority
-
-    async with async_engine.connect() as c:
         last_run = (await c.execute(
             sa.select(AlertRule.last_run)
-            .where(AlertRule.id == 111)
+            .where(AlertRule.id == alert_rule.id)
         )).scalar_one()
 
-    assert last_run == tasks[-1].execute_after
+        assert last_run == tasks[-1].execute_after
 
 
 @pytest.mark.asyncio
 async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(async_engine: AsyncEngine):
+    # == Prepare
     async with async_engine.connect() as c:
         # droping contraint to make testing easier
+        await drop_alert_rules_constraint(c, "alert_rules_monitor_id_fkey")
         async with c.begin():
-            await c.execute(sa.text(
-                "ALTER TABLE public.alert_rules "
-                "DROP CONSTRAINT alert_rules_monitor_id_fkey"
-            ))
-        async with c.begin():
-            task_id = await c.scalar(
+            alert_rule = (await c.execute(
                 sa.insert(AlertRule).values(
                     id=111,
                     name="Test alert",
@@ -123,46 +111,61 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(async_eng
                     repeat_every=5,  # seconds
                     alert_severity=AlertSeverity.CRITICAL,
                     monitor_id=1,
-                ).returning(AlertRule.id)
-            )
+                ).returning(AlertRule)
+            )).first()
 
+    assert alert_rule is not None
+
+    # == Act
     async with anyio.create_task_group() as g:
         for _ in range(30):
             g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=2).run)
         await anyio.sleep(40)
         g.cancel_scope.cancel()
 
+    # == Assert
     async with async_engine.connect() as c:
-        tasks = t.cast(t.List[Task], (await c.execute(
-            sa.select(Task).order_by(Task.execute_after.asc())
-        )).all())
+        tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
+        tasks = t.cast(t.List[Task], (await c.execute(tasks_query)).all())
 
-    reference = f"AlertRule:{task_id}"
-    priority = list(AlertSeverity).index(AlertSeverity.CRITICAL) + 1
-    prev_date = None
+        # The number will vary from run to run depending on number of
+        # occurred serialization errors
+        assert len(tasks) > 0
+        assert_tasks(t.cast(t.Sequence[Task], tasks), t.cast(AlertRule, alert_rule), TaskStatus.SCHEDULED)
 
-    # The number will vary from run to run depending on number of
-    # occurred serialization errors
-    assert len(tasks) > 0
-
-    for task in tasks:
-        assert task.status == TaskStatus.SCHEDULED
-        assert task.reference == reference
-        assert task.name.startswith(reference)
-        assert task.priority == priority
-        if prev_date is None:
-            prev_date = task.execute_after
-        else:
-            assert (task.execute_after - prev_date) == timedelta(seconds=5)
-            prev_date = task.execute_after
-
-    async with async_engine.connect() as c:
         last_run = (await c.execute(
             sa.select(AlertRule.last_run)
             .where(AlertRule.id == 111)
         )).scalar_one()
 
-    assert last_run == tasks[-1].execute_after
+        assert last_run == tasks[-1].execute_after
 
 
+async def drop_alert_rules_constraint(connection, name):
+    async with connection.begin():
+        await connection.execute(sa.text(
+            f"ALTER TABLE public.alert_rules DROP CONSTRAINT {name}"
+        ))
 
+
+def assert_tasks(tasks: t.Sequence[Task], alert_rule: AlertRule, expected_status: TaskStatus):
+    reference = f"AlertRule:{alert_rule.id}"
+    priority = list(AlertSeverity).index(alert_rule.alert_severity) + 1
+    prev_date = None
+
+    for task in tasks:
+        assert task.status == expected_status
+        assert task.reference == reference
+        assert task.name.startswith(reference)
+        assert task.queue == "alert-rules"
+        assert task.priority == priority
+        assert isinstance(task.params, dict)
+        assert "alert_rule_id" in task.params and task.params["alert_rule_id"] == alert_rule.id
+        assert "timestamp" in task.params and isinstance(task.params["timestamp"], str)
+        assert pdl.parse(task.params["timestamp"]) == task.execute_after
+
+        if prev_date is None:
+            prev_date = task.execute_after
+        else:
+            assert (task.execute_after - prev_date) == timedelta(seconds=alert_rule.repeat_every)
+            prev_date = task.execute_after

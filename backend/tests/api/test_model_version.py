@@ -9,7 +9,8 @@
 # ----------------------------------------------------------------------------
 import pytest
 from fastapi.testclient import TestClient
-from tests.conftest import send_reference_request, add_classification_data
+
+from tests.conftest import add_classification_data, send_reference_request
 
 
 @pytest.mark.asyncio

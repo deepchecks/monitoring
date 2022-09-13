@@ -11,6 +11,7 @@
 """Alert execution logic."""
 import logging
 import logging.handlers
+import sys
 import typing as t
 from collections import defaultdict
 
@@ -21,12 +22,11 @@ import uvloop
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from deepchecks_monitoring.bgtasks.task import ExecutionStrategy, Worker, actor
+from deepchecks_monitoring.bgtasks.task import Actor, ExecutionStrategy, Worker, actor
 from deepchecks_monitoring.config import DatabaseSettigns
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_window
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule, Condition
-from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -40,9 +40,18 @@ async def execute_alert_rule(
     alert_rule_id: int,
     timestamp: str,
     session: AsyncSession,
+    logger: t.Optional[logging.Logger] = None,
     **kwargs  # pylint: disable=unused-argument
 ):
     """Execute alert rule."""
+    logger = logger or logging.getLogger("execute_alert_rule")
+
+    logger.info(
+        "Executiong AlertRule(id:%s) for timestamp %s",
+        alert_rule_id,
+        timestamp
+    )
+
     alert_rule = t.cast(AlertRule, await session.scalar(
         sa.select(AlertRule)
         .where(AlertRule.id == alert_rule_id)
@@ -54,10 +63,11 @@ async def execute_alert_rule(
     if alert_rule is None:
         raise ValueError(f"Did not find alert rule with id {alert_rule.id}")
 
-    monitor: Monitor = alert_rule.monitor
+    monitor = alert_rule.monitor
     check = monitor.check
     end_time = pdl.parser.parse(timestamp)
     start_time = end_time - pdl.duration(seconds=t.cast(int, monitor.lookback))
+
     monitor_options = MonitorOptions(
         additional_kwargs=monitor.additional_kwargs,
         start_time=start_time.isoformat(),
@@ -65,10 +75,6 @@ async def execute_alert_rule(
         filter=t.cast(DataFilterList, monitor.data_filters)
     )
 
-    model = t.cast(Model, (await session.scalars(
-        sa.select(Model)
-        .where(Model.id == check.model_id)
-    )).first())
     model_versions = t.cast(t.List[ModelVersion], (await session.scalars(
         sa.select(ModelVersion)
         .where(ModelVersion.model_id == check.model_id)
@@ -77,19 +83,29 @@ async def execute_alert_rule(
         .options(joinedload(ModelVersion.model))
     )).all())
 
+    if not model_versions:
+        logger.info("Model(id:%s) is empty (does not have versions)", check.model_id)
+        return
+
+    model = model_versions[0].model
     check_results = await run_check_window(check, monitor_options, session, model, model_versions)
+    logger.info("Check execution result: %s", check_results)
+    check_results = {k: v for k, v in check_results.items() if v is not None}
 
     if alert := assert_check_results(alert_rule, check_results):
         alert.start_time = start_time
         alert.end_time = end_time
         session.add(alert)
         await session.commit()
+        logger.info("Alert instance created for monitor(id:%s)", monitor.id)
         return alert
+
+    logger.info("No alerts instances were created for monitor(id:%s)", monitor.id)
 
 
 def assert_check_results(
     alert_rule: AlertRule,
-    results: t.Dict[ModelVersion, t.Dict[str, t.Any]]
+    results: t.Dict[int, t.Dict[str, t.Any]]
 ) -> t.Optional[Alert]:
     """Assert check result in accordance to alert rule."""
     alert_condition = t.cast(Condition, alert_rule.condition)
@@ -122,38 +138,61 @@ def assert_check_results(
         )
 
 
-def execute_worker():
-    class Settings(DatabaseSettigns):
-        worker_logfile: t.Optional[str] = None  # scheduler.log
-        worker_loglevel: str = "INFO"
-        worker_logfile_maxsize: int = 10000000  # 10MB
-        worker_logfile_backup_count: int = 3
+class WorkerSettings(DatabaseSettigns):
+    """Set of worker settings."""
 
-    async def main():
-        settings = Settings()  # type: ignore
+    worker_logfile: t.Optional[str] = None  # scheduler.log
+    worker_loglevel: str = "INFO"
+    worker_logfile_maxsize: int = 10000000  # 10MB
+    worker_logfile_backup_count: int = 3
 
-        root_logger = logging.getLogger()
+    class Config:
+        """Model config."""
+
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+class WorkerBootstrap:
+    """Worer initialization script."""
+
+    resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]] = ResourcesProvider
+    settings_type: t.ClassVar[t.Type[WorkerSettings]] = WorkerSettings
+    actors: t.ClassVar[t.Sequence[Actor]] = [execute_alert_rule]
+
+    async def run(self):
+        settings = self.settings_type()  # type: ignore
+
         logger = logging.getLogger("alerts-executor")
-
-        root_logger.setLevel(settings.worker_loglevel)
         logger.setLevel(settings.worker_loglevel)
+        logger.propagate = True
+
+        h = logging.StreamHandler(sys.stdout)
+        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+        h.setLevel(settings.worker_loglevel)
+        logger.addHandler(h)
 
         if settings.worker_logfile:
-            logger.addHandler(logging.handlers.RotatingFileHandler(
+            h = logging.handlers.RotatingFileHandler(
                 filename=settings.worker_logfile,
                 maxBytes=settings.worker_logfile_backup_count,
-            ))
+            )
+            h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+            h.setLevel(settings.worker_loglevel)
+            logger.addHandler(h)
 
-        async with ResourcesProvider(settings) as rp:
+        async with self.resources_provider_type(settings) as rp:
             async with anyio.create_task_group() as g:
                 g.start_soon(Worker(
                     engine=rp.async_database_engine,
-                    actors=[execute_alert_rule],
+                    actors=self.actors,
+                    logger=logger
                 ).start)
 
-    uvloop.install()
-    anyio.run(main)
+    def bootstrap(self):
+        uvloop.install()
+        anyio.run(self.run)
 
 
 if __name__ == "__main__":
-    execute_worker()
+    WorkerBootstrap().bootstrap()

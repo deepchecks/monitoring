@@ -12,6 +12,7 @@
 import asyncio
 import logging
 import logging.handlers
+import sys
 import typing as t
 from textwrap import dedent
 
@@ -21,7 +22,9 @@ import uvloop
 from asyncpg.exceptions import SerializationError
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.sql import Executable
 
+from deepchecks_monitoring.bgtasks.task import Task
 from deepchecks_monitoring.config import DatabaseSettigns
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import TimeUnit
@@ -65,6 +68,19 @@ class AlertsScheduler:
 
     async def enqueue_tasks(self, connection: AsyncConnection):
         """Enqueue alert-rules execution tasks."""
+        await self.try_enqueue_tasks(
+            connection=connection,
+            statement=EnqueueTasks
+        )
+
+    async def try_enqueue_tasks(
+        self,
+        connection: AsyncConnection,
+        statement: Executable,
+        max_attempts: int = 3,
+        delay: int = TimeUnit.SECOND * 2
+    ) -> t.Optional[t.List[Task]]:
+        """Try enqueue alert rule execution tasks."""
         attempts = 0
         max_attempts = 3
         delay = 2  # seconds
@@ -72,9 +88,9 @@ class AlertsScheduler:
             try:
                 async with connection.begin():
                     self.logger.info("Looking for alert rules to enqueue for execution")
-                    tasks = (await connection.execute(EnqueueTasks)).all()
+                    tasks = t.cast(t.List[Task], (await connection.execute(statement)).all())
                     self.logger.info(f"Enqueued {len(tasks)} new tasks")
-                    return
+                    return tasks
             except (SerializationError, DBAPIError) as error:
                 # NOTE:
                 # We use 'Repeatable Read Isolation Level' to run query
@@ -170,7 +186,7 @@ EnqueueTasks = sa.text(dedent("""
 )
 
 
-def execute_alerts_scheduler():
+def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
     class Settings(DatabaseSettigns):
         scheduler_sleep_seconds: int = 30
@@ -185,21 +201,28 @@ def execute_alerts_scheduler():
 
     async def main():
         settings = Settings()  # type: ignore
-        root_logger = logging.getLogger()
-        logger = logging.getLogger("alerts-scheduler")
 
-        root_logger.setLevel(settings.scheduler_loglevel)
+        logger = logging.getLogger("alerts-scheduler")
         logger.setLevel(settings.scheduler_loglevel)
+        logger.propagate = True
+
+        h = logging.StreamHandler(sys.stdout)
+        h.setLevel(settings.scheduler_loglevel)
+        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+        logger.addHandler(h)
 
         if settings.scheduler_logfile:
-            logger.addHandler(logging.handlers.RotatingFileHandler(
+            h = logging.handlers.RotatingFileHandler(
                 filename=settings.scheduler_logfile,
                 maxBytes=settings.scheduler_logfile_backup_count,
-            ))
+            )
+            h.setLevel(settings.scheduler_loglevel)
+            h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+            logger.addHandler(h)
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                g.start_soon(AlertsScheduler(
+                g.start_soon(scheduler_implementation(
                     rp.async_database_engine,
                     sleep_seconds=settings.scheduler_sleep_seconds,
                     logger=logger
@@ -210,4 +233,4 @@ def execute_alerts_scheduler():
 
 
 if __name__ == "__main__":
-    execute_alerts_scheduler()
+    execute_alerts_scheduler(scheduler_implementation=AlertsScheduler)

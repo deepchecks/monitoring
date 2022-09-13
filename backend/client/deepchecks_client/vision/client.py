@@ -24,12 +24,11 @@ from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerforman
 from deepchecks.vision.task_type import TaskType as VisTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-
+from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import DeepchecksColumns
-from deepchecks_client.core.utils import create_timestamp, maybe_raise, DeepchecksJsonValidator
-from deepchecks_client.vision.utils import (DeepchecksVisionEncoder, calc_image_bbox_props, create_static_properties)
-from deepchecks_client.core import ColumnType, TaskType
+from deepchecks_client.core.utils import DeepchecksJsonValidator, create_timestamp, maybe_raise
+from deepchecks_client.vision.utils import DeepchecksVisionEncoder, calc_image_bbox_props, create_static_properties
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):

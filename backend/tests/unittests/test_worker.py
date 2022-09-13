@@ -220,6 +220,7 @@ class TestWorker:
             assert isinstance(kwargs.get("actor"), Actor)
             assert isinstance(kwargs.get("session"), AsyncSession)
             assert isinstance(kwargs.get("engine"), AsyncEngine)
+            assert "logger" in kwargs
 
         actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]

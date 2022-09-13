@@ -727,6 +727,7 @@ class Worker:
             "session": session,
             "actor": actor,
             "engine": self.engine,
+            "logger": self.logger.getChild(f"{actor.queue_name}/{actor.name}"),
             **self.additional_params,
             **task_params
         }

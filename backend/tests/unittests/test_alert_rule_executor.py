@@ -41,45 +41,27 @@ async def test_alert_executor(
         lookback=TimeUnit.DAY * 3,
         additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
         data_filters={
-            "filters": [{
-                "operator": "equals",
-                "value": "ppppp",
-                "column": "b"
-            }]
+            "filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]
         }
     )
     rule_id = t.cast(int, add_alert_rule(
         monitor_id,
         client,
         repeat_every=TimeUnit.DAY * 2,
-        condition={
-            "operator": "less_than",
-            "value": 0.7,
-        }
+        condition={"operator": "less_than", "value": 0.7}
     ))
     versions = [
-        t.cast(int, add_model_version(
-            classification_model_id,
-            client,
-            name="v1"
-        )),
-        t.cast(int, add_model_version(
-            classification_model_id,
-            client,
-            name="v2"
-        )),
+        t.cast(int, add_model_version(classification_model_id, client, name="v1")),
+        t.cast(int, add_model_version(classification_model_id, client, name="v2")),
+        t.cast(int, add_model_version(classification_model_id, client, name="v3")),
     ]
 
-    for version_id in versions:
+    for version_id in versions[:2]:
         add_classification_data(version_id, client)
 
     now = pdl.now()
 
-    result = await execute_alert_rule(
-        alert_rule_id=rule_id,
-        timestamp=str(now),
-        session=async_session
-    )
+    result = await execute_alert_rule(alert_rule_id=rule_id, timestamp=str(now), session=async_session)
 
     assert isinstance(result, Alert), result
     assert isinstance(result.failed_values, dict), result.failed_values

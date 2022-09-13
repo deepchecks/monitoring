@@ -9,9 +9,15 @@
 # ----------------------------------------------------------------------------
 import pendulum as pdl
 import pytest
+import json
 from fastapi.testclient import TestClient
+from deepdiff import DeepDiff
 
 from tests.conftest import add_classification_data, add_vision_classification_data, send_reference_request
+
+
+def prettify(data) -> str:
+    return json.dumps(data, indent=3)
 
 
 @pytest.mark.asyncio
@@ -78,36 +84,54 @@ async def test_metric_check_info_no_model_version(classification_model_check_id,
     response = client.get(f"/api/v1/checks/{classification_model_check_id}/info")
 
     assert response.status_code == 200
-    assert response.json() == {"check_conf":
-                                   [{"is_agg_shown": None,
-                                     "type": "scorer",
-                                     "values": [{"is_agg": True, "name": "Accuracy"},
-                                                {"is_agg": True, "name": "Precision Macro"},
-                                                {"is_agg": True, "name": "Precision Micro"},
-                                                {"is_agg": True, "name": "Precision Weighted"},
-                                                {"is_agg": False, "name": "Precision Per Class"},
-                                                {"is_agg": True, "name": "Recall Macro"},
-                                                {"is_agg": True, "name": "Recall Micro"},
-                                                {"is_agg": True, "name": "Recall Weighted"},
-                                                {"is_agg": False, "name": "Recall Per Class"},
-                                                {"is_agg": True, "name": "F1 Macro"},
-                                                {"is_agg": True, "name": "F1 Micro"},
-                                                {"is_agg": True, "name": "F1 Weighted"},
-                                                {"is_agg": False, "name": "F1 Per Class"},
-                                                {"is_agg": False, "name": "Roc Auc Per Class"},
-                                                {"is_agg": False, "name": "Fpr Per Class"},
-                                                {"is_agg": True, "name": "Fpr Macro"},
-                                                {"is_agg": True, "name": "Fpr Micro"},
-                                                {"is_agg": True, "name": "Fpr Weighted"},
-                                                {"is_agg": False, "name": "Fnr Per Class"},
-                                                {"is_agg": True, "name": "Fnr Macro"},
-                                                {"is_agg": True, "name": "Fnr Micro"},
-                                                {"is_agg": True, "name": "Fnr Weighted"},
-                                                {"is_agg": False, "name": "Tnr Per Class"},
-                                                {"is_agg": True, "name": "Tnr Macro"},
-                                                {"is_agg": True, "name": "Tnr Micro"},
-                                                {"is_agg": True, "name": "Tnr Weighted"}]}],
-                               "res_conf": {"type": "class", "values": None, "is_agg_shown": False}}
+
+    diff = DeepDiff(
+        ignore_order=True,
+        t1=response.json(),
+        t2={
+            "check_conf":[
+                {
+                    "is_agg_shown": None,
+                    "type": "scorer",
+                    "values": [
+                        {"is_agg": True, "name": "Accuracy"},
+                        {"is_agg": True, "name": "Precision Macro"},
+                        {"is_agg": True, "name": "Precision Micro"},
+                        {"is_agg": True, "name": "Precision Weighted"},
+                        {"is_agg": False, "name": "Precision Per Class"},
+                        {"is_agg": True, "name": "Recall Macro"},
+                        {"is_agg": True, "name": "Recall Micro"},
+                        {"is_agg": True, "name": "Recall Weighted"},
+                        {"is_agg": False, "name": "Recall Per Class"},
+                        {"is_agg": True, "name": "F1 Macro"},
+                        {"is_agg": True, "name": "F1 Micro"},
+                        {"is_agg": True, "name": "F1 Weighted"},
+                        {"is_agg": False, "name": "F1 Per Class"},
+                        {"is_agg": False, "name": "Roc Auc Per Class"},
+                        {"is_agg": False, "name": "Fpr Per Class"},
+                        {"is_agg": True, "name": "Fpr Macro"},
+                        {"is_agg": True, "name": "Fpr Micro"},
+                        {"is_agg": True, "name": "Fpr Weighted"},
+                        {"is_agg": False, "name": "Fnr Per Class"},
+                        {"is_agg": True, "name": "Fnr Macro"},
+                        {"is_agg": True, "name": "Fnr Micro"},
+                        {"is_agg": True, "name": "Fnr Weighted"},
+                        {"is_agg": False, "name": "Tnr Per Class"},
+                        {"is_agg": True, "name": "Tnr Macro"},
+                        {"is_agg": True, "name": "Tnr Micro"},
+                        {"is_agg": True, "name": "Tnr Weighted"}
+                    ]
+                }
+            ],
+            "res_conf": {
+                "type": "class",
+                "values": None,
+                "is_agg_shown": False
+            }
+        }
+    )
+
+    assert len(diff) == 0, prettify(diff)
 
 
 @pytest.mark.asyncio
@@ -117,34 +141,48 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
     response = client.get(f"/api/v1/checks/{classification_model_check_id}/info")
 
     assert response.status_code == 200
-    assert response.json()["check_conf"] == [{"is_agg_shown": None,
-                                              "type": "scorer",
-                                              "values": [{"is_agg": True, "name": "Accuracy"},
-                                                         {"is_agg": True, "name": "Precision Macro"},
-                                                         {"is_agg": True, "name": "Precision Micro"},
-                                                         {"is_agg": True, "name": "Precision Weighted"},
-                                                         {"is_agg": False, "name": "Precision Per Class"},
-                                                         {"is_agg": True, "name": "Recall Macro"},
-                                                         {"is_agg": True, "name": "Recall Micro"},
-                                                         {"is_agg": True, "name": "Recall Weighted"},
-                                                         {"is_agg": False, "name": "Recall Per Class"},
-                                                         {"is_agg": True, "name": "F1 Macro"},
-                                                         {"is_agg": True, "name": "F1 Micro"},
-                                                         {"is_agg": True, "name": "F1 Weighted"},
-                                                         {"is_agg": False, "name": "F1 Per Class"},
-                                                         {"is_agg": False, "name": "Roc Auc Per Class"},
-                                                         {"is_agg": False, "name": "Fpr Per Class"},
-                                                         {"is_agg": True, "name": "Fpr Macro"},
-                                                         {"is_agg": True, "name": "Fpr Micro"},
-                                                         {"is_agg": True, "name": "Fpr Weighted"},
-                                                         {"is_agg": False, "name": "Fnr Per Class"},
-                                                         {"is_agg": True, "name": "Fnr Macro"},
-                                                         {"is_agg": True, "name": "Fnr Micro"},
-                                                         {"is_agg": True, "name": "Fnr Weighted"},
-                                                         {"is_agg": False, "name": "Tnr Per Class"},
-                                                         {"is_agg": True, "name": "Tnr Macro"},
-                                                         {"is_agg": True, "name": "Tnr Micro"},
-                                                         {"is_agg": True, "name": "Tnr Weighted"}]}]
+
+    conf_diff = DeepDiff(
+        ignore_order=True,
+        t1=response.json()["check_conf"],
+        t2=[
+            {
+                "is_agg_shown": None,
+                "type": "scorer",
+                "values": [
+                    {"name": "Precision Micro", "is_agg": True},
+                    {"name": "Precision Weighted","is_agg": True},
+                    {"name": "Recall Micro", "is_agg": True},
+                    {"name": "Recall Weighted", "is_agg": True},
+                    {"name": "F1 Macro", "is_agg": True},
+                    {"name": "F1 Micro", "is_agg": True},
+                    {"name": "F1 Weighted","is_agg": True},
+                    {"is_agg": True, "name": "Accuracy"},
+                    {"is_agg": True, "name": "Precision Macro"},
+                    {"is_agg": True, "name": "Recall Macro"},
+                    {"is_agg": False, "name": "Precision Per Class"},
+                    {"is_agg": False, "name": "Recall Per Class"},
+                    {"is_agg": False, "name": "F1 Per Class"},
+                    {"is_agg": False, "name": "Roc Auc Per Class"},
+                    {"is_agg": False, "name": "Fpr Per Class"},
+                    {"is_agg": True, "name": "Fpr Macro"},
+                    {"is_agg": True, "name": "Fpr Micro"},
+                    {"is_agg": True, "name": "Fpr Weighted"},
+                    {"is_agg": False, "name": "Fnr Per Class"},
+                    {"is_agg": True, "name": "Fnr Macro"},
+                    {"is_agg": True, "name": "Fnr Micro"},
+                    {"is_agg": True, "name": "Fnr Weighted"},
+                    {"is_agg": False, "name": "Tnr Per Class"},
+                    {"is_agg": True, "name": "Tnr Macro"},
+                    {"is_agg": True, "name": "Tnr Micro"},
+                    {"is_agg": True, "name": "Tnr Weighted"}
+                ]
+            }
+        ]
+    )
+
+    assert len(conf_diff) == 0, prettify(conf_diff)
+
     res_conf_json = response.json()["res_conf"]
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False

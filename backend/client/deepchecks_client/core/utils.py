@@ -13,9 +13,9 @@ import json
 import typing as t
 from datetime import datetime
 
-from jsonschema import validators
 import numpy as np
 import pendulum as pdl
+from jsonschema import validators
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
 

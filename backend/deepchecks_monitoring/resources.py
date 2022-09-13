@@ -38,10 +38,10 @@ class BaseResourcesProvider:
         """Disponse async resources."""
         pass
 
-    async def __enter__(self):
+    def __enter__(self):
         return self
 
-    async def __exit__(self, *args, **kwargs):
+    def __exit__(self, *args, **kwargs):
         self.dispose_resources()
 
     def dispose_resources(self):

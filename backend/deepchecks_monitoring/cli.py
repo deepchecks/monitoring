@@ -43,8 +43,9 @@ def run():
 @cli.command()
 def schedule_alert_rules():
     """Run alert rules scheduler."""
+    from .bgtasks.scheduler import AlertsScheduler  # pylint: disable=import-outside-toplevel
     from .bgtasks.scheduler import execute_alerts_scheduler  # pylint: disable=import-outside-toplevel
-    execute_alerts_scheduler()
+    execute_alerts_scheduler(scheduler_implementation=AlertsScheduler)
 
 
 if __name__ == "__main__":

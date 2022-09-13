@@ -17,9 +17,8 @@ from urllib.parse import urljoin
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-from jsonschema import validate
-
 from deepchecks_client.core.utils import DeepchecksEncoder, maybe_raise
+from jsonschema import validate
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")

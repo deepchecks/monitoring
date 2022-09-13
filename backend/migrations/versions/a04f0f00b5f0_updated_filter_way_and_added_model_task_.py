@@ -19,8 +19,7 @@ import sqlalchemy as sa
 from alembic import op
 
 import deepchecks_monitoring.models.pydantic_type
-from deepchecks_monitoring.models.model import TaskType
-from deepchecks_monitoring.models.model import Model
+from deepchecks_monitoring.models.model import Model, TaskType
 
 # revision identifiers, used by Alembic.
 revision = 'a04f0f00b5f0'
