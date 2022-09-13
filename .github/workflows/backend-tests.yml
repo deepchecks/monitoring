@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9"]
 
     steps:
     - uses: actions/checkout@v3
@@ -41,22 +41,22 @@ jobs:
     - name: Run Tests
       run: make test
       working-directory: ./backend
-  coverage:
-    runs-on: ubuntu-latest
-    name: coveralls
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-      with:
-        python-version: "3.9"
-    - name: Set Up Env
-      run: make env
-      working-directory: ./backend
-    - name: Run Coverage
-      run: make coveralls
-      working-directory: ./backend
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#  coverage:
+#    runs-on: ubuntu-latest
+#    name: coveralls
+#    steps:
+#    - uses: actions/checkout@v3
+#    - uses: actions/setup-python@v3
+#      with:
+#        python-version: "3.9"
+#    - name: Set Up Env
+#      run: make env
+#      working-directory: ./backend
+#    - name: Run Coverage
+#      run: make coveralls
+#      working-directory: ./backend
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #  tests-windows:
 #    runs-on: windows-latest
