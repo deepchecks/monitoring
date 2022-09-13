@@ -85,12 +85,10 @@ class DeepchecksModelVersionClient:
 
     Parameters
     ----------
-    host: str
-        The deepchecks monitoring API host.
     model_version_id: int
         The id of the model version.
-    image_properties : Optional[List[Dict[str, Any]]]
-        The image properties to use for the reference.
+    model: dict
+    session: requests.Session
     """
 
     model_version_id: int
@@ -119,7 +117,7 @@ class DeepchecksModelVersionClient:
             msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) reference schema.\n{{error}}"
         ).json()
 
-    def log_sample(self):
+    def log_sample(self, *args, **kwargs):
         """Send sample for the model version."""
         raise NotImplementedError
 
@@ -134,7 +132,7 @@ class DeepchecksModelVersionClient:
         )
         self._log_samples.clear()
 
-    def upload_reference(self):
+    def upload_reference(self, *args, **kwargs):
         """Upload reference data. Possible to upload only once for a given model version."""
         raise NotImplementedError
 
@@ -178,8 +176,8 @@ class DeepchecksModelClient:
 
     Parameters
     ----------
-    host: str
-        The deepchecks monitoring API host.
+    session: requests.Session
+        The deepchecks monitoring API session.
     model_id: int
         The id of the model.
     """
@@ -196,8 +194,8 @@ class DeepchecksModelClient:
         ).json()
         self._model_version_clients = {}
 
-    def create_version(self) -> DeepchecksModelVersionClient:
-        """Create a new model version."""
+    def version(self, *args, **kwargs) -> DeepchecksModelVersionClient:
+        """Get or create a new model version."""
         raise NotImplementedError
 
     def _get_model_version_id(self, model_version_name):
@@ -279,6 +277,7 @@ class DeepchecksClient:
     ----------
     host: str
         The deepchecks monitoring API host.
+    token
     """
 
     host: str
@@ -314,6 +313,7 @@ class DeepchecksClient:
             Task type of the model, one of: # TODO
         description
             Additional description for the model
+        checks
 
         Returns
         -------
@@ -371,6 +371,7 @@ class DeepchecksClient:
 
         if self._model_clients.get(model_id) is None:
             if 'vision' in task_type:
-                self._model_clients[model_id] =  VisionDeepchecksModelClient(model_id, session=self.session)
-            self._model_clients[model_id] =  TabularDeepchecksModelClient(model_id, session=self.session)
+                self._model_clients[model_id] = VisionDeepchecksModelClient(model_id, session=self.session)
+            else:
+                self._model_clients[model_id] = TabularDeepchecksModelClient(model_id, session=self.session)
         return self._model_clients[model_id]

@@ -20,11 +20,10 @@ from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainT
                                        TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
-from jsonschema import validate
 
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import ColumnType, DeepchecksColumns, TaskType
-from deepchecks_client.core.utils import DeepchecksEncoder, create_timestamp, maybe_raise
+from deepchecks_client.core.utils import DeepchecksEncoder, create_timestamp, maybe_raise, DeepchecksJsonValidator
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -86,6 +85,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             raise Exception(f'Unknown task type provided')
 
         sample = DeepchecksEncoder().default(sample)
+        DeepchecksJsonValidator(self.schema).validate(sample)
         self._log_samples.append(sample)
 
     def upload_reference(
@@ -125,9 +125,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             data = data.sample(100_000, random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
 
+        validator = DeepchecksJsonValidator(self.ref_schema)
         for (_, row) in data.iterrows():
             item = row.to_dict()
-            validate(schema=self.ref_schema, instance=item)
+            item = DeepchecksEncoder().default(item)
+            validator.validate(item)
 
         maybe_raise(
             self.session.post(
@@ -160,7 +162,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if label:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
-        validate(instance=update, schema=optional_columns_schema)
+        update = DeepchecksEncoder().default(update)
+        DeepchecksJsonValidator(optional_columns_schema).validate(update)
 
         maybe_raise(
             self.session.put(

@@ -13,6 +13,7 @@ import json
 import typing as t
 from datetime import datetime
 
+from jsonschema import validators
 import numpy as np
 import pendulum as pdl
 from requests import HTTPError, Response
@@ -87,6 +88,7 @@ def maybe_raise(
 
     return response
 
+
 class DeepchecksEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.generic):
@@ -117,3 +119,12 @@ def create_timestamp(timestamp):
             raise Exception(f'Not supported timestamp type: {type(timestamp)}')
     else:
         return pdl.now()
+
+
+DeepchecksJsonValidator = validators.extend(
+  validators.Draft202012Validator,
+  type_checker=validators.Draft202012Validator.TYPE_CHECKER.redefine(
+        "array",
+        lambda _, instance: isinstance(instance, (list, tuple))
+    )
+)

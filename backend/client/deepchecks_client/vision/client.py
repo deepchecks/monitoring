@@ -24,11 +24,10 @@ from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerforman
 from deepchecks.vision.task_type import TaskType as VisTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-from jsonschema import validate
 
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import DeepchecksColumns
-from deepchecks_client.core.utils import create_timestamp, maybe_raise
+from deepchecks_client.core.utils import create_timestamp, maybe_raise, DeepchecksJsonValidator
 from deepchecks_client.vision.utils import (DeepchecksVisionEncoder, calc_image_bbox_props, create_static_properties)
 from deepchecks_client.core import ColumnType, TaskType
 
@@ -38,8 +37,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     Parameters
     ----------
-    host: str
-        The deepchecks monitoring API host.
+    session: requests.Session
+        The deepchecks monitoring API session.
     model_version_id: int
         The id of the model version.
     image_properties : Optional[List[Dict[str, Any]]]
@@ -109,7 +108,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         sample = DeepchecksVisionEncoder().default(sample)
-        validate(instance=sample, schema=self.schema)
+        DeepchecksJsonValidator(self.schema).validate(sample)
 
         self._log_samples.append(sample)
 
@@ -146,10 +145,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                         data[ind][prop_type + ' ' + prop_name] = props[prop_type][prop_name]
 
         data = pd.DataFrame(data).T
+        validator = DeepchecksJsonValidator(schema=self.ref_schema)
         for (_, row) in data.iterrows():
             item = row.to_dict()
-            schema = DeepchecksVisionEncoder().default(self.ref_schema)
-            validate(schema=schema, instance=item)
+            item = DeepchecksVisionEncoder().default(item)
+            validator.validate(instance=item)
 
         maybe_raise(
             self.session.post(
@@ -199,7 +199,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                         update[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = prop_val[0]
 
         update = DeepchecksVisionEncoder().default(update)
-        validate(instance=update, schema=optional_columns_schema)
+        DeepchecksJsonValidator(schema=optional_columns_schema).validate(update)
 
         maybe_raise(
             self.session.put(
