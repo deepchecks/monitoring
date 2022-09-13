@@ -1,12 +1,17 @@
-import React, { createContext, FC, useContext } from 'react';
+import React, { createContext, useContext, FC } from 'react';
 
 interface ContextInterface {
   dashboard_id: number;
+  models?: [];
+  monitors?: [];
+  currMonitor?: null;
 }
 
-const GlobalStateContext = createContext<ContextInterface>({
+const initState = {
   dashboard_id: 1
-} as ContextInterface);
+};
+
+const GlobalStateContext = createContext<ContextInterface>(initState as ContextInterface);
 
 export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => (
   <GlobalStateContext.Provider value={{ dashboard_id: 1 }}>{children}</GlobalStateContext.Provider>

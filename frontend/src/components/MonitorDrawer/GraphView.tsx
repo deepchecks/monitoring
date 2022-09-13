@@ -1,16 +1,17 @@
 import React from 'react';
 import { Button, Stack, Typography, Box } from '@mui/material';
-import { CloseIcon } from '../../assets/icon/icon';
+import { CloseIcon, NoDataToShow } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
-// import { useTypedSelector } from '../../../../store/hooks';
-// import { checkGraphSelector } from '../../../../store/slices/check/checkSlice';
+import { ChartData } from 'chart.js';
+import { GraphData } from 'helpers/types';
 
 interface GraphViewProps {
   onClose: () => void | undefined;
+  graphData?: ChartData<'line'>;
+  isLoading: boolean;
 }
 
-export const GraphView = ({ onClose }: GraphViewProps) => {
-  // const graph = useTypedSelector(checkGraphSelector);
+export const GraphView = ({ onClose, graphData }: GraphViewProps) => {
   const closeDrawer = () => {
     onClose();
   };
@@ -33,7 +34,11 @@ export const GraphView = ({ onClose }: GraphViewProps) => {
           width: 690
         }}
       >
-        <DiagramLine data={{ datasets: [] }} />
+        {graphData?.datasets.length ? (
+          <DiagramLine data={graphData as ChartData<'line', GraphData>} />
+        ) : (
+          <NoDataToShow />
+        )}
       </Box>
     </Box>
   );

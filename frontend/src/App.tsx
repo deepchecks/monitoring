@@ -12,6 +12,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { StatsTimeProvider } from './hooks/useStatsTime';
 import useUser, { UserProvider } from './hooks/useUser';
+import { MonitorsDataProvider } from './hooks/useMonitorsData';
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -61,16 +62,18 @@ const App = () => {
         <GlobalStateProvider>
           <UserProvider>
             <StatsTimeProvider>
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/alerts" element={<AlertsPage />} />
-                  <Route path="/analysis" element={<div>analysis placeholder...</div>} />
-                  <Route path="/configuration" element={<DashboardPage />} />
-                </Route>
-                <Route path="/complete-details" element={<CompleteDetails />} />
-              </Routes>
+              <MonitorsDataProvider>
+                <Routes>
+                  <Route element={<Layout />}>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/alerts" element={<AlertsPage />} />
+                    <Route path="/analysis" element={<div>analysis placeholder...</div>} />
+                    <Route path="/configuration" element={<DashboardPage />} />
+                  </Route>
+                  <Route path="/complete-details" element={<CompleteDetails />} />
+                </Routes>
+              </MonitorsDataProvider>
             </StatsTimeProvider>
           </UserProvider>
         </GlobalStateProvider>

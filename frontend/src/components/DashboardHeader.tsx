@@ -7,7 +7,7 @@ import { AlertCount, SEVERITY } from './AlertCount';
 import { ID } from '../helpers/types';
 
 interface DashboardHeaderProps {
-  onOpen: (monitorId?: ID) => void;
+  onOpen: () => void;
 }
 
 export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {

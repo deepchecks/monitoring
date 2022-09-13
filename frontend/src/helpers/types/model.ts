@@ -14,9 +14,10 @@ export enum ColumnType {
 
 export interface Categorical {
   type: ColumnType.string;
-  values: [string, string];
+  stats: {
+    values: string[];
+  };
 }
-
 export interface Numeric {
   type: ColumnType.number;
   min: number;

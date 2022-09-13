@@ -27,6 +27,7 @@ import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
 import { ReactComponent as UserInvite} from './userInvite.svg'
 import { ReactComponent as EmailIcon } from './email.svg';
+import { ReactComponent as NoDataToShow } from './noDataToShow.svg';
 
 export {
   Alarm,
@@ -57,5 +58,6 @@ export {
   Sort,
   PencilDrawing,
   UserInvite,
-  EmailIcon
+  EmailIcon,
+  NoDataToShow
 };

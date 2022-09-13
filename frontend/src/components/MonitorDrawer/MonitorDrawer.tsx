@@ -1,36 +1,70 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { Drawer, DrawerProps, Stack, styled } from '@mui/material';
-// import { useTypedDispatch } from '../../../store/hooks';
-// import { clearCheckState } from '../../../store/slices/check/checkSlice';
-// import { clearColumns } from '../../../store/slices/model/modelSlice';
 import { GraphView } from './GraphView';
 import { CreateMonitor } from './MonitorForm/CreateMonitor';
 import EditMonitor from './MonitorForm/EditMonitor';
+import { MonitorSchema, useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
+import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
+import { ChartData } from 'chart.js';
 
 export const StyledStackWrapper = styled(Stack)({
   height: '100%'
 });
 
+export interface LookbackCheckProps {
+  checkId: number;
+  data: {
+    start_time: string;
+    end_time: string;
+    filter?: {
+      filters: {
+        column: string;
+        operator: string;
+        value: string | number;
+      }[];
+    };
+  };
+}
+
 interface MonitorDrawerProps extends DrawerProps {
-  monitorId?: number | string | null;
+  monitor?: MonitorSchema;
   onClose: () => void;
 }
 
-function MonitorDrawer({ monitorId = null, onClose, ...props }: MonitorDrawerProps) {
-  // const dispatch = useTypedDispatch();
-  console.log(monitorId);
+function MonitorDrawer({ monitor, onClose, ...props }: MonitorDrawerProps) {
+  const [graphData, setGraphData] = useState<ChartData<'line'>>();
 
-  // useEffect(() => {
-  //   dispatch(clearCheckState());
-  //   dispatch(clearColumns());
-  // }, [dispatch]);
+  const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
+    useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
+
+  const handleOnClose = () => {
+    setGraphData(undefined);
+    onClose();
+  };
+
+  const handleLookback = async (graphData: LookbackCheckProps) => {
+    const { checkId, data } = graphData;
+    try {
+      const res = await runCheck({
+        checkId,
+        data
+      });
+      const parsedChartData = parseDataForChart(res);
+      setGraphData(parsedChartData);
+    } catch (e) {
+      setGraphData(undefined);
+    }
+  };
 
   return (
     <Drawer {...props}>
       <StyledStackWrapper direction="row">
-        {monitorId ? <EditMonitor onClose={onClose} monitorId={monitorId} /> : <CreateMonitor onClose={onClose} />}
-        {/* <CreateMonitor onClose={onClose} /> */}
-        <GraphView onClose={onClose} />
+        {monitor ? (
+          <EditMonitor onClose={handleOnClose} runCheckLookback={handleLookback} monitor={monitor} />
+        ) : (
+          <CreateMonitor onClose={handleOnClose} runCheckLookback={handleLookback} />
+        )}
+        <GraphView onClose={handleOnClose} isLoading={isRunCheckLoading} graphData={graphData} />
       </StyledStackWrapper>
     </Drawer>
   );

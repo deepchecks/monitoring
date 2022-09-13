@@ -22,7 +22,7 @@ import { _DeepPartialObject } from 'chart.js/types/utils.js';
 interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
   monitor: MonitorSchema;
-  onOpen: (id: ID) => void;
+  onOpen: (monitor?: MonitorSchema) => void;
   title: string;
   models: GetModelsApiV1ModelsGetQueryResult;
 }
@@ -34,11 +34,11 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
 
   const openRootMenu = Boolean(anchorElRootMenu);
 
-  const filterMap : { [key: string]: string} = {
+  const filterMap: { [key: string]: string } = {
     greater_than: '>',
     equals: '=',
     contains: 'in'
-  }
+  };
 
   const modelName = useMemo(() => {
     let name;
@@ -74,17 +74,14 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
   };
 
   const handleOpenEditMonitor = () => {
-    onOpen(monitor.id);
+    onOpen(monitor);
     setAnchorElRootMenu(null);
   };
 
-  const tooltipCallbacks : _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<"line">, TooltipItem<"line">>> = {
-    label: (context : TooltipItem<'line'>) => {
-      console.log(context)
-      return `${context.label} | Model Version ${context.dataset.label?.split(':')[0]}`
-    }
+  const tooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = {
+    label: (context: TooltipItem<'line'>) => `${context.label} | Model Version ${context.dataset.label?.split(':')[0]}`
   };
-  
+
   return (
     <>
       <StyledFlexContent onMouseOver={onMouseOver} onMouseLeave={onMouseLeave}>
@@ -100,19 +97,20 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
           <Typography variant="subtitle2">Model: {modelName}</Typography>
           <StyledDivider orientation="vertical" flexItem />
           <Typography variant="subtitle2">Check: {monitor.check.name}</Typography>
-          { monitor.data_filters ? (
+          {monitor.data_filters ? (
             <>
               <StyledDivider orientation="vertical" flexItem />
               <Typography variant="subtitle2">
                 <>
-                  Filter: {monitor.data_filters.filters[0].column} {filterMap[monitor.data_filters.filters[0].operator as string]} {monitor.data_filters.filters[0].value}
+                  Filter: {monitor.data_filters.filters[0].column}{' '}
+                  {filterMap[monitor.data_filters.filters[0].operator as string]}{' '}
+                  {monitor.data_filters.filters[0].value}
                 </>
-              </Typography> 
+              </Typography>
             </>
-          )
-          : 
-          ''
-          }
+          ) : (
+            ''
+          )}
         </StyledInfo>
         <StyledDiagramWrapper>
           <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} />

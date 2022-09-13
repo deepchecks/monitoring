@@ -1,4 +1,4 @@
-import { FormControl, SelectProps } from '@mui/material';
+import React, { FormControl, SelectProps } from '@mui/material';
 import { ReactNode } from 'react';
 
 import { InputLabel, Select, styled } from '@mui/material';
@@ -8,10 +8,7 @@ export const StyledInputLabel = styled(InputLabel)(({ theme }) => ({
 }));
 
 export const StyledSelect = styled(Select)({
-  minWidth: 200,
-  '& .MuiSvgIcon-root': {
-    display: 'none'
-  }
+  minWidth: 200
 });
 
 interface MarkedSelectProps extends SelectProps {

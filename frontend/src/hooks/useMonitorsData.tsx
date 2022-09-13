@@ -1,87 +1,92 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, createContext, useContext } from 'react';
 import {
-  CheckResultSchema,
+  getGetDashboardApiV1DashboardsGetQueryKey,
+  MonitorSchema,
   runMonitorLookbackApiV1MonitorsMonitorIdRunPost,
   useGetDashboardApiV1DashboardsGet
 } from '../api/generated';
 import { ChartData } from 'chart.js';
-import dayjs from 'dayjs';
-import { setGraphOptions } from 'helpers/setGraphOptions';
 import useModelsMap from './useModelsMap';
+import { parseDataForChart } from 'helpers/utils/parseDataForChart';
 
-export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'line'> => ({
-  datasets: Object.keys(graph.output)
-    .map(key => {
-      let counter = 0;
-      if (!graph.output[key]) {
-        return [];
-      }
+type MonitorId = MonitorSchema['id'];
 
-      const lines: { [key: string]: (number | null)[] } = {};
+export type MonitorsDataProvider = {
+  children: JSX.Element;
+};
 
-      for (let i = 0; i < graph.output[key].length; i++) {
-        graph.output[key].forEach((item: any) => {
-          if (item) {
-            Object.keys(item).forEach(itemKey => {
-              lines[`${key}: ${itemKey}`] = [];
-            });
-          }
-        });
-      }
+export type MonitorsDataContext = {
+  monitors: MonitorSchema[];
+  chartDataList: ChartData<'line'>[];
+  refreshMonitors: (monitor?: MonitorSchema) => void;
+};
 
-      graph.output[key].forEach((item: any) => {
-        if (item) {
-          Object.keys(item).forEach(itemKey => {
-            lines[`${key}: ${itemKey}`].push(item[itemKey]);
-          });
-          return;
-        }
-
-        Object.keys(lines).forEach(itemKey => {
-          lines[itemKey].push(null);
-        });
-      });
-      return Object.keys(lines).map(lineKey => ({
-        data: lines[lineKey],
-        ...setGraphOptions(lineKey, counter++)
-      }));
-    })
-    .flat(2),
-  labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD YYYY'))
-});
+const MonitorsDataContext = createContext<MonitorsDataContext | null>(null);
 
 const useMonitorsData = () => {
-  const { data: dashboards } = useGetDashboardApiV1DashboardsGet();
-  const [chartDataList, setChartDataList] = useState<ChartData<'line'>[]>([]);
+  const context = useContext(MonitorsDataContext);
+  if (context === null) throw Error('UserContext is null');
+
+  return context;
+};
+
+export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.Element => {
+  const [lastMonitorsFetch, setLastMonitorsFetch] = useState(new Date());
+
+  const { data: dashboards } = useGetDashboardApiV1DashboardsGet({
+    query: {
+      queryKey: [getGetDashboardApiV1DashboardsGetQueryKey(), lastMonitorsFetch]
+    }
+  });
+
+  const [chartDataMap, setChartDataMap] = useState<Record<MonitorId, ChartData<'line'>>>({});
+
+  useEffect(() => console.log('UPDATE', { lastMonitorsFetch }), [lastMonitorsFetch]);
 
   const modelsMap = useModelsMap();
-  const monitors = useMemo(() => dashboards?.monitors ?? [], [dashboards]);
+  const { monitors = [] } = dashboards || {};
+
+  const refreshMonitors = async (monitor?: MonitorSchema) => {
+    if (!monitors.length) return;
+
+    if (monitor) {
+      console.log('Case 1');
+      fetchMonitor(monitor, true);
+    } else {
+      console.log('Case 2');
+      setLastMonitorsFetch(new Date());
+      //   // -> refresh monitors list, make sure existing monitors data is not being refreshed;
+      //   await fetchMonitors();
+      //   console.log('dashboards', dashboards);
+    }
+  };
+
+  const fetchMonitor = async (monitor: MonitorSchema, isForceRefetch = false) => {
+    if (!isForceRefetch && chartDataMap[monitor.id]) return;
+
+    const fetchedMonitor = await runMonitorLookbackApiV1MonitorsMonitorIdRunPost(monitor.id, {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      end_time: new Date(modelsMap[monitor?.check.model_id]?.latest_time * 1000)
+    });
+
+    const parsedDataForChart = parseDataForChart(fetchedMonitor);
+
+    setChartDataMap(prevState => ({ ...prevState, [monitor.id]: parsedDataForChart }));
+  };
 
   useEffect(() => {
-    if (!monitors || !modelsMap) return;
-
-    const monitorFetchers = monitors.map(monitor => {
-      console.log({ monitor, modelsMap });
-      return runMonitorLookbackApiV1MonitorsMonitorIdRunPost(monitor.id, {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        end_time: new Date(modelsMap[monitor.check.model_id]?.latest_time * 1000)
-      });
-    });
-    Promise.allSettled(monitorFetchers)
-      .then(monitors => monitors.map(result => {
-        if (result.status == 'fulfilled') {
-          return parseMonitorDataForChart(result.value)
-        }
-        else {
-          console.log("Error fetching monitor" + result)
-          return {labels: [], datasets: []};
-        }
-      } ))
-      .then(setChartDataList);
+    monitors.map(monitor => fetchMonitor(monitor));
   }, [dashboards, modelsMap]);
 
-  return { monitors, chartDataList };
+  const chartDataList = useMemo(
+    () => monitors.map(monitor => chartDataMap[monitor.id] || { labels: [], datasets: [] }),
+    [monitors, chartDataMap]
+  );
+
+  const value = { monitors, chartDataList, refreshMonitors };
+
+  return <MonitorsDataContext.Provider value={value}>{children}</MonitorsDataContext.Provider>;
 };
 
 export default useMonitorsData;

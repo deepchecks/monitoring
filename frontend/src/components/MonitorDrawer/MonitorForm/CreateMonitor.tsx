@@ -1,74 +1,59 @@
-import { Box, MenuItem, SelectChangeEvent } from '@mui/material';
+import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Box, MenuItem, SelectChangeEvent, TextField } from '@mui/material';
 import { useFormik } from 'formik';
-import React, { ReactNode, useRef, useState } from 'react';
 import { MarkedSelect } from '../../MarkedSelect';
-// import { useTypedDispatch, useTypedSelector } from '../../../../store/hooks';
-// import { checkSelector, getChecks, runCheck } from '../../../../store/slices/check/checkSlice';
-// import { getColumns, modelSelector } from '../../../../store/slices/model/modelSlice';
-// import { createMonitor, monitorSelector } from '../../../../store/slices/monitor/monitorSlice';
-import {
-  MonitorCreationSchema,
-  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
-  useGetChecksApiV1ModelsModelIdChecksGet,
-  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
-  useGetModelsApiV1ModelsGet
-} from 'api/generated';
-import { ColumnType, ModelColumns, Numeric } from '../../../helpers/types/model';
+import { RangePicker } from '../../RangePicker';
+import { Numeric, ColumnType, ModelColumns, Categorical } from '../../../helpers/types/model';
+import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
   StyledButtonWrapper,
   StyledStackContainer,
   StyledStackInputs,
-  StyledTypography
+  StyledTypography,
+  StyledTypographyLabel
 } from './MonitorForm.style';
+import {
+  useGetModelsApiV1ModelsGet,
+  useGetChecksApiV1ModelsModelIdChecksGet,
+  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
+  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
+  MonitorCreationSchema
+} from 'api/generated';
+import useGlobalState from 'Context';
+
+import useMonitorsData from '../../../hooks/useMonitorsData';
+import { LookbackCheckProps } from '../MonitorDrawer';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
   { label: '1 day', value: 60 * 60 * 24 },
   { label: '1 week', value: 60 * 60 * 24 * 7 },
-  { label: '1 month', value: 60 * 60 * 24 * 31 }
+  { label: '1 month', value: 60 * 60 * 24 * 31 },
+  { label: '3 months', value: 60 * 60 * 24 * 31 * 3 }
 ];
 
 interface CreateMonitorProps {
   onClose: () => void | undefined;
+  runCheckLookback: (props: LookbackCheckProps) => void;
 }
 
-export function CreateMonitor({ onClose }: CreateMonitorProps) {
+export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const [selectedModelId, setSelectedModelId] = useState(Number);
-  const [loading, setLoading] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  const { refreshMonitors } = useMonitorsData();
+  const globalState = useGlobalState();
 
   const { data: allModels = [] } = useGetModelsApiV1ModelsGet();
   const { data: columns = {} as ModelColumns } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(selectedModelId);
   const { data: checks = [] } = useGetChecksApiV1ModelsModelIdChecksGet(selectedModelId);
 
-  // interface CreateMonitorParams  {
-  //   checkId: number;
-  //   monitorCreationSchema: MonitorCreationSchema
-  // }
-
-  // type CreateMonitor = (params: CreateMonitorParams) => void;
-
-  const createMonitor = useCreateMonitorApiV1ChecksCheckIdMonitorsPost();
-
-  // const createMonitor: CreateMonitor = ({ checkId, monitorCreationSchema }) => {
-  //     try {
-  //       // const response = await MonitorService.createMonitor(checkId, monitor);
-  //       const response = createMonitorApiV1ChecksCheckIdMonitorsPost(checkId, monitorCreationSchema);
-  //       return response;
-  //     } catch (err) {
-  //       if (err instanceof Error) {
-  //         throw new Error(err.message);
-  //       }
-
-  //       throw new Error("Error");
-  //     }
-  //   }
-  // }
+  const { mutateAsync: createMonitor } = useCreateMonitorApiV1ChecksCheckIdMonitorsPost();
 
   const { values, handleChange, handleBlur, getFieldProps, setFieldValue, ...formik } = useFormik({
     initialValues: {
+      name: '',
       category: '',
       check: '',
       column: '',
@@ -76,7 +61,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
       numericValue: '',
       time: ''
     },
-    onSubmit: values => {
+    onSubmit: async values => {
       let operator;
       let value;
 
@@ -89,70 +74,56 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
         }
 
         if (column.type === ColumnType.string) {
-          operator = 'in';
+          operator = 'contains';
           value = values.category;
         }
       }
 
       const monitorSchema: MonitorCreationSchema = {
-        name: checks.reduce((acc, item) => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (item.id === values.check) {
-            return item.name || acc;
-          }
-
-          return acc;
-        }, ''),
+        name: values.name,
         lookback: +values.time,
-        description: 'hardcoded_desc',
+        description: '',
         data_filters: {
           filters: [
             {
               column: values.column,
-              operator: operator || 'in',
+              operator: operator || 'contains',
               value: value || values.category
             }
           ]
         },
-        dashboard_id: 1
-        // filter_key: 'hardcoded_filter_key'
+        dashboard_id: globalState.dashboard_id
+        // filter_key: ''
       };
 
-      createMonitor.mutate({ checkId: parseInt(values.check), data: monitorSchema });
+      await createMonitor({ checkId: parseInt(values.check), data: monitorSchema });
+      refreshMonitors();
       formik.resetForm();
       onClose();
     }
   });
 
   const updateGraph = (operator = '', value: string | number = '') => {
-    if (!operator) {
-      // dispatch(
-      //   runCheck({
-      //     checkId: +values.check,
-      //     data: {
-      //       start_time: new Date(Date.now() - +values.time * 1000),
-      //       end_time: new Date()
-      //     }
-      //   })
-      // );
-      return;
+    const checkId = +values.check;
+
+    const lookbackCheckData: LookbackCheckProps = {
+      checkId,
+      data: {
+        start_time: new Date(Date.now() - +values.time * 1000).toISOString(),
+        end_time: new Date().toISOString()
+      }
+    };
+
+    if (operator) {
+      lookbackCheckData.data.filter = {
+        filters: [{ column: values.column, operator, value }]
+      };
     }
 
-    // dispatch(
-    //   runCheck({
-    //     checkId: +values.check,
-    //     data: {
-    //       start_time: new Date(Date.now() - +values.time * 1000),
-    //       end_time: new Date(),
-    //       filter: { filters: [{ column: values.column, operator, value }] }
-    //     }
-    //   })
-    // );
+    runCheckLookback(lookbackCheckData);
   };
 
   const handleModelChange = (event: SelectChangeEvent<unknown>) => {
-    // Get checks & columns by model id..
     const value = event.target.value as string;
     handleChange(event);
     setSelectedModelId(+value);
@@ -160,8 +131,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
     setFieldValue('model', value);
     setFieldValue('check', '');
     setFieldValue('column', '');
-    // dispatch(getChecks(+value));
-    // dispatch(getColumns(+value));
+    setFieldValue('category', '');
   };
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
@@ -183,91 +153,92 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
     }
   };
 
-  // useMemo(() => {
-  //   if (values.column) {
-  //     let column = columns[values.column];
+  useMemo(() => {
+    if (!values.column) {
+      return setColumnComponent(null);
+    }
+    if (values.column) {
+      let column = columns[values.column];
 
-  //     if (column.type === ColumnType.string) {
-  //       column = column as Categorical;
-  //       setColumnComponent(
-  //         <Subcategory>
-  //           <MarkedSelect
-  //             label="Select category"
-  //             size="small"
-  //             disabled={!column.values.length}
-  //             fullWidth
-  //             {...getFieldProps('category')}
-  //           >
-  //             {column.values.map((col, index) => (
-  //               <MenuItem key={index} value={col}>
-  //                 {col}
-  //               </MenuItem>
-  //             ))}
-  //           </MarkedSelect>
-  //         </Subcategory>
-  //       );
-  //       return;
-  //     }
+      if (column.type === ColumnType.string) {
+        column = column as Categorical;
+        setColumnComponent(
+          <Subcategory>
+            <MarkedSelect
+              label="Select category"
+              size="small"
+              disabled={!column.stats.values.length}
+              fullWidth
+              {...getFieldProps('category')}
+            >
+              {column.stats.values.map((col: string, index: number) => (
+                <MenuItem key={index} value={col}>
+                  {col}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+          </Subcategory>
+        );
+        return;
+      }
 
-  //     if (column.type === ColumnType.number) {
-  //       column = column as Numeric;
-  //       setColumnComponent(
-  //         <Box mt="39px">
-  //           <StyledTypographyLabel>Select Value</StyledTypographyLabel>
-  //           <RangePicker
-  //             onChange={handleSliderChange}
-  //             handleInputBlur={handleInputBlur}
-  //             handleInputChange={handleInputChange}
-  //             name="numericValue"
-  //             value={+values.numericValue || 0}
-  //             min={column.min}
-  //             max={column.max}
-  //             valueLabelDisplay="auto"
-  //           />
-  //         </Box>
-  //       );
-  //       return;
-  //     }
+      if (column.type === ColumnType.number) {
+        column = column as Numeric;
+        setColumnComponent(
+          <Box mt="39px">
+            <StyledTypographyLabel>Select Value</StyledTypographyLabel>
+            <RangePicker
+              onChange={handleSliderChange}
+              handleInputBlur={handleInputBlur}
+              handleInputChange={handleInputChange}
+              name="numericValue"
+              value={+values.numericValue || 0}
+              min={column.min}
+              max={column.max}
+              valueLabelDisplay="auto"
+            />
+          </Box>
+        );
+        return;
+      }
+    }
+  }, [values.column, values.category, values.numericValue]);
 
-  //     setColumnComponent(null);
-  //   }
-  // }, [values.column, values.category, values.numericValue]);
+  useEffect(() => {
+    const column = columns[values.column];
+    if (column && column.type === ColumnType.string) {
+      setFieldValue('category', column.stats.values[0]);
+    }
+  }, [values.column]);
 
-  // useEffect(() => {
-  //   const column = columns[values.column];
-  //   if (column && column.type === ColumnType.string) {
-  //     setFieldValue('category', column.values[0]);
-  //   }
-  // }, [values.column]);
+  useEffect(() => {
+    clearTimeout(timer.current);
+    const column = columns[values.column];
 
-  // useEffect(() => {
-  //   clearTimeout(timer.current);
-  //   const column = columns[values.column];
+    if (!column && values.check && values.time) {
+      updateGraph();
+    }
 
-  //   if (!column && values.check && values.time) {
-  //     updateGraph();
-  //   }
+    if (column) {
+      if (column.type === ColumnType.number) {
+        if (values.check && values.time && values.column && values.numericValue) {
+          timer.current = setTimeout(() => {
+            updateGraph('greater_than', values.numericValue);
+          }, 500);
+        }
+      }
 
-  //   if (column) {
-  //     if (column.type === ColumnType.number) {
-  //       if (values.check && values.time && values.column && values.numericValue) {
-  //         timer.current = setTimeout(() => {
-  //           updateGraph('greater_than', values.numericValue);
-  //         }, 500);
-  //       }
-  //     }
+      if (column.type === ColumnType.string) {
+        if (values.check && values.time && values.column && values.category) {
+          updateGraph('contains', values.category);
+        }
+      }
+    }
 
-  //     if (column.type === ColumnType.string) {
-  //       if (values.check && values.time && values.column && values.category) {
-  //         updateGraph('in', values.category);
-  //       }
-  //     }
-  //   }
-
-  //   return () => {
-  //     clearTimeout(timer.current);
-  //   };
-  // }, [values.check, values.column, values.category, values.numericValue, values.time]);
+    return () => {
+      clearTimeout(timer.current);
+    };
+  }, [values.check, values.column, values.category, values.numericValue, values.time]);
 
   return (
     <form onSubmit={formik.handleSubmit}>
@@ -275,14 +246,16 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
         <Box>
           <StyledTypography variant="h4">New Monitor</StyledTypography>
           <StyledStackInputs spacing="60px">
+            <TextField label="Monitor Name" variant="outlined" size="small" {...getFieldProps('name')} required />
             <MarkedSelect
-              label="Select model"
+              label="Select Model"
               onChange={handleModelChange}
               name="model"
               onBlur={handleBlur}
               size="small"
               value={values.model}
               fullWidth
+              required
             >
               {allModels.map(({ name, id }, index) => (
                 <MenuItem key={index} value={id}>
@@ -296,6 +269,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
               disabled={!checks.length}
               {...getFieldProps('check')}
               fullWidth
+              required
             >
               {checks.map(({ name, id }, index) => (
                 <MenuItem key={index} value={id}>
@@ -303,7 +277,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
                 </MenuItem>
               ))}
             </MarkedSelect>
-            <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth>
+            <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth required>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -312,7 +286,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
             </MarkedSelect>
             <Box width={1}>
               <MarkedSelect
-                label="Filter by Column"
+                label="Segment"
                 size="small"
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}
@@ -330,7 +304,7 @@ export function CreateMonitor({ onClose }: CreateMonitorProps) {
         </Box>
 
         <StyledButtonWrapper>
-          <StyledButton type="submit" size="large" disabled={!values.time || !values.check || loading}>
+          <StyledButton type="submit" size="large" disabled={!values.time || !values.check}>
             Save
           </StyledButton>
         </StyledButtonWrapper>

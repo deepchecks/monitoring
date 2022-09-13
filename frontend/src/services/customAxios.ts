@@ -24,7 +24,9 @@ AXIOS_INSTANCE.interceptors.response.use(
 
 export const customInstance = <T>(config: AxiosRequestConfig): Promise<T> => {
   const source = Axios.CancelToken.source();
-  const promise = AXIOS_INSTANCE({ ...config, cancelToken: source.token }).then(({ data }) => data);
+  const promise = AXIOS_INSTANCE({ ...config, cancelToken: source.token })
+    .then(({ data }) => data)
+    .catch(e => console.log('Error occurred in Axios -', e));
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   promise.cancel = () => {

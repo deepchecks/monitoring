@@ -1,17 +1,14 @@
 import React, { memo, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, MenuItem } from '@mui/material';
+import { Box, MenuItem, TextField } from '@mui/material';
 import {
-  ModelsInfoSchema,
+  MonitorSchema,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet,
-  useGetModelsApiV1ModelsGet,
-  useGetMonitorApiV1MonitorsMonitorIdGet,
-  useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost
+  useUpdateMonitorApiV1MonitorsMonitorIdPut
 } from 'api/generated';
 import { useFormik } from 'formik';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
 import { Numeric, Categorical, ColumnType, ModelColumns } from '../../../helpers/types/model';
-import { ID } from '../../../helpers/types';
 import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
@@ -23,115 +20,115 @@ import {
 } from './MonitorForm.style';
 import useModelsMap from 'hooks/useModelsMap';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
+import { LookbackCheckProps } from '../MonitorDrawer';
+import useMonitorsData from '../../../hooks/useMonitorsData';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
   { label: '1 day', value: 60 * 60 * 24 },
   { label: '1 week', value: 60 * 60 * 24 * 7 },
-  { label: '1 month', value: 60 * 60 * 24 * 31 }
+  { label: '1 month', value: 60 * 60 * 24 * 31 },
+  { label: '3 months', value: 60 * 60 * 24 * 31 * 3 }
 ];
 
 interface EditMonitorProps {
-  monitorId: ID;
+  monitor: MonitorSchema;
   onClose: () => void | undefined;
+  runCheckLookback: (props: LookbackCheckProps) => void;
 }
 
-function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
+function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  const { data: monitor } = useGetMonitorApiV1MonitorsMonitorIdGet(+monitorId);
+  const models = useModelsMap();
+  const { refreshMonitors } = useMonitorsData();
 
+  const timer = useRef<ReturnType<typeof setTimeout>>();
   const modelId = useMemo(() => monitor?.check.model_id ?? null, [monitor]);
-  useRunMonitorLookback(+monitorId, modelId?.toString() ?? null);
+
+  useRunMonitorLookback(+monitor.id, modelId?.toString() ?? null);
+
   const { data: columns = {} as ModelColumns, isLoading: isColumnsLoading } =
     useGetModelColumnsApiV1ModelsModelIdColumnsGet(modelId!);
 
-  //const runMonitor = useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost();
-  //const modelsMap = useModelsMap();
+  const { mutateAsync: updateMonitor } = useUpdateMonitorApiV1MonitorsMonitorIdPut();
 
-  //useEffect(() => {
-  //const modelId = monitor?.check.model_id;
-  //if (!modelId) return;
+  const modelName = useMemo(() => {
+    if (!modelId) return;
+    return models[modelId].name;
+  }, [modelId]);
 
-  //const monitorModel = modelsMap[modelId];
-
-  //if (!monitorModel) return;
-
-  //const end_time = monitorModel.latest_time?.toString() ?? void 0;
-  //runMonitor.mutateAsync({ monitorId: monitor.id, data: { end_time } });
-  //}, [modelsMap, monitor]);
+  const initValues = {
+    name: monitor.name,
+    category: (monitor.data_filters?.filters[0].value as string) || '',
+    column: monitor.data_filters?.filters[0].column || '',
+    numericValue: (monitor.data_filters?.filters[0]?.value as number) || 0,
+    time: monitor.lookback
+  };
 
   const { values, getFieldProps, setFieldValue, ...formik } = useFormik({
-    initialValues: {
-      category: '',
-      column: '',
-      numericValue: '',
-      time: ''
-    },
-    onSubmit: values => {
+    initialValues: initValues,
+    onSubmit: async values => {
       let operator;
       let value;
 
       const column = columns[values.column];
 
-      if (column.type === ColumnType.number) {
+      if (column?.type === ColumnType.number) {
         operator = 'greater_than';
         value = values.numericValue;
       }
 
-      if (column.type === ColumnType.string) {
-        operator = 'in';
+      if (column?.type === ColumnType.string) {
+        operator = 'contains';
         value = values.category;
       }
 
-      //   dispatch(
-      //     updateMonitor({
-      //       monitorId: monitor.id,
-      //       monitor: {
-      //         dashboard_id: monitor.dashboard_id,
-      //         name: monitor.name,
-      //         lookback: +values.time,
-      //         data_filter: {
-      //           filters: [
-      //             {
-      //               column: values.column,
-      //               operator: operator || 'in',
-      //               value: value || values.category
-      //             }
-      //           ]
-      //         }
-      //       }
-      //     })
-      //   );
+      await updateMonitor({
+        monitorId: monitor.id,
+        data: {
+          name: values.name || monitor.name,
+          lookback: values.time + '',
+          description: '',
+          data_filters: {
+            filters: [
+              {
+                column: values.column,
+                operator: operator || 'contains',
+                value: value || values.category
+              }
+            ]
+          },
+          dashboard_id: monitor.dashboard_id
+          // filter_key: ''
+        }
+      });
+
+      refreshMonitors(monitor);
       formik.resetForm();
       onClose();
     }
   });
 
   const updateGraph = (operator = '', value: string | number = '') => {
-    if (!operator) {
-      //   dispatch(
-      //     runCheck({
-      //       checkId: +monitor.check.id,
-      //       data: {
-      //         start_time: new Date(Date.now() - +values.time * 1000),
-      //         end_time: new Date()
-      //       }
-      //     })
-      //   );
-      return;
+    if (!monitor) return;
+
+    const checkId = +monitor.check.id;
+
+    const lookbackCheckData: LookbackCheckProps = {
+      checkId,
+      data: {
+        start_time: new Date(Date.now() - +values.time * 1000).toISOString(),
+        end_time: new Date().toISOString()
+      }
+    };
+
+    if (operator) {
+      lookbackCheckData.data.filter = {
+        filters: [{ column: values.column, operator, value }]
+      };
     }
 
-    // dispatch(
-    //   runCheck({
-    //     checkId: +monitor.check.id,
-    //     data: {
-    //       start_time: new Date(Date.now() - +values.time * 1000),
-    //       end_time: new Date(),
-    //       filter: { filters: [{ column: values.column, operator, value }] }
-    //     }
-    //   })
-    // );
+    runCheckLookback(lookbackCheckData);
   };
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
@@ -154,59 +151,58 @@ function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
   };
 
   useMemo(() => {
-    if (values.column) {
-      let column = columns[values.column];
-
-      if (column.type === ColumnType.string) {
-        column = column as Categorical;
-        setColumnComponent(
-          <Subcategory>
-            <MarkedSelect
-              label="Select category"
-              size="small"
-              disabled={!column.values.length}
-              fullWidth
-              {...getFieldProps('category')}
-            >
-              {column.values?.map((col, index) => (
-                <MenuItem key={index} value={col}>
-                  {col}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-          </Subcategory>
-        );
-        return;
-      }
-
-      if (column.type === ColumnType.number) {
-        column = column as Numeric;
-        setColumnComponent(
-          <Box mt="39px">
-            <StyledTypographyLabel>Select Value</StyledTypographyLabel>
-            <RangePicker
-              onChange={handleSliderChange}
-              handleInputBlur={handleInputBlur}
-              handleInputChange={handleInputChange}
-              name="numericValue"
-              value={+values.numericValue || 0}
-              min={column.min}
-              max={column.max}
-              valueLabelDisplay="auto"
-            />
-          </Box>
-        );
-        return;
-      }
-
-      setColumnComponent(null);
+    if (!values.column) {
+      return setColumnComponent(null);
     }
-  }, [values.column, values.category, values.numericValue]);
+    let column = columns[values.column];
+
+    if (column?.type === ColumnType.string) {
+      column = column as Categorical;
+      setColumnComponent(
+        <Subcategory>
+          <MarkedSelect
+            label="Select category"
+            size="small"
+            disabled={!column.stats.values.length}
+            fullWidth
+            {...getFieldProps('category')}
+          >
+            {column.stats.values?.map((col: string, index: number) => (
+              <MenuItem key={index} value={col}>
+                {col}
+              </MenuItem>
+            ))}
+          </MarkedSelect>
+        </Subcategory>
+      );
+      return;
+    }
+
+    if (column?.type === ColumnType.number) {
+      column = column as Numeric;
+      setColumnComponent(
+        <Box mt="39px">
+          <StyledTypographyLabel>Select Value</StyledTypographyLabel>
+          <RangePicker
+            onChange={handleSliderChange}
+            handleInputBlur={handleInputBlur}
+            handleInputChange={handleInputChange}
+            name="numericValue"
+            value={+values.numericValue}
+            min={column.min}
+            max={column.max}
+            valueLabelDisplay="auto"
+          />
+        </Box>
+      );
+      return;
+    }
+  }, [values.column, values.category, values.numericValue, columns]);
 
   //   useEffect(() => {
   //     const column = columns[values.column];
-  //     if (column && column.type === ColumnType.string) {
-  //       setFieldValue('category', column.values[0]);
+  //     if (column && column?.type === ColumnType.string) {
+  //       setFieldValue('category', column.stats.values[0]);
   //     }
   //   }, [values.column]);
 
@@ -240,7 +236,7 @@ function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
     }
 
     if (column) {
-      if (column.type === ColumnType.number) {
+      if (column?.type === ColumnType.number) {
         if (values.time && values.column && values.numericValue) {
           timer.current = setTimeout(() => {
             updateGraph('greater_than', values.numericValue);
@@ -248,9 +244,9 @@ function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
         }
       }
 
-      if (column.type === ColumnType.string) {
+      if (column?.type === ColumnType.string) {
         if (values.time && values.column && values.category) {
-          updateGraph('in', values.category);
+          updateGraph('contains', values.category);
         }
       }
     }
@@ -266,6 +262,11 @@ function EditMonitor({ monitorId, onClose }: EditMonitorProps) {
         <Box>
           <StyledTypography variant="h4">Edit Monitor</StyledTypography>
           <StyledStackInputs spacing="60px">
+            <TextField variant="outlined" label="Monitor Name" {...getFieldProps('name')} size="small" />
+
+            <TextField variant="outlined" label={`Model: ${modelName}`} size="small" disabled={true} />
+            <TextField variant="outlined" label={`Check: ${monitor?.check.name}`} size="small" disabled={true} />
+
             <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
