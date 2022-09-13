@@ -62,7 +62,7 @@ class MonitorUpdateSchema(BaseModel):
     """Schema defines the parameters for creating new monitor."""
 
     name: t.Optional[str]
-    lookback: t.Optional[str]
+    lookback: t.Optional[int]
     description: t.Optional[str]
     data_filters: t.Optional[DataFilterList]
     dashboard_id: t.Optional[int]

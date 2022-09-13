@@ -87,7 +87,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
         monitorId: monitor.id,
         data: {
           name: values.name || monitor.name,
-          lookback: values.time + '',
+          lookback: values.time,
           description: '',
           data_filters: {
             filters: [
@@ -197,7 +197,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
       );
       return;
     }
-  }, [values.column, values.category, values.numericValue, columns]);
+  }, [values.column, values.category, values.numericValue]);
 
   //   useEffect(() => {
   //     const column = columns[values.column];

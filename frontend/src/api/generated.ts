@@ -291,7 +291,7 @@ export interface DataFilterList {
  */
 export interface MonitorUpdateSchema {
   name?: string;
-  lookback?: string;
+  lookback?: number;
   description?: string;
   data_filters?: DataFilterList;
   dashboard_id?: number;
