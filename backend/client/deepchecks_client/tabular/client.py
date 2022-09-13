@@ -83,7 +83,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         else:
             raise Exception(f'Unknown task type provided')
 
-        sample = DeepchecksEncoder().default(sample)
+        sample = DeepchecksEncoder.encode(sample)
         DeepchecksJsonValidator(self.schema).validate(sample)
         self._log_samples.append(sample)
 
@@ -127,7 +127,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         validator = DeepchecksJsonValidator(self.ref_schema)
         for (_, row) in data.iterrows():
             item = row.to_dict()
-            item = DeepchecksEncoder().default(item)
+            item = DeepchecksEncoder.encode(item)
             validator.validate(item)
 
         maybe_raise(
@@ -161,7 +161,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if label:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
-        update = DeepchecksEncoder().default(update)
+        update = DeepchecksEncoder.encode(update)
         DeepchecksJsonValidator(optional_columns_schema).validate(update)
 
         maybe_raise(

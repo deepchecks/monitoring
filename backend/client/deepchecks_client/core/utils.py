@@ -89,8 +89,10 @@ def maybe_raise(
     return response
 
 
-class DeepchecksEncoder(json.JSONEncoder):
-    def default(self, obj):
+class DeepchecksEncoder:
+
+    @classmethod
+    def encode(cls, obj):
         if isinstance(obj, np.generic):
             if np.isnan(obj):
                 return None
@@ -102,9 +104,9 @@ class DeepchecksEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         if isinstance(obj, dict):
-            return {k: self.default(v) for k, v in obj.items()}
+            return {k: cls.encode(v) for k, v in obj.items()}
         if isinstance(obj, list):
-            return tuple([self.default(v) for v in obj])
+            return tuple([cls.encode(v) for v in obj])
         return obj
 
 

@@ -24,11 +24,11 @@ from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerforman
 from deepchecks.vision.task_type import TaskType as VisTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import DeepchecksColumns
-from deepchecks_client.core.utils import DeepchecksJsonValidator, create_timestamp, maybe_raise
-from deepchecks_client.vision.utils import DeepchecksVisionEncoder, calc_image_bbox_props, create_static_properties
+from deepchecks_client.core.utils import create_timestamp, maybe_raise, DeepchecksJsonValidator
+from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_image_bbox_props, create_static_properties)
+from deepchecks_client.core import ColumnType, TaskType
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -106,7 +106,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if label is not None:
             sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
-        sample = DeepchecksVisionEncoder().default(sample)
+        sample = DeepchecksEncoder.encode(sample)
         DeepchecksJsonValidator(self.schema).validate(sample)
 
         self._log_samples.append(sample)
@@ -135,26 +135,25 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             indexes = list(vision_data.data_loader.batch_sampler)[i]
             labels = dict(zip(indexes, vision_data.batch_to_labels(batch)))
             for ind in indexes:
-                data[ind][DeepchecksColumns.SAMPLE_LABEL_COL.value] = labels[ind]
+                data[ind][DeepchecksColumns.SAMPLE_LABEL_COL.value] = DeepchecksEncoder.encode(labels[ind])
                 if predictions:
-                    data[ind][DeepchecksColumns.SAMPLE_PRED_COL.value] = predictions[ind]
+                    data[ind][DeepchecksColumns.SAMPLE_PRED_COL.value] = DeepchecksEncoder.encode(predictions[ind])
                 props = static_props[ind]
                 for prop_type in props.keys():
                     for prop_name in props[prop_type].keys():
-                        data[ind][prop_type + ' ' + prop_name] = props[prop_type][prop_name]
+                        data[ind][prop_type + ' ' + prop_name] = DeepchecksEncoder.encode(props[prop_type][prop_name])
 
         data = pd.DataFrame(data).T
         validator = DeepchecksJsonValidator(schema=self.ref_schema)
         for (_, row) in data.iterrows():
             item = row.to_dict()
-            item = DeepchecksVisionEncoder().default(item)
             validator.validate(instance=item)
 
         maybe_raise(
             self.session.post(
                 f'model-versions/{self.model_version_id}/reference',
                 files={'file': data.to_json(orient='table', index=False)}
-            ).raise_for_status(),
+            ),
             msg="Reference upload failure.\n{error}"
         )
 
@@ -197,7 +196,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                     for prop_name, prop_val in bbox_props.items():
                         update[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = prop_val[0]
 
-        update = DeepchecksVisionEncoder().default(update)
+        update = DeepchecksEncoder.encode(update)
         DeepchecksJsonValidator(schema=optional_columns_schema).validate(update)
 
         maybe_raise(

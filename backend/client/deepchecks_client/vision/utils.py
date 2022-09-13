@@ -16,16 +16,17 @@ from deepchecks.vision.task_type import TaskType
 from deepchecks.vision.utils.image_functions import crop_image
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
-from deepchecks_client.core.utils import DeepchecksEncoder
+from deepchecks_client.core.utils import DeepchecksEncoder as CoreDeepcheckEncoder
 
 
-class DeepchecksVisionEncoder(DeepchecksEncoder):
-    def default(self, obj):
-        obj = super().default(obj)
+class DeepchecksEncoder(CoreDeepcheckEncoder):
+
+    @classmethod
+    def encode(cls, obj):
         if isinstance(obj, torch.Tensor):
             tensor_values = obj.cpu().detach().numpy().tolist()
-            return tuple([self.default(v) for v in tensor_values])
-        return obj
+            return tuple([cls.encode(v) for v in tensor_values])
+        return super().encode(obj)
 
 
 def create_static_predictions(vision_data: VisionData, model, device):

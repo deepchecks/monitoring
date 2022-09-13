@@ -17,8 +17,8 @@ from urllib.parse import urljoin
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-from deepchecks_client.core.utils import DeepchecksEncoder, maybe_raise
-from jsonschema import validate
+
+from deepchecks_client.core.utils import maybe_raise
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")
@@ -136,38 +136,8 @@ class DeepchecksModelVersionClient:
         raise NotImplementedError
 
     def update_sample(self, sample_id: str, label=None, **values):
-        """Update sample. Possible to update only non_features and label.
-
-        Parameters
-        ----------
-        sample_id: str
-        label
-        values
-        """
-        # Create update schema, which contains only non-required columns and sample id
-        required_columns = set(self.schema["required"])
-        optional_columns_schema = {
-            "type": "object",
-            "properties": {k: v for k, v in self.schema["properties"].items()
-                           if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
-            "required": [DeepchecksColumns.SAMPLE_ID_COL.value]
-        }
-
-        update = {DeepchecksColumns.SAMPLE_ID_COL.value: sample_id, **values}
-
-        if label:
-            update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
-
-        update = DeepchecksEncoder().default(update)
-        validate(instance=update, schema=optional_columns_schema)
-
-        maybe_raise(
-            self.session.put(
-                f'model-versions/{self.model_version_id}/data',
-                json=[update]
-            ),
-            msg="Sample update failure.\n{error}"
-        )
+        """Update sample. Possible to update only non_features and label."""
+        raise NotImplementedError
 
 
 class DeepchecksModelClient:
