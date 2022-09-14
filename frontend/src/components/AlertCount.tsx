@@ -1,24 +1,24 @@
-import React, { FC, memo, useMemo } from 'react';
 import { alpha, Box, Typography, useTheme } from '@mui/material';
-
+import { AlertSeverity } from 'api/generated';
+import { GlobalStateContext } from 'Context';
+import React, { FC, memo, useContext, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ReactComponent as CriticalSeverityIcon } from '../assets/icon/severity/critical.svg';
+import { ReactComponent as HighSeverityIcon } from '../assets/icon/severity/high.svg';
 import { ReactComponent as LowSeverityIcon } from '../assets/icon/severity/low.svg';
 import { ReactComponent as MediumSeverityIcon } from '../assets/icon/severity/medium.svg';
-import { ReactComponent as HighSeverityIcon } from '../assets/icon/severity/high.svg';
-import { ReactComponent as CriticalSeverityIcon } from '../assets/icon/severity/critical.svg';
 
 export enum SEVERITY {
   LOW = 'low',
-  MEDIUM = 'medium',
+  MID = 'mid',
   HIGH = 'high',
   CRITICAL = 'critical'
 }
 
-export type Criticality = 'low' | 'mid' | 'high' | 'critical';
-
 export type AlertsCount = Record<SEVERITY, number>;
 
 interface AlertCountComponentProps {
-  severity: SEVERITY;
+  severity: AlertSeverity;
   count: number;
 }
 
@@ -27,15 +27,25 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
   count
 }: AlertCountComponentProps) => {
   const theme = useTheme();
+  const { changeAlertFilters } = useContext(GlobalStateContext);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const linkToAlerts = () => {
+    navigate({ pathname: '/alerts' }, { replace: location.pathname === '/alerts' });
+    changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, severity: [severity] }));
+  };
+
   const { color, Icon } = useMemo(() => {
-    const { LOW, MEDIUM, HIGH, CRITICAL } = SEVERITY;
+    const { LOW, MID, HIGH, CRITICAL } = SEVERITY;
 
     const severityMap = {
       [LOW]: {
         color: theme.palette.error.contrastText,
         Icon: LowSeverityIcon
       },
-      [MEDIUM]: {
+      [MID]: {
         color: theme.palette.error.light,
         Icon: MediumSeverityIcon
       },
@@ -73,6 +83,7 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
     >
       <Box
         className="severity-svg-wrapper"
+        onClick={linkToAlerts}
         sx={{
           height: 38,
           width: 38,

@@ -1,7 +1,9 @@
-import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { StyledAlert, StyledContainer, StyledCounter, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 import { ModelsInfoSchema } from 'api/generated';
+import { GlobalStateContext } from 'Context';
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { StyledAlert, StyledContainer, StyledCounter, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 import dayjs from 'dayjs';
 
 interface ModelItemProps {
@@ -9,8 +11,16 @@ interface ModelItemProps {
 }
 
 export function ModelItem({ model }: ModelItemProps) {
+  const navigate = useNavigate();
+  const { changeAlertFilters } = useContext(GlobalStateContext);
+
+  const linkToAlerts = () => {
+    changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [model.id] }));
+    navigate({ pathname: '/alerts' });
+  };
+
   return (
-    <StyledContainer>
+    <StyledContainer onClick={linkToAlerts}>
       <StyledModelInfo>
         <Box>
           <Typography variant="subtitle1">{model.name}</Typography>

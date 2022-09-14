@@ -1,21 +1,21 @@
 import { Box, List, styled } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 // import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
 // import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
-import { AlertsFilters } from '../components/AlertsFilters';
-import { AlertsHeader } from '../components/AlertsHeader';
+import { GlobalStateContext } from 'Context';
+import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import {
   AlertRuleInfoSchema,
-  GetAlertRulesApiV1AlertRulesGetParams,
   useGetAlertRulesApiV1AlertRulesGet,
   useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost
 } from '../api/generated';
-import { Loader } from '../components/Loader';
-import { AlertsRulesItem } from '../components/AlertsRulesItem';
-import { AlertsResolveDialog } from '../components/AlertsResolveDialog';
-import { AlertsSnackbar } from '../components/AlertsSnackbar';
 import { AlertsDrawer } from '../components/AlertsDrawer';
-import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
+import { AlertsFilters } from '../components/AlertsFilters';
+import { AlertsHeader } from '../components/AlertsHeader';
+import { AlertsResolveDialog } from '../components/AlertsResolveDialog';
+import { AlertsRulesItem } from '../components/AlertsRulesItem';
+import { AlertsSnackbar } from '../components/AlertsSnackbar';
+import { Loader } from '../components/Loader';
 
 const snackbarPosition = {
   vertical: 'bottom',
@@ -26,9 +26,9 @@ export const AlertsPage = () => {
   const [resolveAlertRule, setResolveAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [isNotification, setIsNotification] = useState<boolean>(false);
-  const [filters, setFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>({});
+  const { alertFilters } = useContext(GlobalStateContext);
 
-  const { data: alertRules, isLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet(filters);
+  const { data: alertRules, isLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
   const {
     mutateAsync: mutateAlertRuleResolve,
     isError: isAlertRuleResolveError,
@@ -52,7 +52,7 @@ export const AlertsPage = () => {
     <>
       <AlertsHeader />
       <StyledAlertContainer>
-        <AlertsFilters onChange={setFilters} />
+        <AlertsFilters />
         <StyledList>
           {isLoading ? (
             <Loader />

@@ -50,7 +50,6 @@ export const DashboardPage = () => {
                 data={chartData as any}
                 monitor={monitors[index]}
                 onOpen={handleOpenMonitorDrawer}
-                title={monitors[index]?.name}
                 models={models}
               />
             </Grid>

@@ -23,7 +23,6 @@ interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
   monitor: MonitorSchema;
   onOpen: (monitor?: MonitorSchema) => void;
-  title: string;
   models: GetModelsApiV1ModelsGetQueryResult;
 }
 

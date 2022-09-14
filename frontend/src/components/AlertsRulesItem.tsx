@@ -7,7 +7,6 @@ import React, { memo, useState } from 'react';
 import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
 import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
-import { Criticality } from './AlertCount';
 import { Loader } from './Loader';
 
 dayjs.extend(duration);
@@ -116,7 +115,7 @@ type StyledCriticalityProps = {
 const StyledCriticality = styled(Box, {
   shouldForwardProp: prop => prop !== 'criticality'
 })<StyledCriticalityProps>(({ criticality = 'low', theme }) => {
-  const getColor = (filed: Criticality) => {
+  const getColor = (filed: AlertSeverity): string => {
     if (filed === 'low') {
       return theme.palette.error.contrastText;
     }
@@ -132,6 +131,8 @@ const StyledCriticality = styled(Box, {
     if (filed === 'critical') {
       return theme.palette.error.main;
     }
+
+    return theme.palette.error.main;
   };
 
   return {

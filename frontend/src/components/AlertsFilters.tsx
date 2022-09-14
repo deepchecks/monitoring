@@ -1,19 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Button, MenuItem, SelectChangeEvent, Stack, TextField, Box, Divider } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { Box, Button, Divider, MenuItem, SelectChangeEvent, Stack, styled, TextField } from '@mui/material';
+import { AlertSeverity, GetAlertRulesApiV1AlertRulesGetParams, useGetModelsApiV1ModelsGet } from 'api/generated';
+import { GlobalStateContext } from 'Context';
+import React, { useContext, useEffect, useState } from 'react';
 import { Sort } from '../assets/icon/icon';
 import { DatePicker } from './DatePicker/DatePicker';
 import { SelectPrimary } from './SelectPrimary/SelectPrimary';
-import { styled } from '@mui/material';
-import {
-  GetAlertRulesApiV1AlertRulesGetParams,
-  GetAlertRulesApiV1AlertRulesGetSortbyItem,
-  AlertSeverity,
-  useGetModelsApiV1ModelsGet
-} from 'api/generated';
 
 export type AlertsFiltersProps = {
-  onChange: (params: GetAlertRulesApiV1AlertRulesGetParams) => void;
+  onChange: (alertFilters: GetAlertRulesApiV1AlertRulesGetParams) => void;
 };
 
 const severityList = [
@@ -24,25 +18,19 @@ const severityList = [
   { label: 'Low', value: 'low' }
 ];
 
-export const AlertsFilters = ({ onChange }: AlertsFiltersProps) => {
-  const location = useLocation();
-  const state = location.state as { modelId: number } | null;
-  const [startDate, setStartDate] = useState<Date | null>(new Date(Date.now() - 60 * 60 * 24 * 365 * 1000));
-  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now()));
-  const [sortedBy, setSortedBy] = useState<GetAlertRulesApiV1AlertRulesGetSortbyItem | null>(null);
-  const [params, setParams] = useState<GetAlertRulesApiV1AlertRulesGetParams>(() => {
-    const options: GetAlertRulesApiV1AlertRulesGetParams = {};
-    if (state) {
-      options.models = [state.modelId];
-    }
-    return {
-      start: startDate?.toISOString(),
-      end: endDate?.toISOString(),
-      ...options
-    };
-  });
+const oneYear = 60 * 60 * 24 * 365 * 1000;
 
-  const [model, setModel] = useState<number>(state ? state.modelId : -1);
+const initStartDate = new Date(Date.now() - oneYear);
+const initEndDate = new Date(Date.now());
+
+export const AlertsFilters = () => {
+  const { alertFilters, changeAlertFilters } = useContext(GlobalStateContext);
+  const [startDate, setStartDate] = useState<Date | null>(
+    alertFilters?.start ? new Date(alertFilters?.start) : initStartDate
+  );
+  const [endDate, setEndDate] = useState<Date | null>(alertFilters?.end ? new Date(alertFilters?.end) : initEndDate);
+
+  const [model, setModel] = useState<number>(-1);
   const [severity, setSeverity] = useState<AlertSeverity | 'All'>('All');
 
   const { data: models = [], isLoading: isModelsLoading } = useGetModelsApiV1ModelsGet();
@@ -50,32 +38,33 @@ export const AlertsFilters = ({ onChange }: AlertsFiltersProps) => {
   const handleModelChange = (event: SelectChangeEvent<number | unknown>) => {
     const currentModel = event.target.value as number;
     setModel(currentModel);
-    if (currentModel === -1 && params.models) {
-      setParams(prevParams => {
-        const currentParams = { ...prevParams };
+    if (currentModel === -1 && alertFilters.models) {
+      changeAlertFilters(prevAlertFilters => {
+        const currentParams = { ...prevAlertFilters };
         delete currentParams.models;
         return currentParams;
       });
       return;
     }
-    setParams(prevParams => ({ ...prevParams, models: [currentModel] }));
+    changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [currentModel] }));
   };
 
   const handleSeverityChange = (event: SelectChangeEvent<unknown>) => {
     const currentSeverity = event.target.value as AlertSeverity | 'All';
     setSeverity(currentSeverity);
-    if (currentSeverity === 'All' && params.severity) {
-      setParams(prevParams => {
-        const currentParams = { ...prevParams };
+
+    if (currentSeverity === 'All' && alertFilters.severity) {
+      changeAlertFilters(prevAlertFilters => {
+        const currentParams = { ...prevAlertFilters };
         delete currentParams.severity;
         return currentParams;
       });
       return;
     }
-    setParams(
-      prevParams =>
+    changeAlertFilters(
+      prevAlertFilters =>
         ({
-          ...prevParams,
+          ...prevAlertFilters,
           severity: [currentSeverity]
         } as GetAlertRulesApiV1AlertRulesGetParams)
     );
@@ -84,8 +73,8 @@ export const AlertsFilters = ({ onChange }: AlertsFiltersProps) => {
   const handleStartDateChange = (currentStartDate: Date | null) => {
     if (currentStartDate && startDate && currentStartDate < startDate) {
       setStartDate(currentStartDate);
-      setParams(prevParams => ({
-        ...prevParams,
+      changeAlertFilters(prevAlertFilters => ({
+        ...prevAlertFilters,
         start: currentStartDate.toISOString()
       }));
     }
@@ -94,44 +83,46 @@ export const AlertsFilters = ({ onChange }: AlertsFiltersProps) => {
   const handleEndDateChange = (currentEndDate: Date | null) => {
     if (currentEndDate && startDate && currentEndDate > startDate) {
       setEndDate(currentEndDate);
-      setParams(prevParams => ({
-        ...prevParams,
+      changeAlertFilters(prevAlertFilters => ({
+        ...prevAlertFilters,
         end: currentEndDate.toISOString()
       }));
     }
   };
 
   const onSort = () => {
-    let sort: GetAlertRulesApiV1AlertRulesGetSortbyItem | null = null;
-    setSortedBy(prevSortedBy => {
-      if (prevSortedBy) {
-        return sort;
+    changeAlertFilters(prevAlertFilters => {
+      const currentAlertFilters = { ...prevAlertFilters };
+
+      if (prevAlertFilters.sortby) {
+        delete currentAlertFilters.sortby;
+        return currentAlertFilters;
       }
-      sort = 'severity:asc';
-      return sort;
-    });
 
-    if (sort) {
-      setParams(
-        prevParams =>
-          ({
-            ...prevParams,
-            sortby: [sort]
-          } as GetAlertRulesApiV1AlertRulesGetParams)
-      );
-      return;
-    }
-
-    setParams(prevParams => {
-      const currentParams = { ...prevParams };
-      delete currentParams.sortby;
-      return currentParams;
+      return {
+        ...prevAlertFilters,
+        sortby: ['severity:asc']
+      } as GetAlertRulesApiV1AlertRulesGetParams;
     });
   };
 
   useEffect(() => {
-    onChange(params);
-  }, [model, severity, startDate, endDate, sortedBy]);
+    if (alertFilters.models) {
+      const [currentModel] = alertFilters.models;
+      if (currentModel !== model) {
+        setModel(currentModel);
+      }
+    }
+  }, [alertFilters.models]);
+
+  useEffect(() => {
+    if (alertFilters.severity) {
+      const [currentSeverity] = alertFilters.severity;
+      if (currentSeverity !== severity) {
+        setSeverity(currentSeverity);
+      }
+    }
+  }, [alertFilters.severity]);
 
   return (
     <StyledMainWrapper>
@@ -144,7 +135,7 @@ export const AlertsFilters = ({ onChange }: AlertsFiltersProps) => {
             label="Start Date"
             disableMaskedInput
             disabled={isModelsLoading}
-            renderInput={params => <TextField {...params} size="small" />}
+            renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
           />
           -
           <DatePicker
@@ -154,7 +145,7 @@ export const AlertsFilters = ({ onChange }: AlertsFiltersProps) => {
             label="End Date"
             disableMaskedInput
             disabled={isModelsLoading}
-            renderInput={params => <TextField {...params} size="small" />}
+            renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
           />
         </StyledDateWrapper>
         <StyledDivider orientation="vertical" flexItem />

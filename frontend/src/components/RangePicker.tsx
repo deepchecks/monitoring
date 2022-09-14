@@ -1,5 +1,5 @@
 import { Slider, SliderProps, Stack } from '@mui/material';
-import { memo } from 'react';
+import React, { memo } from 'react';
 
 import { Box, styled, TextField } from '@mui/material';
 

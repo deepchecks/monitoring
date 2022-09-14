@@ -1,4 +1,4 @@
-import React, { FormControl, SelectProps } from '@mui/material';
+import { FormControl, SelectProps } from '@mui/material';
 import { ReactNode } from 'react';
 
 import { InputLabel, Select, styled } from '@mui/material';

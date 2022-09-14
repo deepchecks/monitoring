@@ -1,21 +1,34 @@
-import React, { createContext, useContext, FC } from 'react';
+import { GetAlertRulesApiV1AlertRulesGetParams } from 'api/generated';
+import React, { createContext, Dispatch, FC, SetStateAction, useContext, useState } from 'react';
 
-interface ContextInterface {
+interface Context {
   dashboard_id: number;
   models?: [];
   monitors?: [];
   currMonitor?: null;
+  alertFilters: GetAlertRulesApiV1AlertRulesGetParams;
+  changeAlertFilters: Dispatch<SetStateAction<GetAlertRulesApiV1AlertRulesGetParams>>;
+  isLoggedIn: boolean;
 }
 
-const initState = {
-  dashboard_id: 1
+const initialValue: Context = {
+  alertFilters: {},
+  changeAlertFilters: () => 1,
+  dashboard_id: 1,
+  isLoggedIn: false
 };
 
-const GlobalStateContext = createContext<ContextInterface>(initState as ContextInterface);
+export const GlobalStateContext = createContext<Context>(initialValue);
 
-export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => (
-  <GlobalStateContext.Provider value={{ dashboard_id: 1 }}>{children}</GlobalStateContext.Provider>
-);
+export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => {
+  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>({});
+
+  return (
+    <GlobalStateContext.Provider value={{ ...initialValue, alertFilters, changeAlertFilters: setAlertFilters }}>
+      {children}
+    </GlobalStateContext.Provider>
+  );
+};
 
 const useGlobalState = () => useContext(GlobalStateContext);
 export default useGlobalState;
