@@ -50,7 +50,7 @@ export const componentOptions: Components<Theme> = {
       }),
       outlined: ({ theme }) => ({
         background: alpha(theme.palette.common.white, 0.7),
-        color: theme.palette.primary.dark,
+        color: theme.palette.primary.main,
         ":hover": {
           background: theme.palette.primary.light
         },

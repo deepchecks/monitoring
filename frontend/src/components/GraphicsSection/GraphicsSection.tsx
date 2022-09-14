@@ -23,10 +23,11 @@ interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
   monitor: MonitorSchema;
   onOpen: (monitor?: MonitorSchema) => void;
+  onDelete: (monitor: MonitorSchema) => void;
   models: GetModelsApiV1ModelsGetQueryResult;
 }
 
-function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSectionProps) {
+function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: GraphicsSectionProps) {
   const [hover, setHover] = useState<boolean>(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<null | HTMLElement>(null);
   const [openSubmenu, setOpenSubmenu] = useState<boolean>(false);
@@ -74,6 +75,10 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
 
   const handleOpenEditMonitor = () => {
     onOpen(monitor);
+    setAnchorElRootMenu(null);
+  };
+  const handleOpenDeleteMonitor = () => {
+    onDelete(monitor);
     setAnchorElRootMenu(null);
   };
 
@@ -133,6 +138,9 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models }: GraphicsSec
       >
         <StyledMenuItem onClick={handleOpenEditMonitor}>
           <Typography variant="body2">Edit</Typography>
+        </StyledMenuItem>
+        <StyledMenuItem onClick={handleOpenDeleteMonitor}>
+          <Typography variant="body2">Delete</Typography>
         </StyledMenuItem>
         {/* <StyledMenuItem onClick={handleOpenSubmenu}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" width={1}>
