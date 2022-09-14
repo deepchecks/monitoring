@@ -1,11 +1,7 @@
 import { Box, Select, styled, Typography } from '@mui/material';
 
 export const StyledFlexContent = styled(Box)(({ theme }) => ({
-  width: '100%',
-  // minWidth: '428px',
-  minHeight: '446px',
   boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
-  paddingBottom: '30px',
   borderRadius: '10px',
   borderLeft: `8px solid ${theme.palette.primary.light}`
 }));

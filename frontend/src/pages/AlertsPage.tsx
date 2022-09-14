@@ -98,11 +98,7 @@ export const AlertsPage = () => {
 };
 
 const StyledAlertContainer = styled(Box)(({ theme }) => ({
-  padding: '40px 40px 0',
-  width: '100%',
-  [theme.breakpoints.down(1381)]: {
-    marginLeft: '83px'
-  }
+  padding: '40px 40px 0'
 }));
 
 const StyledList = styled(List)({

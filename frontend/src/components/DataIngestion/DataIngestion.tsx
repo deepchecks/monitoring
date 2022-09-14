@@ -25,27 +25,21 @@ export const DataIngestion = (): JSX.Element => {
 
   return (
     <StyledFlexContent>
-      <Box>
-        <StyledFlexWrapper>
-          <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
-        </StyledFlexWrapper>
-        <StyledDiagramWrapper>
-          <DiagramLine data={graphData} />
-          <StyledFooter>
-            <StyledSelect
-              value={currentTime.value.toString()}
-              onChange={ev => handleTime(ev.target.value)}
-              size="small"
-            >
-              {timeOptions.map(({ label, value }) => (
-                <MenuItem value={value.toString()} key={label}>
-                  {label}
-                </MenuItem>
-              ))}
-            </StyledSelect>
-          </StyledFooter>
-        </StyledDiagramWrapper>
-      </Box>
+      <StyledFlexWrapper>
+        <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
+      </StyledFlexWrapper>
+      <StyledDiagramWrapper>
+        <DiagramLine data={graphData} height={408} />
+        <StyledFooter>
+          <StyledSelect value={currentTime.value.toString()} onChange={ev => handleTime(ev.target.value)} size="small">
+            {timeOptions.map(({ label, value }) => (
+              <MenuItem value={value.toString()} key={label}>
+                {label}
+              </MenuItem>
+            ))}
+          </StyledSelect>
+        </StyledFooter>
+      </StyledDiagramWrapper>
     </StyledFlexContent>
   );
 };

@@ -7,7 +7,7 @@ import { Loader } from '../components/Loader';
 import { ID } from '../helpers/types/';
 
 import { MonitorSchema, useGetModelsApiV1ModelsGet } from '../api/generated';
-import { Grid } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 import { DataIngestion } from 'components/DataIngestion/DataIngestion';
 import useMonitorsData from '../hooks/useMonitorsData';
 
@@ -35,17 +35,17 @@ export const DashboardPage = () => {
     <>
       <DashboardHeader onOpen={handleOpenMonitorDrawer} />
       <Grid container spacing={4}>
-        <Grid item xs={4}>
+        <Grid item lg={5} md={4}>
           <ModelList models={models} />
         </Grid>
-        <Grid item xs={8}>
+        <Grid item lg={7} md={8}>
           <DataIngestion />
         </Grid>
         {!chartDataList.length ? (
-          <Loader />
+          <Loader sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
         ) : (
           chartDataList.map((chartData, index) => (
-            <Grid item xs={4} key={index}>
+            <Grid item md={6} lg={6} xl={4} key={index}>
               <GraphicsSection
                 data={chartData as any}
                 monitor={monitors[index]}

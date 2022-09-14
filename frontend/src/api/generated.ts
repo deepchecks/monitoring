@@ -139,18 +139,7 @@ export interface OrganizationSchema {
 /**
  * Operators for numeric and categorical filters.
  */
-export type OperatorsEnum = typeof OperatorsEnum[keyof typeof OperatorsEnum];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const OperatorsEnum = {
-  greater_than_equals: 'greater_than_equals',
-  greater_than: 'greater_than',
-  less_than_equals: 'less_than_equals',
-  less_than: 'less_than',
-  contains: 'contains',
-  equals: 'equals',
-  not_equals: 'not_equals'
-} as const;
+export type OperatorsEnum = unknown;
 
 /**
  * Schema defines a response containing only id and name.
@@ -391,35 +380,13 @@ export interface CompleteDetailsSchema {
 /**
  * Enum containing possible types of data.
  */
-export type ColumnType = typeof ColumnType[keyof typeof ColumnType];
+export type ColumnType = unknown;
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ColumnType = {
-  numeric: 'numeric',
-  integer: 'integer',
-  categorical: 'categorical',
-  boolean: 'boolean',
-  text: 'text',
-  array_float: 'array_float',
-  array_float_2d: 'array_float_2d',
-  datetime: 'datetime'
-} as const;
+export type ColumnMetadataStats = { [key: string]: any };
 
-/**
- * A typed object represents a numeric column statistic
- */
-export interface ColumnStatistics {
-  max?: number;
-  min?: number;
-  values?: string[];
-}
-
-/**
- * TypedDict containing relavant column metadata.
- */
 export interface ColumnMetadata {
   type: ColumnType;
-  stats: ColumnStatistics;
+  stats: ColumnMetadataStats;
 }
 
 export type CheckResultSchemaOutput = { [key: string]: any };

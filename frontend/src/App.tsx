@@ -23,8 +23,6 @@ const Layout = () => {
       <main>
         <Box
           sx={theme => ({
-            margin: '0 auto',
-            background: BACKGROUND_COLOR_MAX_WIDTH,
             [theme.breakpoints.up(1920)]: {
               borderRight: '1px solid rgba(209, 216, 220, 0.5)',
               borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
@@ -40,8 +38,10 @@ const Layout = () => {
             <Sidebar />
             <Box
               sx={{
-                width: '100%',
-                padding: '0 35px'
+                background: BACKGROUND_COLOR_MAX_WIDTH,
+                padding: '0 35px',
+                minWidth: '1200px',
+                width: '100%'
               }}
             >
               <Outlet />

@@ -26,6 +26,7 @@ export const Sidebar = () => {
       component="nav"
       position="sticky"
       sx={{
+        left: 0,
         alignItems: 'center',
         justifyContent: 'space-between',
         background: '#17003E',

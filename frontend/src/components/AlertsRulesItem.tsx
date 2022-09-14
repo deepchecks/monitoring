@@ -99,6 +99,7 @@ const StyledMainWrapper = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   borderRadius: '10px',
   boxShadow: '0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
+  minWidth: 'fit-content',
   height: 100,
   position: 'relative',
   ':hover': {

@@ -41,11 +41,8 @@ export function ModelList({ models }: ModelListProps) {
   return (
     <Box
       sx={{
-        width: '100%',
-        height: '520px',
         boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
         borderRadius: '10px',
-        marginBottom: '40px',
         borderLeft: '8px solid rgba(239, 76, 54, 0.5)'
       }}
     >

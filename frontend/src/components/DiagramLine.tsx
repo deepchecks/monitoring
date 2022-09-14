@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { alpha, Box, useTheme } from '@mui/material';
 import { Chart, ChartData, registerables, TimeUnit, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
 import { _DeepPartialObject } from 'chart.js/types/utils';
@@ -14,6 +14,7 @@ Chart.register(...registerables, zoomPlugin);
 
 export interface DiagramLineProps {
   data: ChartData<'line', GraphData>;
+  height?: number;
   threshold?: number;
   minTimeUnit?: TimeUnit;
   isLoading?: boolean;
@@ -32,6 +33,7 @@ const defaultTooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', Toolt
 
 function DiagramLine({
   data,
+  height,
   threshold = 0,
   minTimeUnit = 'day',
   isLoading,
@@ -77,7 +79,8 @@ function DiagramLine({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        height
       }}
     >
       {isLoading ? (
@@ -87,7 +90,11 @@ function DiagramLine({
           data={getNewData()}
           ref={chartRef}
           options={{
+            maintainAspectRatio: false,
             responsive: true,
+            onResize: chart => {
+              chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
+            },
             layout: {
               padding: {
                 right: threshold ? 15 : 0
