@@ -37,6 +37,7 @@ class AlertRuleCreationSchema(BaseModel):
     repeat_every: int = Field(ge=0)
     alert_severity: AlertSeverity = AlertSeverity.MID
     name: t.Optional[str] = None
+    is_active: bool = True
 
 
 class AlertRuleSchema(BaseModel):
@@ -48,6 +49,7 @@ class AlertRuleSchema(BaseModel):
     repeat_every: int
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
+    is_active: bool
 
     class Config:
         """Config for Alert schema."""
@@ -70,6 +72,7 @@ class AlertRuleUpdateSchema(BaseModel):
     repeat_every: t.Optional[int]
     alert_severity: t.Optional[AlertSeverity]
     condition: t.Optional[Condition]
+    is_active: t.Optional[bool]
 
 
 @router.post(
@@ -139,6 +142,7 @@ async def get_alert_rules(
     end: t.Optional[datetime] = Query(default=None),
     models: t.List[int] = Query(default=[]),
     severity: t.List[AlertSeverity] = Query(default=[]),
+    is_active: t.Optional[bool] = Query(default=None),
     sortby: t.List[t.Literal[
         "severity:asc",
         "severity:desc",
@@ -151,6 +155,11 @@ async def get_alert_rules(
 
     Parameters
     ----------
+    start
+    end
+    models
+    severity
+    sortby
     monitor_id : int
         ID of a monitor to filter alert rules by.
     session : AsyncSession, optional
@@ -191,6 +200,7 @@ async def get_alert_rules(
             AlertRule.alert_severity,
             AlertRule.repeat_every,
             AlertRule.monitor_id,
+            AlertRule.is_active,
             Check.model_id,
             alerts_info.c.alerts_count,
             alerts_info.c.max_end_time,
@@ -210,6 +220,8 @@ async def get_alert_rules(
         q = q.where(Check.model_id.in_(models))
     if severity:
         q = q.where(AlertRule.alert_severity.in_(severity))
+    if is_active is not None:
+        q = q.where(AlertRule.is_active.is_(is_active))
 
     # TODO:
     # refactor, need a better way of describing and applying sorting parameters
@@ -250,7 +262,10 @@ async def update_alert(
     session: AsyncSession = AsyncSessionDep
 ):
     """Update alert by id."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
+    alert_rule: AlertRule = await fetch_or_404(session, AlertRule, id=alert_rule_id)
+    # If toggling from inactive to active, then updating the last_run value
+    if body.is_active is True and alert_rule.is_active is False:
+        alert_rule.forward_last_run_to_closest_window()
     await AlertRule.update(session, alert_rule_id, body.dict(exclude_none=True))
     return Response(status_code=status.HTTP_200_OK)
 

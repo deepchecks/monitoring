@@ -136,7 +136,7 @@ EnqueueTasks = sa.text(dedent("""
                 ARRAY_POSITION(ENUM_RANGE(alert_severity), alert_severity) AS severity,
                 GENERATE_SERIES(info.last_scheduling, NOW(), info.frequency) AS timestamp
             FROM
-                alert_rules,
+                alert_rules as ar,
                 LATERAL (
                     SELECT
                         (repeat_every || ' seconds')::INTERVAL AS frequency,
@@ -145,7 +145,7 @@ EnqueueTasks = sa.text(dedent("""
                             ELSE last_run
                         END AS last_scheduling
                 ) as info(frequency, last_scheduling)
-            WHERE (info.last_scheduling + info.frequency) <= NOW()
+            WHERE (info.last_scheduling + info.frequency) <= NOW() AND ar.is_active = true
         ),
         latest_schedule AS (
             SELECT

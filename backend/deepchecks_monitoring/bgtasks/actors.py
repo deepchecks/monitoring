@@ -62,6 +62,9 @@ async def execute_alert_rule(
 
     if alert_rule is None:
         raise ValueError(f"Did not find alert rule with id {alert_rule.id}")
+    if not alert_rule.is_active:
+        logger.info("AlertRule(id:%s) is not active", alert_rule.id)
+        return
 
     monitor = alert_rule.monitor
     check = monitor.check

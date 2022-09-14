@@ -99,13 +99,16 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
                                                     "params": {"reduce": "mean"}},
                                          "id": 1, "model_id": 1, "name": "check"},
                                "description": "", "additional_kwargs": None,
-                               "alert_rules": [{
-                                   "alert_severity": "low",
-                                   "condition": {"operator": "greater_than", "value": 100.0},
-                                   "id": 1,
-                                   "monitor_id": 2,
-                                   "name": "alerty",
-                                   "repeat_every": 86400}
+                               "alert_rules": [
+                                   {
+                                       "alert_severity": "low",
+                                       "condition": {"operator": "greater_than", "value": 100.0},
+                                       "id": 1,
+                                       "monitor_id": 2,
+                                       "name": "alerty",
+                                       "repeat_every": 86400,
+                                       "is_active": True
+                                    }
                                ]}
 
 

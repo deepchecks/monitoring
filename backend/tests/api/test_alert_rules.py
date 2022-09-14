@@ -11,7 +11,7 @@ import pytest
 import randomname
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.models.alert_rule import AlertSeverity
+from deepchecks_monitoring.models.alert_rule import AlertSeverity, AlertRule
 from tests.api.test_alerts import add_alert
 from tests.conftest import add_alert_rule, add_monitor
 
@@ -72,7 +72,8 @@ async def test_get_alert_rule(classification_model_check_id, client: TestClient)
         "monitor_id": 1,
         "repeat_every": 86400,
         "condition": {"operator": "greater_than", "value": 100.0},
-        "alert_severity": "low"
+        "alert_severity": "low",
+        "is_active": True
     }
 
 
@@ -179,7 +180,8 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
             "alert_severity": "mid",
             "model_id": 1,
             "alerts_count": 2,
-            "max_end_time": "1970-01-19T12:26:40+00:00"
+            "max_end_time": "1970-01-19T12:26:40+00:00",
+            "is_active": True
         },
         {
             "id": 1,
@@ -190,7 +192,8 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
             "alert_severity": "low",
             "model_id": 1,
             "alerts_count": 1,
-            "max_end_time": "1970-01-19T12:26:40+00:00"
+            "max_end_time": "1970-01-19T12:26:40+00:00",
+            "is_active": True
         }
     ]
 
@@ -231,3 +234,21 @@ async def test_alert_rule_name_uniqueness_violation(classification_model_check_i
     add_alert_rule(monitor_id, client, name="Test Rule")
     add_alert_rule(monitor_id, client, expected_status_code=400, name="Test Rule")
 
+
+@pytest.mark.asyncio
+async def test_reactivate_alert_rule(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(monitor_id, client, name=randomname.get_name(), is_active=False)
+    alert_rule = (await AlertRule.filter_by(async_session, id=alert_rule_id)).scalar()
+    assert alert_rule.last_run is None
+
+    request = {
+        "is_active": True
+    }
+    # Act
+    client.put(f"/api/v1/alert-rules/{alert_rule_id}", json=request)
+    # Assert
+    await async_session.refresh(alert_rule)
+    assert alert_rule.last_run is not None
+    assert alert_rule.last_run == alert_rule.scheduling_start

@@ -144,3 +144,37 @@ async def test_alert_scheduling(
     for alert in alerts:
         assert alert.failed_values == {"v1": ["accuracy"]}, alert
         assert alert.alert_rule_id == 1
+
+
+@pytest.mark.asyncio
+async def test_alert_executor_on_unactive_rules(
+    async_session: AsyncSession,
+    client: TestClient,
+    classification_model_id: int,
+):
+    check_id = t.cast(int, add_check(
+        classification_model_id,
+        client=client
+    ))
+
+    monitor_id = add_monitor(
+        check_id,
+        client,
+        lookback=TimeUnit.DAY * 3,
+        additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
+        data_filters={
+            "filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]
+        }
+    )
+    rule_id = t.cast(int, add_alert_rule(
+        monitor_id,
+        client,
+        repeat_every=TimeUnit.DAY * 2,
+        condition={"operator": "less_than", "value": 0.7},
+        is_active=False
+    ))
+
+    now = pdl.now()
+
+    result = await execute_alert_rule(alert_rule_id=rule_id, timestamp=str(now), session=async_session)
+    assert result is None

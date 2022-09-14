@@ -11,6 +11,7 @@
 import enum
 import typing as t
 
+import pendulum as pdl
 import sqlalchemy as sa
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +35,7 @@ class Condition(BaseModel):
     value: float
 
     def __str__(self) -> str:
-        """Return condition string representatio."""
+        """Return condition string representation."""
         if self.operator == OperatorsEnum.EQ:
             op = "=="
         elif self.operator == OperatorsEnum.NOT_EQ:
@@ -77,6 +78,7 @@ class AlertRule(Base):
     condition = sa.Column(PydanticType(pydantic_model=Condition))
     repeat_every = sa.Column(sa.Integer, nullable=False)
     alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
+    is_active = sa.Column(sa.Boolean, default=True)
 
     # TODO: rename to latest_schedule
     last_run = sa.Column(sa.DateTime(timezone=True), nullable=True)
@@ -119,6 +121,13 @@ class AlertRule(Base):
 
         results = (await session.execute(q)).all()
         return {r.alert_rule_id: r.alerts_count for r in results}
+
+    def forward_last_run_to_closest_window(self):
+        """Update last_run to the closest window before current time."""
+        start = pdl.instance(self.scheduling_start)
+        duration_seconds = (pdl.now() - start).in_seconds()
+        seconds_to_add = duration_seconds - duration_seconds % self.repeat_every
+        self.last_run = start.add(seconds=seconds_to_add)
 
 
 UnresolvedAlertsCount = (
