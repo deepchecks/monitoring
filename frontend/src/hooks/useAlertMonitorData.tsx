@@ -50,7 +50,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
       }));
     })
     .flat(2),
-  labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD'))
+  labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD YYYY'))
 });
 
 const useMonitorsData = (alertRule: AlertRuleInfoSchema | null) => {

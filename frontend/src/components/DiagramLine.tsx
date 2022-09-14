@@ -191,7 +191,7 @@ function DiagramLine({
               },
               y: {
                 min: range.min,
-                max: range.max + (range.max - range.min) * 0.3
+                max: Math.max(range.max + (range.max - range.min) * 0.3, 1)
               }
             }
           }}

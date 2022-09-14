@@ -1,6 +1,11 @@
 import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import qs from 'qs';
 
 export const AXIOS_INSTANCE = Axios.create({ baseURL: process.env.REACT_APP_BASE_API, withCredentials: true });
+
+
+AXIOS_INSTANCE.defaults.paramsSerializer = params =>  qs.stringify(params, {arrayFormat: 'repeat'});
+
 
 // Adding an axios interceptor that will handle unauthorized users & users with incomplete details:
 AXIOS_INSTANCE.interceptors.response.use(
