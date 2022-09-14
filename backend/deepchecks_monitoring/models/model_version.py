@@ -15,11 +15,11 @@ from itertools import chain
 
 import pandas as pd
 import pendulum as pdl
+from pydantic.main import BaseModel
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
-from typing_extensions import TypedDict
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.column_type import ColumnType, column_types_to_table_columns
@@ -33,11 +33,19 @@ __all__ = ["ModelVersion", "ColumnMetadata", "update_statistics_from_sample"]
 CATEGORICAL_STATISTICS_VALUES_LIMIT = 200
 
 
-class ColumnMetadata(TypedDict):
+class ColumnStatistics(BaseModel):
+    """A typed object represents a numeric column statistic."""
+
+    max: t.Optional[float]
+    min: t.Optional[float]
+    values: t.Optional[t.List[str]]
+
+
+class ColumnMetadata(BaseModel):
     """TypedDict containing relavant column metadata."""
 
     type: ColumnType
-    stats: dict
+    stats: ColumnStatistics
 
 
 class ModelVersion(Base):

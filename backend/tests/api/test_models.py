@@ -37,9 +37,9 @@ async def test_get_columns_model(classification_model_id, classification_model_v
     assert classification_model_version_id == 1
     assert response.status_code == 200
     diff = DeepDiff(response.json(), {
-        "a": {"type": "numeric", "stats": {"max": None, "min": None}},
-        "b": {"type": "categorical", "stats": {"values": []}},
-        "c": {"type": "numeric", "stats": {"max": None, "min": None}}
+        "a": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}},
+        "b": {"type": "categorical", "stats": {"max": None, "min": None, "values": []}},
+        "c": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}}
     },
         ignore_order=True)
     assert not diff

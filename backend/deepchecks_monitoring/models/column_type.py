@@ -26,7 +26,7 @@ SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
 SAMPLE_PRED_COL = "_dc_prediction"
 
 
-class ColumnType(enum.Enum):
+class ColumnType(str, enum.Enum):
     """Enum containing possible types of data."""
 
     NUMERIC = "numeric"

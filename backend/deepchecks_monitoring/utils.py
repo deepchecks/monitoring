@@ -42,7 +42,7 @@ __all__ = [
 ]
 
 
-class OperatorsEnum(enum.Enum):
+class OperatorsEnum(str, enum.Enum):
     """Operators for numeric and categorical filters."""
 
     GE = "greater_than_equals"
@@ -54,7 +54,7 @@ class OperatorsEnum(enum.Enum):
     NOT_EQ = "not_equals"
 
 
-class CheckParameterTypeEnum(enum.Enum):
+class CheckParameterTypeEnum(str, enum.Enum):
     """Supported customizable parameter types in checks."""
 
     FEATURE = "feature"
