@@ -9,7 +9,9 @@
 # ----------------------------------------------------------------------------
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import inspect
 
+from deepchecks_monitoring.models import ModelVersion
 from tests.conftest import add_classification_data, send_reference_request
 
 
@@ -108,3 +110,24 @@ async def test_count_tables(client: TestClient, classification_model_version_id:
     # Assert
     assert response.status_code == 200
     assert response.json() == {"monitor_count": 5, "reference_count": 100}
+
+
+@pytest.mark.asyncio
+async def test_remove_version(client: TestClient, classification_model_version_id: int, async_session):
+    # Arrange
+    model_version = (await ModelVersion.filter_by(async_session, id=classification_model_version_id)).scalar()
+    mon_table_name = model_version.get_monitor_table_name()
+    ref_table_name = model_version.get_reference_table_name()
+    # Act
+    response = client.delete(f"/api/v1/model-versions/{classification_model_version_id}")
+    # Assert
+    assert response.status_code == 200
+
+    def get_table_names(conn):
+        inspector = inspect(conn)
+        return inspector.get_table_names()
+
+    tables = await (await async_session.connection()).run_sync(get_table_names)
+
+    assert mon_table_name not in tables
+    assert ref_table_name not in tables

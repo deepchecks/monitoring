@@ -270,3 +270,14 @@ async def get_count_samples(
     ref_count = (await session.execute(text(count_sql.format(model_version.get_reference_table_name())))).scalar()
 
     return {'monitor_count': mon_count, 'reference_count': ref_count}
+
+
+@router.delete('/model-versions/{model_version_id}', tags=[Tags.MODELS])
+async def delete_model_version(
+    model_version_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Delete model version by id."""
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    await session.delete(model_version)
+    return fastapi.Response()

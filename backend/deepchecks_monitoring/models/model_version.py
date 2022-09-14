@@ -15,8 +15,10 @@ from itertools import chain
 
 import pandas as pd
 import pendulum as pdl
+import sqlalchemy as sa
 from pydantic.main import BaseModel
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, func, select
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, event, func,
+                        select)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
@@ -202,3 +204,35 @@ def unify_statistics(original_statistics: dict, added_statistics: dict):
                 values = original_statistics[col]["values"]
             unified_dict[col]["values"] = values
     return unified_dict
+
+
+# ~~~~~ Automatic triggers to delete the data tables when a model version is deleted ~~~~~~
+
+PGDataTableDropFunc = sa.DDL("""
+CREATE OR REPLACE FUNCTION drop_model_version_tables()
+RETURNS TRIGGER AS $$
+BEGIN
+    EXECUTE 'DROP TABLE IF EXISTS model_' || OLD.model_id || '_monitor_data_' || OLD.id;
+    EXECUTE 'DROP TABLE IF EXISTS model_' || OLD.model_id || '_ref_data_' || OLD.id;
+    RETURN null;
+END; $$ LANGUAGE PLPGSQL
+""")
+
+
+PGDataTableDropTrigger = sa.DDL("""
+CREATE OR REPLACE TRIGGER trigger_model_version_delete AFTER DELETE ON model_versions
+FOR EACH ROW EXECUTE PROCEDURE drop_model_version_tables();
+""")
+
+
+event.listen(
+    Base.metadata,
+    "after_create",
+    PGDataTableDropFunc.execute_if(dialect="postgresql")
+)
+
+event.listen(
+    Base.metadata,
+    "after_create",
+    PGDataTableDropTrigger.execute_if(dialect="postgresql")
+)
