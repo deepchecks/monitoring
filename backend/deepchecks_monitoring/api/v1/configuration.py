@@ -32,9 +32,9 @@ class AlertRuleConfigSchema(BaseModel):
     check_name: str
     repeat_every: int
     alert_severity: t.Optional[AlertSeverity]
-    total_alerts: int
-    non_resolved_alerts: int
-    recent_alert: pdl.DateTime
+    total_alerts: t.Optional[int] = 0
+    non_resolved_alerts: t.Optional[int] = 0
+    recent_alert: t.Optional[pdl.DateTime]
 
     class Config:
         """Config for Alert schema."""
@@ -112,8 +112,8 @@ async def get_all_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
-        .join(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
-        .join(total_count, total_count.c.alert_rule_id == AlertRule.id)
+        .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
+        .outerjoin(total_count, total_count.c.alert_rule_id == AlertRule.id)
     )
 
     if models:
