@@ -5,25 +5,18 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Sort } from '../assets/icon/icon';
 import { DatePicker } from './DatePicker/DatePicker';
 import { SelectPrimary } from './SelectPrimary/SelectPrimary';
+import { SeverityAll, severityAll, SelectSeverity } from './SelectSeverity';
 
 export type AlertsFiltersProps = {
-  onChange: (alertFilters: GetAlertRulesApiV1AlertRulesGetParams) => void;
+  isFilterByTimeLine?: boolean;
 };
-
-const severityList = [
-  { label: 'All', value: 'All' },
-  { label: 'Critical', value: 'critical' },
-  { label: 'High', value: 'high' },
-  { label: 'Mid', value: 'mid' },
-  { label: 'Low', value: 'low' }
-];
 
 const oneYear = 60 * 60 * 24 * 365 * 1000;
 
 const initStartDate = new Date(Date.now() - oneYear);
 const initEndDate = new Date(Date.now());
 
-export const AlertsFilters = () => {
+export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
   const { alertFilters, changeAlertFilters } = useContext(GlobalStateContext);
   const [startDate, setStartDate] = useState<Date | null>(
     alertFilters?.start ? new Date(alertFilters?.start) : initStartDate
@@ -31,7 +24,7 @@ export const AlertsFilters = () => {
   const [endDate, setEndDate] = useState<Date | null>(alertFilters?.end ? new Date(alertFilters?.end) : initEndDate);
 
   const [model, setModel] = useState<number>(-1);
-  const [severity, setSeverity] = useState<AlertSeverity | 'All'>('All');
+  const [severity, setSeverity] = useState<AlertSeverity | SeverityAll>(severityAll);
 
   const { data: models = [], isLoading: isModelsLoading } = useGetModelsApiV1ModelsGet();
 
@@ -50,10 +43,10 @@ export const AlertsFilters = () => {
   };
 
   const handleSeverityChange = (event: SelectChangeEvent<unknown>) => {
-    const currentSeverity = event.target.value as AlertSeverity | 'All';
+    const currentSeverity = event.target.value as AlertSeverity | SeverityAll;
     setSeverity(currentSeverity);
 
-    if (currentSeverity === 'All' && alertFilters.severity) {
+    if (currentSeverity === severityAll && alertFilters.severity) {
       changeAlertFilters(prevAlertFilters => {
         const currentParams = { ...prevAlertFilters };
         delete currentParams.severity;
@@ -124,36 +117,48 @@ export const AlertsFilters = () => {
     }
   }, [alertFilters.severity]);
 
+  useEffect(() => {
+    if (isFilterByTimeLine) return;
+    changeAlertFilters(prevAlertFilters => {
+      const { start, end, ...newFilters } = prevAlertFilters;
+      return newFilters;
+    });
+  }, [isFilterByTimeLine]);
+
   return (
     <StyledMainWrapper>
       <Stack direction="row">
-        <StyledDateWrapper>
-          <DatePicker
-            inputFormat="DD MMM YYYY"
-            onChange={handleStartDateChange}
-            value={startDate}
-            label="Start Date"
-            disableMaskedInput
-            disabled={isModelsLoading}
-            renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
-          />
-          -
-          <DatePicker
-            inputFormat="DD MMM YYYY"
-            onChange={handleEndDateChange}
-            value={endDate}
-            label="End Date"
-            disableMaskedInput
-            disabled={isModelsLoading}
-            renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
-          />
-        </StyledDateWrapper>
-        <StyledDivider orientation="vertical" flexItem />
+        {isFilterByTimeLine && (
+          <>
+            <StyledDateWrapper>
+              <DatePicker
+                inputFormat="DD MMM YYYY"
+                onChange={handleStartDateChange}
+                value={startDate}
+                label="Start Date"
+                disableMaskedInput
+                disabled={isModelsLoading}
+                renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
+              />
+              -
+              <DatePicker
+                inputFormat="DD MMM YYYY"
+                onChange={handleEndDateChange}
+                value={endDate}
+                label="End Date"
+                disableMaskedInput
+                disabled={isModelsLoading}
+                renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
+              />
+            </StyledDateWrapper>
+            <StyledDivider orientation="vertical" flexItem />
+          </>
+        )}
         <Stack direction="row" spacing="16px">
           <SelectPrimary
             label="Model"
             onChange={handleModelChange}
-            size="small"
+            labelProps={{ size: 'small' }}
             value={model}
             disabled={isModelsLoading}
           >
@@ -164,19 +169,13 @@ export const AlertsFilters = () => {
               </MenuItem>
             ))}
           </SelectPrimary>
-          <SelectPrimary
-            label="Severity"
+          <SelectSeverity
+            allowAll
             onChange={handleSeverityChange}
-            size="small"
+            labelProps={{ size: 'small' }}
             value={severity}
             disabled={isModelsLoading}
-          >
-            {severityList.map(({ label, value }) => (
-              <MenuItem value={value} key={label}>
-                {label}
-              </MenuItem>
-            ))}
-          </SelectPrimary>
+          />
         </Stack>
       </Stack>
       <Button variant="text" startIcon={<Sort />} onClick={onSort} disabled={isModelsLoading}>

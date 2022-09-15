@@ -1,4 +1,6 @@
-// import { Alarm, Analysis, Caonfiguration, Dashboard } from "../assets/icon/icon"
+import { AlertRules } from 'pages/AlertRules';
+import { AlertsPage } from 'pages/AlertsPage';
+import { DashboardPage } from 'pages/DashboardPage';
 import { FC } from 'react';
 import {
   Alarm,
@@ -15,41 +17,57 @@ import {
   DashboardHover
 } from '../assets/icon/icon';
 
-export interface SidebarInfo {
-  text: string;
+export interface PathInfo {
+  title: string;
   link: string;
-  Icon: FC;
-  IconHover: FC;
-  ActivIcon: FC;
+  element: () => JSX.Element;
+  Icon: FC | null;
+  IconHover: FC | null;
+  ActiveIcon: FC | null;
+  children?: PathInfo[];
 }
 
-export const sideBarInfo: SidebarInfo[] = [
+export const pathsInfo: PathInfo[] = [
   {
-    text: 'My Dashboard',
+    title: 'My Dashboard',
     link: '/dashboard',
+    element: DashboardPage,
     Icon: Dashboard,
     IconHover: DashboardHover,
-    ActivIcon: DashboardActive
+    ActiveIcon: DashboardActive
   },
   {
-    text: 'Alerts',
+    title: 'Alerts',
     link: '/alerts',
+    element: AlertsPage,
     Icon: Alarm,
     IconHover: AlarmHover,
-    ActivIcon: AlarmActive
+    ActiveIcon: AlarmActive
   },
   {
-    text: 'Analysis',
+    title: 'Analysis',
     link: '/analysis',
+    element: DashboardPage,
     Icon: Analysis,
     IconHover: AnalysisHover,
-    ActivIcon: AnalysisActive
+    ActiveIcon: AnalysisActive
   },
   {
-    text: 'Configuration',
+    title: 'Configuration',
     link: '/configuration',
+    element: DashboardPage,
     Icon: Configuration,
     IconHover: ConfigurationHover,
-    ActivIcon: ConfigurationActive
+    ActiveIcon: ConfigurationActive,
+    children: [
+      {
+        title: 'Alerts Rules',
+        link: '/configuration/alert-rules',
+        Icon: null,
+        element: AlertRules,
+        IconHover: null,
+        ActiveIcon: null
+      }
+    ]
   }
 ];

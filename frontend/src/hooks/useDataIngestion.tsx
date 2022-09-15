@@ -3,11 +3,11 @@ import dayjs from 'dayjs';
 import { useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet } from '../api/generated';
 import useStatsTime from './useStatsTime';
 import { setGraphColor } from '../helpers/graphColors';
-import useModelsMap from './useModelsMap';
+import useModels from './useModels';
 
 const useDataIngestion = () => {
   const [statsTime] = useStatsTime();
-  const modelsMap = useModelsMap();
+  const { modelsMap } = useModels();
 
   const latestTime = Math.max(...Object.values(modelsMap).map(o => (o.latest_time ? o.latest_time : 0)));
   const { data = [], isLoading } = useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet({

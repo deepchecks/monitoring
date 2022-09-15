@@ -14,10 +14,14 @@ export type StatsTimeProvider = {
 
 export type StatsTimeContext = [StatTime, (newId: StatTimeId) => void, StatTime[]];
 
+export const labelPrefix = 'Last';
+
 const statTimes: StatTime[] = [
-  { label: 'Last day', value: 60 * 60 * 24 },
-  { label: 'Last 7 days', value: 60 * 60 * 24 * 7 },
-  { label: 'Last month', value: 60 * 60 * 24 * 31 }
+  { label: `${labelPrefix} hour`, value: 60 * 60 },
+  { label: `${labelPrefix} day`, value: 60 * 60 * 24 },
+  { label: `${labelPrefix} week`, value: 60 * 60 * 24 * 7 },
+  { label: `${labelPrefix} month`, value: 60 * 60 * 24 * 31 },
+  { label: `${labelPrefix} 3 months`, value: 60 * 60 * 24 * 31 * 3 }
 ].map((item, i) => ({ ...item, id: i.toString() }));
 
 const DEFAULT_STAT_TIME = statTimes[2];

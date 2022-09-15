@@ -2,7 +2,7 @@ import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/materi
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import useModelsMap from 'hooks/useModelsMap';
+import useModels from 'hooks/useModels';
 import React, { memo, useState } from 'react';
 import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
@@ -23,7 +23,7 @@ const titles = ['Model', 'Check', 'Condition', 'Check Frequency'];
 export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }: AlertRuleItemProps) => {
   const [hover, setHover] = useState<boolean>(false);
 
-  const modelsMap = useModelsMap();
+  const { modelsMap } = useModels();
 
   const { alerts_count, alert_severity, condition, name, repeat_every, max_end_time, model_id } = alertRule;
 

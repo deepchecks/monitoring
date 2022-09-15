@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
+    "@mui/icons-material": "^5.10.3",
     "@mui/material": "^5.10.1",
     "@mui/x-date-pickers": "^5.0.0-beta.7",
     "@tanstack/react-query": "^4.2.1",
@@ -12,18 +13,22 @@
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
     "axios": "^0.27.2",
+    "change-case": "^4.1.2",
     "chart.js": "^3.9.1",
     "chartjs-adapter-dayjs-3": "^1.2.3",
     "chartjs-plugin-zoom": "^1.2.1",
     "dayjs": "^1.11.5",
+    "deepmerge": "^4.2.2",
     "formik": "^2.2.9",
+    "lodash": "^4.17.21",
     "qs": "^6.11.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^4.3.1",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.0"
+    "web-vitals": "^2.1.0",
+    "yup": "^0.32.11"
   },
   "scripts": {
     "dev": "env-cmd -f .env.development concurrently yarn:codegen yarn:start",
@@ -56,6 +61,7 @@
   },
   "devDependencies": {
     "@types/jest": "^27.0.1",
+    "@types/lodash": "^4.14.185",
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",

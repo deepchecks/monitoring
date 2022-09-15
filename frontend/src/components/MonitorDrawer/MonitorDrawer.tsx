@@ -3,7 +3,11 @@ import { Drawer, DrawerProps, Stack, styled } from '@mui/material';
 import { GraphView } from './GraphView';
 import { CreateMonitor } from './MonitorForm/CreateMonitor';
 import EditMonitor from './MonitorForm/EditMonitor';
-import { MonitorSchema, useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
+import {
+  MonitorSchema,
+  OperatorsEnum,
+  useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
+} from 'api/generated';
 import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
 import { ChartData } from 'chart.js';
 
@@ -19,7 +23,7 @@ export interface LookbackCheckProps {
     filter?: {
       filters: {
         column: string;
-        operator: string;
+        operator: OperatorsEnum;
         value: string | number;
       }[];
     };

@@ -3,7 +3,7 @@ import { Box, MenuItem, SelectChangeEvent, TextField } from '@mui/material';
 import { useFormik } from 'formik';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
-import { Numeric, ColumnType, ModelColumns, Categorical } from '../../../helpers/types/model';
+import { ColumnType, ColumnStatsCategorical, ColumnStatsNumeric, ColumnsSchema } from '../../../helpers/types/model';
 import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
@@ -18,7 +18,8 @@ import {
   useGetChecksApiV1ModelsModelIdChecksGet,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet,
   useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
-  MonitorCreationSchema
+  MonitorCreationSchema,
+  OperatorsEnum
 } from 'api/generated';
 import useGlobalState from 'Context';
 
@@ -46,7 +47,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
   const globalState = useGlobalState();
 
   const { data: allModels = [] } = useGetModelsApiV1ModelsGet();
-  const { data: columns = {} as ModelColumns } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(selectedModelId);
+  const { data: columns = {} as ColumnsSchema } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(selectedModelId);
   const { data: checks = [] } = useGetChecksApiV1ModelsModelIdChecksGet(selectedModelId);
 
   const { mutateAsync: createMonitor } = useCreateMonitorApiV1ChecksCheckIdMonitorsPost();
@@ -68,13 +69,13 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
       const column = columns[values.column];
 
       if (column) {
-        if (column.type === ColumnType.number) {
-          operator = 'greater_than';
+        if (column.type === ColumnType.numeric) {
+          operator = OperatorsEnum.greater_than;
           value = values.numericValue;
         }
 
-        if (column.type === ColumnType.string) {
-          operator = 'contains';
+        if (column.type === ColumnType.categorical) {
+          operator = OperatorsEnum.contains;
           value = values.category;
         }
       }
@@ -87,7 +88,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
           filters: [
             {
               column: values.column,
-              operator: operator || 'contains',
+              operator: operator || OperatorsEnum.contains,
               value: value || values.category
             }
           ]
@@ -103,7 +104,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     }
   });
 
-  const updateGraph = (operator = '', value: string | number = '') => {
+  const updateGraph = (operator?: OperatorsEnum | undefined, value: string | number = '') => {
     const checkId = +values.check;
 
     const lookbackCheckData: LookbackCheckProps = {
@@ -145,11 +146,12 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
   };
 
   const handleInputBlur = () => {
-    const column = columns[values.column] as Numeric;
-    if (+values.numericValue < column.min) {
-      setFieldValue('numericValue', column.min);
-    } else if (+values.numericValue > column.max) {
-      setFieldValue('numericValue', column.max);
+    const column = columns[values.column];
+    const stats = column.stats as ColumnStatsNumeric;
+    if (+values.numericValue < stats.min) {
+      setFieldValue('numericValue', stats.min);
+    } else if (+values.numericValue > stats.max) {
+      setFieldValue('numericValue', stats.max);
     }
   };
 
@@ -158,20 +160,21 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
       return setColumnComponent(null);
     }
     if (values.column) {
-      let column = columns[values.column];
+      const column = columns[values.column];
+      if (!column) return;
 
-      if (column.type === ColumnType.string) {
-        column = column as Categorical;
+      if (column.type === ColumnType.categorical) {
+        const stats = column.stats as ColumnStatsCategorical;
         setColumnComponent(
           <Subcategory>
             <MarkedSelect
               label="Select category"
               size="small"
-              disabled={!column.stats.values.length}
+              disabled={!stats.values.length}
               fullWidth
               {...getFieldProps('category')}
             >
-              {column.stats.values.map((col: string, index: number) => (
+              {stats.values.map((col: string, index: number) => (
                 <MenuItem key={index} value={col}>
                   {col}
                 </MenuItem>
@@ -182,8 +185,8 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
         return;
       }
 
-      if (column.type === ColumnType.number) {
-        column = column as Numeric;
+      if (column.type === ColumnType.numeric) {
+        const stats = column.stats as ColumnStatsNumeric;
         setColumnComponent(
           <Box mt="39px">
             <StyledTypographyLabel>Select Value</StyledTypographyLabel>
@@ -193,8 +196,8 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               handleInputChange={handleInputChange}
               name="numericValue"
               value={+values.numericValue || 0}
-              min={column.min}
-              max={column.max}
+              min={stats.min}
+              max={stats.max}
               valueLabelDisplay="auto"
             />
           </Box>
@@ -206,8 +209,8 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
 
   useEffect(() => {
     const column = columns[values.column];
-    if (column && column.type === ColumnType.string) {
-      setFieldValue('category', column.stats.values[0]);
+    if (column?.type === ColumnType.categorical) {
+      setFieldValue('category', column?.stats?.values?.[0] || '');
     }
   }, [values.column]);
 
@@ -220,7 +223,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     }
 
     if (column) {
-      if (column.type === ColumnType.number) {
+      if (column.type === ColumnType.numeric) {
         if (values.check && values.time && values.column && values.numericValue) {
           timer.current = setTimeout(() => {
             updateGraph('greater_than', values.numericValue);
@@ -228,7 +231,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
         }
       }
 
-      if (column.type === ColumnType.string) {
+      if (column.type === ColumnType.categorical) {
         if (values.check && values.time && values.column && values.category) {
           updateGraph('contains', values.category);
         }

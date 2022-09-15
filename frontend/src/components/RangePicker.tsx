@@ -1,36 +1,39 @@
 import { Slider, SliderProps, Stack } from '@mui/material';
 import React, { memo } from 'react';
 
-import { Box, styled, TextField } from '@mui/material';
+import { Box, styled } from '@mui/material';
+import RangePickerInput, { RangePickerInputProps } from './RangePickerInput';
+import pick from 'lodash/pick';
 
 export const StyledInputWrapper = styled(Box)({
   display: 'flex',
   justifyContent: 'end'
 });
 
-export const StyledTextField = styled(TextField)({
-  '& .MuiOutlinedInput-input': {
-    padding: '4px 12px',
-    width: 60
-  }
-});
+type RangePickerProps = SliderProps &
+  Omit<RangePickerInputProps, 'onChange'> & {
+    handleInputBlur?: () => void;
+    handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  };
 
-interface RangePickerProps extends SliderProps {
-  handleInputBlur: () => void;
-  handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}
+const DEFAULT_STEP = 0.01;
 
-export function RangePickerComponent({ handleInputBlur, handleInputChange, ...props }: RangePickerProps) {
+export function RangePickerComponent({ handleInputBlur, handleInputChange, step, ...props }: RangePickerProps) {
   return (
     <Stack spacing="20px">
-      <Slider {...props} />
+      <Slider step={DEFAULT_STEP} {...props} />
       <StyledInputWrapper>
-        <StyledTextField
+        <RangePickerInput
+          sx={{
+            '& .MuiOutlinedInput-input': {
+              padding: '4px 12px',
+              width: 60
+            }
+          }}
+          step={DEFAULT_STEP}
+          {...pick(props, ['name', 'min', 'max', 'value'])}
           onChange={handleInputChange}
-          value={props.value || ''}
-          type="number"
           onBlur={handleInputBlur}
-          placeholder="0"
           InputLabelProps={{
             shrink: true
           }}

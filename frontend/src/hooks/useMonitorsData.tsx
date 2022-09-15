@@ -6,7 +6,7 @@ import {
   useGetDashboardApiV1DashboardsGet
 } from '../api/generated';
 import { ChartData } from 'chart.js';
-import useModelsMap from './useModelsMap';
+import useModels from './useModels';
 import { parseDataForChart } from 'helpers/utils/parseDataForChart';
 
 type MonitorId = MonitorSchema['id'];
@@ -43,7 +43,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
 
   useEffect(() => console.log('UPDATE', { lastMonitorsFetch }), [lastMonitorsFetch]);
 
-  const modelsMap = useModelsMap();
+  const { modelsMap } = useModels();
   const { monitors = [] } = dashboards || {};
 
   const refreshMonitors = async (monitor?: MonitorSchema) => {

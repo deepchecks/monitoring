@@ -1,9 +1,9 @@
 import { useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost } from 'api/generated';
 import { useEffect } from 'react';
-import useModelsMap from './useModelsMap';
+import useModels from './useModels';
 
 const useRunMonitorLookback = (monitorId: number | null, modelId: string | null) => {
-  const modelsMap = useModelsMap();
+  const { modelsMap } = useModels();
   const runMonitor = useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost();
 
   useEffect(() => {

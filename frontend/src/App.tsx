@@ -9,9 +9,10 @@ import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GlobalStateProvider } from './Context';
 import { DashboardPage } from './pages/DashboardPage';
-import { AlertsPage } from './pages/AlertsPage';
 import { StatsTimeProvider } from './hooks/useStatsTime';
 import useUser, { UserProvider } from './hooks/useUser';
+import { HeaderProvider } from 'hooks/useHeader';
+import { pathsInfo } from 'helpers/helper';
 import { MonitorsDataProvider } from './hooks/useMonitorsData';
 
 const Layout = () => {
@@ -55,26 +56,28 @@ const Layout = () => {
 
 const App = () => {
   const queryClient = new QueryClient();
+  const flatPathsInfo = pathsInfo.flatMap(pathInfo => [pathInfo, ...(pathInfo?.children ?? [])]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <GlobalStateProvider>
           <UserProvider>
-            <StatsTimeProvider>
-              <MonitorsDataProvider>
+            <HeaderProvider>
+              <StatsTimeProvider>
+                <MonitorsDataProvider>
                 <Routes>
                   <Route element={<Layout />}>
                     <Route path="/" element={<DashboardPage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/alerts" element={<AlertsPage />} />
-                    <Route path="/analysis" element={<div>analysis placeholder...</div>} />
-                    <Route path="/configuration" element={<DashboardPage />} />
+                    {flatPathsInfo.map(({ link, element: PageElement }) => (
+                      <Route key={link} path={link} element={<PageElement />} />
+                    ))}
                   </Route>
                   <Route path="/complete-details" element={<CompleteDetails />} />
-                </Routes>
-              </MonitorsDataProvider>
-            </StatsTimeProvider>
+                </Routes></MonitorsDataProvider>
+              </StatsTimeProvider>
+            </HeaderProvider>
           </UserProvider>
         </GlobalStateProvider>
       </LocalizationProvider>

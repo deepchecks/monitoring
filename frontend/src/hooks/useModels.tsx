@@ -1,8 +1,8 @@
 import { ModelsInfoSchema, useGetModelsApiV1ModelsGet } from 'api/generated';
 import { useMemo } from 'react';
 
-const useModelsMap = () => {
-  const { data: models = [] } = useGetModelsApiV1ModelsGet();
+const useModels = () => {
+  const { data: models = [], isLoading } = useGetModelsApiV1ModelsGet();
 
   const modelsMap = useMemo(
     () =>
@@ -14,7 +14,7 @@ const useModelsMap = () => {
     [models]
   );
 
-  return modelsMap;
+  return { modelsMap, models, isLoading };
 };
 
-export default useModelsMap;
+export default useModels;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, AppBar, Button, Container } from '@mui/material';
-import { sideBarInfo, SidebarInfo } from '../helpers/helper';
+import { PathInfo, pathsInfo } from '../helpers/helper';
 import useWindowResize from '../hooks/windowResize';
 import { Logo } from './Logo';
 import { SidebarMenuItem } from './SidebarMenuItem';
@@ -38,8 +38,9 @@ export const Sidebar = () => {
         <Box sx={{ width: 1, height: 0.7 }}>
           <Logo />
           <Box sx={{ mt: '54px', pl: '14px' }}>
-            {sideBarInfo &&
-              sideBarInfo.map((info: SidebarInfo) => <SidebarMenuItem key={info.link} info={info} width={width} />)}
+            {pathsInfo.map((info: PathInfo) => (
+              <SidebarMenuItem key={info.link} info={info} width={width} />
+            ))}
           </Box>
         </Box>
 

@@ -25,8 +25,15 @@ import { ReactComponent as PencilDrawing } from './pencilDrawing.svg';
 import { ReactComponent as Checkmark } from './checkmark.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
-import { ReactComponent as UserInvite} from './userInvite.svg'
+import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as EmailIcon } from './email.svg';
+import { ReactComponent as ExpandIcon } from './expand.svg';
+import { ReactComponent as PauseIcon } from './pause.svg';
+import { ReactComponent as DeleteIcon } from './delete.svg';
+import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
+import { ReactComponent as RightArrow } from './right-arrow.svg';
+import { ReactComponent as LockIcon } from './lock.svg';
+import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as NoDataToShow } from './noDataToShow.svg';
 
 export {
@@ -59,5 +66,12 @@ export {
   PencilDrawing,
   UserInvite,
   EmailIcon,
+  ExpandIcon,
+  PauseIcon,
+  DeleteIcon,
+  WhitePlusIcon,
+  RightArrow,
+  LockIcon,
+  OpenLockIcon,
   NoDataToShow
 };

@@ -1,3 +1,5 @@
+import { GetModelColumnsApiV1ModelsModelIdColumnsGet200 } from '../../api/generated';
+
 export interface Model {
   latest_time: number;
   alerts_count: number;
@@ -8,18 +10,28 @@ export interface Model {
 }
 
 export enum ColumnType {
-  string = 'categorical',
-  number = 'numeric'
+  categorical = 'categorical',
+  numeric = 'numeric'
+}
+
+export interface ColumnStatsCategorical {
+  values: string[];
+}
+
+export interface ColumnStatsNumeric {
+  min: number;
+  max: number;
 }
 
 export interface Categorical {
-  type: ColumnType.string;
+  type: ColumnType.categorical;
   stats: {
     values: string[];
   };
 }
+
 export interface Numeric {
-  type: ColumnType.number;
+  type: ColumnType.numeric;
   min: number;
   max: number;
 }
@@ -27,6 +39,9 @@ export interface Numeric {
 export interface ModelColumns {
   [key: string]: Categorical | Numeric;
 }
+
+// @FIXME all places using ModelColumns should be refactored to ColumnsSchema
+export type ColumnsSchema = GetModelColumnsApiV1ModelsModelIdColumnsGet200;
 
 export interface DataIngestion {
   count: number;
