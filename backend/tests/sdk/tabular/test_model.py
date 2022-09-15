@@ -27,7 +27,7 @@ async def test_get_model_client_just_name(classification_model_id, deepchecks_sd
 
 
 @pytest.mark.asyncio
-async def test_get_model_create(deepchecks_sdk_client: DeepchecksClient):
+async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.model(name="classification model 2", task_type=TaskType.MULTICLASS.value)
     assert model_client.model["id"] == 1
     assert model_client.model["name"] == "classification model 2"
@@ -38,3 +38,26 @@ async def test_get_model_create(deepchecks_sdk_client: DeepchecksClient):
     assert len(resp_json) == 1
     assert resp_json[0] == {"id": 1, "name": "classification model 2", "task_type": "multiclass",
                             "description": None, "alerts_count": 0, "latest_time": None}
+
+
+@pytest.mark.asyncio
+async def test_add_monitor(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value)
+    assert model_client.model["id"] == classification_model_id
+
+    checks_name = list(model_client.get_checks().keys())[0]
+    monitor_id = model_client.add_monitor(checks_name, 30 * 86400)
+    assert monitor_id > 0
+
+
+@pytest.mark.asyncio
+async def test_add_alert(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value)
+    assert model_client.model["id"] == classification_model_id
+
+    checks_name = list(model_client.get_checks().keys())[0]
+    alert_id = model_client.add_alert(checks_name, 0.3, 86400)
+    assert alert_id == 1
+
+    alert_id = model_client.add_alert(checks_name, 0.3, 86400, greater_than=False)
+    assert alert_id == 2

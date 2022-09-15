@@ -90,14 +90,8 @@ async def create_alert_rule(
     monitor = await fetch_or_404(session, Monitor, id=monitor_id)
 
     monitor_name = t.cast(str, monitor.name).capitalize()
-    level = alert_rule.alert_severity.upper()
-    criteria = str(alert_rule.condition)
+    alert_rule.name = monitor_name if alert_rule.name is None or len(alert_rule.name) > 50 else alert_rule.name
 
-    alert_rule.name = (
-        f"{monitor_name} Alert (level:{level}): {criteria}"
-        if alert_rule.name is None
-        else alert_rule.name
-    )
     stm = insert(AlertRule).values(
         monitor_id=monitor_id,
         **alert_rule.dict(exclude_none=True)

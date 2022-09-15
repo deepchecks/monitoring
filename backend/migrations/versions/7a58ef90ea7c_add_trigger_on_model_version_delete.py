@@ -14,8 +14,8 @@ Revises: f2ec131ea7a5
 Create Date: 2022-09-14 17:26:09.160083
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 from deepchecks_monitoring.models.model_version import PGDataTableDropFunc, PGDataTableDropTrigger
 

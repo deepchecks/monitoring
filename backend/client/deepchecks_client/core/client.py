@@ -10,14 +10,15 @@
 #
 """Module containing deepchecks monitoring client."""
 import enum
-import sys
 import typing as t
+import warnings
 from importlib.metadata import version
 from urllib.parse import urljoin
 
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
+
 from deepchecks_client.core.utils import maybe_raise
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
@@ -152,11 +153,7 @@ class DeepchecksModelClient:
         The id of the model.
     """
 
-    def __init__(
-            self,
-            model_id: int,
-            session: requests.Session
-    ):
+    def __init__(self, model_id: int, session: requests.Session):
         self.session = session
         self.model = maybe_raise(
             self.session.get(f'models/{model_id}'),
@@ -180,15 +177,22 @@ class DeepchecksModelClient:
         """Add default checks to the model based on its task type."""
         raise NotImplementedError
 
-    def add_checks(self, checks: t.Dict[str, BaseCheck]) -> t.Dict[str, int]:
+    def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False) -> t.Dict[str, int]:
         """Add new checks for the model and returns their checks' id."""
         serialized_checks = []
 
+        checks_in_model = self.get_checks()
         for name, check in checks.items():
             if not isinstance(check, ReduceMixin):
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
-            sys.stderr.write(f"{check.config()}\n")
-            serialized_checks.append({'name': name, 'config': check.config()})
+            elif name in checks_in_model and not force_replace:
+                warnings.warn(f'Check named {name} already exist, was not modified. If you want to change it'
+                              f'set the force_replace argument to true')
+            elif name in checks_in_model and force_replace:
+                warnings.warn(f'Check named {name} already exist, was modified to newly added check.')
+                raise Exception("Currently unsupported")
+            else:
+                serialized_checks.append({'name': name, 'config': check.config()})
 
         response = maybe_raise(
             self.session.post(
@@ -198,6 +202,18 @@ class DeepchecksModelClient:
             msg="Failed to create new check instances.\n{error}"
         )
         return {serialized_checks[idx]['name']: int(d['id']) for idx, d in enumerate(response.json())}
+
+    def _get_id_of_check(self, check_name: str) -> int:
+        """ Return the check id of a provided check name."""
+        model_id = self.model["id"]
+        data = maybe_raise(
+            self.session.get(f'models/{self.model["id"]}/checks'),
+            msg=f"Failed to obtain Model(id:{model_id}) checks.\n{{error}}").json()
+
+        for check in data:
+            if check['name'] == check_name:
+                return check['id']
+        return None
 
     def get_checks(self) -> t.Dict[str, BaseCheck]:
         """Return dictionary of check instances."""
@@ -211,10 +227,83 @@ class DeepchecksModelClient:
         if not isinstance(data, list):
             raise ValueError('Expected server to return a list of check configs.')
 
-        return {
-            it['name']: BaseCheck.from_config(it['config'])
-            for it in data
-        }
+        return {it['name']: BaseCheck.from_config(it['config']) for it in data}
+
+    def add_alert(self, check_name: str, threshold: float, window_size: int, alert_severity: str = "mid",
+                  repeat_every: int = None, greater_than: bool = True, alert_name: str = None,
+                  monitor_name: str = None, add_monitor_to_dashboard: bool = False) -> int:
+        """Create an alert based on provided arguments. Alert is run on a specific check result.
+        Parameters
+        ----------
+        check_name: str
+            The check to monitor. The alert will monitor the value produced by the check's reduce function.
+        threshold: float
+            The value to compare the check value to.
+        window_size: int
+            The time range (current time - window size) the check would run on, provided in seconds.
+        alert_severity: str, default: "mid"
+            The severity level associated with the alert. Possible values are: critical, high, mid and low.
+        repeat_every: int, default: None
+            Control the frequency the alert will be calculated. If None, uses window size as frequency.
+        greater_than: bool, default: True
+            Whether the alert condition requires the check value to be larger or smaller than provided threshold.
+        alert_name: str, default: None
+            Name for the created alert.
+        monitor_name: str, default: None
+            Name for the created monitor (only relevant if add_monitor_to_dashboard is True).
+        add_monitor_to_dashboard: bool, default: False
+            Whether to add a corresponding monitor to the dashboard screen.
+        Returns
+        -------
+            alert_id: int
+        """
+
+        if alert_severity not in ['low', 'mid', 'high', 'critical']:
+            raise Exception(f'Alert severity must be of one of low, mid, high, critical received {alert_severity}.')
+
+        monitor_name = monitor_name if monitor_name is not None else f'{check_name} alert monitor'
+        monitor_id = self.add_monitor(check_name=check_name, lookback=window_size * 12, name=monitor_name,
+                                      add_to_dashboard=add_monitor_to_dashboard)
+        response = maybe_raise(
+            self.session.post(
+                url=f'monitors/{monitor_id}/alert-rules', json={
+                    'condition': {'operator': "greater_than" if greater_than else "less_than",
+                                  'value': threshold},
+                    'repeat_every': repeat_every if repeat_every is not None else window_size,
+                    'alert_severity': alert_severity,
+                    'name': alert_name
+                }), msg="Failed to create new alert for check.\n{error}")
+        return response.json()['id']
+
+    def add_monitor(self, check_name: str, lookback: int, name: str = None, description: str = None,
+                    add_to_dashboard: bool = True) -> int:
+        """Create a monitor based on check to be displayed in dashboard.
+        Parameters
+        ----------
+        check_name: str
+            The check to monitor. The alert will monitor the value produced by the check's reduce function.
+        lookback: int
+            The time range to minitor, provided in seconds.
+        name: str, default: None
+            The name to assigned to the monitor.
+        description: str, default: None
+            The description to assigned to the monitor.
+        add_to_dashboard: bool, default: True
+            Whether to add the monitor to the dashboard screen.
+        Returns
+        -------
+            monitor_id: int
+        """
+        check_id = self._get_id_of_check(check_name)
+        response = maybe_raise(
+            self.session.post(
+                url=f'checks/{check_id}/monitors', json={
+                    'name': name if name is not None else f'{check_name} Monitor',
+                    'lookback': lookback,
+                    'dashboard_id': self.session.get('dashboards/').json()['id'] if add_to_dashboard else None,
+                    'description': description,
+                }), msg="Failed to create new monitor for check.\n{error}")
+        return response.json()['id']
 
     def get_versions(self) -> t.Dict[str, str]:
         """Return list of model version (id and name)."""
@@ -305,22 +394,11 @@ class DeepchecksClient:
 
         model_id = response['id']
         model = self._model_client(model_id, task_type)
-        model_checks = model.get_checks()
 
-        if len(model_checks) == 0:
-            if checks is not None:
-                model.add_checks(checks)
-            else:
-                model._add_default_checks()
-        else:
-            if checks is not None:
-                new_checks = {}
-                for check_name, check_val in checks.items():
-                    if check_name not in model_checks:
-                        new_checks[check_name] = check_val
-                if len(new_checks) > 0:
-                    model.add_checks(checks)
-
+        if len(model.get_checks()) == 0 and checks is None:
+            model._add_default_checks()
+        elif checks is not None:
+            model.add_checks(checks)
         return model
 
     def _model_client(self, model_id: int, task_type: str) -> DeepchecksModelClient:
@@ -336,7 +414,7 @@ class DeepchecksClient:
         -------
         DeepchecksModelClient
             Client to interact with the model.
-        """    
+        """
         from deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
         from deepchecks_client.vision.client import DeepchecksModelClient as VisionDeepchecksModelClient
 

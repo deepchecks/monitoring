@@ -293,7 +293,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def _add_default_checks(self):
         """Add default list of checks for a vision model."""
         checks = {
-            'Property Drift': ImagePropertyDrift(),
+            # 'Property Drift': ImagePropertyDrift(), TODO: make this work (serialize problem)
             'Prediction Drift': TrainTestPredictionDrift(),
             'Label Drift': TrainTestLabelDrift(),
         }
@@ -302,4 +302,4 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
         elif TaskType(self.model['task_type']) == TaskType.VISION_DETECTION:
             checks['Performance'] = SingleDatasetPerformance(scorers={'Precision': 'precision_macro'})
-        return self.add_checks(checks={})
+        return self.add_checks(checks=checks)

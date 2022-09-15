@@ -11,7 +11,7 @@ import pytest
 import randomname
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.models.alert_rule import AlertSeverity, AlertRule
+from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity
 from tests.api.test_alerts import add_alert
 from tests.conftest import add_alert_rule, add_monitor
 
