@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 import pytest
 from fastapi.testclient import TestClient
+import pendulum as pdl
 
 from tests.conftest import add_alert_rule, add_classification_data
 
@@ -143,5 +144,14 @@ async def test_run_monitor(classification_model_check_id, classification_model_v
     monitor_id = add_monitor(classification_model_check_id, client)
     add_classification_data(classification_model_version_id, client)
     # Act
-    response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={})
+    response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={"end_time": pdl.now().isoformat()})
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_run_monitor_invalid_end_time(classification_model_check_id, client: TestClient):
+    # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
+    # Act
+    response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={"end_time": "13000000"})
+    assert response.status_code == 422

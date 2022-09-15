@@ -12,7 +12,7 @@ import typing as t
 
 import pendulum as pdl
 from fastapi import Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -73,6 +73,12 @@ class MonitorRunSchema(BaseModel):
     """Schema defines the parameters for creating new monitor."""
 
     end_time: t.Optional[str]
+
+    @validator("end_time", pre=True)
+    def end_time_validate(cls, v):  # pylint: disable=no-self-argument
+        """Validate end time with pendulum."""
+        pdl.parse(v)
+        return v
 
 
 @router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],
