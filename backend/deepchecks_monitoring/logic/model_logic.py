@@ -41,7 +41,10 @@ from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList,
 
 def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
     for kwarg_type, kwarg_val in model_config.check_conf.items():
-        check_conf['params'][CheckParameterTypeEnum(kwarg_type).to_kwarg_name()] = kwarg_val
+        kwarg_name = CheckParameterTypeEnum(kwarg_type).to_kwarg_name()
+        if kwarg_name == 'aggregation_method':
+            kwarg_val = kwarg_val[0]
+        check_conf['params'][kwarg_name] = kwarg_val
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
