@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { ModelsInfoSchema } from 'api/generated';
 import { GlobalStateContext } from 'Context';
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StyledAlert, StyledContainer, StyledCounter, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 import dayjs from 'dayjs';

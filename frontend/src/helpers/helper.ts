@@ -1,6 +1,9 @@
 import { AlertRules } from 'pages/AlertRules';
 import { AlertsPage } from 'pages/AlertsPage';
 import { DashboardPage } from 'pages/DashboardPage';
+import { NotificationsPage } from 'pages/NotificationsPage';
+import { IntegrationsPage } from 'pages/IntegrationsPage';
+
 import { FC } from 'react';
 import {
   Alarm,
@@ -65,6 +68,22 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/alert-rules',
         Icon: null,
         element: AlertRules,
+        IconHover: null,
+        ActiveIcon: null
+      },
+      {
+        title: 'Notification',
+        link: '/configuration/notifications',
+        Icon: null,
+        element: NotificationsPage,
+        IconHover: null,
+        ActiveIcon: null
+      },
+      {
+        title: 'Integrations',
+        link: '/configuration/integrations',
+        Icon: null,
+        element: IntegrationsPage,
         IconHover: null,
         ActiveIcon: null
       }

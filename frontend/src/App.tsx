@@ -1,19 +1,18 @@
-import React from 'react';
-import { Outlet, Routes, Route } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Sidebar } from './components/Sidebar';
-import { CompleteDetails } from './pages/CompleteDetails';
-import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Outlet, Route, Routes } from 'react-router-dom';
+import { Sidebar } from './components/Sidebar';
 import { GlobalStateProvider } from './Context';
-import { DashboardPage } from './pages/DashboardPage';
+import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 import { StatsTimeProvider } from './hooks/useStatsTime';
 import useUser, { UserProvider } from './hooks/useUser';
 import { HeaderProvider } from 'hooks/useHeader';
 import { pathsInfo } from 'helpers/helper';
 import { MonitorsDataProvider } from './hooks/useMonitorsData';
+import { CompleteDetails } from './pages/CompleteDetails';
+import { DashboardPage } from 'pages/DashboardPage';
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();

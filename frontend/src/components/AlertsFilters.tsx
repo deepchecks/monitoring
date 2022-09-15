@@ -1,5 +1,5 @@
 import { Box, Button, Divider, MenuItem, SelectChangeEvent, Stack, styled, TextField } from '@mui/material';
-import { AlertSeverity, GetAlertRulesApiV1AlertRulesGetParams, useGetModelsApiV1ModelsGet } from 'api/generated';
+import { AlertSeverity, GetAlertRulesApiV1AlertRulesGetParams, GetAlertRulesApiV1AlertRulesGetSortbyItem, useGetModelsApiV1ModelsGet } from 'api/generated';
 import { GlobalStateContext } from 'Context';
 import React, { useContext, useEffect, useState } from 'react';
 import { Sort } from '../assets/icon/icon';
