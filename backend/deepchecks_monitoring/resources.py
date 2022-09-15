@@ -114,7 +114,8 @@ class ResourcesProvider(BaseResourcesProvider):
             str(settings.database_uri),
             echo=settings.echo_sql,
             json_serializer=json_dumps,
-            future=True
+            future=True,
+            pool_pre_ping=True
         )
 
         return self._database_engine
@@ -154,7 +155,8 @@ class ResourcesProvider(BaseResourcesProvider):
         self._async_database_engine = create_async_engine(
             str(settings.async_database_uri),
             echo=settings.echo_sql,
-            json_serializer=json_dumps
+            json_serializer=json_dumps,
+            pool_pre_ping=True
         )
         return self._async_database_engine
 
