@@ -25,6 +25,7 @@ from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.models.column_type import ColumnType, column_types_to_table_columns
+from deepchecks_monitoring.utils import DataFilterList
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.models import Model  # pylint: disable=unused-import
@@ -169,6 +170,13 @@ class ModelVersion(Base):
             if field not in sample:
                 sample[field] = None
 
+    def is_filter_fit(self, data_filter: DataFilterList):
+        """Check if columns defined on filter exists on the model version."""
+        filter_columns = [f.column for f in data_filter.filters]
+        columns = (set(self.features_columns.keys()) | set(self.non_features_columns.keys()) |
+                   set(self.model_columns.keys()))
+        return columns.issuperset(filter_columns)
+
 
 def update_statistics_from_sample(statistics: dict, sample: dict):
     """Update statistics dict inplace, using the sample given."""
@@ -218,12 +226,10 @@ BEGIN
 END; $$ LANGUAGE PLPGSQL
 """)
 
-
 PGDataTableDropTrigger = sa.DDL("""
 CREATE OR REPLACE TRIGGER trigger_model_version_delete AFTER DELETE ON model_versions
 FOR EACH ROW EXECUTE PROCEDURE drop_model_version_tables();
 """)
-
 
 event.listen(
     Base.metadata,

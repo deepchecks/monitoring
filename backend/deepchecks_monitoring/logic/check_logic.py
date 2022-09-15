@@ -303,13 +303,15 @@ async def run_check_per_window_in_range(
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Coroutine]]] = []
     for model_version in model_versions:
+        # If filter does not fit the model version, skip it
+        if monitor_filter and not model_version.is_filter_fit(monitor_filter):
+            continue
         if isinstance(dp_check, TrainTestBaseCheck):
             reference_table = model_version.get_reference_table(session)
             reference_query = create_model_version_select_object(model_version, reference_table, top_feat)
-            if monitor_filter:
-                reference_query = filter_table_selection_by_data_filters(reference_table,
-                                                                         reference_query,
-                                                                         monitor_filter)
+            reference_query = filter_table_selection_by_data_filters(reference_table,
+                                                                     reference_query,
+                                                                     monitor_filter)
             reference_query = session.execute(random_sample(reference_query, reference_table))
         else:
             reference_query = None
@@ -416,7 +418,7 @@ def load_data_for_check(
         features: t.List[str],
         options: MonitorOptions,
         with_reference=True
-) -> t.Tuple[t.Coroutine, t.Optional[t.Coroutine]]:
+) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
 
     Parameters
@@ -430,16 +432,18 @@ def load_data_for_check(
 
     Returns
     -------
-    Tuple[Coroutine, t.Optional[Coroutine]]
+    Tuple[t.Optional[Coroutine], t.Optional[Coroutine]]
         First routine is test session, Second routine is reference session
     """
+    if options.filter and not model_version.is_filter_fit(options.filter):
+        return None, None
+
     if with_reference:
         reference_table = model_version.get_reference_table(session)
         reference_query = create_model_version_select_object(model_version, reference_table, features)
-        if options.filter:
-            reference_query = filter_table_selection_by_data_filters(reference_table,
-                                                                     reference_query,
-                                                                     options.filter)
+        reference_query = filter_table_selection_by_data_filters(reference_table,
+                                                                 reference_query,
+                                                                 options.filter)
         reference_query = session.execute(random_sample(reference_query, reference_table))
     else:
         reference_query = None

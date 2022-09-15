@@ -140,8 +140,11 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_ty
     return TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader), preds, static_props
 
 
-def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select, data_filters: DataFilterList):
+def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select,
+                                           data_filters: t.Optional[DataFilterList]):
     """Filter table selection by data filter."""
+    if data_filters is None:
+        return table_selection
     filtered_table_selection = table_selection
     for data_filter in data_filters.filters:
         filtered_table_selection = filtered_table_selection.where(make_oparator_func(data_filter.operator)(
@@ -263,10 +266,7 @@ def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
     """Filter monitor table by window and data filter."""
     if start_time <= model_version.end_time and end_time >= model_version.start_time:
         select_time_filtered = filter_select_object_by_window(table_selection, mon_table, start_time, end_time)
-        if data_filter:
-            select_time_filtered = filter_table_selection_by_data_filters(mon_table,
-                                                                          select_time_filtered,
-                                                                          data_filter)
+        select_time_filtered = filter_table_selection_by_data_filters(mon_table, select_time_filtered, data_filter)
         return random_sample(select_time_filtered, mon_table)
     else:
         return None

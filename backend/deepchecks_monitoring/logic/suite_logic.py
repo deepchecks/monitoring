@@ -90,12 +90,10 @@ async def run_suite_for_model_version(
     """
     top_feat, feat_imp = model_version.get_top_features()
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options)
-    test_session, ref_session = await test_session, await ref_session
+    test_df = DataFrame.from_dict((await test_session).all()) if test_session else DataFrame()
+    ref_df = DataFrame.from_dict((await ref_session).all()) if ref_session else DataFrame()
     # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily
     await session.commit()
-
-    test_df = DataFrame.from_dict(test_session.all())
-    ref_df = DataFrame.from_dict(ref_session.all())
 
     suite_name = f"{model_version.name} from {window_options.start_time} to {window_options.end_time}"
     task_type = model_version.model.task_type
