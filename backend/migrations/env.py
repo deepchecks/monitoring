@@ -85,6 +85,8 @@ def run_migrations_online() -> None:
         )
 
         with context.begin_transaction():
+            if os.environ.get('SCHEMA'):
+                context.execute(f'SET search_path TO {os.environ["SCHEMA"]}')
             context.run_migrations()
 
 
