@@ -16,13 +16,17 @@ export const UserInfo = () => {
           flexGrow: 1,
           m: 1,
           lineHeight: '150%',
+          textTransform: 'ellipsis',
           fontFamily: 'Roboto',
           fontWeight: 400,
           alignItems: 'center',
           letterSpacing: '0.1px',
           textAlign: 'center',
           verticalAlign: 'middle',
-          color: '#FFFFFF'
+          color: '#FFFFFF',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
         }}
       >
         {user.full_name}

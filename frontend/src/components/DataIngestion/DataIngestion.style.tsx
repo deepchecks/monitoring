@@ -23,7 +23,7 @@ export const StyledFlexWrapper = styled(Box)({
 });
 
 export const StyledDiagramWrapper = styled(Box)({
-  padding: '0 40px'
+  padding: '0 40px 16px'
 });
 
 export const StyledSelect = styled(Select)(({ theme }) => ({

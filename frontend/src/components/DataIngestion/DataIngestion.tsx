@@ -29,16 +29,14 @@ export const DataIngestion = (): JSX.Element => {
         <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
       </StyledFlexWrapper>
       <StyledDiagramWrapper>
-        <DiagramLine data={graphData} height={408} />
-        <StyledFooter>
-          <StyledSelect value={currentTime.value.toString()} onChange={ev => handleTime(ev.target.value)} size="small">
-            {timeOptions.map(({ label, value }) => (
-              <MenuItem value={value.toString()} key={label}>
-                {label}
-              </MenuItem>
-            ))}
-          </StyledSelect>
-        </StyledFooter>
+        <DiagramLine data={graphData} height={392} />
+        <StyledSelect value={currentTime.value.toString()} onChange={ev => handleTime(ev.target.value)} size="small">
+          {timeOptions.map(({ label, value }) => (
+            <MenuItem value={value.toString()} key={label}>
+              {label}
+            </MenuItem>
+          ))}
+        </StyledSelect>
       </StyledDiagramWrapper>
     </StyledFlexContent>
   );
