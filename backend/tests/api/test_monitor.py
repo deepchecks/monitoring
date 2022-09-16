@@ -7,9 +7,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
-import pendulum as pdl
 
 from tests.conftest import add_alert_rule, add_classification_data
 

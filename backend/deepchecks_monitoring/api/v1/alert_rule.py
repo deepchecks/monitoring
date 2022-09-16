@@ -34,7 +34,7 @@ class AlertRuleCreationSchema(BaseModel):
     """Schema defines the parameters for creating new alert rule."""
 
     condition: Condition
-    repeat_every: int = Field(ge=0)
+    repeat_every: int = Field(gt=0)
     alert_severity: AlertSeverity = AlertSeverity.MID
     name: t.Optional[str] = None
     is_active: bool = True

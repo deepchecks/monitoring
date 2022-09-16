@@ -189,6 +189,7 @@ class WorkerBootstrap:
                 g.start_soon(Worker(
                     engine=rp.async_database_engine,
                     actors=self.actors,
+                    additional_params={"resources_provider": rp},
                     logger=logger
                 ).start)
 

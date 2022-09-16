@@ -392,7 +392,7 @@ class Worker:
         actors: t.Sequence[Actor],
         worker_name: str = "tasks-executor",
         notification_wait_timeout: float = TimeUnit.SECOND * 60,
-        expire_after: timedelta = timedelta(hours=2),  # TODO: consider moving it to actor type
+        expire_after: timedelta = timedelta(days=2),  # TODO: consider moving it to actor type
         additional_params: t.Optional[t.Dict[str, t.Any]] = None,
         logger: t.Optional[logging.Logger] = None,
     ):

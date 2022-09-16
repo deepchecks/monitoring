@@ -18,7 +18,6 @@ from urllib.parse import urljoin
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-
 from deepchecks_client.core.utils import maybe_raise
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']

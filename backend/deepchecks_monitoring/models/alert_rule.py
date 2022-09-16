@@ -69,8 +69,9 @@ class AlertRule(Base):
 
     __tablename__ = "alert_rules"
     __table_args__ = (
-        sa.UniqueConstraint("name", "monitor_id"),
-        sa.CheckConstraint("repeat_every >= 0"),
+        sa.UniqueConstraint("name", "monitor_id", name="alert_rule_name_uniqueness"),
+        # NOTE: alembic ignores 'CheckConstraint', it should be added manually
+        sa.CheckConstraint("repeat_every > 0", name="not_negative_repeat_every"),
     )
 
     id = sa.Column(sa.Integer, primary_key=True)

@@ -56,7 +56,7 @@ class ModelVersion(Base):
 
     __tablename__ = "model_versions"
     __table_args__ = (
-        UniqueConstraint("model_id", "name"),
+        UniqueConstraint("model_id", "name", name="model_version_name_uniqueness"),
     )
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
