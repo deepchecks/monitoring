@@ -19,7 +19,7 @@ export function ModelList({ models }: ModelListProps) {
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     if (!value) setFilteredModels(models);
-    setFilteredModels(models.filter(({ name }) => name.includes(value)));
+    setFilteredModels(models.filter(({ name }) => name.toLowerCase().includes(value.toLowerCase())));
   };
 
   const handleRange = () => {
