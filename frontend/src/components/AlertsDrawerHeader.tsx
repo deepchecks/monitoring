@@ -1,51 +1,58 @@
-import React, { useEffect, useState } from 'react';
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
   Button,
   Divider,
   IconButton,
-  Select,
-  Typography,
   MenuItem,
+  Select,
   SelectChangeEvent,
+  Stack,
   styled,
+  Typography,
   useTheme
 } from '@mui/material';
+import { ChartSvg } from 'assets/icon/chart';
 import dayjs from 'dayjs';
-import { ChartSvg } from '../assets/icon/chart';
-import { CloseIcon, FastForward, Rewind } from '../assets/icon/icon';
+import useModels from 'hooks/useModels';
+import React, { Dispatch, SetStateAction, useState } from 'react';
 import {
   AlertRuleInfoSchema,
-  useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet,
-  useGetMonitorApiV1MonitorsMonitorIdGet,
+  AlertSchema,
+  MonitorSchema,
   useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost
 } from '../api/generated';
+import { Checkmark, CloseIcon, TestTube } from '../assets/icon/icon';
 import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
-import { Loader } from './Loader';
+
 interface AlertsDrawerHeaderProps {
+  alertIndex: number;
+  alerts: AlertSchema[];
   alertRule: AlertRuleInfoSchema;
+  changeAlertIndex: Dispatch<SetStateAction<number>>;
   onResolve: () => void;
   onClose: () => void;
+  monitor: MonitorSchema | null;
 }
 
-const titles = ['Model', 'Check', 'Feature', 'Condition', 'Frequency'];
+const titles = ['Check:', 'Model:', 'Feature:', 'Segment:', 'Frequency:'];
 
-export const AlertsDrawerHeader = ({ alertRule, onResolve, onClose }: AlertsDrawerHeaderProps) => {
-  const { name, alert_severity, condition, repeat_every } = alertRule;
+export const AlertsDrawerHeader = ({
+  alertIndex,
+  alerts,
+  alertRule,
+  changeAlertIndex,
+  onResolve,
+  onClose,
+  monitor
+}: AlertsDrawerHeaderProps) => {
+  const { alert_severity, condition, repeat_every } = alertRule;
 
-  const { data: alerts = [], isLoading: isAlertsLoading } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(
-    alertRule.id
-  );
-  const { data: monitor = null, isLoading: isMonitorLoading } = useGetMonitorApiV1MonitorsMonitorIdGet(
-    alertRule.monitor_id
-  );
+  const { mutateAsync: mutateRunSuit, isLoading } =
+    useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
 
-  const isLoading = isAlertsLoading || isMonitorLoading;
-
-  const { mutateAsync: mutateRunSuit } = useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
-
-  const [alertIndex, setAlertIndex] = useState(0);
   const theme = useTheme();
+  const { modelsMap } = useModels();
 
   const [modelVersionId, setModelVersionId] = useState<string>('');
 
@@ -70,34 +77,26 @@ export const AlertsDrawerHeader = ({ alertRule, onResolve, onClose }: AlertsDraw
     }
   });
 
-  if (isLoading) return <Loader />;
-
   const alert = alerts[alertIndex];
 
-  const info = [
-    name,
-    monitor?.check?.name,
-    '-',
-    `Value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
-    repeat_every === 86400 ? 'Day' : repeat_every
+  const info: string[] = [
+    monitor?.check?.name || '',
+    modelsMap[alertRule.model_id].name,
+    monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : '-',
+    monitor?.data_filters
+      ? `${monitor?.data_filters.filters[0].column} = ${monitor?.data_filters.filters[0].value}`
+      : '-',
+    dayjs.duration(repeat_every, 'seconds').humanize()
   ];
 
   const { color, ...criticalityRange } = criticalityMap[alert_severity!];
-
-  const prevAlert = () => {
-    setAlertIndex(prevIndex => prevIndex - 1);
-  };
-
-  const nextAlert = () => {
-    setAlertIndex(prevIndex => prevIndex + 1);
-  };
 
   const runTest = async (modelVersionId: string) => {
     const result = await mutateRunSuit({
       modelVersionId: parseInt(modelVersionId),
       data: {
-        start_time: alert.start_time,
-        end_time: alert.end_time,
+        start_time: alert?.start_time,
+        end_time: alert?.end_time,
         filter: monitor!.data_filters
       }
     });
@@ -117,50 +116,88 @@ export const AlertsDrawerHeader = ({ alertRule, onResolve, onClose }: AlertsDraw
     runTest(modelVersionId);
   };
 
+  const closeDrawer = () => {
+    changeAlertIndex(0);
+    onClose();
+  };
+
   return (
     <StyledMainWrapper>
-      <Box>
-        <StyledCriticalityTop bgColor={color} />
-        <StyledCriticality bgColor={color}>
-          <ChartSvg {...criticalityRange} width={18} height={16} />
-          <StyledCaption variant="caption">{alert_severity}</StyledCaption>
-        </StyledCriticality>
-      </Box>
       <Box width={1}>
         <StyledTopSection>
-          <Box>
-            <Typography variant="h4">{name}</Typography>
-            <StyledDate variant="subtitle2">Alert date: {dayjs(alert?.created_at).format('MMM. DD, YYYY')}</StyledDate>
-          </Box>
-          <StyledFlexWrapper>
-            <StyledFlexWrapper>
-              <StyledIconButton disabled={!alertIndex} onClick={prevAlert}>
-                <Rewind />
-              </StyledIconButton>
-              <StyledTypographyCount variant="body1">
-                Alert #{alertIndex + 1}/{alerts.length}
-              </StyledTypographyCount>
-              <StyledIconButton disabled={alertIndex + 1 === alerts.length} onClick={nextAlert}>
-                <FastForward />
-              </StyledIconButton>
-            </StyledFlexWrapper>
-            <StyledDivider orientation="vertical" flexItem />
-            <StyledIconButton onClick={onClose}>
-              <CloseIcon />
-            </StyledIconButton>
-          </StyledFlexWrapper>
+          <Stack direction="row" spacing="20px" alignItems="center">
+            <Box
+              sx={{
+                padding: '10px 8px 5px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                backgroundColor: color,
+                borderRadius: '10px'
+              }}
+            >
+              <ChartSvg {...criticalityRange} width={27} height={26} />
+              <Typography
+                sx={{
+                  fontSize: '16px',
+                  lineHeight: '150%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  letterSpacing: '-0.9px',
+                  fontWeight: 700,
+                  color: theme => theme.palette.common.white,
+                  marginTop: '10px'
+                }}
+              >
+                {dayjs(alert.start_time).format('DD.MM.YYYY')}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="h4">{monitor?.name} Alert</Typography>
+              <Typography variant="body1" marginTop="8px">
+                {`Rule: Value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`}
+              </Typography>
+            </Box>
+          </Stack>
+          <StyledIconButton onClick={closeDrawer}>
+            <CloseIcon />
+          </StyledIconButton>
         </StyledTopSection>
-        <StyledDividerDashed />
+        <Divider
+          sx={theme => ({
+            border: `1px dashed ${theme.palette.grey[300]}`,
+            margin: '16px 0 16px 0'
+          })}
+        />
         <StyledBottomSection>
           <StyledFlexWrapper>
             {titles.map((title, index) => (
-              <StyledPropertyWrapper key={title}>
-                <StyledTypographyTitle>{title}</StyledTypographyTitle>
-                <StyledTypographyProperty variant="subtitle2">{info[index]}</StyledTypographyProperty>
-              </StyledPropertyWrapper>
+              <Box
+                key={title}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '8px 0'
+                }}
+              >
+                <Typography variant="subtitle2" color="text.disabled">
+                  {title}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ color: 'text.disabled', fontWeight: 700, marginLeft: '4px' }}>
+                  {info[index]}
+                </Typography>
+                {titles.length - 1 !== index && (
+                  <Divider
+                    orientation="vertical"
+                    flexItem
+                    sx={{ margin: '0 10px', height: '10px', alignSelf: 'center', borderColor: 'text.disabled' }}
+                  />
+                )}
+              </Box>
             ))}
           </StyledFlexWrapper>
-          <StyledButtonWrapper>
+          <Stack direction="row" spacing="20px">
             {alert?.failed_values && Object.keys(alert.failed_values).length > 1 ? (
               <StyledSelect
                 size="small"
@@ -171,19 +208,36 @@ export const AlertsDrawerHeader = ({ alertRule, onResolve, onClose }: AlertsDraw
                 renderValue={value => <Typography>{value ? `Version ${value}` : 'RUN TEST SUITE'}</Typography>}
               >
                 {Object.keys(alert.failed_values).map(key => (
-                  <MenuItem value={key}>Version {key}</MenuItem>
+                  <MenuItem value={key} key={key}>
+                    Version {key}
+                  </MenuItem>
                 ))}
               </StyledSelect>
             ) : (
-              <StyledButtonTest variant="outlined" onClick={handleRunSuite}>
-                Run Test Suite
-              </StyledButtonTest>
+              <StyledButtonResolve
+                variant="outlined"
+                disabled={alert?.resolved}
+                onClick={onResolve}
+                startIcon={<Checkmark />}
+              >
+                Resolve Alert
+              </StyledButtonResolve>
             )}
-
-            <StyledButtonResolve variant="contained" disabled={alert?.resolved} onClick={onResolve}>
-              Resolve Alert
-            </StyledButtonResolve>
-          </StyledButtonWrapper>
+            <StyledButtonTest
+              size="small"
+              color="secondary"
+              loading={isLoading}
+              loadingPosition="start"
+              variant="contained"
+              onClick={handleRunSuite}
+              startIcon={<TestTube />}
+            >
+              Run Test Suite
+            </StyledButtonTest>
+            {/* <StyledButtonTest variant="contained" onClick={handleRunSuite} startIcon={<TestTube />}>
+              Run Test Suite
+            </StyledButtonTest> */}
+          </Stack>
         </StyledBottomSection>
       </Box>
     </StyledMainWrapper>
@@ -191,130 +245,41 @@ export const AlertsDrawerHeader = ({ alertRule, onResolve, onClose }: AlertsDraw
 };
 
 const StyledMainWrapper = styled(Box)({
-  display: 'flex',
-  padding: '15px 36px 0 16px'
-});
-
-interface StyledCriticalityProps {
-  bgColor: string;
-}
-
-const StyledCriticalityTop = styled(Box, {
-  shouldForwardProp: prop => prop !== 'bgColor'
-})<StyledCriticalityProps>(({ bgColor }) => ({
-  width: 46,
-  height: 70,
-  borderRadius: '1000px 0 0 0',
-  backgroundColor: bgColor
-}));
-
-const StyledCriticality = styled(Box, {
-  shouldForwardProp: prop => prop !== 'bgColor'
-})<StyledCriticalityProps>(({ bgColor, theme }) => ({
-  width: 46,
-  height: 108,
-  backgroundColor: bgColor,
-  borderRadius: '0 0 1000px 1000px',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'end',
-  alignItems: 'center',
-  padding: '34px 6px',
-  color: theme.palette.common.white
-}));
-
-const StyledCaption = styled(Typography)({
-  marginTop: '5px'
+  padding: '16px 40px 16px 40px'
 });
 
 const StyledTopSection = styled(Box)({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '9px 0 0 22px',
   width: '100%'
-});
-
-const StyledDate = styled(Typography)({
-  marginTop: '5px'
 });
 
 const StyledFlexWrapper = styled(Box)({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between'
+  flexWrap: 'wrap',
+  maxWidth: 700
 });
 
 const StyledIconButton = styled(IconButton)({
   background: 'transparent'
 });
 
-const StyledTypographyCount = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  margin: '0 8px'
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-  borderColor: theme.palette.grey[200],
-  margin: '0 24px'
-}));
-
-const StyledDividerDashed = styled(Divider)(({ theme }) => ({
-  border: `1px dashed ${theme.palette.grey[300]}`,
-  margin: '18px 3px 22px 12px'
-}));
-
 const StyledBottomSection = styled(Box)({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  margin: '0 1px 0 18px'
-});
-
-const StyledPropertyWrapper = styled(Box)({
-  margin: '0 22.5px',
-  ':first-of-type': {
-    marginLeft: 0
-  },
-  ':last-of-type': {
-    marginRight: 0
-  }
-});
-
-const StyledTypographyTitle = styled(Typography)(({ theme }) => ({
-  color: theme.palette.text.disabled,
-  fontWeight: 500,
-  fontSize: 12,
-  lineHeight: '140%',
-  letterSpacing: '1px',
-  textTransform: 'uppercase'
-}));
-
-const StyledTypographyProperty = styled(Typography)({
-  marginTop: '5px'
-});
-
-const StyledButtonWrapper = styled(Box)({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  width: 328
+  justifyContent: 'space-between'
 });
 
 const StyledButtonResolve = styled(Button)({
-  width: 138,
+  width: 160,
+  padding: '0 8px'
+});
+
+const StyledButtonTest = styled(LoadingButton)({
+  width: 166,
   padding: 0
-});
-
-const StyledButtonTest = styled(Button)({
-  width: 170
-});
-
-const StyledTypographySelect = styled(Typography)({
-  fontWeight: 500,
-  fontSize: 14,
-  letterSpacing: '1px',
-  lineHeight: 2.66
 });
 
 const StyledSelect = styled(Select)(({ theme }) => ({

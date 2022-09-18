@@ -1816,6 +1816,20 @@
     prop-types "^15.8.1"
     react-is "^18.2.0"
 
+"@mui/base@5.0.0-alpha.97":
+  version "5.0.0-alpha.97"
+  resolved "https://registry.yarnpkg.com/@mui/base/-/base-5.0.0-alpha.97.tgz#bd12db4ed3bb1dbc2879944bbdb68b559641b02a"
+  integrity sha512-gvo0hOg/tBzfJ3eDQOGAPBJJU+qTWd0e5zBEMFIkT1ekJqXx14JtIHvheOFU17y9iDciYE256Q8g+tj6a1dcBA==
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@emotion/is-prop-valid" "^1.2.0"
+    "@mui/types" "^7.2.0"
+    "@mui/utils" "^5.10.3"
+    "@popperjs/core" "^2.11.6"
+    clsx "^1.2.1"
+    prop-types "^15.8.1"
+    react-is "^18.2.0"
+
 "@mui/core-downloads-tracker@^5.10.4":
   version "5.10.4"
   resolved "https://registry.npmjs.org/@mui/core-downloads-tracker/-/core-downloads-tracker-5.10.4.tgz"
@@ -1827,6 +1841,19 @@
   integrity sha512-o0kbUlsWCBtCE0wP33cGKbyryCh7kpm2EECYMPDmWrLhbA+HUODXIdhiTFS26szp2xXo9HY1lEx0ufeJ+tddYw==
   dependencies:
     "@babel/runtime" "^7.18.9"
+
+"@mui/lab@^5.0.0-alpha.99":
+  version "5.0.0-alpha.99"
+  resolved "https://registry.yarnpkg.com/@mui/lab/-/lab-5.0.0-alpha.99.tgz#b643b323df4b98b35c36faeb6f06650ed7d23789"
+  integrity sha512-GBjpeugp59KEHdIGJ4w9uqWcxNSPr2q6IEjzjWkut6GpprSruVYgXGn5PqBdrcSEtLKTd8bQ0xBFPSmoVqkJUw==
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@mui/base" "5.0.0-alpha.97"
+    "@mui/system" "^5.10.5"
+    "@mui/utils" "^5.10.3"
+    clsx "^1.2.1"
+    prop-types "^15.8.1"
+    react-is "^18.2.0"
 
 "@mui/material@^5.10.1":
   version "5.10.4"
@@ -1865,6 +1892,16 @@
     csstype "^3.1.0"
     prop-types "^15.8.1"
 
+"@mui/styled-engine@^5.10.5":
+  version "5.10.5"
+  resolved "https://registry.yarnpkg.com/@mui/styled-engine/-/styled-engine-5.10.5.tgz#8ce4197e887a69119aea056320aad5812025ceb4"
+  integrity sha512-6U6tTdf+H1OsjgcFoY12gYPR+qqZ1WHGGIahK5V7JhMkMUgH7ozyiNi8s1LzmwrUlAz1hAAhuO5nBYXku3wWvw==
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@emotion/cache" "^11.10.3"
+    csstype "^3.1.0"
+    prop-types "^15.8.1"
+
 "@mui/system@^5.10.4":
   version "5.10.4"
   resolved "https://registry.npmjs.org/@mui/system/-/system-5.10.4.tgz"
@@ -1873,6 +1910,20 @@
     "@babel/runtime" "^7.18.9"
     "@mui/private-theming" "^5.10.3"
     "@mui/styled-engine" "^5.10.4"
+    "@mui/types" "^7.2.0"
+    "@mui/utils" "^5.10.3"
+    clsx "^1.2.1"
+    csstype "^3.1.0"
+    prop-types "^15.8.1"
+
+"@mui/system@^5.10.5":
+  version "5.10.5"
+  resolved "https://registry.yarnpkg.com/@mui/system/-/system-5.10.5.tgz#b0c8494aa9230fb3b8e33c4aee05207925519569"
+  integrity sha512-GUPiDVZTKp9yH3FVeLSIw3Bqsyl7qLxtAK1ZiZmC8e+zdH7bcnZZXvWK3vPIbx35ZyhQpvAOWQFpiF9TjdA77w==
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@mui/private-theming" "^5.10.3"
+    "@mui/styled-engine" "^5.10.5"
     "@mui/types" "^7.2.0"
     "@mui/utils" "^5.10.3"
     clsx "^1.2.1"
@@ -2639,6 +2690,11 @@
   integrity sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==
   dependencies:
     "@types/node" "*"
+
+"@types/hammerjs@^2.0.41":
+  version "2.0.41"
+  resolved "https://registry.yarnpkg.com/@types/hammerjs/-/hammerjs-2.0.41.tgz#f6ecf57d1b12d2befcce00e928a6a097c22980aa"
+  integrity sha512-ewXv/ceBaJprikMcxCmWU1FKyMAQ2X7a9Gtmzw8fcg2kIePI1crERDM818W+XYrxqdBBOdlf2rm137bU+BltCA==
 
 "@types/html-minifier-terser@^6.0.0":
   version "6.1.0"

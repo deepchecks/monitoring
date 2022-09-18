@@ -1,9 +1,15 @@
-import React from 'react';
-import { Box, Drawer, DrawerProps, styled } from '@mui/material';
-import DiagramLine from './DiagramLine';
-import { AlertsDrawerHeader } from './AlertsDrawerHeader';
-import { AlertRuleInfoSchema } from '../api/generated';
+import { Box, Drawer, DrawerProps, styled, Typography } from '@mui/material';
+import { useModels } from 'hooks/useModels';
+import React, { useEffect, useState } from 'react';
+import {
+  AlertRuleInfoSchema,
+  useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet,
+  useGetMonitorApiV1MonitorsMonitorIdGet
+} from '../api/generated';
 import useMonitorData from '../hooks/useAlertMonitorData';
+import { AlertsDrawerHeader } from './AlertsDrawerHeader';
+import DiagramLine from './DiagramLine';
+import { Loader } from './Loader';
 
 interface AlertsDrawerProps extends DrawerProps {
   alertRule: AlertRuleInfoSchema | null;
@@ -12,17 +18,79 @@ interface AlertsDrawerProps extends DrawerProps {
 }
 
 export const AlertsDrawer = ({ onClose, onResolve, alertRule, ...props }: AlertsDrawerProps) => {
-  const { graphData } = useMonitorData(alertRule);
+  const { modelsMap, isLoading: isModelMapLoading } = useModels();
+  const { graphData, isLoading: isGraphDataLoading } = useMonitorData(
+    alertRule,
+    alertRule ? modelsMap[alertRule.model_id].latest_time : undefined
+  );
 
+  const [alertIndex, setAlertIndex] = useState(0);
+
+  const {
+    data: alerts = [],
+    isLoading: isAlertsLoading,
+    refetch: refetchAlerts,
+    isError
+  } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule?.id as number, {
+    query: {
+      enabled: false
+    }
+  });
+  const {
+    data: monitor = null,
+    isLoading: isMonitorLoading,
+    refetch: refetchMonitor
+  } = useGetMonitorApiV1MonitorsMonitorIdGet(alertRule?.monitor_id as number, {
+    query: {
+      enabled: false
+    }
+  });
+
+  const isLoading = isAlertsLoading || isMonitorLoading || isModelMapLoading || isGraphDataLoading;
+
+  useEffect(() => {
+    if (alertRule) {
+      refetchAlerts();
+      refetchMonitor();
+    }
+  }, [alertRule]);
+
+  if (isError) {
+    return <Typography variant="h4">Something went wrong...</Typography>;
+  }
   return (
     <StyledDrawer onClose={onClose} {...props}>
-      {alertRule && (
+      {isLoading || !alertRule ? (
+        <Loader />
+      ) : (
         <>
-          <AlertsDrawerHeader onResolve={onResolve} alertRule={alertRule} onClose={onClose} />
+          <AlertsDrawerHeader
+            alertIndex={alertIndex}
+            alerts={alerts}
+            alertRule={alertRule}
+            changeAlertIndex={setAlertIndex}
+            onClose={onClose}
+            onResolve={onResolve}
+            monitor={monitor}
+          />
           <StyledDiagramWrapper>
-            {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-            {/* @ts-ignore */}
-            <DiagramLine data={graphData} threshold={alertRule.condition?.value} />
+            {/* eslint-disable @typescript-eslint/ban-ts-comment */}
+            <DiagramLine
+              alerts={alerts}
+              alertIndex={alertIndex}
+              changeAlertIndex={setAlertIndex}
+              //@ts-ignore
+              data={graphData}
+              height={350}
+              minimap={{
+                alerts: alerts,
+                alertSeverity: alertRule.alert_severity || 'low',
+                alertIndex: alertIndex,
+                changeAlertIndex: setAlertIndex
+              }}
+              threshold={alertRule.condition?.value}
+            />
+            {/* eslint-enable @typescript-eslint/ban-ts-comment */}
           </StyledDiagramWrapper>
         </>
       )}
@@ -37,5 +105,5 @@ const StyledDrawer = styled(Drawer)({
 });
 
 const StyledDiagramWrapper = styled(Box)({
-  margin: '78px 40px 0 40px'
+  margin: '0 40px 0 40px'
 });

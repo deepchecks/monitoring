@@ -1,77 +1,79 @@
+import { alpha, Components, Theme } from '@mui/material';
 import React from 'react';
-import { alpha, Components, Theme } from "@mui/material";
 // import type {} from "@mui/x-date-pickers/themeAugmentation";
-import { CheckboxDefault, CheckboxSelected } from "../assets/icon/icon";
-import { colors } from "./colors";
+import { CheckboxDefault, CheckboxSelected } from '../assets/icon/icon';
+import { colors } from './colors';
 
 export const componentOptions: Components<Theme> = {
   MuiButton: {
     defaultProps: {
-      variant: "contained",
-      color: "primary"
+      variant: 'contained',
+      color: 'primary'
     },
     styleOverrides: {
       root: ({ theme }) => ({
         color: theme.palette.common.white,
-        borderRadius: "2px",
+        borderRadius: '2px',
         fontSize: 14,
-        width: "max-content",
+        width: 'max-content',
         boxShadow:
-          "0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 5px 8px rgba(0, 0, 0, 0.14), 0px 1px 14px rgba(0, 0, 0, 0.12)",
-        transition: "all 0.3s ease"
+          '0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 5px 8px rgba(0, 0, 0, 0.14), 0px 1px 14px rgba(0, 0, 0, 0.12)',
+        transition: 'all 0.3s ease'
       }),
       sizeLarge: {
-        padding: "0 21px",
+        padding: '0 21px',
         minHeight: 42,
         minWidth: 92
       },
       sizeMedium: {
-        padding: "0 13px",
+        padding: '0 13px',
         lineHeight: 2,
         minHeight: 36,
         minWidth: 88
       },
       sizeSmall: {
-        padding: "0 11px",
+        padding: '0 11px',
         lineHeight: 2,
         minHeight: 30,
         minWidth: 70
       },
       contained: ({ theme }) => ({
         background: theme.palette.primary.main,
-        ":hover": {
+        ':hover': {
           background: theme.palette.primary.dark
         },
-        ":disabled": {
+        ':disabled': {
           background: theme.palette.grey[100],
           color: theme.palette.grey[300],
-          boxShadow: "none"
+          boxShadow: 'none'
         }
       }),
       outlined: ({ theme }) => ({
         background: alpha(theme.palette.common.white, 0.7),
-        color: theme.palette.primary.main,
-        ":hover": {
+        border: `1px solid ${theme.palette.primary.main}`,
+        color: theme.palette.primary.dark,
+        ':hover': {
+          color: theme.palette.primary.main,
           background: theme.palette.primary.light
         },
-        ":disabled": {
+        ':disabled': {
           background: alpha(theme.palette.common.white, 0.7),
           color: theme.palette.grey[200],
           border: `1px solid ${theme.palette.grey[200]}`,
-          boxShadow: "none"
+          boxShadow: 'none'
         }
       }),
       text: ({ theme }) => ({
         fontSize: 15,
-        lineHeight: "26px",
-        background: "none",
-        letterSpacing: "0.46px",
-        boxShadow: "none",
+        lineHeight: '26px',
+        background: 'none',
+        letterSpacing: '0.46px',
+        boxShadow: 'none',
         color: theme.palette.primary.main,
-        ":hover": {
+        ':hover': {
           background: theme.palette.primary.light
         },
-        ":disabled": {
+        ':disabled': {
           color: theme.palette.grey[200]
         }
       })
@@ -79,68 +81,62 @@ export const componentOptions: Components<Theme> = {
   },
   MuiIconButton: {
     defaultProps: {
-      color: "primary",
+      color: 'primary',
       disableFocusRipple: false
     },
     styleOverrides: {
       root: ({ theme }) => ({
-        borderRadius: "6px",
-        transition: "all 0.3s ease",
-        background: "#F3F5F8",
-        ":hover": {
+        borderRadius: '6px',
+        transition: 'all 0.3s ease',
+        background: '#F3F5F8',
+        ':hover': {
           background: theme.palette.primary.light
         },
-        ":active": {
+        ':active': {
           background: theme.palette.primary.light
         },
-        "& svg": {
+        '& svg': {
           color: theme.palette.primary.light
         }
       }),
       sizeLarge: {
-        padding: "9px"
+        padding: '9px'
       },
       sizeMedium: {
-        padding: "6px"
+        padding: '6px'
       },
       sizeSmall: {
-        padding: "5px"
+        padding: '5px'
       }
     }
   },
   MuiSlider: {
     styleOverrides: {
       root: ({ theme }) => ({
-        "&.Mui-disabled": {
+        '&.Mui-disabled': {
           color: theme.palette.grey[300]
         }
       }),
       markLabel: ({ theme }) => ({
-        top: "36px",
+        top: '36px',
         color: theme.palette.text.disabled,
-        "&.MuiSlider-markLabelActive": {
+        '&.MuiSlider-markLabelActive': {
           color: theme.palette.text.secondary
         }
       }),
       thumb: ({ theme }) => ({
         color: theme.palette.primary.dark,
-        "&.Mui-disabled": {
+        '&.Mui-disabled': {
           color: theme.palette.grey[300]
         },
-        ":hover": {
-          boxShadow: `0px 0px 0px 11px ${alpha(
-            theme.palette.primary.main,
-            0.16
-          )}`
+        ':hover': {
+          boxShadow: `0px 0px 0px 11px ${alpha(theme.palette.primary.main, 0.16)}`
         }
       }),
       sizeSmall: ({ theme }) => ({
-        "& .MuiSlider-thumb": {
-          ":hover": {
-            boxShadow: `0px 0px 0px 10px ${alpha(
-              theme.palette.primary.main,
-              0.16
-            )}`
+        '& .MuiSlider-thumb': {
+          ':hover': {
+            boxShadow: `0px 0px 0px 10px ${alpha(theme.palette.primary.main, 0.16)}`
           }
         }
       })
@@ -149,16 +145,16 @@ export const componentOptions: Components<Theme> = {
   MuiSelect: {
     styleOverrides: {
       select: ({ theme }) => ({
-        "&.Mui-focused": {
+        '&.Mui-focused': {
           color: theme.palette.primary.main
         },
-        "&:hover .MuiOutlinedInput-notchedOutline": {
+        '&:hover .MuiOutlinedInput-notchedOutline': {
           borderColor: `${theme.palette.primary.main} !important`
         }
       }),
       icon: ({ theme }) => ({
         color: theme.palette.text.secondary,
-        "& + .MuiOutlinedInput-notchedOutline": {
+        '& + .MuiOutlinedInput-notchedOutline': {
           border: `1px solid ${theme.palette.grey[200]}`
         }
       })
@@ -167,7 +163,7 @@ export const componentOptions: Components<Theme> = {
   MuiMenu: {
     styleOverrides: {
       list: {
-        padding: "6px 0 10px"
+        padding: '6px 0 10px'
       }
     }
   },
@@ -178,31 +174,31 @@ export const componentOptions: Components<Theme> = {
     },
     styleOverrides: {
       root: {
-        padding: "3px"
+        padding: '3px'
       }
     }
   },
   MuiSwitch: {
     styleOverrides: {
       root: ({ theme }) => ({
-        padding: "7px",
+        padding: '7px',
         height: 24,
         width: 40,
-        overflow: "visible",
-        "& 	.Mui-checked + .MuiSwitch-track": {
+        overflow: 'visible',
+        '& 	.Mui-checked + .MuiSwitch-track': {
           backgroundColor: theme.palette.primary.contrastText,
           opacity: 1
         }
       }),
       switchBase: ({ theme }) => ({
-        padding: "4px",
+        padding: '4px',
         color: theme.palette.grey[100]
       }),
       thumb: {
         width: 16,
         height: 16,
         boxShadow:
-          "0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px rgba(0, 0, 0, 0.14), 0px 1px 3px rgba(0, 0, 0, 0.12)"
+          '0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px rgba(0, 0, 0, 0.14), 0px 1px 3px rgba(0, 0, 0, 0.12)'
       },
       track: ({ theme }) => ({
         opacity: 1,
@@ -213,11 +209,11 @@ export const componentOptions: Components<Theme> = {
   MuiTooltip: {
     styleOverrides: {
       tooltip: {
-        padding: "4px 16px",
+        padding: '4px 16px',
         backgroundColor: colors.neutral.blue,
         fontSize: 16,
-        lineHeight: "24px",
-        letterSpacing: "0.15px",
+        lineHeight: '24px',
+        letterSpacing: '0.15px',
         fontWeight: 400
       }
     }
@@ -229,21 +225,21 @@ export const componentOptions: Components<Theme> = {
         backgroundColor: colors.neutral.blue,
         color: theme.palette.common.white,
         fontSize: 12,
-        lineHeight: "18px",
-        letterSpacing: "0.1px"
+        lineHeight: '18px',
+        letterSpacing: '0.1px'
       }),
       label: {
-        padding: "0 7px 0 10px"
+        padding: '0 7px 0 10px'
       },
       deletable: ({ theme }) => ({
-        "& .MuiChip-deleteIcon": {
-          margin: "0 7px 0 0",
+        '& .MuiChip-deleteIcon': {
+          margin: '0 7px 0 0',
           width: 16,
           height: 16,
           opacity: 0.7,
           color: theme.palette.common.white,
 
-          ":hover": {
+          ':hover': {
             color: theme.palette.common.white,
             opacity: 1
           }
@@ -254,7 +250,7 @@ export const componentOptions: Components<Theme> = {
   MuiBreadcrumbs: {
     styleOverrides: {
       separator: ({ theme }) => ({
-        margin: "0 10px",
+        margin: '0 10px',
         color: theme.palette.text.primary
       })
     }
@@ -272,7 +268,7 @@ export const componentOptions: Components<Theme> = {
   MuiFormControl: {
     styleOverrides: {
       root: ({ theme }) => ({
-        "& label": {
+        '& label': {
           color: theme.palette.text.disabled
         }
       })

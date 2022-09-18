@@ -1,10 +1,11 @@
-import { Box, Menu, MenuItem, Select, styled, Typography, Divider } from '@mui/material';
+import { Box, Divider, Menu, MenuItem, Select, styled, Typography } from '@mui/material';
 import { Arrow } from '../../assets/icon/icon';
 
 export const StyledFlexContent = styled(Box)({
   boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
   paddingBottom: '30px',
-  borderRadius: '10px'
+  borderRadius: '10px',
+  height: '100%'
 });
 
 export const StyledTypographyTitle = styled(Typography)({

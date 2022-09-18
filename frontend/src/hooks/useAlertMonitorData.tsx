@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
+import { ChartData } from 'chart.js';
+import dayjs from 'dayjs';
+import { useEffect, useMemo } from 'react';
 import {
   AlertRuleInfoSchema,
   CheckResultSchema,
   useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost
 } from '../api/generated';
-import { ChartData } from 'chart.js';
-import dayjs from 'dayjs';
 import { setGraphOptions } from '../helpers/setGraphOptions';
 
 export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'line'> => ({
@@ -53,12 +53,12 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
   labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD YYYY'))
 });
 
-const useMonitorsData = (alertRule: AlertRuleInfoSchema | null) => {
+const useMonitorsData = (alertRule: AlertRuleInfoSchema | null, time: number | undefined) => {
   const { data, mutate, isLoading } = useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost();
 
   useEffect(() => {
-    if (!alertRule) return;
-    mutate({ monitorId: alertRule.monitor_id, data: {} });
+    if (!alertRule || !time) return;
+    mutate({ monitorId: alertRule.monitor_id, data: { end_time: new Date(time * 1000).toISOString() } });
   }, [alertRule]);
 
   const graphData = useMemo(() => {

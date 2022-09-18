@@ -1,5 +1,4 @@
-import { Box, Button, Dialog, DialogProps, IconButton, Stack, styled, Typography } from '@mui/material';
-import React from 'react';
+import React, { Box, Button, Dialog, DialogProps, IconButton, Stack, styled, Typography } from '@mui/material';
 import { AlertRuleInfoSchema } from '../api/generated';
 import { CloseIcon } from '../assets/icon/icon';
 import { Loader } from './Loader';

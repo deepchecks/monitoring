@@ -32,7 +32,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   );
 
   const data = [
-    modelsMap[model_id].name,
+    modelsMap[model_id]?.name,
     monitor?.check?.name,
     `value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
     dayjs.duration(repeat_every, 'seconds').humanize()
