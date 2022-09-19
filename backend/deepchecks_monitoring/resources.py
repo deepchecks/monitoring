@@ -156,7 +156,7 @@ class ResourcesProvider(BaseResourcesProvider):
             str(settings.async_database_uri),
             echo=settings.echo_sql,
             json_serializer=json_dumps,
-            pool_pre_ping=False
+            pool_pre_ping=True
         )
         return self._async_database_engine
 
