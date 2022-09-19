@@ -34,6 +34,7 @@ declare module 'chart.js' {
   interface PluginOptionsByType<TType extends ChartType> {
     drawAlerts: {
       activeIndex: number;
+      changeAlertIndex: Dispatch<SetStateAction<number>>;
       severity: AlertSeverity;
     };
     minimapPanorama: {
@@ -41,6 +42,7 @@ declare module 'chart.js' {
     };
     drawAlertsOnMinimap: {
       activeIndex: number;
+      changeAlertIndex: Dispatch<SetStateAction<number>>;
       severity: AlertSeverity;
     };
   }
@@ -157,7 +159,7 @@ function DiagramLine({
       })
     };
   };
-  console.log('Mainrange', range);
+
   const onChange = ({ chart }: { chart: Chart }) => {
     if (chart.originalMinMax && minimapRef?.current?.length) {
       const { min, max } = chart.scales.x;
@@ -215,10 +217,7 @@ function DiagramLine({
     plugins: {
       drawAlerts: {
         activeIndex: alertIndex,
-        severity: alertSeverity
-      },
-      drawAlertsOnMinimap: {
-        activeIndex: alertIndex,
+        changeAlertIndex,
         severity: alertSeverity
       },
       legend: {
@@ -316,6 +315,7 @@ function DiagramLine({
         <Minimap
           alerts={alerts}
           alertIndex={alertIndex}
+          alertSeverity={alertSeverity}
           changeAlertIndex={changeAlertIndex}
           data={getNewData()}
           options={options}

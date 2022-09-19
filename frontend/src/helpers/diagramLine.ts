@@ -1,9 +1,10 @@
 import { alpha } from '@mui/material';
 import { AlertSchema, AlertSeverity } from 'api/generated';
-import { Chart, ChartMeta } from 'chart.js';
+import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 import { SEVERITY } from 'components/AlertCount';
 import dayjs from 'dayjs';
+import { Dispatch, SetStateAction } from 'react';
 
 const { LOW, MID, HIGH, CRITICAL } = SEVERITY;
 
@@ -185,9 +186,64 @@ export const addSpace = (space: number) => {
   return extraSpace;
 };
 
+const outerRadius = 18;
+
 export const drawAlerts = (alerts: AlertSchema[]) => ({
   id: 'drawAlerts',
   beforeDatasetsDraw: () => 1,
+  afterEvent(
+    chart: ChartOption,
+    args: { event: ChartEvent; replay: boolean; changed?: boolean; cancelable: false; inChartArea: boolean },
+    { activeIndex, changeAlertIndex }: { activeIndex: number; changeAlertIndex: Dispatch<SetStateAction<number>> }
+  ) {
+    const {
+      chartArea: { bottom, top }
+    } = chart;
+
+    const click = args.event.type;
+    const xCursor = args.event.x;
+    const yCursor = args.event.y;
+    const meta = chart.getDatasetMeta(0);
+    const deviation = 4;
+
+    const angle = Math.PI / 180;
+
+    if (click === 'click' && xCursor && yCursor && chart?.data?.labels && chart?.data?.labels.length) {
+      chart?.data?.labels.forEach((label, index) => {
+        const xData = meta.data[index].x;
+        const yData = meta.data[index].y;
+        alerts.forEach(({ end_time }, alertIndex) => {
+          if (label === dayjs(end_time).format('MMM. DD YYYY') && alertIndex !== activeIndex) {
+            let xLineMin = xData - deviation < xCursor;
+            let xLineMax = xData + deviation > xCursor;
+            const currentTop = yData - outerRadius < top ? yData - outerRadius : top;
+            const currentBottom = yData + outerRadius > bottom ? yData + outerRadius : bottom;
+            const yCondition = yCursor < currentBottom && yCursor > currentTop;
+            const yRhombusCoordinates = yData - outerRadius < yCursor && yData + outerRadius > yCursor;
+
+            let side = 0;
+
+            if (yRhombusCoordinates) {
+              if (yCursor <= yData) {
+                side = Math.abs((yCursor - (yData - outerRadius)) / Math.tan(angle * 45));
+              }
+
+              if (yCursor > yData) {
+                side = Math.abs(outerRadius - (yCursor - yData) / Math.tan(angle * 45));
+              }
+
+              xLineMin = xData - side < xCursor;
+              xLineMax = xData + side > xCursor;
+            }
+
+            if (yCondition && xLineMin && xLineMax) {
+              changeAlertIndex(alertIndex);
+            }
+          }
+        });
+      });
+    }
+  },
   afterDatasetsDraw(
     chart: ChartOption,
     args: Record<string, never>,
@@ -284,7 +340,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       ctx.restore();
       ctx.setLineDash([6, 0]);
 
-      drawFilledRhoimbus(ctx, meta, '#fff', index, 18, 4);
+      drawFilledRhoimbus(ctx, meta, '#fff', index, outerRadius, 4);
       drawFilledRhoimbus(ctx, meta, criticalColor, index, 14, 3);
       drawFilledRhoimbus(ctx, meta, alpha('#fff', 0.85), index, 10, 0);
       drawExclamationMark(ctx, meta, criticalColor, index, 12, 2);

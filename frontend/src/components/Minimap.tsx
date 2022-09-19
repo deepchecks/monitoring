@@ -1,5 +1,5 @@
 import { alpha, Box, Button, Stack, styled, useTheme } from '@mui/material';
-import { AlertSchema } from 'api/generated';
+import { AlertSchema, AlertSeverity } from 'api/generated';
 import { FastForward, Rewind } from 'assets/icon/icon';
 import { Chart, ChartData, ChartOptions, registerables } from 'chart.js';
 import 'chartjs-adapter-dayjs-3';
@@ -14,6 +14,7 @@ Chart.register(...registerables, zoomPlugin);
 interface MinimapProps {
   alerts: AlertSchema[];
   alertIndex: number;
+  alertSeverity: AlertSeverity;
   changeAlertIndex: Dispatch<SetStateAction<number>>;
   data: ChartData<'line', GraphData>;
   options: ChartOptions<'line'>;
@@ -46,7 +47,7 @@ const StyledBoxLine = styled(Box)({
 });
 
 export const Minimap = React.forwardRef(function MinimapComponent(
-  { alerts, alertIndex, changeAlertIndex, data, options }: MinimapProps,
+  { alerts, alertIndex, alertSeverity, changeAlertIndex, data, options }: MinimapProps,
   ref
 ) {
   const theme = useTheme();
@@ -89,7 +90,9 @@ export const Minimap = React.forwardRef(function MinimapComponent(
               legend: { display: false },
               tooltip: { enabled: false },
               drawAlertsOnMinimap: {
-                activeIndex: alertIndex
+                activeIndex: alertIndex,
+                changeAlertIndex,
+                severity: alertSeverity
               }
             },
             scales: {

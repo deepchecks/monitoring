@@ -21,7 +21,7 @@ export const AlertsDrawer = ({ onClose, onResolve, alertRule, ...props }: Alerts
   const { modelsMap, isLoading: isModelMapLoading } = useModels();
   const { graphData, isLoading: isGraphDataLoading } = useMonitorData(
     alertRule,
-    alertRule ? modelsMap[alertRule.model_id].latest_time : undefined
+    alertRule ? modelsMap[alertRule.model_id]?.latest_time : undefined
   );
 
   const [alertIndex, setAlertIndex] = useState(0);
@@ -56,7 +56,11 @@ export const AlertsDrawer = ({ onClose, onResolve, alertRule, ...props }: Alerts
   }, [alertRule]);
 
   if (isError) {
-    return <Typography variant="h4">Something went wrong...</Typography>;
+    return (
+      <StyledDrawer onClose={onClose} {...props}>
+        <Typography variant="h4">Something went wrong...</Typography>
+      </StyledDrawer>
+    );
   }
   return (
     <StyledDrawer onClose={onClose} {...props}>
