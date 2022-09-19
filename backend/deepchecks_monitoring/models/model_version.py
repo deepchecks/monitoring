@@ -131,21 +131,21 @@ class ModelVersion(Base):
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)
 
-    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
+    async def update_timestamps(self, timestamps: t.List[datetime], session: AsyncSession):
         """Update start and end date if needed based on given timestamp.
 
         Parameters
         ----------
-        timestamp
-            Timestamp to update
+        timestamps
+            Timestamps for update
         session: AsyncSession
             DB session to use
         """
         # Running an update with min/max in order to prevent race condition when running in parallel
         ts_updates = {}
-        if self.start_time > min_timestamp:
+        if (min_timestamp := min(timestamps)) < self.start_time:
             ts_updates[ModelVersion.start_time] = func.least(ModelVersion.start_time, min_timestamp)
-        if self.end_time < max_timestamp:
+        if (max_timestamp := max(timestamps)) > self.end_time:
             ts_updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
 
         if ts_updates:

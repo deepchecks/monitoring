@@ -120,7 +120,15 @@ async def test_metric_check_info_no_model_version(classification_model_check_id,
                         {"is_agg": False, "name": "Tnr Per Class"},
                         {"is_agg": True, "name": "Tnr Macro"},
                         {"is_agg": True, "name": "Tnr Micro"},
-                        {"is_agg": True, "name": "Tnr Weighted"}
+                        {"is_agg": True, "name": "Tnr Weighted"},
+                        {"is_agg": True, "name": "Roc Auc Ovr"},
+                        {"is_agg": True, "name": "Roc Auc Ovo"},
+                        {"is_agg": True, "name": "Roc Auc Ovr Weighted"},
+                        {"is_agg": True, "name": "Roc Auc Ovo Weighted"},
+                        {"is_agg": True, "name": "Jaccard Macro"},
+                        {"is_agg": True, "name": "Jaccard Micro"},
+                        {"is_agg": True, "name": "Jaccard Weighted"},
+                        {"is_agg": False, "name": "Jaccard Per Class"},
                     ]
                 }
             ],
@@ -176,7 +184,15 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
                     {"is_agg": False, "name": "Tnr Per Class"},
                     {"is_agg": True, "name": "Tnr Macro"},
                     {"is_agg": True, "name": "Tnr Micro"},
-                    {"is_agg": True, "name": "Tnr Weighted"}
+                    {"is_agg": True, "name": "Tnr Weighted"},
+                    {"is_agg": True, "name": "Roc Auc Ovr"},
+                    {"is_agg": True, "name": "Roc Auc Ovo"},
+                    {"is_agg": True, "name": "Roc Auc Ovr Weighted"},
+                    {"is_agg": True, "name": "Roc Auc Ovo Weighted"},
+                    {"is_agg": True, "name": "Jaccard Macro"},
+                    {"is_agg": True, "name": "Jaccard Micro"},
+                    {"is_agg": True, "name": "Jaccard Weighted"},
+                    {"is_agg": False, "name": "Jaccard Per Class"},
                 ]
             }
         ]
@@ -205,7 +221,16 @@ async def test_property_check_info(classification_vision_model_property_check_id
                                                 {"name": "max", "is_agg": True},
                                                 {"name": "none", "is_agg": False}]},
                                     {"type": "image property",
-                                     "values": [{"is_agg": None, "name": "Aspect Ratio"}], "is_agg_shown": False}],
+                                     "values": [
+                                         {"is_agg": None, "name": "Area"},
+                                         {"is_agg": None, "name": "Brightness"},
+                                         {"is_agg": None, "name": "Aspect Ratio"},
+                                         {"is_agg": None, "name": "RMS Contrast"},
+                                         {"is_agg": None, "name": "Mean Red Relative Intensity"},
+                                         {"is_agg": None, "name": "Mean Blue Relative Intensity"},
+                                         {"is_agg": None, "name": "Mean Green Relative Intensity"},
+                                     ],
+                                     "is_agg_shown": False}],
                                "res_conf": None}
 
 
@@ -370,6 +395,13 @@ async def test_run_check_vision(classification_vision_model_id,
                 "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
                 "_dc_label": 2,
                 "images Aspect Ratio": 0.677 / i,
+                "images Brightness": 0.5,
+                "images Area": 0.5,
+                "images RMS Contrast": 0.5,
+                "images Mean Red Relative Intensity": 0.5,
+                "images Mean Blue Relative Intensity": 0.5,
+                "images Mean Green Relative Intensity": 0.5,
+
             })
         response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/data", json=request)
         assert response.status_code == 200
@@ -377,6 +409,12 @@ async def test_run_check_vision(classification_vision_model_id,
         "_dc_prediction": [0.1, 0.3, 0.6],
         "_dc_label": 2,
         "images Aspect Ratio": 0.677,
+        "images Brightness": 0.5,
+        "images Area": 0.5,
+        "images RMS Contrast": 0.5,
+        "images Mean Red Relative Intensity": 0.5,
+        "images Mean Blue Relative Intensity": 0.5,
+        "images Mean Green Relative Intensity": 0.5,
     }
     # Act
     response = send_reference_request(client, classification_vision_model_version_id, [sample] * 100)
@@ -471,7 +509,19 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                     if i % 2 else [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
                 "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
                 "images Aspect Ratio": 0.677 / i,
+                "images Brightness": 0.5,
+                "images Area": 0.5,
+                "images RMS Contrast": 0.5,
+                "images Mean Red Relative Intensity": 0.5,
+                "images Mean Blue Relative Intensity": 0.5,
+                "images Mean Green Relative Intensity": 0.5,
                 "partial_images Aspect Ratio": [0.677 / i, 0.9 / i],
+                "partial_images Brightness": [0.5, 0.5],
+                "partial_images Area": [0.5, 0.5],
+                "partial_images RMS Contrast": [0.5, 0.5],
+                "partial_images Mean Red Relative Intensity": [0.5, 0.5],
+                "partial_images Mean Blue Relative Intensity": [0.5, 0.5],
+                "partial_images Mean Green Relative Intensity": [0.5, 0.5],
             })
         response = client.post(f"/api/v1/model-versions/{detection_vision_model_version_id}/data", json=request)
         assert response.status_code == 200
@@ -479,7 +529,19 @@ async def test_run_check_vision_detection(detection_vision_model_id,
         "_dc_prediction": [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
         "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
         "images Aspect Ratio": 0.677,
+        "images Brightness": 0.5,
+        "images Area": 0.5,
+        "images RMS Contrast": 0.5,
+        "images Mean Red Relative Intensity": 0.5,
+        "images Mean Blue Relative Intensity": 0.5,
+        "images Mean Green Relative Intensity": 0.5,
         "partial_images Aspect Ratio": [0.677, 0.9],
+        "partial_images Brightness": [0.5, 0.5],
+        "partial_images Area": [0.5, 0.5],
+        "partial_images RMS Contrast": [0.5, 0.5],
+        "partial_images Mean Red Relative Intensity": [0.5, 0.5],
+        "partial_images Mean Blue Relative Intensity": [0.5, 0.5],
+        "partial_images Mean Green Relative Intensity": [0.5, 0.5],
     }
     # Act
     response = send_reference_request(client, detection_vision_model_version_id, [sample] * 100)

@@ -10,8 +10,7 @@
 """Module defining the ingestion error ORM model."""
 import typing as t
 
-import pendulum as pdl
-from sqlalchemy import ARRAY, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
@@ -29,9 +28,9 @@ class IngestionError(Base):
     __tablename__ = "ingestion_errors"
 
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime(timezone=True), default=pdl.now)
-    samples_ids = Column(ARRAY(String))
-    samples = Column(ARRAY(String))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    sample = Column(String)
+    sample_id = Column(String, nullable=True)
     error = Column(String)
 
     model_version_id = Column(

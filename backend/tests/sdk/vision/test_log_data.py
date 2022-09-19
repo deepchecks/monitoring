@@ -37,8 +37,9 @@ async def test_classification_log(vision_classification_model_version_client: De
     assert stats['images Aspect Ratio'] == {'max': 1, 'min': 0.5}
 
     mon_table = model_version.get_monitor_table(async_session)
-    mon_arr = (await async_session.execute(select(mon_table))).all()
-    mon_arr = [list(arr[:-2]) + [arr[-1]] for arr in mon_arr]
+    mon_arr = [dict(row) for row in (await async_session.execute(select(mon_table))).all()]
+    mon_arr = [[row['images Aspect Ratio'], row['_dc_label'], row['_dc_prediction'], row['_dc_sample_id']]
+               for row in mon_arr]
     assert mon_arr == [
         [0.5, 2, [0.1, 0.3, 0.6], '1'],
         [1.0, 0, [0.1, 0.3, 0.6], '2'],
@@ -70,8 +71,10 @@ async def test_detection_log(detection_vision_model_version_client: DeepchecksMo
     assert stats['images Aspect Ratio'] == {'max': 1.3333333333333333, 'min': 0.5}
 
     mon_table = model_version.get_monitor_table(async_session)
-    mon_arr = (await async_session.execute(select(mon_table))).all()
-    mon_arr = [list(arr[:-2]) + [arr[-1]] for arr in mon_arr]
+    mon_arr = [dict(row) for row in (await async_session.execute(select(mon_table))).all()]
+    mon_arr = [[row['images Aspect Ratio'], row['partial_images Aspect Ratio'], row['_dc_label'], row['_dc_prediction'],
+                row['_dc_sample_id']]
+               for row in mon_arr]
     assert mon_arr == [
         [0.5, [], [[1, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6, 2]], '1'],
         [1, [], [[0, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6, 2]], '2'],

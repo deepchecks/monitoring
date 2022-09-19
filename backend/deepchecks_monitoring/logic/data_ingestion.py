@@ -24,9 +24,11 @@ import sqlalchemy.exc
 from aiokafka import AIOKafkaConsumer
 from jsonschema.validators import validate
 from sqlalchemy import update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.models import ModelVersion
+from deepchecks_monitoring.models.cache_invalidations import CacheInvalidation
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.ingestion_errors import IngestionError
 from deepchecks_monitoring.models.model_version import update_statistics_from_sample
@@ -37,9 +39,9 @@ from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 
 async def log_data(
-    model_version: ModelVersion,
-    data: t.List[t.Dict[t.Any, t.Any]],
-    session: AsyncSession
+        model_version: ModelVersion,
+        data: t.List[t.Dict[t.Any, t.Any]],
+        session: AsyncSession
 ):
     """Insert batch data samples.
 
@@ -49,31 +51,61 @@ async def log_data(
     data
     session
     """
-    max_timestamp = None
-    min_timestamp = None
-    updated_statistics = copy.deepcopy(model_version.statistics)
+    valid_data = {}
+    errors = []
+
     for sample in data:
         # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
         # to make sure all samples have same set of fields.
         model_version.fill_optional_fields(sample)
-        validate(schema=model_version.monitor_json_schema, instance=sample)
+        try:
+            validate(schema=model_version.monitor_json_schema, instance=sample)
+        except jsonschema.exceptions.ValidationError as e:
+            errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
+                               model_version_id=model_version.id))
+            continue
         # Timestamp is passed as string, convert it to datetime
         sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])
-        max_timestamp = sample[SAMPLE_TS_COL] if max_timestamp is None else max(max_timestamp, sample[SAMPLE_TS_COL])
-        min_timestamp = sample[SAMPLE_TS_COL] if min_timestamp is None else min(min_timestamp, sample[SAMPLE_TS_COL])
-        update_statistics_from_sample(updated_statistics, sample)
+        # If getting an index more then once, it will be override here and the last one will be used in arbitrary
+        valid_data[sample[SAMPLE_ID_COL]] = sample
 
-    monitor_table = model_version.get_monitor_table(session)
-    await session.execute(monitor_table.insert(), data)
-    await model_version.update_timestamps(min_timestamp, max_timestamp, session)
+    # Insert samples, and log samples which failed on existing index
+    if valid_data:
+        monitor_table = model_version.get_monitor_table(session)
+        statement = (insert(monitor_table).values(list(valid_data.values()))
+                     .on_conflict_do_nothing(index_elements=[SAMPLE_ID_COL]).returning(monitor_table.c[SAMPLE_ID_COL]))
+        results = (await session.execute(statement)).scalars()
+        logged_ids = set(results)
+    else:
+        logged_ids = set()
+    logged_samples = [v for k, v in valid_data.items() if k in logged_ids]
+    not_logged_samples = [v for k, v in valid_data.items() if k not in logged_ids]
+    for sample in not_logged_samples:
+        errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error="Duplicate index on log",
+                           model_version_id=model_version.id))
+    # Save errors
+    if errors:
+        await session.execute(insert(IngestionError).values(errors))
+
+    # Update statistics, timestamps, and cache invalidations, running only on samples which were logged successfully
+    if len(logged_samples) == 0:
+        return
+    all_timestamps = []
+    updated_statistics = copy.deepcopy(model_version.statistics)
+    for sample in logged_samples:
+        update_statistics_from_sample(updated_statistics, sample)
+        all_timestamps.append(sample[SAMPLE_TS_COL])
+
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
+    await model_version.update_timestamps(all_timestamps, session)
+    await CacheInvalidation.insert_or_update(model_version, all_timestamps, session)
 
 
 async def update_data(
-    model_version: ModelVersion,
-    data: t.List[t.Dict[t.Any, t.Any]],
-    session: AsyncSession
+        model_version: ModelVersion,
+        data: t.List[t.Dict[t.Any, t.Any]],
+        session: AsyncSession
 ):
     """Update data samples.
 
@@ -94,28 +126,58 @@ async def update_data(
     }
 
     table = model_version.get_monitor_table(session)
-    updated_statistics = copy.deepcopy(model_version.statistics)
 
+    results = []
+    errors = []
+    valid_data = {}
     for sample in data:
-        validate(schema=optional_columns_schema, instance=sample)
-        sample_id = sample.pop(SAMPLE_ID_COL)
-        update_statistics_from_sample(updated_statistics, sample)
-        await session.execute(
-            update(table).where(table.c[SAMPLE_ID_COL] == sample_id).values(sample)
-        )
+        try:
+            validate(schema=optional_columns_schema, instance=sample)
+        except jsonschema.exceptions.ValidationError as e:
+            errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
+                               model_version_id=model_version.id))
+            continue
+        valid_data[sample[SAMPLE_ID_COL]] = sample
+        results.append(session.execute(
+            update(table).where(table.c[SAMPLE_ID_COL] == sample[SAMPLE_ID_COL]).values(sample)
+            .returning(table.c[SAMPLE_ID_COL], table.c[SAMPLE_TS_COL])
+        ))
 
+    # Gather results, if got an update on non-existing id, then result will be empty
+    results = [(await r).first() for r in results]
+    logged_ids = [row[0] for row in results if row]
+    logged_timestsamps = [pdl.instance(row[1]) for row in results if row]
+
+    # Save as errors the ids that weren't exists
+    logged_samples = [v for k, v in valid_data.items() if k in logged_ids]
+    not_logged_samples = [v for k, v in valid_data.items() if k not in logged_ids]
+    for sample in not_logged_samples:
+        errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error="Index not found on update",
+                           model_version_id=model_version.id))
+    # Save errors
+    if errors:
+        await session.execute(insert(IngestionError).values(errors))
+
+    if len(logged_samples) == 0:
+        return
+
+    updated_statistics = copy.deepcopy(model_version.statistics)
+    for sample in logged_samples:
+        update_statistics_from_sample(updated_statistics, sample)
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
+
+    await CacheInvalidation.insert_or_update(model_version, logged_timestsamps, session)
 
 
 class DataIngestionBackend:
     """Holds the logic for the data ingestion. Can be override to alter the logic and sent in `create_app`."""
 
     def __init__(
-        self,
-        settings,
-        resources_provider,
-        logger=None
+            self,
+            settings,
+            resources_provider,
+            logger=None
     ):
         self.settings = settings
         self.resources_provider = resources_provider
@@ -123,9 +185,9 @@ class DataIngestionBackend:
         self.use_kafka = self.settings.kafka_host is not None
 
     def generate_topic_name(
-        self,
-        model_version: ModelVersion,
-        request: fastapi.Request  # pylint: disable=unused-argument
+            self,
+            model_version: ModelVersion,
+            request: fastapi.Request  # pylint: disable=unused-argument
     ):
         """Get name of kafka topic.
 
@@ -144,8 +206,8 @@ class DataIngestionBackend:
 
     @asynccontextmanager
     async def get_session(
-        self,
-        topic  # pylint: disable=unused-argument
+            self,
+            topic  # pylint: disable=unused-argument
     ) -> t.AsyncIterator[ExtendedAsyncSession]:
         """Get session object based on the given topic.
 
@@ -162,11 +224,11 @@ class DataIngestionBackend:
             yield s
 
     async def log(
-        self,
-        model_version: ModelVersion,
-        data: t.List[t.Dict[str, t.Any]],
-        session: AsyncSession,
-        request: fastapi.Request  # pylint: disable=unused-argument
+            self,
+            model_version: ModelVersion,
+            data: t.List[t.Dict[str, t.Any]],
+            session: AsyncSession,
+            request: fastapi.Request  # pylint: disable=unused-argument
     ):
         """Log new data.
 
@@ -191,11 +253,11 @@ class DataIngestionBackend:
             await log_data(model_version, data, session)
 
     async def update(
-        self,
-        model_version: ModelVersion,
-        data: t.List[t.Dict[str, t.Any]],
-        session: AsyncSession,
-        request: fastapi.Request  # pylint: disable=unused-argument
+            self,
+            model_version: ModelVersion,
+            data: t.List[t.Dict[str, t.Any]],
+            session: AsyncSession,
+            request: fastapi.Request  # pylint: disable=unused-argument
     ):
         """Update existing data.
 
@@ -240,7 +302,7 @@ class DataIngestionBackend:
                                 await self.handle_messages(tp, messages)
                                 # Commit progress only for this partition
                                 await consumer.commit({tp: messages[-1].offset + 1})
-                            except (sqlalchemy.exc.SQLAlchemyError, jsonschema.exceptions.ValidationError) as e:
+                            except sqlalchemy.exc.SQLAlchemyError as e:
                                 self.logger.exception(e)
                                 # Sqlalchemy wraps the asyncpg exceptions in orig field
                                 if hasattr(e, "orig"):
@@ -251,7 +313,7 @@ class DataIngestionBackend:
                                     # again
                                     continue
                                 else:
-                                    # In case of postgres error (which is not connection) or json validation error,
+                                    # In case of postgres error (which is not connection)
                                     # commit the messages and saves the error to db
                                     await self.save_failed_messages(tp, messages, e)
                                     await consumer.commit({tp: messages[-1].offset + 1})
@@ -285,6 +347,8 @@ class DataIngestionBackend:
             topic = tp.topic
             model_version_id = int(topic[topic.rfind("-") + 1:])
             messages_data = [m.value.decode() for m in messages[:5]]
-            ids = [json.loads(m)["data"].get(SAMPLE_ID_COL) for m in messages_data]
-            session.add(IngestionError(samples_ids=ids, samples=messages_data, error=str(exception),
-                                       model_version_id=model_version_id))
+            samples = [json.loads(m)["data"] for m in messages_data]
+            values = [{"sample_id": s.get(SAMPLE_ID_COL), "sample": s, "error": str(exception),
+                       "model_version_id": model_version_id}
+                      for s in samples]
+            await session.execute(insert(IngestionError).values(values))

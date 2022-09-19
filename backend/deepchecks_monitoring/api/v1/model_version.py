@@ -127,13 +127,15 @@ async def get_or_create_version(
         'type': 'object',
         'properties': {name: data_type.to_json_schema_type(nullable=name not in not_null_columns)
                        for name, data_type in monitor_table_columns.items()},
-        'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols
+        'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols,
+        'additionalProperties': False
     }
     reference_table_schema = {
         'type': 'object',
         'properties': {name: data_type.to_json_schema_type(nullable=name not in not_null_columns)
                        for name, data_type in ref_table_columns.items()},
-        'required': list(info.features.keys()) + required_model_cols
+        'required': list(info.features.keys()) + required_model_cols,
+        'additionalProperties': False
     }
 
     # Create statistics info

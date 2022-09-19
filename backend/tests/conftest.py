@@ -246,7 +246,22 @@ async def classification_model_version_id(classification_model_id: int, client):
 async def detection_vision_model_version_id(detection_vision_model_id: int, client):
     request = {
         "name": "v1",
-        "features": {"images Aspect Ratio": "numeric", "partial_images Aspect Ratio": "array_float"},
+        "features": {
+            "images Aspect Ratio": "numeric",
+            "images Area": "numeric",
+            "images Brightness": "numeric",
+            "images RMS Contrast": "numeric",
+            "images Mean Red Relative Intensity": "numeric",
+            "images Mean Blue Relative Intensity": "numeric",
+            "images Mean Green Relative Intensity": "numeric",
+            "partial_images Aspect Ratio": "array_float",
+            "partial_images Area": "array_float",
+            "partial_images Brightness": "array_float",
+            "partial_images RMS Contrast": "array_float",
+            "partial_images Mean Red Relative Intensity": "array_float",
+            "partial_images Mean Blue Relative Intensity": "array_float",
+            "partial_images Mean Green Relative Intensity": "array_float",
+        },
         "non_features": {}
     }
     response = client.post(f"/api/v1/models/{detection_vision_model_id}/version", json=request)
@@ -257,7 +272,14 @@ async def detection_vision_model_version_id(detection_vision_model_id: int, clie
 async def classification_vision_model_version_id(classification_vision_model_id: int, client):
     request = {
         "name": "v1",
-        "features": {"images Aspect Ratio": "numeric"},
+        "features": {"images Aspect Ratio": "numeric",
+                     "images Area": "numeric",
+                     "images Brightness": "numeric",
+                     "images RMS Contrast": "numeric",
+                     "images Mean Red Relative Intensity": "numeric",
+                     "images Mean Blue Relative Intensity": "numeric",
+                     "images Mean Green Relative Intensity": "numeric",
+                     },
         "non_features": {}
     }
     response = client.post(f"/api/v1/models/{classification_vision_model_id}/version", json=request)
@@ -485,6 +507,12 @@ def add_vision_classification_data(model_version_id, client: TestClient):
                 "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
                 "_dc_label": 2,
                 "images Aspect Ratio": 0.677 / i,
+                "images Area": 0.5,
+                "images Brightness": 0.5,
+                "images RMS Contrast": 0.5,
+                "images Mean Red Relative Intensity": 0.5,
+                "images Mean Blue Relative Intensity": 0.5,
+                "images Mean Green Relative Intensity": 0.5,
             })
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
     return resp, day_before_curr_time, curr_time

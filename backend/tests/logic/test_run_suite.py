@@ -46,7 +46,15 @@ async def test_tabular_classification_suite_without_ref(classification_model_ver
 @pytest.mark.asyncio
 async def test_vision_classification_suite_with_ref(classification_vision_model_version_id, client: TestClient):
     # Arrange
-    sample = {"_dc_label": "2", "images Aspect Ratio": 0.2, "_dc_prediction": [0.1, 0.3, 0.6]}
+    sample = {"_dc_label": "2",
+              "images Aspect Ratio": 0.2,
+              "images Area": 0.5,
+              "images Brightness": 0.5,
+              "images RMS Contrast": 0.5,
+              "images Mean Red Relative Intensity": 0.5,
+              "images Mean Blue Relative Intensity": 0.5,
+              "images Mean Green Relative Intensity": 0.5,
+              "_dc_prediction": [0.1, 0.3, 0.6]}
     send_reference_request(client, classification_vision_model_version_id, [sample] * 100)
     resp, start_date, end_date = add_vision_classification_data(classification_vision_model_version_id, client)
     assert resp.status_code == 200
