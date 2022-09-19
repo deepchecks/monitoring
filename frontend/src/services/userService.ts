@@ -1,3 +1,4 @@
+import mixpanel from 'mixpanel-browser';
 import { customInstance } from './customAxios';
 
 interface completeDetailsProps {
@@ -21,6 +22,12 @@ export const postCompleteDetails = async (completeDetails: completeDetailsProps)
     });
     window.location.href = '/';
     console.log('res inside userService', res);
+
+    mixpanel.track('Sign Up', {
+      'From invitation': false,
+      'Org name': organization
+    });
+
   } catch (e) {
     console.log('error occurred,', e);
   }
@@ -35,6 +42,10 @@ export const postCompleteDetailsAndAcceptInvite = async (completeDetails: comple
       url: '/api/v1/users/complete-details'
     });
     console.log('res inside userService', res);
+
+    mixpanel.track('Sign Up', {
+      'From invitation': true
+    });
 
     window.location.href = '/';
   } catch (e) {
