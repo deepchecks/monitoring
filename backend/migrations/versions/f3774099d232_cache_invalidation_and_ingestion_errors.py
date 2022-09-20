@@ -41,9 +41,9 @@ def upgrade() -> None:
     op.drop_column('ingestion_errors', 'samples_ids')
 
     model_version_update = """
-        UPDATE model_version SET 
-        monitor_json_schema = jsonb_set(monitor_json_schema, '{additionalProperties}', false),
-        reference_json_schema = jsonb_set(reference_json_schema, '{additionalProperties}', false);
+        UPDATE model_versions SET 
+        monitor_json_schema = jsonb_set(monitor_json_schema, '{additionalProperties}', 'false'::jsonb),
+        reference_json_schema = jsonb_set(reference_json_schema, '{additionalProperties}', 'false'::jsonb);
     """
     op.execute(text(model_version_update))
 
