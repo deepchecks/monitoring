@@ -43,48 +43,54 @@ export const DashboardPage = () => {
   const handleDeleteMonitor = async (confirm: boolean) => {
     if (!currMonitor) return;
     if (!confirm) return setIsDeleteMonitorDialogOpen(false);
+    window.scrollTo(0, 0);
     await DeleteMonitorById({ monitorId: currMonitor.id });
     setIsDeleteMonitorDialogOpen(false);
+    setCurrMonitor(undefined);
     refreshMonitors();
   };
 
-  if (!monitors || isLoading) return <Loader />;
+  if (!monitors) return <Loader />;
 
   return (
     <>
       <DashboardHeader onOpen={handleOpenMonitorDrawer} />
-      <Grid container spacing={4}>
-        <Grid item lg={5} md={4}>
-          <ModelList models={models} />
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <Grid container spacing={4}>
+          <Grid item lg={5} md={4}>
+            <ModelList models={models} />
+          </Grid>
+          <Grid item lg={7} md={8}>
+            <DataIngestion />
+          </Grid>
+          {!chartDataList.length ? (
+            <Loader sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+          ) : (
+            chartDataList.map((chartData, index) => (
+              <Grid item md={6} lg={6} xl={4} key={index}>
+                <GraphicsSection
+                  data={chartData as any}
+                  monitor={monitors[index]}
+                  onOpen={handleOpenMonitorDrawer}
+                  onDelete={handleOpenDeleteMonitorDialog}
+                  models={models}
+                />
+              </Grid>
+            ))
+          )}
+          {currMonitor && (
+            <DeleteMonitor
+              setIsOpen={setIsDeleteMonitorDialogOpen}
+              onClick={handleDeleteMonitor}
+              isOpen={isDeleteMonitorDialogOpen}
+              monitor={currMonitor}
+            />
+          )}
+          <MonitorDrawer monitor={currMonitor} anchor="right" open={isDrawerOpen} onClose={handleCloseMonitor} />
         </Grid>
-        <Grid item lg={7} md={8}>
-          <DataIngestion />
-        </Grid>
-        {!chartDataList.length ? (
-          <Loader sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
-        ) : (
-          chartDataList.map((chartData, index) => (
-            <Grid item md={6} lg={6} xl={4} key={index}>
-              <GraphicsSection
-                data={chartData as any}
-                monitor={monitors[index]}
-                onOpen={handleOpenMonitorDrawer}
-                onDelete={handleOpenDeleteMonitorDialog}
-                models={models}
-              />
-            </Grid>
-          ))
-        )}
-        {currMonitor && (
-          <DeleteMonitor
-            setIsOpen={setIsDeleteMonitorDialogOpen}
-            onClick={handleDeleteMonitor}
-            isOpen={isDeleteMonitorDialogOpen}
-            monitor={currMonitor}
-          />
-        )}
-        <MonitorDrawer monitor={currMonitor} anchor="right" open={isDrawerOpen} onClose={handleCloseMonitor} />
-      </Grid>
+      )}
     </>
   );
 };

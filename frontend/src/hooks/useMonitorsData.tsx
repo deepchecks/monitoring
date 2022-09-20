@@ -55,9 +55,6 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
     } else {
       console.log('Case 2');
       setLastMonitorsFetch(new Date());
-      //   // -> refresh monitors list, make sure existing monitors data is not being refreshed;
-      //   await fetchMonitors();
-      //   console.log('dashboards', dashboards);
     }
   };
 
