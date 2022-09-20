@@ -1,5 +1,5 @@
 {
-  "name": "ts-front",
+  "name": "deepchecks-mon",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -80,6 +80,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-react": "^7.30.1",
     "husky": "^8.0.1",
+    "license-checker": "^25.0.1",
     "nodemon": "^2.0.19",
     "orval": "^6.9.6",
     "prettier": "^2.7.1",
