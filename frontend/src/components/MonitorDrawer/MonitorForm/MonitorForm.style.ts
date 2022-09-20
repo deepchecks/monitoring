@@ -1,7 +1,7 @@
 import { Box, Button, Stack, styled, Typography } from '@mui/material';
 
 export const StyledStackContainer = styled(Stack)({
-  padding: '62px 40px 47px',
+  padding: '32px 40px 37px',
   height: '100%',
   justifyContent: 'space-between'
 });
@@ -12,7 +12,7 @@ export const StyledStackInputs = styled(Stack)({
 
 export const StyledTypography = styled(Typography)({
   textAlign: 'center',
-  marginBottom: '65px'
+  marginBottom: '35px'
 });
 
 export const StyledButtonWrapper = styled(Box)({

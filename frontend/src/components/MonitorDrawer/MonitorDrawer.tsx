@@ -4,6 +4,7 @@ import { GraphView } from './GraphView';
 import { CreateMonitor } from './MonitorForm/CreateMonitor';
 import EditMonitor from './MonitorForm/EditMonitor';
 import {
+  MonitorCheckConfSchema,
   MonitorSchema,
   OperatorsEnum,
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
@@ -27,6 +28,7 @@ export interface LookbackCheckProps {
         value: string | number;
       }[];
     };
+    additional_kwargs: MonitorCheckConfSchema;
   };
 }
 

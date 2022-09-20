@@ -25,7 +25,7 @@ const useDataIngestion = () => {
               x: dayjs(new Date(day * 1_000)).format('MMM. DD YYYY'),
               y: count
             })),
-          ...setGraphColor(modelsMap ? modelsMap[key].name : key, index)
+          ...setGraphColor(modelsMap ? modelsMap[key]?.name : key, index)
         })) ?? [],
       labels: Object.entries(data)
         .flatMap(([_, items]) => items.map(item => item.day * 1_000))

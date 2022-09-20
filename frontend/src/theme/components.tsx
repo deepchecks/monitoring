@@ -163,7 +163,8 @@ export const componentOptions: Components<Theme> = {
   MuiMenu: {
     styleOverrides: {
       list: {
-        padding: '6px 0 10px'
+        padding: '6px 0 10px',
+        maxHeight: 300
       }
     }
   },

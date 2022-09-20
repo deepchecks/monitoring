@@ -2,6 +2,7 @@ import React, { memo, ReactNode, useEffect, useMemo, useRef, useState } from 're
 import { Box, MenuItem, TextField } from '@mui/material';
 import {
   MonitorSchema,
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
   OperatorsEnum,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet,
   useUpdateMonitorApiV1MonitorsMonitorIdPut
@@ -9,14 +10,7 @@ import {
 import { useFormik } from 'formik';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
-import {
-  Numeric,
-  Categorical,
-  ColumnType,
-  ColumnsSchema,
-  ColumnStatsNumeric,
-  ColumnStatsCategorical
-} from '../../../helpers/types/model';
+import { ColumnType, ColumnsSchema, ColumnStatsNumeric, ColumnStatsCategorical } from '../../../helpers/types/model';
 import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
@@ -30,6 +24,7 @@ import useModels from 'hooks/useModels';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import { LookbackCheckProps } from '../MonitorDrawer';
 import useMonitorsData from '../../../hooks/useMonitorsData';
+import { CheckInfo } from '../CheckInfo';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
@@ -49,6 +44,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const { modelsMap } = useModels();
   const { refreshMonitors } = useMonitorsData();
+  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor.check.id);
 
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const modelId = useMemo(() => monitor?.check.model_id ?? null, [monitor]);
@@ -65,16 +61,21 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
     return modelsMap[modelId].name;
   }, [modelId]);
 
-  const initValues = {
+  const checkInfoInitValue = () => ({
+    check_conf: {}
+  });
+
+  const formikInitValues = {
     name: monitor.name,
     category: (monitor.data_filters?.filters[0].value as string) || '',
-    column: monitor.data_filters?.filters[0].column || '',
-    numericValue: (monitor.data_filters?.filters[0]?.value as number) || 0,
-    time: monitor.lookback
+    column: (monitor.data_filters?.filters[0].column as string) || '',
+    numericValue: (monitor.data_filters?.filters[0].value as number) || 0,
+    time: monitor.lookback,
+    additional_kwargs: monitor.additional_kwargs || checkInfoInitValue()
   };
 
   const { values, getFieldProps, setFieldValue, ...formik } = useFormik({
-    initialValues: initValues,
+    initialValues: formikInitValues,
     onSubmit: async values => {
       let operator;
       let value;
@@ -91,25 +92,29 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
         value = values.category;
       }
 
-      await updateMonitor({
+      const monitorSchema = {
         monitorId: monitor.id,
         data: {
           name: values.name || monitor.name,
           lookback: values.time,
-          description: '',
-          data_filters: {
-            filters: [
-              {
-                column: values.column,
-                operator: operator || OperatorsEnum.contains,
-                value: value || values.category
-              }
-            ]
-          },
-          dashboard_id: monitor.dashboard_id
-          // filter_key: ''
+          dashboard_id: monitor.dashboard_id,
+          additional_kwargs: values.additional_kwargs,
+          data_filters:
+            values.column && operator && value
+              ? {
+                  filters: [
+                    {
+                      column: values.column,
+                      operator: operator,
+                      value: value
+                    }
+                  ]
+                }
+              : undefined
         }
-      });
+      };
+
+      await updateMonitor(monitorSchema);
 
       refreshMonitors(monitor);
       formik.resetForm();
@@ -122,11 +127,16 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
 
     const checkId = +monitor.check.id;
 
+    const end_time = modelsMap[modelId]?.latest_time
+      ? new Date((modelsMap[modelId]?.latest_time as number) * 1000).toISOString()
+      : new Date().toISOString();
+
     const lookbackCheckData: LookbackCheckProps = {
       checkId,
       data: {
         start_time: new Date(Date.now() - +values.time * 1000).toISOString(),
-        end_time: new Date().toISOString()
+        end_time,
+        additional_kwargs: values.additional_kwargs
       }
     };
 
@@ -206,35 +216,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
       );
       return;
     }
-  }, [values.column, values.category, values.numericValue]);
-
-  //   useEffect(() => {
-  //     const column = columns[values.column];
-  //     if (column && column?.type === ColumnType.string) {
-  //       setFieldValue('category', column.stats.values[0]);
-  //     }
-  //   }, [values.column]);
-
-  //   useEffect(() => {
-  //     dispatch(getMonitor(monitorId));
-  //     dispatch(runMonitor(monitorId));
-  //   }, [dispatch]);
-
-  //   useEffect(() => {
-  //     if (Object.keys(monitor).length) {
-  //       dispatch(getColumns(monitor.check.model_id));
-  //       setFieldValue(
-  //         'category',
-  //         getValue(monitor.data_filter?.filters[0]?.column, monitor.data_filter?.filters[0]?.value)
-  //       );
-  //       setFieldValue('column', monitor.data_filter?.filters[0]?.column || '');
-  //       setFieldValue(
-  //         'numericValue',
-  //         getValue(monitor.data_filter?.filters[0]?.column, monitor.data_filter?.filters[0]?.value)
-  //       );
-  //       setFieldValue('time', monitor.lookback);
-  //     }
-  //   }, [monitor]);
+  }, [values.column, values.category, values.numericValue, isColumnsLoading]);
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -263,18 +245,26 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
     return () => {
       clearTimeout(timer.current);
     };
-  }, [values.column, values.category, values.numericValue, values.time]);
+  }, [values.column, values.category, values.numericValue, values.time, values.additional_kwargs]);
 
   return (
     <form onSubmit={formik.handleSubmit}>
       <StyledStackContainer>
         <Box>
           <StyledTypography variant="h4">Edit Monitor</StyledTypography>
-          <StyledStackInputs spacing="60px">
+          <StyledStackInputs spacing="50px">
             <TextField variant="outlined" label="Monitor Name" {...getFieldProps('name')} size="small" />
 
             <TextField variant="outlined" label={`Model: ${modelName}`} size="small" disabled={true} />
             <TextField variant="outlined" label={`Check: ${monitor?.check.name}`} size="small" disabled={true} />
+
+            {checkInfo && (
+              <CheckInfo
+                checkInfo={checkInfo}
+                initialCheckInfoValues={values.additional_kwargs}
+                setFieldValue={setFieldValue}
+              />
+            )}
 
             <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth>
               {timeWindow.map(({ label, value }, index) => (

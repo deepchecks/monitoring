@@ -14,17 +14,19 @@ import {
   StyledTypographyLabel
 } from './MonitorForm.style';
 import {
-  useGetModelsApiV1ModelsGet,
   useGetChecksApiV1ModelsModelIdChecksGet,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet,
   useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
   MonitorCreationSchema,
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
   OperatorsEnum
 } from 'api/generated';
 import useGlobalState from 'Context';
 
 import useMonitorsData from '../../../hooks/useMonitorsData';
 import { LookbackCheckProps } from '../MonitorDrawer';
+import { CheckInfo } from '../CheckInfo';
+import useModelsMap from 'hooks/useModels';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
@@ -42,15 +44,21 @@ interface CreateMonitorProps {
 export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const [selectedModelId, setSelectedModelId] = useState(Number);
+  const [selectedCheckId, setSelectedCheckId] = useState(Number);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const { refreshMonitors } = useMonitorsData();
   const globalState = useGlobalState();
+  const { modelsMap } = useModelsMap();
 
-  const { data: allModels = [] } = useGetModelsApiV1ModelsGet();
   const { data: columns = {} as ColumnsSchema } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(selectedModelId);
   const { data: checks = [] } = useGetChecksApiV1ModelsModelIdChecksGet(selectedModelId);
+  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(selectedCheckId);
 
   const { mutateAsync: createMonitor } = useCreateMonitorApiV1ChecksCheckIdMonitorsPost();
+
+  const checkInfoInitValue = () => ({
+    check_conf: {}
+  });
 
   const { values, handleChange, handleBlur, getFieldProps, setFieldValue, ...formik } = useFormik({
     initialValues: {
@@ -60,7 +68,8 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
       column: '',
       model: '',
       numericValue: '',
-      time: ''
+      time: '',
+      additional_kwargs: checkInfoInitValue()
     },
     onSubmit: async values => {
       let operator;
@@ -83,8 +92,12 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
       const monitorSchema: MonitorCreationSchema = {
         name: values.name,
         lookback: +values.time,
-        description: '',
-        data_filters: {
+        dashboard_id: globalState.dashboard_id,
+        additional_kwargs: values.additional_kwargs
+      };
+
+      if (values.column && operator && value) {
+        monitorSchema.data_filters = {
           filters: [
             {
               column: values.column,
@@ -92,10 +105,12 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               value: value || values.category
             }
           ]
-        },
-        dashboard_id: globalState.dashboard_id
-        // filter_key: ''
-      };
+        };
+      } else {
+        monitorSchema.data_filters = undefined;
+      }
+
+      console.log('Creating monitor', { checkId: parseInt(values.check), data: monitorSchema });
 
       await createMonitor({ checkId: parseInt(values.check), data: monitorSchema });
       refreshMonitors();
@@ -107,11 +122,16 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
   const updateGraph = (operator?: OperatorsEnum | undefined, value: string | number = '') => {
     const checkId = +values.check;
 
+    const end_time = modelsMap[selectedModelId]?.latest_time
+      ? new Date((modelsMap[selectedModelId]?.latest_time as number) * 1000).toISOString()
+      : new Date().toISOString();
+
     const lookbackCheckData: LookbackCheckProps = {
       checkId,
       data: {
         start_time: new Date(Date.now() - +values.time * 1000).toISOString(),
-        end_time: new Date().toISOString()
+        end_time,
+        additional_kwargs: values.additional_kwargs
       }
     };
 
@@ -124,6 +144,11 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     runCheckLookback(lookbackCheckData);
   };
 
+  useEffect(() => {
+    if (!values.check) return;
+    setSelectedCheckId(+values.check);
+  }, [values.check]);
+
   const handleModelChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as string;
     handleChange(event);
@@ -133,6 +158,10 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     setFieldValue('check', '');
     setFieldValue('column', '');
     setFieldValue('category', '');
+    setFieldValue('time', '');
+    setFieldValue('numericValue', '');
+    setFieldValue('additional_kwargs', checkInfoInitValue());
+    updateGraph();
   };
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
@@ -241,14 +270,14 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     return () => {
       clearTimeout(timer.current);
     };
-  }, [values.check, values.column, values.category, values.numericValue, values.time]);
+  }, [values.check, values.column, values.category, values.numericValue, values.time, values.additional_kwargs]);
 
   return (
     <form onSubmit={formik.handleSubmit}>
       <StyledStackContainer>
         <Box>
           <StyledTypography variant="h4">New Monitor</StyledTypography>
-          <StyledStackInputs spacing="60px">
+          <StyledStackInputs spacing="50px">
             <TextField label="Monitor Name" variant="outlined" size="small" {...getFieldProps('name')} required />
             <MarkedSelect
               label="Select Model"
@@ -260,7 +289,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               fullWidth
               required
             >
-              {allModels.map(({ name, id }, index) => (
+              {Object.values(modelsMap).map(({ name, id }, index) => (
                 <MenuItem key={index} value={id}>
                   {name}
                 </MenuItem>
@@ -280,6 +309,8 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
                 </MenuItem>
               ))}
             </MarkedSelect>
+            {values.check && checkInfo && <CheckInfo checkInfo={checkInfo} setFieldValue={setFieldValue} />}
+
             <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth required>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>

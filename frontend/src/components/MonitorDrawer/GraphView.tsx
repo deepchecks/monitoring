@@ -4,6 +4,7 @@ import { CloseIcon, NoDataToShow } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
 import { ChartData } from 'chart.js';
 import { GraphData } from 'helpers/types';
+import { Loader } from 'components/Loader';
 
 interface GraphViewProps {
   onClose: () => void | undefined;
@@ -11,7 +12,7 @@ interface GraphViewProps {
   isLoading: boolean;
 }
 
-export const GraphView = ({ onClose, graphData }: GraphViewProps) => {
+export const GraphView = ({ onClose, graphData, isLoading }: GraphViewProps) => {
   const closeDrawer = () => {
     onClose();
   };
@@ -34,7 +35,9 @@ export const GraphView = ({ onClose, graphData }: GraphViewProps) => {
           width: 690
         }}
       >
-        {graphData?.datasets.length ? (
+        {isLoading ? (
+          <Loader />
+        ) : graphData?.datasets.length ? (
           <DiagramLine data={graphData as ChartData<'line', GraphData>} />
         ) : (
           <NoDataToShow />
