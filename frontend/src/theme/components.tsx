@@ -1,6 +1,6 @@
 import { alpha, Components, Theme } from '@mui/material';
-import React from 'react';
 // import type {} from "@mui/x-date-pickers/themeAugmentation";
+import React from 'react';
 import { CheckboxDefault, CheckboxSelected } from '../assets/icon/icon';
 import { colors } from './colors';
 
@@ -173,9 +173,15 @@ export const componentOptions: Components<Theme> = {
       checkedIcon: <CheckboxSelected />
     },
     styleOverrides: {
-      root: {
+      root: ({ theme }) => ({
+        '&.Mui-disabled svg': {
+          stroke: theme.palette.grey[300]
+        },
+        '& svg': {
+          stroke: theme.palette.text.primary
+        },
         padding: '3px'
-      }
+      })
     }
   },
   MuiSwitch: {

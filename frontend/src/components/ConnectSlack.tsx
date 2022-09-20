@@ -65,7 +65,7 @@ export function ConnectSlack() {
     <Box
       sx={{
         borderRadius: '10px',
-        padding: '30px 30px 65px 50px',
+        padding: '30px 30px 40px 50px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'start',

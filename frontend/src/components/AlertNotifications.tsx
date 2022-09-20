@@ -177,7 +177,7 @@ export function AlertNotifications() {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '9px 16px',
-              margin: '24px 0',
+              margin: '10px 0',
               ':last-of-type': {
                 marginBottom: 0
               }
