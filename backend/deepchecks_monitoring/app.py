@@ -89,7 +89,7 @@ def create_application(
         allow_methods=["*"],
         allow_headers=["*"],
         allow_credentials=True,
-        expose_headers=["*"],
+        expose_headers=["x-substatus"],
     )
 
     routers_dependencies = routers_dependencies or {}

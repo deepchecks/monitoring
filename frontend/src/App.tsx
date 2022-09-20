@@ -19,37 +19,39 @@ const Layout = () => {
   if (!isUserDetailsComplete) return null;
 
   return (
-    <div>
-      <main>
-        <Box
-          sx={theme => ({
-            [theme.breakpoints.up(1920)]: {
-              borderRight: '1px solid rgba(209, 216, 220, 0.5)',
-              borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
-              height: '100%'
-            }
-          })}
-        >
+    <MonitorsDataProvider>
+      <div>
+        <main>
           <Box
-            sx={{
-              display: 'flex'
-            }}
+            sx={theme => ({
+              [theme.breakpoints.up(1920)]: {
+                borderRight: '1px solid rgba(209, 216, 220, 0.5)',
+                borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
+                height: '100%'
+              }
+            })}
           >
-            <Sidebar />
             <Box
               sx={{
-                background: BACKGROUND_COLOR_MAX_WIDTH,
-                padding: '0 35px',
-                minWidth: '1200px',
-                width: '100%'
+                display: 'flex'
               }}
             >
-              <Outlet />
+              <Sidebar />
+              <Box
+                sx={{
+                  background: BACKGROUND_COLOR_MAX_WIDTH,
+                  padding: '0 35px',
+                  minWidth: '1200px',
+                  width: '100%'
+                }}
+              >
+                <Outlet />
+              </Box>
             </Box>
           </Box>
-        </Box>
-      </main>
-    </div>
+        </main>
+      </div>
+    </MonitorsDataProvider>
   );
 };
 
@@ -65,7 +67,7 @@ const App = () => {
           <UserProvider>
             <HeaderProvider>
               <StatsTimeProvider>
-                <MonitorsDataProvider>
+                
                 <Routes>
                   <Route element={<Layout />}>
                     <Route path="/" element={<DashboardPage />} />
@@ -74,7 +76,7 @@ const App = () => {
                     ))}
                   </Route>
                   <Route path="/complete-details" element={<CompleteDetails />} />
-                </Routes></MonitorsDataProvider>
+                </Routes>
               </StatsTimeProvider>
             </HeaderProvider>
           </UserProvider>
