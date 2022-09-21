@@ -1,15 +1,24 @@
-import { alpha, PaletteOptions } from "@mui/material";
-import { colors } from "./colors";
+import { alpha, PaletteOptions } from '@mui/material';
+import { AlertSeverity } from 'api/generated';
+import { colors } from './colors';
 
-declare module "@mui/material" {
+declare module '@mui/material' {
   interface Color {
     dark: string;
     light: string;
   }
+
+  interface Palette {
+    severity: Record<AlertSeverity, string>;
+  }
+
+  interface PaletteOptions {
+    severity: Record<AlertSeverity, string>;
+  }
 }
 
 export const lightPaletteOptions: PaletteOptions = {
-  mode: "light",
+  mode: 'light',
   common: {
     black: colors.neutral.black,
     white: colors.neutral.white
@@ -24,6 +33,12 @@ export const lightPaletteOptions: PaletteOptions = {
     dark: colors.semantic.orange,
     light: colors.semantic.yellow[50],
     main: colors.semantic.yellow[100]
+  },
+  severity: {
+    low: colors.neutral.lightText,
+    mid: colors.semantic.yellow[100],
+    high: colors.semantic.orange,
+    critical: colors.semantic.red
   },
   error: {
     main: colors.semantic.red,

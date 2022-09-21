@@ -1,5 +1,5 @@
-import React from 'react';
 import { alpha, Box, ListItem, ListItemProps, styled, Typography } from '@mui/material';
+import React from 'react';
 
 export const StyledContainer = styled(
   (
@@ -37,12 +37,9 @@ export const StyledAlert = styled(Box)(({ theme }) => ({
   width: 50,
   height: 60,
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: alpha(theme.palette.error.main, 0.1),
   borderRadius: '20px'
-}));
-
-export const StyledCounter = styled(Typography)(({ theme }) => ({
-  color: theme.palette.error.main
 }));

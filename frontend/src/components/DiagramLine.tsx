@@ -14,7 +14,7 @@ import {
 import { DistributiveArray, _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import React, { Dispatch, SetStateAction, useRef } from 'react';
+import { Dispatch, SetStateAction, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   addSpace,
@@ -142,7 +142,6 @@ function DiagramLine({
               range.current.min = item.y;
             }
             if (item.y > range.current.max) {
-              console.log('item', item);
               range.current.max = item.y;
             }
           }

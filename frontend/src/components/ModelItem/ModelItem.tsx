@@ -1,16 +1,19 @@
-import { Box, Typography } from '@mui/material';
+import { alpha, Box, Typography } from '@mui/material';
 import { ModelsInfoSchema } from 'api/generated';
 import { GlobalStateContext } from 'Context';
-import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { StyledAlert, StyledContainer, StyledCounter, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 import dayjs from 'dayjs';
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { StyledContainer, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 
 interface ModelItemProps {
+  alertsCount: number;
   model: ModelsInfoSchema;
 }
 
-export function ModelItem({ model }: ModelItemProps) {
+const severity = 'critical';
+
+export function ModelItem({ alertsCount, model }: ModelItemProps) {
   const navigate = useNavigate();
   const { changeAlertFilters } = useContext(GlobalStateContext);
 
@@ -28,9 +31,28 @@ export function ModelItem({ model }: ModelItemProps) {
             Last data update: {model.latest_time ? dayjs.unix(model.latest_time).format('MMM. DD, YYYY') : '-'}
           </StyledTypographyDate>
         </Box>
-        <StyledAlert>
-          <StyledCounter variant="h4">{model.alerts_count}</StyledCounter>
-        </StyledAlert>
+        <Box
+          sx={{
+            padding: '0 10px',
+            height: 60,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme => alpha(theme.palette.severity[severity], 0.1),
+            borderRadius: '20px'
+          }}
+        >
+          <Typography variant="h4" sx={{ color: theme => theme.palette.severity[severity], lineHeight: '25px' }}>
+            {alertsCount}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: theme => theme.palette.severity[severity], lineHeight: '14px', letterSpacing: '0.1px' }}
+          >
+            {`${severity[0].toUpperCase()}${severity.slice(1)}`}
+          </Typography>
+        </Box>
       </StyledModelInfo>
     </StyledContainer>
   );
