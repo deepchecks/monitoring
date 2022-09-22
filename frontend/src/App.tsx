@@ -1,3 +1,4 @@
+import React from 'react';
 import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -67,7 +68,6 @@ const App = () => {
           <UserProvider>
             <HeaderProvider>
               <StatsTimeProvider>
-                
                 <Routes>
                   <Route element={<Layout />}>
                     <Route path="/" element={<DashboardPage />} />

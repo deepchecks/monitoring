@@ -2,6 +2,7 @@ import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/materi
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import processFrequency from '../helpers/utils/processFrequency';
 import useModels from 'hooks/useModels';
 import React, { memo, useState } from 'react';
 import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
@@ -35,7 +36,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
     modelsMap[model_id]?.name,
     monitor?.check?.name,
     `value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
-    dayjs.duration(repeat_every, 'seconds').humanize()
+    processFrequency(dayjs.duration(repeat_every, 'seconds'))
   ];
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {

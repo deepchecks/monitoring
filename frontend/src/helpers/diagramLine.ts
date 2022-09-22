@@ -2,18 +2,8 @@ import { alpha } from '@mui/material';
 import { AlertSchema, AlertSeverity } from 'api/generated';
 import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
-import { SEVERITY } from 'components/AlertCount';
 import dayjs from 'dayjs';
 import { Dispatch, SetStateAction } from 'react';
-
-const { LOW, MID, HIGH, CRITICAL } = SEVERITY;
-
-const severityMap = {
-  [LOW]: '#94A4AD',
-  [MID]: '#FCB400',
-  [HIGH]: '#FF833D',
-  [CRITICAL]: '#EF4C36'
-};
 
 const drawFilledRhoimbus = (
   ctx: CanvasRenderingContext2D,
@@ -119,7 +109,7 @@ export const setThreshold = (threshold: number) => ({
     const yOffset = y.getPixelForValue(threshold);
 
     ctx.beginPath();
-    ctx.strokeStyle = 'red';
+    ctx.strokeStyle = '#17003E';
     ctx.lineWidth = 1;
     ctx.setLineDash([6, 6]);
     ctx.moveTo(left, yOffset);
@@ -132,7 +122,7 @@ export const setThreshold = (threshold: number) => ({
     const text = 'critical';
     ctx.translate(0, 0);
     ctx.font = '12px Roboto';
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = '#17003E';
     ctx.direction = 'inherit';
     ctx.textAlign = 'center';
     ctx.rotate(270 * angle);
@@ -247,7 +237,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
   afterDatasetsDraw(
     chart: ChartOption,
     args: Record<string, never>,
-    { activeIndex, severity }: { activeIndex: number; severity: AlertSeverity }
+    { activeIndex }: { activeIndex: number; severity: AlertSeverity }
   ) {
     const {
       ctx,
@@ -256,7 +246,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     const angle = Math.PI / 180;
     const space = 8;
     const meta = chart.getDatasetMeta(0);
-    const criticalColor = severityMap[severity];
+    const criticalColor = '#17003E';
 
     const drawActiveAlert = (index: number) => {
       const rectWidth = 100;
@@ -293,13 +283,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.font = '16px Roboto';
-      ctx.fillText(
-        `Alerts #${currentIndex <= 9 ? `0${currentIndex}` : currentIndex}/${
-          alerts.length <= 9 ? `0${alerts.length}` : alerts.length
-        }`,
-        meta?.data[index]?.x,
-        top - space - rectHeight / 2
-      );
+      ctx.fillText(`Alert ${currentIndex}/${alerts.length}`, meta?.data[index]?.x, top - space - rectHeight / 2);
 
       ctx.beginPath();
       ctx.lineWidth = 2;
@@ -331,8 +315,8 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     const drawAlert = (index: number) => {
       ctx.beginPath();
       ctx.strokeStyle = criticalColor;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([6, 6]);
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([2, 3]);
       ctx.moveTo(meta?.data[index]?.x, bottom);
       ctx.lineTo(meta?.data[index]?.x, top);
       ctx.closePath();
@@ -363,7 +347,7 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
   afterDatasetsDraw(
     chart: ChartOption,
     args: Record<string, never>,
-    { activeIndex, severity }: { activeIndex: number; severity: AlertSeverity }
+    { activeIndex }: { activeIndex: number; severity: AlertSeverity }
   ) {
     const {
       ctx,
@@ -374,7 +358,7 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
 
     const meta = chart.getDatasetMeta(0);
 
-    const criticalColor = severityMap[severity];
+    const criticalColor = '#17003E';
 
     const drawActiveAlert = (index: number) => {
       ctx.beginPath();
@@ -404,9 +388,9 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
 
     const drawAlert = (index: number) => {
       ctx.beginPath();
-      ctx.strokeStyle = 'red';
+      ctx.strokeStyle = '#17003E';
       ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([3, 2]);
       ctx.moveTo(meta?.data[index]?.x, bottom);
       ctx.lineTo(meta?.data[index]?.x, top);
       ctx.stroke();

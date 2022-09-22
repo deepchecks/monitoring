@@ -1,6 +1,6 @@
+import React, { useEffect, useState } from 'react';
 import { Box, Drawer, DrawerProps, styled, Typography } from '@mui/material';
 import { useModels } from 'hooks/useModels';
-import React, { useEffect, useState } from 'react';
 import {
   AlertRuleInfoSchema,
   useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet,

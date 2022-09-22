@@ -1,3 +1,4 @@
+import React, { Dispatch, SetStateAction, useState } from 'react';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
@@ -15,7 +16,6 @@ import {
 import { ChartSvg } from 'assets/icon/chart';
 import dayjs from 'dayjs';
 import useModels from 'hooks/useModels';
-import React, { Dispatch, SetStateAction, useState } from 'react';
 import {
   AlertRuleInfoSchema,
   AlertSchema,
@@ -24,6 +24,7 @@ import {
 } from '../api/generated';
 import { Checkmark, CloseIcon, TestTube } from '../assets/icon/icon';
 import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
+import processFrequency from '../helpers/utils/processFrequency';
 
 interface AlertsDrawerHeaderProps {
   alertIndex: number;
@@ -82,11 +83,9 @@ export const AlertsDrawerHeader = ({
   const info: string[] = [
     monitor?.check?.name || '',
     modelsMap[alertRule.model_id].name,
-    monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : '-',
-    monitor?.data_filters
-      ? `${monitor?.data_filters.filters[0].column} = ${monitor?.data_filters.filters[0].value}`
-      : '-',
-    dayjs.duration(repeat_every, 'seconds').humanize()
+    monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : 'N/A',
+    monitor?.data_filters ? `${monitor?.data_filters.filters[0].column}` : 'N/A',
+    processFrequency(dayjs.duration(repeat_every, 'seconds'))
   ];
 
   const { color, ...criticalityRange } = criticalityMap[alert_severity!];
@@ -184,7 +183,15 @@ export const AlertsDrawerHeader = ({
                 <Typography variant="subtitle2" color="text.disabled">
                   {title}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ color: 'text.disabled', fontWeight: 700, marginLeft: '4px' }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: 'text.disabled',
+                    fontWeight: 700,
+                    marginLeft: '4px',
+                    '&:last-child': { marginRight: '5px' }
+                  }}
+                >
                   {info[index]}
                 </Typography>
                 {titles.length - 1 !== index && (
