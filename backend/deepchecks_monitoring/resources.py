@@ -224,5 +224,5 @@ class ResourcesProvider(BaseResourcesProvider):
     def redis_client(self) -> t.Optional[Redis]:
         """Return redis client if redis defined, else None."""
         if self._redis_client is None and self.redis_settings.redis_uri:
-            self._redis_client = Redis(self.redis_settings.redis_uri.host)
+            self._redis_client = Redis.from_url(self.redis_settings.redis_uri)
         return self._redis_client
