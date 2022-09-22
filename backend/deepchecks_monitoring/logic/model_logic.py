@@ -11,6 +11,7 @@
 """Module defining utility functions for specific db objects."""
 import typing as t
 from collections import defaultdict
+from numbers import Number
 
 import numpy as np
 import pandas as pd
@@ -31,6 +32,7 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 from torch.utils.data import DataLoader
 
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions, CacheResult
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
@@ -156,11 +158,15 @@ def filter_table_selection_by_data_filters(data_table: Table, table_selection: S
 
 
 async def get_results_for_model_versions_per_window(
-        model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[pd.DataFrame]]],
+        model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
         model_versions: t.List[ModelVersion],
         model: Model,
         dp_check: BaseCheck,
-        additional_kwargs: MonitorCheckConfSchema) -> t.Dict[int, t.Dict[str, float]]:
+        additional_kwargs: MonitorCheckConfSchema,
+        monitor_id: int = None,
+        cache_funcs: CacheFunctions = None,
+        cache_key_base: str = ''
+) -> t.Dict[str, t.Optional[t.Dict[str, Number]]]:
     """Get results for active model version sessions per window."""
     if additional_kwargs is not None:
         check_conf = dp_check.config()
@@ -173,8 +179,9 @@ async def get_results_for_model_versions_per_window(
                                  (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
 
     model_reduces = {}
-    for (reference_table_dataframe, test_dataframes), model_version in zip(model_versions_dataframes, model_versions):
-        # If we have empty reference skip the run
+    for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
+        # If reference is none then it wasn't queried (single dataset check) and if it's empty then it was queried
+        # and data wasn't found, therefore skipping the run.
         if reference_table_dataframe is not None and reference_table_dataframe.empty:
             model_reduces[model_version.name] = None
             continue
@@ -187,75 +194,60 @@ async def get_results_for_model_versions_per_window(
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
                 reference_table_dataframe, task_type)
 
-        for test_data_dataframe in test_dataframes:
-            if test_data_dataframe.empty:
-                reduced_outs.append(None)
-                continue
-            if not is_vision_check:
-                test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(test_data_dataframe,
-                                                                               model_version.features_columns,
-                                                                               top_feat)
+        for curr_test_info in test_infos:
+            current_data = curr_test_info['data']
+            # If the data is cache result we are assuming it was indeed found in the cache and was validated before
+            # passed here (meaning current_data.found must be true here)
+            if isinstance(current_data, CacheResult):
+                curr_result = current_data.value
+            # If current_data is not cache result, then it must be a dataframe. If the dataframe is empty, skipping the
+            # run and putting none result
+            elif current_data.empty:
+                curr_result = None
             else:
-                test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(test_data_dataframe,
-                                                                                     task_type)
-            try:
-                if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
-                    reduced = dp_check.run(test_ds, feature_importance=feat_imp,
-                                           y_pred_train=test_pred, y_proba_train=test_proba,
-                                           with_display=False).reduce_output()
-                elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
-                    reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
-                                           y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
-                                           y_pred_test=test_pred, y_proba_test=test_proba,
-                                           with_display=False).reduce_output()
-                elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
-                    reduced = dp_check.run(test_ds,
-                                           train_predictions=test_pred, train_properties=test_props,
-                                           with_display=False).reduce_output()
-                elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
-                    reduced = dp_check.run(reference_table_ds, test_ds,
-                                           train_predictions=reference_table_pred,
-                                           train_properties=reference_table_props,
-                                           test_predictions=test_pred, test_properties=test_props,
-                                           with_display=False).reduce_output()
+                if not is_vision_check:
+                    test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(current_data,
+                                                                                   model_version.features_columns,
+                                                                                   top_feat)
                 else:
-                    raise ValueError('incompatible check type')
+                    test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(current_data,
+                                                                                         task_type)
+                try:
+                    if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
+                        reduced = dp_check.run(test_ds, feature_importance=feat_imp,
+                                               y_pred_train=test_pred, y_proba_train=test_proba,
+                                               with_display=False).reduce_output()
+                    elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
+                        reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
+                                               y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
+                                               y_pred_test=test_pred, y_proba_test=test_proba,
+                                               with_display=False).reduce_output()
+                    elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
+                        reduced = dp_check.run(test_ds,
+                                               train_predictions=test_pred, train_properties=test_props,
+                                               with_display=False).reduce_output()
+                    elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
+                        reduced = dp_check.run(reference_table_ds, test_ds,
+                                               train_predictions=reference_table_pred,
+                                               train_properties=reference_table_props,
+                                               test_predictions=test_pred, test_properties=test_props,
+                                               with_display=False).reduce_output()
+                    else:
+                        raise ValueError('incompatible check type')
 
-                reduced_outs.append(dict({(key, un_numpy(value)) for key, value in reduced.items()}))
-            except DeepchecksBaseError:
-                reduced_outs.append(None)
+                    curr_result = finalize_reduced_results(reduced, additional_kwargs)
+                # In case of exception in the run putting none result
+                except DeepchecksBaseError:
+                    # TODO log exception
+                    curr_result = None
+
+            reduced_outs.append(curr_result)
+            # If result is not from cache, and cache available, save it
+            if not isinstance(current_data, CacheResult) and cache_funcs and monitor_id:
+                cache_funcs.set(cache_key_base, model_version.id, monitor_id, curr_test_info['start'],
+                                curr_test_info['end'], curr_result)
 
         model_reduces[model_version.name] = reduced_outs
-
-    # filter values
-    if additional_kwargs is not None and additional_kwargs.res_conf is not None:
-        for reduced_results in model_reduces.values():
-            if reduced_results is not None:
-                for reduced_res in reduced_results:
-                    if reduced_res is not None:
-                        for val_name in list(reduced_res.keys()):
-                            has_value = False
-                            # check per each allowed value in the filter
-                            for value in additional_kwargs.res_conf:
-                                # if we have a filter on the result key we first check if the key is tuple
-                                # if it is tuple we check the last value, if not we check regularly
-                                if (isinstance(val_name, tuple) and val_name[-1] == value) \
-                                        or val_name == value:
-                                    has_value = True
-                                    break
-                            if not has_value:
-                                del reduced_res[val_name]
-
-    # return the reduced result with strings as keys
-    for reduced_results in model_reduces.values():
-        if reduced_results is not None:
-            for reduced_res in reduced_results:
-                if reduced_res is not None:
-                    for val_name, val_value in list(reduced_res.items()):
-                        # if the key tuple we need to return the values as strings
-                        if isinstance(val_name, tuple):
-                            reduced_res[' '.join(val_name)] = val_value
-                            del reduced_res[val_name]
 
     return model_reduces
 
@@ -273,3 +265,29 @@ def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
         return random_sample(select_time_filtered, mon_table)
     else:
         return None
+
+
+def finalize_reduced_results(results, additional_kwargs) -> t.Dict[str, Number]:
+    """Apply filtering on the check results (after reduce)."""
+    final_result = {}
+
+    def set_key_value(key, value):
+        # if the key is tuple we need to transform it to string
+        key = ' '.join(key) if isinstance(key, tuple) else key
+        final_result[key] = un_numpy(value)
+
+    # filter the keys if needed
+    if additional_kwargs and additional_kwargs.res_conf:
+        keys_to_keep = set(additional_kwargs.res_conf)
+    else:
+        keys_to_keep = None
+
+    for key, value in results.items():
+        if keys_to_keep:
+            # If we have key as tuple we check for filter on the last value in the tuple, else regular
+            if (isinstance(key, tuple) and key[-1] in keys_to_keep) or key in keys_to_keep:
+                set_key_value(key, value)
+        else:
+            set_key_value(key, value)
+
+    return final_result

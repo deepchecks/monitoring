@@ -97,7 +97,7 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
                                "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
                                "check": {"config": {"class_name": "SingleDatasetPerformance",
                                                     "module_name": "deepchecks.tabular.checks",
-                                                    "params": {"reduce": "mean"}},
+                                                    "params": {}},
                                          "id": 1, "model_id": 1, "name": "check"},
                                "description": "", "additional_kwargs": None,
                                "alert_rules": [

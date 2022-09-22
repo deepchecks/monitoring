@@ -10,7 +10,6 @@
 """Module defining the ORM models."""
 from .alert import Alert
 from .alert_rule import AlertRule
-from .cache_invalidations import CacheInvalidation
 from .check import Check
 from .column_type import ColumnType
 from .dashboard import Dashboard
@@ -20,4 +19,4 @@ from .model_version import ModelVersion
 from .monitor import Monitor
 
 __all__ = ['Model', 'ModelVersion', 'TaskType', 'Check', 'AlertRule', 'Monitor', 'Dashboard', 'Alert', 'ColumnType',
-           'IngestionError', 'CacheInvalidation']
+           'IngestionError']

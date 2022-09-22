@@ -13,8 +13,11 @@ import random
 import string
 import typing as t
 from copy import copy
+from unittest import mock
+from unittest.mock import patch
 
 import dotenv
+import fakeredis
 import numpy as np
 import pandas as pd
 import pendulum as pdl
@@ -41,9 +44,15 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from deepchecks_monitoring.models.base import Base
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
 dotenv.load_dotenv()
+
+
+@pytest.fixture(scope="function")
+def redis():
+    yield mock.Mock(wraps=fakeredis.FakeStrictRedis())
 
 
 @pytest.fixture(scope="session")
@@ -53,19 +62,26 @@ def postgres():
 
 
 @pytest.fixture(scope="function")
-def application(postgres):
+def settings(postgres):
     database_uri = postgres.url()
-    # async_database_uri = postgres.url().replace("postgresql", "postgresql+asyncpg")
-    settings = Settings(
+    yield Settings(
         database_uri=database_uri,
-        # async_database_uri=async_database_uri
-    )  # type: ignore
-    app = create_application(settings=settings)
-    return app
+    )
+
+
+@pytest.fixture(scope="function")
+def resources_provider(settings, redis):
+    with patch.object(ResourcesProvider, "redis_client", redis):
+        yield ResourcesProvider(settings)
+
+
+@pytest.fixture(scope="function")
+def application(resources_provider, settings):
+    yield create_application(resources_provider=resources_provider, settings=settings)
 
 
 @pytest.fixture(scope="session")
-def event_loop() -> t.Generator:
+def event_loop():
     """Fix run time error "Attached to a different loop"...
     Taken from https://rogulski.it/blog/sqlalchemy-14-async-orm-with-fastapi/
     """
@@ -301,7 +317,7 @@ async def classification_model_version_no_fi_id(classification_model_id: int, cl
 async def classification_model_check_id(async_session: AsyncSession, classification_model_id: int):
     schema = CheckCreationSchema(name="check", config={
         "class_name": "SingleDatasetPerformance",
-        "params": {"reduce": "mean"},
+        "params": {},
         "module_name": "deepchecks.tabular.checks"
     })
 
@@ -459,7 +475,7 @@ def add_alert_rule(
 def add_monitor(check_id, client: TestClient, **kwargs):
     request = {
         "name": "monitor",
-        "lookback": 1000
+        "lookback": 3600 * 24
     }
     request.update(kwargs)
     response = client.post(f"/api/v1/checks/{check_id}/monitors", json=request)
@@ -469,7 +485,8 @@ def add_monitor(check_id, client: TestClient, **kwargs):
 def add_classification_data(
         model_version_id: int,
         client: TestClient,
-        daterange: t.Optional[t.Sequence[pdl.DateTime]] = None
+        daterange: t.Optional[t.Sequence[pdl.DateTime]] = None,
+        id_prefix=""
 ):
     if daterange is None:
         curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
@@ -481,11 +498,11 @@ def add_classification_data(
     for i, date in enumerate(daterange):
         time = date.isoformat()
         data.append({
-            "_dc_sample_id": str(i),
+            "_dc_sample_id": f"{id_prefix}{i}",
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
-            "_dc_prediction": "2" if i % 2 else "1",
-            "_dc_label": "2" if i != 1 else "1",
+            "_dc_prediction": str(i % 3),
+            "_dc_label": str(i % 3),
             "a": 10 + i,
             "b": "ppppp",
         })

@@ -72,12 +72,12 @@ async def test_metric_check_w_res_conf(classification_model_check_id, classifica
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["1"]}})
-    assert response.json() == {"v1": {"F1 Per Class 1": 0.0}}
+    assert response.json() == {"v1": {"F1 Per Class 1": 1.0}}
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["2"]}})
-    assert response.json() == {"v1": {"F1 Per Class 2": 0.3333333333333333}}
+    assert response.json() == {"v1": {"F1 Per Class 2": 1.0}}
 
 
 @pytest.mark.asyncio
@@ -204,7 +204,7 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False
     assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
-           sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
+           [{"is_agg": None, "name": "0"}, {"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}]
 
 
 @pytest.mark.asyncio

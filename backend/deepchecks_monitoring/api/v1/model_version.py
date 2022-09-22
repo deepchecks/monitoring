@@ -23,8 +23,10 @@ from sqlalchemy.sql.ddl import CreateIndex
 from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, DataIngestionDep, KafkaAdminDep, SettingsDep
+from deepchecks_monitoring.dependencies import (AsyncSessionDep, CacheInvalidatorDep, DataIngestionDep, KafkaAdminDep,
+                                                SettingsDep)
 from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType,
@@ -59,7 +61,8 @@ async def get_or_create_version(
     session: AsyncSession = AsyncSessionDep,
     kafka_admin: KafkaAdminClient = KafkaAdminDep,
     settings=SettingsDep,
-    data_ingest: DataIngestionBackend = DataIngestionDep
+    data_ingest: DataIngestionBackend = DataIngestionDep,
+    cache_invalidator: CacheInvalidator = CacheInvalidatorDep
 ):
     """Create a new model version.
 
@@ -75,6 +78,7 @@ async def get_or_create_version(
     kafka_admin
     settings
     data_ingest
+    cache_invalidator
     """
     # TODO: all this logic must be implemented (encapsulated) within Model type
     model: Model = await fetch_or_404(session, Model, id=model_id)
@@ -173,10 +177,14 @@ async def get_or_create_version(
     # Create kafka topic
     if data_ingest.use_kafka:
         # We want to digest the message in the order they are sent, so using single partition.
-        topic = NewTopic(name=data_ingest.generate_topic_name(model_version, request),
-                         num_partitions=1,
-                         replication_factor=settings.kafka_replication_factor)
-        kafka_admin.create_topics([topic])
+        data_topic_name = data_ingest.generate_topic_name(model_version, request)
+        data_topic = NewTopic(name=data_topic_name,
+                              num_partitions=1,
+                              replication_factor=settings.kafka_replication_factor)
+        invalidation_topic = NewTopic(name=cache_invalidator.generate_invalidation_topic_name(data_topic_name),
+                                      num_partitions=1,
+                                      replication_factor=settings.kafka_replication_factor)
+        kafka_admin.create_topics([data_topic, invalidation_topic])
 
     return {'id': model_version.id}
 

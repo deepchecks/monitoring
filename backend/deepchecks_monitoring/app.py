@@ -15,17 +15,19 @@ import typing as t
 import deepchecks
 import jsonschema.exceptions
 from fastapi import APIRouter, FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-# from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pyinstrument import Profiler
 from starlette.responses import FileResponse
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions
+from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.resources import ResourcesProvider
 
@@ -37,11 +39,12 @@ def create_application(
     openapi_url: str = "/api/v1/openapi.json",
     root_path: str = "",
     settings: t.Optional[Settings] = None,
-    resources_provider: t.Optional[ResourcesProvider] = None,
     additional_routers: t.Optional[t.Sequence[APIRouter]] = None,
     additional_dependencies: t.Optional[t.Sequence[Depends]] = None,
     routers_dependencies: t.Optional[t.Dict[str, t.Sequence[Depends]]] = None,
-    data_ingestion_backend: t.Optional[DataIngestionBackend] = None,
+    resources_provider: t.Optional[ResourcesProvider] = None,
+    data_ingestion_backend_class=DataIngestionBackend,
+    cache_functions_class=CacheFunctions,
 ) -> FastAPI:
     """Create the application.
 
@@ -55,13 +58,14 @@ def create_application(
         url root path
     settings : Optional[Settings], default None
         settings for the application
-    resources_provider
     additional_routers : Optional[Sequence[APIRouter]] , default None
         list of additional routers to include
     additional_dependencies : Optional[Sequence[Depends]] , default None
         list of additional dependencies
     routers_dependencies
-    data_ingestion_backend
+    resources_provider
+    data_ingestion_backend_class
+    cache_functions_class
 
     Returns
     -------
@@ -80,9 +84,10 @@ def create_application(
 
     app.state.settings = settings
     app.state.resources_provider = resources_provider or ResourcesProvider(settings)
-    app.state.data_ingestion_backend = data_ingestion_backend or DataIngestionBackend(app.state.settings,
-                                                                                      app.state.resources_provider)
-
+    app.state.cache_functions = cache_functions_class(app.state.resources_provider.redis_client)
+    app.state.cache_invalidator = CacheInvalidator(app.state.resources_provider, app.state.cache_functions)
+    app.state.data_ingestion_backend = data_ingestion_backend_class(app.state.resources_provider,
+                                                                    app.state.cache_invalidator)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "https://localhost:3000"],
@@ -119,6 +124,11 @@ def create_application(
             content={"error": exc.message},
         )
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(_: Request, exc: RequestValidationError):
+        exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
+        return JSONResponse(content={"message": exc_str}, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
     @app.exception_handler(404)
     async def custom_404_handler(request: Request, exc):
         if request.url.path.startswith("/api/"):
@@ -135,7 +145,8 @@ def create_application(
     @app.on_event("startup")
     async def app_startup():
         if app.state.data_ingestion_backend.use_kafka:
-            asyncio.create_task(app.state.data_ingestion_backend.consume_from_kafka())
+            asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
+            asyncio.create_task(app.state.cache_invalidator.run_invalidation_consumer())
 
         # Add telemetry
         if settings.instrument_telemetry:

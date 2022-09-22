@@ -13,9 +13,9 @@ import typing as t
 from enum import Enum
 
 from aiokafka.helpers import create_ssl_context
-from pydantic import BaseSettings, PostgresDsn
+from pydantic import BaseSettings, PostgresDsn, RedisDsn
 
-__all__ = ['Settings', 'tags_metadata', 'Tags']
+__all__ = ['Settings', 'tags_metadata', 'Tags', 'DatabaseSettings', 'RedisSettings', 'KafkaSettings']
 
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
@@ -39,6 +39,7 @@ class KafkaSettings(BaseSettings):
 
     @property
     def kafka_params(self):
+        """Get connection parameters for kafka."""
         return {
             'bootstrap_servers': self.kafka_host,
             'security_protocol': self.kafka_security_protocol,
@@ -49,7 +50,7 @@ class KafkaSettings(BaseSettings):
         }
 
 
-class DatabaseSettigns(BaseSettings):
+class DatabaseSettings(BaseSettings):
     """Database settings."""
 
     database_uri: PostgresDsn
@@ -63,13 +64,26 @@ class DatabaseSettigns(BaseSettings):
 
     @property
     def async_database_uri(self) -> PostgresDsn:
+        """Return async postgres connection string."""
         return t.cast(PostgresDsn, self.database_uri.replace(
             'postgresql',
             'postgresql+asyncpg'
         ))
 
 
-class Settings(DatabaseSettigns, KafkaSettings):
+class RedisSettings(BaseSettings):
+    """Redis settings."""
+
+    redis_uri: t.Optional[RedisDsn]
+
+    class Config:
+        """Settings configuration."""
+
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+
+class Settings(DatabaseSettings, KafkaSettings, RedisSettings):
     """Settings for the deepchecks_monitoring package."""
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'

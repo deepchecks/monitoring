@@ -14,17 +14,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, func
 
 from deepchecks_monitoring.models import ModelVersion, IngestionError
-from deepchecks_monitoring.models.cache_invalidations import CacheInvalidation
 from tests.conftest import send_reference_request
 
 
 async def assert_ingestion_errors_count(num, session):
     count = (await session.execute(select(func.count()).select_from(IngestionError))).scalar()
-    assert num == count
-
-
-async def assert_cache_invalidation_count(num, session):
-    count = (await session.execute(select(func.count()).select_from(CacheInvalidation))).scalar()
     assert num == count
 
 
@@ -41,7 +35,6 @@ async def test_log_data(client: TestClient, classification_model_version_id: int
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
     assert response.status_code == 200
     await assert_ingestion_errors_count(0, async_session)
-    await assert_cache_invalidation_count(1, async_session)
 
 
 @pytest.mark.asyncio
@@ -56,8 +49,6 @@ async def test_log_data_without_index(client: TestClient, classification_model_v
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
     assert response.status_code == 200
     await assert_ingestion_errors_count(1, async_session)
-    await assert_cache_invalidation_count(0, async_session)
-
 
 
 @pytest.mark.asyncio
@@ -69,7 +60,6 @@ async def test_log_data_missing_columns(client: TestClient, classification_model
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
     assert response.status_code == 200
     await assert_ingestion_errors_count(1, async_session)
-    await assert_cache_invalidation_count(0, async_session)
 
 
 @pytest.mark.asyncio
@@ -89,7 +79,6 @@ async def test_log_data_conflict(client: TestClient, classification_model_versio
     # Assert
     assert response.status_code == 200
     await assert_ingestion_errors_count(1, async_session)
-    await assert_cache_invalidation_count(1, async_session)
 
 
 @pytest.mark.asyncio
@@ -117,7 +106,6 @@ async def test_log_data_different_columns_in_samples(client: TestClient, classif
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
     assert response.status_code == 200
     await assert_ingestion_errors_count(0, async_session)
-    await assert_cache_invalidation_count(2, async_session)
 
 
 @pytest.mark.asyncio
@@ -146,7 +134,6 @@ async def test_update_data(client: TestClient, classification_model_version_id: 
     # Assert
     assert response.status_code == 200, response.json()
     await assert_ingestion_errors_count(0, async_session)
-    await assert_cache_invalidation_count(1, async_session)
 
 
 @pytest.mark.asyncio
@@ -162,7 +149,6 @@ async def test_update_data_not_existing_id(client: TestClient, classification_mo
     # Assert
     assert response.status_code == 200, response.json()
     await assert_ingestion_errors_count(1, async_session)
-    await assert_cache_invalidation_count(0, async_session)
 
 
 @pytest.mark.asyncio
@@ -177,7 +163,6 @@ async def test_update_data_no_id_column(client: TestClient, classification_model
     # Assert
     assert response.status_code == 200, response.json()
     await assert_ingestion_errors_count(1, async_session)
-    await assert_cache_invalidation_count(0, async_session)
 
 
 @pytest.mark.asyncio
@@ -330,41 +315,3 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         "_dc_prediction": {"values": ["2"]}
     }, ignore_order=True)
     assert not diff
-
-
-@pytest.mark.asyncio
-async def test_log_cache_invalidation(client: TestClient, classification_model_version_id: int, async_session):
-    # Arrange
-    request = [
-        {
-            "_dc_sample_id": "a000",
-            "_dc_time": pdl.datetime(2020, 1, 1, 12, 22, 54).isoformat(),
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-            "_dc_prediction": "2",
-            "a": 11.1,
-            "b": "ppppp",
-        },
-        {
-            "_dc_sample_id": "a100",
-            "_dc_time": pdl.datetime(2020, 1, 1, 12, 5, 30).isoformat(),
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-            "_dc_prediction": "2",
-            "a": 11.1,
-            "b": "ppppp",
-        },
-        {
-            "_dc_sample_id": "a200",
-            "_dc_time": pdl.datetime(2020, 1, 1, 12, 59, 1).isoformat(),
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-            "_dc_prediction": "2",
-            "a": 11.1,
-            "b": "ppppp",
-        }
-    ]
-    # Act
-    client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    cache_invalidations = (await async_session.execute(select(CacheInvalidation))).scalars().all()
-
-    assert len(cache_invalidations) == 1
-    assert pdl.instance(cache_invalidations[0].time_window) == pdl.datetime(2020, 1, 1, 12, 0, 0)
-    assert cache_invalidations[0].model_version_id == classification_model_version_id

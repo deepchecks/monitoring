@@ -15,11 +15,13 @@ from contextlib import asynccontextmanager, contextmanager
 from aiokafka import AIOKafkaProducer
 from kafka import KafkaAdminClient
 from pydantic import BaseSettings
+from redis.client import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from deepchecks_monitoring.config import DatabaseSettigns, KafkaSettings
+from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
 
 __all__ = ["ResourcesProvider"]
@@ -65,11 +67,13 @@ class ResourcesProvider(BaseResourcesProvider):
         self._async_session_factory: t.Optional[sessionmaker] = None
         self._kafka_producer: t.Optional[AIOKafkaProducer] = None
         self._kafka_admin: t.Optional[KafkaAdminClient] = None
+        self._redis_client: t.Optional[Redis] = None
+        self._cache_funcs: t.Optional[CacheFunctions] = None
 
     @property
-    def database_settings(self) -> DatabaseSettigns:
+    def database_settings(self) -> DatabaseSettings:
         """Return database settings."""
-        if not isinstance(self.settings, DatabaseSettigns):
+        if not isinstance(self.settings, DatabaseSettings):
             raise AssertionError(
                 "In order to be able to instantiate sqlalchemy resources "
                 "you need to provide instance of 'DatabaseSettigns' "
@@ -84,6 +88,17 @@ class ResourcesProvider(BaseResourcesProvider):
             raise AssertionError(
                 "In order to be able to instantiate kafka resources "
                 "you need to provide instance of 'KafkaSettings' "
+                "to the 'ResourcesProvider' constructor"
+            )
+        return self.settings
+
+    @property
+    def redis_settings(self) -> RedisSettings:
+        """Get the redis settings."""
+        if not isinstance(self.settings, RedisSettings):
+            raise AssertionError(
+                "In order to be able to instantiate redis resources "
+                "you need to provide instance of 'RedisSettings' "
                 "to the 'ResourcesProvider' constructor"
             )
         return self.settings
@@ -204,3 +219,10 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._kafka_admin is None:
             self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
         return self._kafka_admin
+
+    @property
+    def redis_client(self) -> t.Optional[Redis]:
+        """Return redis client if redis defined, else None."""
+        if self._redis_client is None and self.redis_settings.redis_uri:
+            self._redis_client = Redis(self.redis_settings.redis_uri.host)
+        return self._redis_client

@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.bgtasks.task import Actor, ExecutionStrategy, Worker, actor
-from deepchecks_monitoring.config import DatabaseSettigns
+from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_window
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule, Condition
@@ -141,7 +141,7 @@ def assert_check_results(
         )
 
 
-class WorkerSettings(DatabaseSettigns):
+class WorkerSettings(DatabaseSettings):
     """Set of worker settings."""
 
     worker_logfile: t.Optional[str] = None  # scheduler.log

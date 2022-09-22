@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Executable
 
 from deepchecks_monitoring.bgtasks.task import Task
-from deepchecks_monitoring.config import DatabaseSettigns
+from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import TimeUnit
 
@@ -188,7 +188,7 @@ EnqueueTasks = sa.text(dedent("""
 
 def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
-    class Settings(DatabaseSettigns):
+    class Settings(DatabaseSettings):
         scheduler_sleep_seconds: int = 30
         scheduler_logfile: t.Optional[str] = None  # "scheduler.log"
         scheduler_loglevel: str = "INFO"

@@ -48,7 +48,7 @@ async def test_alert_executor(
         monitor_id,
         client,
         repeat_every=TimeUnit.DAY * 2,
-        condition={"operator": "less_than", "value": 0.7}
+        condition={"operator": "greater_than", "value": 0.7}
     ))
     versions = [
         t.cast(int, add_model_version(classification_model_id, client, name="v1")),
@@ -102,13 +102,13 @@ async def test_alert_scheduling(
             monitors[0],
             client,
             repeat_every=TimeUnit.SECOND * 3,
-            condition={"operator": "less_than", "value": 0.7}
+            condition={"operator": "greater_than", "value": 0.7}
         )),
         t.cast(int, add_alert_rule(
             monitors[1],
             client,
             repeat_every=TimeUnit.SECOND * 3,
-            condition={"operator": "less_than", "value": 0.7}
+            condition={"operator": "greater_than", "value": 0.7}
         )),
     ]
     model_version_id = t.cast(int, add_model_version(

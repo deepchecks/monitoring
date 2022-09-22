@@ -11,7 +11,7 @@
 import typing as t
 
 import pendulum as pdl
-from fastapi import Response, status
+from fastapi import Request, Response, status
 from pydantic import BaseModel, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -19,7 +19,8 @@ from sqlalchemy.orm import joinedload
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import run_check_per_window_in_range
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
@@ -77,7 +78,8 @@ class MonitorRunSchema(BaseModel):
     @validator("end_time", pre=True)
     def end_time_validate(cls, v):  # pylint: disable=no-self-argument
         """Validate end time with pendulum."""
-        pdl.parse(v)
+        if v is not None:
+            pdl.parse(v)
         return v
 
 
@@ -112,32 +114,42 @@ async def get_monitor(
 
 @router.put("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def update_monitor(
+    request: Request,
     monitor_id: int,
     body: MonitorUpdateSchema,
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
+    cache_funcs: CacheFunctions = CacheFunctionsDep
 ):
     """Update monitor by id."""
     await exists_or_404(session, Monitor, id=monitor_id)
     await Monitor.update(session, monitor_id, body.dict(exclude_none=True))
+    cache_key_base = cache_funcs.get_key_base_by_request(request)
+    cache_funcs.clear_monitor(cache_key_base, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
+    request: Request,
     monitor_id: int,
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
+    cache_funcs: CacheFunctions = CacheFunctionsDep
 ):
     """Delete monitor by id."""
     await exists_or_404(session, Monitor, id=monitor_id)
     await Monitor.delete(session, monitor_id)
+    cache_key_base = cache_funcs.get_key_base_by_request(request)
+    cache_funcs.clear_monitor(cache_key_base, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])
 async def run_monitor_lookback(
+    request: Request,
     monitor_id: int,
     body: MonitorRunSchema,
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
+    cache_funcs: CacheFunctions = CacheFunctionsDep
 ):
     """Run a monitor for each time window by lookback.
 
@@ -148,6 +160,7 @@ async def run_monitor_lookback(
     body
     session : AsyncSession, optional
         SQLAlchemy session.
+    cache_funcs
 
     Returns
     -------
@@ -157,9 +170,9 @@ async def run_monitor_lookback(
     monitor = await fetch_or_404(session, Monitor, id=monitor_id)
 
     if body.end_time:
-        end_time = pdl.parse(body.end_time)
+        end_time = pdl.parse(body.end_time).set(minute=0, second=0, microsecond=0).add(hours=1)
     else:
-        end_time: pdl.DateTime = pdl.now().add(minutes=30).set(minute=0, second=0, microsecond=0)
+        end_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0).add(hours=1)
     # get the time window size
     lookback_duration = pdl.duration(seconds=monitor.lookback)
     if lookback_duration < pdl.duration(days=2):
@@ -169,6 +182,8 @@ async def run_monitor_lookback(
     else:
         window = pdl.duration(weeks=1)
 
+    cache_key_base = cache_funcs.get_key_base_by_request(request)
+
     return await run_check_per_window_in_range(
         monitor.check_id,
         end_time - lookback_duration,
@@ -177,4 +192,7 @@ async def run_monitor_lookback(
         monitor.data_filters,
         session,
         monitor.additional_kwargs,
+        monitor_id=monitor_id,
+        cache_funcs=cache_funcs,
+        cache_key_base=cache_key_base
     )

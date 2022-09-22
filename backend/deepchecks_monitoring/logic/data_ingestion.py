@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 
 """Module defining the dynamic tables metadata for the monitoring package."""
-import asyncio
 import copy
 import json
 import logging
@@ -21,14 +20,13 @@ import fastapi
 import jsonschema.exceptions
 import pendulum as pdl
 import sqlalchemy.exc
-from aiokafka import AIOKafkaConsumer
 from jsonschema.validators import validate
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.models.cache_invalidations import CacheInvalidation
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.ingestion_errors import IngestionError
 from deepchecks_monitoring.models.model_version import update_statistics_from_sample
@@ -87,9 +85,9 @@ async def log_data(
     if errors:
         await session.execute(insert(IngestionError).values(errors))
 
-    # Update statistics, timestamps, and cache invalidations, running only on samples which were logged successfully
+    # Update statistics and timestamps, running only on samples which were logged successfully
     if len(logged_samples) == 0:
-        return
+        return []
     all_timestamps = []
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
@@ -99,7 +97,7 @@ async def log_data(
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
     await model_version.update_timestamps(all_timestamps, session)
-    await CacheInvalidation.insert_or_update(model_version, all_timestamps, session)
+    return all_timestamps
 
 
 async def update_data(
@@ -159,15 +157,16 @@ async def update_data(
         await session.execute(insert(IngestionError).values(errors))
 
     if len(logged_samples) == 0:
-        return
+        return []
 
+    # Update statistics if needed
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
         update_statistics_from_sample(updated_statistics, sample)
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
 
-    await CacheInvalidation.insert_or_update(model_version, logged_timestsamps, session)
+    return logged_timestsamps
 
 
 class DataIngestionBackend:
@@ -175,14 +174,14 @@ class DataIngestionBackend:
 
     def __init__(
             self,
-            settings,
             resources_provider,
+            cache_invalidator,
             logger=None
     ):
-        self.settings = settings
         self.resources_provider = resources_provider
+        self.cache_invalidator = cache_invalidator
         self.logger = logger or logging.getLogger("data-ingestion")
-        self.use_kafka = self.settings.kafka_host is not None
+        self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
 
     def generate_topic_name(
             self,
@@ -280,50 +279,12 @@ class DataIngestionBackend:
         else:
             await update_data(model_version, data, session)
 
-    async def consume_from_kafka(self):
+    async def run_data_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
-        while True:
-            try:
-                consumer = AIOKafkaConsumer(
-                    **self.settings.kafka_params,
-                    group_id="data_group",  # Consumer must be in a group to commit
-                    enable_auto_commit=False,  # Will disable autocommit
-                    auto_offset_reset="earliest",  # If committed offset not found, start from beginning,
-                    max_poll_records=100,
-                    metadata_max_age_ms=60 * 1000
-                )
-                await consumer.start()
-                consumer.subscribe(pattern=r"^data\-.*$")
-                while True:
-                    result = await consumer.getmany(timeout_ms=10 * 1000)
-                    for tp, messages in result.items():
-                        if messages:
-                            try:
-                                await self.handle_messages(tp, messages)
-                                # Commit progress only for this partition
-                                await consumer.commit({tp: messages[-1].offset + 1})
-                            except sqlalchemy.exc.SQLAlchemyError as e:
-                                self.logger.exception(e)
-                                # Sqlalchemy wraps the asyncpg exceptions in orig field
-                                if hasattr(e, "orig"):
-                                    e = e.orig
+        await consume_from_kafka(self.resources_provider.kafka_settings, self.handle_data_messages,
+                                 self.handle_failed_data_messages, r"^data\-.*$", self.logger)
 
-                                if isinstance(e, asyncpg.exceptions.PostgresConnectionError):
-                                    # In case of connection error does not commit the kafka messages, in order to try
-                                    # again
-                                    continue
-                                else:
-                                    # In case of postgres error (which is not connection)
-                                    # commit the messages and saves the error to db
-                                    await self.save_failed_messages(tp, messages, e)
-                                    await consumer.commit({tp: messages[-1].offset + 1})
-
-            except Exception as e:  # pylint: disable=broad-except
-                self.logger.exception(e)
-            # If consumer fails sleep 30 seconds and tried again
-            await asyncio.sleep(30)
-
-    async def handle_messages(self, tp, messages):
+    async def handle_data_messages(self, tp, messages):
         """Handle messages consumed from kafka."""
         topic = tp.topic
         model_version_id = int(topic[topic.rfind("-") + 1:])
@@ -336,13 +297,29 @@ class DataIngestionBackend:
             model_version = await session.get(ModelVersion, model_version_id)
             if model_version is None:
                 return
+            timestamps = []
             if log_samples:
-                await log_data(model_version, log_samples, session)
+                timestamps += await log_data(model_version, log_samples, session)
             if update_samples:
-                await update_data(model_version, update_samples, session)
+                timestamps += await update_data(model_version, update_samples, session)
+        if timestamps:
+            await self.cache_invalidator.send_invalidation(timestamps, tp)
 
-    async def save_failed_messages(self, tp, messages, exception):
-        """Handle messages failed to be saved to the database."""
+    async def handle_failed_data_messages(self, tp, messages, exception):
+        """Handle messages failed to be saved to the database. return True to commit message, false to not commit."""
+        # The only "valid" exceptions are disconnections from the db, any others are not expected therefore
+        # we raise them back.
+        if not isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
+            raise exception
+        # Sqlalchemy wraps the asyncpg exceptions in orig field
+        if hasattr(exception, "orig"):
+            exception = exception.orig
+
+        if isinstance(exception, asyncpg.exceptions.PostgresConnectionError):
+            # In case of connection error does not commit the kafka messages, in order to try
+            # again
+            return False
+
         async with self.get_session(tp) as session:
             topic = tp.topic
             model_version_id = int(topic[topic.rfind("-") + 1:])
@@ -352,3 +329,4 @@ class DataIngestionBackend:
                        "model_version_id": model_version_id}
                       for s in samples]
             await session.execute(insert(IngestionError).values(values))
+        return True
