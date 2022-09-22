@@ -16,7 +16,7 @@ from aiokafka import AIOKafkaProducer
 from kafka import KafkaAdminClient
 from pydantic import BaseSettings
 from redis.client import Redis
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -112,8 +112,8 @@ class ResourcesProvider(BaseResourcesProvider):
 
     async def async_dispose_resources(self):
         """Dispose async resources."""
-        if self._async_session_factory is not None:
-            await AsyncSession.close_all()
+        # if self._async_session_factory is not None:
+        #     await AsyncSession.close_all()
         if self._async_database_engine is not None:
             await self._async_database_engine.dispose()
 

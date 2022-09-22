@@ -29,4 +29,6 @@ Instrumentor
 toplevel
 ExtendedAsyncSession
 10MB
+invalidations
+AsyncSession
 dataframe

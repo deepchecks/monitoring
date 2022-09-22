@@ -128,7 +128,7 @@ async def test_alert_scheduling(
 
     async with anyio.create_task_group() as g:
         g.start_soon(Worker(engine=async_engine, actors=[execute_alert_rule]).start)
-        await anyio.sleep(10)  # give worker time to execute tasks
+        await anyio.sleep(15)  # give worker time to execute tasks, TODO: need something better
         g.cancel_scope.cancel()
 
     alerts = (await async_session.scalars(sa.select(Alert))).all()

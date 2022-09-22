@@ -7,13 +7,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
 from dotenv import load_dotenv
 
 load_dotenv()
+
 import os
+from contextlib import contextmanager
 from logging.config import fileConfig
 
+import sqlalchemy as sa
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
@@ -40,7 +42,9 @@ target_metadata = [MonitoringBase.metadata, TasksBase.metadata]
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URI"))
+if os.environ.get("DATABASE_URI"):
+    config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URI"])
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -71,23 +75,55 @@ def run_migrations_online() -> None:
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
+    with database_connection() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata
+        )
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+@contextmanager
+def database_connection():
+    connectable = config.attributes.get('connection')
+    if connectable:
+        # we assume that desired schema search path is already applied
+        # by whom passed connection to the attributes
+        yield connectable
+    else:
+        schema = context.get_x_argument(as_dictionary=True).get("schema")
+        schema = schema or os.environ.get("SCHEMA")
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+        try:
+            with connectable.connect() as c:
+                if schema:
+                    verify_schema_existence(c, schema)
+                    c.execute(f"SET search_path TO {schema}")
+                    c.dialect.default_schema_name = schema
+                yield c
+        finally:
+            connectable.dispose()
+
+
+def verify_schema_existence(connection, schema):
+    exists = connection.scalar(
+        sa.text(
+            "select exists ( "
+                "select 1 "
+                "from information_schema.schemata "
+                "where schema_name = :schema_name "
+            ")"
+        ).bindparams(schema_name=schema)
     )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
-
-        with context.begin_transaction():
-            if os.environ.get('SCHEMA'):
-                context.execute(f'SET search_path TO {os.environ["SCHEMA"]}')
-            context.run_migrations()
+    if not exists:
+        raise RuntimeError(f"Schema '{schema}' does not exist")
 
 
 if context.is_offline_mode():

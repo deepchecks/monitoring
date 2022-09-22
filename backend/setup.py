@@ -87,4 +87,5 @@ setuptools.setup(
     python_requires='>=3.8',
     install_requires=install_requires,
     dependency_links=dependency_links,
+    package_data={'deepchecks_monitoring.migrations': ['script.py.mako']},
 )

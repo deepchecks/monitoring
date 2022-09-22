@@ -11,7 +11,7 @@
 """create initial models
 
 Revision ID: fb9160d139d5
-Revises: 
+Revises:
 Create Date: 2022-07-24 13:49:39.616890
 
 """
