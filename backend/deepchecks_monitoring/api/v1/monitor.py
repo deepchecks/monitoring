@@ -12,7 +12,7 @@ import typing as t
 
 import pendulum as pdl
 from fastapi import Request, Response, status
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -24,7 +24,8 @@ from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import run_check_per_window_in_range
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
+                                         fetch_or_404, field_length)
 
 from .router import router
 
@@ -32,10 +33,10 @@ from .router import router
 class MonitorCreationSchema(BaseModel):
     """Schema defines the parameters for creating new monitor."""
 
-    name: str
+    name: str = Field(max_length=field_length(Monitor.name))
     lookback: int
     dashboard_id: t.Optional[int]
-    description: t.Optional[str]
+    description: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList]
     additional_kwargs: t.Optional[MonitorCheckConfSchema]
 
@@ -44,11 +45,11 @@ class MonitorSchema(BaseModel):
     """Schema for the monitor."""
 
     id: int
-    name: str
+    name: str = Field(max_length=field_length(Monitor.name))
     check: CheckSchema
     dashboard_id: t.Optional[int]
     lookback: int
-    description: t.Optional[str] = None
+    description: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList] = None
     additional_kwargs: t.Optional[MonitorCheckConfSchema]
     alert_rules: t.List[AlertRuleSchema]
@@ -62,9 +63,9 @@ class MonitorSchema(BaseModel):
 class MonitorUpdateSchema(BaseModel):
     """Schema defines the parameters for creating new monitor."""
 
-    name: t.Optional[str]
+    name: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.name))
     lookback: t.Optional[int]
-    description: t.Optional[str]
+    description: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList]
     dashboard_id: t.Optional[int]
     additional_kwargs: t.Optional[MonitorCheckConfSchema]

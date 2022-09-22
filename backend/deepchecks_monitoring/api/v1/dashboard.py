@@ -11,7 +11,7 @@
 import typing as t
 
 from fastapi import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
@@ -23,7 +23,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.dashboard_logic import create_default_dashboard
 from deepchecks_monitoring.models.dashboard import Dashboard
 from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import exists_or_404
+from deepchecks_monitoring.utils import exists_or_404, field_length
 
 from .router import router
 
@@ -32,7 +32,7 @@ class DashboardSchema(BaseModel):
     """Schema for the dashboard."""
 
     id: int
-    name: t.Optional[str]
+    name: t.Optional[str] = Field(default=None, max_length=field_length(Dashboard.name))
     monitors: t.List[MonitorSchema]
 
     class Config:
@@ -44,7 +44,7 @@ class DashboardSchema(BaseModel):
 class DashboardUpdateSchema(BaseModel):
     """Schema defines the parameters for updating a dashboard."""
 
-    name: str
+    name: str = Field(max_length=field_length(Dashboard.name))
 
 
 @router.get('/dashboards/', response_model=DashboardSchema, tags=[Tags.MONITORS])

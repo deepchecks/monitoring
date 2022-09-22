@@ -24,7 +24,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest, InternalError
 from deepchecks_monitoring.models import Alert, Check, Monitor
 from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity, Condition
-from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404, field_length
 
 from .alert import AlertSchema
 from .router import router
@@ -36,7 +36,7 @@ class AlertRuleCreationSchema(BaseModel):
     condition: Condition
     repeat_every: int = Field(gt=0)
     alert_severity: AlertSeverity = AlertSeverity.MID
-    name: t.Optional[str] = None
+    name: t.Optional[str] = Field(default=None, max_length=field_length(AlertRule.name))
     is_active: bool = True
 
 
@@ -44,7 +44,7 @@ class AlertRuleSchema(BaseModel):
     """Schema for the alert rule."""
 
     id: int
-    name: str
+    name: str = Field(max_length=field_length(AlertRule.name))
     monitor_id: int
     repeat_every: int
     condition: Condition
@@ -68,7 +68,7 @@ class AlertRuleInfoSchema(AlertRuleSchema):
 class AlertRuleUpdateSchema(BaseModel):
     """Schema defines the parameters for updating alert rule."""
 
-    name: t.Optional[str]
+    name: t.Optional[str] = Field(default=None, max_length=field_length(AlertRule.name))
     repeat_every: t.Optional[int]
     alert_severity: t.Optional[AlertSeverity]
     condition: t.Optional[Condition]

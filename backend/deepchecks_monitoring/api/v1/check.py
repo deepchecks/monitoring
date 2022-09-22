@@ -14,7 +14,7 @@ import pendulum as pdl
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 from sqlalchemy import and_, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ from deepchecks_monitoring.logic.check_logic import (MonitorOptions, get_feature
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.models import Check, Model
 from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.utils import IdResponse, MonitorCheckConf, exists_or_404, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, MonitorCheckConf, exists_or_404, fetch_or_404, field_length
 
 from .router import router
 
@@ -47,7 +47,7 @@ class CheckCreationSchema(BaseModel):
     """Check schema."""
 
     config: CheckConfigSchema
-    name: t.Optional[str] = None
+    name: t.Optional[str] = Field(default=None, max_length=field_length(Check.name))
 
     class Config:
         """Schema config."""
@@ -73,7 +73,7 @@ class CheckSchema(BaseModel):
     config: CheckConfigSchema
     model_id: int
     id: int
-    name: t.Optional[str] = None
+    name: t.Optional[str] = Field(default=None, max_length=field_length(Check.name))
 
     class Config:
         """Config for Alert schema."""

@@ -39,6 +39,7 @@ __all__ = [
     "IdResponse",
     "CheckParameterTypeEnum",
     "NameIdResponse",
+    "field_length"
 ]
 
 
@@ -348,3 +349,11 @@ async def not_exists_or_400(
         model_name = getattr(model, "__name__", "Entity")
         args = "; ".join(f"{k}={v}" for k, v in kwargs.items())
         raise NotFound(error_template.format(entity=model_name.capitalize(), arguments=args))
+
+
+def field_length(column) -> int:
+    """Return model field length."""
+    result = getattr(column.expression.type, "length", None)
+    if not isinstance(result, int):
+        raise ValueError(f"Field {column.expression.key} does not have length or it is not set")
+    return result

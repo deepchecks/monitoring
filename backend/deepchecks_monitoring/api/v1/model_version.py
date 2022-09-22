@@ -14,7 +14,7 @@ from io import StringIO
 import fastapi
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import Index, MetaData, Table, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -33,7 +33,7 @@ from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_TS_C
                                                       column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.utils import IdResponse, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, fetch_or_404, field_length
 
 from .check import MonitorOptions
 from .router import router
@@ -42,7 +42,7 @@ from .router import router
 class ModelVersionCreationSchema(BaseModel):
     """Schema defines the parameters for creating new model version."""
 
-    name: str
+    name: str = Field(max_length=field_length(ModelVersion.name))
     features: t.Dict[str, ColumnType]
     non_features: t.Dict[str, ColumnType]
     feature_importance: t.Optional[t.Dict[str, float]] = None

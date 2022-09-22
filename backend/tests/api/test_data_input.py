@@ -11,9 +11,9 @@ import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
-from deepchecks_monitoring.models import ModelVersion, IngestionError
+from deepchecks_monitoring.models import IngestionError, ModelVersion
 from tests.conftest import send_reference_request
 
 

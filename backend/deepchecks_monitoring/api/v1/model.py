@@ -12,7 +12,7 @@ import typing as t
 from collections import defaultdict
 
 import pendulum as pdl
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import Integer as SQLInteger
 from sqlalchemy import func, literal, select, text, union_all
 from sqlalchemy.orm import selectinload
@@ -27,7 +27,7 @@ from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_CO
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, fetch_or_404
+from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, fetch_or_404, field_length
 
 from .router import router
 
@@ -36,8 +36,8 @@ class ModelSchema(BaseModel):
     """Model Schema."""
 
     id: int
-    name: str
-    description: t.Optional[str]
+    name: str = Field(max_length=field_length(Model.name))
+    description: t.Optional[str] = Field(default=None, max_length=field_length(Model.description))
     task_type: t.Optional[TaskType]
 
     class Config:
@@ -49,9 +49,9 @@ class ModelSchema(BaseModel):
 class ModelCreationSchema(BaseModel):
     """Model schema."""
 
-    name: str
+    name: str = Field(max_length=field_length(Model.name))
+    description: t.Optional[str] = Field(default=None, max_length=field_length(Model.description))
     task_type: TaskType
-    description: t.Optional[str] = None
 
     class Config:
         """Config for Model schema."""
