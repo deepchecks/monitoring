@@ -290,18 +290,51 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "_dc_label": "2",
             "a": 10 + i,
             "b": "ppppp",
-        }]
+        },
+        {
+            "_dc_sample_id": str(i*10),
+            "_dc_time": time,
+            "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
+            "_dc_prediction": "1",
+            "_dc_label": "1",
+            "a": 10 + i,
+            "b": "ppppp",
+        },
+        {
+            "_dc_sample_id": str(i*100),
+            "_dc_time": time,
+            "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
+            "_dc_prediction": "0",
+            "_dc_label": "0",
+            "a": 10 + i,
+            "b": "ppppp",
+        }
+        ]
         response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
         assert response.status_code == 200
-    sample = {
+    samples = [{
         "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
         "_dc_prediction": "2",
         "_dc_label": "2",
         "a": 16.1,
         "b": "ppppp",
-    }
+    },
+    {
+        "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
+        "_dc_prediction": "1",
+        "_dc_label": "1",
+        "a": 16.1,
+        "b": "ppppp",
+    },
+    {
+        "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
+        "_dc_prediction": "0",
+        "_dc_label": "0",
+        "a": 16.1,
+        "b": "ppppp",
+    }]
     # Act
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100)
+    response = send_reference_request(client, classification_model_version_id, samples * 100)
     assert response.status_code == 200
 
     # test no filter
