@@ -86,12 +86,6 @@ RUN chown -R deepchecks.deepchecks /code
 
 USER deepchecks
 
-ENV DATABASE_URI \
-    ASYNC_DATABASE_URI \
-    CHROME_BIN=/usr/bin/chromium-browser \
-    CHROME_PATH=/usr/lib/chromium/ \
-    CHROMEDRIVER_BIN=/usr/bin/chromedriver
-
 # Expose container port and run entry point script
 EXPOSE 8000
 CMD ["./bin/start"]
