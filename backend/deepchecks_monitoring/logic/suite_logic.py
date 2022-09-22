@@ -95,7 +95,7 @@ async def run_suite_for_model_version(
     # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily
     await session.commit()
 
-    suite_name = f"{model_version.name} from {window_options.start_time} to {window_options.end_time}"
+    suite_name = f"Test Suite - Model {model_version.name} - Window {window_options.start_time_dt().date()}"
     task_type = model_version.model.task_type
     if task_type in [TaskType.MULTICLASS, TaskType.BINARY, TaskType.REGRESSION]:
         suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
