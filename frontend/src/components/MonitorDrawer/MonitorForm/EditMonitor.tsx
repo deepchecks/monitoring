@@ -182,6 +182,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
           <MarkedSelect
             label="Select category"
             size="small"
+            clearValue={() => {setFieldValue('category', '')}}
             disabled={!stats.values.length}
             fullWidth
             {...getFieldProps('category')}
@@ -266,7 +267,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
               />
             )}
 
-            <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth>
+            <MarkedSelect label="Time Window" clearValue={() => {setFieldValue('time', '')}} size="small" {...getFieldProps('time')} fullWidth>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -277,6 +278,7 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
               <MarkedSelect
                 label="Filter by Column"
                 size="small"
+                clearValue={() => {setFieldValue('column', '')}}
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}
                 fullWidth

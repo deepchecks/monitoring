@@ -33,29 +33,38 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
     setFieldValue('additional_kwargs', checkInfoData, false);
   }, [checkInfoData]);
 
-  const handleOnChange = (confType: string, dataType: string, item: MonitorValueConf) => {
+  const handleOnChange = (confType: string, dataType: string, item?: MonitorValueConf) => {
     let objectToUpdate: any = { ...checkInfoData };
     let didAggShowChange = false;
-
+    let changedItem;
+    if (!item){
+      changedItem = {
+        name: null,
+        is_agg: undefined
+      };
+    }
+    else {
+      changedItem = item;
+    }
     if (confType === 'res_conf') {
-      objectToUpdate[confType] = [item.name];
+      objectToUpdate[confType] = [changedItem.name];
     } else {
       if (!objectToUpdate[confType]) {
-        objectToUpdate[confType] = { [dataType]: [item.name] };
+        objectToUpdate[confType] = { [dataType]: [changedItem.name] };
       } else {
-        objectToUpdate[confType][dataType] = [item.name];
+        objectToUpdate[confType][dataType] = [changedItem.name];
       }
 
-      if (item.is_agg !== null) {
+      if (changedItem.is_agg !== null) {
         didAggShowChange = true;
-        setIsAggShown(item.is_agg);
+        setIsAggShown(changedItem.is_agg);
       }
     }
 
-    if (didAggShowChange && item.is_agg === true) {
-      objectToUpdate = { check_conf: { [dataType]: [item.name] } };
+    if (didAggShowChange && changedItem.is_agg === true) {
+      objectToUpdate = { check_conf: { [dataType]: [changedItem.name] } };
     }
-
+    
     console.log(objectToUpdate);
 
     setCheckInfoData(objectToUpdate);

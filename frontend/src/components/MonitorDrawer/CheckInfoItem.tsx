@@ -9,7 +9,7 @@ interface CheckInfoItemSchema {
   data: MonitorTypeConf;
   confType: string;
   isAggShown: isAggShownProps;
-  handleOnChange: (confType: string, key: string, item: MonitorValueConf) => void;
+  handleOnChange: (confType: string, key: string, item?: MonitorValueConf) => void;
   initValue: any;
   setIsAggShown: (flag: boolean) => void;
 }
@@ -50,14 +50,20 @@ export const CheckInfoItem = ({
     setSelectedValue('');
   }, [isDisabled]);
 
-  const handleSelectedItem = (item: MonitorValueConf) => {
-    const dataType = data.type;
-    setSelectedValue(item.name);
-    handleOnChange(confType, dataType, item);
+  const handleSelectedItem = (item?: MonitorValueConf) => {
+    if (!item) {
+      setSelectedValue('');
+      handleOnChange(confType, data.type, undefined);
+    }
+    else {
+      const dataType = data.type;
+      setSelectedValue(item.name);
+      handleOnChange(confType, dataType, item);
+    }
   };
 
   return (
-    <MarkedSelect label={data.type as string} value={selectedValue} size="small" fullWidth disabled={isDisabled}>
+    <MarkedSelect label={data.type as string} value={selectedValue} size="small" clearValue={() => {handleSelectedItem(undefined)}} fullWidth disabled={isDisabled}>
       {data.values?.map((item, index) => (
         <MenuItem key={item.name + index} value={item.name} onClick={() => handleSelectedItem(item)}>
           {item.name}

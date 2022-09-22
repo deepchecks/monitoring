@@ -12,6 +12,7 @@ import { ReactComponent as ConfigurationHover } from './caonfigurationHover.svg'
 import { ReactComponent as CheckboxDefault } from './checkboxDefault.svg';
 import { ReactComponent as CheckboxSelected } from './checkboxSelected.svg';
 import { ReactComponent as Checkmark } from './checkmark.svg';
+import { ReactComponent as Clear } from './clear.svg';
 import { ReactComponent as CloseIcon } from './close.svg';
 import { ReactComponent as Dashboard } from './dashboard.svg';
 import { ReactComponent as DashboardActive } from './dashboardActiv.svg';
@@ -50,6 +51,7 @@ export {
   CheckboxDefault,
   CheckboxSelected,
   Checkmark,
+  Clear,
   CloseIcon,
   Configuration,
   ConfigurationActive,

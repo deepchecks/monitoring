@@ -174,6 +174,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     setFieldValue('numericValue', event.target.value ? +event.target.value : '');
   };
 
+
   const handleInputBlur = () => {
     const column = columns[values.column];
     const stats = column.stats as ColumnStatsNumeric;
@@ -199,6 +200,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
             <MarkedSelect
               label="Select category"
               size="small"
+              clearValue={() => {setFieldValue('category', '')}}
               disabled={!stats.values.length}
               fullWidth
               {...getFieldProps('category')}
@@ -283,6 +285,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               label="Select Model"
               onChange={handleModelChange}
               name="model"
+              clearValue={() => {setFieldValue('model', '')}}
               onBlur={handleBlur}
               size="small"
               value={values.model}
@@ -298,6 +301,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
             <MarkedSelect
               label="Select Check"
               size="small"
+              clearValue={() => {setFieldValue('check', '')}}
               disabled={!checks.length}
               {...getFieldProps('check')}
               fullWidth
@@ -311,7 +315,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
             </MarkedSelect>
             {values.check && checkInfo && <CheckInfo checkInfo={checkInfo} setFieldValue={setFieldValue} />}
 
-            <MarkedSelect label="Time Window" size="small" {...getFieldProps('time')} fullWidth required>
+            <MarkedSelect label="Time Window" size="small" clearValue={() => {setFieldValue('time', '')}} {...getFieldProps('time')} fullWidth required>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -322,6 +326,7 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               <MarkedSelect
                 label="Segment"
                 size="small"
+                clearValue={() => {setFieldValue('column', '')}}
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}
                 fullWidth
