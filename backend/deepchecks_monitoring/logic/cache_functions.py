@@ -103,7 +103,7 @@ class CacheFunctions:
                 # If cache value is none it means the key was not found
                 if cache_value is not None:
                     # Set the expiry longer for this key
-                    self.redis.expire(key, pdl.duration(days=7).in_seconds(), gt=True)
+                    self.redis.expire(key, pdl.duration(days=7).in_seconds())
                     return CacheResult(found=True, value=json.loads(cache_value))
             except redis.exceptions.RedisError as e:
                 self.logger.exception(e)
