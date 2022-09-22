@@ -1,21 +1,31 @@
 import {
   Alert,
+  alpha,
   Avatar,
   Box,
   Button,
   Dialog,
-  DialogTitle,
+  Divider,
+  IconButton,
   InputAdornment,
   List,
   ListItem,
-  ListItemAvatar,
-  ListItemText,
   Snackbar,
-  TextField
+  Stack,
+  TextField,
+  Typography,
+  useTheme
 } from '@mui/material';
-import { createInviteApiV1OrganizationInvitePut, InvitationCreationSchema, UserSchema } from 'api/generated';
-import { EmailIcon } from 'assets/icon/icon';
+import {
+  createInviteApiV1OrganizationInvitePut,
+  InvitationCreationSchema,
+  useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete,
+  useRetriveOrganizationMembersApiV1OrganizationMembersGet
+} from 'api/generated';
+import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
+import dayjs from 'dayjs';
 import React, { PropsWithChildren, useState } from 'react';
+import { Loader } from './Loader';
 
 export interface UserInviteDialogProps {
   open: boolean;
@@ -27,6 +37,21 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
   const [btnEnabled, setBtnEnabled] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(false);
+  const theme = useTheme();
+
+  const {
+    data: organizationMembers = [],
+    isLoading: isOrganizationMembersLoading,
+    refetch
+  } = useRetriveOrganizationMembersApiV1OrganizationMembersGet();
+
+  const { mutate: deleteMember, isLoading: isDeleteMemberLoading } =
+    useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete({
+      mutation: {
+        onSuccess: () => refetch()
+      }
+    });
+
   const handleClose = () => {
     onClose();
   };
@@ -40,6 +65,10 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
       setEmailValue('');
     }
     setBtnEnabled(valid);
+  };
+
+  const handleDeleteMember = (memberId: number) => {
+    deleteMember({ memberId });
   };
 
   const handleInviteToOrgClick = () => {
@@ -60,52 +89,136 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
     }
   };
 
-  const handleListItemClick = (value: string) => {
-    onClose();
-  };
-  // TODO: Fetch the org members from backend
-  const organizationMembers: UserSchema[] = [];
+  const isLoading = isOrganizationMembersLoading || isDeleteMemberLoading;
 
   return (
-    <Dialog maxWidth="md" fullWidth={true} onClose={handleClose} open={open}>
-      <DialogTitle>Invite to workspace</DialogTitle>
-      <Box sx={{ display: 'flex', justifyContent: 'center', m: 2, p: 2 }}>
-        <TextField
-          sx={{ flexGrow: 1, m: 1 }}
-          label="Please enter the email address of the invitee.."
-          variant="outlined"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <EmailIcon></EmailIcon>
-              </InputAdornment>
-            )
-          }}
-          onChange={text => validateEmail(text.target.value)}
-        ></TextField>
-        <Button sx={{ m: 1 }} onClick={handleInviteToOrgClick} disabled={!btnEnabled}>
-          <Avatar sx={{ background: 'none' }}>+</Avatar>
-          invite
-        </Button>
-      </Box>
-      {errorMsg ? <Alert severity="error">{errorMsg}</Alert> : ''}
-      <List sx={{ pt: 0 }}>
-        {organizationMembers.map(member => (
-          <ListItem
-            button
-            onClick={() => handleListItemClick(member.full_name ? member.full_name : member.email)}
-            key={member.email}
+    <Dialog
+      maxWidth="md"
+      fullWidth={true}
+      onClose={handleClose}
+      open={open}
+      sx={{
+        '& .MuiDialog-paper': {
+          borderRadius: 0
+        }
+      }}
+    >
+      <Box sx={{ padding: '10px 10px 0 30px' }}>
+        <Stack direction="row" width={1} justifyContent="space-between">
+          <Typography variant="h4" sx={{ paddingTop: '15px' }}>
+            Invite to workspace
+          </Typography>
+          <IconButton
+            sx={{
+              height: 36,
+              width: 36,
+              backgroundColor: 'transparent'
+            }}
+            onClick={onClose}
           >
-            <ListItemAvatar>
-              {/* <Avatar sx={{ bgcolor: blue[100], color: blue[600] }}>
-                  <PersonIcon />
-                </Avatar> */}
-            </ListItemAvatar>
-            <ListItemText primary={member.email} />
-          </ListItem>
-        ))}
-      </List>
-
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+      </Box>
+      <Box sx={{ padding: '0 30px', marginTop: '42px' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <TextField
+            sx={{
+              flexGrow: 1,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme => theme.palette.grey[200]
+              }
+            }}
+            placeholder="Please enter the email address of the invitee.."
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <EmailIcon></EmailIcon>
+                </InputAdornment>
+              )
+            }}
+            onChange={text => validateEmail(text.target.value)}
+          ></TextField>
+          <Button
+            sx={{ ml: '10px', padding: '0 23px' }}
+            onClick={handleInviteToOrgClick}
+            disabled={!btnEnabled}
+            startIcon={<PlusIcon fill={theme.palette.grey[300]} />}
+          >
+            invite
+          </Button>
+        </Box>
+        {errorMsg ? <Alert severity="error">{errorMsg}</Alert> : ''}
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <List sx={{ p: 0, m: '16px 0 42px', maxHeight: 320, overflow: 'auto' }}>
+            {organizationMembers.map(({ id, created_at, email, full_name, picture_url }) => (
+              <ListItem
+                key={email}
+                sx={{
+                  padding: '20px 0',
+                  borderBottom: theme => `1px solid ${alpha(theme.palette.grey[300], 0.5)}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  ':last-of-type': {
+                    borderBottom: 'none'
+                  }
+                }}
+              >
+                <Avatar alt={full_name} src={picture_url} />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    flexGrow: 1,
+                    ml: '10px'
+                  }}
+                >
+                  <Typography variant="subtitle1">{full_name}</Typography>
+                  <Stack direction="row">
+                    <Typography variant="caption">{email}</Typography>
+                    <Divider
+                      orientation="vertical"
+                      flexItem
+                      sx={{ margin: '0 5px', alignSelf: 'center', height: '8px' }}
+                    />
+                    <Typography variant="caption">Active since {dayjs(created_at).format('MMMM DD. YYYY')}</Typography>
+                  </Stack>
+                </Box>
+                <Button variant="text" sx={{ padding: '0 16px' }} onClick={() => handleDeleteMember(id)}>
+                  Remove
+                </Button>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </Box>
+      {/* <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme => alpha(theme.palette.grey[200], 0.5),
+          height: 90
+        }}
+      >
+        <Stack direction="row" alignItems="center">
+          <Typography variant="body2">
+            Or copy the link to your workspace so you can share it any way you like
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            ml="8px"
+            sx={{ cursor: 'pointer', color: theme => theme.palette.primary.main }}
+            onClick={() => navigator.clipboard.writeText('test')}
+          >
+            Copy link to clipboard
+          </Typography>
+        </Stack>
+      </Box> */}
       <Snackbar open={success} autoHideDuration={6000} message="User invited succesfully" />
     </Dialog>
   );

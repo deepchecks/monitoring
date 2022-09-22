@@ -180,6 +180,21 @@ export interface MonitorTypeConf {
 }
 
 /**
+ * Schema for the monitor.
+ */
+export interface MonitorSchema {
+  id: number;
+  name: string;
+  check: CheckSchema;
+  dashboard_id?: number;
+  lookback: number;
+  description?: string;
+  data_filters?: DataFilterList;
+  additional_kwargs?: MonitorCheckConfSchema;
+  alert_rules: AlertRuleSchema[];
+}
+
+/**
  * Schema defines the parameters for creating new monitor.
  */
 export interface MonitorRunSchema {
@@ -194,6 +209,40 @@ export type MonitorCheckConfSchemaCheckConf = { [key: string]: any };
 export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
+}
+
+/**
+ * Schema defines the parameters for creating new monitor.
+ */
+export interface MonitorUpdateSchema {
+  name?: string;
+  lookback?: number;
+  description?: string;
+  data_filters?: DataFilterList;
+  dashboard_id?: number;
+  additional_kwargs?: MonitorCheckConfSchema;
+}
+
+/**
+ * Monitor run schema.
+ */
+export interface MonitorOptions {
+  end_time: string;
+  start_time: string;
+  filter?: DataFilterList;
+  additional_kwargs?: MonitorCheckConfSchema;
+}
+
+/**
+ * Schema defines the parameters for creating new monitor.
+ */
+export interface MonitorCreationSchema {
+  name: string;
+  lookback: number;
+  dashboard_id?: number;
+  description?: string;
+  data_filters?: DataFilterList;
+  additional_kwargs?: MonitorCheckConfSchema;
 }
 
 /**
@@ -256,6 +305,17 @@ export interface ModelCreationSchema {
   description?: string;
 }
 
+export interface MemberSchema {
+  id: number;
+  email: string;
+  full_name?: string;
+  disabled: boolean;
+  picture_url?: string;
+  is_admin: boolean;
+  last_login?: string;
+  created_at: string;
+}
+
 /**
  * Schema for info on invitation.
  */
@@ -297,55 +357,6 @@ export interface DataFilter {
  */
 export interface DataFilterList {
   filters: DataFilter[];
-}
-
-/**
- * Schema defines the parameters for creating new monitor.
- */
-export interface MonitorUpdateSchema {
-  name?: string;
-  lookback?: number;
-  description?: string;
-  data_filters?: DataFilterList;
-  dashboard_id?: number;
-  additional_kwargs?: MonitorCheckConfSchema;
-}
-
-/**
- * Schema for the monitor.
- */
-export interface MonitorSchema {
-  id: number;
-  name: string;
-  check: CheckSchema;
-  dashboard_id?: number;
-  lookback: number;
-  description?: string;
-  data_filters?: DataFilterList;
-  additional_kwargs?: MonitorCheckConfSchema;
-  alert_rules: AlertRuleSchema[];
-}
-
-/**
- * Monitor run schema.
- */
-export interface MonitorOptions {
-  end_time: string;
-  start_time: string;
-  filter?: DataFilterList;
-  additional_kwargs?: MonitorCheckConfSchema;
-}
-
-/**
- * Schema defines the parameters for creating new monitor.
- */
-export interface MonitorCreationSchema {
-  name: string;
-  lookback: number;
-  dashboard_id?: number;
-  description?: string;
-  data_filters?: DataFilterList;
-  additional_kwargs?: MonitorCheckConfSchema;
 }
 
 /**
@@ -3216,6 +3227,93 @@ export const useUpdateOrganizationApiV1OrganizationPut = <
     Awaited<ReturnType<typeof updateOrganizationApiV1OrganizationPut>>,
     TError,
     { data: OrganizationUpdateSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Retrive organization members
+ * @summary Retrive Organization Members
+ */
+export const retriveOrganizationMembersApiV1OrganizationMembersGet = (signal?: AbortSignal) =>
+  customInstance<MemberSchema[]>({ url: `/api/v1/organization/members`, method: 'get', signal });
+
+export const getRetriveOrganizationMembersApiV1OrganizationMembersGetQueryKey = () => [`/api/v1/organization/members`];
+
+export type RetriveOrganizationMembersApiV1OrganizationMembersGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retriveOrganizationMembersApiV1OrganizationMembersGet>>
+>;
+export type RetriveOrganizationMembersApiV1OrganizationMembersGetQueryError = ErrorType<unknown>;
+
+export const useRetriveOrganizationMembersApiV1OrganizationMembersGet = <
+  TData = Awaited<ReturnType<typeof retriveOrganizationMembersApiV1OrganizationMembersGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof retriveOrganizationMembersApiV1OrganizationMembersGet>>,
+    TError,
+    TData
+  >;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetriveOrganizationMembersApiV1OrganizationMembersGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retriveOrganizationMembersApiV1OrganizationMembersGet>>> = ({
+    signal
+  }) => retriveOrganizationMembersApiV1OrganizationMembersGet(signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof retriveOrganizationMembersApiV1OrganizationMembersGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Remove member from an organization
+ * @summary Remove Organization Member
+ */
+export const removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete = (memberId: number) =>
+  customInstance<unknown>({ url: `/api/v1/organization/members/${memberId}`, method: 'delete' });
+
+export type RemoveOrganizationMemberApiV1OrganizationMembersMemberIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete>>
+>;
+
+export type RemoveOrganizationMemberApiV1OrganizationMembersMemberIdDeleteMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete>>,
+    TError,
+    { memberId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete>>,
+    { memberId: number }
+  > = props => {
+    const { memberId } = props ?? {};
+
+    return removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete(memberId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete>>,
+    TError,
+    { memberId: number },
     TContext
   >(mutationFn, mutationOptions);
 };

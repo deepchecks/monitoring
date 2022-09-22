@@ -1,10 +1,8 @@
+import { Box, Button, Stack, Typography, useTheme } from '@mui/material';
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Stack, Box, Button, Typography } from '@mui/material';
 import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
 import { PlusIcon } from '../assets/icon/icon';
 import { AlertCount, SEVERITY } from './AlertCount';
-import { ID } from '../helpers/types';
 
 interface DashboardHeaderProps {
   onOpen: () => void;
@@ -12,6 +10,8 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
   const { data } = useCountAlertsApiV1AlertsCountActiveGet();
+  const theme = useTheme();
+
   return (
     <>
       <Box
@@ -59,7 +59,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
                 padding: '8px'
               }}
               variant="text"
-              startIcon={<PlusIcon />}
+              startIcon={<PlusIcon fill={theme.palette.primary.main} />}
             >
               <Typography
                 sx={{
