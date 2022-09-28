@@ -1,20 +1,25 @@
-import React from 'react';
-import { Button, Stack, Typography, Box } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import { ChartData } from 'chart.js';
+import { Loader } from 'components/Loader';
+import { GraphData } from 'helpers/types';
+import React, { Dispatch, SetStateAction } from 'react';
 import { CloseIcon, NoDataToShow } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
-import { ChartData } from 'chart.js';
-import { GraphData } from 'helpers/types';
-import { Loader } from 'components/Loader';
 
 interface GraphViewProps {
   onClose: () => void | undefined;
   graphData?: ChartData<'line'>;
   isLoading: boolean;
+  setResetMonitor: Dispatch<SetStateAction<boolean>>;
 }
 
-export const GraphView = ({ onClose, graphData, isLoading }: GraphViewProps) => {
+export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: GraphViewProps) => {
   const closeDrawer = () => {
     onClose();
+  };
+
+  const resetFilters = () => {
+    setResetMonitor(true);
   };
 
   return (
@@ -40,7 +45,16 @@ export const GraphView = ({ onClose, graphData, isLoading }: GraphViewProps) => 
         ) : graphData?.datasets.length ? (
           <DiagramLine data={graphData as ChartData<'line', GraphData>} />
         ) : (
-          <NoDataToShow />
+          <>
+            <NoDataToShow />
+            <Typography
+              variant="body1"
+              sx={{ textAlign: 'center', color: theme => theme.palette.primary.main, cursor: 'pointer' }}
+              onClick={resetFilters}
+            >
+              Reset Changes
+            </Typography>
+          </>
         )}
       </Box>
     </Box>

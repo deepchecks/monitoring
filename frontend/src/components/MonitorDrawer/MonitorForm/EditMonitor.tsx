@@ -1,16 +1,21 @@
-import React, { memo, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, MenuItem, TextField } from '@mui/material';
 import {
   MonitorSchema,
-  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
   OperatorsEnum,
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet,
   useUpdateMonitorApiV1MonitorsMonitorIdPut
 } from 'api/generated';
 import { useFormik } from 'formik';
+import useModels from 'hooks/useModels';
+import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
+import React, { Dispatch, memo, ReactNode, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import { ColumnsSchema, ColumnStatsCategorical, ColumnStatsNumeric, ColumnType } from '../../../helpers/types/model';
+import useMonitorsData from '../../../hooks/useMonitorsData';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
-import { ColumnType, ColumnsSchema, ColumnStatsNumeric, ColumnStatsCategorical } from '../../../helpers/types/model';
+import { CheckInfo } from '../CheckInfo';
+import { LookbackCheckProps } from '../MonitorDrawer';
 import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
@@ -20,11 +25,6 @@ import {
   StyledTypography,
   StyledTypographyLabel
 } from './MonitorForm.style';
-import useModels from 'hooks/useModels';
-import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
-import { LookbackCheckProps } from '../MonitorDrawer';
-import useMonitorsData from '../../../hooks/useMonitorsData';
-import { CheckInfo } from '../CheckInfo';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
@@ -37,10 +37,12 @@ const timeWindow = [
 interface EditMonitorProps {
   monitor: MonitorSchema;
   onClose: () => void | undefined;
+  resetMonitor: boolean;
   runCheckLookback: (props: LookbackCheckProps) => void;
+  setResetMonitor: Dispatch<SetStateAction<boolean>>;
 }
 
-function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
+function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setResetMonitor }: EditMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const { modelsMap } = useModels();
   const { refreshMonitors } = useMonitorsData();
@@ -182,7 +184,9 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
           <MarkedSelect
             label="Select category"
             size="small"
-            clearValue={() => {setFieldValue('category', '')}}
+            clearValue={() => {
+              setFieldValue('category', '');
+            }}
             disabled={!stats.values.length}
             fullWidth
             {...getFieldProps('category')}
@@ -248,6 +252,13 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
     };
   }, [values.column, values.category, values.numericValue, values.time, values.additional_kwargs]);
 
+  useEffect(() => {
+    if (resetMonitor) {
+      setResetMonitor(false);
+      formik.resetForm();
+    }
+  }, [resetMonitor]);
+
   return (
     <form onSubmit={formik.handleSubmit}>
       <StyledStackContainer>
@@ -267,7 +278,15 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
               />
             )}
 
-            <MarkedSelect label="Time Window" clearValue={() => {setFieldValue('time', '')}} size="small" {...getFieldProps('time')} fullWidth>
+            <MarkedSelect
+              label="Time Window"
+              clearValue={() => {
+                setFieldValue('time', '');
+              }}
+              size="small"
+              {...getFieldProps('time')}
+              fullWidth
+            >
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -278,7 +297,9 @@ function EditMonitor({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
               <MarkedSelect
                 label="Filter by Column"
                 size="small"
-                clearValue={() => {setFieldValue('column', '')}}
+                clearValue={() => {
+                  setFieldValue('column', '');
+                }}
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}
                 fullWidth

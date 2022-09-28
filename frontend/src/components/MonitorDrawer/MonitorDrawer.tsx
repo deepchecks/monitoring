@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
 import { Drawer, DrawerProps, Stack, styled } from '@mui/material';
-import { GraphView } from './GraphView';
-import { CreateMonitor } from './MonitorForm/CreateMonitor';
-import EditMonitor from './MonitorForm/EditMonitor';
 import {
   MonitorCheckConfSchema,
   MonitorSchema,
   OperatorsEnum,
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from 'api/generated';
-import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
 import { ChartData } from 'chart.js';
+import React, { useState } from 'react';
+import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
+import { GraphView } from './GraphView';
+import { CreateMonitor } from './MonitorForm/CreateMonitor';
+import EditMonitor from './MonitorForm/EditMonitor';
 
 export const StyledStackWrapper = styled(Stack)({
   height: '100%'
@@ -39,6 +39,7 @@ interface MonitorDrawerProps extends DrawerProps {
 
 function MonitorDrawer({ monitor, onClose, ...props }: MonitorDrawerProps) {
   const [graphData, setGraphData] = useState<ChartData<'line'>>();
+  const [resetMonitor, setResetMonitor] = useState<boolean>(false);
 
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
@@ -66,11 +67,27 @@ function MonitorDrawer({ monitor, onClose, ...props }: MonitorDrawerProps) {
     <Drawer {...props}>
       <StyledStackWrapper direction="row">
         {monitor ? (
-          <EditMonitor onClose={handleOnClose} runCheckLookback={handleLookback} monitor={monitor} />
+          <EditMonitor
+            onClose={handleOnClose}
+            runCheckLookback={handleLookback}
+            monitor={monitor}
+            resetMonitor={resetMonitor}
+            setResetMonitor={setResetMonitor}
+          />
         ) : (
-          <CreateMonitor onClose={handleOnClose} runCheckLookback={handleLookback} />
+          <CreateMonitor
+            onClose={handleOnClose}
+            runCheckLookback={handleLookback}
+            resetMonitor={resetMonitor}
+            setResetMonitor={setResetMonitor}
+          />
         )}
-        <GraphView onClose={handleOnClose} isLoading={isRunCheckLoading} graphData={graphData} />
+        <GraphView
+          onClose={handleOnClose}
+          isLoading={isRunCheckLoading}
+          graphData={graphData}
+          setResetMonitor={setResetMonitor}
+        />
       </StyledStackWrapper>
     </Drawer>
   );

@@ -1,9 +1,18 @@
-import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, MenuItem, SelectChangeEvent, TextField } from '@mui/material';
+import {
+  MonitorCreationSchema,
+  OperatorsEnum,
+  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
+  useGetChecksApiV1ModelsModelIdChecksGet,
+  useGetModelColumnsApiV1ModelsModelIdColumnsGet
+} from 'api/generated';
+import useGlobalState from 'Context';
 import { useFormik } from 'formik';
+import React, { Dispatch, ReactNode, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import { ColumnsSchema, ColumnStatsCategorical, ColumnStatsNumeric, ColumnType } from '../../../helpers/types/model';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
-import { ColumnType, ColumnStatsCategorical, ColumnStatsNumeric, ColumnsSchema } from '../../../helpers/types/model';
 import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
@@ -13,20 +22,11 @@ import {
   StyledTypography,
   StyledTypographyLabel
 } from './MonitorForm.style';
-import {
-  useGetChecksApiV1ModelsModelIdChecksGet,
-  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
-  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
-  MonitorCreationSchema,
-  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
-  OperatorsEnum
-} from 'api/generated';
-import useGlobalState from 'Context';
 
-import useMonitorsData from '../../../hooks/useMonitorsData';
-import { LookbackCheckProps } from '../MonitorDrawer';
-import { CheckInfo } from '../CheckInfo';
 import useModelsMap from 'hooks/useModels';
+import useMonitorsData from '../../../hooks/useMonitorsData';
+import { CheckInfo } from '../CheckInfo';
+import { LookbackCheckProps } from '../MonitorDrawer';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
@@ -38,10 +38,12 @@ const timeWindow = [
 
 interface CreateMonitorProps {
   onClose: () => void | undefined;
+  resetMonitor: boolean;
   runCheckLookback: (props: LookbackCheckProps) => void;
+  setResetMonitor: Dispatch<SetStateAction<boolean>>;
 }
 
-export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps) {
+export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setResetMonitor }: CreateMonitorProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const [selectedModelId, setSelectedModelId] = useState(Number);
   const [selectedCheckId, setSelectedCheckId] = useState(Number);
@@ -174,7 +176,6 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     setFieldValue('numericValue', event.target.value ? +event.target.value : '');
   };
 
-
   const handleInputBlur = () => {
     const column = columns[values.column];
     const stats = column.stats as ColumnStatsNumeric;
@@ -200,7 +201,9 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
             <MarkedSelect
               label="Select category"
               size="small"
-              clearValue={() => {setFieldValue('category', '')}}
+              clearValue={() => {
+                setFieldValue('category', '');
+              }}
               disabled={!stats.values.length}
               fullWidth
               {...getFieldProps('category')}
@@ -274,6 +277,13 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
     };
   }, [values.check, values.column, values.category, values.numericValue, values.time, values.additional_kwargs]);
 
+  useEffect(() => {
+    if (resetMonitor) {
+      setResetMonitor(false);
+      formik.resetForm();
+    }
+  }, [resetMonitor]);
+
   return (
     <form onSubmit={formik.handleSubmit}>
       <StyledStackContainer>
@@ -285,7 +295,9 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               label="Select Model"
               onChange={handleModelChange}
               name="model"
-              clearValue={() => {setFieldValue('model', '')}}
+              clearValue={() => {
+                setFieldValue('model', '');
+              }}
               onBlur={handleBlur}
               size="small"
               value={values.model}
@@ -301,7 +313,9 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
             <MarkedSelect
               label="Select Check"
               size="small"
-              clearValue={() => {setFieldValue('check', '')}}
+              clearValue={() => {
+                setFieldValue('check', '');
+              }}
               disabled={!checks.length}
               {...getFieldProps('check')}
               fullWidth
@@ -315,7 +329,16 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
             </MarkedSelect>
             {values.check && checkInfo && <CheckInfo checkInfo={checkInfo} setFieldValue={setFieldValue} />}
 
-            <MarkedSelect label="Time Window" size="small" clearValue={() => {setFieldValue('time', '')}} {...getFieldProps('time')} fullWidth required>
+            <MarkedSelect
+              label="Time Window"
+              size="small"
+              clearValue={() => {
+                setFieldValue('time', '');
+              }}
+              {...getFieldProps('time')}
+              fullWidth
+              required
+            >
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -326,7 +349,9 @@ export function CreateMonitor({ onClose, runCheckLookback }: CreateMonitorProps)
               <MarkedSelect
                 label="Segment"
                 size="small"
-                clearValue={() => {setFieldValue('column', '')}}
+                clearValue={() => {
+                  setFieldValue('column', '');
+                }}
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}
                 fullWidth
