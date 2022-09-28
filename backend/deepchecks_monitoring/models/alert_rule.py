@@ -11,7 +11,6 @@
 import enum
 import typing as t
 
-import pendulum as pdl
 import sqlalchemy as sa
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,22 +67,11 @@ class AlertRule(Base):
     """ORM model for the alert rule."""
 
     __tablename__ = "alert_rules"
-    __table_args__ = (
-        sa.UniqueConstraint("name", "monitor_id", name="alert_rule_name_uniqueness"),
-        # NOTE: alembic ignores 'CheckConstraint', it should be added manually
-        sa.CheckConstraint("repeat_every > 0", name="not_negative_repeat_every"),
-    )
 
     id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String(50), nullable=False)
     condition = sa.Column(PydanticType(pydantic_model=Condition))
-    repeat_every = sa.Column(sa.Integer, nullable=False)
     alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
-
-    # TODO: rename to latest_schedule
-    last_run = sa.Column(sa.DateTime(timezone=True), nullable=True)
-    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, server_default=sa.func.now())
 
     monitor_id = sa.Column(
         sa.Integer,
@@ -122,13 +110,6 @@ class AlertRule(Base):
 
         results = (await session.execute(q)).all()
         return {r.alert_rule_id: r.alerts_count for r in results}
-
-    def forward_last_run_to_closest_window(self):
-        """Update last_run to the closest window before current time."""
-        start = pdl.instance(self.scheduling_start)
-        duration_seconds = (pdl.now() - start).in_seconds()
-        seconds_to_add = duration_seconds - duration_seconds % self.repeat_every
-        self.last_run = start.add(seconds=seconds_to_add)
 
 
 UnresolvedAlertsCount = (

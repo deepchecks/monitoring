@@ -12,19 +12,16 @@ import typing as t
 from datetime import datetime
 
 import pendulum as pdl
-from asyncpg.exceptions import UniqueViolationError
 from fastapi import Query, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy import func, insert, select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.exceptions import BadRequest, InternalError
 from deepchecks_monitoring.models import Alert, Check, Monitor
 from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity, Condition
-from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404, field_length
+from deepchecks_monitoring.utils import IdResponse, exists_or_404, fetch_or_404
 
 from .alert import AlertSchema
 from .router import router
@@ -34,9 +31,7 @@ class AlertRuleCreationSchema(BaseModel):
     """Schema defines the parameters for creating new alert rule."""
 
     condition: Condition
-    repeat_every: int = Field(gt=0)
     alert_severity: AlertSeverity = AlertSeverity.MID
-    name: t.Optional[str] = Field(default=None, max_length=field_length(AlertRule.name))
     is_active: bool = True
 
 
@@ -44,9 +39,7 @@ class AlertRuleSchema(BaseModel):
     """Schema for the alert rule."""
 
     id: int
-    name: str = Field(max_length=field_length(AlertRule.name))
     monitor_id: int
-    repeat_every: int
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
     is_active: bool
@@ -68,8 +61,6 @@ class AlertRuleInfoSchema(AlertRuleSchema):
 class AlertRuleUpdateSchema(BaseModel):
     """Schema defines the parameters for updating alert rule."""
 
-    name: t.Optional[str] = Field(default=None, max_length=field_length(AlertRule.name))
-    repeat_every: t.Optional[int]
     alert_severity: t.Optional[AlertSeverity]
     condition: t.Optional[Condition]
     is_active: t.Optional[bool]
@@ -87,29 +78,15 @@ async def create_alert_rule(
     session: AsyncSession = AsyncSessionDep
 ):
     """Create new alert rule on a given check."""
-    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
-
-    monitor_name = t.cast(str, monitor.name).capitalize()
-    alert_rule.name = monitor_name if alert_rule.name is None or len(alert_rule.name) > 50 else alert_rule.name
+    await exists_or_404(session, Monitor, id=monitor_id)
 
     stm = insert(AlertRule).values(
         monitor_id=monitor_id,
         **alert_rule.dict(exclude_none=True)
     ).returning(AlertRule.id)
 
-    try:
-        rule_id = (await session.execute(stm)).scalar_one()
-        return {"id": rule_id}
-    except IntegrityError as error:
-        await session.rollback()
-        origin = getattr(error, "orig", None)
-        sqlstate = getattr(origin, "sqlstate", 0)
-        exception = (
-            BadRequest("AlertRule name must be unique")
-            if isinstance(origin, UniqueViolationError) or sqlstate == UniqueViolationError.sqlstate
-            else InternalError("Internal error")
-        )
-        raise exception from error
+    rule_id = (await session.execute(stm)).scalar_one()
+    return {"id": rule_id}
 
 
 @router.get("/alert-rules/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
@@ -189,10 +166,8 @@ async def get_alert_rules(
     q = (
         select(
             AlertRule.id,
-            AlertRule.name,
             AlertRule.condition,
             AlertRule.alert_severity,
-            AlertRule.repeat_every,
             AlertRule.monitor_id,
             AlertRule.is_active,
             Check.model_id,
@@ -256,10 +231,8 @@ async def update_alert(
     session: AsyncSession = AsyncSessionDep
 ):
     """Update alert by id."""
-    alert_rule: AlertRule = await fetch_or_404(session, AlertRule, id=alert_rule_id)
-    # If toggling from inactive to active, then updating the last_run value
-    if body.is_active is True and alert_rule.is_active is False:
-        alert_rule.forward_last_run_to_closest_window()
+    await exists_or_404(session, AlertRule, id=alert_rule_id)
+    # If toggling from inactive to active, then updating the latest_schedule value
     await AlertRule.update(session, alert_rule_id, body.dict(exclude_none=True))
     return Response(status_code=status.HTTP_200_OK)
 

@@ -10,7 +10,7 @@
 """Module defining the monitor ORM model."""
 import typing as t
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
@@ -29,17 +29,25 @@ class Monitor(Base):
     """ORM model for the monitor."""
 
     __tablename__ = "monitors"
+    __table_args__ = (
+        sa.CheckConstraint("frequency >= 0"),
+    )
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String(50))
+    description = sa.Column(sa.String(200), default="")
+    data_filters = sa.Column(PydanticType(pydantic_model=DataFilterList), nullable=True)
+    lookback = sa.Column(sa.Integer)
+    additional_kwargs = sa.Column(PydanticType(pydantic_model=MonitorCheckConfSchema), default=None, nullable=True)
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50))
-    description = Column(String(200), default="")
-    data_filters = Column(PydanticType(pydantic_model=DataFilterList), nullable=True)
-    lookback = Column(Integer)
-    additional_kwargs = Column(PydanticType(pydantic_model=MonitorCheckConfSchema), default=None, nullable=True)
+    aggregation_window = sa.Column(sa.Integer, nullable=False)
+    frequency = sa.Column(sa.Integer, nullable=False)
 
-    check_id = Column(
-        Integer,
-        ForeignKey("checks.id", ondelete="CASCADE", onupdate="RESTRICT"),
+    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, server_default=sa.func.now())
+
+    check_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("checks.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
     check: Mapped["Check"] = relationship(
@@ -47,9 +55,9 @@ class Monitor(Base):
         back_populates="monitors"
     )
 
-    dashboard_id = Column(
-        Integer,
-        ForeignKey("dashboards.id", ondelete="SET NULL", onupdate="RESTRICT"),
+    dashboard_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("dashboards.id", ondelete="SET NULL", onupdate="RESTRICT"),
         nullable=True
     )
     dashboard: Mapped[t.Optional["Dashboard"]] = relationship(

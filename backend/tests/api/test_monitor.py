@@ -14,10 +14,12 @@ from fastapi.testclient import TestClient
 from tests.conftest import add_alert_rule, add_classification_data
 
 
-def add_monitor(classification_model_check_id, client: TestClient, dashboard_id = None) -> int:
+def add_monitor(classification_model_check_id, client: TestClient, dashboard_id=None) -> int:
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400,
         "data_filters": {"filters": [{
             "column": "c",
             "operator": "greater_than",
@@ -36,6 +38,8 @@ async def test_add_monitor_no_filter(classification_model_check_id, client: Test
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400,
     }
     # Act
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
@@ -50,6 +54,8 @@ async def test_add_monitor_with_feature(classification_model_check_id, client: T
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400,
         "monitor_rule": {
             "operator": "greater_than",
             "value": 100,
@@ -69,6 +75,8 @@ async def test_add_monitor_with_data_filter(classification_model_check_id, clien
     request = {
         "name": "monitory",
         "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400,
         "data_filters": {"filters": [{
             "operator": "contains",
             "value": ["a", "ff"],
@@ -93,23 +101,23 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
     add_alert_rule(monitor_id, client)
     # Act
     response = client.get(f"/api/v1/monitors/{monitor_id}")
-    assert response.json() == {"id": 2, "name": "monitory", "dashboard_id": 1, "lookback": 86400 * 7,
+    assert response.json() == {"id": 2, "name": "monitory", "dashboard_id": 1,
+                               "lookback": 86400 * 7, "aggregation_window": 86400 * 30,
                                "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
                                "check": {"config": {"class_name": "SingleDatasetPerformance",
                                                     "module_name": "deepchecks.tabular.checks",
                                                     "params": {}},
                                          "id": 1, "model_id": 1, "name": "check"},
                                "description": "", "additional_kwargs": None,
+                               "frequency": 86400,
                                "alert_rules": [
                                    {
                                        "alert_severity": "low",
                                        "condition": {"operator": "greater_than", "value": 100.0},
                                        "id": 1,
                                        "monitor_id": 2,
-                                       "name": "alerty",
-                                       "repeat_every": 86400,
                                        "is_active": True
-                                    }
+                                   }
                                ]}
 
 

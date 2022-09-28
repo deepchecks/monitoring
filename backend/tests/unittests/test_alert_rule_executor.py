@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from deepchecks_monitoring.bgtasks.actors import execute_alert_rule
+from deepchecks_monitoring.bgtasks.actors import execute_monitor
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.bgtasks.task import Task, TaskStatus, Worker
 from deepchecks_monitoring.models import Alert
@@ -38,17 +38,22 @@ async def test_alert_executor(
     monitor_id = add_monitor(
         check_id,
         client,
-        lookback=TimeUnit.DAY * 3,
+        lookback=TimeUnit.DAY * 24,
+        frequency=TimeUnit.SECOND * 2,
         additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
         data_filters={
             "filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]
         }
     )
-    rule_id = t.cast(int, add_alert_rule(
+    rule_that_should_raise_id = t.cast(int, add_alert_rule(
         monitor_id,
         client,
-        repeat_every=TimeUnit.DAY * 2,
-        condition={"operator": "greater_than", "value": 0.7}
+        condition={"operator": "less_than", "value": 0.7}
+    ))
+    rule_that_does_nothing_id = t.cast(int, add_alert_rule(  # pylint: disable=unused-variable
+        monitor_id,
+        client,
+        condition={"operator": "less_than", "value": 0}
     ))
     versions = [
         t.cast(int, add_model_version(classification_model_id, client, name="v1")),
@@ -61,11 +66,15 @@ async def test_alert_executor(
 
     now = pdl.now()
 
-    result = await execute_alert_rule(alert_rule_id=rule_id, timestamp=str(now), session=async_session)
+    result: t.List[Alert] = await execute_monitor(monitor_id=monitor_id, timestamp=str(now), session=async_session)
 
-    assert isinstance(result, Alert), result
-    assert isinstance(result.failed_values, dict), result.failed_values
-    assert result.failed_values == {"v1": ["accuracy"], "v2": ["accuracy"]}, result.failed_values
+    assert len(result) == 1, result
+    alert = result[0]
+
+    assert isinstance(alert, Alert), alert
+    assert alert.alert_rule_id == rule_that_should_raise_id
+    assert isinstance(alert.failed_values, dict), alert.failed_values
+    assert alert.failed_values == {"v1": ["accuracy"], "v2": ["accuracy"]}, alert.failed_values
 
 
 @pytest.mark.asyncio
@@ -86,13 +95,16 @@ async def test_alert_scheduling(
             check_id,
             client,
             lookback=TimeUnit.DAY * 3,
+            frequency=TimeUnit.SECOND * 3,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
-            data_filters={"filters": [{"operator": "equals","value": "ppppp", "column": "b"}]}
+            data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         ),
         add_monitor(
             check_id,
             client,
             lookback=TimeUnit.HOUR * 2,
+            aggregation_window=TimeUnit.HOUR * 2,
+            frequency=TimeUnit.SECOND * 3,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         )
@@ -101,14 +113,12 @@ async def test_alert_scheduling(
         t.cast(int, add_alert_rule(
             monitors[0],
             client,
-            repeat_every=TimeUnit.SECOND * 3,
-            condition={"operator": "greater_than", "value": 0.7}
+            condition={"operator": "less_than", "value": 0.7}
         )),
         t.cast(int, add_alert_rule(
             monitors[1],
             client,
-            repeat_every=TimeUnit.SECOND * 3,
-            condition={"operator": "greater_than", "value": 0.7}
+            condition={"operator": "less_than", "value": 0.7}
         )),
     ]
     model_version_id = t.cast(int, add_model_version(
@@ -117,18 +127,18 @@ async def test_alert_scheduling(
         name="v1"
     ))
 
-    past_date = pdl.now() - pdl.duration(days=3)
+    past_date = pdl.now() - pdl.duration(days=1)
     daterange = [past_date.add(hours=h) for h in range(1, 24, 2)]
     add_classification_data(model_version_id, client, daterange=daterange)
 
     async with anyio.create_task_group() as g:
         g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=1).run)
-        await anyio.sleep(5) # give scheduler time to enqueue tasks
+        await anyio.sleep(5)  # give scheduler time to enqueue tasks
         g.cancel_scope.cancel()
 
     async with anyio.create_task_group() as g:
-        g.start_soon(Worker(engine=async_engine, actors=[execute_alert_rule]).start)
-        await anyio.sleep(15)  # give worker time to execute tasks, TODO: need something better
+        g.start_soon(Worker(engine=async_engine, actors=[execute_monitor]).start)
+        await anyio.sleep(10)  # give worker time to execute tasks
         g.cancel_scope.cancel()
 
     alerts = (await async_session.scalars(sa.select(Alert))).all()
@@ -161,20 +171,20 @@ async def test_alert_executor_on_unactive_rules(
         check_id,
         client,
         lookback=TimeUnit.DAY * 3,
+        frequency=TimeUnit.DAY * 2,
         additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
         data_filters={
             "filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]
         }
     )
-    rule_id = t.cast(int, add_alert_rule(
+    rule_id = t.cast(int, add_alert_rule(  # pylint: disable=unused-variable
         monitor_id,
         client,
-        repeat_every=TimeUnit.DAY * 2,
         condition={"operator": "less_than", "value": 0.7},
         is_active=False
     ))
 
     now = pdl.now()
 
-    result = await execute_alert_rule(alert_rule_id=rule_id, timestamp=str(now), session=async_session)
+    result = await execute_monitor(monitor_id=monitor_id, timestamp=str(now), session=async_session)
     assert result is None

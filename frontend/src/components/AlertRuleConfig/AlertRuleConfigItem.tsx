@@ -25,11 +25,11 @@ export const AlertRuleConfigItem: FC<AlertRuleConfigItemProps> = ({ alertRule, o
     non_resolved_alerts: NonResolvedAlerts,
     total_alerts: totalAlerts,
     recent_alert: recentAlert,
-    repeat_every: repeatEvery,
+    frequency: frequency,
     name
   } = alertRule;
 
-  const checkFrequencyFormated = dayjs.duration(repeatEvery, 'seconds').humanize();
+  const checkFrequencyFormated = dayjs.duration(frequency, 'seconds').humanize();
 
   const theme = useTheme();
   return (

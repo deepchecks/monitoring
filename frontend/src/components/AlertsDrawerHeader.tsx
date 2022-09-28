@@ -47,7 +47,7 @@ export const AlertsDrawerHeader = ({
   onClose,
   monitor
 }: AlertsDrawerHeaderProps) => {
-  const { alert_severity, condition, repeat_every } = alertRule;
+  const { alert_severity, condition } = alertRule;
 
   const { mutateAsync: mutateRunSuit, isLoading } =
     useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
@@ -85,7 +85,7 @@ export const AlertsDrawerHeader = ({
     modelsMap[alertRule.model_id].name,
     monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : 'N/A',
     monitor?.data_filters ? `${monitor?.data_filters.filters[0].column}` : 'N/A',
-    processFrequency(dayjs.duration(repeat_every, 'seconds'))
+    monitor?.frequency ? processFrequency(dayjs.duration(monitor?.frequency, 'seconds')) : 'N/A'
   ];
 
   const { color, ...criticalityRange } = criticalityMap[alert_severity!];

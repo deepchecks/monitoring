@@ -2,10 +2,13 @@ import React, { FC } from 'react';
 import { TextField } from '@mui/material';
 import { SelectSeverity } from './SelectSeverity';
 import * as yup from 'yup';
-import { AlertRuleSchema } from '../api/generated';
+import { AlertSeverity } from '../api/generated';
 import { AlertRuleDialogStep, AlertRuleDialogStepBase } from './AlertRuleDialogStep';
 
-export type AlertRuleDialogStep1Values = Pick<Partial<AlertRuleSchema>, 'name' | 'alert_severity'>;
+export interface AlertRuleDialogStep1Values {
+  name: string;
+  alert_severity?: AlertSeverity;
+}
 
 export type AlertRuleDialogStep1 = AlertRuleDialogStepBase<AlertRuleDialogStep1Values>;
 

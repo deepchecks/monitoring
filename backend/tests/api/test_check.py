@@ -72,12 +72,12 @@ async def test_metric_check_w_res_conf(classification_model_check_id, classifica
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["1"]}})
-    assert response.json() == {"v1": {"F1 Per Class 1": 1.0}}
+    assert response.json() == {"v1": {"F1 Per Class 1": 0.0}}
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["2"]}})
-    assert response.json() == {"v1": {"F1 Per Class 2": 1.0}}
+    assert response.json() == {"v1": {"F1 Per Class 2": 0.3333333333333333}}
 
 
 @pytest.mark.asyncio
@@ -90,7 +90,7 @@ async def test_metric_check_info_no_model_version(classification_model_check_id,
         ignore_order=True,
         t1=response.json(),
         t2={
-            "check_conf":[
+            "check_conf": [
                 {
                     "is_agg_shown": None,
                     "type": "scorer",
@@ -160,12 +160,12 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
                 "type": "scorer",
                 "values": [
                     {"name": "Precision Micro", "is_agg": True},
-                    {"name": "Precision Weighted","is_agg": True},
+                    {"name": "Precision Weighted", "is_agg": True},
                     {"name": "Recall Micro", "is_agg": True},
                     {"name": "Recall Weighted", "is_agg": True},
                     {"name": "F1 Macro", "is_agg": True},
                     {"name": "F1 Micro", "is_agg": True},
-                    {"name": "F1 Weighted","is_agg": True},
+                    {"name": "F1 Weighted", "is_agg": True},
                     {"is_agg": True, "name": "Accuracy"},
                     {"is_agg": True, "name": "Precision Macro"},
                     {"is_agg": True, "name": "Recall Macro"},
@@ -197,17 +197,16 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
             }
         ]
     )
-
-    assert len(conf_diff) == 0, prettify(conf_diff)
+    assert len(conf_diff) == 0, (conf_diff.t1, conf_diff.t2)
 
     res_conf_json = response.json()["res_conf"]
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False
     assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
-           [{"is_agg": None, "name": "0"}, {"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}]
+        sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
 
 
-@pytest.mark.asyncio
+@ pytest.mark.asyncio
 async def test_property_check_info(classification_vision_model_property_check_id,
                                    classification_vision_model_version_id,
                                    client: TestClient):
@@ -216,12 +215,12 @@ async def test_property_check_info(classification_vision_model_property_check_id
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                                   [{"is_agg_shown": None, "type": "aggregation method",
-                                     "values": [{"name": "mean", "is_agg": True},
-                                                {"name": "max", "is_agg": True},
-                                                {"name": "none", "is_agg": False}]},
-                                    {"type": "image property",
-                                     "values": [
+                               [{"is_agg_shown": None, "type": "aggregation method",
+                                 "values": [{"name": "mean", "is_agg": True},
+                                            {"name": "max", "is_agg": True},
+                                            {"name": "none", "is_agg": False}]},
+                                {"type": "image property",
+                                 "values": [
                                          {"is_agg": None, "name": "Area"},
                                          {"is_agg": None, "name": "Brightness"},
                                          {"is_agg": None, "name": "Aspect Ratio"},
@@ -229,12 +228,12 @@ async def test_property_check_info(classification_vision_model_property_check_id
                                          {"is_agg": None, "name": "Mean Red Relative Intensity"},
                                          {"is_agg": None, "name": "Mean Blue Relative Intensity"},
                                          {"is_agg": None, "name": "Mean Green Relative Intensity"},
-                                     ],
-                                     "is_agg_shown": False}],
+                                 ],
+                                 "is_agg_shown": False}],
                                "res_conf": None}
 
 
-@pytest.mark.asyncio
+@ pytest.mark.asyncio
 async def test_feature_check_info(classification_model_feature_check_id, classification_model_version_id,
                                   client: TestClient):
     add_classification_data(classification_model_version_id, client)
@@ -242,16 +241,16 @@ async def test_feature_check_info(classification_model_feature_check_id, classif
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                                   [{"is_agg_shown": None, "type": "aggregation method",
-                                     "values": [{"name": "mean", "is_agg": True},
-                                                {"name": "max", "is_agg": True},
-                                                {"name": "none", "is_agg": False},
-                                                {"name": "weighted", "is_agg": True},
-                                                {"name": "l2_weighted", "is_agg": True}]},
-                                    {"type": "feature",
-                                     "values": [{"is_agg": None, "name": "a"},
-                                                {"is_agg": None, "name": "b"}],
-                                     "is_agg_shown": False}],
+                               [{"is_agg_shown": None, "type": "aggregation method",
+                                 "values": [{"name": "mean", "is_agg": True},
+                                            {"name": "max", "is_agg": True},
+                                            {"name": "none", "is_agg": False},
+                                            {"name": "weighted", "is_agg": True},
+                                            {"name": "l2_weighted", "is_agg": True}]},
+                                {"type": "feature",
+                                 "values": [{"is_agg": None, "name": "a"},
+                                            {"is_agg": None, "name": "b"}],
+                                 "is_agg_shown": False}],
                                "res_conf": None}
 
 
@@ -276,12 +275,11 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     assert response.status_code == 200
-    times = []
+
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
     for i in [1, 3, 7, 13]:
         time = day_before_curr_time.add(hours=i).isoformat()
-        times.append(time)
         request = [{
             "_dc_sample_id": str(i),
             "_dc_time": time,
@@ -292,7 +290,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "b": "ppppp",
         },
         {
-            "_dc_sample_id": str(i*10),
+            "_dc_sample_id": str(i * 10),
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
             "_dc_prediction": "1",
@@ -301,7 +299,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "b": "ppppp",
         },
         {
-            "_dc_sample_id": str(i*100),
+            "_dc_sample_id": str(i * 100),
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
             "_dc_prediction": "0",
@@ -342,10 +340,6 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                                                   "end_time": curr_time.isoformat()})
     assert response.status_code == 200
     json_rsp = response.json()
-    assert response.status_code == 200
-    assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["v1"]) == 24
-    assert set(times).issubset(set(json_rsp["time_labels"]))
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
 
     # test with filter
@@ -354,8 +348,6 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14},
                                                         {"column": "b", "operator": "contains", "value": "ppppp"}]}})
     json_rsp = response.json()
-    assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["v1"]) == 24
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 2
 
     # test with filter no reference because of filter
@@ -363,7 +355,6 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
     json_rsp = response.json()
-    assert len(json_rsp["time_labels"]) == 24
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 1
     # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
@@ -371,7 +362,6 @@ async def run_check(classification_model_id, classification_model_version_id, cl
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
                                                         {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()
-    assert len(json_rsp["time_labels"]) == 24
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 0
 
     # test with filter on window
@@ -414,12 +404,10 @@ async def test_run_check_vision(classification_vision_model_id,
     # Act
     response = client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=[request, request2])
     assert response.status_code == 200
-    times = []
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
-    for i in [1, 3, 7, 13]:
-        time = day_before_curr_time.add(hours=i).isoformat()
-        times.append(time)
+    for i, hour in enumerate([1, 3, 7, 13]):
+        time = day_before_curr_time.add(hours=hour).isoformat()
         request = []
         for j in range(10):
             request.append({
@@ -427,7 +415,7 @@ async def test_run_check_vision(classification_vision_model_id,
                 "_dc_time": time,
                 "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
                 "_dc_label": 2,
-                "images Aspect Ratio": 0.677 / i,
+                "images Aspect Ratio": 0.677 / hour,
                 "images Brightness": 0.5,
                 "images Area": 0.5,
                 "images RMS Contrast": 0.5,
@@ -453,25 +441,26 @@ async def test_run_check_vision(classification_vision_model_id,
     response = send_reference_request(client, classification_vision_model_version_id, [sample] * 100)
     assert response.status_code == 200
 
-    # test no filter
-    response = client.post("/api/v1/checks/1/run/lookback", json={"start_time": day_before_curr_time.isoformat(),
-                                                                  "end_time": curr_time.isoformat()})
+    # test no filter + 3 hour agg window
+    response = client.post("/api/v1/checks/2/run/lookback", json={"start_time": day_before_curr_time.isoformat(),
+                                                                  "end_time": curr_time.isoformat(),
+                                                                  "aggregation_window": 10800, "frequency": 3600, })
     assert response.status_code == 200
     json_rsp = response.json()
-    assert response.status_code == 200
-    assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["v1"]) == 24
-    assert set(times).issubset(set(json_rsp["time_labels"]))
-    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
+    assert json_rsp["output"]["v1"] == [None, {"accuracy": 0.0}, {"accuracy": 0.0}, {"accuracy": 0.5},
+                                        {"accuracy": 1.0}, {"accuracy": 1.0}, None, {"accuracy": 0.0},
+                                        {"accuracy": 0.0}, {"accuracy": 0.0}, None, None, None,
+                                        {"accuracy": 1.0}, {"accuracy": 1.0}, {"accuracy": 1.0},
+                                        None, None, None, None, None, None, None, None]
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 11
 
     # test with filter
-    response = client.post("/api/v1/checks/1/run/lookback",
+    response = client.post("/api/v1/checks/2/run/lookback",
                            json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
+
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0.2}]}})
     json_rsp = response.json()
-    assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["v1"]) == 24
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 2
 
     # test with filter no reference because of filter
@@ -480,7 +469,6 @@ async def test_run_check_vision(classification_vision_model_id,
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 1}]}})
     json_rsp = response.json()
-    assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"v1": None}
     # test with filter no reference because of filter 2
     response = client.post("/api/v1/checks/1/run/lookback",
@@ -490,17 +478,16 @@ async def test_run_check_vision(classification_vision_model_id,
                                                         {"column": "images Aspect Ratio",
                                                          "operator": "equals", "value": 2}]}})
     json_rsp = response.json()
-    assert len(json_rsp["time_labels"]) == 24
     assert json_rsp["output"] == {"v1": None}
 
     # test with filter on window
     response = client.post("/api/v1/checks/2/run/window",
-                           json={"start_time": day_before_curr_time.add(hours=7).isoformat(),
+                           json={"start_time": day_before_curr_time.add(hours=3).isoformat(),
                                  "end_time": day_before_curr_time.add(hours=9).isoformat(),
                                  "filter": {"filters": [{"column": "images Aspect Ratio",
                                                          "operator": "greater_than", "value": 0}]}})
     json_rsp = response.json()
-    assert json_rsp == {"v1": {"accuracy": 1.0}}
+    assert json_rsp == {"v1": {"accuracy": 0.5}}
 
 
 @pytest.mark.asyncio
@@ -526,12 +513,10 @@ async def test_run_check_vision_detection(detection_vision_model_id,
     # Act
     response = client.post(f"/api/v1/models/{detection_vision_model_id}/checks", json=request)
     assert response.status_code == 200
-    times = []
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
     for i in [1, 3, 7, 13]:
         time = day_before_curr_time.add(hours=i).isoformat()
-        times.append(time)
         request = []
         for j in range(10):
             request.append({
@@ -585,10 +570,6 @@ async def test_run_check_vision_detection(detection_vision_model_id,
                                                                   "end_time": curr_time.isoformat()})
     assert response.status_code == 200
     json_rsp = response.json()
-    assert response.status_code == 200
-    assert len(json_rsp["time_labels"]) == 24
-    assert len(json_rsp["output"]["v1"]) == 24
-    assert set(times).issubset(set(json_rsp["time_labels"]))
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
 
     # test with filter on window

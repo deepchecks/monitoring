@@ -70,8 +70,10 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
       column: '',
       model: '',
       numericValue: '',
-      time: '',
-      additional_kwargs: checkInfoInitValue()
+      lookback: '',
+      additional_kwargs: checkInfoInitValue(),
+      frequency: '',
+      aggregation_window: ''
     },
     onSubmit: async values => {
       let operator;
@@ -93,9 +95,11 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
 
       const monitorSchema: MonitorCreationSchema = {
         name: values.name,
-        lookback: +values.time,
+        lookback: +values.lookback,
         dashboard_id: globalState.dashboard_id,
-        additional_kwargs: values.additional_kwargs
+        additional_kwargs: values.additional_kwargs,
+        frequency: +values.frequency,
+        aggregation_window: +values.aggregation_window
       };
 
       if (values.column && operator && value) {
@@ -131,9 +135,11 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
     const lookbackCheckData: LookbackCheckProps = {
       checkId,
       data: {
-        start_time: new Date(Date.now() - +values.time * 1000).toISOString(),
+        start_time: new Date(Date.now() - +values.lookback * 1000).toISOString(),
         end_time,
-        additional_kwargs: values.additional_kwargs
+        additional_kwargs: values.additional_kwargs,
+        frequency: +values.frequency,
+        aggregation_window: +values.aggregation_window
       }
     };
 
@@ -160,7 +166,7 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
     setFieldValue('check', '');
     setFieldValue('column', '');
     setFieldValue('category', '');
-    setFieldValue('time', '');
+    setFieldValue('lookback', '');
     setFieldValue('numericValue', '');
     setFieldValue('additional_kwargs', checkInfoInitValue());
     updateGraph();
@@ -252,13 +258,17 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
     clearTimeout(timer.current);
     const column = columns[values.column];
 
-    if (!column && values.check && values.time) {
+    if (values.frequency && !values.aggregation_window) {
+      setFieldValue('aggregation_window', values.frequency);
+    }
+
+    if (!column && values.check && values.lookback && values.aggregation_window && values.frequency) {
       updateGraph();
     }
 
     if (column) {
       if (column.type === ColumnType.numeric) {
-        if (values.check && values.time && values.column && values.numericValue) {
+        if (values.check && values.lookback && values.aggregation_window && values.frequency && values.column && values.numericValue) {
           timer.current = setTimeout(() => {
             updateGraph('greater_than', values.numericValue);
           }, 500);
@@ -266,7 +276,7 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
       }
 
       if (column.type === ColumnType.categorical) {
-        if (values.check && values.time && values.column && values.category) {
+        if (values.check && values.lookback && values.aggregation_window && values.frequency && values.column && values.category) {
           updateGraph('contains', values.category);
         }
       }
@@ -275,7 +285,7 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
     return () => {
       clearTimeout(timer.current);
     };
-  }, [values.check, values.column, values.category, values.numericValue, values.time, values.additional_kwargs]);
+  }, [values.check, values.column, values.category, values.numericValue, values.lookback, values.aggregation_window, values.frequency, values.additional_kwargs]);
 
   useEffect(() => {
     if (resetMonitor) {
@@ -328,17 +338,21 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
               ))}
             </MarkedSelect>
             {values.check && checkInfo && <CheckInfo checkInfo={checkInfo} setFieldValue={setFieldValue} />}
-
-            <MarkedSelect
-              label="Time Window"
-              size="small"
-              clearValue={() => {
-                setFieldValue('time', '');
-              }}
-              {...getFieldProps('time')}
-              fullWidth
-              required
-            >
+            <MarkedSelect label="Frequency" size="small" clearValue={() => {setFieldValue('frequency', '')}} {...getFieldProps('frequency')} fullWidth required>
+              {timeWindow.map(({ label, value }, index) => (
+                <MenuItem key={index} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+            <MarkedSelect label="Aggregation Window" size="small" clearValue={() => {setFieldValue('aggregation_window', '')}} {...getFieldProps('aggregation_window')} fullWidth required>
+              {timeWindow.map(({ label, value }, index) => (
+                <MenuItem key={index} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+            <MarkedSelect label="Lookback" size="small" clearValue={() => {setFieldValue('lookback', '')}} {...getFieldProps('lookback')} fullWidth required>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -368,7 +382,7 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
         </Box>
 
         <StyledButtonWrapper>
-          <StyledButton type="submit" size="large" disabled={!values.time || !values.check}>
+          <StyledButton type="submit" size="large" disabled={!values.lookback || !values.check || !values.frequency || !values.aggregation_window}>
             Save
           </StyledButton>
         </StyledButtonWrapper>

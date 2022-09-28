@@ -27,6 +27,7 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.check_logic import (MonitorOptions, get_feature_property_info, get_metric_class_info,
                                                      run_check_per_window_in_range, run_check_window)
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
+from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models import Check, Model
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.utils import IdResponse, MonitorCheckConf, exists_or_404, fetch_or_404, field_length
@@ -93,9 +94,9 @@ class CheckResultSchema(BaseModel):
              tags=[Tags.CHECKS]
              )
 async def create_check(
-    model_id: int,
-    checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]],
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]],
+        session: AsyncSession = AsyncSessionDep
 ) -> t.Union[t.Dict[t.Any, t.Any], t.List[t.Dict[t.Any, t.Any]]]:
     """Create a new check.
 
@@ -146,9 +147,9 @@ async def create_check(
 
 @router.delete('/models/{model_id}/checks/{check_id}', tags=[Tags.CHECKS])
 async def delete_check(
-    model_id: int,
-    check_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        check_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Delete check instance by identifier."""
     await exists_or_404(session, Model, id=model_id)
@@ -158,9 +159,9 @@ async def delete_check(
 
 @router.delete('/models/{model_id}/checks', tags=[Tags.CHECKS])
 async def delete_check_by_name(
-    model_id: int,
-    names: t.List[str] = Query(...),
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        names: t.List[str] = Query(...),
+        session: AsyncSession = AsyncSessionDep
 ):
     """Delete check instances by name."""
     await exists_or_404(session, Model, id=model_id)
@@ -172,8 +173,8 @@ async def delete_check_by_name(
 
 @router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema], tags=[Tags.CHECKS])
 async def get_checks(
-    model_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        session: AsyncSession = AsyncSessionDep
 ) -> dict:
     """Return all the checks for a given model.
 
@@ -198,9 +199,9 @@ async def get_checks(
 
 @router.post('/checks/{check_id}/run/lookback', response_model=CheckResultSchema, tags=[Tags.CHECKS])
 async def run_standalone_check_per_window_in_range(
-    check_id: int,
-    monitor_options: MonitorOptions,
-    session: AsyncSession = AsyncSessionDep
+        check_id: int,
+        monitor_options: MonitorOptions,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Run a check for each time window by start-end.
 
@@ -221,19 +222,22 @@ async def run_standalone_check_per_window_in_range(
     # get the time window size
     start_time: pdl.DateTime = pdl.parse(monitor_options.start_time)
     end_time: pdl.DateTime = pdl.parse(monitor_options.end_time)
-    lookback_duration: pdl.Period = end_time - start_time
-    if lookback_duration < pdl.duration(days=2):
-        window = pdl.duration(hours=1)
-    elif lookback_duration < pdl.duration(days=8):
-        window = pdl.duration(days=1)
+    lookback = (end_time - start_time).in_seconds()
+
+    start_time, end_time, frequency = get_time_ranges_for_monitor(
+        lookback=lookback, frequency=monitor_options.frequency, end_time=end_time)
+
+    if monitor_options.aggregation_window is None:
+        aggregation_window = frequency
     else:
-        window = pdl.duration(weeks=1)
+        aggregation_window = pdl.duration(seconds=monitor_options.aggregation_window)
 
     return await run_check_per_window_in_range(
         check_id,
         start_time,
         end_time,
-        window,
+        frequency,
+        aggregation_window,
         monitor_options.filter,
         session,
         monitor_options.additional_kwargs
@@ -242,9 +246,9 @@ async def run_standalone_check_per_window_in_range(
 
 @router.post('/checks/{check_id}/run/window', tags=[Tags.CHECKS])
 async def get_check_window(
-    check_id: int,
-    monitor_options: MonitorOptions,
-    session: AsyncSession = AsyncSessionDep
+        check_id: int,
+        monitor_options: MonitorOptions,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Run a check for the time window.
 
@@ -271,8 +275,8 @@ async def get_check_window(
 
 @router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])
 async def get_check_info(
-    check_id: int,
-    session: AsyncSession = AsyncSessionDep
+        check_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Get the check configuration info and the possible values for the parameters.
 

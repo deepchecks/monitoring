@@ -19,7 +19,8 @@ from deepchecks_monitoring.models.monitor import Monitor
 
 
 async def create_default_dashboard(monitor_options, session: AsyncSession, max_num_monitors: int = 5,
-                                   lookback: int = 30 * 86400):
+                                   lookback: int = 30 * 86400, frequency: int = 86400,
+                                   aggregation_window: int = 86400):
     """Create default dashboard."""
     dashboard = Dashboard()
     session.add(dashboard)
@@ -30,7 +31,9 @@ async def create_default_dashboard(monitor_options, session: AsyncSession, max_n
     checks_to_monitor = (await session.execute(check_select)).scalars().all()[:max_num_monitors]
     monitors = []
     for check in checks_to_monitor:
-        monitor = Monitor(name=check.name + ' Monitor', check_id=check.id, lookback=lookback, dashboard_id=dashboard.id)
+        monitor = Monitor(name=check.name + ' Monitor', check_id=check.id,
+                          lookback=lookback, frequency=frequency, aggregation_window=aggregation_window,
+                          dashboard_id=dashboard.id)
         session.add(monitor)
         await session.flush()
         monitor_query = select(Monitor).where(Monitor.id == monitor.id).options(*monitor_options)

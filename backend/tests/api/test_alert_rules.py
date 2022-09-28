@@ -8,7 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import pytest
-import randomname
 from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity
@@ -20,10 +19,7 @@ from tests.conftest import add_alert_rule, add_monitor
 async def test_add_alert_rule_no_feature(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_name = randomname.get_name()
     request = {
-        "name": alert_name,
-        "repeat_every": 86400,
         "condition": {
             "operator": "greater_than",
             "value": 100
@@ -41,10 +37,7 @@ async def test_add_alert_rule_no_feature(classification_model_check_id, client: 
 async def test_add_alert_rule_with_feature(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_name = randomname.get_name()
     request = {
-        "name": alert_name,
-        "repeat_every": 86400,
         "condition": {
             "operator": "greater_than",
             "value": 100,
@@ -62,15 +55,12 @@ async def test_add_alert_rule_with_feature(classification_model_check_id, client
 async def test_get_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_name = randomname.get_name()
-    alert_rule_id = add_alert_rule(monitor_id, client, name=alert_name)
+    alert_rule_id = add_alert_rule(monitor_id, client)
     # Act
     response = client.get(f"/api/v1/alert-rules/{alert_rule_id}")
     assert response.json() == {
         "id": 1,
-        "name": alert_name,
         "monitor_id": 1,
-        "repeat_every": 86400,
         "condition": {"operator": "greater_than", "value": 100.0},
         "alert_severity": "low",
         "is_active": True
@@ -81,8 +71,7 @@ async def test_get_alert_rule(classification_model_check_id, client: TestClient)
 async def test_remove_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_name = randomname.get_name()
-    alert_rule_id = add_alert_rule(monitor_id, client, name=alert_name)
+    alert_rule_id = add_alert_rule(monitor_id, client)
     # Act
     response = client.delete(f"/api/v1/alert-rules/{alert_rule_id}")
     assert response.status_code == 200
@@ -92,9 +81,8 @@ async def test_remove_alert_rule(classification_model_check_id, client: TestClie
 async def test_update_alert_rule(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client, name=randomname.get_name())
+    alert_rule_id = add_alert_rule(monitor_id, client)
     request = {
-        "repeat_every": 100000,
         "condition": {"operator": "greater_than", "value": -0.1}
     }
     # Act
@@ -110,10 +98,10 @@ async def test_count_alert_rule(
 ):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    add_alert_rule(monitor_id, client, name=randomname.get_name())
-    add_alert_rule(monitor_id, client, name=randomname.get_name())
+    add_alert_rule(monitor_id, client)
+    add_alert_rule(monitor_id, client)
     monitor_id = add_monitor(regression_model_check_id, client)
-    add_alert_rule(monitor_id, client, name=randomname.get_name())
+    add_alert_rule(monitor_id, client)
     # Act
     response = client.get("/api/v1/alert-rules/count")
     assert response.status_code == 200
@@ -128,12 +116,12 @@ async def test_count_single_model(
 ):
     # Arrange
     monitor_id_1 = add_monitor(classification_model_check_id, client)
-    add_alert_rule(monitor_id_1, client, name=randomname.get_name())
-    add_alert_rule(monitor_id_1, client, name=randomname.get_name())
-    add_alert_rule(monitor_id_1, client, name=randomname.get_name())
+    add_alert_rule(monitor_id_1, client)
+    add_alert_rule(monitor_id_1, client)
+    add_alert_rule(monitor_id_1, client)
 
     monitor_id_2 = add_monitor(regression_model_check_id, client)
-    add_alert_rule(monitor_id_2, client, name=randomname.get_name())
+    add_alert_rule(monitor_id_2, client)
 
     # Act
     response = client.get(f"/api/v1/models/{monitor_id_1}/alert-rules/count")
@@ -154,14 +142,12 @@ async def test_count_single_model(
 async def test_get_alert_rules(classification_model_check_id, client: TestClient, async_session):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    first_rule_name = randomname.get_name()
-    second_rule_name = randomname.get_name()
 
-    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.LOW.value, name=first_rule_name)
+    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.LOW.value)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session, resolved=False)
-    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.MID.value, name=second_rule_name)
+    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.MID.value)
     add_alert(alert_rule_id, async_session)
     add_alert(alert_rule_id, async_session, resolved=False)
     add_alert(alert_rule_id, async_session, resolved=False)
@@ -173,9 +159,7 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
     assert response.json() == [
         {
             "id": 2,
-            "name": second_rule_name,
             "monitor_id": 1,
-            "repeat_every": 86400,
             "condition": {"operator": "greater_than", "value": 100.0},
             "alert_severity": "mid",
             "model_id": 1,
@@ -185,9 +169,7 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
         },
         {
             "id": 1,
-            "name": first_rule_name,
             "monitor_id": 1,
-            "repeat_every": 86400,
             "condition": {"operator": "greater_than", "value": 100.0},
             "alert_severity": "low",
             "model_id": 1,
@@ -206,7 +188,6 @@ async def test_resolve_all_alerts_of_alert_rule(classification_model_check_id, c
         monitor_id,
         client,
         alert_severity=AlertSeverity.LOW.value,
-        name=randomname.get_name()
     )
 
     alert1 = add_alert(alert_rule_id, async_session, resolved=False)
@@ -228,20 +209,11 @@ async def test_resolve_all_alerts_of_alert_rule(classification_model_check_id, c
 
 
 @pytest.mark.asyncio
-async def test_alert_rule_name_uniqueness_violation(classification_model_check_id, client: TestClient):
-    # Arrange/Act
-    monitor_id = add_monitor(classification_model_check_id, client)
-    add_alert_rule(monitor_id, client, name="Test Rule")
-    add_alert_rule(monitor_id, client, expected_status_code=400, name="Test Rule")
-
-
-@pytest.mark.asyncio
 async def test_reactivate_alert_rule(classification_model_check_id, client: TestClient, async_session):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client, name=randomname.get_name(), is_active=False)
+    alert_rule_id = add_alert_rule(monitor_id, client, is_active=False)
     alert_rule = (await AlertRule.filter_by(async_session, id=alert_rule_id)).scalar()
-    assert alert_rule.last_run is None
 
     request = {
         "is_active": True
@@ -250,5 +222,4 @@ async def test_reactivate_alert_rule(classification_model_check_id, client: Test
     client.put(f"/api/v1/alert-rules/{alert_rule_id}", json=request)
     # Assert
     await async_session.refresh(alert_rule)
-    assert alert_rule.last_run is not None
-    assert alert_rule.last_run == alert_rule.scheduling_start
+    assert alert_rule.is_active is True

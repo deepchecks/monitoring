@@ -448,8 +448,6 @@ def add_alert_rule(
         **kwargs
 ) -> t.Union[int, Response]:
     request = {
-        "name": "alerty",
-        "repeat_every": 86400,
         "alert_severity": AlertSeverity.LOW.value,
         "condition": {
             "operator": "greater_than",
@@ -475,9 +473,12 @@ def add_alert_rule(
 def add_monitor(check_id, client: TestClient, **kwargs):
     request = {
         "name": "monitor",
+        "frequency": 86400,
         "lookback": 3600 * 24
     }
     request.update(kwargs)
+    if "aggregation_window" not in request:
+        request["aggregation_window"] = request["lookback"] / 12
     response = client.post(f"/api/v1/checks/{check_id}/monitors", json=request)
     return response.json()["id"]
 
@@ -501,14 +502,14 @@ def add_classification_data(
             "_dc_sample_id": f"{id_prefix}{i}",
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
-            "_dc_prediction": str(i % 3),
-            "_dc_label": str(i % 3),
+            "_dc_prediction": "2" if i % 2 else "1",
+            "_dc_label": "2" if i != 1 else "1",
             "a": 10 + i,
             "b": "ppppp",
         })
 
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
-    return resp, daterange[0], daterange[len(daterange) - 1]
+    return resp, daterange[0], daterange[-1]
 
 
 def add_vision_classification_data(model_version_id, client: TestClient):

@@ -29,6 +29,8 @@ export interface LookbackCheckProps {
       }[];
     };
     additional_kwargs: MonitorCheckConfSchema;
+    frequency: number;
+    aggregation_window: number;
   };
 }
 

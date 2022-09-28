@@ -188,10 +188,12 @@ export interface MonitorSchema {
   check: CheckSchema;
   dashboard_id?: number;
   lookback: number;
+  aggregation_window: number;
   description?: string;
   data_filters?: DataFilterList;
   additional_kwargs?: MonitorCheckConfSchema;
   alert_rules: AlertRuleSchema[];
+  frequency: number;
 }
 
 /**
@@ -221,6 +223,8 @@ export interface MonitorUpdateSchema {
   data_filters?: DataFilterList;
   dashboard_id?: number;
   additional_kwargs?: MonitorCheckConfSchema;
+  frequency?: number;
+  aggregation_window?: number;
 }
 
 /**
@@ -229,6 +233,8 @@ export interface MonitorUpdateSchema {
 export interface MonitorOptions {
   end_time: string;
   start_time: string;
+  frequency?: number;
+  aggregation_window?: number;
   filter?: DataFilterList;
   additional_kwargs?: MonitorCheckConfSchema;
 }
@@ -239,6 +245,8 @@ export interface MonitorOptions {
 export interface MonitorCreationSchema {
   name: string;
   lookback: number;
+  aggregation_window: number;
+  frequency: number;
   dashboard_id?: number;
   description?: string;
   data_filters?: DataFilterList;
@@ -301,8 +309,8 @@ export interface ModelDailyIngestion {
  */
 export interface ModelCreationSchema {
   name: string;
-  task_type: TaskType;
   description?: string;
+  task_type: TaskType;
 }
 
 export interface MemberSchema {
@@ -507,8 +515,6 @@ export interface AlertSchema {
  * Schema defines the parameters for updating alert rule.
  */
 export interface AlertRuleUpdateSchema {
-  name?: string;
-  repeat_every?: number;
   alert_severity?: AlertSeverity;
   condition?: Condition;
   is_active?: boolean;
@@ -519,9 +525,7 @@ export interface AlertRuleUpdateSchema {
  */
 export interface AlertRuleSchema {
   id: number;
-  name: string;
   monitor_id: number;
-  repeat_every: number;
   condition: Condition;
   alert_severity?: AlertSeverity;
   is_active: boolean;
@@ -532,9 +536,7 @@ export interface AlertRuleSchema {
  */
 export interface AlertRuleInfoSchema {
   id: number;
-  name: string;
   monitor_id: number;
-  repeat_every: number;
   condition: Condition;
   alert_severity?: AlertSeverity;
   is_active: boolean;
@@ -548,9 +550,7 @@ export interface AlertRuleInfoSchema {
  */
 export interface AlertRuleCreationSchema {
   condition: Condition;
-  repeat_every: number;
   alert_severity?: AlertSeverity;
-  name?: string;
   is_active?: boolean;
 }
 
@@ -561,7 +561,7 @@ export interface AlertRuleConfigSchema {
   id: number;
   name: string;
   check_name: string;
-  repeat_every: number;
+  frequency: number;
   alert_severity?: AlertSeverity;
   total_alerts?: number;
   non_resolved_alerts?: number;
@@ -1932,6 +1932,7 @@ monitor_id : int
 body
 session : AsyncSession, optional
     SQLAlchemy session.
+cache_funcs
 
 Returns
 -------
@@ -2683,6 +2684,7 @@ session : AsyncSession, optional
 kafka_admin
 settings
 data_ingest
+cache_invalidator
  * @summary Get Or Create Version
  */
 export const getOrCreateVersionApiV1ModelsModelIdVersionPost = (

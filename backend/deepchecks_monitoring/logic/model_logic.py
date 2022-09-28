@@ -37,7 +37,7 @@ from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                       SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL)
-from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConfSchema,
+from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConfSchema, fetch_or_404,
                                          make_oparator_func)
 
 
@@ -54,12 +54,15 @@ async def get_model_versions_for_time_range(session: AsyncSession,
                                             start_time: pdl.DateTime,
                                             end_time: pdl.DateTime) -> t.Tuple[Model, t.List[ModelVersion]]:
     """Get model versions for a time window."""
-    model_results = await session.execute(select(Model).where(Model.id == check.model_id)
+    model_results = await session.execute(select(Model).where(Model.id == check.model_id,
+                                                              ModelVersion.end_time >= start_time,
+                                                              ModelVersion.start_time <= end_time)
                                           .options(selectinload(Model.versions)))
     model: Model = model_results.scalars().first()
-    model_versions: t.List[ModelVersion] = [version for version in model.versions
-                                            if start_time <= version.end_time and end_time >= version.start_time]
-    return model, model_versions
+    if model is not None:
+        model_versions: t.List[ModelVersion] = model.versions
+        return model, model_versions
+    return await fetch_or_404(session, Model, id=check.model_id), []
 
 
 def create_model_version_select_object(model_version: ModelVersion, mon_table: Table, top_feat: t.List[str]) -> Select:

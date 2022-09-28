@@ -228,8 +228,8 @@ class DeepchecksModelClient:
 
         return {it['name']: BaseCheck.from_config(it['config']) for it in data}
 
-    def add_alert(self, check_name: str, threshold: float, window_size: int, alert_severity: str = "mid",
-                  repeat_every: int = None, greater_than: bool = True, alert_name: str = None,
+    def add_alert(self, check_name: str, threshold: float, frequency: int, alert_severity: str = "mid",
+                  aggregation_window: int = None, greater_than: bool = True, alert_name: str = None,
                   monitor_name: str = None, add_monitor_to_dashboard: bool = False) -> int:
         """Create an alert based on provided arguments. Alert is run on a specific check result.
         Parameters
@@ -238,12 +238,13 @@ class DeepchecksModelClient:
             The check to monitor. The alert will monitor the value produced by the check's reduce function.
         threshold: float
             The value to compare the check value to.
-        window_size: int
+        frequency: int, default: None
+            Control the frequency the alert will be calculated.
+        aggregation_window: int
             The time range (current time - window size) the check would run on, provided in seconds.
+            If None, uses window size as frequency.
         alert_severity: str, default: "mid"
             The severity level associated with the alert. Possible values are: critical, high, mid and low.
-        repeat_every: int, default: None
-            Control the frequency the alert will be calculated. If None, uses window size as frequency.
         greater_than: bool, default: True
             Whether the alert condition requires the check value to be larger or smaller than provided threshold.
         alert_name: str, default: None
@@ -261,28 +262,36 @@ class DeepchecksModelClient:
             raise Exception(f'Alert severity must be of one of low, mid, high, critical received {alert_severity}.')
 
         monitor_name = monitor_name if monitor_name is not None else f'{check_name} alert monitor'
-        monitor_id = self.add_monitor(check_name=check_name, lookback=window_size * 12, name=monitor_name,
-                                      add_to_dashboard=add_monitor_to_dashboard)
+        monitor_id = \
+            self.add_monitor(check_name=check_name,
+                             frequency=frequency if frequency is not None else aggregation_window,
+                             aggregation_window=aggregation_window if aggregation_window is not None else frequency,
+                             lookback=frequency * 12, name=monitor_name,
+                             add_to_dashboard=add_monitor_to_dashboard)
         response = maybe_raise(
             self.session.post(
                 url=f'monitors/{monitor_id}/alert-rules', json={
                     'condition': {'operator': "greater_than" if greater_than else "less_than",
                                   'value': threshold},
-                    'repeat_every': repeat_every if repeat_every is not None else window_size,
                     'alert_severity': alert_severity,
                     'name': alert_name
                 }), msg="Failed to create new alert for check.\n{error}")
         return response.json()['id']
 
-    def add_monitor(self, check_name: str, lookback: int, name: str = None, description: str = None,
+    def add_monitor(self, check_name: str, frequency: int, aggregation_window: int = None, lookback: int = None,
+                    name: str = None, description: str = None,
                     add_to_dashboard: bool = True) -> int:
         """Create a monitor based on check to be displayed in dashboard.
         Parameters
         ----------
         check_name: str
             The check to monitor. The alert will monitor the value produced by the check's reduce function.
-        lookback: int
-            The time range to minitor, provided in seconds.
+        frequency: int
+            How often the minitor would be calculated, provided in seconds.
+        aggregation_window: int, default: None
+            The aggregation window of each calculation of the minitor, provided in seconds.
+        lookback: int, default: None
+            Determines the time range seen on the monitor, provided in seconds.
         name: str, default: None
             The name to assigned to the monitor.
         description: str, default: None
@@ -298,7 +307,9 @@ class DeepchecksModelClient:
             self.session.post(
                 url=f'checks/{check_id}/monitors', json={
                     'name': name if name is not None else f'{check_name} Monitor',
-                    'lookback': lookback,
+                    'lookback': frequency * 12 if lookback is None else lookback,
+                    'frequency': frequency,
+                    'aggregation_window': frequency if aggregation_window is None else aggregation_window,
                     'dashboard_id': self.session.get('dashboards/').json()['id'] if add_to_dashboard else None,
                     'description': description,
                 }), msg="Failed to create new monitor for check.\n{error}")

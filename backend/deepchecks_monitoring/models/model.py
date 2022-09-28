@@ -11,7 +11,7 @@
 import enum
 import typing as t
 
-from sqlalchemy import Column, Enum, Integer, String
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
@@ -39,10 +39,10 @@ class Model(Base):
 
     __tablename__ = "models"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True)
-    description = Column(String(200))
-    task_type = Column(Enum(TaskType))
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String(50), unique=True)
+    description = sa.Column(sa.String(200))
+    task_type = sa.Column(sa.Enum(TaskType))
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",

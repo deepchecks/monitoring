@@ -46,7 +46,7 @@ async def test_add_monitor(classification_model_id, deepchecks_sdk_client: Deepc
     assert model_client.model["id"] == classification_model_id
 
     checks_name = list(model_client.get_checks().keys())[0]
-    monitor_id = model_client.add_monitor(checks_name, 30 * 86400)
+    monitor_id = model_client.add_monitor(checks_name, frequency=86400, lookback=86400 * 30)
     assert monitor_id > 0
 
 

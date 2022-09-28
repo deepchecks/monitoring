@@ -22,6 +22,7 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import run_check_per_window_in_range
+from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models import Check
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
@@ -34,7 +35,9 @@ class MonitorCreationSchema(BaseModel):
     """Schema defines the parameters for creating new monitor."""
 
     name: str = Field(max_length=field_length(Monitor.name))
-    lookback: int
+    lookback: int = Field(ge=0)
+    aggregation_window: int = Field(ge=0)
+    frequency: int = Field(ge=0)
     dashboard_id: t.Optional[int]
     description: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList]
@@ -49,10 +52,12 @@ class MonitorSchema(BaseModel):
     check: CheckSchema
     dashboard_id: t.Optional[int]
     lookback: int
+    aggregation_window: int
     description: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList] = None
     additional_kwargs: t.Optional[MonitorCheckConfSchema]
     alert_rules: t.List[AlertRuleSchema]
+    frequency: int
 
     class Config:
         """Config for Monitor schema."""
@@ -69,6 +74,8 @@ class MonitorUpdateSchema(BaseModel):
     data_filters: t.Optional[DataFilterList]
     dashboard_id: t.Optional[int]
     additional_kwargs: t.Optional[MonitorCheckConfSchema]
+    frequency: t.Optional[int]
+    aggregation_window: t.Optional[int]
 
 
 class MonitorRunSchema(BaseModel):
@@ -122,7 +129,7 @@ async def update_monitor(
     cache_funcs: CacheFunctions = CacheFunctionsDep
 ):
     """Update monitor by id."""
-    await exists_or_404(session, Monitor, id=monitor_id)
+    await fetch_or_404(session, Monitor, id=monitor_id)
     await Monitor.update(session, monitor_id, body.dict(exclude_none=True))
     cache_key_base = cache_funcs.get_key_base_by_request(request)
     cache_funcs.clear_monitor(cache_key_base, monitor_id)
@@ -169,27 +176,18 @@ async def run_monitor_lookback(
         Created check.
     """
     monitor = await fetch_or_404(session, Monitor, id=monitor_id)
-
-    if body.end_time:
-        end_time = pdl.parse(body.end_time).set(minute=0, second=0, microsecond=0).add(hours=1)
-    else:
-        end_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0).add(hours=1)
-    # get the time window size
-    lookback_duration = pdl.duration(seconds=monitor.lookback)
-    if lookback_duration < pdl.duration(days=2):
-        window = pdl.duration(hours=1)
-    elif lookback_duration < pdl.duration(days=8):
-        window = pdl.duration(days=1)
-    else:
-        window = pdl.duration(weeks=1)
+    end_time = None if body.end_time is None else pdl.parse(body.end_time)
+    start_time, end_time, frequency = get_time_ranges_for_monitor(
+        lookback=monitor.lookback, frequency=monitor.frequency, end_time=end_time)
 
     cache_key_base = cache_funcs.get_key_base_by_request(request)
 
     return await run_check_per_window_in_range(
         monitor.check_id,
-        end_time - lookback_duration,
+        start_time,
         end_time,
-        window,
+        frequency,
+        pdl.duration(seconds=monitor.aggregation_window),
         monitor.data_filters,
         session,
         monitor.additional_kwargs,

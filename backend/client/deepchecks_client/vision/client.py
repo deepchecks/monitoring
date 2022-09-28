@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
-import sys
 import typing as t
 import warnings
 from collections import defaultdict

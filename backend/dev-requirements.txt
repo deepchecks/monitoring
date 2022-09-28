@@ -19,4 +19,5 @@ pyinstrument
 deepdiff
 randomname
 supervisor
+deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
 fakeredis

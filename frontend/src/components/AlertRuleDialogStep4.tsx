@@ -17,7 +17,7 @@ import { Loader } from './Loader';
 import { NoDataToShow } from '../assets/icon/icon';
 import { parseDataForChart } from '../helpers/utils/parseDataForChart';
 
-export type AlertRuleDialogStep4Values = Condition & Pick<AlertRuleSchema, 'repeat_every'>;
+export type AlertRuleDialogStep4Values = Condition & Pick<MonitorSchema, 'frequency' | 'aggregation_window'>;
 
 export type AlertRuleDialogStep4 = AlertRuleDialogStepBase<AlertRuleDialogStep4Values> & {
   monitor: MonitorSchema;
@@ -36,7 +36,9 @@ export const AlertRuleDialogStep4: FC<AlertRuleDialogStep4> = ({ monitor, ...pro
   const {
     lookback,
     data_filters: filter,
-    check: { id: checkId }
+    check: { id: checkId },
+    frequency: frequency,
+    aggregation_window: aggregation_window
   } = monitor;
 
   const updateGraphData = async () => {
@@ -47,7 +49,9 @@ export const AlertRuleDialogStep4: FC<AlertRuleDialogStep4> = ({ monitor, ...pro
       data: {
         start_time: new Date(Date.now() - lookback * 1000).toISOString(),
         end_time: new Date().toISOString(),
-        filter: filter?.filters[0].column ? filter : undefined
+        filter: filter?.filters[0].column ? filter : undefined,
+        frequency: frequency,
+        aggregation_window: aggregation_window
       }
     });
 
@@ -56,7 +60,7 @@ export const AlertRuleDialogStep4: FC<AlertRuleDialogStep4> = ({ monitor, ...pro
 
   useEffect(() => {
     updateGraphData();
-  }, [monitor]);
+  }, [monitor, monitor.frequency, monitor.aggregation_window]);
 
   const renderGraph = () => {
     if (isLoading) return <Loader />;
@@ -86,10 +90,15 @@ export const AlertRuleDialogStep4: FC<AlertRuleDialogStep4> = ({ monitor, ...pro
               setFieldValue={setFieldValue}
             />
             <SelectTimeframe
-              label="Repeat Every"
-              name="repeat_every"
+              label="Frequency"
+              name="frequency"
               prefix="Every"
-              {...getFieldProps('repeat_every')}
+              {...getFieldProps('frequency')}
+            />
+            <SelectTimeframe
+              label="Aggregation Window"
+              name="aggregation_window"
+              {...getFieldProps('aggregation_window')}
             />
           </>
         )}

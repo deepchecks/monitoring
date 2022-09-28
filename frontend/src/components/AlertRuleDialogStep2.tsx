@@ -16,7 +16,6 @@ type ModelId = CheckSchema['model_id'];
 export interface AlertRuleDialogStep2Values {
   check_id?: CheckSchema['id'];
   model_id?: ModelId;
-  lookback?: MonitorSchema['lookback'];
 }
 
 export interface AlertRuleDialogStep2 extends AlertRuleDialogStepBase<AlertRuleDialogStep2Values> {
@@ -25,8 +24,7 @@ export interface AlertRuleDialogStep2 extends AlertRuleDialogStepBase<AlertRuleD
 
 const validationSchema = yup.object().shape({
   model_id: yup.number().min(1, 'Model is required'),
-  check_id: yup.number().min(1, 'Check is required'),
-  lookback: yup.number().min(1, 'Look-back window is required')
+  check_id: yup.number().min(1, 'Check is required')
 });
 
 export const AlertRuleDialogStep2: FC<AlertRuleDialogStep2> = ({ models, ...props }) => {
@@ -70,8 +68,6 @@ export const AlertRuleDialogStep2: FC<AlertRuleDialogStep2> = ({ models, ...prop
               </SelectPrimaryItem>
             ))}
           </SelectPrimary>
-
-          <SelectTimeframe label="Look-back Window" name="lookback" {...getFieldProps('lookback')} />
         </>
       )}
     </AlertRuleDialogStep>

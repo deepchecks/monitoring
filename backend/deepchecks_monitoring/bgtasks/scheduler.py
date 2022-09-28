@@ -125,51 +125,50 @@ def is_serialization_error(error: DBAPIError):
 # this query relies on two things
 # - it must be run with 'Repeatable Read' isolation level
 # - 'tasks' table must contain 'unique' constraint for the 'name' column
-# without this two points query below will corrupt 'alert_rules' table
+# without this two points query below will corrupt 'monitors' table
 # logical state and will create task duplicates
 #
 EnqueueTasks = sa.text(dedent("""
     WITH
         scheduling_series AS (
             SELECT
-                id AS alert_rule_id,
-                ARRAY_POSITION(ENUM_RANGE(alert_severity), alert_severity) AS severity,
+                id AS monitor_id,
                 GENERATE_SERIES(info.last_scheduling, NOW(), info.frequency) AS timestamp
             FROM
-                alert_rules as ar,
+                monitors as ar,
                 LATERAL (
                     SELECT
-                        (repeat_every || ' seconds')::INTERVAL AS frequency,
+                        (frequency || ' seconds')::INTERVAL AS frequency,
                         CASE
-                            WHEN last_run IS NULL THEN scheduling_start
-                            ELSE last_run
+                            WHEN latest_schedule IS NULL THEN scheduling_start
+                            ELSE latest_schedule
                         END AS last_scheduling
                 ) as info(frequency, last_scheduling)
-            WHERE (info.last_scheduling + info.frequency) <= NOW() AND ar.is_active = true
+            WHERE (info.last_scheduling + info.frequency) <= NOW()
         ),
         latest_schedule AS (
             SELECT
-                alert_rule_id,
+                monitor_id,
                 MAX(timestamp) AS timestamp
             FROM scheduling_series
-            GROUP BY alert_rule_id
+            GROUP BY monitor_id
         ),
         updated_rules AS (
-            UPDATE alert_rules
-            SET last_run = latest_schedule.timestamp
+            UPDATE monitors
+            SET latest_schedule = latest_schedule.timestamp
             FROM latest_schedule
-            WHERE latest_schedule.alert_rule_id = alert_rules.id
+            WHERE latest_schedule.monitor_id = monitors.id
         ),
         enqueued_tasks AS (
             INSERT INTO tasks(name, executor, queue, params, priority, description, reference, execute_after)
                 SELECT
-                    'AlertRule:' || alert_rule_id || ':ts:' || (select extract(epoch from timestamp)::int),
-                    'execute_alert_rule',
-                    'alert-rules',
-                    JSONB_BUILD_OBJECT('alert_rule_id', alert_rule_id, 'timestamp', timestamp),
-                    severity,
+                    'Monitor:' || monitor_id || ':ts:' || (select extract(epoch from timestamp)::int),
+                    'execute_monitor',
+                    'monitors',
+                    JSONB_BUILD_OBJECT('monitor_id', monitor_id, 'timestamp', timestamp),
+                    1,
                     'Alert rule execution task',
-                    'AlertRule:' || alert_rule_id,
+                    'Monitor:' || monitor_id,
                     timestamp
                 FROM scheduling_series
             ON CONFLICT ON CONSTRAINT name_uniqueness DO NOTHING

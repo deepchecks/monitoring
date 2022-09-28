@@ -25,6 +25,7 @@ from sqlalchemy.orm import joinedload
 from deepchecks_monitoring.bgtasks.task import Actor, ExecutionStrategy, Worker, actor
 from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_window
+from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule, Condition
 from deepchecks_monitoring.models.model_version import ModelVersion
@@ -32,44 +33,51 @@ from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
 
-__all__ = ["execute_alert_rule"]
+__all__ = ["execute_monitor"]
 
 
-@actor(queue_name="alert-rules", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
-async def execute_alert_rule(
-    alert_rule_id: int,
+@actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
+async def execute_monitor(
+    monitor_id: int,
     timestamp: str,
     session: AsyncSession,
     logger: t.Optional[logging.Logger] = None,
     **kwargs  # pylint: disable=unused-argument
 ):
     """Execute alert rule."""
-    logger = logger or logging.getLogger("execute_alert_rule")
+    logger = logger or logging.getLogger("execute_monitor")
 
     logger.info(
-        "Executiong AlertRule(id:%s) for timestamp %s",
-        alert_rule_id,
+        "Executiong Monitor(id:%s) for timestamp %s",
+        monitor_id,
         timestamp
     )
-
-    alert_rule = t.cast(AlertRule, await session.scalar(
-        sa.select(AlertRule)
-        .where(AlertRule.id == alert_rule_id)
-        .options(
-            joinedload(AlertRule.monitor).options(joinedload(Monitor.check)),
-        )
+    monitor = t.cast(Monitor, await session.scalar(
+        sa.select(Monitor)
+        .where(Monitor.id == monitor_id)
+        .options(joinedload(Monitor.check)),
     ))
-
-    if alert_rule is None:
-        raise ValueError(f"Did not find alert rule with id {alert_rule.id}")
-    if not alert_rule.is_active:
-        logger.info("AlertRule(id:%s) is not active", alert_rule.id)
-        return
-
-    monitor = alert_rule.monitor
     check = monitor.check
+
+    if monitor is None:
+        raise ValueError(f"Did not find monitor with the id {monitor_id}")
+
+    alert_rules = t.cast(t.List[AlertRule], (await session.execute(
+        sa.select(AlertRule)
+        .where(AlertRule.monitor_id == monitor_id)
+    )).scalars().all())
+
+    if len(alert_rules) == 0:
+        raise ValueError(f"Did not find alert rules for monitor {monitor_id}")
+
+    alerts = []
+
+    # round end/start times to monitor intervals
     end_time = pdl.parser.parse(timestamp)
-    start_time = end_time - pdl.duration(seconds=t.cast(int, monitor.lookback))
+    start_time, _, frequency = get_time_ranges_for_monitor(
+        lookback=monitor.frequency, frequency=monitor.frequency, end_time=end_time)
+    end_time = start_time + frequency
+    start_time = end_time - pdl.duration(seconds=monitor.aggregation_window)
 
     monitor_options = MonitorOptions(
         additional_kwargs=monitor.additional_kwargs,
@@ -91,17 +99,26 @@ async def execute_alert_rule(
         return
 
     model = model_versions[0].model
+
     check_results = await run_check_window(check, monitor_options, session, model, model_versions)
     logger.info("Check execution result: %s", check_results)
     check_results = {k: v for k, v in check_results.items() if v is not None}
 
-    if alert := assert_check_results(alert_rule, check_results):
-        alert.start_time = start_time
-        alert.end_time = end_time
-        session.add(alert)
-        await session.commit()
-        logger.info("Alert instance created for monitor(id:%s)", monitor.id)
-        return alert
+    for alert_rule in alert_rules:
+        if not alert_rule.is_active:
+            logger.info("AlertRule(id:%s) is not active", alert_rule.id)
+            continue
+
+        if alert := assert_check_results(alert_rule, check_results):
+            alert.start_time = start_time
+            alert.end_time = end_time
+            session.add(alert)
+            await session.commit()
+            logger.info("Alert instance created for monitor(id:%s)", monitor.id)
+            alerts.append(alert)
+
+    if len(alerts) > 0:
+        return alerts
 
     logger.info("No alerts instances were created for monitor(id:%s)", monitor.id)
 
@@ -161,7 +178,7 @@ class WorkerBootstrap:
 
     resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]] = ResourcesProvider
     settings_type: t.ClassVar[t.Type[WorkerSettings]] = WorkerSettings
-    actors: t.ClassVar[t.Sequence[Actor]] = [execute_alert_rule]
+    actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor]
 
     async def run(self):
         settings = self.settings_type()  # type: ignore

@@ -49,6 +49,8 @@ class MonitorOptions(BaseModel):
 
     end_time: str
     start_time: str
+    frequency: t.Optional[int]
+    aggregation_window: t.Optional[int]
     filter: t.Optional[DataFilterList] = None
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
 
@@ -148,13 +150,13 @@ async def run_check_per_window_in_range(
         check_id: int,
         start_time: pdl.DateTime,
         end_time: pdl.DateTime,
-        interval: pdl.Duration,
+        frequency: pdl.Duration,
+        agg_window: pdl.Duration,
         monitor_filter: t.Optional[DataFilterList],
         session: AsyncSession,
         additional_kwargs: t.Optional[MonitorCheckConfSchema],
         monitor_id: int = None,
         cache_funcs: CacheFunctions = None,
-        window_size: pdl.Duration = None,
         cache_key_base: str = ""
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
@@ -206,10 +208,9 @@ async def run_check_per_window_in_range(
     top_feat, _ = model_versions[0].get_top_features()
 
     # The range calculates from start to end excluding the end, so add interval to have the windows at their end time
-    windows_end = [d + interval for d in (end_time - start_time).range("hours", interval.in_hours())
-                   if d + interval <= end_time]
-    window_size = window_size if window_size else interval
-    windows_start = [d - window_size for d in windows_end]
+    windows_end = [d + frequency for d in (end_time - start_time).range("seconds", frequency.in_seconds())
+                   if d + frequency <= end_time]
+    windows_start = [d - agg_window for d in windows_end]
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []

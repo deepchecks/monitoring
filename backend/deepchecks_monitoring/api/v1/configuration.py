@@ -30,7 +30,7 @@ class AlertRuleConfigSchema(BaseModel):
     id: int
     name: str
     check_name: str
-    repeat_every: int
+    frequency: int
     alert_severity: t.Optional[AlertSeverity]
     total_alerts: t.Optional[int] = 0
     non_resolved_alerts: t.Optional[int] = 0
@@ -100,9 +100,9 @@ async def get_all_alert_rules(
     q = (
         select(
             AlertRule.id,
-            AlertRule.name,
+            Monitor.name,
             AlertRule.alert_severity,
-            AlertRule.repeat_every,
+            Monitor.frequency,
             Check.name.label("check_name"),
             non_resolved_alerts_count.c.non_resolved_alerts,
             total_count.c.total_alerts,

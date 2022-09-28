@@ -26,7 +26,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
 
   const { modelsMap } = useModels();
 
-  const { alerts_count, alert_severity, condition, name, repeat_every, max_end_time, model_id } = alertRule;
+  const { alerts_count, alert_severity, condition, max_end_time, model_id } = alertRule;
 
   const { data: monitor = null, isLoading: isMonitorLoading } = useGetMonitorApiV1MonitorsMonitorIdGet(
     alertRule.monitor_id
@@ -36,7 +36,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
     modelsMap[model_id]?.name,
     monitor?.check?.name,
     `value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
-    processFrequency(dayjs.duration(repeat_every, 'seconds'))
+    monitor ? processFrequency(dayjs.duration(monitor?.frequency, 'seconds')) : undefined
   ];
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -61,7 +61,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
         <Typography variant="subtitle2">{alert_severity}</Typography>
       </StyledCriticality>
       <StyledDescription>
-        <Typography variant="h5">{name}</Typography>
+        <Typography variant="h5">{monitor?.name}</Typography>
         <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('MMM. DD, YYYY')}</Typography>
       </StyledDescription>
       <StyledDivider orientation="vertical" flexItem />

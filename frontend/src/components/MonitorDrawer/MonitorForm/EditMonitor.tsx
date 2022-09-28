@@ -72,7 +72,9 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     category: (monitor.data_filters?.filters[0].value as string) || '',
     column: (monitor.data_filters?.filters[0].column as string) || '',
     numericValue: (monitor.data_filters?.filters[0].value as number) || 0,
-    time: monitor.lookback,
+    lookback: monitor.lookback,
+    frequency: monitor.frequency,
+    aggregation_window: monitor.aggregation_window,
     additional_kwargs: monitor.additional_kwargs || checkInfoInitValue()
   };
 
@@ -98,7 +100,9 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         monitorId: monitor.id,
         data: {
           name: values.name || monitor.name,
-          lookback: values.time,
+          lookback: values.lookback,
+          frequency: values.frequency,
+          aggregation_window: values.aggregation_window,
           dashboard_id: monitor.dashboard_id,
           additional_kwargs: values.additional_kwargs,
           data_filters:
@@ -136,9 +140,11 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     const lookbackCheckData: LookbackCheckProps = {
       checkId,
       data: {
-        start_time: new Date(Date.now() - +values.time * 1000).toISOString(),
+        start_time: new Date(Date.now() - +values.lookback * 1000).toISOString(),
         end_time,
-        additional_kwargs: values.additional_kwargs
+        additional_kwargs: values.additional_kwargs,
+        frequency: +values.frequency,
+        aggregation_window: +values.aggregation_window
       }
     };
 
@@ -227,13 +233,17 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     clearTimeout(timer.current);
     const column = columns[values.column];
 
-    if (!column && values.time) {
+    if (values.frequency && !values.aggregation_window) {
+      setFieldValue('aggregation_window', values.frequency);
+    }
+    
+    if (!column && values.lookback && values.aggregation_window && values.frequency) {
       updateGraph();
     }
 
     if (column) {
       if (column?.type === ColumnType.numeric) {
-        if (values.time && values.column && values.numericValue) {
+        if (values.lookback && values.aggregation_window && values.frequency && values.column && values.numericValue) {
           timer.current = setTimeout(() => {
             updateGraph('greater_than', values.numericValue);
           }, 500);
@@ -241,7 +251,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       }
 
       if (column?.type === ColumnType.categorical) {
-        if (values.time && values.column && values.category) {
+        if (values.lookback && values.aggregation_window && values.frequency && values.column && values.category) {
           updateGraph('contains', values.category);
         }
       }
@@ -250,7 +260,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     return () => {
       clearTimeout(timer.current);
     };
-  }, [values.column, values.category, values.numericValue, values.time, values.additional_kwargs]);
+  }, [values.column, values.category, values.numericValue, values.lookback, values.aggregation_window, values.frequency, values.additional_kwargs]);
 
   useEffect(() => {
     if (resetMonitor) {
@@ -277,16 +287,21 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 setFieldValue={setFieldValue}
               />
             )}
-
-            <MarkedSelect
-              label="Time Window"
-              clearValue={() => {
-                setFieldValue('time', '');
-              }}
-              size="small"
-              {...getFieldProps('time')}
-              fullWidth
-            >
+            <MarkedSelect label="Frequency" size="small" clearValue={() => {setFieldValue('frequency', '')}} {...getFieldProps('frequency')} fullWidth required>
+              {timeWindow.map(({ label, value }, index) => (
+                <MenuItem key={index} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+            <MarkedSelect label="Aggregation Window" size="small" clearValue={() => {setFieldValue('aggregation_window', '')}} {...getFieldProps('aggregation_window')} fullWidth required>
+              {timeWindow.map(({ label, value }, index) => (
+                <MenuItem key={index} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+            <MarkedSelect label="Lookback" clearValue={() => {setFieldValue('lookback', '')}} size="small" {...getFieldProps('lookback')} fullWidth>
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
@@ -316,7 +331,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         </Box>
 
         <StyledButtonWrapper>
-          <StyledButton type="submit" size="large" disabled={!values.time || isColumnsLoading}>
+          <StyledButton type="submit" size="large" disabled={!values.lookback || !values.frequency || !values.aggregation_window || isColumnsLoading}>
             Save
           </StyledButton>
         </StyledButtonWrapper>
