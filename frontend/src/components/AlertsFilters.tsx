@@ -1,11 +1,11 @@
 import { Box, Button, Divider, MenuItem, SelectChangeEvent, Stack, styled, TextField } from '@mui/material';
-import { AlertSeverity, GetAlertRulesApiV1AlertRulesGetParams, GetAlertRulesApiV1AlertRulesGetSortbyItem, useGetModelsApiV1ModelsGet } from 'api/generated';
+import { AlertSeverity, GetAlertRulesApiV1AlertRulesGetParams, useGetModelsApiV1ModelsGet } from 'api/generated';
 import { GlobalStateContext } from 'Context';
 import React, { useContext, useEffect, useState } from 'react';
-import { Sort } from '../assets/icon/icon';
+import { Sort, Undo } from '../assets/icon/icon';
 import { DatePicker } from './DatePicker/DatePicker';
 import { SelectPrimary } from './SelectPrimary/SelectPrimary';
-import { SeverityAll, severityAll, SelectSeverity } from './SelectSeverity';
+import { SelectSeverity, SeverityAll, severityAll } from './SelectSeverity';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
@@ -17,14 +17,13 @@ const initStartDate = new Date(Date.now() - oneYear);
 const initEndDate = new Date(Date.now());
 
 export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
-  const { alertFilters, changeAlertFilters } = useContext(GlobalStateContext);
-  const [startDate, setStartDate] = useState<Date | null>(
-    alertFilters?.start ? new Date(alertFilters?.start) : initStartDate
-  );
-  const [endDate, setEndDate] = useState<Date | null>(alertFilters?.end ? new Date(alertFilters?.end) : initEndDate);
+  const { alertFilters, changeAlertFilters, resetFilters } = useContext(GlobalStateContext);
+  const [startDate, setStartDate] = useState<Date | null>(initStartDate);
+  const [endDate, setEndDate] = useState<Date | null>(initEndDate);
 
   const [model, setModel] = useState<number>(-1);
   const [severity, setSeverity] = useState<AlertSeverity | SeverityAll>(severityAll);
+  const filtered = endDate !== initEndDate || startDate !== initStartDate || model !== -1 || severity !== severityAll;
 
   const { data: models = [], isLoading: isModelsLoading } = useGetModelsApiV1ModelsGet();
 
@@ -109,17 +108,41 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
   }, [alertFilters.models]);
 
   useEffect(() => {
-    if (alertFilters.severity) {
-      const [currentSeverity] = alertFilters.severity;
-      if (currentSeverity !== severity) {
-        setSeverity(currentSeverity);
-      }
+    if (alertFilters.models && alertFilters.models[0] !== model) {
+      const [currentModel] = alertFilters.models;
+      setModel(currentModel ? currentModel : -1);
     }
-  }, [alertFilters.severity]);
+
+    if (alertFilters.severity && alertFilters.severity[0] !== severity) {
+      const [currentSeverity] = alertFilters.severity;
+      setSeverity(currentSeverity ? currentSeverity : severityAll);
+    }
+
+    if (alertFilters.start) {
+      const currentStart = alertFilters.start;
+      const currentStartDate = new Date(currentStart);
+      if (currentStartDate !== startDate) {
+        setStartDate(currentStartDate ? currentStartDate : initStartDate);
+      }
+    } else {
+      setStartDate(initStartDate);
+    }
+
+    if (alertFilters.end) {
+      const currentEnd = alertFilters.end;
+      const currentEndDate = new Date(currentEnd);
+      if (currentEndDate !== endDate) {
+        setEndDate(currentEndDate ? currentEndDate : initEndDate);
+      }
+    } else {
+      setEndDate(initEndDate);
+    }
+  }, [alertFilters.start, alertFilters.severity, alertFilters.end, alertFilters.models]);
 
   useEffect(() => {
     if (isFilterByTimeLine) return;
     changeAlertFilters(prevAlertFilters => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { start, end, ...newFilters } = prevAlertFilters;
       return newFilters;
     });
@@ -158,7 +181,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
           <SelectPrimary
             label="Model"
             onChange={handleModelChange}
-            labelProps={{ size: 'small' }}
+            size="small"
             value={model}
             disabled={isModelsLoading}
           >
@@ -172,15 +195,48 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
           <SelectSeverity
             allowAll
             onChange={handleSeverityChange}
-            labelProps={{ size: 'small' }}
+            size="small"
             value={severity}
             disabled={isModelsLoading}
           />
         </Stack>
       </Stack>
-      <Button variant="text" startIcon={<Sort />} onClick={onSort} disabled={isModelsLoading}>
-        Sort
-      </Button>
+
+      {filtered ? (
+        <Stack direction="row" spacing="11px">
+          <Button
+            variant="text"
+            startIcon={<Undo />}
+            onClick={resetFilters}
+            disabled={isModelsLoading}
+            sx={{ minHeight: 30 }}
+          >
+            Reset
+          </Button>
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={theme => ({
+              borderColor: theme.palette.grey[300],
+              alignSelf: 'center',
+              height: 24
+            })}
+          />
+          <Button
+            variant="text"
+            startIcon={<Sort />}
+            onClick={onSort}
+            disabled={isModelsLoading}
+            sx={{ minHeight: 30 }}
+          >
+            Sort
+          </Button>
+        </Stack>
+      ) : (
+        <Button variant="text" startIcon={<Sort />} onClick={onSort} disabled={isModelsLoading} sx={{ minHeight: 30 }}>
+          Sort
+        </Button>
+      )}
     </StyledMainWrapper>
   );
 };

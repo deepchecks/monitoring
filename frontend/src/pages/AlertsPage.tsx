@@ -1,7 +1,8 @@
-import { Box, List, styled } from '@mui/material';
+import { Box, List, styled, Typography } from '@mui/material';
 import React, { useCallback, useContext, useState } from 'react';
 // import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
 // import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
+import { EmptyAlerts } from 'assets/bg/backgrounds';
 import { GlobalStateContext } from 'Context';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import {
@@ -26,7 +27,7 @@ export const AlertsPage = () => {
   const [resolveAlertRule, setResolveAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [isNotification, setIsNotification] = useState<boolean>(false);
-  const { alertFilters } = useContext(GlobalStateContext);
+  const { alertFilters, resetFilters } = useContext(GlobalStateContext);
 
   const { data: alertRules, isLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
   const {
@@ -51,12 +52,12 @@ export const AlertsPage = () => {
   return (
     <>
       <AlertsHeader />
-      <StyledAlertContainer>
+      <Box>
         <AlertsFilters />
         <StyledList>
           {isLoading ? (
             <Loader />
-          ) : (
+          ) : alertRules?.length ? (
             (alertRules || []).map(alertRule => (
               <StyledListItem key={alertRule.id}>
                 <AlertsRulesItem
@@ -66,9 +67,34 @@ export const AlertsPage = () => {
                 />
               </StyledListItem>
             ))
+          ) : (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: '207px' }}>
+              <Box width={444}>
+                <EmptyAlerts />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mt: '60px',
+                    color: theme => theme.palette.text.disabled,
+                    textAlign: 'center',
+                    padding: '0 20px'
+                  }}
+                >
+                  No results found for the applied filters maybe try to{' '}
+                  <Typography
+                    sx={{ color: theme => theme.palette.primary.main, cursor: 'pointer' }}
+                    component={'span'}
+                    onClick={resetFilters}
+                  >
+                    reset the filters
+                  </Typography>{' '}
+                  and start over
+                </Typography>
+              </Box>
+            </Box>
           )}
         </StyledList>
-      </StyledAlertContainer>
+      </Box>
       <AlertsDrawer
         anchor="right"
         open={!!drawerAlertRule}
@@ -96,10 +122,6 @@ export const AlertsPage = () => {
     </>
   );
 };
-
-const StyledAlertContainer = styled(Box)(({ theme }) => ({
-  padding: '40px 40px 0'
-}));
 
 const StyledList = styled(List)({
   padding: 0,

@@ -1,10 +1,15 @@
+import { Box, Button } from '@mui/material';
+import { Settings } from 'assets/icon/icon';
 import React from 'react';
-import { Stack, Box } from '@mui/material';
-import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
-import { AlertCount, SEVERITY } from './AlertCount';
+import { useNavigate } from 'react-router-dom';
 
 export const AlertsHeader = () => {
-  const { data } = useCountAlertsApiV1AlertsCountActiveGet();
+  const navigate = useNavigate();
+
+  const linkToSettings = () => {
+    navigate({ pathname: '/configuration/notifications' });
+  };
+
   return (
     <>
       <Box
@@ -15,7 +20,7 @@ export const AlertsHeader = () => {
           justifyContent: 'space-between',
           height: '100px',
           width: '100%',
-          marginBottom: '35px',
+          marginBottom: '40px',
           borderBottom: theme => `1px dashed ${theme.palette.text.disabled}`
         }}
       >
@@ -33,10 +38,13 @@ export const AlertsHeader = () => {
             alignItems: 'center'
           }}
         >
-          <Stack spacing="20px" alignItems="center" direction="row">
-            <AlertCount count={data?.critical ? data.critical : 0} severity={SEVERITY.CRITICAL} />
-            <AlertCount count={data?.high ? data.high : 0} severity={SEVERITY.HIGH} />
-          </Stack>
+          <Button
+            sx={{ width: 136 }}
+            startIcon={<Settings fill="#fff" width={20} height={20} />}
+            onClick={linkToSettings}
+          >
+            Configure
+          </Button>
         </Box>
       </Box>
     </>

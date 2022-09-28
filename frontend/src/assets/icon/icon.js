@@ -34,9 +34,11 @@ import { ReactComponent as PlusIcon } from './plus.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
 import { ReactComponent as RightArrow } from './right-arrow.svg';
 import { ReactComponent as SearchIcon } from './search.svg';
+import { ReactComponent as Settings } from './settings.svg';
 import { ReactComponent as Slack } from './slack.svg';
 import { ReactComponent as Sort } from './sort.svg';
 import { ReactComponent as TestTube } from './testTube.svg';
+import { ReactComponent as Undo } from './undo.svg';
 import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
 
@@ -78,8 +80,10 @@ export {
   DeleteIcon,
   WhitePlusIcon,
   RightArrow,
+  Settings,
   LockIcon,
   OpenLockIcon,
   NoDataToShow,
-  TestTube
+  TestTube,
+  Undo
 };

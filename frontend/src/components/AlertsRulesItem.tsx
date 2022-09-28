@@ -2,12 +2,12 @@ import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/materi
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import processFrequency from '../helpers/utils/processFrequency';
 import useModels from 'hooks/useModels';
 import React, { memo, useState } from 'react';
 import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
 import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
+import processFrequency from '../helpers/utils/processFrequency';
 import { Loader } from './Loader';
 
 dayjs.extend(duration);
@@ -77,13 +77,13 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
         <StyledBlur>
           <Box>
             <StyledIconButton>
-              <PencilDrawing />
+              <PencilDrawing width={30} height={30} />
             </StyledIconButton>
             <StyledCaption variant="caption">Edit Rule</StyledCaption>
           </Box>
           <Box onClick={handleOpenResolve}>
             <StyledIconButton>
-              <Checkmark />
+              <Checkmark width={30} height={30} />
             </StyledIconButton>
             <StyledCaption variant="caption">Resolve all</StyledCaption>
           </Box>
@@ -150,7 +150,7 @@ const StyledCriticality = styled(Box, {
 });
 
 const StyledDescription = styled(Box)({
-  padding: '22px 90px 22px 30px',
+  padding: '22px 20px 22px 30px',
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
@@ -198,7 +198,7 @@ const StyledBlur = styled(Box)({
   width: 262,
   background: 'linear-gradient(90deg, rgba(241, 233, 254, 0) -12.12%, #F1E9FE 28.76%)',
   borderRadius: '10px',
-  padding: '20px 25px  28px 87px',
+  padding: '21px 25px 21px 87px',
   display: 'flex',
   justifyContent: 'space-between'
 });
