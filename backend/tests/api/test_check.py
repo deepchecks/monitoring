@@ -219,7 +219,7 @@ async def test_property_check_info(classification_vision_model_property_check_id
                                  "values": [{"name": "mean", "is_agg": True},
                                             {"name": "max", "is_agg": True},
                                             {"name": "none", "is_agg": False}]},
-                                {"type": "image property",
+                                {"type": "property",
                                  "values": [
                                          {"is_agg": None, "name": "Area"},
                                          {"is_agg": None, "name": "Brightness"},
@@ -289,7 +289,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "a": 10 + i,
             "b": "ppppp",
         },
-        {
+            {
             "_dc_sample_id": str(i * 10),
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
@@ -298,7 +298,7 @@ async def run_check(classification_model_id, classification_model_version_id, cl
             "a": 10 + i,
             "b": "ppppp",
         },
-        {
+            {
             "_dc_sample_id": str(i * 100),
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
@@ -317,14 +317,14 @@ async def run_check(classification_model_id, classification_model_version_id, cl
         "a": 16.1,
         "b": "ppppp",
     },
-    {
+        {
         "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
         "_dc_prediction": "1",
         "_dc_label": "1",
         "a": 16.1,
         "b": "ppppp",
     },
-    {
+        {
         "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
         "_dc_prediction": "0",
         "_dc_label": "0",
@@ -581,3 +581,61 @@ async def test_run_check_vision_detection(detection_vision_model_id,
     json_rsp = response.json()
     assert json_rsp == {"v1": {"Average Precision 42": 0.0, "Average Precision 51": 0.0,
                                "Average Recall 42": 0.0, "Average Recall 51": 0.0}}
+
+
+@pytest.mark.asyncio
+async def test_metric_check_w_features(classification_model_check_id, classification_model_version_id,
+                                       client: TestClient):
+    assert add_classification_data(classification_model_version_id, client)[0].status_code == 200
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"],
+                                                                      "feature": ["a"]}, "res_conf": ["1"]}})
+    assert response.json() == {"v1": {"F1 Per Class 1": 0.0}}
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"],
+                                                                      "feature": ["a"]}, "res_conf": ["2"]}})
+    assert response.json() == {"v1": {"F1 Per Class 2": 0.3333333333333333}}
+
+
+@pytest.mark.asyncio
+async def test_property_check_w_properties(classification_vision_model_property_check_id,
+                                           classification_vision_model_version_id,
+                                           client: TestClient):
+    assert add_vision_classification_data(classification_vision_model_version_id, client)[0].status_code == 200
+    sample = {
+        "_dc_prediction": [0.1, 0.3, 0.6],
+        "_dc_label": 2,
+        "images Aspect Ratio": 0.677,
+        "images Brightness": 0.5,
+        "images Area": 0.5,
+        "images RMS Contrast": 0.5,
+        "images Mean Red Relative Intensity": 0.5,
+        "images Mean Blue Relative Intensity": 0.5,
+        "images Mean Green Relative Intensity": 0.5,
+    }
+    # Act
+    response = send_reference_request(client, classification_vision_model_version_id, [sample] * 100)
+    assert response.status_code == 200
+
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    response = client.post(f"/api/v1/checks/{classification_vision_model_property_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"aggregation method": ["none"],
+                                                                      "property": ["images Brightness"]},
+                                                       "res_conf": None}})
+    assert response.json() == {"v1": {"Brightness": 0}}
+    response = client.post(f"/api/v1/checks/{classification_vision_model_property_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"aggregation method": ["none"],
+                                                                      "property": ["images Area"]},
+                                                       "res_conf": None}})
+    assert response.json() == {"v1": {"Area": 0}}

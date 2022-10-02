@@ -28,7 +28,8 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
-                                                     get_results_for_model_versions_per_window, random_sample)
+                                                     get_results_for_model_versions_per_window,
+                                                     get_top_features_or_from_conf, random_sample)
 from deepchecks_monitoring.models import ModelVersion
 from deepchecks_monitoring.models.check import Check
 from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL
@@ -117,7 +118,7 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
 
 def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_check: BaseCheck) -> MonitorCheckConf:
     """Get check info for checks that are instance of ReduceFeatureMixin or ReducePropertyMixin."""
-    feat_names = [] if latest_version is None else latest_version.get_top_features()[0]
+    feat_names = [] if latest_version is None else list(latest_version.features_columns.keys())
     aggs_names = ["mean", "max", "none"]
     # FeatureMixin has additional aggregation options
     if isinstance(dp_check, ReduceFeatureMixin):
@@ -133,15 +134,12 @@ def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_che
         # all those checks are of type property but use different property type (maybe we should refactor in deepchecks)
         if "Image" in check.config["class_name"]:
             property_type = PropertiesInputType.IMAGES
-            property_type_name = CheckParameterTypeEnum.IMAGE_PROPERTY.value
         elif "Label" in check.config["class_name"]:
             property_type = PropertiesInputType.LABELS
-            property_type_name = CheckParameterTypeEnum.LABEL_PROPERTY.value
         elif "Prediction" in check.config["class_name"]:
             property_type = PropertiesInputType.PREDICTIONS
-            property_type_name = CheckParameterTypeEnum.PREDICTION_PROPERTY.value
         check_parameter_conf["check_conf"] \
-            .append({"type": property_type_name,
+            .append({"type": CheckParameterTypeEnum.PROPERTY.value,
                      "values": _get_properties_by_type(property_type, feat_names), "is_agg_shown": False})
     return check_parameter_conf
 
@@ -205,7 +203,7 @@ async def run_check_per_window_in_range(
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
-    top_feat, _ = model_versions[0].get_top_features()
+    top_feat, _ = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
     # The range calculates from start to end excluding the end, so add interval to have the windows at their end time
     windows_end = [d + frequency for d in (end_time - start_time).range("seconds", frequency.in_seconds())
@@ -298,7 +296,7 @@ async def run_check_window(
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
-    top_feat, _ = model_versions[0].get_top_features()
+    top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
 
     load_reference = isinstance(dp_check, TrainTestBaseCheck)
 

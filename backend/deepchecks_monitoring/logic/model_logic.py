@@ -24,6 +24,7 @@ from deepchecks.tabular import base_checks as tabular_base_checks
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision import VisionData
 from deepchecks.vision import base_checks as vision_base_checks
+from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from sqlalchemy import VARCHAR, Table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -43,10 +44,12 @@ from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList,
 
 def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
     for kwarg_type, kwarg_val in model_config.check_conf.items():
-        kwarg_name = CheckParameterTypeEnum(kwarg_type).to_kwarg_name()
-        if kwarg_name == 'aggregation_method':
+        kwarg_type = CheckParameterTypeEnum(kwarg_type)
+        kwarg_name = kwarg_type.to_kwarg_name()
+        if kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
             kwarg_val = kwarg_val[0]
-        check_conf['params'][kwarg_name] = kwarg_val
+        if kwarg_type != CheckParameterTypeEnum.PROPERTY:
+            check_conf['params'][kwarg_name] = kwarg_val
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -138,12 +141,12 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_ty
         static_props = defaultdict(dict)
         for col in df.columns:
             prop_type, prop_name = col.split(' ', 1)
+            prop_type = PropertiesInputType(prop_type)
             for ind, item in df[col].items():
                 if static_props[ind].get(prop_type) is None:
                     static_props[ind][prop_type] = {prop_name: item}
                 else:
                     static_props[ind][prop_type][prop_name] = item
-
     data_loader = DataLoader(LabelVisionDataset(labels), batch_size=len(labels), collate_fn=list)
     return TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader), preds, static_props
 
@@ -158,6 +161,24 @@ def filter_table_selection_by_data_filters(data_table: Table, table_selection: S
         filtered_table_selection = filtered_table_selection.where(make_oparator_func(data_filter.operator)(
             getattr(data_table.c, data_filter.column), data_filter.value))
     return filtered_table_selection
+
+
+def get_top_features_or_from_conf(model_version: ModelVersion,
+                                  additional_kwargs: MonitorCheckConfSchema,
+                                  n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
+    """Get top features sorted by feature importance and the feature_importance or by the check config."""
+    if additional_kwargs is not None \
+        and (additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE) is not None
+             or additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY) is not None):
+        features = additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE, []) + \
+            additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY, [])
+        if model_version.feature_importance is not None:
+            feat_dict = pd.Series({key: val for key, val in
+                                   model_version.feature_importance.items() if key in features})
+        else:
+            feat_dict = None
+        return features, feat_dict
+    return model_version.get_top_features(n_top)
 
 
 async def get_results_for_model_versions_per_window(
@@ -176,7 +197,7 @@ async def get_results_for_model_versions_per_window(
         _check_kwarg_filter(check_conf, additional_kwargs)
         dp_check = BaseCheck.from_config(check_conf)
 
-    top_feat, feat_imp = model_versions[0].get_top_features()
+    top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
     task_type = model.task_type
     is_vision_check = isinstance(dp_check,
                                  (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))

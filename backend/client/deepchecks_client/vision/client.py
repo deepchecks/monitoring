@@ -292,7 +292,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def _add_default_checks(self):
         """Add default list of checks for a vision model."""
         checks = {
-            # 'Property Drift': ImagePropertyDrift(), TODO: make this work (serialize problem)
+            'Property Drift': ImagePropertyDrift(),
             'Prediction Drift': TrainTestPredictionDrift(),
             'Label Drift': TrainTestLabelDrift(),
         }

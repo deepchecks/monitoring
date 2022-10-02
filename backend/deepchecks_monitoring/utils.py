@@ -62,9 +62,7 @@ class CheckParameterTypeEnum(str, enum.Enum):
     SCORER = "scorer"
     AGGREGATION_METHOD = "aggregation method"
     CLASS = "class"
-    IMAGE_PROPERTY = "image property"
-    LABEL_PROPERTY = "label property"
-    PREDICTION_PROPERTY = "prediction property"
+    PROPERTY = "property"
 
     def to_kwarg_name(self):
         """Return the SQLAlchemy type of the data type."""
@@ -73,9 +71,7 @@ class CheckParameterTypeEnum(str, enum.Enum):
             CheckParameterTypeEnum.SCORER: "scorers",
             CheckParameterTypeEnum.AGGREGATION_METHOD: "aggregation_method",
             CheckParameterTypeEnum.CLASS: "class_list_to_show",
-            CheckParameterTypeEnum.IMAGE_PROPERTY: "image_properties",
-            CheckParameterTypeEnum.LABEL_PROPERTY: "label_properties",
-            CheckParameterTypeEnum.PREDICTION_PROPERTY: "prediction_properties",
+            CheckParameterTypeEnum.PROPERTY: "property",
         }
         return types_map[self]
 
