@@ -4,18 +4,22 @@ import {
   ModelsInfoSchema,
   useGetChecksApiV1ModelsModelIdChecksGet,
   CheckSchema,
-  MonitorSchema
+  DataFilter
 } from '../api/generated';
 import { AlertRuleDialogStep, AlertRuleDialogStepBase, AlertRuleDialogStepRenderArgs } from './AlertRuleDialogStep';
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
 import { CircularProgress } from '@mui/material';
-import { SelectTimeframe } from './SelectTimeframe';
+import { SelectModelColumn } from './SelectModelColumn';
+import { SelectFrequency } from './SelectFrequency';
 
 type ModelId = CheckSchema['model_id'];
 
 export interface AlertRuleDialogStep2Values {
   check_id?: CheckSchema['id'];
   model_id?: ModelId;
+  data_filter?: DataFilter;
+  frequency?: number;
+  aggregation_window?: number;
 }
 
 export interface AlertRuleDialogStep2 extends AlertRuleDialogStepBase<AlertRuleDialogStep2Values> {
@@ -33,9 +37,10 @@ export const AlertRuleDialogStep2: FC<AlertRuleDialogStep2> = ({ models, ...prop
 
   const onModelIdBuilder =
     (setFieldValue: AlertRuleDialogStepRenderArgs<AlertRuleDialogStep2Values>['setFieldValue']) =>
-    (modelId: ModelId | undefined) => {
+    (modelId: any) => {
       setModelId(modelId || 0);
       setFieldValue('check_id', 0);
+      setFieldValue('data_filters', null);
     };
 
   return (
@@ -68,6 +73,22 @@ export const AlertRuleDialogStep2: FC<AlertRuleDialogStep2> = ({ models, ...prop
               </SelectPrimaryItem>
             ))}
           </SelectPrimary>
+          <SelectFrequency
+            frequency={getFieldProps('frequency').value as number}
+            aggregation_window={getFieldProps('aggregation_window').value as number}
+            setFieldValue={setFieldValue}/>
+
+          <SelectModelColumn
+            modelId={modelId}
+            label="Select Column"
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            {...getFieldProps('data_filter.column')}
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            valueProps={getFieldProps('data_filter.value')}
+            setFieldValue={setFieldValue}
+          />
         </>
       )}
     </AlertRuleDialogStep>

@@ -18,6 +18,7 @@ import { TransitionProps } from '@mui/material/transitions';
 import {
   AlertRuleConfigSchema,
   AlertRuleSchema,
+  DataFilterList,
   MonitorSchema,
   OperatorsEnum,
   useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost,
@@ -34,8 +35,8 @@ import { DeepPartial } from 'utility-types';
 import { AlertRuleDialogStep1, AlertRuleDialogStep1Values } from './AlertRuleDialogStep1';
 import { AlertRuleDialogStep2, AlertRuleDialogStep2Values } from './AlertRuleDialogStep2';
 import { AlertRuleDialogStep3, AlertRuleDialogStep3Values } from './AlertRuleDialogStep3';
-import { AlertRuleDialogStep4, AlertRuleDialogStep4Values } from './AlertRuleDialogStep4';
 import { omit } from 'lodash';
+import dayjs from 'dayjs';
 
 interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
   alertRuleId?: AlertRuleConfigSchema['id'];
@@ -73,8 +74,8 @@ const initialMonitor = {
     id: 0,
     model_id: 0
   },
-  frequency: 0,
-  aggregation_window: 0,
+  frequency: 86400,
+  aggregation_window: 86400,
   data_filters: {
     filters: [
       {
@@ -166,7 +167,7 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
       },
       {
         key: 2,
-        title: 'Model Details',
+        title: 'Monitor Data',
         isExpendable: true,
         Component: () => (
           <AlertRuleDialogStep2
@@ -174,7 +175,11 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
             models={models}
             initialValues={{
               model_id: editMonitor?.check.model_id,
-              check_id: editMonitor?.check.id            }}
+              check_id: editMonitor?.check.id,
+              data_filter: (editMonitor.data_filters || initialMonitor.data_filters!).filters[0],
+              aggregation_window: editMonitor?.aggregation_window,
+              frequency: editMonitor?.frequency
+                        }}
             onSubmit={onStepComplete<AlertRuleDialogStep2Values>(2, values => {
               setEditMonitor(prevMonitor => {
                 const isModelIdChanged = prevMonitor.check.model_id !== values.model_id;
@@ -183,7 +188,10 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
                     id: values.check_id,
                     model_id: values.model_id
                   },
-                  data_filters: isModelIdChanged ? undefined : prevMonitor.data_filters
+                  data_filters: isModelIdChanged || !values.data_filter ? undefined : deepmerge<DataFilterList | undefined, DeepPartial<DataFilterList>>(prevMonitor.data_filters, { filters: [values.data_filter] }),
+                  frequency: values.frequency,
+                  aggregation_window: values.aggregation_window,
+                  lookback: dayjs.duration(1, 'months').milliseconds()
                 });
               });
             })}
@@ -192,53 +200,20 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
       },
       {
         key: 3,
-        title: 'Filter By Segment',
+        title: 'Alert Logic',
         isExpendable: !!editMonitor?.check.model_id,
         Component: () => (
           <AlertRuleDialogStep3
             isEdit={isEdit}
-            modelId={editMonitor?.check.model_id || 0}
-            initialValues={(editMonitor.data_filters || initialMonitor.data_filters!).filters[0]}
-            onSubmit={onStepComplete<AlertRuleDialogStep3Values>(3, values => {
-              setEditMonitor(prevMonitor =>
-                deepmerge<MonitorSchema, DeepPartial<MonitorSchema>>(
-                  prevMonitor,
-                  {
-                    data_filters: {
-                      filters: [values]
-                    }
-                  },
-                  { arrayMerge: (destinationArray, sourceArray) => sourceArray }
-                )
-              );
-            })}
-          />
-        )
-      },
-      {
-        key: 4,
-        title: 'Monitor Logic',
-        isExpendable: true,
-        Component: () => (
-          <AlertRuleDialogStep4
-            isEdit={isEdit}
             monitor={editMonitor}
             buttonProps={{ startIcon: null, children: 'Save Alert Rule' }}
             initialValues={{
-              ...(editAlertRule.condition || initialAlertRule.condition),
-              frequency: editMonitor?.frequency,
-              aggregation_window: editMonitor?.aggregation_window
+              ...(editAlertRule.condition || initialAlertRule.condition)
             }}
-            onSubmit={onStepComplete<AlertRuleDialogStep4Values>(4, values => {
+            onSubmit={onStepComplete<AlertRuleDialogStep3Values>(3, values => {
               setEditAlertRule(prevAlertRule =>
                 deepmerge<AlertRuleSchema, DeepPartial<AlertRuleSchema>>(prevAlertRule, {
-                  condition: omit(values, 'frequency')
-                })
-              );
-              setEditMonitor(prevMonitor => 
-                deepmerge<MonitorSchema, DeepPartial<MonitorSchema>>(prevMonitor, {
-                  frequency: values.frequency,
-                  aggregation_window: values.aggregation_window
+                  condition: values
                 })
               );
             })}
