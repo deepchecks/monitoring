@@ -6,6 +6,7 @@ import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDra
 import React, { useEffect, useMemo, useState } from 'react';
 import { MenuVertical } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
+import dayjs from 'dayjs';
 import {
   StyledDiagramWrapper,
   StyledDivider,
@@ -36,7 +37,7 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
   const filterMap: { [key: string]: string } = {
     greater_than: '>',
     equals: '=',
-    contains: 'in'
+    contains: 'contains'
   };
 
   const modelName = useMemo(() => {
@@ -82,8 +83,14 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
     setAnchorElRootMenu(null);
   };
 
+  function getTime(timeLabel: string) {
+    if (monitor.frequency < 86400)
+      return dayjs(timeLabel).format('MMM. DD YYYY hha');
+    return dayjs(timeLabel).format('MMM. DD YYYY');
+  };
+
   const tooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = {
-    label: (context: TooltipItem<'line'>) => `${context.label} | Model Version ${context.dataset.label?.split(':')[0]}`
+    label: (context: TooltipItem<'line'>) => `${getTime(context.label)} | Model Version ${context.dataset.label?.split(':')[0]}`
   };
 
   return (
