@@ -23,7 +23,8 @@ import { ReactComponent as EmailIcon } from './emailIcon.svg';
 import { ReactComponent as ExpandIcon } from './expand.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as HomeIcon } from './home.svg';
-import { ReactComponent as InfoIcon } from './info.svg';
+import { ReactComponent as Info } from './info.svg';
+import { ReactComponent as InfoIcon } from './infoIcon.svg';
 import { ReactComponent as LockIcon } from './lock.svg';
 import { ReactComponent as MenuVertical } from './menuVertical.svg';
 import { ReactComponent as NoDataToShow } from './noDataToShow.svg';
@@ -67,6 +68,7 @@ export {
   FastForward,
   MenuVertical,
   HomeIcon,
+  Info,
   InfoIcon,
   PlusIcon,
   Rewind,

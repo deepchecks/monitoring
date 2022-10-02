@@ -6,6 +6,7 @@ import {
   useGetModelColumnsApiV1ModelsModelIdColumnsGet,
   useUpdateMonitorApiV1MonitorsMonitorIdPut
 } from 'api/generated';
+import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { useFormik } from 'formik';
 import useModels from 'hooks/useModels';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
@@ -236,7 +237,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     if (values.frequency && !values.aggregation_window) {
       setFieldValue('aggregation_window', values.frequency);
     }
-    
+
     if (!column && values.lookback && values.aggregation_window && values.frequency) {
       updateGraph();
     }
@@ -260,7 +261,15 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     return () => {
       clearTimeout(timer.current);
     };
-  }, [values.column, values.category, values.numericValue, values.lookback, values.aggregation_window, values.frequency, values.additional_kwargs]);
+  }, [
+    values.column,
+    values.category,
+    values.numericValue,
+    values.lookback,
+    values.aggregation_window,
+    values.frequency,
+    values.additional_kwargs
+  ]);
 
   useEffect(() => {
     if (resetMonitor) {
@@ -287,27 +296,57 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 setFieldValue={setFieldValue}
               />
             )}
-            <MarkedSelect label="Frequency" size="small" clearValue={() => {setFieldValue('frequency', '')}} {...getFieldProps('frequency')} fullWidth required>
+            <MarkedSelect
+              label="Frequency"
+              size="small"
+              clearValue={() => {
+                setFieldValue('frequency', '');
+              }}
+              {...getFieldProps('frequency')}
+              fullWidth
+              required
+            >
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
                 </MenuItem>
               ))}
             </MarkedSelect>
-            <MarkedSelect label="Aggregation Window" size="small" clearValue={() => {setFieldValue('aggregation_window', '')}} {...getFieldProps('aggregation_window')} fullWidth required>
+            <MarkedSelect
+              label="Aggregation Window"
+              size="small"
+              clearValue={() => {
+                setFieldValue('aggregation_window', '');
+              }}
+              {...getFieldProps('aggregation_window')}
+              fullWidth
+              required
+            >
               {timeWindow.map(({ label, value }, index) => (
                 <MenuItem key={index} value={value}>
                   {label}
                 </MenuItem>
               ))}
             </MarkedSelect>
-            <MarkedSelect label="Lookback" clearValue={() => {setFieldValue('lookback', '')}} size="small" {...getFieldProps('lookback')} fullWidth>
-              {timeWindow.map(({ label, value }, index) => (
-                <MenuItem key={index} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
+
+            <TooltipInputWrapper title="Time">
+              <MarkedSelect
+                label="Lookback"
+                clearValue={() => {
+                  setFieldValue('lookback', '');
+                }}
+                size="small"
+                {...getFieldProps('lookback')}
+                fullWidth
+              >
+                {timeWindow.map(({ label, value }, index) => (
+                  <MenuItem key={index} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </MarkedSelect>
+            </TooltipInputWrapper>
+
             <Box width={1}>
               <MarkedSelect
                 label="Filter by Column"
@@ -331,7 +370,11 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         </Box>
 
         <StyledButtonWrapper>
-          <StyledButton type="submit" size="large" disabled={!values.lookback || !values.frequency || !values.aggregation_window || isColumnsLoading}>
+          <StyledButton
+            type="submit"
+            size="large"
+            disabled={!values.lookback || !values.frequency || !values.aggregation_window || isColumnsLoading}
+          >
             Save
           </StyledButton>
         </StyledButtonWrapper>
