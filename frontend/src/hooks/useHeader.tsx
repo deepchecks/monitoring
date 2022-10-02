@@ -1,9 +1,9 @@
 import { Stack, Typography } from '@mui/material';
+import { pathsInfo } from 'helpers/helper';
+import groupBy from 'lodash/groupBy';
 import React, { createContext, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { theme } from 'theme';
-import { pathsInfo } from 'helpers/helper';
-import groupBy from 'lodash/groupBy';
 
 export type HeaderProvider = {
   children: JSX.Element;
@@ -40,12 +40,12 @@ export const HeaderProvider = ({ children }: HeaderProvider): JSX.Element => {
       alignItems="center"
       justifyContent="space-between"
       sx={{
-        padding: ' 20px 0',
+        padding: ' 21px 0',
         width: '100%',
-        borderBottom: `1px dashed ${theme.palette.grey[300]}`
+        borderBottom: `1px dotted ${theme.palette.grey[300]}`
       }}
     >
-      <Typography sx={{ fontWeight: 600, fontSize: '34px', letterSpacing: '0.6px', lineHeight: '40px' }}>
+      <Typography variant="h4" sx={{ color: theme => theme.palette.text.disabled }}>
         {pathInfo[0]?.title}
       </Typography>
       {headerChildren}

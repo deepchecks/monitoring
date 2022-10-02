@@ -1,5 +1,21 @@
-import { Box, Button, Divider, MenuItem, SelectChangeEvent, Stack, styled, TextField } from '@mui/material';
-import { AlertSeverity, GetAlertRulesApiV1AlertRulesGetParams, useGetModelsApiV1ModelsGet } from 'api/generated';
+import {
+  Box,
+  Button,
+  Divider,
+  Menu,
+  MenuItem,
+  SelectChangeEvent,
+  Stack,
+  styled,
+  TextField,
+  Typography
+} from '@mui/material';
+import {
+  AlertSeverity,
+  GetAlertRulesApiV1AlertRulesGetParams,
+  GetAlertRulesApiV1AlertRulesGetSortbyItem,
+  useGetModelsApiV1ModelsGet
+} from 'api/generated';
 import { GlobalStateContext } from 'Context';
 import React, { useContext, useEffect, useState } from 'react';
 import { Sort, Undo } from '../assets/icon/icon';
@@ -16,6 +32,13 @@ const oneYear = 60 * 60 * 24 * 365 * 1000;
 const initStartDate = new Date(Date.now() - oneYear);
 const initEndDate = new Date(Date.now());
 
+const sortMethodMap = {
+  'Alphabetically A-Z': 'severity:asc',
+  'Alphabetically Z-A': 'severity:desc'
+} as const;
+
+const sortOptions = ['Alphabetically A-Z', 'Alphabetically Z-A'] as const;
+
 export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
   const { alertFilters, changeAlertFilters, resetFilters } = useContext(GlobalStateContext);
   const [startDate, setStartDate] = useState<Date | null>(initStartDate);
@@ -25,7 +48,19 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
   const [severity, setSeverity] = useState<AlertSeverity | SeverityAll>(severityAll);
   const filtered = endDate !== initEndDate || startDate !== initStartDate || model !== -1 || severity !== severityAll;
 
+  const [anchorElSortMenu, setAnchorElSortMenu] = useState<null | HTMLElement>(null);
+
+  const openSortMenu = Boolean(anchorElSortMenu);
+
   const { data: models = [], isLoading: isModelsLoading } = useGetModelsApiV1ModelsGet();
+
+  const handleCloseSortMenu = () => {
+    setAnchorElSortMenu(null);
+  };
+
+  const handleOpenSortMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorElSortMenu(event.currentTarget);
+  };
 
   const handleModelChange = (event: SelectChangeEvent<number | unknown>) => {
     const currentModel = event.target.value as number;
@@ -82,7 +117,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
     }
   };
 
-  const onSort = () => {
+  const onSort = (sortMethod: GetAlertRulesApiV1AlertRulesGetSortbyItem) => {
     changeAlertFilters(prevAlertFilters => {
       const currentAlertFilters = { ...prevAlertFilters };
 
@@ -93,9 +128,10 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
 
       return {
         ...prevAlertFilters,
-        sortby: ['severity:asc']
+        sortby: [sortMethod]
       } as GetAlertRulesApiV1AlertRulesGetParams;
     });
+    handleCloseSortMenu();
   };
 
   useEffect(() => {
@@ -149,95 +185,125 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
   }, [isFilterByTimeLine]);
 
   return (
-    <StyledMainWrapper>
-      <Stack direction="row">
-        {isFilterByTimeLine && (
-          <>
-            <StyledDateWrapper>
-              <DatePicker
-                inputFormat="DD MMM YYYY"
-                onChange={handleStartDateChange}
-                value={startDate}
-                label="Start Date"
-                disableMaskedInput
-                disabled={isModelsLoading}
-                renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
-              />
-              -
-              <DatePicker
-                inputFormat="DD MMM YYYY"
-                onChange={handleEndDateChange}
-                value={endDate}
-                label="End Date"
-                disableMaskedInput
-                disabled={isModelsLoading}
-                renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
-              />
-            </StyledDateWrapper>
-            <StyledDivider orientation="vertical" flexItem />
-          </>
-        )}
-        <Stack direction="row" spacing="16px">
-          <SelectPrimary
-            label="Model"
-            onChange={handleModelChange}
-            size="small"
-            value={model}
-            disabled={isModelsLoading}
-          >
-            <MenuItem value={-1}>All</MenuItem>
-            {models.map(({ id, name }) => (
-              <MenuItem value={id} key={id}>
-                {name}
-              </MenuItem>
-            ))}
-          </SelectPrimary>
-          <SelectSeverity
-            allowAll
-            onChange={handleSeverityChange}
-            size="small"
-            value={severity}
-            disabled={isModelsLoading}
-          />
+    <>
+      <StyledMainWrapper>
+        <Stack direction="row">
+          {isFilterByTimeLine && (
+            <>
+              <StyledDateWrapper>
+                <DatePicker
+                  inputFormat="DD MMM YYYY"
+                  onChange={handleStartDateChange}
+                  value={startDate}
+                  label="Start Date"
+                  disableMaskedInput
+                  disabled={isModelsLoading}
+                  renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
+                />
+                -
+                <DatePicker
+                  inputFormat="DD MMM YYYY"
+                  onChange={handleEndDateChange}
+                  value={endDate}
+                  label="End Date"
+                  disableMaskedInput
+                  disabled={isModelsLoading}
+                  renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
+                />
+              </StyledDateWrapper>
+              <StyledDivider orientation="vertical" flexItem />
+            </>
+          )}
+          <Stack direction="row" spacing="16px">
+            <SelectPrimary
+              label="Model"
+              onChange={handleModelChange}
+              size="small"
+              value={model}
+              disabled={isModelsLoading}
+            >
+              <MenuItem value={-1}>All</MenuItem>
+              {models.map(({ id, name }) => (
+                <MenuItem value={id} key={id}>
+                  {name}
+                </MenuItem>
+              ))}
+            </SelectPrimary>
+            <SelectSeverity
+              allowAll
+              onChange={handleSeverityChange}
+              size="small"
+              value={severity}
+              disabled={isModelsLoading}
+            />
+          </Stack>
         </Stack>
-      </Stack>
 
-      {filtered ? (
-        <Stack direction="row" spacing="11px">
-          <Button
-            variant="text"
-            startIcon={<Undo />}
-            onClick={resetFilters}
-            disabled={isModelsLoading}
-            sx={{ minHeight: 30 }}
-          >
-            Reset
-          </Button>
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={theme => ({
-              borderColor: theme.palette.grey[300],
-              alignSelf: 'center',
-              height: 24
-            })}
-          />
+        {filtered ? (
+          <Stack direction="row" spacing="11px">
+            <Button
+              variant="text"
+              startIcon={<Undo />}
+              onClick={resetFilters}
+              disabled={isModelsLoading}
+              sx={{ minHeight: 30 }}
+            >
+              Reset
+            </Button>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={theme => ({
+                borderColor: theme.palette.grey[300],
+                alignSelf: 'center',
+                height: 24
+              })}
+            />
+            <Button
+              variant="text"
+              startIcon={<Sort />}
+              onClick={handleOpenSortMenu}
+              disabled={isModelsLoading}
+              sx={{ minHeight: 30 }}
+            >
+              Sort
+            </Button>
+          </Stack>
+        ) : (
           <Button
             variant="text"
             startIcon={<Sort />}
-            onClick={onSort}
+            onClick={handleOpenSortMenu}
             disabled={isModelsLoading}
             sx={{ minHeight: 30 }}
           >
             Sort
           </Button>
-        </Stack>
-      ) : (
-        <Button variant="text" startIcon={<Sort />} onClick={onSort} disabled={isModelsLoading} sx={{ minHeight: 30 }}>
-          Sort
-        </Button>
-      )}
-    </StyledMainWrapper>
+        )}
+      </StyledMainWrapper>
+      <Menu
+        anchorEl={anchorElSortMenu}
+        open={openSortMenu}
+        onClose={handleCloseSortMenu}
+        MenuListProps={{
+          'aria-labelledby': 'basic-button'
+        }}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right'
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right'
+        }}
+      >
+        {sortOptions.map(sort => (
+          <MenuItem sx={{ py: '12px', pl: '12px' }} key={sort} onClick={() => onSort(sortMethodMap[sort])}>
+            <Typography variant="subtitle2">{sort}</Typography>
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
   );
 };
 

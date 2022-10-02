@@ -19,12 +19,12 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
         sx={{
           display: 'inline-flex',
           alignItems: 'center',
-          padding: '20px 48px 20px 0',
+          padding: '12px 48px 12px 0',
           justifyContent: 'space-between',
           height: '100px',
           width: '100%',
           marginBottom: '35px',
-          borderBottom: theme => `1px dashed ${theme.palette.text.disabled}`
+          borderBottom: theme => `1px dotted ${theme.palette.text.disabled}`
         }}
       >
         <Box
@@ -47,7 +47,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
           </Stack>
           <Box
             sx={{
-              backgroundColor: '#B3BEC4',
+              backgroundColor: theme => theme.palette.grey[200],
               margin: '0 20px 0 30px',
               height: '42px',
               width: '1px'

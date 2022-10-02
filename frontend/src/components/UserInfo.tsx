@@ -1,4 +1,4 @@
-import { Avatar, Box, Typography } from '@mui/material';
+import { alpha, Avatar, Box, Typography } from '@mui/material';
 import React from 'react';
 import useUser from '../hooks/useUser';
 
@@ -9,17 +9,20 @@ export const UserInfo = () => {
   const { full_name, picture_url } = user;
 
   return (
-    <Box sx={{ mt: 4, p: 1, display: 'flex', justifyContent: 'center' }}>
-      <Avatar sx={{ flexGrow: 0 }} alt={full_name} src={picture_url}></Avatar>
+    <Box sx={{ mt: 4, p: '7px 0', display: 'flex', alignItems: 'center' }}>
+      <Avatar
+        sx={{ flexGrow: 0, border: theme => `2px solid ${alpha(theme.palette.common.white, 0.2)}` }}
+        alt={full_name}
+        src={picture_url}
+      ></Avatar>
       <Typography
         sx={{
-          flexGrow: 1,
-          m: 1,
-          lineHeight: '150%',
+          lineHeight: '140%',
           textTransform: 'ellipsis',
           fontFamily: 'Roboto',
           fontWeight: 400,
-          alignItems: 'center',
+          fontSize: 12,
+          marginLeft: '8px',
           letterSpacing: '0.1px',
           textAlign: 'center',
           verticalAlign: 'middle',

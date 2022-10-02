@@ -1,9 +1,9 @@
 import React, { memo, useState } from 'react';
-import { useLocation, Link, LinkProps } from 'react-router-dom';
+import { Link, LinkProps, useLocation } from 'react-router-dom';
 import { Arrow } from '../assets/icon/icon';
 import { PathInfo } from '../helpers/helper';
 
-import { alpha, Box, styled, Typography, useTheme } from '@mui/material';
+import { Box, styled, Typography, useTheme } from '@mui/material';
 import { colors } from '../theme/colors';
 
 interface StyledLinkWrapperProps {
@@ -23,20 +23,11 @@ const StyledLinkWrapper = styled(
   margin-left: 14px;
   border-radius: 20px 0px 0px 20px;
   width: 100%;
-  margin: 12px 0;
-  padding: 7px 0 7px 16px;
+  margin: 28px 0;
+  padding: 6px 0 6px 16px;
   text-decoration: none;
-  color: ${active ? '#17003E' : '#fff'};
   cursor: pointer;
   ${active ? 'background-color: #fff;' : ''}
-
-  &:hover {
-    color: #B17DFF;
-  };
-
-  &:hover img {
-    color: #B17DFF;
-  }
 
   &:first-of-type {
     margin-top: 0;
@@ -60,6 +51,13 @@ function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
   const location = useLocation();
   const { ActiveIcon, Icon, IconHover, link } = info;
   const active = location?.pathname.startsWith(link);
+  const [isConfigurationOpen, setIsConfigurationOpen] = useState<boolean>(false);
+
+  const activeHover = hover && !active;
+
+  const openOrCloseConfiguration = () => {
+    setIsConfigurationOpen(prevState => !prevState);
+  };
 
   const onMouseOver = () => {
     setHover(true);
@@ -69,77 +67,162 @@ function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
     setHover(false);
   };
 
+  const MenuItem = (
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center'
+        }}
+      >
+        {Icon && IconHover && ActiveIcon ? hover && !active ? <IconHover /> : active ? <ActiveIcon /> : <Icon /> : null}
+        <Typography
+          sx={{
+            fontSize: '14px',
+            lineHeight: '120%',
+            marginLeft: '14px',
+            fontWeight: active ? 500 : 400
+          }}
+          variant="subtitle1"
+        >
+          {info.title}
+        </Typography>
+      </Box>
+      {info.title === 'Analysis' && (
+        <Box
+          sx={theme => ({
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            marginRight: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: activeHover ? theme.palette.primary.dark : theme.palette.primary.contrastText,
+            '& svg': {
+              fill: activeHover ? colors.primary.violet[600] : theme.palette.common.black
+            }
+          })}
+        >
+          <Arrow />
+        </Box>
+      )}
+      {info.title === 'Configuration' && (
+        <Box
+          sx={theme => ({
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            marginRight: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            backgroundColor: theme.palette.primary.contrastText
+          })}
+        >
+          {isConfigurationOpen ? (
+            <Box sx={{ height: 2, width: 6, background: colors.primary.violet[600] }} />
+          ) : (
+            <Box
+              sx={{
+                height: 2,
+                width: 6,
+                background: colors.primary.violet[600],
+                position: 'relative',
+                ':after': {
+                  content: "''",
+                  display: 'block',
+                  width: 2,
+                  height: 6,
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  background: colors.primary.violet[600],
+                  transform: 'translate(-50%, -50%)'
+                }
+              }}
+            />
+          )}
+        </Box>
+      )}
+    </>
+  );
+
   return (
     <>
-      <StyledLinkWrapper
-        to={link}
-        active={active}
-        key={info.link}
-        onMouseLeave={onMouseLeave}
-        onMouseOver={onMouseOver}
-      >
+      {info.title === 'Configuration' ? (
         <Box
           sx={{
+            height: 38,
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginLeft: '14px',
+            borderRadius: '20px 0px 0px 20px',
+            width: 1,
+            margin: '28px 0 0',
+            padding: '6px 0 6px 16px',
+            textDecoration: 'none',
+            cursor: 'pointer',
+            color: active ? colors.primary.violet[200] : hover ? colors.primary.violet[300] : '#fff'
+          }}
+          onMouseLeave={onMouseLeave}
+          onMouseOver={onMouseOver}
+          onClick={openOrCloseConfiguration}
+        >
+          {MenuItem}
+        </Box>
+      ) : (
+        <StyledLinkWrapper
+          to={link}
+          active={active}
+          onMouseLeave={onMouseLeave}
+          onMouseOver={onMouseOver}
+          sx={{
+            color: active ? colors.primary.violet[600] : hover ? colors.primary.violet[300] : '#fff'
           }}
         >
-          {Icon && IconHover && ActiveIcon ? hover ? <IconHover /> : active ? <ActiveIcon /> : <Icon /> : null}
-          <Typography
-            sx={{
-              fontSize: '14px',
-              lineHeight: '120%',
-              marginLeft: '14px'
-            }}
-            variant="subtitle1"
-          >
-            {info.title}
-          </Typography>
-        </Box>
-        {info.title === 'Analysis' && (
-          <Box
-            sx={theme => ({
-              width: 16,
-              height: 16,
-              borderRadius: '50%',
-              marginRight: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: hover ? theme.palette.primary.dark : theme.palette.primary.contrastText,
-              '& svg': {
-                fill: hover ? colors.primary.violet[600] : theme.palette.common.black
-              }
-            })}
-          >
-            <Arrow />
-          </Box>
-        )}
-      </StyledLinkWrapper>
-      {info.children?.map(childInfo => (
-        <StyledLinkWrapper to={childInfo.link} key={childInfo.link}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: location.pathname === childInfo.link ? alpha(theme.palette.common.white, 0.1) : 'none',
-              width: '100%',
-              borderRadius: '4px'
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: '14px',
-                lineHeight: '25px',
-                marginLeft: '38px'
-              }}
-              variant="subtitle1"
-            >
-              {childInfo.title}
-            </Typography>
-          </Box>
+          {MenuItem}
         </StyledLinkWrapper>
-      ))}
+      )}
+
+      {isConfigurationOpen &&
+        info.children?.map(childInfo => (
+          <StyledLinkWrapper
+            to={childInfo.link}
+            key={childInfo.link}
+            active={location.pathname === childInfo.link}
+            sx={{
+              color: location.pathname === childInfo.link ? colors.primary.violet[600] : '#fff',
+              ':hover': {
+                color: location.pathname !== childInfo.link ? colors.primary.violet[400] : colors.primary.violet[600]
+              },
+              m: '21px 0'
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                borderRadius: '4px'
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: '14px',
+                  lineHeight: '25px',
+                  marginLeft: '38px',
+                  fontWeight: location.pathname === childInfo.link ? 500 : 400
+                }}
+                variant="subtitle1"
+              >
+                {childInfo.title}
+              </Typography>
+            </Box>
+          </StyledLinkWrapper>
+        ))}
     </>
   );
 }

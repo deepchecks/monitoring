@@ -1,10 +1,11 @@
 import { Box, Stack } from '@mui/material';
+import React from 'react';
 import { ConnectSlack } from '../components/ConnectSlack';
 import { PageHeader } from '../components/PageHeader';
 
-export const IntegrationsPage = function() {
+export const IntegrationsPage = function () {
   return (
-    <Box padding="0 40px">
+    <Box>
       <Stack spacing="40px">
         <PageHeader text="Integrations" />
         <ConnectSlack />

@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { ChartData } from 'chart.js';
 import { Loader } from 'components/Loader';
 import { GraphData } from 'helpers/types';
@@ -30,9 +30,9 @@ export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: Gr
       })}
     >
       <Stack direction="row" justifyContent="end">
-        <Button variant="text" size="large" startIcon={<CloseIcon />} onClick={closeDrawer}>
-          <Typography variant="body2">Close</Typography>
-        </Button>
+        <IconButton size="large" onClick={closeDrawer} sx={{ background: 'none', padding: '6px' }}>
+          <CloseIcon width={24} height={24} />
+        </IconButton>
       </Stack>
       <Box
         sx={{
