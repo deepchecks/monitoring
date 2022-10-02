@@ -1,9 +1,11 @@
 import { alpha } from '@mui/material';
-import { AlertSchema, AlertSeverity } from 'api/generated';
+import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
 import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 import dayjs from 'dayjs';
 import { Dispatch, SetStateAction } from 'react';
+import { OperatorsEnumMap } from '../helpers/conditionOperator';
+import { lightPaletteOptions } from '../theme/palette';
 
 const drawFilledRhoimbus = (
   ctx: CanvasRenderingContext2D,
@@ -96,8 +98,8 @@ export const zoomOptions: ZoomPluginOptions = {
   }
 };
 
-export const setThreshold = (threshold: number) => ({
-  id: 'setThreshold',
+export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
+  id: 'setAlertLine',
   beforeDatasetsDraw(chart: Chart<'line', number[], string>) {
     const {
       ctx,
@@ -106,11 +108,12 @@ export const setThreshold = (threshold: number) => ({
     } = chart;
 
     if (!y) return;
-    const yOffset = y.getPixelForValue(threshold);
+    const yOffset = y.getPixelForValue(alert_rule.condition.value);
 
     ctx.beginPath();
-    ctx.strokeStyle = '#17003E';
-    ctx.lineWidth = 1;
+    const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || 'medium' as AlertSeverity];
+    ctx.strokeStyle = severity_color
+    ctx.lineWidth = 2;
     ctx.setLineDash([6, 6]);
     ctx.moveTo(left, yOffset);
     ctx.lineTo(right, yOffset);
@@ -119,14 +122,13 @@ export const setThreshold = (threshold: number) => ({
     ctx.setLineDash([6, 0]);
     ctx.save();
     const angle = Math.PI / 180;
-    const text = 'critical';
     ctx.translate(0, 0);
-    ctx.font = '12px Roboto';
-    ctx.fillStyle = '#17003E';
+    ctx.font = 'bold 12px Roboto';
+    ctx.fillStyle = severity_color;
     ctx.direction = 'inherit';
     ctx.textAlign = 'center';
     ctx.rotate(270 * angle);
-    ctx.fillText(text, -yOffset, right + 10);
+    ctx.fillText(OperatorsEnumMap[alert_rule.condition.operator], -yOffset, right + 10);
     ctx.restore();
   }
 });

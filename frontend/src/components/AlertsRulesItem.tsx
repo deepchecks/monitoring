@@ -6,7 +6,7 @@ import useModels from 'hooks/useModels';
 import React, { memo, useState } from 'react';
 import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
-import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
+import { OperatorsEnumMap } from '../helpers/conditionOperator';
 import processFrequency from '../helpers/utils/processFrequency';
 import { Loader } from './Loader';
 
@@ -35,7 +35,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   const data = [
     modelsMap[model_id]?.name,
     monitor?.check?.name,
-    `value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`,
+    `value ${OperatorsEnumMap[condition.operator]} ${condition.value}`,
     monitor ? processFrequency(dayjs.duration(monitor?.frequency, 'seconds')) : undefined
   ];
 

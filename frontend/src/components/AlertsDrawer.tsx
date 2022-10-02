@@ -92,7 +92,7 @@ export const AlertsDrawer = ({ onClose, onResolve, alertRule, ...props }: Alerts
                 alertIndex: alertIndex,
                 changeAlertIndex: setAlertIndex
               }}
-              threshold={alertRule.condition?.value}
+              alert_rules={[alertRule]}
             />
             {/* eslint-enable @typescript-eslint/ban-ts-comment */}
           </StyledDiagramWrapper>

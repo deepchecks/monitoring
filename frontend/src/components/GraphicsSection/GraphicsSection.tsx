@@ -1,6 +1,7 @@
 import { IconButton, Stack, Typography } from '@mui/material';
 import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
+import { AlertRuleSchema } from 'api/generated';
 import { _DeepPartialObject } from 'chart.js/types/utils.js';
 import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -92,7 +93,6 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
   const tooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = {
     label: (context: TooltipItem<'line'>) => `${getTime(context.label)} | Model Version ${context.dataset.label?.split(':')[0]}`
   };
-
   return (
     <>
       <StyledFlexContent onMouseOver={onMouseOver} onMouseLeave={onMouseLeave}>
@@ -143,7 +143,7 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
           )}
         </StyledInfo>
         <StyledDiagramWrapper>
-          <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} />
+          <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} alert_rules={monitor.alert_rules} />
         </StyledDiagramWrapper>
       </StyledFlexContent>
       <StyledRootMenu

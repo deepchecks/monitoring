@@ -1,5 +1,5 @@
 import { alpha, Stack, useTheme } from '@mui/material';
-import { AlertSchema, AlertSeverity } from 'api/generated';
+import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
 import {
   Chart,
   ChartArea,
@@ -22,7 +22,7 @@ import {
   drawCircle,
   minimapPanorama,
   OriginalMinMax,
-  setThreshold
+  setAlertLine
 } from '../helpers/diagramLine';
 import { GraphData } from '../helpers/types';
 import { colors } from '../theme/colors';
@@ -75,7 +75,7 @@ interface IMinimap {
 
 export interface DiagramLineProps {
   data: ChartData<'line', GraphData>;
-  threshold?: number;
+  alert_rules?: Array<AlertRuleSchema>;
   height?: number;
   minTimeUnit?: TimeUnit;
   isLoading?: boolean;
@@ -103,7 +103,7 @@ const initMinimap: IMinimap = {
 function DiagramLine({
   data,
   height,
-  threshold = 0,
+  alert_rules = [],
   minTimeUnit = 'day',
   isLoading,
   minimap = initMinimap,
@@ -181,8 +181,8 @@ function DiagramLine({
       currentPlugins.push(minimapPanorama(onChange));
     }
 
-    if (threshold) {
-      currentPlugins.push(setThreshold(threshold));
+    if (alert_rules.length) {
+      alert_rules.forEach(alert_rule => currentPlugins.push(setAlertLine(alert_rule)));
     }
 
     return currentPlugins;
@@ -196,7 +196,7 @@ function DiagramLine({
     },
     layout: {
       padding: {
-        right: threshold ? 15 : 0,
+        right: alert_rules.length ? 15 : 0,
         top: alerts.length ? 40 : 0
       }
     },

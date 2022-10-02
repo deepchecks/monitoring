@@ -1,7 +1,9 @@
-export enum ConditionOperator {
-  greater_than_equals = 'greater_than_equals'
-}
-
-export const conditionOperatorMap = {
-  greater_than_equals: '>'
+export const OperatorsEnumMap = {
+  greater_than_equals: '>=',
+  greater_than: '>',
+  less_than_equals: '<=>',
+  less_than: '<',
+  contains: 'contains',
+  equals: '==',
+  not_equals: '!='
 };

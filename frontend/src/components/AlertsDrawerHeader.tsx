@@ -23,7 +23,7 @@ import {
   useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost
 } from '../api/generated';
 import { Checkmark, CloseIcon, TestTube } from '../assets/icon/icon';
-import { ConditionOperator, conditionOperatorMap } from '../helpers/conditionOperator';
+import { OperatorsEnumMap } from '../helpers/conditionOperator';
 import processFrequency from '../helpers/utils/processFrequency';
 
 interface AlertsDrawerHeaderProps {
@@ -155,7 +155,7 @@ export const AlertsDrawerHeader = ({
             <Box>
               <Typography variant="h4">{monitor?.name} Alert</Typography>
               <Typography variant="body1" marginTop="8px">
-                {`Rule: Value ${conditionOperatorMap[condition.operator as ConditionOperator]} ${condition.value}`}
+                {`Rule: Value ${OperatorsEnumMap[condition.operator]} ${condition.value}`}
               </Typography>
             </Box>
           </Stack>
