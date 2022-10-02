@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useMemo, createContext, useContext } from 'react';
+import { ChartData } from 'chart.js';
+import { parseDataForChart } from 'helpers/utils/parseDataForChart';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   getGetDashboardApiV1DashboardsGetQueryKey,
   MonitorSchema,
   runMonitorLookbackApiV1MonitorsMonitorIdRunPost,
   useGetDashboardApiV1DashboardsGet
 } from '../api/generated';
-import { ChartData } from 'chart.js';
 import useModels from './useModels';
-import { parseDataForChart } from 'helpers/utils/parseDataForChart';
 
 type MonitorId = MonitorSchema['id'];
 
@@ -73,7 +73,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
   };
 
   useEffect(() => {
-    monitors.map(monitor => fetchMonitor(monitor));
+    monitors.sort((a, b) => a.check.model_id - b.check.model_id).map(monitor => fetchMonitor(monitor));
   }, [dashboards, modelsMap]);
 
   const chartDataList = useMemo(

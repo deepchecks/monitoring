@@ -1,20 +1,23 @@
 import { Box, Button, List, Typography } from '@mui/material';
 import { ModelsInfoSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
-import React, { useEffect, useState } from 'react';
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { Loader } from './Loader';
 import { ModelItem } from './ModelItem/ModelItem';
 import { SearchField } from './SearchField';
 
 interface ModelListProps {
+  filterMonitors: Dispatch<SetStateAction<number | null>>;
   models: ModelsInfoSchema[];
+  modelsMap: Record<number, ModelsInfoSchema>;
 }
 
 const initRange = 3;
 
-export function ModelList({ models }: ModelListProps) {
+export function ModelList({ filterMonitors, models, modelsMap }: ModelListProps) {
   const [range, setRange] = useState<number>(initRange);
 
   const [filteredModels, setFilteredModels] = useState(models);
+  const [reset, setReset] = useState<boolean>(false);
 
   const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
     severity: ['critical']
@@ -27,16 +30,25 @@ export function ModelList({ models }: ModelListProps) {
   };
 
   const handleRange = () => {
-    setRange(prevRange => {
-      const currentRange = prevRange + initRange;
+    if (reset) {
+      setFilteredModels(models);
+      setRange(initRange);
+      filterMonitors(null);
+      setReset(false);
+      return;
+    }
 
-      if (currentRange < filteredModels.length) {
-        return currentRange;
-      }
-
-      return filteredModels.length;
-    });
+    setRange(filteredModels.length);
   };
+
+  const sortModels = useCallback(
+    (models: ModelsInfoSchema[]) => {
+      setRange(1);
+      setFilteredModels(models);
+      setReset(true);
+    },
+    [setRange, setFilteredModels]
+  );
 
   useEffect(() => {
     setFilteredModels(models);
@@ -80,6 +92,7 @@ export function ModelList({ models }: ModelListProps) {
           {filteredModels.slice(0, range).map((model, index) => (
             <ModelItem
               key={index}
+              filterMonitors={filterMonitors}
               alertsCount={criticalAlerts.reduce((acc, alert) => {
                 let currentAlertCount = acc;
                 if (alert.model_id === model.id && alert.alerts_count) {
@@ -89,6 +102,8 @@ export function ModelList({ models }: ModelListProps) {
                 return currentAlertCount;
               }, 0)}
               model={model}
+              modelsMap={modelsMap}
+              sortModels={sortModels}
             />
           ))}
           {range < filteredModels.length && (

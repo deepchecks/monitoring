@@ -1,4 +1,4 @@
-import { IconButton, Typography } from '@mui/material';
+import { IconButton, Stack, Typography } from '@mui/material';
 import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
 import { _DeepPartialObject } from 'chart.js/types/utils.js';
@@ -19,13 +19,14 @@ import {
 
 interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
+  isBlack: boolean;
   monitor: MonitorSchema;
   onOpen: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
   onDelete: (monitor: MonitorSchema) => void;
   models: GetModelsApiV1ModelsGetQueryResult;
 }
 
-function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: GraphicsSectionProps) {
+function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDelete }: GraphicsSectionProps) {
   const [hover, setHover] = useState<boolean>(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<null | HTMLElement>(null);
   const [openSubmenu, setOpenSubmenu] = useState<boolean>(false);
@@ -41,13 +42,13 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
   const modelName = useMemo(() => {
     let name;
     models.forEach(model => {
-      if (model.id === monitor.check.model_id) {
+      if (model.id === monitor?.check?.model_id) {
         name = model.name;
       }
     });
 
     return name;
-  }, [models, monitor.check.model_id]);
+  }, [models, monitor?.check?.model_id]);
 
   useEffect(() => {
     setHover(true);
@@ -97,9 +98,28 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
           )}
         </StyledFlexWrapper>
         <StyledInfo>
-          <Typography variant="subtitle2">Model: {modelName}</Typography>
+          <Stack direction="row">
+            <Typography variant="subtitle2">Model:</Typography>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 700,
+                color: theme => (isBlack ? theme.palette.grey[300] : theme.palette.text.primary),
+                ml: '4px'
+              }}
+            >
+              {modelName}
+            </Typography>
+          </Stack>
+
           <StyledDivider orientation="vertical" flexItem />
-          <Typography variant="subtitle2">Check: {monitor.check.name}</Typography>
+          <Stack direction="row">
+            <Typography variant="subtitle2">Check:</Typography>
+            <Typography variant="subtitle2" ml="4px">
+              {monitor.check.name}
+            </Typography>
+          </Stack>
+
           {monitor.data_filters ? (
             <>
               <StyledDivider orientation="vertical" flexItem />

@@ -8,20 +8,23 @@ import MonitorDrawer, { DrawerNames, DrawerNamesMap } from '../components/Monito
 import { Grid } from '@mui/material';
 import { DataIngestion } from 'components/DataIngestion/DataIngestion';
 import DeleteMonitor from 'components/MonitorDrawer/MonitorForm/DeleteMonitor';
+import useModels from 'hooks/useModels';
 import {
   MonitorSchema,
-  useDeleteMonitorApiV1MonitorsMonitorIdDelete,
-  useGetModelsApiV1ModelsGet
+  useDeleteMonitorApiV1MonitorsMonitorIdDelete
 } from '../api/generated';
 import useMonitorsData from '../hooks/useMonitorsData';
 
 export const DashboardPage = () => {
-  const { data: models = [] } = useGetModelsApiV1ModelsGet();
+  const { models, modelsMap } = useModels();
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState<boolean>(false);
   const [currMonitor, setCurrMonitor] = useState<MonitorSchema>();
   const [drawerName, setDrawerName] = useState<DrawerNames>(DrawerNamesMap.CreateMonitor);
   const { monitors, chartDataList, refreshMonitors } = useMonitorsData();
+  const [currentModelId, setCurrentModelId] = useState<number | null>(null);
+  let prevModelId = -1;
+  let isBlack = true;
 
   const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
     if (monitor) {
@@ -35,7 +38,8 @@ export const DashboardPage = () => {
     setCurrMonitor(undefined);
     setIsDrawerOpen(false);
   };
-  const { mutateAsync: DeleteMonitorById, isLoading } = useDeleteMonitorApiV1MonitorsMonitorIdDelete();
+  const { mutateAsync: DeleteMonitorById, isLoading: isDeleteMonitorLoading } =
+    useDeleteMonitorApiV1MonitorsMonitorIdDelete();
 
   const handleOpenDeleteMonitorDialog = (monitor: MonitorSchema) => {
     setCurrMonitor(monitor);
@@ -52,7 +56,7 @@ export const DashboardPage = () => {
     refreshMonitors();
   };
 
-  if (!monitors) return <Loader />;
+  const isLoading = !monitors || isDeleteMonitorLoading;
 
   return (
     <>
@@ -60,9 +64,9 @@ export const DashboardPage = () => {
       {isLoading ? (
         <Loader />
       ) : (
-        <Grid container spacing={4}>
+        <Grid container spacing={4} pb={4}>
           <Grid item lg={5} md={4}>
-            <ModelList models={models} />
+            <ModelList models={models} modelsMap={modelsMap} filterMonitors={setCurrentModelId} />
           </Grid>
           <Grid item lg={7} md={8}>
             <DataIngestion />
@@ -70,17 +74,32 @@ export const DashboardPage = () => {
           {!chartDataList.length ? (
             <Loader sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
           ) : (
-            chartDataList.map((chartData, index) => (
-              <Grid item md={6} lg={6} xl={4} key={index}>
-                <GraphicsSection
-                  data={chartData as any}
-                  monitor={monitors[index]}
-                  onOpen={handleOpenMonitorDrawer}
-                  onDelete={handleOpenDeleteMonitorDialog}
-                  models={models}
-                />
-              </Grid>
-            ))
+            chartDataList.map((chartData, index) => {
+              const modelId = monitors[index].check.model_id;
+
+              if (typeof currentModelId === 'number' && modelId !== currentModelId) {
+                return null;
+              }
+              const toggle = prevModelId === modelId;
+              prevModelId = modelId;
+
+              if (!toggle) {
+                isBlack = !isBlack;
+              }
+
+              return (
+                <Grid item md={6} lg={6} xl={4} key={index}>
+                  <GraphicsSection
+                    data={chartData as any}
+                    isBlack={isBlack}
+                    monitor={monitors[index]}
+                    onOpen={handleOpenMonitorDrawer}
+                    onDelete={handleOpenDeleteMonitorDialog}
+                    models={models}
+                  />
+                </Grid>
+              );
+            })
           )}
           {currMonitor && (
             <DeleteMonitor

@@ -41,5 +41,6 @@ export const StyledAlert = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: alpha(theme.palette.error.main, 0.1),
-  borderRadius: '20px'
+  borderRadius: '20px',
+  cursor: 'pointer'
 }));
