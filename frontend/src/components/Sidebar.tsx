@@ -1,6 +1,7 @@
 import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
 import { UserInvite } from 'assets/icon/icon';
 import React, { useState } from 'react';
+import { colors } from 'theme/colors';
 import { PathInfo, pathsInfo } from '../helpers/helper';
 import useWindowResize from '../hooks/windowResize';
 import { Logo } from './Logo';
@@ -40,25 +41,42 @@ export const Sidebar = () => {
         left: 0,
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#17003E',
+        background: colors.primary.violet[600],
         width: '237px',
         height: '100vh'
       }}
     >
-      <Box sx={{ height: 1, width: 1, overflow: 'auto' }}>
-        <Box sx={{ width: 1, height: 0.7 }}>
-          <Box sx={{ position: 'sticky', top: 0 }}>
+      <Box
+        sx={{
+          height: 1,
+          width: 1,
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}
+      >
+        <Box>
+          <Box
+            sx={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 3,
+              background: colors.primary.violet[600],
+              paddingBottom: '20px'
+            }}
+          >
             <Logo />
           </Box>
 
-          <Box sx={{ mt: '60px', pl: '14px' }}>
+          <Box sx={{ mt: '40px', pl: '14px' }}>
             {pathsInfo.map((info: PathInfo) => (
               <SidebarMenuItem key={info.link} info={info} width={width} />
             ))}
           </Box>
         </Box>
 
-        <Box sx={{ width: 1, height: 0.3, padding: '0 30px' }}>
+        <Box sx={{ padding: '50px 30px 90px' }}>
           <StyledButton onClick={handleInviteToOrgClick} startIcon={<UserInvite />}>
             <Typography
               sx={{
