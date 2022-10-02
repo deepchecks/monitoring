@@ -6,8 +6,9 @@ import {
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from 'api/generated';
 import { ChartData } from 'chart.js';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
+import CreateAlert from './AlertForm/CreateAlert';
 import { GraphView } from './GraphView';
 import { CreateMonitor } from './MonitorForm/CreateMonitor';
 import EditMonitor from './MonitorForm/EditMonitor';
@@ -34,12 +35,21 @@ export interface LookbackCheckProps {
   };
 }
 
+export enum DrawerNamesMap {
+  CreateMonitor = 'new monitor',
+  CreateAlert = 'new alert',
+  EditMonitor = 'edit monitor'
+}
+
+export type DrawerNames = DrawerNamesMap.CreateMonitor | DrawerNamesMap.CreateAlert | DrawerNamesMap.EditMonitor;
+
 interface MonitorDrawerProps extends DrawerProps {
   monitor?: MonitorSchema;
+  drawerName: DrawerNames;
   onClose: () => void;
 }
 
-function MonitorDrawer({ monitor, onClose, ...props }: MonitorDrawerProps) {
+function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawerProps) {
   const [graphData, setGraphData] = useState<ChartData<'line'>>();
   const [resetMonitor, setResetMonitor] = useState<boolean>(false);
 
@@ -65,10 +75,23 @@ function MonitorDrawer({ monitor, onClose, ...props }: MonitorDrawerProps) {
     }
   };
 
-  return (
-    <Drawer {...props}>
-      <StyledStackWrapper direction="row">
-        {monitor ? (
+  const Content = useMemo(() => {
+    switch (drawerName) {
+      case DrawerNamesMap.CreateAlert:
+        return monitor ? (
+          <CreateAlert monitor={monitor} onClose={handleOnClose} runCheckLookback={handleLookback} />
+        ) : null;
+      case DrawerNamesMap.CreateMonitor:
+        return (
+          <CreateMonitor
+            onClose={handleOnClose}
+            runCheckLookback={handleLookback}
+            resetMonitor={resetMonitor}
+            setResetMonitor={setResetMonitor}
+          />
+        );
+      case DrawerNamesMap.EditMonitor:
+        return monitor ? (
           <EditMonitor
             onClose={handleOnClose}
             runCheckLookback={handleLookback}
@@ -76,14 +99,23 @@ function MonitorDrawer({ monitor, onClose, ...props }: MonitorDrawerProps) {
             resetMonitor={resetMonitor}
             setResetMonitor={setResetMonitor}
           />
-        ) : (
+        ) : null;
+      default:
+        return (
           <CreateMonitor
             onClose={handleOnClose}
             runCheckLookback={handleLookback}
             resetMonitor={resetMonitor}
             setResetMonitor={setResetMonitor}
           />
-        )}
+        );
+    }
+  }, [drawerName]);
+
+  return (
+    <Drawer {...props}>
+      <StyledStackWrapper direction="row">
+        {Content}
         <GraphView
           onClose={handleOnClose}
           isLoading={isRunCheckLoading}

@@ -1,28 +1,26 @@
-import React, { memo, useState, useMemo, useEffect } from 'react';
-import { IconButton, Stack, Typography } from '@mui/material';
+import { IconButton, Typography } from '@mui/material';
+import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
-import { MenuVertical } from '../../assets/icon/icon.js';
+import { _DeepPartialObject } from 'chart.js/types/utils.js';
+import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer';
+import React, { useEffect, useMemo, useState } from 'react';
+import { MenuVertical } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
-import { Submenu } from '../Submenu';
-import { ID } from '../../helpers/types';
 import {
-  StyledArrow,
   StyledDiagramWrapper,
+  StyledDivider,
   StyledFlexContent,
   StyledFlexWrapper,
+  StyledInfo,
   StyledMenuItem,
   StyledRootMenu,
-  StyledTypographyTitle,
-  StyledDivider,
-  StyledInfo
+  StyledTypographyTitle
 } from './GraphicsSection.style';
-import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
-import { _DeepPartialObject } from 'chart.js/types/utils.js';
 
 interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
   monitor: MonitorSchema;
-  onOpen: (monitor?: MonitorSchema) => void;
+  onOpen: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
   onDelete: (monitor: MonitorSchema) => void;
   models: GetModelsApiV1ModelsGetQueryResult;
 }
@@ -73,10 +71,11 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
     setOpenSubmenu(true);
   };
 
-  const handleOpenEditMonitor = () => {
-    onOpen(monitor);
+  const handleOpenMonitor = (drawerName: DrawerNames) => () => {
+    onOpen(drawerName, monitor);
     setAnchorElRootMenu(null);
   };
+
   const handleOpenDeleteMonitor = () => {
     onDelete(monitor);
     setAnchorElRootMenu(null);
@@ -136,29 +135,15 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
           horizontal: 'right'
         }}
       >
-        <StyledMenuItem onClick={handleOpenEditMonitor}>
-          <Typography variant="body2">Edit</Typography>
+        <StyledMenuItem onClick={handleOpenMonitor(DrawerNamesMap.CreateAlert)}>
+          <Typography variant="body2">Create alert</Typography>
+        </StyledMenuItem>
+        <StyledMenuItem onClick={handleOpenMonitor(DrawerNamesMap.EditMonitor)}>
+          <Typography variant="body2">Edit Monitor</Typography>
         </StyledMenuItem>
         <StyledMenuItem onClick={handleOpenDeleteMonitor}>
-          <Typography variant="body2">Delete</Typography>
+          <Typography variant="body2">Delete Monitor</Typography>
         </StyledMenuItem>
-        {/* <StyledMenuItem onClick={handleOpenSubmenu}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" width={1}>
-            <Typography variant="body2">Change width</Typography>
-            <StyledArrow fill="black" />
-          </Stack>
-          <Submenu open={openSubmenu}>
-            <StyledMenuItem onClick={handleCloseRootMenu}>
-              <Typography variant="body2">One Columns</Typography>
-            </StyledMenuItem>
-            <StyledMenuItem onClick={handleCloseRootMenu}>
-              <Typography variant="body2">TwoColumns</Typography>
-            </StyledMenuItem>
-            <StyledMenuItem onClick={handleCloseRootMenu}>
-              <Typography variant="body2">ThreeColumns</Typography>
-            </StyledMenuItem>
-          </Submenu>
-        </StyledMenuItem> */}
       </StyledRootMenu>
     </>
   );

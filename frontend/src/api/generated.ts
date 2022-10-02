@@ -4,17 +4,17 @@
  * Enterprise Deepchecks Monitoring
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery, useMutation } from '@tanstack/react-query';
 import type {
-  UseQueryOptions,
-  UseMutationOptions,
-  QueryFunction,
   MutationFunction,
-  UseQueryResult,
-  QueryKey
+  QueryFunction,
+  QueryKey,
+  UseMutationOptions,
+  UseQueryOptions,
+  UseQueryResult
 } from '@tanstack/react-query';
-import { customInstance } from '../services/customAxios';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ErrorType } from '../services/customAxios';
+import { customInstance } from '../services/customAxios';
 export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error?: string; state?: string };
 
 export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: ColumnMetadata };
@@ -3496,10 +3496,6 @@ codeflow:
 4. Generate redirection URL
 5. Set 'installation state' cookie
 6. Redirect user to slack authorization page.
-
-NOTE:
-current implementation is not complete,
-currently we do not have authorization subsystem (point 2)
 
 Slack authorization URL description:
 https://slack.com/oauth/v2/authorize?state=&client_id=&scope=&user_scope=

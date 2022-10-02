@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { GraphicsSection } from '../components/GraphicsSection/GraphicsSection';
-import { ModelList } from '../components/ModelList';
-import MonitorDrawer from '../components/MonitorDrawer/MonitorDrawer';
 import { DashboardHeader } from '../components/DashboardHeader';
+import { GraphicsSection } from '../components/GraphicsSection/GraphicsSection';
 import { Loader } from '../components/Loader';
+import { ModelList } from '../components/ModelList';
+import MonitorDrawer, { DrawerNames, DrawerNamesMap } from '../components/MonitorDrawer/MonitorDrawer';
 
+import { Grid } from '@mui/material';
+import { DataIngestion } from 'components/DataIngestion/DataIngestion';
+import DeleteMonitor from 'components/MonitorDrawer/MonitorForm/DeleteMonitor';
 import {
   MonitorSchema,
   useDeleteMonitorApiV1MonitorsMonitorIdDelete,
   useGetModelsApiV1ModelsGet
 } from '../api/generated';
-import { Grid } from '@mui/material';
-import { DataIngestion } from 'components/DataIngestion/DataIngestion';
 import useMonitorsData from '../hooks/useMonitorsData';
-import DeleteMonitor from 'components/MonitorDrawer/MonitorForm/DeleteMonitor';
 
 export const DashboardPage = () => {
   const { data: models = [] } = useGetModelsApiV1ModelsGet();
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState<boolean>(false);
   const [currMonitor, setCurrMonitor] = useState<MonitorSchema>();
+  const [drawerName, setDrawerName] = useState<DrawerNames>(DrawerNamesMap.CreateMonitor);
   const { monitors, chartDataList, refreshMonitors } = useMonitorsData();
 
-  const handleOpenMonitorDrawer = (monitor?: MonitorSchema) => {
+  const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
     if (monitor) {
       setCurrMonitor(monitor);
     }
+    setDrawerName(drawerName);
     setIsDrawerOpen(true);
   };
 
@@ -88,7 +90,13 @@ export const DashboardPage = () => {
               monitor={currMonitor}
             />
           )}
-          <MonitorDrawer monitor={currMonitor} anchor="right" open={isDrawerOpen} onClose={handleCloseMonitor} />
+          <MonitorDrawer
+            anchor="right"
+            monitor={currMonitor}
+            drawerName={drawerName}
+            open={isDrawerOpen}
+            onClose={handleCloseMonitor}
+          />
         </Grid>
       )}
     </>

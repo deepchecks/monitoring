@@ -3,9 +3,10 @@ import React from 'react';
 import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
 import { PlusIcon } from '../assets/icon/icon';
 import { AlertCount, SEVERITY } from './AlertCount';
+import { DrawerNames, DrawerNamesMap } from './MonitorDrawer/MonitorDrawer';
 
 interface DashboardHeaderProps {
-  onOpen: () => void;
+  onOpen: (monitorName: DrawerNames) => void;
 }
 
 export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
@@ -52,7 +53,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
               width: '1px'
             }}
           />
-          <Box onClick={() => onOpen()}>
+          <Box onClick={() => onOpen(DrawerNamesMap.CreateMonitor)}>
             <Button
               sx={{
                 textTransform: 'none',
