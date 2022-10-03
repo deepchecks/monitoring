@@ -13,7 +13,6 @@ import click
 import uvicorn
 from sqlalchemy import create_engine
 
-from deepchecks_monitoring.bgtasks.task import Base as TasksBase
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models.base import Base
 
@@ -30,7 +29,6 @@ def initdb():
     settings = Settings()  # type: ignore
     engine = create_engine(str(settings.database_uri), echo=True)
     Base.metadata.create_all(engine)
-    TasksBase.metadata.create_all(engine)
     engine.dispose()
 
 

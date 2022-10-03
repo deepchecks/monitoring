@@ -20,9 +20,9 @@ import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
-from deepchecks_monitoring.bgtasks.task import Actor, ExecutionStrategy, Worker, actor
+from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
@@ -43,48 +43,39 @@ async def execute_monitor(
     session: AsyncSession,
     logger: t.Optional[logging.Logger] = None,
     **kwargs  # pylint: disable=unused-argument
-):
-    """Execute alert rule."""
-    logger = logger or logging.getLogger("execute_monitor")
+) -> t.List[Alert]:
+    """Execute monitor alert rules."""
+    logger = logger or logging.getLogger("monitor-executor")
+    logger.info("Execution of Monitor(id:%s) for timestamp %s", monitor_id, timestamp)
 
-    logger.info(
-        "Executiong Monitor(id:%s) for timestamp %s",
-        monitor_id,
-        timestamp
-    )
     monitor = t.cast(Monitor, await session.scalar(
         sa.select(Monitor)
         .where(Monitor.id == monitor_id)
-        .options(joinedload(Monitor.check)),
+        .options(
+            joinedload(Monitor.check),
+            selectinload(Monitor.alert_rules)
+        )
     ))
-    check = monitor.check
 
     if monitor is None:
         raise ValueError(f"Did not find monitor with the id {monitor_id}")
 
-    alert_rules = t.cast(t.List[AlertRule], (await session.execute(
-        sa.select(AlertRule)
-        .where(AlertRule.monitor_id == monitor_id)
-    )).scalars().all())
+    check = monitor.check
+    alert_rules = monitor.alert_rules
 
     if len(alert_rules) == 0:
-        raise ValueError(f"Did not find alert rules for monitor {monitor_id}")
-
-    alerts = []
+        logger.info("Monitor(id:%s) does not have alert rules", monitor_id)
+        return []
 
     # round end/start times to monitor intervals
-    end_time = pdl.parser.parse(timestamp)
     start_time, _, frequency = get_time_ranges_for_monitor(
-        lookback=monitor.frequency, frequency=monitor.frequency, end_time=end_time)
+        lookback=monitor.frequency,
+        frequency=monitor.frequency,
+        end_time=pdl.parser.parse(timestamp)
+    )
+
     end_time = start_time + frequency
     start_time = end_time - pdl.duration(seconds=monitor.aggregation_window)
-
-    monitor_options = MonitorOptions(
-        additional_kwargs=monitor.additional_kwargs,
-        start_time=start_time.isoformat(),
-        end_time=end_time.isoformat(),
-        filter=t.cast(DataFilterList, monitor.data_filters)
-    )
 
     model_versions = t.cast(t.List[ModelVersion], (await session.scalars(
         sa.select(ModelVersion)
@@ -96,31 +87,42 @@ async def execute_monitor(
 
     if not model_versions:
         logger.info("Model(id:%s) is empty (does not have versions)", check.model_id)
-        return
+        return []
 
-    model = model_versions[0].model
+    check_results = await run_check_window(
+        check,
+        monitor_options=MonitorOptions(
+            additional_kwargs=monitor.additional_kwargs,
+            start_time=start_time.isoformat(),
+            end_time=end_time.isoformat(),
+            filter=t.cast(DataFilterList, monitor.data_filters)
+        ),
+        session=session,
+        model=model_versions[0].model,
+        model_versions=model_versions
+    )
 
-    check_results = await run_check_window(check, monitor_options, session, model, model_versions)
-    logger.info("Check execution result: %s", check_results)
+    logger.debug("Check execution result: %s", check_results)
     check_results = {k: v for k, v in check_results.items() if v is not None}
+    alerts = []
 
     for alert_rule in alert_rules:
         if not alert_rule.is_active:
-            logger.info("AlertRule(id:%s) is not active", alert_rule.id)
-            continue
-
-        if alert := assert_check_results(alert_rule, check_results):
+            logger.info("AlertRule(id:%s) is not active, skipping it", alert_rule.id)
+        elif alert := assert_check_results(alert_rule, check_results):
             alert.start_time = start_time
             alert.end_time = end_time
             session.add(alert)
             await session.commit()
-            logger.info("Alert instance created for monitor(id:%s)", monitor.id)
+            logger.info("Alert(id:%s) instance created for monitor(id:%s)", alert.id, monitor.id)
             alerts.append(alert)
 
-    if len(alerts) > 0:
+    if (n_of_alerts := len(alerts)) > 0:
+        logger.info("%s alerts raised for Monitor(id:%s)", n_of_alerts, monitor.id)
         return alerts
 
-    logger.info("No alerts instances were created for monitor(id:%s)", monitor.id)
+    logger.info("No alerts were raised for Monitor(id:%s)", monitor.id)
+    return []
 
 
 def assert_check_results(
@@ -161,7 +163,7 @@ def assert_check_results(
 class WorkerSettings(DatabaseSettings):
     """Set of worker settings."""
 
-    worker_logfile: t.Optional[str] = None  # scheduler.log
+    worker_logfile: t.Optional[str] = None
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
@@ -178,6 +180,7 @@ class WorkerBootstrap:
 
     resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]] = ResourcesProvider
     settings_type: t.ClassVar[t.Type[WorkerSettings]] = WorkerSettings
+    task_broker_type: t.ClassVar[t.Type[TasksBroker]] = TasksBroker
     actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor]
 
     async def run(self):
@@ -203,8 +206,9 @@ class WorkerBootstrap:
 
         async with self.resources_provider_type(settings) as rp:
             async with anyio.create_task_group() as g:
-                g.start_soon(Worker(
+                g.start_soon(Worker.create(
                     engine=rp.async_database_engine,
+                    task_broker_type=self.task_broker_type,
                     actors=self.actors,
                     additional_params={"resources_provider": rp},
                     logger=logger

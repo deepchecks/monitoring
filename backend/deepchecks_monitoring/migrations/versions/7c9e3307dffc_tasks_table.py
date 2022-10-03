@@ -18,7 +18,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-from deepchecks_monitoring.bgtasks.task import PGTaskNotificationFunc, PGTaskNotificationTrigger
+from deepchecks_monitoring.bgtasks.core import PGTaskNotificationFunc, PGTaskNotificationTrigger
 
 # revision identifiers, used by Alembic.
 revision = '7c9e3307dffc'

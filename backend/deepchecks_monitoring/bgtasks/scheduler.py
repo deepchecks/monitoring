@@ -24,7 +24,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Executable
 
-from deepchecks_monitoring.bgtasks.task import Task
+from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import TimeUnit
@@ -32,6 +32,7 @@ from deepchecks_monitoring.utils import TimeUnit
 __all__ = ["AlertsScheduler"]
 
 
+# TODO: rename to MonitorScheduler
 class AlertsScheduler:
     """Alerts scheduler."""
 
@@ -49,11 +50,11 @@ class AlertsScheduler:
         """Start alert scheduler."""
         # TODO: add retry logic in case of database connection lose
         engine = self.engine.execution_options(isolation_level="REPEATABLE READ")
+        s = self.sleep_seconds
         try:
             while True:
                 async with engine.connect() as connection:
                     await self.enqueue_tasks(connection)
-                s = self.sleep_seconds
                 self.logger.info(f"Sleep for the next {s} seconds")
                 await asyncio.sleep(s)
         except anyio.get_cancelled_exc_class():
@@ -68,10 +69,7 @@ class AlertsScheduler:
 
     async def enqueue_tasks(self, connection: AsyncConnection):
         """Enqueue alert-rules execution tasks."""
-        await self.try_enqueue_tasks(
-            connection=connection,
-            statement=EnqueueTasks
-        )
+        await self.try_enqueue_tasks(connection=connection, statement=EnqueueTasks)
 
     async def try_enqueue_tasks(
         self,
@@ -80,16 +78,16 @@ class AlertsScheduler:
         max_attempts: int = 3,
         delay: int = TimeUnit.SECOND * 2
     ) -> t.Optional[t.List[Task]]:
-        """Try enqueue alert rule execution tasks."""
+        """Try enqueue monitor execution tasks."""
         attempts = 0
         max_attempts = 3
         delay = 2  # seconds
         while True:
             try:
                 async with connection.begin():
-                    self.logger.info("Looking for alert rules to enqueue for execution")
+                    self.logger.info("Looking for monitors to enqueue for execution")
                     tasks = t.cast(t.List[Task], (await connection.execute(statement)).all())
-                    self.logger.info(f"Enqueued {len(tasks)} new tasks")
+                    self.logger.info(f"Enqueued {len(tasks)} new task(s)")
                     return tasks
             except (SerializationError, DBAPIError) as error:
                 # NOTE:
@@ -98,7 +96,7 @@ class AlertsScheduler:
                 # If it occurs then we want to repeat query
                 attempts += 1
                 if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                    self.logger.exception("Alert rules enqueue failed")
+                    self.logger.exception("Monitor(s) enqueue failed")
                     raise
                 if attempts > max_attempts:
                     self.logger.warning(f"Max number of attemts reached {max_attempts}")
@@ -135,7 +133,7 @@ EnqueueTasks = sa.text(dedent("""
                 id AS monitor_id,
                 GENERATE_SERIES(info.last_scheduling, NOW(), info.frequency) AS timestamp
             FROM
-                monitors as ar,
+                monitors,
                 LATERAL (
                     SELECT
                         (frequency || ' seconds')::INTERVAL AS frequency,
@@ -153,7 +151,7 @@ EnqueueTasks = sa.text(dedent("""
             FROM scheduling_series
             GROUP BY monitor_id
         ),
-        updated_rules AS (
+        updated_monitors AS (
             UPDATE monitors
             SET latest_schedule = latest_schedule.timestamp
             FROM latest_schedule
@@ -167,7 +165,7 @@ EnqueueTasks = sa.text(dedent("""
                     'monitors',
                     JSONB_BUILD_OBJECT('monitor_id', monitor_id, 'timestamp', timestamp),
                     1,
-                    'Alert rule execution task',
+                    'Monitor alert rules execution task',
                     'Monitor:' || monitor_id,
                     timestamp
                 FROM scheduling_series
@@ -189,7 +187,7 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
     class Settings(DatabaseSettings):
         scheduler_sleep_seconds: int = 30
-        scheduler_logfile: t.Optional[str] = None  # "scheduler.log"
+        scheduler_logfile: t.Optional[str] = None
         scheduler_loglevel: str = "INFO"
         scheduler_logfile_maxsize: int = 10000000  # 10MB
         scheduler_logfile_backup_count: int = 3

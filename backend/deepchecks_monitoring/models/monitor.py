@@ -29,9 +29,8 @@ class Monitor(Base):
     """ORM model for the monitor."""
 
     __tablename__ = "monitors"
-    __table_args__ = (
-        sa.CheckConstraint("frequency >= 0"),
-    )
+    __table_args__ = (sa.CheckConstraint("frequency > 0", name="only_positive_frequency"),)
+
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(50))
     description = sa.Column(sa.String(200), default="")

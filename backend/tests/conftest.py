@@ -39,7 +39,7 @@ from client.deepchecks_client.core.client import DeepchecksClient
 from client.deepchecks_client.core.utils import maybe_raise
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
 from deepchecks_monitoring.app import create_application
-from deepchecks_monitoring.bgtasks.task import Base as TasksBase
+from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity

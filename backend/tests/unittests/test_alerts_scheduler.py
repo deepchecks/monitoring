@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 import typing as t
 from datetime import timedelta
+from random import random
 
 import anyio
 import pendulum as pdl
@@ -16,8 +17,8 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from deepchecks_monitoring.bgtasks.core import Task, TaskStatus
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, EnqueueTasks
-from deepchecks_monitoring.bgtasks.task import Task, TaskStatus
 from deepchecks_monitoring.models.monitor import Monitor
 from tests.conftest import add_monitor
 
@@ -36,10 +37,11 @@ async def schedule_tasks(delay, async_engine) -> t.List[Task]:
 @pytest.mark.asyncio
 async def test_alert_rules_scheduler_query(classification_model_check_id, client, async_engine: AsyncEngine):
     # == Prepare
-    monitor_id = add_monitor(classification_model_check_id, client, lookback=3600 * 3,
-                             name="Test alert",
-                             frequency=5,  # seconds
-                             )
+    monitor_id = add_monitor(
+        classification_model_check_id, client, lookback=3600 * 3,
+        name="Test alert",
+        frequency=5,  # seconds
+    )
     async with async_engine.connect() as c:
         monitor = (await c.execute(
             sa.select(Monitor)
@@ -55,11 +57,18 @@ async def test_alert_rules_scheduler_query(classification_model_check_id, client
 
 @ pytest.mark.asyncio
 async def test_alert_rules_scheduler(classification_model_check_id, client, async_engine: AsyncEngine):
+    # TODO:
+    # looks like this test was modified by someone in an improper way,
+    # it should use `AlertsScheduler` directly and not `EnqueueTasks` query to
+    # enqueue tasks
+
     # == Prepare
-    monitor_id = add_monitor(classification_model_check_id, client, lookback=3600 * 3,
-                             name="Test alert",
-                             frequency=10,  # seconds
-                             )
+    monitor_id = add_monitor(
+        classification_model_check_id, client, lookback=3600 * 3,
+        name="Test alert",
+        frequency=10,  # seconds
+    )
+
     async with async_engine.connect() as c:
         monitor = (await c.execute(
             sa.select(Monitor)
@@ -67,7 +76,7 @@ async def test_alert_rules_scheduler(classification_model_check_id, client, asyn
         )).first()
 
     # == Act
-    tasks = await schedule_tasks(35, async_engine)
+    tasks = await schedule_tasks(delay=35, async_engine=async_engine)
 
     # == Assert
     assert len(tasks) == 4
@@ -83,13 +92,16 @@ async def test_alert_rules_scheduler(classification_model_check_id, client, asyn
 
 
 @ pytest.mark.asyncio
-async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(classification_model_check_id, client,
-                                                                       async_engine: AsyncEngine):
+async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
+    classification_model_check_id, client,
+    async_engine: AsyncEngine
+):
     # == Prepare
-    monitor_id = add_monitor(classification_model_check_id, client, lookback=3600 * 3,
-                             name="Test alert",
-                             frequency=5,  # seconds
-                             )
+    monitor_id = add_monitor(
+        classification_model_check_id, client, lookback=3600 * 3,
+        name="Test alert",
+        frequency=5,  # seconds
+    )
     async with async_engine.connect() as c:
         monitor = (await c.execute(
             sa.select(Monitor)
@@ -99,8 +111,9 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(classific
     # == Act
     async with anyio.create_task_group() as g:
         for _ in range(30):
+            await anyio.sleep(random())
             g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=2).run)
-        await anyio.sleep(40)
+        await anyio.sleep(30)
         g.cancel_scope.cancel()
 
     # == Assert

@@ -50,8 +50,8 @@ class MonitorOptions(BaseModel):
 
     end_time: str
     start_time: str
-    frequency: t.Optional[int]
-    aggregation_window: t.Optional[int]
+    frequency: t.Optional[int] = None
+    aggregation_window: t.Optional[int] = None
     filter: t.Optional[DataFilterList] = None
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
 

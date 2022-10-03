@@ -17,15 +17,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.bgtasks.actors import execute_monitor
+from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.bgtasks.task import Task, TaskStatus, Worker
 from deepchecks_monitoring.models import Alert
 from deepchecks_monitoring.utils import TimeUnit
 from tests.conftest import add_alert_rule, add_check, add_classification_data, add_model_version, add_monitor
 
 
 @pytest.mark.asyncio
-async def test_alert_executor(
+async def test_monitor_executor(
     async_session: AsyncSession,
     client: TestClient,
     classification_model_id: int,
@@ -137,7 +137,7 @@ async def test_alert_scheduling(
         g.cancel_scope.cancel()
 
     async with anyio.create_task_group() as g:
-        g.start_soon(Worker(engine=async_engine, actors=[execute_monitor]).start)
+        g.start_soon(Worker.create(engine=async_engine, actors=[execute_monitor]).start)
         await anyio.sleep(10)  # give worker time to execute tasks
         g.cancel_scope.cancel()
 
@@ -157,7 +157,7 @@ async def test_alert_scheduling(
 
 
 @pytest.mark.asyncio
-async def test_alert_executor_on_unactive_rules(
+async def test_monitor_executor_with_unactive_alert_rules(
     async_session: AsyncSession,
     client: TestClient,
     classification_model_id: int,
@@ -173,9 +173,7 @@ async def test_alert_executor_on_unactive_rules(
         lookback=TimeUnit.DAY * 3,
         frequency=TimeUnit.DAY * 2,
         additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
-        data_filters={
-            "filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]
-        }
+        data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
     )
     rule_id = t.cast(int, add_alert_rule(  # pylint: disable=unused-variable
         monitor_id,
@@ -187,4 +185,4 @@ async def test_alert_executor_on_unactive_rules(
     now = pdl.now()
 
     result = await execute_monitor(monitor_id=monitor_id, timestamp=str(now), session=async_session)
-    assert result is None
+    assert not result

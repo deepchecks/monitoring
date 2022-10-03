@@ -20,8 +20,8 @@ import randomname
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
 
-from deepchecks_monitoring.bgtasks.task import (Actor, ExecutionStrategy, Notification, NotificationsListener, Task,
-                                                TaskStatus, Worker)
+from deepchecks_monitoring.bgtasks.core import (Actor, ExecutionStrategy, Notification, NotificationsListener, Task,
+                                                TasksBroker, TaskStatus, Worker)
 
 
 def generate_actor(*, fn=None, bind=None, execution_strategy=ExecutionStrategy.ATOMIC):
@@ -115,7 +115,7 @@ class TestWorker:
     async def test(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
         actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
@@ -135,7 +135,7 @@ class TestWorker:
 
         actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
@@ -163,7 +163,7 @@ class TestWorker:
         tasks_ids = [await actor.enqueue() for _ in range(3)]
         second_actor_task_ids = [await second_actor.enqueue() for _ in range(3)]
 
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
@@ -195,11 +195,11 @@ class TestWorker:
             for _ in range(3)
         ]
 
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
-            await anyio.sleep(10)
+            await anyio.sleep(5)
             g.cancel_scope.cancel()
 
         tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
@@ -224,11 +224,17 @@ class TestWorker:
 
         actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=1, additional_params={"foo": 1})
+
+        worker = Worker.create(
+            engine=async_engine,
+            actors=[actor],
+            notification_wait_timeout=1,
+            additional_params={"foo": 1}
+        )
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
-            await anyio.sleep(10)
+            await anyio.sleep(5)
             g.cancel_scope.cancel()
 
         tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
@@ -252,7 +258,7 @@ class TestWorker:
 
         actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
         task_id = await actor.enqueue()
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=2)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=2)
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
@@ -281,12 +287,31 @@ class TestWorker:
             print("Hello world")
 
         actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
-        worker = Worker(engine=async_engine, actors=[actor], notification_wait_timeout=600)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=600)
 
         async with anyio.create_task_group() as g:
             g.start_soon(worker.start)
             task_id = await actor.enqueue()
-            await anyio.sleep(10)  # to much time
+            # TODO: too much time for 'sleep'
+            # weird, but if to set a smaller amount of time (for example 5 seconds)
+            # then this test with a big probability will fail either because
+            # 1. it will not be able handle the task in time
+            # 2. test async fixture finalization will fail with `asyncio.exceptions.CancelledError`
+            #
+            # I do not know what causes the second issue, but I suspect it might be
+            # some kind bug in 'pytest_asyncio'
+            #
+            # Importantly, along with its failure, some other tests might also fail,
+            # probably because fixture finalization failure prevents proper initialization
+            # of fixtures for the next tasks
+            #
+            # NOTE:
+            # this problem happens only when all tests from 'test_worker.py' are run at once
+            # but never when this test is run by itself
+            #
+            # This problem must be investigated
+            #
+            await anyio.sleep(10)
             g.cancel_scope.cancel()
 
         task = await fetch_task(async_engine, task_id, actor=actor)
@@ -333,7 +358,7 @@ class TestNotificationListener:
             connection_factory=connection_factory,
             channels=["test"],
             max_reconnect_attempts=3,
-            reconnect_delay=2,  # seconds
+            reconnect_delay=1,  # seconds
         )
 
         async with anyio.create_task_group() as g:
@@ -355,12 +380,15 @@ class TestNotificationListener:
             connection_factory=connection_factory,
             channels=[actor.channel],
             max_reconnect_attempts=3,
-            reconnect_delay=2,  # seconds
+            reconnect_delay=1,  # seconds
         )
 
         async with anyio.create_task_group() as g:
             g.start_soon(listener.listen, queue)
+
             await anyio.sleep(2)  # give time to starttup
+            assert queue.empty() is True
+
             await actor.enqueue()
             await anyio.sleep(2)
             g.cancel_scope.cancel()
@@ -369,3 +397,62 @@ class TestNotificationListener:
         n = queue.get_nowait()
         assert isinstance(n, Notification)
         assert n.channel == actor.channel
+
+
+
+class TestTasksBroker:
+
+    @pytest.mark.asyncio
+    async def test_tasks_broker(self, async_session: AsyncSession):
+        n_of_tasks = 3
+        actor = generate_actor(bind=async_session)
+        tasks_ids = [await actor.enqueue() for _ in range(n_of_tasks)]
+
+        broker = TasksBroker(
+            database_url=async_session.get_bind().url,
+            queues_names=[actor.queue_name],
+            actors_names=[actor.name]
+        )
+
+        iterator = broker.next_task(async_session)
+
+        with anyio.fail_after(delay=5):
+            tasks = [await iterator.__anext__() for _ in range(n_of_tasks)]
+
+        assert len(tasks) == 3
+
+        for task in tasks:
+            assert isinstance(task, Task)
+            assert task.id in tasks_ids
+            assert task.status == TaskStatus.RUNNING
+
+    @pytest.mark.asyncio
+    async def test_task_broker_notification_listening_capabilities(self, async_engine: AsyncEngine):
+        actor = generate_actor(bind=async_engine)
+
+        broker = TasksBroker(
+            database_url=async_engine.url,
+            queues_names=[actor.queue_name],
+            actors_names=[actor.name],
+            notification_wait_timeout=600
+        )
+
+        async with AsyncSession(async_engine) as s:
+            async with anyio.create_task_group() as g:
+                g.start_soon(broker.listen_for_notifications)
+                iterator = broker.next_task(s)
+                future = asyncio.create_task(iterator.__anext__())
+
+                await asyncio.sleep(2)  # give broker time to start listening for notifications
+                assert future.done() is False
+
+                task_id = await actor.enqueue()
+
+                with anyio.fail_after(delay=10):
+                    task = await future
+
+                g.cancel_scope.cancel()
+
+        assert isinstance(task, Task)
+        assert task.id == task_id
+        assert task.status == TaskStatus.RUNNING

@@ -26,18 +26,20 @@ from asyncpg.connection import connect as asyncpg_connect
 from asyncpg.exceptions import PostgresConnectionError
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.engine.url import URL as DatabaseUrl
 from sqlalchemy.exc import DisconnectionError
 from sqlalchemy.exc import TimeoutError as AlchemyTimeoutError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
-from sqlalchemy.orm import declarative_base
+# from sqlalchemy.orm import declarative_base
 from typing_extensions import Awaitable, ParamSpec, Self, TypeAlias
 
+from deepchecks_monitoring.models.base import Base
 from deepchecks_monitoring.utils import TimeUnit
 
 __all__ = ["Task", "Worker", "actor"]
 
-
-Base = t.cast(t.Any, declarative_base())
+# at least for now it is not needed
+# Base = t.cast(t.Any, declarative_base())
 
 
 class TaskStatus(enum.Enum):
@@ -217,6 +219,7 @@ class Actor(t.Generic[P, R]):
         bind: t.Union[AsyncEngine, AsyncConnection, AsyncSession, None] = None,
         task_name: t.Optional[str] = None,
         execute_after: t.Optional[datetime] = None,
+        execution_options: t.Optional[t.Mapping[str, t.Any]] = None,
         **params: t.Any
     ) -> int:
         """Enqueue task.
@@ -258,10 +261,10 @@ class Actor(t.Generic[P, R]):
         if bind is not None:
             if isinstance(bind, AsyncEngine):
                 async with bind.begin() as c:
-                    task_id = await c.scalar(stm)
+                    task_id = await c.scalar(stm, execution_options=execution_options)
                     return task_id
             elif isinstance(bind, (AsyncConnection, AsyncSession)):
-                task_id = await bind.scalar(stm)
+                task_id = await bind.scalar(stm, execution_options=execution_options)
                 return task_id
             else:
                 raise TypeError(f"Unsupported type of 'bind' parameter - {type(bind)}")
@@ -335,6 +338,138 @@ def actor(
 TNotificationsQueue: TypeAlias = "asyncio.Queue[t.Union[Notification, Exception]]"
 
 
+class TasksBroker:
+    """Tasks broker.
+
+    Dequeues tasks from the "queue table" and listens for newly enqueued task notifications.
+
+    Parameters
+    ==========
+    database_url : sqlalchemy.engine.url.URL
+        daatabase url
+    queues_names : Sequence[str]
+        a sequence of queues names from which tasks will be "consumed"
+    actors_names : Sequence[str]
+        a sequence of actors (executors) names, tasks of which to consume
+    notification_wait_timeout : float, default '60 seconds'
+        for how long to wait for notification arrival before trying
+        to pull task(s) from the table
+    logger : Optional[Logger] , default None
+        logger instance to use
+    """
+
+    def __init__(
+        self,
+        database_url: DatabaseUrl,
+        queues_names: t.Sequence[str],
+        actors_names: t.Sequence[str],
+        notification_wait_timeout: float = TimeUnit.SECOND * 60,
+        logger: t.Optional[logging.Logger] = None,
+    ):
+        assert len(queues_names) > 0
+        assert len(actors_names) > 0
+        assert notification_wait_timeout > 0
+        self.queues_names = list(queues_names)
+        self.actors_names = list(actors_names)
+        self.database_url = database_url
+        self.notifications: TNotificationsQueue = asyncio.Queue()
+        self.notification_wait_timeout = notification_wait_timeout
+        self.logger = logger or logging.getLogger("tasks-broker")
+        self.channels: t.Set[str] = {f"{q}.{a}" for q, a in zip(queues_names, actors_names)}
+
+    def listen_for_notifications(self) -> t.Coroutine[t.Any, t.Any, t.Any]:
+        """Start listening for notifications."""
+        dsn = self.database_url.set(drivername="postgresql")
+        factory = lambda: asyncpg_connect(dsn=str(dsn))
+        notifications_listener = NotificationsListener(connection_factory=factory, channels=list(self.channels))
+        return notifications_listener.listen(self.notifications)
+
+    async def next_task(self, session: AsyncSession) -> t.AsyncIterator[Task]:
+        """Pop next task from the queue or wait for it."""
+        queues_names: t.Optional[t.Sequence["QueueName"]] = None
+        actors_names: t.Optional[t.Sequence["ExecutorName"]] = None
+        while True:
+            task = await self.pop_task(
+                session=session,
+                queue_names=queues_names,
+                actor_names=actors_names,
+            )
+            if task is not None:
+                yield task
+            elif queues_names or actors_names:
+                queues_names = None
+                actors_names = None
+            else:
+                await session.rollback()  # closing any active transaction
+                if notifications := await self.wait_for_notifications():
+                    queues_names, actors_names = self._process_notifications(notifications)
+
+    def _process_notifications(self, notifications: t.Sequence["Notification"]):
+        """Process notifications sequence."""
+        queues = set()
+        actors = set()
+        for n in notifications:
+            q, a = unfold_channel_name(n.channel)
+            queues.add(q)
+            if a:
+                actors.add(a)
+        return list(queues), list(actors)
+
+    async def pop_task(
+        self,
+        session: AsyncSession,
+        actor_names: t.Optional[t.Sequence["ExecutorName"]] = None,
+        queue_names: t.Optional[t.Sequence["QueueName"]] = None,
+        execution_options: t.Optional[t.Mapping[str, t.Any]] = None,
+    ) -> t.Optional[Task]:
+        """Pop next task from the queue."""
+        cte = (
+            sa.select(Task)
+            .where(sa.and_(
+                Task.executor.in_(actor_names or self.actors_names),
+                Task.queue.in_(queue_names or self.queues_names),
+                Task.status == TaskStatus.SCHEDULED,
+                Task.execute_after <= sa.func.now(),
+            ))
+            .order_by(Task.enqueued_at, Task.priority.desc())
+            .limit(1)
+            .with_for_update(skip_locked=True)
+        )
+        cte = (
+            sa.update(Task)
+            .where(cte.c.id == Task.id)
+            .values(
+                status=TaskStatus.RUNNING,
+                started_at=datetime.now(timezone.utc))
+            .returning(Task)
+        )
+        return await session.scalar(
+            sa.select(Task).from_statement(cte),
+            execution_options=execution_options
+        )
+
+    async def wait_for_notifications(self) -> t.List["Notification"]:
+        """Wait for a task enqueueing notification(s)."""
+        timeout = self.notification_wait_timeout
+        try:
+            notifications = [
+                await asyncio.wait_for(self.notifications.get(), timeout=timeout)
+            ]
+        except asyncio.TimeoutError:
+            self.logger.info("Notification listen timeout, no notifications received after %s seconds", timeout)
+            return []
+        else:
+            while not self.notifications.empty():
+                notifications.append(self.notifications.get_nowait())
+            if any(isinstance(n, Exception) for n in notifications):
+                msg = "Notification listener failed"
+                self.logger.error(msg)
+                raise RuntimeError(msg)
+            else:
+                self.logger.debug("Received %s notifications", len(notifications))
+                return t.cast(t.List[Notification], notifications)
+
+
 class Worker:
     """Tasks processing infinite loop.
 
@@ -386,12 +521,59 @@ class Worker:
     >>
     """
 
+    @classmethod
+    def create(
+        cls,
+        engine: AsyncEngine,
+        actors: t.Sequence[Actor],
+        # using Ellipsis to identify unset parameters and to avoid
+        # copying defaults from constructor here
+        task_broker_type: t.Type[TasksBroker] = TasksBroker,
+        worker_name: str = ...,
+        notification_wait_timeout: float = TimeUnit.SECOND * 60,
+        expire_after: timedelta = ...,  # TODO: consider moving it to actor type
+        additional_params: t.Optional[t.Dict[str, t.Any]] = None,
+        logger: t.Optional[logging.Logger] = None,
+    ):
+        """Create worker instance."""
+        queues_names: t.Set[str] = set()
+        actors_names: t.Set[str] = set()
+
+        for actor in actors:
+            q, a = (actor.queue_name, actor.name)
+            queues_names.add(q)
+            actors_names.add(a)
+
+        broker = task_broker_type(
+            database_url=engine.url,
+            queues_names=list(queues_names),
+            actors_names=list(actors_names),
+            notification_wait_timeout=notification_wait_timeout,
+            logger=logger.getChild("tasks-broker") if logger else None
+        )
+
+        kwargs = {}
+
+        if worker_name is not Ellipsis:
+            kwargs["worker_name"] = "worker_name"
+        if expire_after is not Ellipsis:
+            kwargs["expire_after"] = "expire_after"
+
+        return cls(
+            engine=engine,
+            actors=actors,
+            tasks_broker=broker,
+            additional_params=additional_params,
+            logger=logger,
+            **kwargs
+        )
+
     def __init__(
         self,
         engine: AsyncEngine,
         actors: t.Sequence[Actor],
+        tasks_broker: TasksBroker,
         worker_name: str = "tasks-executor",
-        notification_wait_timeout: float = TimeUnit.SECOND * 60,
         expire_after: timedelta = timedelta(days=2),  # TODO: consider moving it to actor type
         additional_params: t.Optional[t.Dict[str, t.Any]] = None,
         logger: t.Optional[logging.Logger] = None,
@@ -399,14 +581,10 @@ class Worker:
         assert len(actors) > 0
         self.engine = engine
         self.additional_params = additional_params or {}
-        self.notification_wait_timeout = notification_wait_timeout
+        self.tasks_broker = tasks_broker
         self.expire_after = expire_after
         self.logger = logger or logging.getLogger(worker_name)
-
         self.actors: t.Dict[t.Tuple[str, str], Actor] = {}
-        self.channels: t.Set[str] = set()
-        self.actor_names: t.Set[str] = set()
-        self.queue_names: t.Set[str] = set()
 
         for a in actors:
             k = (a.queue_name, a.name)
@@ -414,47 +592,13 @@ class Worker:
                 raise ValueError(f"Actors duplication - {k}")
             else:
                 self.actors[k] = a
-                self.actor_names.add(a.name)
-                self.queue_names.add(a.queue_name)
-                self.channels.add(f"{k[0]}.{k[1]}")
-
-        dsn = str(engine.url.set(drivername="postgres"))
-        factory = lambda: asyncpg_connect(dsn=dsn)
-        self.notifications: TNotificationsQueue = asyncio.Queue()
-        self.notifications_listener = NotificationsListener(connection_factory=factory, channels=list(self.channels))
-
-    @classmethod
-    async def start_many(
-        cls,
-        engine: AsyncEngine,
-        actors: t.Sequence[Actor],
-        n_of_workers: int = 4,
-        worker_name: str = "tasks-executor",
-        notification_wait_timeout: float = TimeUnit.SECOND * 60,
-        expire_after: timedelta = timedelta(hours=2),
-        additional_params: t.Optional[t.Dict[str, t.Any]] = None,
-        logger: t.Optional[logging.Logger] = None
-    ):
-        """Start many concurrent instances of worker."""
-        async with anyio.create_task_group() as g:
-            for n in range(n_of_workers):
-                name = f"{worker_name}-{n}"
-                g.start_soon(cls(
-                    worker_name=name,
-                    engine=engine,
-                    actors=actors,
-                    notification_wait_timeout=notification_wait_timeout,
-                    expire_after=expire_after,
-                    additional_params=additional_params,
-                    logger=logger
-                ).start)
 
     async def start(self):
         """Start processing tasks."""
         async with AsyncSession(self.engine, autoflush=False, expire_on_commit=False) as session:
             try:
                 async with anyio.create_task_group() as g:
-                    g.start_soon(self.notifications_listener.listen, self.notifications)
+                    g.start_soon(self.tasks_broker.listen_for_notifications)
                     g.start_soon(self.loop, session)
             finally:
                 with anyio.CancelScope(shield=True):
@@ -463,7 +607,7 @@ class Worker:
 
     async def loop(self, session: AsyncSession):
         """Loop over enqueued tasks."""
-        async for task in self.next_task(session):
+        async for task in self.tasks_broker.next_task(session):
             if (datetime.now(timezone.utc) - task.execute_after) > self.expire_after:
                 task.status = TaskStatus.EXPIRED
                 await session.flush()
@@ -476,71 +620,6 @@ class Worker:
                     await session.rollback()
                 else:
                     await self.execute_task(session, actor, task)
-
-    async def next_task(self, session: AsyncSession) -> t.AsyncIterator[Task]:
-        """Pop next task from the queue or wait for it."""
-        queue_names = None
-        actor_names = None
-        while True:
-            task = await self.pop_task(session=session, queue_names=queue_names, actor_names=actor_names)
-            queue_names = None
-            actor_names = None
-            if task is not None:
-                yield task
-            else:
-                await session.rollback()  # closing any active transaction
-                notification = await self.wait_for_notification()
-                if notification is not None:
-                    q, a = notification.unfold_channel_name()
-                    queue_names = [q]
-                    actor_names = [a]
-                    continue
-
-    async def pop_task(
-        self,
-        session: AsyncSession,
-        actor_names: t.Optional[t.Sequence["ExecutorName"]] = None,
-        queue_names: t.Optional[t.Sequence["QueueName"]] = None
-    ) -> t.Optional[Task]:
-        """Pop next task from the queue."""
-        cte = (
-            sa.select(Task)
-            .where(sa.and_(
-                Task.executor.in_(actor_names or self.actor_names),
-                Task.queue.in_(queue_names or self.queue_names),
-                Task.status == TaskStatus.SCHEDULED,
-                Task.execute_after <= sa.func.now(),
-            ))
-            .order_by(Task.enqueued_at, Task.priority.desc())
-            .limit(1)
-            .with_for_update(skip_locked=True)
-        )
-        cte = (
-            sa.update(Task)
-            .where(cte.c.id == Task.id)
-            .values(
-                status=TaskStatus.RUNNING,
-                started_at=datetime.now(timezone.utc))
-            .returning(Task)
-        )
-        return await session.scalar(sa.select(Task).from_statement(cte))
-
-    async def wait_for_notification(self) -> t.Optional["Notification"]:
-        """Wait for a task enqueueing notification."""
-        try:
-            notification = await asyncio.wait_for(
-                self.notifications.get(),
-                timeout=self.notification_wait_timeout
-            )
-        except asyncio.TimeoutError:
-            return
-        else:
-            if isinstance(notification, Exception):
-                msg = "Notification listener failed"
-                self.logger.error(msg)
-                raise RuntimeError(msg)
-            else:
-                return notification
 
     async def execute_task(self, session: AsyncSession, actor: Actor, task: Task):
         """Execute task logic."""
@@ -742,7 +821,7 @@ def read_traceback() -> str:
 
 
 QueueName = str
-ExecutorName = t.Optional[str]
+ExecutorName = str
 AsyncpgConnectionFactory = t.Callable[..., Awaitable[AsyncpgConnection]]
 
 
@@ -751,12 +830,13 @@ class Notification:
     channel: str
     payload: t.Optional[str] = None
 
-    def unfold_channel_name(self) -> t.Tuple[QueueName, ExecutorName]:
-        r = self.channel.split(".")
-        if len(r) < 2:
-            return r[0], None
-        else:
-            return r[0], r[1] or None
+
+def unfold_channel_name(name: str) -> t.Tuple[QueueName, t.Optional[ExecutorName]]:
+    r = name.split(".")
+    if len(r) == 1:
+        return r[0], None
+    else:
+        return r[0], r[1] or None
 
 
 class NotificationsListener:
