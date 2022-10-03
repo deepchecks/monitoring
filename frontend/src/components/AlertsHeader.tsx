@@ -16,7 +16,7 @@ export const AlertsHeader = () => {
         sx={{
           display: 'inline-flex',
           alignItems: 'center',
-          padding: '20px 48px 20px 0',
+          padding: '20px 0',
           justifyContent: 'space-between',
           height: '100px',
           width: '100%',

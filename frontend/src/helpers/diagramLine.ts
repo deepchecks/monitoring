@@ -111,8 +111,8 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
 
     ctx.beginPath();
-    const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || 'medium' as AlertSeverity];
-    ctx.strokeStyle = severity_color
+    const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || ('medium' as AlertSeverity)];
+    ctx.strokeStyle = severity_color;
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 6]);
     ctx.moveTo(left, yOffset);
@@ -253,31 +253,40 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     const drawActiveAlert = (index: number) => {
       const rectWidth = 100;
       const rectHeight = 32;
-      const rectRadius = 25;
 
       drawFilledRhoimbus(ctx, meta, criticalColor, index, 20, 2);
       drawFilledRhoimbus(ctx, meta, alpha(criticalColor, 0.15), index, 30, 10);
 
       ctx.beginPath();
-      ctx.lineWidth = 1;
       ctx.fillStyle = criticalColor;
-      ctx.setLineDash([6, 0]);
-      ctx.moveTo(meta?.data[index]?.x - rectWidth / 2, top - space);
-      ctx.quadraticCurveTo(
-        meta?.data[index]?.x - rectWidth / 2 - rectRadius,
-        top - rectHeight / 2 - space,
+      ctx.arc(
         meta?.data[index]?.x - rectWidth / 2,
-        top - space - rectHeight
-      );
-      ctx.lineTo(meta?.data[index]?.x + rectWidth / 2, top - rectHeight - space);
-
-      ctx.quadraticCurveTo(
-        meta?.data[index]?.x + rectWidth / 2 + rectRadius,
         top - rectHeight / 2 - space,
-        meta?.data[index]?.x + rectWidth / 2,
-        top - space
+        rectHeight / 2,
+        angle * 0,
+        angle * 360,
+        false
       );
-      ctx.lineTo(meta?.data[index]?.x - rectWidth / 2, top - space);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.fillStyle = criticalColor;
+      ctx.arc(
+        meta?.data[index]?.x + rectWidth / 2,
+        top - rectHeight / 2 - space,
+        rectHeight / 2,
+        angle * 0,
+        angle * 360,
+        false
+      );
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.fillStyle = criticalColor;
+      ctx.fillRect(meta?.data[index]?.x - rectWidth / 2, top - rectHeight - space, rectWidth, rectHeight);
+
       ctx.fill();
       ctx.closePath();
 

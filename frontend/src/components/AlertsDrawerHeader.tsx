@@ -1,4 +1,3 @@
-import React, { Dispatch, SetStateAction, useState } from 'react';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
@@ -16,6 +15,7 @@ import {
 import { ChartSvg } from 'assets/icon/chart';
 import dayjs from 'dayjs';
 import useModels from 'hooks/useModels';
+import React, { Dispatch, SetStateAction, useState } from 'react';
 import {
   AlertRuleInfoSchema,
   AlertSchema,
@@ -204,7 +204,7 @@ export const AlertsDrawerHeader = ({
               </Box>
             ))}
           </StyledFlexWrapper>
-          <Stack direction="row" spacing="20px">
+          <Stack direction="row" spacing="20px" alignItems="start">
             {alert?.failed_values && Object.keys(alert.failed_values).length > 1 ? (
               <StyledSelect
                 size="small"
@@ -241,9 +241,6 @@ export const AlertsDrawerHeader = ({
             >
               Run Test Suite
             </StyledButtonTest>
-            {/* <StyledButtonTest variant="contained" onClick={handleRunSuite} startIcon={<TestTube />}>
-              Run Test Suite
-            </StyledButtonTest> */}
           </Stack>
         </StyledBottomSection>
       </Box>
@@ -275,18 +272,21 @@ const StyledIconButton = styled(IconButton)({
 
 const StyledBottomSection = styled(Box)({
   display: 'flex',
-  alignItems: 'center',
   justifyContent: 'space-between'
 });
 
 const StyledButtonResolve = styled(Button)({
   width: 160,
-  padding: '0 8px'
+  padding: '0 8px',
+  minHeight: 36,
+  textTransform: 'none'
 });
 
 const StyledButtonTest = styled(LoadingButton)({
   width: 166,
-  padding: 0
+  padding: 0,
+  minHeight: 36,
+  textTransform: 'none'
 });
 
 const StyledSelect = styled(Select)(({ theme }) => ({
