@@ -73,18 +73,19 @@ class ModelsInfoSchema(ModelSchema):
     latest_time: t.Optional[int]
 
 
-@router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model.",
-             description="Create a new model with its name, task type, and description. Returns the ID of the model.")
+@router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model if does not exist.",
+             description="Create a new model with its name, task type, and description. Returns the ID of the model."
+                         " If the model already exists, returns the ID of the existing model.")
 async def get_create_model(
-    model_schema: ModelCreationSchema,
-    session: AsyncSession = AsyncSessionDep
+        model_schema: ModelCreationSchema,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Create a new model.
 
     Parameters
     ----------
-    model : ModelCreationSchema
-        Model to create.
+    model_schema : ModelCreationSchema
+        Schema of model to create.
     session : AsyncSession
         SQLAlchemy session.
 
@@ -107,10 +108,10 @@ async def get_create_model(
 @router.get("/models/data-ingestion", response_model=t.Dict[int, t.List[ModelDailyIngestion]], tags=[Tags.MODELS])
 @router.get("/models/{model_id}/data-ingestion", response_model=t.List[ModelDailyIngestion], tags=[Tags.MODELS])
 async def retrieve_models_data_ingestion(
-    model_id: t.Optional[int] = None,
-    time_filter: int = TimeUnit.HOUR * 24,
-    end_time: t.Optional[str] = None,
-    session: AsyncSession = AsyncSessionDep
+        model_id: t.Optional[int] = None,
+        time_filter: int = TimeUnit.HOUR * 24,
+        end_time: t.Optional[str] = None,
+        session: AsyncSession = AsyncSessionDep
 ) -> t.Union[
     t.Dict[int, t.List[ModelDailyIngestion]],
     t.List[ModelDailyIngestion]
@@ -128,11 +129,7 @@ async def retrieve_models_data_ingestion(
     def sample_timestamp(columns):
         return getattr(columns, SAMPLE_TS_COL)
 
-    if end_time:
-        end_time = pdl.parse(end_time)
-    else:
-        end_time: pdl.DateTime = pdl.now()
-
+    end_time = pdl.parse(end_time) if end_time else pdl.now()
     if model_id is not None:
         models = [
             t.cast(Model, await session.fetchone_or_404(
@@ -160,9 +157,8 @@ async def retrieve_models_data_ingestion(
         select(
             literal(model_id).label("model_id"),
             sample_id(table.c).label("sample_id"),
-            truncate_date(sample_timestamp(table.c)).label("day"))
-        .where(is_within_dateframe(sample_timestamp(table.c), end_time))
-        .distinct()
+            truncate_date(sample_timestamp(table.c)).label("day")).where(is_within_dateframe(sample_timestamp(table.c),
+                                                                                             end_time)).distinct()
         for model_id, table in tables
     ))
 
@@ -187,10 +183,10 @@ async def retrieve_models_data_ingestion(
 
 @router.get("/models/{model_id}", response_model=ModelSchema, tags=[Tags.MODELS])
 async def get_model(
-    model_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        session: AsyncSession = AsyncSessionDep
 ) -> ModelSchema:
-    """Create a new model.
+    """Get a model from database based on model id.
 
     Parameters
     ----------
@@ -202,7 +198,7 @@ async def get_model(
     Returns
     -------
     ModelSchema
-        Created model.
+        Requested model.
     """
     model = await fetch_or_404(session, Model, id=model_id)
     return ModelSchema.from_orm(model)
@@ -210,8 +206,8 @@ async def get_model(
 
 @router.get("/models/{model_id}/versions", response_model=t.List[NameIdResponse], tags=[Tags.MODELS])
 async def get_versions_per_model(
-    model_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        session: AsyncSession = AsyncSessionDep
 ) -> ModelSchema:
     """Create a new model.
 
@@ -229,7 +225,7 @@ async def get_versions_per_model(
     """
     model_versions = (await session.execute(
         select(ModelVersion.id, ModelVersion.name).where(ModelVersion.model_id == model_id))
-    ).all()
+                      ).all()
     if model_versions is None:
         return []
     return [NameIdResponse.from_orm(model_version) for model_version in model_versions]
@@ -237,7 +233,7 @@ async def get_versions_per_model(
 
 @router.get("/models/", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])
 async def get_models(
-    session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep
 ):
     """Create a new model.
 
@@ -264,8 +260,8 @@ async def get_models(
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
 async def get_model_columns(
-    model_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Get statistics of columns for model.
 

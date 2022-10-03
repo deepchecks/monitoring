@@ -17,20 +17,6 @@ from tests.api.test_monitor import add_monitor
 
 
 @pytest.mark.asyncio
-async def test_get_dashboard_one_check(classification_model_check_id, client: TestClient):
-    resp_json = client.get('/api/v1/dashboards/').json()
-    assert resp_json['id'] == 1
-    assert resp_json['monitors'][0]['id'] == 1
-    assert len(resp_json['monitors']) == 1
-    assert resp_json['monitors'][0]['check']['id'] == classification_model_check_id
-
-    resp_json = client.get('/api/v1/dashboards/').json()
-    assert resp_json['id'] == 1
-    assert len(resp_json['monitors']) == 1
-    assert resp_json['monitors'][0]['id'] == 1
-
-
-@pytest.mark.asyncio
 async def test_get_dashboard_empty(classification_model_feature_check_id, client: TestClient):
     resp_json = client.get('/api/v1/dashboards/').json()
     assert classification_model_feature_check_id == 1

@@ -47,6 +47,46 @@ async def test_add_check(classification_model_id, client: TestClient):
 
 
 @pytest.mark.asyncio
+async def test_delete_check_success(classification_model_id, client: TestClient):
+    request = {
+        "name": "checky v1",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"reduce": "mean"},
+                   "module_name": "deepchecks.tabular.checks"
+                   },
+    }
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    assert response.status_code == 200
+    assert response.json()["id"] == 1
+
+    request = {"names": ["checky v1"]}
+    response = client.delete(f"/api/v1/models/{classification_model_id}/checks", params=request)
+    assert response.status_code == 200
+
+    response = client.get(f"/api/v1/models/{classification_model_id}/checks")
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_check_fail(classification_model_id, client: TestClient):
+    request = {
+        "name": "checky v1",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"reduce": "mean"},
+                   "module_name": "deepchecks.tabular.checks"
+                   },
+    }
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    assert response.status_code == 200
+    assert response.json()["id"] == 1
+
+    request = {"names": ["checkyyyyyyyyyy"]}
+    response = client.delete(f"/api/v1/models/{classification_model_id}/checks", params=request)
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_add_check_list(classification_model_id, client: TestClient):
     # Arrange
     confi = {"class_name": "SingleDatasetPerformance",

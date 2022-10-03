@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import pytest
+from deepchecks.vision.checks import SingleDatasetPerformance
 
 from client.deepchecks_client.core.client import DeepchecksClient
 from deepchecks_monitoring.models.model import TaskType
@@ -56,12 +57,28 @@ async def test_add_monitor(classification_vision_model_id, deepchecks_sdk_client
 @pytest.mark.asyncio
 async def test_add_alert(classification_vision_model_id, deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value)
+                                               task_type=TaskType.VISION_CLASSIFICATION.value,
+                                               create_defaults=False)
     assert model_client.model["id"] == classification_vision_model_id
+    model_client.add_checks({"check": SingleDatasetPerformance()})
 
-    checks_name = list(model_client.get_checks().keys())[0]
-    alert_id = model_client.add_alert(checks_name, 0.3, 86400, add_monitor_to_dashboard=True)
+    alert_id = model_client.add_alert_rule("check", 0.3, 86400)
     assert alert_id == 1
-
-    alert_id = model_client.add_alert(checks_name, 0.1, 86400, greater_than=False)
+    alert_id = model_client.add_alert_rule("check", 0.3, 86400, greater_than=False)
     assert alert_id == 2
+
+
+@pytest.mark.asyncio
+async def test_add_defaults(classification_vision_model_id, deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="vision classification model",
+                                               task_type=TaskType.VISION_CLASSIFICATION.value,
+                                               create_defaults=True)
+    assert model_client.model["id"] == classification_vision_model_id
+    assert len(model_client.get_checks()) == 4
+
+    checks_added = model_client.add_checks({"check": SingleDatasetPerformance()})
+    assert checks_added["check"] == 5
+    monitor_id = model_client.add_monitor("check", 86400)
+    assert monitor_id == 4
+    alert_id = model_client.add_alert_rule("check", 0.3, 86400)
+    assert alert_id == 4

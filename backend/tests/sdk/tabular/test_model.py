@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import pytest
+from deepchecks.tabular.checks import SingleDatasetPerformance
 
 from client.deepchecks_client.core.client import DeepchecksClient
 from deepchecks_monitoring.models.model import TaskType
@@ -51,13 +52,43 @@ async def test_add_monitor(classification_model_id, deepchecks_sdk_client: Deepc
 
 
 @pytest.mark.asyncio
-async def test_add_alert(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value)
+async def test_add_alert_on_existing_monitor(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value,
+                                               create_defaults=True)
     assert model_client.model["id"] == classification_model_id
 
     checks_name = list(model_client.get_checks().keys())[0]
-    alert_id = model_client.add_alert(checks_name, 0.3, 86400)
-    assert alert_id == 1
+    monitor_id = model_client.add_monitor(checks_name, frequency=86400, lookback=86400 * 30)
+    assert monitor_id > 0
+    alert_id = model_client.add_alert_rule_on_existing_monitor(monitor_id, 0.3)
+    assert alert_id == 5
 
-    alert_id = model_client.add_alert(checks_name, 0.3, 86400, greater_than=False)
+
+@pytest.mark.asyncio
+async def test_add_alert_on_new_monitor(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value,
+                                               create_defaults=False)
+    assert model_client.model["id"] == classification_model_id
+    model_client.add_checks({"check": SingleDatasetPerformance()})
+
+    alert_id = model_client.add_alert_rule("check", 0.3, 86400)
+    assert alert_id == 1
+    alert_id = model_client.add_alert_rule("check", 0.3, 86400, greater_than=False)
     assert alert_id == 2
+
+
+@pytest.mark.asyncio
+async def test_add_defaults(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
+    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value,
+                                               create_defaults=True)
+    assert model_client.model["id"] == classification_model_id
+    assert len(model_client.get_checks()) == 6
+
+    checks_added = model_client.add_checks({"check": SingleDatasetPerformance()})
+    assert checks_added["check"] == 7
+    monitor_id = model_client.add_monitor("check", 86400)
+    assert monitor_id == 5
+    alert_id = model_client.add_alert_rule("check", 0.3, 86400)
+    assert alert_id == 5
+
+

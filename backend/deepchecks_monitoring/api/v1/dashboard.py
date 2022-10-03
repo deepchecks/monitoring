@@ -20,7 +20,6 @@ from starlette import status
 from deepchecks_monitoring.api.v1.monitor import MonitorSchema
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.logic.dashboard_logic import create_default_dashboard
 from deepchecks_monitoring.models.dashboard import Dashboard
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.utils import exists_or_404, field_length
@@ -48,17 +47,18 @@ class DashboardUpdateSchema(BaseModel):
 
 
 @router.get('/dashboards/', response_model=DashboardSchema, tags=[Tags.MONITORS])
-async def get_dashboard(session: AsyncSession = AsyncSessionDep):
+async def get_or_create_dashboard(session: AsyncSession = AsyncSessionDep):
     """Get dashboard by if exists, if not then create it. Add top 5 unassigned monitors to the dashboard if empty."""
-    # get the dashboard or create it
     monitor_options = (joinedload(Monitor.check), selectinload(Monitor.alert_rules))
     dashboard_options = joinedload(Dashboard.monitors).options(*monitor_options)
     dashboard = (await session.execute(select(Dashboard).options(dashboard_options))).scalars().first()
     if dashboard is None:
-        dashboard, monitors = await create_default_dashboard(monitor_options, session)
+        dashboard = Dashboard()
+        session.add(dashboard)
+        await session.flush()
+        monitors_schem = []
     else:
-        monitors = dashboard.monitors
-    monitors_schem = [MonitorSchema.from_orm(monitor) for monitor in monitors]
+        monitors_schem = [MonitorSchema.from_orm(monitor) for monitor in dashboard.monitors]
     return DashboardSchema(id=dashboard.id, name=dashboard.name, monitors=monitors_schem)
 
 

@@ -19,6 +19,7 @@ import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client.core.utils import maybe_raise
+from termcolor import cprint
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")
@@ -172,8 +173,8 @@ class DeepchecksModelClient:
         """Get client to interact with a given version of the model."""
         raise NotImplementedError
 
-    def _add_default_checks(self) -> t.Dict[str, int]:
-        """Add default checks to the model based on its task type."""
+    def _add_defaults(self) -> t.Dict[str, int]:
+        """Add default checks, monitors and alerts to the model based on its task type."""
         raise NotImplementedError
 
     def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False) -> t.Dict[str, int]:
@@ -228,9 +229,38 @@ class DeepchecksModelClient:
 
         return {it['name']: BaseCheck.from_config(it['config']) for it in data}
 
-    def add_alert(self, check_name: str, threshold: float, frequency: int, alert_severity: str = "mid",
-                  aggregation_window: int = None, greater_than: bool = True, alert_name: str = None,
-                  monitor_name: str = None, add_monitor_to_dashboard: bool = False) -> int:
+    def add_alert_rule_on_existing_monitor(self, monitor_id: int, threshold: float, alert_severity: str = "mid",
+                                           greater_than: bool = True) -> int:
+        """Create an alert based on an existing monitor.
+        Parameters
+        ----------
+        monitor_id: int
+            The monitor on which we wise to add an alert.
+        threshold: float
+            The value to compare the check value to.
+        alert_severity: str, default: "mid"
+            The severity level associated with the alert. Possible values are: critical, high, mid and low.
+        greater_than: bool, default: True
+            Whether the alert condition requires the check value to be larger or smaller than provided threshold.
+        Returns
+        -------
+            alert_id: int
+        """
+        if alert_severity not in ['low', 'mid', 'high', 'critical']:
+            raise Exception(f'Alert severity must be of one of low, mid, high, critical received {alert_severity}.')
+
+        response = maybe_raise(
+            self.session.post(
+                url=f'monitors/{monitor_id}/alert-rules', json={
+                    'condition': {'operator': "greater_than" if greater_than else "less_than",
+                                  'value': threshold},
+                    'alert_severity': alert_severity,
+                }), msg="Failed to create new alert for check.\n{error}")
+        return response.json()['id']
+
+    def add_alert_rule(self, check_name: str, threshold: float, frequency: int, alert_severity: str = "mid",
+                       aggregation_window: int = None, greater_than: bool = True, kwargs_for_check: t.Dict = None,
+                       monitor_name: str = None, add_monitor_to_dashboard: bool = False) -> int:
         """Create an alert based on provided arguments. Alert is run on a specific check result.
         Parameters
         ----------
@@ -239,7 +269,7 @@ class DeepchecksModelClient:
         threshold: float
             The value to compare the check value to.
         frequency: int, default: None
-            Control the frequency the alert will be calculated.
+            Control the frequency the alert will be calculated, provided in seconds.
         aggregation_window: int
             The time range (current time - window size) the check would run on, provided in seconds.
             If None, uses window size as frequency.
@@ -247,40 +277,28 @@ class DeepchecksModelClient:
             The severity level associated with the alert. Possible values are: critical, high, mid and low.
         greater_than: bool, default: True
             Whether the alert condition requires the check value to be larger or smaller than provided threshold.
-        alert_name: str, default: None
-            Name for the created alert.
+        kwargs_for_check: t.Dict, default = None
+            Additional kwargs to pass on to check.
         monitor_name: str, default: None
-            Name for the created monitor (only relevant if add_monitor_to_dashboard is True).
+            Name for the created monitor.
         add_monitor_to_dashboard: bool, default: False
             Whether to add a corresponding monitor to the dashboard screen.
         Returns
         -------
             alert_id: int
         """
-
         if alert_severity not in ['low', 'mid', 'high', 'critical']:
             raise Exception(f'Alert severity must be of one of low, mid, high, critical received {alert_severity}.')
 
-        monitor_name = monitor_name if monitor_name is not None else f'{check_name} alert monitor'
-        monitor_id = \
-            self.add_monitor(check_name=check_name,
-                             frequency=frequency if frequency is not None else aggregation_window,
-                             aggregation_window=aggregation_window if aggregation_window is not None else frequency,
-                             lookback=frequency * 12, name=monitor_name,
-                             add_to_dashboard=add_monitor_to_dashboard)
-        response = maybe_raise(
-            self.session.post(
-                url=f'monitors/{monitor_id}/alert-rules', json={
-                    'condition': {'operator': "greater_than" if greater_than else "less_than",
-                                  'value': threshold},
-                    'alert_severity': alert_severity,
-                    'name': alert_name
-                }), msg="Failed to create new alert for check.\n{error}")
-        return response.json()['id']
+        monitor_id = self.add_monitor(check_name=check_name, frequency=frequency, aggregation_window=aggregation_window,
+                                      name=monitor_name, kwargs_for_check=kwargs_for_check,
+                                      add_to_dashboard=add_monitor_to_dashboard)
+        return self.add_alert_rule_on_existing_monitor(monitor_id=monitor_id, threshold=threshold,
+                                                       alert_severity=alert_severity, greater_than=greater_than)
 
     def add_monitor(self, check_name: str, frequency: int, aggregation_window: int = None, lookback: int = None,
-                    name: str = None, description: str = None,
-                    add_to_dashboard: bool = True) -> int:
+                    name: str = None, description: str = None, add_to_dashboard: bool = True,
+                    kwargs_for_check: t.Dict = None) -> int:
         """Create a monitor based on check to be displayed in dashboard.
         Parameters
         ----------
@@ -298,6 +316,8 @@ class DeepchecksModelClient:
             The description to assigned to the monitor.
         add_to_dashboard: bool, default: True
             Whether to add the monitor to the dashboard screen.
+        kwargs_for_check: t.Dict, default = None
+            Additional kwargs to pass on to check.
         Returns
         -------
             monitor_id: int
@@ -312,6 +332,7 @@ class DeepchecksModelClient:
                     'aggregation_window': frequency if aggregation_window is None else aggregation_window,
                     'dashboard_id': self.session.get('dashboards/').json()['id'] if add_to_dashboard else None,
                     'description': description,
+                    'additional_kwargs': kwargs_for_check
                 }), msg="Failed to create new monitor for check.\n{error}")
         return response.json()['id']
 
@@ -331,13 +352,19 @@ class DeepchecksModelClient:
 
     def delete_checks(self, names: t.List[str]):
         model_id = self.model["id"]
+        checks_not_in_model = [x for x in names if x not in self.get_checks().keys()]
+        if len(checks_not_in_model) > 0:
+            warnings.warn(f'The following checks do not exist in model: {checks_not_in_model}')
+
+        checks_in_model = [x for x in names if x not in checks_not_in_model]
         maybe_raise(
             self.session.delete(
                 f'models/{model_id}/checks',
-                params={'names': names}
+                params={'names': checks_in_model}
             ),
             msg=f"Failed to drop Model(id:{model_id}) checks.\n{{error}}"
         )
+        cprint(f"The following checks were successfully deleted: {checks_in_model}", "yellow", attrs=["bold"])
 
 
 class DeepchecksClient:
@@ -371,7 +398,7 @@ class DeepchecksClient:
             name: str,
             task_type: str,
             description: t.Optional[str] = None,
-            checks: t.Optional[t.Dict[str, BaseCheck]] = None
+            create_defaults: bool = True
     ) -> DeepchecksModelClient:
         """Get or create a new model.
 
@@ -379,12 +406,13 @@ class DeepchecksClient:
         ----------
         name: str
             Display name of the model.
-        task_type
-            Task type of the model, one of the values in TaskType
+        task_type: str
+            Task type of the model, possible values are regression, multiclass, binary, vision_classification and
+            vision_detection.
         description
-            Additional description for the model
-        checks
-
+            Additional description for the model.
+        create_defaults
+            Whether to add default check, monitors and alerts to the model.
         Returns
         -------
         DeepchecksModelClient
@@ -404,11 +432,13 @@ class DeepchecksClient:
 
         model_id = response['id']
         model = self._model_client(model_id, task_type)
+        if len(model.get_checks()) == 0:  # a new model was created
+            msg = f"Model {name} was successfully created!."
+            if create_defaults:
+                model._add_defaults()
+                msg += " Default checks, monitors and alerts added."
+            cprint(msg, "yellow", attrs=["bold"])
 
-        if len(model.get_checks()) == 0 and checks is None:
-            model._add_default_checks()
-        elif checks is not None:
-            model.add_checks(checks)
         return model
 
     def _model_client(self, model_id: int, task_type: str) -> DeepchecksModelClient:

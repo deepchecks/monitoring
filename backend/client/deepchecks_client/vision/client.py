@@ -289,8 +289,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                                              image_properties=image_properties)
         return self._model_version_clients[model_version_id]
 
-    def _add_default_checks(self):
-        """Add default list of checks for a vision model."""
+    def _add_defaults(self):
+        """Add default checks, monitors and alerts to a vision model."""
         checks = {
             'Property Drift': ImagePropertyDrift(),
             'Prediction Drift': TrainTestPredictionDrift(),
@@ -301,4 +301,13 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
         elif TaskType(self.model['task_type']) == TaskType.VISION_DETECTION:
             checks['Performance'] = SingleDatasetPerformance(scorers={'Precision': 'precision_macro'})
-        return self.add_checks(checks=checks)
+        self.add_checks(checks=checks)
+
+        self.add_alert_rule(check_name="Property Drift", threshold=0.25, frequency=24 * 60 * 60, alert_severity="high",
+                            monitor_name="Property Drift", add_monitor_to_dashboard=True)
+        self.add_alert_rule(check_name="Prediction Drift", threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name="Prediction Drift", add_monitor_to_dashboard=True, alert_severity="high")
+        self.add_alert_rule(check_name="Label Drift", threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name="Label Drift", add_monitor_to_dashboard=True, alert_severity="high")
+
+

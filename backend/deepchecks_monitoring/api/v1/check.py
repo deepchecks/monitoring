@@ -146,7 +146,7 @@ async def create_check(
 
 
 @router.delete('/models/{model_id}/checks/{check_id}', tags=[Tags.CHECKS])
-async def delete_check(
+async def delete_check_by_id(
         model_id: int,
         check_id: int,
         session: AsyncSession = AsyncSessionDep
@@ -158,17 +158,18 @@ async def delete_check(
 
 
 @router.delete('/models/{model_id}/checks', tags=[Tags.CHECKS])
-async def delete_check_by_name(
+async def delete_checks_by_name(
         model_id: int,
         names: t.List[str] = Query(...),
         session: AsyncSession = AsyncSessionDep
 ):
-    """Delete check instances by name."""
+    """Delete check instances by name if they exist, otherwise returns 404."""
     await exists_or_404(session, Model, id=model_id)
+    for name in names:
+        await exists_or_404(session, Check, name=name, model_id=model_id)
     await session.execute(delete(Check).where(and_(
         Check.model_id == model_id,
-        Check.name.in_(names)
-    )))
+        Check.name.in_(names))))
 
 
 @router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema], tags=[Tags.CHECKS])

@@ -16,8 +16,8 @@ from typing import Dict, Optional, Union
 import numpy as np
 import pandas as pd
 from deepchecks.tabular import Dataset
-from deepchecks.tabular.checks import (CategoryMismatchTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
-                                       TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
+from deepchecks.tabular.checks import (CategoryMismatchTrainTest, SingleDatasetPerformance, TrainTestFeatureDrift,
+                                       TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client.core import client as core_client
@@ -227,8 +227,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     raise ValueError('feature_importance must be a dict')
                 symmetric_diff = set(feature_importance.keys()).symmetric_difference(features.keys())
                 if symmetric_diff:
-                    raise ValueError(f'feature_importance and features must contain the same keys, found not shared keys: '
-                                     f'{symmetric_diff}')
+                    raise ValueError(
+                        f'feature_importance and features must contain the same keys, found not shared keys: '
+                        f'{symmetric_diff}')
                 if any((not isinstance(v, float) for v in feature_importance.values())):
                     raise ValueError('feature_importance must contain only values of type float')
 
@@ -276,8 +277,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 DeepchecksModelVersionClient(model_version_id, self.model, session=self.session)
         return self._model_version_clients[model_version_id]
 
-    def _add_default_checks(self):
-        """Add default list of checks for a tabular model."""
+    def _add_defaults(self):
+        """Add default checks, monitors and alerts to a tabular model."""
         checks = {
             'Feature Drift': TrainTestFeatureDrift(),
             'Prediction Drift': TrainTestPredictionDrift(),
@@ -290,4 +291,15 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
         else:
             checks['Performance'] = SingleDatasetPerformance(scorers={'RMSE': 'rmse'})
-        return self.add_checks(checks=checks)
+        self.add_checks(checks=checks)
+
+        self.add_alert_rule(check_name="Feature Drift", threshold=0.25, frequency=24 * 60 * 60, alert_severity="high",
+                            monitor_name="Aggregated Feature Drift", add_monitor_to_dashboard=True)
+        self.add_alert_rule(check_name="Feature Drift", threshold=0.3, frequency=24 * 60 * 60,
+                            monitor_name="Top 5 Feature Drift",
+                            kwargs_for_check={"res_conf": None, "check_conf": {"aggregation method": ["top_5"]}})
+
+        self.add_alert_rule(check_name="Prediction Drift", threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name="Prediction Drift", add_monitor_to_dashboard=True, alert_severity="high")
+        self.add_alert_rule(check_name="Label Drift", threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name="Label Drift", add_monitor_to_dashboard=True, alert_severity="high")
