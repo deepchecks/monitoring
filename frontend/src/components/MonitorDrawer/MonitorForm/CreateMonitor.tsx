@@ -129,14 +129,14 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
     const checkId = +values.check;
 
     const end_time = modelsMap[selectedModelId]?.latest_time
-      ? new Date((modelsMap[selectedModelId]?.latest_time as number) * 1000).toISOString()
-      : new Date().toISOString();
+      ? new Date((modelsMap[selectedModelId]?.latest_time as number) * 1000)
+      : new Date();
 
     const lookbackCheckData: LookbackCheckProps = {
       checkId,
       data: {
-        start_time: new Date(Date.now() - +values.lookback * 1000).toISOString(),
-        end_time,
+        start_time: new Date(end_time.getTime() - +values.lookback * 1000).toISOString(),
+        end_time: end_time.toISOString(),
         additional_kwargs: values.additional_kwargs,
         frequency: +values.frequency,
         aggregation_window: +values.aggregation_window

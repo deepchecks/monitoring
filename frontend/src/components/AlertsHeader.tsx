@@ -7,7 +7,7 @@ export const AlertsHeader = () => {
   const navigate = useNavigate();
 
   const linkToSettings = () => {
-    navigate({ pathname: '/configuration/notifications' });
+    navigate({ pathname: '/configuration/alert-rules' });
   };
 
   return (

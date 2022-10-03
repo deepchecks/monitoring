@@ -111,7 +111,8 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
 
     ctx.beginPath();
-    const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || ('medium' as AlertSeverity)];
+    // const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || ('medium' as AlertSeverity)];
+    const severity_color = '#17003E';
     ctx.strokeStyle = severity_color;
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 6]);
