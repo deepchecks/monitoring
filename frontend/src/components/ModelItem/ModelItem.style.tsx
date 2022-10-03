@@ -10,7 +10,7 @@ export const StyledContainer = styled(
     ':last-of-type': {
       border: 'none'
     },
-    borderBottom: `1px dashed ${theme.palette.text.disabled}`
+    borderBottom: `1px dotted ${theme.palette.text.disabled}`
   };
   return {
     padding: '21px 30px',

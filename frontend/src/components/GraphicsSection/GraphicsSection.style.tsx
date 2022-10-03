@@ -25,7 +25,7 @@ export const StyledFlexWrapper = styled(Box)({
 });
 
 export const StyledDiagramWrapper = styled(Box)({
-  padding: '0 40px'
+  padding: '0 20px'
 });
 
 export const StyledMenuItem = styled(MenuItem)({
@@ -58,11 +58,15 @@ export const StyledArrow = styled(Arrow)(({ theme }) => ({
 export const StyledInfo = styled(Box)({
   display: 'flex',
   flexWrap: 'wrap',
-  padding: '6px 20px 16px'
+  padding: '0 20px',
+  height: 40,
+  marginBottom: '7px',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap'
 });
 
 export const StyledDivider = styled(Divider)({
-  margin: '0 6px',
-  height: '10px',
-  alignSelf: 'center'
+  margin: '4px 6px',
+  height: '10px'
 });

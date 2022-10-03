@@ -9,10 +9,7 @@ import { Grid } from '@mui/material';
 import { DataIngestion } from 'components/DataIngestion/DataIngestion';
 import DeleteMonitor from 'components/MonitorDrawer/MonitorForm/DeleteMonitor';
 import useModels from 'hooks/useModels';
-import {
-  MonitorSchema,
-  useDeleteMonitorApiV1MonitorsMonitorIdDelete
-} from '../api/generated';
+import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete } from '../api/generated';
 import useMonitorsData from '../hooks/useMonitorsData';
 
 export const DashboardPage = () => {
@@ -64,11 +61,11 @@ export const DashboardPage = () => {
       {isLoading ? (
         <Loader />
       ) : (
-        <Grid container spacing={4} pb={4}>
-          <Grid item lg={5} md={4}>
+        <Grid container spacing={4}>
+          <Grid item md={4}>
             <ModelList models={models} modelsMap={modelsMap} filterMonitors={setCurrentModelId} />
           </Grid>
-          <Grid item lg={7} md={8}>
+          <Grid item md={8}>
             <DataIngestion />
           </Grid>
           {!chartDataList.length ? (

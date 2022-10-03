@@ -1,10 +1,11 @@
-import { alpha, Stack, useTheme } from '@mui/material';
+import { alpha, Box, Tooltip, Typography } from '@mui/material';
 import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
 import {
   Chart,
   ChartArea,
   ChartData,
   ChartOptions,
+  LegendItem,
   registerables,
   TimeUnit,
   TooltipCallbacks,
@@ -14,7 +15,7 @@ import {
 import { DistributiveArray, _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import React, { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   addSpace,
@@ -26,6 +27,7 @@ import {
 } from '../helpers/diagramLine';
 import { GraphData } from '../helpers/types';
 import { colors } from '../theme/colors';
+import { HorizontalScrolling } from './HorizontalScrolling';
 import { Loader } from './Loader';
 import { Minimap } from './Minimap';
 
@@ -74,8 +76,9 @@ interface IMinimap {
 }
 
 export interface DiagramLineProps {
-  data: ChartData<'line', GraphData>;
   alert_rules?: Array<AlertRuleSchema>;
+  data: ChartData<'line', GraphData>;
+  children?: ReactNode;
   height?: number;
   minTimeUnit?: TimeUnit;
   isLoading?: boolean;
@@ -100,8 +103,11 @@ const initMinimap: IMinimap = {
   changeAlertIndex: () => 1
 };
 
+const maxLengthOfTooltipText = 120;
+
 function DiagramLine({
   data,
+  children,
   height,
   alert_rules = [],
   minTimeUnit = 'day',
@@ -113,8 +119,9 @@ function DiagramLine({
   const chartRef = useRef<Chart<'line', number[], string>>();
   const minimapRef = useRef<HTMLDivElement[]>([]);
   const range = useRef({ min: 0, max: 0 });
-  const theme = useTheme();
   const _tCallbacks = { ...defaultTooltipCallbacks, ...tooltipCallbacks };
+  const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
+  const [legends, setLegends] = useState<LegendItem[]>([]);
   const [chartData, setChartData] = useState(data);
 
   const getNewData = () => {
@@ -190,11 +197,28 @@ function DiagramLine({
     return currentPlugins;
   };
 
+  const hideLine = (item: LegendItem) => {
+    const chart = chartRef.current;
+
+    if (chart && typeof item.datasetIndex === 'number') {
+      const isDatasetVisible = chart.isDatasetVisible(item.datasetIndex);
+      chart.setDatasetVisibility(item.datasetIndex, !isDatasetVisible);
+      setLineIndexMap(prevState => ({
+        ...prevState,
+        [typeof item.datasetIndex === 'number' ? item.datasetIndex : -1]: isDatasetVisible
+      }));
+    }
+  };
+
   const options: ChartOptions<'line'> = {
     maintainAspectRatio: false,
     responsive: true,
     onResize: chart => {
       chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
+    },
+    interaction: {
+      mode: 'nearest',
+      intersect: false
     },
     layout: {
       padding: {
@@ -204,13 +228,14 @@ function DiagramLine({
     },
     elements: {
       point: {
-        borderWidth: 2,
-        radius: 4,
-        hoverRadius: 6,
-        hitRadius: 10,
-        hoverBorderWidth: 3
+        borderWidth: 0,
+        radius: 2,
+        hoverRadius: 4,
+        hitRadius: 6,
+        hoverBorderWidth: 0
       },
       line: {
+        borderWidth: 2,
         tension: 0.4,
         fill: true
       }
@@ -222,34 +247,7 @@ function DiagramLine({
         severity: alertSeverity
       },
       legend: {
-        display: true,
-        position: 'bottom',
-        align: 'start',
-        labels: {
-          usePointStyle: true,
-          textAlign: 'center',
-          generateLabels: chart => {
-            const { data } = chart;
-            if (data && data.labels?.length && data.datasets.length) {
-              return data.datasets.map(({ label, borderColor }, index) => ({
-                datasetIndex: index,
-                text: label as string,
-                textColor: theme.palette.text.primary,
-                fillStyle: borderColor as string,
-                strokeStyle: borderColor as string,
-                pointStyle: 'rectRounded',
-                textAlign: 'center',
-                hidden: !chart.isDatasetVisible(index)
-              }));
-            }
-            return [];
-          },
-          boxWidth: 6,
-          boxHeight: 6,
-          font: {
-            size: 12
-          }
-        }
+        display: false
       },
       minimapPanorama: {
         minimapRef: minimapRef.current[1]
@@ -313,11 +311,85 @@ function DiagramLine({
     }
   }, [chartRef.current, data]);
 
+  useEffect(() => {
+    if (chartRef.current && chartRef.current?.legend?.legendItems?.length) {
+      setLegends(chartRef.current?.legend?.legendItems);
+      chartRef.current?.legend?.legendItems.forEach(item => {
+        chartRef.current?.setDatasetVisibility(item.datasetIndex || 0, true);
+      });
+      setLineIndexMap({});
+    }
+  }, [chartData]);
+
   return isLoading ? (
     <Loader />
   ) : (
-    <Stack spacing="44px" height={height}>
-      <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
+    <>
+      <Box height={height ? height - 61 : 'auto'} sx={{ position: 'relative' }}>
+        <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: 1,
+          marginTop: '30px'
+        }}
+      >
+        {!!legends.length && (
+          <Box sx={{ padding: '6.5px 0', minWidth: '70%' }}>
+            <HorizontalScrolling>
+              {legends.map((legendItem, index) => (
+                <Tooltip
+                  title={legendItem?.text || ''}
+                  disableHoverListener={legendItem?.text?.length <= maxLengthOfTooltipText}
+                  key={index}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      m: '0 7px',
+                      minWidth: 'max-content',
+                      cursor: 'pointer',
+                      padding: 0,
+                      p: '3px 0'
+                    }}
+                    onClick={() => hideLine(legendItem)}
+                    key={index}
+                  >
+                    <Box
+                      sx={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: '3px',
+                        backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
+                      }}
+                    />
+                    <Typography
+                      variant="subtitle2"
+                      ml="5px"
+                      sx={{
+                        textDecoration: lineIndexMap[
+                          typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
+                        ]
+                          ? 'line-through'
+                          : 'none'
+                      }}
+                    >
+                      {legendItem?.text?.length > maxLengthOfTooltipText
+                        ? `${legendItem?.text?.slice(0, maxLengthOfTooltipText)}...`
+                        : legendItem?.text}
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              ))}
+            </HorizontalScrolling>
+          </Box>
+        )}
+        {children && <Box sx={{ ml: '42px' }}>{children}</Box>}
+      </Box>
       {changeAlertIndex && !!alerts.length && (
         <Minimap
           alerts={alerts}
@@ -329,7 +401,7 @@ function DiagramLine({
           ref={minimapRef}
         />
       )}
-    </Stack>
+    </>
   );
 }
 

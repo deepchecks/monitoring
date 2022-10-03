@@ -1,17 +1,15 @@
+import { MenuItem } from '@mui/material';
+import { StyledSelect } from 'components/MarkedSelect';
+import useStatsTime from 'hooks/useStatsTime';
 import React from 'react';
-import { Box, MenuItem } from '@mui/material';
 import useDataIngestion from '../../hooks/useDataIngestion';
 import DiagramLine from '../DiagramLine';
 import {
   StyledDiagramWrapper,
   StyledFlexContent,
   StyledFlexWrapper,
-  StyledFooter,
   StyledTypographyTitle
 } from './DataIngestion.style';
-import { Loader } from '../Loader';
-import { StyledSelect } from 'components/MarkedSelect';
-import useStatsTime from 'hooks/useStatsTime';
 
 export const DataIngestion = (): JSX.Element => {
   const { graphData, isLoading } = useDataIngestion();
@@ -24,19 +22,20 @@ export const DataIngestion = (): JSX.Element => {
   };
 
   return (
-    <StyledFlexContent>
+    <StyledFlexContent sx={{ height: 1 }}>
       <StyledFlexWrapper>
         <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
       </StyledFlexWrapper>
       <StyledDiagramWrapper>
-        <DiagramLine data={graphData} height={392} />
-        <StyledSelect value={currentTime.value.toString()} onChange={ev => handleTime(ev.target.value)} size="small">
-          {timeOptions.map(({ label, value }) => (
-            <MenuItem value={value.toString()} key={label}>
-              {label}
-            </MenuItem>
-          ))}
-        </StyledSelect>
+        <DiagramLine data={graphData} height={392}>
+          <StyledSelect value={currentTime.value.toString()} onChange={ev => handleTime(ev.target.value)} size="small">
+            {timeOptions.map(({ label, value }) => (
+              <MenuItem value={value.toString()} key={label}>
+                {label}
+              </MenuItem>
+            ))}
+          </StyledSelect>
+        </DiagramLine>
       </StyledDiagramWrapper>
     </StyledFlexContent>
   );

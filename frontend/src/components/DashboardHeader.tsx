@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography, useTheme } from '@mui/material';
+import { Box, Button, Stack, useTheme } from '@mui/material';
 import React from 'react';
 import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
 import { PlusIcon } from '../assets/icon/icon';
@@ -19,7 +19,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
         sx={{
           display: 'inline-flex',
           alignItems: 'center',
-          padding: '12px 48px 12px 0',
+          padding: '20px 0',
           justifyContent: 'space-between',
           height: '100px',
           width: '100%',
@@ -57,21 +57,19 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
             <Button
               sx={{
                 textTransform: 'none',
-                padding: '8px'
+                padding: '11px 8px',
+                color: '#9D60FB',
+                fontSize: '12px',
+                lineHeight: '17px',
+                fontWeight: 400,
+                '& .MuiButton-startIcon': {
+                  mr: '4px'
+                }
               }}
               variant="text"
               startIcon={<PlusIcon fill={theme.palette.primary.main} />}
             >
-              <Typography
-                sx={{
-                  color: '#9D60FB',
-                  fontSize: '14px',
-                  fontWeight: 400,
-                  marginLeft: '4px'
-                }}
-              >
-                Add Monitor
-              </Typography>
+              Add Monitor
             </Button>
           </Box>
         </Box>

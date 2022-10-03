@@ -294,7 +294,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.font = '16px Roboto';
-      ctx.fillText(`Alert ${currentIndex}/${alerts.length}`, meta?.data[index]?.x, top - space - rectHeight / 2);
+      ctx.fillText(`Alert ${currentIndex}/${alerts.length}`, meta?.data[index]?.x, top - space / 4 - rectHeight / 2);
 
       ctx.beginPath();
       ctx.lineWidth = 2;

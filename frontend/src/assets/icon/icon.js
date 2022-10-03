@@ -11,6 +11,8 @@ import { ReactComponent as CheckboxSelected } from './checkboxSelected.svg';
 import { ReactComponent as Checkmark } from './checkmark.svg';
 import { ReactComponent as Clear } from './clear.svg';
 import { ReactComponent as CloseIcon } from './close.svg';
+import { ReactComponent as CollapseArrowLeft } from './collapseArrowLeft.svg';
+import { ReactComponent as CollapseArrowRight } from './collapseArrowRight.svg';
 import { ReactComponent as Configuration } from './configuration.svg';
 import { ReactComponent as ConfigurationActive } from './configurationActiv.svg';
 import { ReactComponent as ConfigurationHover } from './configurationHover.svg';
@@ -57,6 +59,8 @@ export {
   Checkmark,
   Clear,
   CloseIcon,
+  CollapseArrowLeft,
+  CollapseArrowRight,
   Configuration,
   ConfigurationActive,
   ConfigurationHover,

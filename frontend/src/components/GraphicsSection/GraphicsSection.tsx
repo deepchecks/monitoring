@@ -1,12 +1,12 @@
-import { IconButton, Stack, Typography } from '@mui/material';
-import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
+import { Box, IconButton, Typography } from '@mui/material';
+import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated';
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
-import { _DeepPartialObject } from 'chart.js/types/utils.js';
+import { _DeepPartialObject } from 'chart.js/types/utils';
+import DiagramLine from 'components/DiagramLine';
 import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer';
 import dayjs from 'dayjs';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { MenuVertical } from '../../assets/icon/icon';
-import DiagramLine from '../DiagramLine';
 import {
   StyledDiagramWrapper,
   StyledDivider,
@@ -27,14 +27,21 @@ interface GraphicsSectionProps {
   models: GetModelsApiV1ModelsGetQueryResult;
 }
 
-function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDelete }: GraphicsSectionProps) {
+interface MonitorInfo {
+  label: string;
+  text: string | undefined;
+}
+
+function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: GraphicsSectionProps) {
   const [hover, setHover] = useState<boolean>(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<null | HTMLElement>(null);
   const [openSubmenu, setOpenSubmenu] = useState<boolean>(false);
+  const infoRef = useRef<HTMLDivElement>(null);
 
   const openRootMenu = Boolean(anchorElRootMenu);
 
   const filterMap: { [key: string]: string } = {
+    greater_than_equals: '>',
     greater_than: '>',
     equals: '=',
     contains: 'contains'
@@ -87,6 +94,70 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
     label: (context: TooltipItem<'line'>) =>
       `${getTime(context.label)} | Model Version ${context.dataset.label?.split(':')[0]}`
   };
+
+  const monitorInfo = useMemo(() => {
+    const currentMonitorInfo: MonitorInfo[] = [
+      { label: 'Model', text: modelName },
+      { label: 'Check', text: monitor.check.name }
+    ];
+
+    if (monitor.data_filters) {
+      currentMonitorInfo.push({
+        label: 'Filter',
+        text: `${monitor.data_filters.filters[0].column} ${filterMap[monitor.data_filters.filters[0].operator]} ${
+          monitor.data_filters.filters[0].value
+        }`
+      });
+    }
+
+    const initLength = currentMonitorInfo.length;
+
+    if (infoRef.current && modelName) {
+      const monitorInfoWidth = (infoRef.current.clientWidth - 40) * 2;
+      let fullWidth = 0;
+
+      const monitorInfoOptions = infoRef.current.children;
+
+      for (let i = 0; i < monitorInfoOptions.length; i++) {
+        const firstEmptySpaceCondition =
+          fullWidth < monitorInfoWidth / 2 && fullWidth + monitorInfoOptions[i].clientWidth > monitorInfoWidth / 2;
+        const secondEmptySpaceCondition =
+          fullWidth < monitorInfoWidth && fullWidth + monitorInfoOptions[i].clientWidth > monitorInfoWidth;
+
+        if (firstEmptySpaceCondition) {
+          fullWidth = monitorInfoWidth / 2;
+        }
+
+        if (secondEmptySpaceCondition) {
+          fullWidth = monitorInfoWidth;
+        }
+
+        fullWidth += monitorInfoOptions[i].clientWidth;
+      }
+
+      while (currentMonitorInfo.length !== monitorInfoOptions.length && !currentMonitorInfo.length) {
+        currentMonitorInfo.pop();
+      }
+
+      for (let i = monitorInfoOptions.length - 1; i > 0; i--) {
+        if (fullWidth > monitorInfoWidth) {
+          fullWidth -= monitorInfoOptions[i].clientWidth;
+          currentMonitorInfo.pop();
+          continue;
+        }
+
+        const last = currentMonitorInfo.length - 1;
+        if (last && initLength !== currentMonitorInfo.length) {
+          currentMonitorInfo[last].text = `${currentMonitorInfo[last]?.text?.slice(0, -3)}...`;
+        }
+
+        return currentMonitorInfo;
+      }
+    }
+
+    return currentMonitorInfo;
+  }, [monitor, infoRef.current, models.length, modelName, infoRef.current?.children[0].clientWidth]);
+
   return (
     <>
       <StyledFlexContent onMouseOver={onMouseOver} onMouseLeave={onMouseLeave}>
@@ -98,46 +169,26 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
             </IconButton>
           )}
         </StyledFlexWrapper>
-        <StyledInfo>
-          <Stack direction="row">
-            <Typography variant="subtitle2">Model:</Typography>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                fontWeight: 700,
-                color: theme => (isBlack ? theme.palette.grey[300] : theme.palette.text.primary),
-                ml: '4px'
-              }}
-            >
-              {modelName}
-            </Typography>
-          </Stack>
+        <StyledInfo ref={infoRef}>
+          {monitorInfo.map((item, index) => {
+            if (!item) {
+              return null;
+            }
 
-          <StyledDivider orientation="vertical" flexItem />
-          <Stack direction="row">
-            <Typography variant="subtitle2">Check:</Typography>
-            <Typography variant="subtitle2" ml="4px">
-              {monitor.check.name}
-            </Typography>
-          </Stack>
+            const { label, text } = item;
 
-          {monitor.data_filters ? (
-            <>
-              <StyledDivider orientation="vertical" flexItem />
-              <Typography variant="subtitle2">
-                <>
-                  Filter: {monitor.data_filters.filters[0].column}{' '}
-                  {filterMap[monitor.data_filters.filters[0].operator as string]}{' '}
-                  {monitor.data_filters.filters[0].value}
-                </>
-              </Typography>
-            </>
-          ) : (
-            ''
-          )}
+            return (
+              <Box sx={{ display: 'flex' }} key={index}>
+                <Typography variant="subtitle2" sx={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                  {label}: {text}
+                </Typography>
+                {monitorInfo.length - 1 !== index && <StyledDivider orientation="vertical" flexItem />}
+              </Box>
+            );
+          })}
         </StyledInfo>
         <StyledDiagramWrapper>
-          <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} alert_rules={monitor.alert_rules} />
+          <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} alert_rules={monitor.alert_rules} height={320} />
         </StyledDiagramWrapper>
       </StyledFlexContent>
       <StyledRootMenu
