@@ -35,16 +35,19 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
 
   const { data: dashboards } = useGetDashboardApiV1DashboardsGet({
     query: {
-      queryKey: [getGetDashboardApiV1DashboardsGetQueryKey(), lastMonitorsFetch]
+      queryKey: [getGetDashboardApiV1DashboardsGetQueryKey(), lastMonitorsFetch],
+      refetchOnWindowFocus: false
     }
   });
 
   const [chartDataMap, setChartDataMap] = useState<Record<MonitorId, ChartData<'line'>>>({});
+  const [currentMonitors, setCurrentMonitors] = useState<MonitorSchema[]>([]);
 
   useEffect(() => console.log('UPDATE', { lastMonitorsFetch }), [lastMonitorsFetch]);
 
   const { modelsMap } = useModels();
-  const { monitors = [] } = dashboards || {};
+
+  const monitors: MonitorSchema[] = dashboards?.monitors || [];
 
   const refreshMonitors = async (monitor?: MonitorSchema) => {
     if (!monitors.length) return;
@@ -73,15 +76,20 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
   };
 
   useEffect(() => {
-    monitors.sort((a, b) => a.check.model_id - b.check.model_id).map(monitor => fetchMonitor(monitor));
+    setCurrentMonitors(() => {
+      const currentMonitors = [...monitors.sort((a, b) => a.check.model_id - b.check.model_id)];
+      currentMonitors.forEach(monitor => fetchMonitor(monitor));
+
+      return currentMonitors;
+    });
   }, [dashboards, modelsMap]);
 
   const chartDataList = useMemo(
-    () => monitors.map(monitor => chartDataMap[monitor.id] || { labels: [], datasets: [] }),
-    [monitors, chartDataMap]
+    () => currentMonitors.map(monitor => chartDataMap[monitor.id] || { labels: [], datasets: [] }),
+    [currentMonitors, chartDataMap]
   );
 
-  const value = { monitors, chartDataList, refreshMonitors };
+  const value = { monitors: currentMonitors, chartDataList, refreshMonitors };
 
   return <MonitorsDataContext.Provider value={value}>{children}</MonitorsDataContext.Provider>;
 };

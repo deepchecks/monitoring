@@ -14,7 +14,7 @@ import {
 import { DistributiveArray, _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { Dispatch, SetStateAction, useRef } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   addSpace,
@@ -115,6 +115,7 @@ function DiagramLine({
   const range = useRef({ min: 0, max: 0 });
   const theme = useTheme();
   const _tCallbacks = { ...defaultTooltipCallbacks, ...tooltipCallbacks };
+  const [chartData, setChartData] = useState(data);
 
   const getNewData = () => {
     const char = chartRef.current;
@@ -146,6 +147,7 @@ function DiagramLine({
             }
           }
         });
+
         return {
           ...el,
           backgroundColor: createGradient(
@@ -305,18 +307,24 @@ function DiagramLine({
     }
   };
 
+  useEffect(() => {
+    if (chartRef.current) {
+      setChartData(getNewData());
+    }
+  }, [chartRef.current, data]);
+
   return isLoading ? (
     <Loader />
   ) : (
     <Stack spacing="44px" height={height}>
-      <Line data={getNewData()} ref={chartRef} options={options} plugins={getActivePlugins()} />
+      <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
       {changeAlertIndex && !!alerts.length && (
         <Minimap
           alerts={alerts}
           alertIndex={alertIndex}
           alertSeverity={alertSeverity}
           changeAlertIndex={changeAlertIndex}
-          data={getNewData()}
+          data={chartData}
           options={options}
           ref={minimapRef}
         />

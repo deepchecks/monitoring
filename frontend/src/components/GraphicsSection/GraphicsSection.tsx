@@ -1,13 +1,12 @@
 import { IconButton, Stack, Typography } from '@mui/material';
 import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated.js';
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
-import { AlertRuleSchema } from 'api/generated';
 import { _DeepPartialObject } from 'chart.js/types/utils.js';
 import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer';
-import React, { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import React, { useMemo, useState } from 'react';
 import { MenuVertical } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
-import dayjs from 'dayjs';
 import {
   StyledDiagramWrapper,
   StyledDivider,
@@ -52,11 +51,6 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
     return name;
   }, [models, monitor?.check?.model_id]);
 
-  useEffect(() => {
-    setHover(true);
-    setTimeout(() => setHover(false), 1000);
-  }, [monitor]);
-
   const onMouseOver = () => setHover(true);
 
   const onMouseLeave = () => setHover(false);
@@ -85,13 +79,13 @@ function GraphicsSectionComponent({ data, isBlack, monitor, onOpen, models, onDe
   };
 
   function getTime(timeLabel: string) {
-    if (monitor.frequency < 86400)
-      return dayjs(timeLabel).format('MMM. DD YYYY hha');
+    if (monitor.frequency < 86400) return dayjs(timeLabel).format('MMM. DD YYYY hha');
     return dayjs(timeLabel).format('MMM. DD YYYY');
-  };
+  }
 
   const tooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = {
-    label: (context: TooltipItem<'line'>) => `${getTime(context.label)} | Model Version ${context.dataset.label?.split(':')[0]}`
+    label: (context: TooltipItem<'line'>) =>
+      `${getTime(context.label)} | Model Version ${context.dataset.label?.split(':')[0]}`
   };
   return (
     <>
