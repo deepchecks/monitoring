@@ -79,6 +79,6 @@ async def test_add_defaults(classification_vision_model_id, deepchecks_sdk_clien
     checks_added = model_client.add_checks({"check": SingleDatasetPerformance()})
     assert checks_added["check"] == 5
     monitor_id = model_client.add_monitor("check", 86400)
-    assert monitor_id == 4
+    assert monitor_id == 5
     alert_id = model_client.add_alert_rule("check", 0.3, 86400)
     assert alert_id == 4

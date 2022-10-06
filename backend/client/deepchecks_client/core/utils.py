@@ -18,6 +18,7 @@ import pendulum as pdl
 from jsonschema import validators
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
+from termcolor import cprint
 
 
 def maybe_raise(
@@ -44,7 +45,7 @@ def maybe_raise(
 
     Returns
     =======
-    Respoonse
+    Response
     """
     status = response.status_code
     url = response.url
@@ -124,9 +125,16 @@ def create_timestamp(timestamp):
 
 
 DeepchecksJsonValidator = validators.extend(
-  validators.Draft202012Validator,
-  type_checker=validators.Draft202012Validator.TYPE_CHECKER.redefine(
+    validators.Draft202012Validator,
+    type_checker=validators.Draft202012Validator.TYPE_CHECKER.redefine(
         "array",
         lambda _, instance: isinstance(instance, (list, tuple))
     )
 )
+
+
+def pretty_print(msg: str):
+    """Pretty print the attached massage to the user terminal.
+
+    Used for information massages which are not errors or warnings."""
+    cprint(msg, "yellow", attrs=["bold"])

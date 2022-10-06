@@ -18,8 +18,7 @@ from urllib.parse import urljoin
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-from deepchecks_client.core.utils import maybe_raise
-from termcolor import cprint
+from deepchecks_client.core.utils import maybe_raise, pretty_print
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")
@@ -364,7 +363,7 @@ class DeepchecksModelClient:
             ),
             msg=f"Failed to drop Model(id:{model_id}) checks.\n{{error}}"
         )
-        cprint(f"The following checks were successfully deleted: {checks_in_model}", "yellow", attrs=["bold"])
+        pretty_print(f"The following checks were successfully deleted: {checks_in_model}")
 
 
 class DeepchecksClient:
@@ -437,7 +436,7 @@ class DeepchecksClient:
             if create_defaults:
                 model._add_defaults()
                 msg += " Default checks, monitors and alerts added."
-            cprint(msg, "yellow", attrs=["bold"])
+            pretty_print(msg)
 
         return model
 
@@ -449,18 +448,18 @@ class DeepchecksClient:
         model_id: int
             Model id to get client for.
         task_type: str
-            Task type of the model, one of: # TODO
+            Task type of the model, possible values are regression, multiclass, binary, vision_classification and
+            vision_detection.
         Returns
         -------
         DeepchecksModelClient
             Client to interact with the model.
         """
-        from deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
-        from deepchecks_client.vision.client import DeepchecksModelClient as VisionDeepchecksModelClient
-
         if self._model_clients.get(model_id) is None:
             if 'vision' in task_type:
+                from deepchecks_client.vision.client import DeepchecksModelClient as VisionDeepchecksModelClient
                 self._model_clients[model_id] = VisionDeepchecksModelClient(model_id, session=self.session)
             else:
+                from deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
                 self._model_clients[model_id] = TabularDeepchecksModelClient(model_id, session=self.session)
         return self._model_clients[model_id]

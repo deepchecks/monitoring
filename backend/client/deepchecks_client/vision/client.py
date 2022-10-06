@@ -96,7 +96,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             for prop_name, prop_val in bbox_props.items():
                 prop_vals[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = prop_val[0]
         sample = {
-            DeepchecksColumns.SAMPLE_ID_COL.value: sample_id,
+            DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id),
             DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
             **prop_vals
         }
@@ -309,5 +309,6 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                             monitor_name="Prediction Drift", add_monitor_to_dashboard=True, alert_severity="high")
         self.add_alert_rule(check_name="Label Drift", threshold=0.25, frequency=24 * 60 * 60,
                             monitor_name="Label Drift", add_monitor_to_dashboard=True, alert_severity="high")
+        self.add_monitor(check_name='Performance', frequency=24 * 60 * 60, name='Performance')
 
 
