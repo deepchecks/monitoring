@@ -12,6 +12,7 @@ export const componentOptions: Components<Theme> = {
     },
     styleOverrides: {
       root: ({ theme }) => ({
+        textTransform: 'none',
         color: theme.palette.common.white,
         borderRadius: '2px',
         fontSize: 14,

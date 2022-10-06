@@ -278,15 +278,13 @@ const StyledBottomSection = styled(Box)({
 const StyledButtonResolve = styled(Button)({
   width: 160,
   padding: '0 8px',
-  minHeight: 36,
-  textTransform: 'none'
+  minHeight: 36
 });
 
 const StyledButtonTest = styled(LoadingButton)({
   width: 166,
   padding: 0,
-  minHeight: 36,
-  textTransform: 'none'
+  minHeight: 36
 });
 
 const StyledSelect = styled(Select)(({ theme }) => ({

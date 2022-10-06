@@ -7,7 +7,7 @@ import { Dispatch, SetStateAction } from 'react';
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
 import { lightPaletteOptions } from '../theme/palette';
 
-const drawFilledRhoimbus = (
+const drawFilledRhombus = (
   ctx: CanvasRenderingContext2D,
   meta: ChartMeta,
   color: string,
@@ -255,8 +255,8 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       const rectWidth = 100;
       const rectHeight = 32;
 
-      drawFilledRhoimbus(ctx, meta, criticalColor, index, 20, 2);
-      drawFilledRhoimbus(ctx, meta, alpha(criticalColor, 0.15), index, 30, 10);
+      drawFilledRhombus(ctx, meta, criticalColor, index, 20, 2);
+      drawFilledRhombus(ctx, meta, alpha(criticalColor, 0.15), index, 30, 10);
 
       ctx.beginPath();
       ctx.fillStyle = criticalColor;
@@ -336,9 +336,9 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       ctx.restore();
       ctx.setLineDash([6, 0]);
 
-      drawFilledRhoimbus(ctx, meta, '#fff', index, outerRadius, 4);
-      drawFilledRhoimbus(ctx, meta, criticalColor, index, 14, 3);
-      drawFilledRhoimbus(ctx, meta, alpha('#fff', 0.85), index, 10, 0);
+      drawFilledRhombus(ctx, meta, '#fff', index, outerRadius, 4);
+      drawFilledRhombus(ctx, meta, criticalColor, index, 14, 3);
+      drawFilledRhombus(ctx, meta, alpha('#fff', 0.85), index, 10, 0);
       drawExclamationMark(ctx, meta, criticalColor, index, 12, 2);
     };
 

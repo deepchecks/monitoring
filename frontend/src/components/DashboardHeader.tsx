@@ -56,7 +56,6 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
           <Box onClick={() => onOpen(DrawerNamesMap.CreateMonitor)}>
             <Button
               sx={{
-                textTransform: 'none',
                 padding: '11px 8px',
                 color: '#9D60FB',
                 fontSize: '12px',

@@ -57,7 +57,7 @@ export const AlertRules = () => {
         startIcon={<WhitePlusIcon />}
         onClick={() => onDialogOpen()}
       >
-        New alert rule
+        New Alert Rule
       </Button>
     );
 
