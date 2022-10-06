@@ -388,7 +388,8 @@ async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.
     model_version_dataframes = []
     for (reference_query, test_infos) in model_versions_sessions:
         for curr_test_info in test_infos:
-            if "query" in curr_test_info:
+            # the test info query may be none if there was no data after the filtering
+            if "query" in curr_test_info and curr_test_info["query"] is not None:
                 test_query = await curr_test_info["query"]
                 curr_test_info["data"] = pd.DataFrame.from_dict(test_query.all())
         if reference_query is not None:
