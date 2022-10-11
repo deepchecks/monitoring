@@ -14,7 +14,7 @@ import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete } from '../
 import useMonitorsData from '../hooks/useMonitorsData';
 
 export const DashboardPage = () => {
-  const { models, modelsMap } = useModels();
+  const { models } = useModels();
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState<boolean>(false);
   const [currMonitor, setCurrMonitor] = useState<MonitorSchema>();
@@ -67,10 +67,10 @@ export const DashboardPage = () => {
       ) : (
         <Grid container spacing={4}>
           <Grid item md={4}>
-            <ModelList models={models} modelsMap={modelsMap} filterMonitors={setCurrentModelId} />
+            <ModelList activeModelId={currentModelId} models={models} filterMonitors={setCurrentModelId} />
           </Grid>
           <Grid item md={8}>
-            <DataIngestion />
+            <DataIngestion modelId={currentModelId} />
           </Grid>
           {!chartDataList.length ? (
             <Loader sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />

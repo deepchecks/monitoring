@@ -5,14 +5,16 @@ import { setGraphOptions } from '../helpers/setGraphOptions';
 import useModels from './useModels';
 import useStatsTime from './useStatsTime';
 
-const useDataIngestion = () => {
+const useDataIngestion = (modelId: number | null = null) => {
   const [statsTime] = useStatsTime();
   const { modelsMap } = useModels();
+  const modelOptions = modelId ? { model_id: modelId } : {};
 
   const latestTime = Math.max(...Object.values(modelsMap).map(o => (o.latest_time ? o.latest_time : 0)));
   const { data = [], isLoading } = useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet({
     time_filter: statsTime.value,
-    end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined
+    end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined,
+    ...modelOptions
   });
 
   const graphData = useMemo(

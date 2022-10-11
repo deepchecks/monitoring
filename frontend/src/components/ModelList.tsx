@@ -1,54 +1,59 @@
-import { Box, Button, List, Typography } from '@mui/material';
+import { Box, List, Typography } from '@mui/material';
 import { ModelsInfoSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
-import React, { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { Loader } from './Loader';
 import { ModelItem } from './ModelItem/ModelItem';
 import { SearchField } from './SearchField';
 
 interface ModelListProps {
+  activeModelId: number | null;
   filterMonitors: Dispatch<SetStateAction<number | null>>;
   models: ModelsInfoSchema[];
-  modelsMap: Record<number, ModelsInfoSchema>;
 }
 
-const initRange = 3;
-
-export function ModelList({ filterMonitors, models, modelsMap }: ModelListProps) {
-  const [range, setRange] = useState<number>(initRange);
-
+export function ModelList({ activeModelId, filterMonitors, models }: ModelListProps) {
   const [filteredModels, setFilteredModels] = useState(models);
-  const [reset, setReset] = useState<boolean>(false);
+  const [modelName, setModelName] = useState<string>('');
 
   const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
     severity: ['critical']
   });
 
+  const clearSearchBar = () => {
+    setModelName('');
+    setFilteredModels(models);
+  };
+
+  const onReset = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    filterMonitors(null);
+  };
+
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
+    setModelName(value);
     if (!value) setFilteredModels(models);
     setFilteredModels(models.filter(({ name }) => name.toLowerCase().includes(value.toLowerCase())));
   };
 
-  const handleRange = () => {
-    if (reset) {
-      setFilteredModels(models);
-      setRange(initRange);
-      filterMonitors(null);
-      setReset(false);
-      return;
-    }
+  const alertsCount = useMemo(
+    () =>
+      models.reduce((acc, { id }) => {
+        const currentAlert = criticalAlerts.find(alert => alert.model_id === id);
+        if (currentAlert && currentAlert.alerts_count) {
+          acc.push(currentAlert.alerts_count);
+        } else {
+          acc.push(0);
+        }
 
-    setRange(filteredModels.length);
-  };
-
-  const sortModels = useCallback(
-    (models: ModelsInfoSchema[]) => {
-      setRange(1);
-      setFilteredModels(models);
-      setReset(true);
-    },
-    [setRange, setFilteredModels]
+        return acc;
+      }, [] as number[]),
+    [criticalAlerts, models]
   );
+
+  const handleModelClick = (modelId: number) => {
+    filterMonitors(modelId);
+  };
 
   useEffect(() => {
     setFilteredModels(models);
@@ -83,42 +88,22 @@ export function ModelList({ filterMonitors, models, modelsMap }: ModelListProps)
           padding: '20px 30px 20px 22px'
         }}
       >
-        <SearchField size="small" fullWidth onChange={onSearch} />
+        <SearchField size="small" fullWidth onChange={onSearch} value={modelName} reset={clearSearchBar} />
       </Box>
       {isCriticalAlertsLoading ? (
         <Loader />
       ) : (
         <List sx={{ height: '370px', overflowY: 'auto' }}>
-          {filteredModels.slice(0, range).map((model, index) => (
+          {filteredModels.map((model, index) => (
             <ModelItem
               key={index}
-              filterMonitors={filterMonitors}
-              alertsCount={criticalAlerts.reduce((acc, alert) => {
-                let currentAlertCount = acc;
-                if (alert.model_id === model.id && alert.alerts_count) {
-                  currentAlertCount = alert.alerts_count;
-                }
-
-                return currentAlertCount;
-              }, 0)}
+              activeModel={activeModelId === model.id}
+              alertsCount={alertsCount[index]}
+              onModelClick={handleModelClick}
+              onReset={onReset}
               model={model}
-              modelsMap={modelsMap}
-              sortModels={sortModels}
             />
           ))}
-          {range < filteredModels.length && (
-            <Button
-              sx={{
-                padding: '8px',
-                borderRadius: '4px',
-                marginLeft: '30px'
-              }}
-              variant="text"
-              onClick={handleRange}
-            >
-              See all (+{filteredModels.length - range})
-            </Button>
-          )}
         </List>
       )}
     </Box>

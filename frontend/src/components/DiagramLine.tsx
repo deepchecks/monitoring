@@ -337,7 +337,7 @@ function DiagramLine({
           marginTop: '30px'
         }}
       >
-        {!!legends.length && (
+        {!!chartData?.labels?.length && !!legends.length && (
           <Box sx={{ padding: '6.5px 0', minWidth: '70%' }}>
             <HorizontalScrolling>
               {legends.map((legendItem, index) => (

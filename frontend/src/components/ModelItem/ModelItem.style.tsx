@@ -1,26 +1,29 @@
-import { alpha, Box, ListItem, ListItemProps, styled, Typography } from '@mui/material';
-import React from 'react';
+import { alpha, Box, ListItem, styled, Typography } from '@mui/material';
 
-export const StyledContainer = styled(
-  (
-    { ...props }: ListItemProps // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => <ListItem {...props} />
-)(({ theme }) => {
-  const style = {
-    ':last-of-type': {
-      border: 'none'
-    },
-    borderBottom: `1px dotted ${theme.palette.text.disabled}`
-  };
-  return {
-    padding: '21px 30px',
-    cursor: 'pointer',
-    ':hover': {
-      backgroundColor: theme.palette.grey[100]
-    },
-    ...style
-  };
-});
+interface StyledContainerProps {
+  active: boolean;
+}
+
+export const StyledContainer = styled(ListItem, { shouldForwardProp: prop => prop !== 'active' })<StyledContainerProps>(
+  ({ active, theme }) => {
+    const style = {
+      ':last-of-type': {
+        border: 'none'
+      },
+      borderBottom: `1px dotted ${theme.palette.text.disabled}`
+    };
+    return {
+      padding: '16px 38px 16px 30px',
+      cursor: 'pointer',
+      position: 'relative',
+      backgroundColor: active ? 'rgba(209, 216, 220, 0.5)' : theme.palette.common.white,
+      ':hover': {
+        backgroundColor: theme.palette.grey[100]
+      },
+      ...style
+    };
+  }
+);
 
 export const StyledModelInfo = styled(Box)({
   display: 'flex',

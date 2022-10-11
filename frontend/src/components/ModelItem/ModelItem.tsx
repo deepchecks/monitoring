@@ -2,21 +2,21 @@ import { alpha, Box, Typography } from '@mui/material';
 import { ModelsInfoSchema } from 'api/generated';
 import { GlobalStateContext } from 'Context';
 import dayjs from 'dayjs';
-import React, { Dispatch, SetStateAction, useContext } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StyledContainer, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 
 interface ModelItemProps {
+  activeModel: boolean;
   alertsCount: number;
-  filterMonitors: Dispatch<SetStateAction<number | null>>;
+  onModelClick: (modelId: number) => void;
+  onReset: (event: React.MouseEvent<HTMLDivElement>) => void;
   model: ModelsInfoSchema;
-  modelsMap: Record<number, ModelsInfoSchema>;
-  sortModels: (models: ModelsInfoSchema[]) => void;
 }
 
 const severity = 'critical';
 
-export function ModelItem({ alertsCount, filterMonitors, model, modelsMap, sortModels }: ModelItemProps) {
+export function ModelItem({ activeModel, alertsCount, onModelClick, onReset, model }: ModelItemProps) {
   const navigate = useNavigate();
   const { changeAlertFilters } = useContext(GlobalStateContext);
 
@@ -26,19 +26,8 @@ export function ModelItem({ alertsCount, filterMonitors, model, modelsMap, sortM
     navigate({ pathname: '/alerts' });
   };
 
-  const handleClickModel = () => {
-    const currentModels = [modelsMap[model.id]];
-    Object.entries(modelsMap).forEach(([key, value]) => {
-      if (key !== model.id.toString()) {
-        currentModels.push(value);
-      }
-    });
-    sortModels(currentModels);
-    filterMonitors(model.id);
-  };
-
   return (
-    <StyledContainer onClick={handleClickModel}>
+    <StyledContainer active={activeModel} onClick={() => onModelClick(model.id)}>
       <StyledModelInfo>
         <Box>
           <Typography variant="subtitle1">{model.name}</Typography>
@@ -72,6 +61,37 @@ export function ModelItem({ alertsCount, filterMonitors, model, modelsMap, sortM
           </Typography>
         </Box>
       </StyledModelInfo>
+      {activeModel && (
+        <Box
+          onClick={onReset}
+          sx={{
+            position: 'absolute',
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            backgroundColor: 'white',
+            top: '50%',
+            right: '8px',
+            transform: 'translateY(-50%)',
+            '::before, ::after': {
+              content: "''",
+              position: 'absolute',
+              display: 'block',
+              height: 10,
+              width: 2,
+              background: '#000',
+              left: '50%',
+              top: '50%'
+            },
+            ':before': {
+              transform: 'translate(-50%, -50%) rotate(45deg)'
+            },
+            ':after': {
+              transform: 'translate(-50%, -50%) rotate(-45deg)'
+            }
+          }}
+        />
+      )}
     </StyledContainer>
   );
 }

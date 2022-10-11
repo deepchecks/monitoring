@@ -11,11 +11,15 @@ import {
   StyledTypographyTitle
 } from './DataIngestion.style';
 
-export const DataIngestion = (): JSX.Element => {
-  const { graphData, isLoading } = useDataIngestion();
+interface DataIngestionProps {
+  modelId: number | null;
+}
+
+export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
+  const { graphData } = useDataIngestion(modelId);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
 
-  const handleTime = (newTimeValue: any) => {
+  const handleTime = (newTimeValue: unknown) => {
     if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
     const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
     setCurrentTime(timeOptions[newTimeIndex].id);

@@ -1,9 +1,14 @@
+import { InputAdornment, TextField, TextFieldProps, Typography } from '@mui/material';
 import React, { memo } from 'react';
-import { InputAdornment, TextField, TextFieldProps } from '@mui/material';
 import { SearchIcon } from '../assets/icon/icon';
 
-const SearchFieldComponent = (props: TextFieldProps) => {
-  const { onChange } = props;
+type SearchFieldComponentProps = {
+  reset: () => void;
+};
+
+const SearchFieldComponent = ({ reset, ...props }: SearchFieldComponentProps & TextFieldProps) => {
+  const { onChange, value } = props;
+
   return (
     <TextField
       onChange={onChange}
@@ -12,9 +17,10 @@ const SearchFieldComponent = (props: TextFieldProps) => {
       }}
       placeholder="Search Model"
       variant="outlined"
+      value={value}
       {...props}
       InputProps={{
-        endAdornment: (
+        endAdornment: !value ? (
           <InputAdornment
             position="end"
             sx={{
@@ -22,6 +28,18 @@ const SearchFieldComponent = (props: TextFieldProps) => {
             }}
           >
             <SearchIcon />
+          </InputAdornment>
+        ) : (
+          <InputAdornment
+            position="end"
+            sx={{
+              cursor: 'pointer'
+            }}
+            onClick={reset}
+          >
+            <Typography variant="subtitle2" color="primary.main">
+              Reset
+            </Typography>
           </InputAdornment>
         )
       }}
