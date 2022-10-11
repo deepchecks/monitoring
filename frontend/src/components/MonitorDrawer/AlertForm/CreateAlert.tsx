@@ -13,7 +13,7 @@ import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import React, { memo, ReactNode, useEffect, useMemo, useState } from 'react';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
-import { LookbackCheckProps } from '../MonitorDrawer';
+import { LookbackCheckProps } from '../MonitorDrawer.types';
 
 interface EditMonitorProps {
   monitor: MonitorSchema;

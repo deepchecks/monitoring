@@ -1,7 +1,7 @@
 import { GetAlertRulesApiV1AlertRulesGetParams } from 'api/generated';
 import React, { createContext, Dispatch, FC, SetStateAction, useCallback, useContext, useState } from 'react';
 
-interface Context {
+export interface IContext {
   dashboard_id: number;
   models?: [];
   monitors?: [];
@@ -17,7 +17,7 @@ const initialFilters = {
   severity: []
 };
 
-const initialValue: Context = {
+const initialValue: IContext = {
   alertFilters: initialFilters,
   changeAlertFilters: () => 1,
   dashboard_id: 1,
@@ -25,7 +25,7 @@ const initialValue: Context = {
   resetFilters: () => 1
 };
 
-export const GlobalStateContext = createContext<Context>(initialValue);
+export const GlobalStateContext = createContext<IContext>(initialValue);
 
 export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(initialFilters);

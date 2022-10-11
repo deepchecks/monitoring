@@ -1,18 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MonitorTypeConf, MonitorValueConf } from 'api/generated';
-import { MarkedSelect } from 'components/MarkedSelect';
+
+import { MonitorValueConf } from 'api/generated';
+
 import { MenuItem } from '@mui/material';
 
-type isAggShownProps = boolean | undefined;
+import { MarkedSelect } from 'components/MarkedSelect';
 
-interface CheckInfoItemSchema {
-  data: MonitorTypeConf;
-  confType: string;
-  isAggShown: isAggShownProps;
-  handleOnChange: (confType: string, key: string, item?: MonitorValueConf) => void;
-  initValue: any;
-  setIsAggShown: (flag: boolean) => void;
-}
+import { CheckInfoItemSchema } from './MonitorDrawer.types';
 
 export const CheckInfoItem = ({
   data,
@@ -54,8 +48,7 @@ export const CheckInfoItem = ({
     if (!item) {
       setSelectedValue('');
       handleOnChange(confType, data.type, undefined);
-    }
-    else {
+    } else {
       const dataType = data.type;
       setSelectedValue(item.name);
       handleOnChange(confType, dataType, item);
@@ -63,7 +56,16 @@ export const CheckInfoItem = ({
   };
 
   return (
-    <MarkedSelect label={data.type as string} value={selectedValue} size="small" clearValue={() => {handleSelectedItem(undefined)}} fullWidth disabled={isDisabled}>
+    <MarkedSelect
+      label={data.type as string}
+      value={selectedValue}
+      size="small"
+      clearValue={() => {
+        handleSelectedItem(undefined);
+      }}
+      fullWidth
+      disabled={isDisabled}
+    >
       {data.values?.map((item, index) => (
         <MenuItem key={item.name + index} value={item.name} onClick={() => handleSelectedItem(item)}>
           {item.name}

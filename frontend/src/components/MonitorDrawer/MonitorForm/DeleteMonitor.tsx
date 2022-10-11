@@ -1,13 +1,10 @@
-import { Button, ButtonProps, Dialog, IconButton, Stack, Typography } from '@mui/material';
-import { MonitorSchema } from 'api/generated';
-import { CloseIcon } from 'assets/icon/icon';
 import React from 'react';
-interface DeleteMonitorProps {
-  monitor?: MonitorSchema;
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  onClick: (confirm: boolean) => void;
-}
+
+import { Button, ButtonProps, Dialog, IconButton, Stack, Typography } from '@mui/material';
+
+import { CloseIcon } from 'assets/icon/icon';
+
+import { DeleteMonitorProps } from './MonitorForm.types';
 
 const DeleteMonitor = ({ isOpen, monitor, onClick, setIsOpen }: DeleteMonitorProps) => (
   <Dialog open={isOpen}>

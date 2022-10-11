@@ -3,7 +3,8 @@ import { DashboardHeader } from '../components/DashboardHeader';
 import { GraphicsSection } from '../components/GraphicsSection/GraphicsSection';
 import { Loader } from '../components/Loader';
 import { ModelList } from '../components/ModelList';
-import MonitorDrawer, { DrawerNames, DrawerNamesMap } from '../components/MonitorDrawer/MonitorDrawer';
+import { DrawerNames, DrawerNamesMap } from '../components/MonitorDrawer/MonitorDrawer.types';
+import MonitorDrawer from 'components/MonitorDrawer/MonitorDrawer';
 
 import { Grid } from '@mui/material';
 import { DataIngestion } from 'components/DataIngestion/DataIngestion';
@@ -35,6 +36,7 @@ export const DashboardPage = () => {
     setCurrMonitor(undefined);
     setIsDrawerOpen(false);
   };
+
   const { mutateAsync: DeleteMonitorById, isLoading: isDeleteMonitorLoading } =
     useDeleteMonitorApiV1MonitorsMonitorIdDelete();
 
@@ -46,7 +48,9 @@ export const DashboardPage = () => {
   const handleDeleteMonitor = async (confirm: boolean) => {
     if (!currMonitor) return;
     if (!confirm) return setIsDeleteMonitorDialogOpen(false);
+
     window.scrollTo(0, 0);
+
     await DeleteMonitorById({ monitorId: currMonitor.id });
     setIsDeleteMonitorDialogOpen(false);
     setCurrMonitor(undefined);

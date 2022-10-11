@@ -3,7 +3,7 @@ import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
 import { _DeepPartialObject } from 'chart.js/types/utils';
 import DiagramLine from 'components/DiagramLine';
-import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer';
+import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer.types';
 import dayjs from 'dayjs';
 import React, { useMemo, useRef, useState } from 'react';
 import { MenuVertical } from '../../assets/icon/icon';

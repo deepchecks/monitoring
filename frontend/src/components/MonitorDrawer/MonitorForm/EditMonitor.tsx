@@ -16,7 +16,7 @@ import useMonitorsData from '../../../hooks/useMonitorsData';
 import { MarkedSelect } from '../../MarkedSelect';
 import { RangePicker } from '../../RangePicker';
 import { CheckInfo } from '../CheckInfo';
-import { LookbackCheckProps } from '../MonitorDrawer';
+import { LookbackCheckProps } from '../MonitorDrawer.types';
 import { Subcategory } from '../Subcategory';
 import {
   StyledButton,
@@ -71,12 +71,13 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const formikInitValues = {
     name: monitor.name,
     category: (monitor.data_filters?.filters[0].value as string) || '',
+    check: monitor.check || '',
     column: (monitor.data_filters?.filters[0].column as string) || '',
     numericValue: (monitor.data_filters?.filters[0].value as number) || 0,
     lookback: monitor.lookback,
+    additional_kwargs: monitor.additional_kwargs || checkInfoInitValue(),
     frequency: monitor.frequency,
-    aggregation_window: monitor.aggregation_window,
-    additional_kwargs: monitor.additional_kwargs || checkInfoInitValue()
+    aggregation_window: monitor.aggregation_window
   };
 
   const { values, getFieldProps, setFieldValue, ...formik } = useFormik({
@@ -186,6 +187,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
 
     if (column?.type === ColumnType.categorical) {
       const stats = column.stats as ColumnStatsCategorical;
+
       setColumnComponent(
         <Subcategory>
           <MarkedSelect
@@ -219,7 +221,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
             handleInputBlur={handleInputBlur}
             handleInputChange={handleInputChange}
             name="numericValue"
-            value={+values.numericValue}
+            value={+values.numericValue || 0}
             min={stats.min}
             max={stats.max}
             valueLabelDisplay="auto"
@@ -272,8 +274,8 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   ]);
 
   useEffect(() => {
-    if (resetMonitor) {
-      setResetMonitor(false);
+    if (!resetMonitor) {
+      setResetMonitor(true);
       formik.resetForm();
     }
   }, [resetMonitor]);
@@ -284,7 +286,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         <Box>
           <StyledTypography variant="h4">Edit Monitor</StyledTypography>
           <StyledStackInputs spacing="50px">
-            <TextField variant="outlined" label="Monitor Name" {...getFieldProps('name')} size="small" />
+            <TextField label="Monitor Name" variant="outlined" size="small" {...getFieldProps('name')} />
 
             <TextField variant="outlined" label={`Model: ${modelName}`} size="small" disabled={true} />
             <TextField variant="outlined" label={`Check: ${monitor?.check.name}`} size="small" disabled={true} />
@@ -296,6 +298,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 setFieldValue={setFieldValue}
               />
             )}
+
             <MarkedSelect
               label="Frequency"
               size="small"
@@ -312,6 +315,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 </MenuItem>
               ))}
             </MarkedSelect>
+
             <MarkedSelect
               label="Aggregation Window"
               size="small"
@@ -332,10 +336,10 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
             <TooltipInputWrapper title="Time">
               <MarkedSelect
                 label="Lookback"
+                size="small"
                 clearValue={() => {
                   setFieldValue('lookback', '');
                 }}
-                size="small"
                 {...getFieldProps('lookback')}
                 fullWidth
               >

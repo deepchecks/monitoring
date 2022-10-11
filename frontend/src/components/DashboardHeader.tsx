@@ -3,7 +3,7 @@ import React from 'react';
 import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
 import { PlusIcon } from '../assets/icon/icon';
 import { AlertCount, SEVERITY } from './AlertCount';
-import { DrawerNames, DrawerNamesMap } from './MonitorDrawer/MonitorDrawer';
+import { DrawerNames, DrawerNamesMap } from './MonitorDrawer/MonitorDrawer.types';
 
 interface DashboardHeaderProps {
   onOpen: (monitorName: DrawerNames) => void;

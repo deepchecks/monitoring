@@ -1,17 +1,15 @@
+import React from 'react';
+
 import { Box, IconButton, Stack, Typography } from '@mui/material';
-import { ChartData } from 'chart.js';
+
 import { Loader } from 'components/Loader';
-import { GraphData } from 'helpers/types';
-import React, { Dispatch, SetStateAction } from 'react';
-import { CloseIcon, NoDataToShow } from '../../assets/icon/icon';
 import DiagramLine from '../DiagramLine';
 
-interface GraphViewProps {
-  onClose: () => void | undefined;
-  graphData?: ChartData<'line'>;
-  isLoading: boolean;
-  setResetMonitor: Dispatch<SetStateAction<boolean>>;
-}
+import { CloseIcon, NoDataToShow } from '../../assets/icon/icon';
+
+import { ChartData } from 'chart.js';
+import { GraphData } from 'helpers/types';
+import { GraphViewProps } from './MonitorDrawer.types';
 
 export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: GraphViewProps) => {
   const closeDrawer = () => {

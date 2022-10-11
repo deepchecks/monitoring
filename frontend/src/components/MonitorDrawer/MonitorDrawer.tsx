@@ -1,53 +1,21 @@
-import { Drawer, DrawerProps, Stack, styled } from '@mui/material';
-import {
-  MonitorCheckConfSchema,
-  MonitorSchema,
-  OperatorsEnum,
-  useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
-} from 'api/generated';
-import { ChartData } from 'chart.js';
 import React, { useMemo, useState } from 'react';
-import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
+
+import { useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
+
+import { Drawer } from '@mui/material';
+
 import CreateAlert from './AlertForm/CreateAlert';
 import { GraphView } from './GraphView';
-import { CreateMonitor } from './MonitorForm/CreateMonitor';
-import EditMonitor from './MonitorForm/EditMonitor';
+import MonitorForm from './MonitorForm/MonitorForm';
+// import { CreateMonitor } from './MonitorForm/CreateMonitor';
+// import EditMonitor from './MonitorForm/EditMonitor';
 
-export const StyledStackWrapper = styled(Stack)({
-  height: '100%'
-});
+import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
 
-export interface LookbackCheckProps {
-  checkId: number;
-  data: {
-    start_time: string;
-    end_time: string;
-    filter?: {
-      filters: {
-        column: string;
-        operator: OperatorsEnum;
-        value: string | number;
-      }[];
-    };
-    additional_kwargs: MonitorCheckConfSchema;
-    frequency: number;
-    aggregation_window: number;
-  };
-}
+import { StyledStackWrapper } from './MonitorDrawer.style';
 
-export enum DrawerNamesMap {
-  CreateMonitor = 'new monitor',
-  CreateAlert = 'new alert',
-  EditMonitor = 'edit monitor'
-}
-
-export type DrawerNames = DrawerNamesMap.CreateMonitor | DrawerNamesMap.CreateAlert | DrawerNamesMap.EditMonitor;
-
-interface MonitorDrawerProps extends DrawerProps {
-  monitor?: MonitorSchema;
-  drawerName: DrawerNames;
-  onClose: () => void;
-}
+import { ChartData } from 'chart.js';
+import { MonitorDrawerProps, LookbackCheckProps, DrawerNamesMap } from './MonitorDrawer.types';
 
 function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawerProps) {
   const [graphData, setGraphData] = useState<ChartData<'line'>>();
@@ -63,12 +31,14 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
 
   const handleLookback = async (graphData: LookbackCheckProps) => {
     const { checkId, data } = graphData;
+
     try {
       const res = await runCheck({
         checkId,
         data
       });
       const parsedChartData = parseDataForChart(res);
+
       setGraphData(parsedChartData);
     } catch (e) {
       setGraphData(undefined);
@@ -78,31 +48,34 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
   const Content = useMemo(() => {
     switch (drawerName) {
       case DrawerNamesMap.CreateAlert:
-        return monitor ? (
-          <CreateAlert monitor={monitor} onClose={handleOnClose} runCheckLookback={handleLookback} />
-        ) : null;
+        return monitor && <CreateAlert monitor={monitor} onClose={handleOnClose} runCheckLookback={handleLookback} />;
+
       case DrawerNamesMap.CreateMonitor:
         return (
-          <CreateMonitor
+          <MonitorForm
             onClose={handleOnClose}
             runCheckLookback={handleLookback}
             resetMonitor={resetMonitor}
             setResetMonitor={setResetMonitor}
           />
         );
+
       case DrawerNamesMap.EditMonitor:
-        return monitor ? (
-          <EditMonitor
-            onClose={handleOnClose}
-            runCheckLookback={handleLookback}
-            monitor={monitor}
-            resetMonitor={resetMonitor}
-            setResetMonitor={setResetMonitor}
-          />
-        ) : null;
+        return (
+          monitor && (
+            <MonitorForm
+              onClose={handleOnClose}
+              runCheckLookback={handleLookback}
+              monitor={monitor}
+              resetMonitor={resetMonitor}
+              setResetMonitor={setResetMonitor}
+            />
+          )
+        );
+
       default:
         return (
-          <CreateMonitor
+          <MonitorForm
             onClose={handleOnClose}
             runCheckLookback={handleLookback}
             resetMonitor={resetMonitor}
@@ -110,7 +83,7 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
           />
         );
     }
-  }, [drawerName]);
+  }, [drawerName, monitor]);
 
   return (
     <Drawer {...props}>

@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { MonitorCheckConf, MonitorCheckConfSchema, MonitorTypeConf, MonitorValueConf } from 'api/generated';
-import { Subcategory } from './Subcategory';
+import { MonitorCheckConfSchema, MonitorTypeConf, MonitorValueConf } from 'api/generated';
+
 import { Box } from '@mui/material';
+
+import { Subcategory } from './Subcategory';
 import { CheckInfoItem } from './CheckInfoItem';
 
-type isAggShownProps = boolean | undefined;
-
-interface CheckInfoSchema {
-  checkInfo: MonitorCheckConf;
-  setFieldValue: (fieldName: string, fieldValue: any, shouldValidate: boolean) => void;
-  initialCheckInfoValues?: MonitorCheckConfSchema;
-}
+import { isAggShownProps, CheckInfoSchema } from './MonitorDrawer.types';
 
 export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: CheckInfoSchema) => {
   const [isAggShown, setIsAggShown] = useState<isAggShownProps>(undefined);
@@ -37,15 +33,16 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
     let objectToUpdate: any = { ...checkInfoData };
     let didAggShowChange = false;
     let changedItem;
-    if (!item){
+
+    if (!item) {
       changedItem = {
         name: null,
         is_agg: undefined
       };
-    }
-    else {
+    } else {
       changedItem = item;
     }
+
     if (confType === 'res_conf') {
       objectToUpdate[confType] = [changedItem.name];
     } else {
@@ -64,8 +61,6 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
     if (didAggShowChange && changedItem.is_agg === true) {
       objectToUpdate = { check_conf: { [dataType]: [changedItem.name] } };
     }
-    
-    console.log(objectToUpdate);
 
     setCheckInfoData(objectToUpdate);
   };
@@ -86,7 +81,7 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
                 data={checkItem}
                 handleOnChange={handleOnChange}
                 isAggShown={isAggShown}
-                initValue={shouldRenderInitValues ? initValuesToRender[index][checkItem.type] : ''}
+                initValue={shouldRenderInitValues ? initValuesToRender[index]?.[checkItem.type] || '' : ''}
                 setIsAggShown={setIsAggShown}
               />
             </Subcategory>
@@ -98,7 +93,7 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
               data={val}
               handleOnChange={handleOnChange}
               isAggShown={isAggShown}
-              initValue={shouldRenderInitValues ? initValuesToRender[index][val.type] : ''}
+              initValue={shouldRenderInitValues ? initValuesToRender[index]?.[val.type] || '' : ''}
               setIsAggShown={setIsAggShown}
             />
           </Subcategory>
