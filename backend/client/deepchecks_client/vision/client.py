@@ -16,6 +16,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import pendulum as pdl
 import requests
 import torch
 from deepchecks.vision import VisionData
@@ -27,7 +28,7 @@ from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import DeepchecksColumns
-from deepchecks_client.core.utils import DeepchecksJsonValidator, create_timestamp, maybe_raise
+from deepchecks_client.core.utils import DeepchecksJsonValidator, maybe_raise, parse_timestamp
 from deepchecks_client.vision.utils import DeepchecksEncoder, calc_image_bbox_props, create_static_properties
 
 
@@ -84,7 +85,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         label
             label value if exists
         """
-        timestamp = create_timestamp(timestamp)
+        timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
         vis_task_type = self._get_vision_task_type()
         image_props, bbox_props = \
             calc_image_bbox_props([img], [label] if label is not None else None, vis_task_type, self.image_properties)

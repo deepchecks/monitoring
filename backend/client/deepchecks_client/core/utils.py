@@ -111,17 +111,15 @@ class DeepchecksEncoder:
         return obj
 
 
-def create_timestamp(timestamp):
-    if timestamp:
-        if isinstance(timestamp, int):
-            return pdl.from_timestamp(timestamp, pdl.local_timezone())
-        elif isinstance(timestamp, datetime):
-            # If no timezone in datetime, assumed to be UTC and converted to local timezone
-            return pdl.instance(timestamp, pdl.local_timezone())
-        else:
-            raise Exception(f'Not supported timestamp type: {type(timestamp)}')
+def parse_timestamp(timestamp):
+    """Parse timestamp to datetime object."""
+    if isinstance(timestamp, int):
+        return pdl.from_timestamp(timestamp, pdl.local_timezone())
+    elif isinstance(timestamp, datetime):
+        # If no timezone in datetime, assumed to be UTC and converted to local timezone
+        return pdl.instance(timestamp, pdl.local_timezone())
     else:
-        return pdl.now()
+        raise Exception(f'Not supported timestamp type: {type(timestamp)}')
 
 
 DeepchecksJsonValidator = validators.extend(

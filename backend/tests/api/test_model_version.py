@@ -7,6 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect
@@ -96,6 +97,21 @@ async def test_get_model_version_different_features(classification_model_id,
     assert response.status_code == 400
     assert response.content == \
         b'{"detail":"A model version with the name \\"v1\\" already exists but with different features"}'
+
+
+@pytest.mark.asyncio
+async def test_time_window_statistics(client: TestClient, classification_model_version_id: int):
+    # Arrange
+    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
+    send_reference_request(client, classification_model_version_id, [sample] * 100)
+    add_classification_data(classification_model_version_id, client)
+    add_classification_data(classification_model_version_id, client, is_labeled=False, id_prefix="unlabeled")
+    # Act
+    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/time-window-statistics",
+                           json={"end_time": pdl.now().isoformat()})
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == {"num_samples": 10, "num_labeled_samples": 5}
 
 
 @pytest.mark.asyncio

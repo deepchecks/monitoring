@@ -15,10 +15,11 @@ import warnings
 from importlib.metadata import version
 from urllib.parse import urljoin
 
+import pendulum as pdl
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-from deepchecks_client.core.utils import maybe_raise, pretty_print
+from deepchecks_client.core.utils import maybe_raise, parse_timestamp, pretty_print
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")
@@ -140,6 +141,33 @@ class DeepchecksModelVersionClient:
         """Update sample. Possible to update only non_features and label."""
         raise NotImplementedError
 
+    def time_window_statistics(self, start_time: t.Union[pdl.datetime, int, None] = None,
+                               end_time: t.Union[pdl.datetime, int, None] = None) -> t.Dict[str, float]:
+        """Get statistics on samples in a provided time window.
+
+        Parameters
+        ----------
+        start_time: Union[datetime, int], default = None
+            The start time of the time window. If no timezone info is provided on the datetime assumes local timezone.
+        end_time: Union[datetime, int], default = None
+            The end time of the time window. If no timezone info is provided on the datetime assumes local timezone.
+        Returns
+        -------
+        statistics: dict
+            A dictionary containing the statistics.
+        """
+        start_time = parse_timestamp(start_time) if start_time is not None else pdl.datetime(1970, 1, 1)
+        end_time = parse_timestamp(end_time) if end_time is not None else pdl.now()
+
+        response = maybe_raise(
+            self.session.post(
+                url=f'model-versions/{self.model_version_id}/time-window-statistics',
+                json={'start_time': start_time.isoformat(), 'end_time': end_time.isoformat()}
+            ),
+            msg="Failed to get statistics for samples within provided time window.\n{error}"
+        )
+        return response.json()
+
 
 class DeepchecksModelClient:
     """Client to interact with a model in monitoring.
@@ -231,6 +259,7 @@ class DeepchecksModelClient:
     def add_alert_rule_on_existing_monitor(self, monitor_id: int, threshold: float, alert_severity: str = "mid",
                                            greater_than: bool = True) -> int:
         """Create an alert based on an existing monitor.
+
         Parameters
         ----------
         monitor_id: int

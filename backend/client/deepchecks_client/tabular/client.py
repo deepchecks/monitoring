@@ -15,6 +15,7 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
+import pendulum as pdl
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (CategoryMismatchTrainTest, SingleDatasetPerformance, TrainTestFeatureDrift,
                                        TrainTestLabelDrift, TrainTestPredictionDrift)
@@ -22,7 +23,7 @@ from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.client import ColumnType, DeepchecksColumns, TaskType
-from deepchecks_client.core.utils import DeepchecksEncoder, DeepchecksJsonValidator, create_timestamp, maybe_raise
+from deepchecks_client.core.utils import DeepchecksEncoder, DeepchecksJsonValidator, maybe_raise, parse_timestamp
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -60,7 +61,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         values
             All features of the sample and optional non_features
         """
-        timestamp = create_timestamp(timestamp)
+        timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
 
         sample = {
             DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id),

@@ -12,10 +12,11 @@ import typing as t
 from io import StringIO
 
 import fastapi
+import pendulum as pdl
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from pydantic import BaseModel, Field
-from sqlalchemy import Index, MetaData, Table, select, text
+from sqlalchemy import Index, MetaData, Table, and_, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import CreateTable
@@ -29,7 +30,7 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
-from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_TS_COL, ColumnType,
+from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL, ColumnType,
                                                       column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
@@ -55,14 +56,14 @@ class ModelVersionCreationSchema(BaseModel):
 
 @router.post('/models/{model_id}/version', response_model=IdResponse, tags=[Tags.MODELS])
 async def get_or_create_version(
-    request: fastapi.Request,
-    model_id: int,
-    info: ModelVersionCreationSchema,
-    session: AsyncSession = AsyncSessionDep,
-    kafka_admin: KafkaAdminClient = KafkaAdminDep,
-    settings=SettingsDep,
-    data_ingest: DataIngestionBackend = DataIngestionDep,
-    cache_invalidator: CacheInvalidator = CacheInvalidatorDep
+        request: fastapi.Request,
+        model_id: int,
+        info: ModelVersionCreationSchema,
+        session: AsyncSession = AsyncSessionDep,
+        kafka_admin: KafkaAdminClient = KafkaAdminDep,
+        settings=SettingsDep,
+        data_ingest: DataIngestionBackend = DataIngestionDep,
+        cache_invalidator: CacheInvalidator = CacheInvalidatorDep
 ):
     """Create a new model version.
 
@@ -84,7 +85,7 @@ async def get_or_create_version(
     model: Model = await fetch_or_404(session, Model, id=model_id)
     model_version: ModelVersion = (await session.execute(
         select(ModelVersion).where(ModelVersion.name == info.name, ModelVersion.model_id == model_id))
-    ).scalars().first()
+                                   ).scalars().first()
     if model_version is not None:
         if model_version.features_columns != {key: val.value for key, val in info.features.items()}:
             raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
@@ -191,16 +192,17 @@ async def get_or_create_version(
 
 @router.get('/model-versions/{model_version_id}/schema', tags=[Tags.MODELS])
 async def get_schema(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_version_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Return json schema of the model version data to use in validation on client-side.
 
     Parameters
     ----------
-    model_version_id
-    session
-
+    model_version_id : int
+        Version id to run function on.
+    session : AsyncSession, optional
+        SQLAlchemy session.
     Returns
     -------
     json schema of the model version
@@ -211,16 +213,17 @@ async def get_schema(
 
 @router.get('/model-versions/{model_version_id}/reference-schema', tags=[Tags.MODELS])
 async def get_reference_schema(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_version_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Return json schema of the model version data to use in validation on client-side.
 
     Parameters
     ----------
-    model_version_id
-    session
-
+    model_version_id : int
+        Version id to run function on.
+    session : AsyncSession, optional
+        SQLAlchemy session.
     Returns
     -------
     json schema of the model version
@@ -231,18 +234,19 @@ async def get_reference_schema(
 
 @router.post('/model-versions/{model_version_id}/suite-run', tags=[Tags.CHECKS], response_class=HTMLResponse)
 async def run_suite_on_model_version(
-    model_version_id: int,
-    monitor_options: MonitorOptions,
-    session: AsyncSession = AsyncSessionDep
+        model_version_id: int,
+        monitor_options: MonitorOptions,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Run suite (all checks defined) on given model version.
 
     Parameters
     ----------
-    model_version_id
+    model_version_id : int
+        Version id to run function on.
     monitor_options
-    session
-
+    session : AsyncSession, optional
+        SQLAlchemy session.
     Returns
     -------
     HTML of the suite result.
@@ -258,18 +262,75 @@ async def run_suite_on_model_version(
     return HTMLResponse(content=html, status_code=200)
 
 
+class TimeWindowSchema(BaseModel):
+    """Monitor run schema."""
+
+    end_time: str = None
+    start_time: str = None
+
+    def start_time_dt(self) -> pdl.DateTime:
+        """Get start time as datetime object."""
+        return pdl.datetime(1970, 1, 1) if self.start_time is None else pdl.parse(self.start_time)
+
+    def end_time_dt(self) -> pdl.DateTime:
+        """Get end time as datetime object."""
+        return pdl.now() if self.end_time is None else pdl.parse(self.end_time)
+
+
+class TimeWindowOutputStatsSchema(BaseModel):
+    """Monitor run schema."""
+
+    num_labeled_samples: int = None
+    num_samples: int = None
+
+
+@router.post('/model-versions/{model_version_id}/time-window-statistics', response_model=TimeWindowOutputStatsSchema,
+             tags=[Tags.DATA])
+async def get_time_window_statistics(
+        model_version_id: int,
+        body: TimeWindowSchema,
+        session: AsyncSession = AsyncSessionDep,
+):
+    """Return a json containing statistics on samples in the provided time window.
+
+    Parameters
+    ----------
+    model_version_id : int
+        Version id to run function on.
+    body : TimeWindowSchema
+        Description of the time window to provide statistics for.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+    Returns
+    -------
+    json schema of the model version
+    """
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    test_table = model_version.get_monitor_table(session)
+    sample_id = test_table.c[SAMPLE_ID_COL]
+    sample_label = test_table.c[SAMPLE_LABEL_COL]
+    sample_timestamp = test_table.c[SAMPLE_TS_COL]
+
+    query = select(func.count(sample_id), func.count(sample_id).filter(sample_label.is_not(None))). \
+        where(and_(sample_timestamp < body.end_time_dt(), sample_timestamp >= body.start_time_dt()))
+
+    result = (await session.execute(query)).first()
+    return {'num_samples': result[0], 'num_labeled_samples': result[1]}
+
+
 @router.get('/model-versions/{model_version_id}/count-samples', tags=[Tags.MODELS])
 async def get_count_samples(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_version_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Return json schema of the model version data to use in validation on client-side.
 
     Parameters
     ----------
-    model_version_id
-    session
-
+    model_version_id : int
+        Version id to run function on.
+    session : AsyncSession, optional
+        SQLAlchemy session.
     Returns
     -------
     json schema of the model version
@@ -284,10 +345,18 @@ async def get_count_samples(
 
 @router.delete('/model-versions/{model_version_id}', tags=[Tags.MODELS])
 async def delete_model_version(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_version_id: int,
+        session: AsyncSession = AsyncSessionDep
 ):
-    """Delete model version by id."""
+    """Delete model version by id.
+
+    Parameters
+    ----------
+    model_version_id : int
+        Version id to run function on.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+    """
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     await session.delete(model_version)
     return fastapi.Response()

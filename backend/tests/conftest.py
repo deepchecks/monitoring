@@ -147,7 +147,7 @@ def deepchecks_sdk_client(client: TestClient):
     # pylint: disable=super-init-not-called
     class DeepchecksTestClient(DeepchecksClient):
         def __init__(
-            self,
+                self,
         ):
             self.host = "http://test/api/v1/"
             self.session = copy(client)
@@ -158,6 +158,7 @@ def deepchecks_sdk_client(client: TestClient):
                 self.session.get("say-hello"),
                 msg="Server not available.\n{error}"
             )
+
     return DeepchecksTestClient()
 
 
@@ -487,7 +488,8 @@ def add_classification_data(
         model_version_id: int,
         client: TestClient,
         daterange: t.Optional[t.Sequence[pdl.DateTime]] = None,
-        id_prefix=""
+        id_prefix="",
+        is_labeled=True
 ):
     if daterange is None:
         curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
@@ -498,12 +500,13 @@ def add_classification_data(
 
     for i, date in enumerate(daterange):
         time = date.isoformat()
+        label = ("2" if i != 1 else "1") if is_labeled else None
         data.append({
             "_dc_sample_id": f"{id_prefix}{i}",
             "_dc_time": time,
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
             "_dc_prediction": "2" if i % 2 else "1",
-            "_dc_label": "2" if i != 1 else "1",
+            "_dc_label": label,
             "a": 10 + i,
             "b": "ppppp",
         })
@@ -601,9 +604,9 @@ def vision_detection_and_prediction():
     imgs = [np.array([[[1, 2, 0], [3, 4, 0]]]),
             np.array([[[1, 3, 5]]]),
             np.array([[[7, 9, 0], [9, 6, 0], [9, 6, 0]],
-                     [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
-                     [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
-                     [[7, 9, 0], [9, 6, 0], [9, 6, 0]]])]
+                      [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
+                      [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
+                      [[7, 9, 0], [9, 6, 0], [9, 6, 0]]])]
     labels = [[[1, 0, 0, 1, 1]], [[0, 0, 0, 1, 1]], [[2, 0, 0, 2, 2]]]
     predictions = {0: [[0, 0, 1, 1, 0.6, 2]], 1: [[0, 0, 1, 1, 0.6, 2]], 2: [[0, 0, 2, 2, 0.6, 2]]}
     data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
