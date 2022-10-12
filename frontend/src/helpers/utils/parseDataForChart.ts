@@ -1,14 +1,14 @@
 import { CheckResultSchema } from 'api/generated';
 import { ChartData } from 'chart.js';
-import { setGraphOptions } from 'helpers/setGraphOptions';
 import dayjs from 'dayjs';
+import { setGraphOptions } from 'helpers/setGraphOptions';
 
 export const parseDataForChart = (graph: CheckResultSchema): ChartData<'line'> => {
   if (!graph) return { datasets: [], labels: [] };
+  let counter = 0;
   return {
     datasets: Object.keys(graph.output)
       .map(key => {
-        let counter = 0;
         if (!graph.output[key]) {
           return [];
         }
@@ -38,7 +38,7 @@ export const parseDataForChart = (graph: CheckResultSchema): ChartData<'line'> =
         });
         return Object.keys(lines).map(lineKey => ({
           data: lines[lineKey],
-          ...setGraphOptions(lineKey, counter++)
+          ...setGraphOptions(`${lineKey}|${key}`, counter++)
         }));
       })
       .flat(2),

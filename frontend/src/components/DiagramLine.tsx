@@ -340,51 +340,54 @@ function DiagramLine({
         {!!chartData?.labels?.length && !!legends.length && (
           <Box sx={{ padding: '6.5px 0', minWidth: '70%' }}>
             <HorizontalScrolling>
-              {legends.map((legendItem, index) => (
-                <Tooltip
-                  title={legendItem?.text || ''}
-                  disableHoverListener={legendItem?.text?.length <= maxLengthOfTooltipText}
-                  key={index}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      m: '0 7px',
-                      minWidth: 'max-content',
-                      cursor: 'pointer',
-                      padding: 0,
-                      p: '3px 0'
-                    }}
-                    onClick={() => hideLine(legendItem)}
+              {legends.map((legendItem, index) => {
+                const text = legendItem?.text?.split('|');
+                return (
+                  <Tooltip
+                    title={legendItem?.text || ''}
+                    disableHoverListener={legendItem?.text?.length <= maxLengthOfTooltipText}
                     key={index}
                   >
                     <Box
                       sx={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: '3px',
-                        backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
+                        display: 'flex',
+                        alignItems: 'center',
+                        m: '0 7px',
+                        minWidth: 'max-content',
+                        cursor: 'pointer',
+                        padding: 0,
+                        p: '3px 0'
                       }}
-                    />
-                    <Typography
-                      variant="subtitle2"
-                      ml="5px"
-                      sx={{
-                        textDecoration: lineIndexMap[
-                          typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
-                        ]
-                          ? 'line-through'
-                          : 'none'
-                      }}
+                      onClick={() => hideLine(legendItem)}
+                      key={index}
                     >
-                      {legendItem?.text?.length > maxLengthOfTooltipText
-                        ? `${legendItem?.text?.slice(0, maxLengthOfTooltipText)}...`
-                        : legendItem?.text}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              ))}
+                      <Box
+                        sx={{
+                          width: 9,
+                          height: 9,
+                          borderRadius: '3px',
+                          backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
+                        }}
+                      />
+                      <Typography
+                        variant="subtitle2"
+                        ml="5px"
+                        sx={{
+                          textDecoration: lineIndexMap[
+                            typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
+                          ]
+                            ? 'line-through'
+                            : 'none'
+                        }}
+                      >
+                        {text[0].length > maxLengthOfTooltipText
+                          ? `${text[0].slice(0, maxLengthOfTooltipText)}...`
+                          : text[0]}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                );
+              })}
             </HorizontalScrolling>
           </Box>
         )}

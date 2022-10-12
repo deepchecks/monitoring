@@ -91,8 +91,10 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
   }
 
   const tooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = {
-    label: (context: TooltipItem<'line'>) =>
-      `${getTime(context.label)} | Model Version ${context.dataset.label?.split(':')[0]}`
+    label: (context: TooltipItem<'line'>) => {
+      const textArray = context?.dataset?.label?.split('|');
+      return `${getTime(context.label)} | ${(textArray && textArray[1]) || ''} | ${(textArray && textArray[0]) || ''}`;
+    }
   };
 
   const monitorInfo = useMemo(() => {
