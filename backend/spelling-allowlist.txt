@@ -32,3 +32,4 @@ ExtendedAsyncSession
 invalidations
 AsyncSession
 dataframe
+desc

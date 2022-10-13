@@ -33,7 +33,7 @@ async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
     assert model_client.model["id"] == 1
     assert model_client.model["name"] == "classification model 2"
 
-    response = deepchecks_sdk_client.session.get("models/")
+    response = deepchecks_sdk_client.session.get("models")
     assert response.status_code == 200
     resp_json = response.json()
     assert len(resp_json) == 1

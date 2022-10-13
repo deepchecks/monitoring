@@ -414,6 +414,32 @@ def add_check(
     return data["id"]
 
 
+def add_model(
+    client: TestClient,
+    expected_status_code: int = 200,
+    name: t.Optional[str] = None,
+    task_type: t.Optional[TaskType] = None,
+    description: t.Optional[str] = None,
+) -> t.Union[Response, int]:
+    payload = {}
+    payload["name"] = name or randomname.get_name()
+    payload["task_type"] = task_type or random.choice(list(TaskType)).value.lower()
+    payload["description"] = description or ""
+
+    response = client.post("/api/v1/models", json=payload)
+
+    if not 200 <= expected_status_code <= 299:
+        assert response.status_code == expected_status_code, (response.status_code, response.json())
+        return response
+
+    assert response.status_code == expected_status_code
+
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "id" in data, data
+    return data["id"]
+
+
 def add_model_version(
         model_id: int,
         client: TestClient,
@@ -471,7 +497,7 @@ def add_alert_rule(
     return data["id"]
 
 
-def add_monitor(check_id, client: TestClient, **kwargs):
+def add_monitor(check_id: int, client: TestClient, **kwargs):
     request = {
         "name": "monitor",
         "frequency": 86400,

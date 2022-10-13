@@ -12,11 +12,28 @@
 from typing import Tuple
 
 import pendulum as pdl
-from sqlalchemy import false, func, select
+from sqlalchemy import func, select
 
 from deepchecks_monitoring.models import Alert, AlertRule, Check, Monitor
 
 ORIGIN_START_TIME = pdl.from_timestamp(0)
+
+
+AlertsCountPerModel = (
+    select(Check.model_id, func.count(Alert.id))
+    .join(Check.monitors)
+    .join(Monitor.alert_rules)
+    .join(AlertRule.alerts)
+    .where(Alert.resolved.is_(False))
+    .group_by(Check.model_id)
+)
+
+
+MonitorsCountPerModel = (
+    select(Check.model_id, func.count(Monitor.id))
+    .join(Check.monitors)
+    .group_by(Check.model_id)
+)
 
 
 async def get_alerts_per_model(session) -> dict:
@@ -30,13 +47,8 @@ async def get_alerts_per_model(session) -> dict:
     -------
     dict
     """
-    count_alerts = select(Check.model_id, func.count()) \
-        .join(Check.monitors).join(Monitor.alert_rules).join(AlertRule.alerts) \
-        .where(Alert.resolved == false())
-    q = count_alerts.group_by(Check.model_id)
-    results = await session.execute(q)
-    total = results.all()
-    return dict(total)
+    results = (await session.execute(AlertsCountPerModel)).all()
+    return dict(results)
 
 
 def get_time_ranges_for_monitor(lookback: int, frequency: int = None, end_time: pdl.DateTime = None) -> \

@@ -10,24 +10,26 @@
 """V1 API of the model."""
 import typing as t
 from collections import defaultdict
+from datetime import datetime
 
 import pendulum as pdl
 from pydantic import BaseModel, Field
 from sqlalchemy import Integer as SQLInteger
-from sqlalchemy import func, literal, select, text, union_all
-from sqlalchemy.orm import selectinload
+from sqlalchemy import delete, func, literal, select, text, union_all
+from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.monitor_alert_logic import get_alerts_per_model
+from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, MonitorsCountPerModel,
+                                                             get_alerts_per_model)
 from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, fetch_or_404, field_length
+from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, exists_or_404, fetch_or_404, field_length
 
 from .router import router
 
@@ -157,8 +159,13 @@ async def retrieve_models_data_ingestion(
         select(
             literal(model_id).label("model_id"),
             sample_id(table.c).label("sample_id"),
-            truncate_date(sample_timestamp(table.c)).label("day")).where(is_within_dateframe(sample_timestamp(table.c),
-                                                                                             end_time)).distinct()
+            truncate_date(sample_timestamp(table.c)).label("day")
+        )
+        .where(is_within_dateframe(
+            sample_timestamp(table.c),
+            end_time
+        ))
+        .distinct()
         for model_id, table in tables
     ))
 
@@ -231,10 +238,8 @@ async def get_versions_per_model(
     return [NameIdResponse.from_orm(model_version) for model_version in model_versions]
 
 
-@router.get("/models/", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])
-async def get_models(
-        session: AsyncSession = AsyncSessionDep
-):
+@router.get("/models", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])
+async def get_models(session: AsyncSession = AsyncSessionDep):
     """Create a new model.
 
     Parameters
@@ -256,6 +261,104 @@ async def get_models(
         model.latest_time = int(db_model.versions[0].end_time.timestamp()) if db_model.versions else None
         models.append(model)
     return models
+
+
+class ModelVersionManagmentSchema(BaseModel):
+    """ModelVersion schema for the "Model managment" screen."""
+
+    id: int
+    model_id: int
+    name: str
+    start_time: datetime
+    end_time: datetime
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+class ModelManagmentSchema(BaseModel):
+    """Model schema for the "Model managment" screen."""
+
+    id: int
+    name: str
+    alerts_count: int
+    monitors_count: int
+    latest_time: t.Optional[int] = None
+    description: t.Optional[str] = None
+    task_type: t.Optional[TaskType] = None
+    versions: t.List[ModelVersionManagmentSchema]
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+@router.get(
+    "/available-models",
+    response_model=t.List[ModelManagmentSchema],
+    tags=[Tags.MODELS, "models-managment"],
+    description="Retrieve list of available models."
+)
+async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> t.List[ModelManagmentSchema]:
+    """Retrieve list of models for the "Models managment" screen."""
+    alerts_count = AlertsCountPerModel.cte()
+    monitors_count = MonitorsCountPerModel.cte()
+
+    records = (await session.execute(
+        select(
+            Model,
+            alerts_count.c.count.label("n_of_alerts"),
+            monitors_count.c.count.label("n_of_monitors"),
+        )
+        .select_from(Model)
+        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+        .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
+        .options(
+            joinedload(Model.versions).load_only(
+                ModelVersion.id,
+                ModelVersion.name,
+                ModelVersion.model_id,
+                ModelVersion.start_time,
+                ModelVersion.end_time,
+            )
+        )
+    )).unique().all()
+
+    return [
+        ModelManagmentSchema(
+            id=record.Model.id,
+            name=record.Model.name,
+            task_type=record.Model.task_type,
+            description=record.Model.description,
+            alerts_count=record.n_of_alerts or 0,
+            monitors_count=record.n_of_monitors or 0,
+            latest_time=(
+                # versions relationship is ordered by desc(end_time) during load
+                record.Model.versions[0].end_time.timestamp()
+                if record.Model.versions
+                else None
+            ),
+            versions=[
+                ModelVersionManagmentSchema.from_orm(version)
+                for version in record.Model.versions
+            ]
+        )
+        for record in records
+    ]
+
+
+@router.delete(
+    "/models/{model_id}",
+    tags=[Tags.MODELS, "models-managment"],
+    description="Delete model"
+)
+async def delete_model(model_id: int, session: AsyncSession = AsyncSessionDep):
+    """Delete model instance."""
+    await exists_or_404(session, Model, id=model_id)
+    await session.execute(delete(Model).where(Model.id == model_id))
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
