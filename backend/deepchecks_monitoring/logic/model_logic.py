@@ -37,7 +37,7 @@ from deepchecks_monitoring.logic.cache_functions import CacheFunctions, CacheRes
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                      SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL)
+                                                      SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
 from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConfSchema, fetch_or_404,
                                          make_oparator_func)
 
@@ -110,7 +110,8 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
             y_proba = np.array(df[SAMPLE_PRED_PROBA_COL].to_list())
         df.drop(SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
 
-    cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1] == 'categorical']
+    cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1]
+                    in [ColumnType.CATEGORICAL.value, ColumnType.BOOLEAN.value]]
     if df[SAMPLE_LABEL_COL].isna().all():
         df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
         dataset = Dataset(df, cat_features=cat_features)
