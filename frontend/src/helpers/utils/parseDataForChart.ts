@@ -42,6 +42,6 @@ export const parseDataForChart = (graph: CheckResultSchema): ChartData<'line'> =
         }));
       })
       .flat(2),
-    labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD YYYY'))
+    labels: graph.time_labels?.map(date => dayjs(date).valueOf())
   };
 };

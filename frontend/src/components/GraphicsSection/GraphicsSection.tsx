@@ -203,7 +203,12 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
           })}
         </StyledInfo>
         <StyledDiagramWrapper>
-          <DiagramLine data={data} tooltipCallbacks={tooltipCallbacks} alert_rules={monitor.alert_rules} height={320} />
+          <DiagramLine 
+            data={data} 
+            tooltipCallbacks={tooltipCallbacks} 
+            alert_rules={monitor.alert_rules} 
+            height={320}
+            minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'} />
         </StyledDiagramWrapper>
       </StyledFlexContent>
       <StyledRootMenu

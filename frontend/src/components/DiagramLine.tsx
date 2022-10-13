@@ -304,7 +304,8 @@ function DiagramLine({
         // max: 15,
         type: 'timeseries',
         time: {
-          minUnit: minTimeUnit
+          minUnit: minTimeUnit,
+          unit: minTimeUnit
         }
       },
       y: {
