@@ -1,8 +1,14 @@
-import { Box, Button, Stack, useTheme } from '@mui/material';
 import React from 'react';
+import mixpanel from 'mixpanel-browser';
+
 import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
-import { PlusIcon } from '../assets/icon/icon';
+
+import { Box, Button, Stack, useTheme } from '@mui/material';
+
 import { AlertCount, SEVERITY } from './AlertCount';
+
+import { PlusIcon } from '../assets/icon/icon';
+
 import { DrawerNames, DrawerNamesMap } from './MonitorDrawer/MonitorDrawer.types';
 
 interface DashboardHeaderProps {
@@ -12,6 +18,11 @@ interface DashboardHeaderProps {
 export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
   const { data } = useCountAlertsApiV1AlertsCountActiveGet();
   const theme = useTheme();
+
+  const handleClick = () => {
+    mixpanel.track('Click on Add monitor');
+    onOpen(DrawerNamesMap.CreateMonitor);
+  };
 
   return (
     <>
@@ -53,7 +64,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
               width: '1px'
             }}
           />
-          <Box onClick={() => onOpen(DrawerNamesMap.CreateMonitor)}>
+          <Box onClick={handleClick}>
             <Button
               sx={{
                 padding: '11px 8px',

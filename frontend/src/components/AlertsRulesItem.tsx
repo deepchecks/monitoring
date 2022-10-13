@@ -1,14 +1,20 @@
-import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/material';
+import React, { memo, useState } from 'react';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import mixpanel from 'mixpanel-browser';
+
 import useModels from 'hooks/useModels';
-import React, { memo, useState } from 'react';
+
 import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorIdGet } from '../api/generated';
-import { Checkmark, PencilDrawing } from '../assets/icon/icon';
-import { OperatorsEnumMap } from '../helpers/conditionOperator';
 import processFrequency from '../helpers/utils/processFrequency';
+import { OperatorsEnumMap } from '../helpers/conditionOperator';
+
+import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/material';
+
 import { Loader } from './Loader';
+
+import { Checkmark, PencilDrawing } from '../assets/icon/icon';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -40,11 +46,15 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   ];
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
+    mixpanel.track('Click on the Resolve All');
+
     event.stopPropagation();
     return onResolveOpen();
   };
 
   const handleOpenDrawer = (event: React.MouseEvent<HTMLDivElement>) => {
+    mixpanel.track('Click on the alert');
+
     event.stopPropagation();
     return onDrawerOpen();
   };

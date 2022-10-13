@@ -1,6 +1,9 @@
-import { Box, List, Typography } from '@mui/material';
-import { ModelsInfoSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+
+import { ModelsInfoSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
+
+import { Box, List, Typography } from '@mui/material';
+
 import { Loader } from './Loader';
 import { ModelItem } from './ModelItem/ModelItem';
 import { SearchField } from './SearchField';
@@ -45,6 +48,7 @@ export function ModelList({ activeModelId, filterMonitors, models }: ModelListPr
         } else {
           acc.push(0);
         }
+
 
         return acc;
       }, [] as number[]),

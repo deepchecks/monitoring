@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material';
-import App from './App';
 import { hotjar } from 'react-hotjar';
 import mixpanel from 'mixpanel-browser';
 
+import { ThemeProvider } from '@mui/material';
 import { theme } from './theme';
+
+import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 const hotjarId = process.env.REACT_APP_HJ_ID;
@@ -18,7 +19,7 @@ if (hotjarId && hotjarSv) {
 }
 
 if (mixpanelId) {
-  mixpanel.init(mixpanelId);
+  mixpanel.init(mixpanelId, { ignore_dnt: true });
 }
 
 root.render(

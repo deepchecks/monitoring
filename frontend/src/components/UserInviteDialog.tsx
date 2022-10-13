@@ -1,3 +1,14 @@
+import React, { PropsWithChildren, useState } from 'react';
+import dayjs from 'dayjs';
+import mixpanel from 'mixpanel-browser';
+
+import {
+  createInviteApiV1OrganizationInvitePut,
+  InvitationCreationSchema,
+  useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete,
+  useRetriveOrganizationMembersApiV1OrganizationMembersGet
+} from 'api/generated';
+
 import {
   Alert,
   alpha,
@@ -16,16 +27,10 @@ import {
   Typography,
   useTheme
 } from '@mui/material';
-import {
-  createInviteApiV1OrganizationInvitePut,
-  InvitationCreationSchema,
-  useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete,
-  useRetriveOrganizationMembersApiV1OrganizationMembersGet
-} from 'api/generated';
-import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
-import dayjs from 'dayjs';
-import React, { PropsWithChildren, useState } from 'react';
+
 import { Loader } from './Loader';
+
+import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
 
 export interface UserInviteDialogProps {
   open: boolean;
@@ -33,11 +38,12 @@ export interface UserInviteDialogProps {
 }
 
 export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInviteDialogProps>) => {
+  const theme = useTheme();
+
   const [emailValue, setEmailValue] = useState('');
   const [btnEnabled, setBtnEnabled] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(false);
-  const theme = useTheme();
 
   const {
     data: organizationMembers = [],
@@ -67,8 +73,12 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
     setBtnEnabled(valid);
   };
 
-  const handleDeleteMember = (memberId: number) => {
+  const handleDeleteMember = (memberId: number, email: string) => {
     deleteMember({ memberId });
+
+    mixpanel.track('Remove User', {
+      'Removed user email': email
+    });
   };
 
   const handleInviteToOrgClick = () => {
@@ -77,8 +87,13 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
         email: emailValue,
         ttl: 1 * 24 * 60 * 60
       };
+
       createInviteApiV1OrganizationInvitePut(inviteSchema)
-        .then(res => {
+        .then(() => {
+          mixpanel.track('Invite User', {
+            'Invited user email': emailValue
+          });
+
           setSuccess(true);
           handleClose();
         })
@@ -188,7 +203,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
                     <Typography variant="caption">Active since {dayjs(created_at).format('MMMM DD. YYYY')}</Typography>
                   </Stack>
                 </Box>
-                <Button variant="text" sx={{ padding: '0 16px' }} onClick={() => handleDeleteMember(id)}>
+                <Button variant="text" sx={{ padding: '0 16px' }} onClick={() => handleDeleteMember(id, email)}>
                   Remove
                 </Button>
               </ListItem>

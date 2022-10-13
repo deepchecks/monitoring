@@ -1,3 +1,16 @@
+import React, { useContext, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import mixpanel from 'mixpanel-browser';
+
+import { GlobalStateContext } from 'Context';
+
+import {
+  AlertSeverity,
+  GetAlertRulesApiV1AlertRulesGetParams,
+  GetAlertRulesApiV1AlertRulesGetSortbyItem,
+  useGetModelsApiV1ModelsGet
+} from 'api/generated';
+
 import {
   Box,
   Button,
@@ -10,18 +23,12 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import {
-  AlertSeverity,
-  GetAlertRulesApiV1AlertRulesGetParams,
-  GetAlertRulesApiV1AlertRulesGetSortbyItem,
-  useGetModelsApiV1ModelsGet
-} from 'api/generated';
-import { GlobalStateContext } from 'Context';
-import React, { useContext, useEffect, useState } from 'react';
-import { Sort, Undo } from '../assets/icon/icon';
+
 import { DatePicker } from './DatePicker/DatePicker';
 import { SelectPrimary } from './SelectPrimary/SelectPrimary';
 import { SelectSeverity, SeverityAll, severityAll } from './SelectSeverity';
+
+import { Sort, Undo } from '../assets/icon/icon';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
@@ -39,17 +46,20 @@ const sortMethodMap = {
 
 const sortOptions = ['Alphabetically A-Z', 'Alphabetically Z-A'] as const;
 
+const trackFiltersAndSortChange = (path: string) =>
+  mixpanel.track(`${path === '/alerts' ? 'Alerts' : 'Alerts Rules'}: changed filters & sort`);
+
 export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
+  const { pathname } = useLocation();
   const { alertFilters, changeAlertFilters, resetFilters } = useContext(GlobalStateContext);
+
   const [startDate, setStartDate] = useState<Date | null>(initStartDate);
   const [endDate, setEndDate] = useState<Date | null>(initEndDate);
-
   const [model, setModel] = useState<number>(-1);
   const [severity, setSeverity] = useState<AlertSeverity | SeverityAll>(severityAll);
-  const filtered = endDate !== initEndDate || startDate !== initStartDate || model !== -1 || severity !== severityAll;
-
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<null | HTMLElement>(null);
 
+  const filtered = endDate !== initEndDate || startDate !== initStartDate || model !== -1 || severity !== severityAll;
   const openSortMenu = Boolean(anchorElSortMenu);
 
   const { data: models = [], isLoading: isModelsLoading } = useGetModelsApiV1ModelsGet();
@@ -63,6 +73,8 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
   };
 
   const handleModelChange = (event: SelectChangeEvent<number | unknown>) => {
+    trackFiltersAndSortChange(pathname);
+
     const currentModel = event.target.value as number;
     setModel(currentModel);
     if (currentModel === -1 && alertFilters.models) {
@@ -73,10 +85,13 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
       });
       return;
     }
+
     changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [currentModel] }));
   };
 
   const handleSeverityChange = (event: SelectChangeEvent<unknown>) => {
+    trackFiltersAndSortChange(pathname);
+
     const currentSeverity = event.target.value as AlertSeverity | SeverityAll;
     setSeverity(currentSeverity);
 
@@ -88,6 +103,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
       });
       return;
     }
+
     changeAlertFilters(
       prevAlertFilters =>
         ({
@@ -104,6 +120,8 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
         ...prevAlertFilters,
         start: currentStartDate.toISOString()
       }));
+
+      trackFiltersAndSortChange(pathname);
     }
   };
 
@@ -114,6 +132,8 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
         ...prevAlertFilters,
         end: currentEndDate.toISOString()
       }));
+
+      trackFiltersAndSortChange(pathname);
     }
   };
 
@@ -131,7 +151,15 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
         sortby: [sortMethod]
       } as GetAlertRulesApiV1AlertRulesGetParams;
     });
+
     handleCloseSortMenu();
+
+    trackFiltersAndSortChange(pathname);
+  };
+
+  const handleReset = () => {
+    trackFiltersAndSortChange(pathname);
+    resetFilters();
   };
 
   useEffect(() => {
@@ -244,7 +272,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
             <Button
               variant="text"
               startIcon={<Undo />}
-              onClick={resetFilters}
+              onClick={handleReset}
               disabled={isModelsLoading}
               sx={{ minHeight: 30 }}
             >

@@ -1,15 +1,19 @@
-import { Box, List, styled, Typography } from '@mui/material';
 import React, { useCallback, useContext, useState } from 'react';
-// import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
-// import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
-import { EmptyAlerts } from 'assets/bg/backgrounds';
+import mixpanel from 'mixpanel-browser';
+
 import { GlobalStateContext } from 'Context';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
+
 import {
   AlertRuleInfoSchema,
   useGetAlertRulesApiV1AlertRulesGet,
   useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost
 } from '../api/generated';
+
+import { Box, List, styled, Typography } from '@mui/material';
+
+// import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
+// import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
 import { AlertsDrawer } from '../components/AlertsDrawer';
 import { AlertsFilters } from '../components/AlertsFilters';
 import { AlertsHeader } from '../components/AlertsHeader';
@@ -18,16 +22,19 @@ import { AlertsRulesItem } from '../components/AlertsRulesItem';
 import { AlertsSnackbar } from '../components/AlertsSnackbar';
 import { Loader } from '../components/Loader';
 
+import { EmptyAlerts } from 'assets/bg/backgrounds';
+
 const snackbarPosition = {
   vertical: 'bottom',
   horizontal: 'right'
 } as const;
 
 export const AlertsPage = () => {
+  const { alertFilters, resetFilters } = useContext(GlobalStateContext);
+
   const [resolveAlertRule, setResolveAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [isNotification, setIsNotification] = useState<boolean>(false);
-  const { alertFilters, resetFilters } = useContext(GlobalStateContext);
 
   const { data: alertRules, isLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
   const {
@@ -43,6 +50,8 @@ export const AlertsPage = () => {
     await mutateAlertRuleResolve({ alertRuleId: alertRule.id });
     setIsNotification(true);
     setResolveAlertRule(null);
+
+    mixpanel.track('Resolve alerts');
   }, []);
 
   const handleCloseSuccess = () => setIsNotification(false);

@@ -1,5 +1,4 @@
-import { alpha, Box, Tooltip, Typography } from '@mui/material';
-import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
+import React, { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from 'react';
 import {
   Chart,
   ChartArea,
@@ -13,10 +12,13 @@ import {
   TooltipModel
 } from 'chart.js';
 import { DistributiveArray, _DeepPartialObject } from 'chart.js/types/utils';
+import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import React, { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import mixpanel from 'mixpanel-browser';
+
+import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
+
 import {
   addSpace,
   drawAlerts,
@@ -25,11 +27,16 @@ import {
   OriginalMinMax,
   setAlertLine
 } from '../helpers/diagramLine';
-import { GraphData } from '../helpers/types';
-import { colors } from '../theme/colors';
+
+import { alpha, Box, Tooltip, Typography } from '@mui/material';
+
 import { HorizontalScrolling } from './HorizontalScrolling';
 import { Loader } from './Loader';
 import { Minimap } from './Minimap';
+
+import { colors } from '../theme/colors';
+
+import { GraphData } from '../helpers/types';
 
 declare module 'chart.js' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -198,6 +205,8 @@ function DiagramLine({
   };
 
   const hideLine = (item: LegendItem) => {
+    mixpanel.track('Click on a legend on the graph');
+
     const chart = chartRef.current;
 
     if (chart && typeof item.datasetIndex === 'number') {

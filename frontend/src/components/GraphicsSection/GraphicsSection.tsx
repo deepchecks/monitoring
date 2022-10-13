@@ -1,12 +1,17 @@
-import { Box, IconButton, Typography } from '@mui/material';
-import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated';
+import React, { useMemo, useRef, useState } from 'react';
 import { ChartData, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
 import { _DeepPartialObject } from 'chart.js/types/utils';
-import DiagramLine from 'components/DiagramLine';
-import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer.types';
 import dayjs from 'dayjs';
-import React, { useMemo, useRef, useState } from 'react';
+import mixpanel from 'mixpanel-browser';
+
+import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated';
+
+import { Box, IconButton, Typography } from '@mui/material';
+
+import DiagramLine from 'components/DiagramLine';
+
 import { MenuVertical } from '../../assets/icon/icon';
+
 import {
   StyledDiagramWrapper,
   StyledDivider,
@@ -17,6 +22,8 @@ import {
   StyledRootMenu,
   StyledTypographyTitle
 } from './GraphicsSection.style';
+
+import { DrawerNames, DrawerNamesMap } from 'components/MonitorDrawer/MonitorDrawer.types';
 
 interface GraphicsSectionProps {
   data: ChartData<'line', { x: string; y: number }[]>;
@@ -76,11 +83,17 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
   };
 
   const handleOpenMonitor = (drawerName: DrawerNames) => () => {
+    if (drawerName === DrawerNamesMap.EditMonitor) {
+      mixpanel.track('Click on Edit monitor');
+    }
+
     onOpen(drawerName, monitor);
     setAnchorElRootMenu(null);
   };
 
   const handleOpenDeleteMonitor = () => {
+    mixpanel.track('Click on Delete monitor');
+
     onDelete(monitor);
     setAnchorElRootMenu(null);
   };

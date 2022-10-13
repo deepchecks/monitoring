@@ -1,9 +1,13 @@
-import { alpha, Box, Typography } from '@mui/material';
-import { ModelsInfoSchema } from 'api/generated';
-import { GlobalStateContext } from 'Context';
-import dayjs from 'dayjs';
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import mixpanel from 'mixpanel-browser';
+
+import { GlobalStateContext } from 'Context';
+import { ModelsInfoSchema } from 'api/generated';
+
+import { alpha, Box, Typography } from '@mui/material';
+
 import { StyledContainer, StyledModelInfo, StyledTypographyDate } from './ModelItem.style';
 
 interface ModelItemProps {
@@ -26,8 +30,14 @@ export function ModelItem({ activeModel, alertsCount, onModelClick, onReset, mod
     navigate({ pathname: '/alerts' });
   };
 
+  const handleClickModel = () => {
+    mixpanel.track('Click on a model in the model list');
+
+    onModelClick(model.id)
+  };
+  
   return (
-    <StyledContainer active={activeModel} onClick={() => onModelClick(model.id)}>
+    <StyledContainer active={activeModel} onClick={handleClickModel}>
       <StyledModelInfo>
         <Box>
           <Typography variant="subtitle1">{model.name}</Typography>

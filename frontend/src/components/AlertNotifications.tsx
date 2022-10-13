@@ -1,15 +1,20 @@
-import { Box, Button, Checkbox, Typography } from '@mui/material';
-import { Stack } from '@mui/system';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import mixpanel from 'mixpanel-browser';
+
 import {
   AlertSeverity,
   useRetriveOrganizationApiV1OrganizationGet,
   useUpdateOrganizationApiV1OrganizationPut
 } from 'api/generated';
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import connectSlackBG from '../assets/bg/connectSlackBG.svg';
-import { Email, Slack } from '../assets/icon/icon';
+
+import { Box, Button, Checkbox, Typography } from '@mui/material';
+import { Stack } from '@mui/system';
+
 import { Loader } from './Loader';
+
+import { Email, Slack } from '../assets/icon/icon';
+import connectSlackBG from '../assets/bg/connectSlackBG.svg';
 
 export enum NotificationDictionary {
   email = 'email_notification_levels',
@@ -109,6 +114,8 @@ export function AlertNotifications() {
 
       return currentNotifications;
     });
+
+    mixpanel.track('Changed notification');
   };
 
   useEffect(() => {

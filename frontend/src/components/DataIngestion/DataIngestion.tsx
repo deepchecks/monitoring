@@ -1,9 +1,14 @@
-import { MenuItem } from '@mui/material';
-import { StyledSelect } from 'components/MarkedSelect';
-import useStatsTime from 'hooks/useStatsTime';
 import React from 'react';
+import mixpanel from 'mixpanel-browser';
+
+import useStatsTime from 'hooks/useStatsTime';
 import useDataIngestion from '../../hooks/useDataIngestion';
+
+import { MenuItem } from '@mui/material';
+
+import { StyledSelect } from 'components/MarkedSelect';
 import DiagramLine from '../DiagramLine';
+
 import {
   StyledDiagramWrapper,
   StyledFlexContent,
@@ -21,8 +26,13 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
 
   const handleTime = (newTimeValue: unknown) => {
     if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
+
     const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
     setCurrentTime(timeOptions[newTimeIndex].id);
+
+    mixpanel.track('Change of time filter for Prediction Data status', {
+      'Filter value': newTimeValue
+    });
   };
 
   return (

@@ -1,4 +1,24 @@
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import deepmerge from 'deepmerge';
+import mixpanel from 'mixpanel-browser';
+
+import useModels from '../hooks/useModels';
+
+import {
+  AlertRuleConfigSchema,
+  AlertRuleSchema,
+  DataFilterList,
+  MonitorSchema,
+  OperatorsEnum,
+  useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost,
+  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
+  useGetAlertRuleApiV1AlertRulesAlertRuleIdGet,
+  useGetMonitorApiV1MonitorsMonitorIdGet,
+  useUpdateAlertApiV1AlertRulesAlertRuleIdPut,
+  useUpdateMonitorApiV1MonitorsMonitorIdPut
+} from '../api/generated';
+
 import {
   DialogProps,
   Dialog,
@@ -13,30 +33,16 @@ import {
   Box,
   useTheme
 } from '@mui/material';
-import { CloseIcon, ExpandIcon, LockIcon, OpenLockIcon } from '../assets/icon/icon';
 import { TransitionProps } from '@mui/material/transitions';
-import {
-  AlertRuleConfigSchema,
-  AlertRuleSchema,
-  DataFilterList,
-  MonitorSchema,
-  OperatorsEnum,
-  useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost,
-  useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
-  useGetAlertRuleApiV1AlertRulesAlertRuleIdGet,
-  useGetMonitorApiV1MonitorsMonitorIdGet,
-  useUpdateAlertApiV1AlertRulesAlertRuleIdPut,
-  useUpdateMonitorApiV1MonitorsMonitorIdPut
-} from '../api/generated';
+
 import { Loader } from './Loader';
-import useModels from '../hooks/useModels';
-import deepmerge from 'deepmerge';
-import { DeepPartial } from 'utility-types';
 import { AlertRuleDialogStep1, AlertRuleDialogStep1Values } from './AlertRuleDialogStep1';
 import { AlertRuleDialogStep2, AlertRuleDialogStep2Values } from './AlertRuleDialogStep2';
 import { AlertRuleDialogStep3, AlertRuleDialogStep3Values } from './AlertRuleDialogStep3';
-import { omit } from 'lodash';
-import dayjs from 'dayjs';
+
+import { CloseIcon, ExpandIcon, LockIcon, OpenLockIcon } from '../assets/icon/icon';
+
+import { DeepPartial } from 'utility-types';
 
 interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
   alertRuleId?: AlertRuleConfigSchema['id'];
@@ -50,7 +56,15 @@ interface AlertRuleDialogStep {
   Component: () => JSX.Element;
 }
 
-const STEP_KEY_SAVING = 0;
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+type trackAddEditRuleSavedSuccessfullyData = PartialBy<MonitorSchema, 'id' | 'check'>;
+
+const trackAddEditRuleSavedSuccessfully = (data: trackAddEditRuleSavedSuccessfullyData) =>
+  mixpanel.track('Add/Edit alert rule saved successfully', { 'The rule details': data });
+
+const trackNavigationBetweenStages = () => mixpanel.track('Navigation between stages in the form');
 
 const Transition = forwardRef(function Transition(
   props: TransitionProps & { children: React.ReactElement },
@@ -88,6 +102,7 @@ const initialMonitor = {
 } as MonitorSchema;
 
 const INITIAL_STEP_INDEX = 0;
+const STEP_KEY_SAVING = 0;
 
 export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRuleDialogProps) => {
   const theme = useTheme();
@@ -113,18 +128,24 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
 
   const onSaveAndClose = async () => {
     if (isEdit) {
-      const { id: monitorId, check, ...monitor } = editMonitor;
+      const { id: monitorId, ...monitor } = editMonitor;
+
       await Promise.all([
         updateMonitor({ monitorId, data: monitor }),
         updateAlertRule({ alertRuleId, data: editAlertRule })
       ]);
+
+      trackAddEditRuleSavedSuccessfully(monitor);
     } else {
       const { check, ...monitor } = editMonitor;
       const { id: monitorId } = await createMonitor({ checkId: check.id, data: monitor });
+
       await createAlertRule({ monitorId, data: editAlertRule });
+
+      trackAddEditRuleSavedSuccessfully(monitor);
     }
 
-    handleClose(true);
+    handleClose(true, true);
   };
 
   const onStepComplete =
@@ -139,6 +160,8 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
       const isLastStep = completeStepIndex >= steps.length - 1;
 
       setCurrentStepKey(isLastStep ? STEP_KEY_SAVING : steps[completeStepIndex + 1].key);
+
+      !isLastStep && trackNavigationBetweenStages();
     };
 
   const steps: AlertRuleDialogStep[] = useMemo(
@@ -179,7 +202,7 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
               data_filter: (editMonitor.data_filters || initialMonitor.data_filters!).filters[0],
               aggregation_window: editMonitor?.aggregation_window,
               frequency: editMonitor?.frequency
-                        }}
+            }}
             onSubmit={onStepComplete<AlertRuleDialogStep2Values>(2, values => {
               setEditMonitor(prevMonitor => {
                 const isModelIdChanged = prevMonitor.check.model_id !== values.model_id;
@@ -188,7 +211,12 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
                     id: values.check_id,
                     model_id: values.model_id
                   },
-                  data_filters: isModelIdChanged || !values.data_filter ? undefined : deepmerge<DataFilterList | undefined, DeepPartial<DataFilterList>>(prevMonitor.data_filters, { filters: [values.data_filter] }),
+                  data_filters:
+                    isModelIdChanged || !values.data_filter
+                      ? undefined
+                      : deepmerge<DataFilterList | undefined, DeepPartial<DataFilterList>>(prevMonitor.data_filters, {
+                          filters: [values.data_filter]
+                        }),
                   frequency: values.frequency,
                   aggregation_window: values.aggregation_window,
                   lookback: dayjs.duration(1, 'months').milliseconds()
@@ -236,11 +264,13 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
     setEditMonitor(isEdit && monitor ? monitor : (initialMonitor as MonitorSchema));
   }, [isEdit, alertRule, monitor]);
 
-  const handleClose = (isRefetch = false) => {
+  const handleClose = (isRefetch = false, finished = false) => {
     onClose(isRefetch);
     setCurrentStepKey(steps[INITIAL_STEP_INDEX].key);
     setEditMonitor(initialMonitor);
     setEditAlertRule(initialAlertRule);
+
+    !finished && mixpanel.track('Add/Edit alert rule exited without saving');
   };
 
   const isLoading =
@@ -254,11 +284,18 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
   const renderStep = ({ key, title, isExpendable, Component }: AlertRuleDialogStep) => {
     const isCurrentStep = key === currentStepKey;
 
+    const handleAccordionChange = () => {
+      if (!isCurrentStep && isExpendable) {
+        setCurrentStepKey(key);
+        trackNavigationBetweenStages();
+      }
+    };
+
     return (
       <Accordion
         key={key}
         expanded={isCurrentStep}
-        onChange={() => isExpendable && setCurrentStepKey(key)}
+        onChange={handleAccordionChange}
         sx={{
           mb: '40px',
           boxShadow: '0px 4px 13px 2px rgba(0, 0, 0, 0.12)',

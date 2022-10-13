@@ -1,6 +1,10 @@
 import React, { useMemo, useState } from 'react';
+import { ChartData } from 'chart.js';
+import mixpanel from 'mixpanel-browser';
 
 import { useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
+
+import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
 
 import { Drawer } from '@mui/material';
 
@@ -10,11 +14,8 @@ import MonitorForm from './MonitorForm/MonitorForm';
 // import { CreateMonitor } from './MonitorForm/CreateMonitor';
 // import EditMonitor from './MonitorForm/EditMonitor';
 
-import { parseDataForChart } from '../../helpers/utils/parseDataForChart';
-
 import { StyledStackWrapper } from './MonitorDrawer.style';
 
-import { ChartData } from 'chart.js';
 import { MonitorDrawerProps, LookbackCheckProps, DrawerNamesMap } from './MonitorDrawer.types';
 
 function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawerProps) {
@@ -27,6 +28,8 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
   const handleOnClose = () => {
     setGraphData(undefined);
     onClose();
+
+    mixpanel.track('Exited add/edit monitor window without saving');
   };
 
   const handleLookback = async (graphData: LookbackCheckProps) => {

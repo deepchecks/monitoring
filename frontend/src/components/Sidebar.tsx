@@ -1,13 +1,19 @@
-import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
-import { UserInvite } from 'assets/icon/icon';
 import React, { useState } from 'react';
-import { colors } from 'theme/colors';
-import { PathInfo, pathsInfo } from '../helpers/helper';
+import mixpanel from 'mixpanel-browser';
+
 import useWindowResize from '../hooks/windowResize';
+
+import { PathInfo, pathsInfo } from '../helpers/helper';
+
+import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
+
 import { Logo } from './Logo';
 import { SidebarMenuItem } from './SidebarMenuItem';
-import { UserInfo } from './UserInfo';
 import { UserInviteDialog } from './UserInviteDialog';
+import { UserInfo } from './UserInfo';
+
+import { UserInvite } from 'assets/icon/icon';
+import { colors } from 'theme/colors';
 
 const StyledButton = styled(Button)(({ theme }) => ({
   width: '100%',
@@ -26,6 +32,8 @@ export const Sidebar = () => {
   const [userInviteOpen, setUserInviteOpen] = useState(false);
 
   const handleInviteToOrgClick = () => {
+    mixpanel.track('Click on the Invite to workspace');
+
     setUserInviteOpen(true);
   };
 

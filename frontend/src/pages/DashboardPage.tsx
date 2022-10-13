@@ -1,26 +1,32 @@
 import React, { useState } from 'react';
+import mixpanel from 'mixpanel-browser';
+
+import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete } from '../api/generated';
+import useModels from 'hooks/useModels';
+import useMonitorsData from '../hooks/useMonitorsData';
+
+import { Grid } from '@mui/material';
+
 import { DashboardHeader } from '../components/DashboardHeader';
 import { GraphicsSection } from '../components/GraphicsSection/GraphicsSection';
 import { Loader } from '../components/Loader';
 import { ModelList } from '../components/ModelList';
-import { DrawerNames, DrawerNamesMap } from '../components/MonitorDrawer/MonitorDrawer.types';
 import MonitorDrawer from 'components/MonitorDrawer/MonitorDrawer';
-
-import { Grid } from '@mui/material';
 import { DataIngestion } from 'components/DataIngestion/DataIngestion';
 import DeleteMonitor from 'components/MonitorDrawer/MonitorForm/DeleteMonitor';
-import useModels from 'hooks/useModels';
-import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete } from '../api/generated';
-import useMonitorsData from '../hooks/useMonitorsData';
+
+import { DrawerNames, DrawerNamesMap } from '../components/MonitorDrawer/MonitorDrawer.types';
 
 export const DashboardPage = () => {
   const { models } = useModels();
+  const { monitors, chartDataList, refreshMonitors } = useMonitorsData();
+
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState<boolean>(false);
   const [currMonitor, setCurrMonitor] = useState<MonitorSchema>();
   const [drawerName, setDrawerName] = useState<DrawerNames>(DrawerNamesMap.CreateMonitor);
-  const { monitors, chartDataList, refreshMonitors } = useMonitorsData();
   const [currentModelId, setCurrentModelId] = useState<number | null>(null);
+
   let prevModelId = -1;
   let isBlack = true;
 
@@ -48,6 +54,8 @@ export const DashboardPage = () => {
   const handleDeleteMonitor = async (confirm: boolean) => {
     if (!currMonitor) return;
     if (!confirm) return setIsDeleteMonitorDialogOpen(false);
+
+    if (confirm) mixpanel.track('Click on confirm deletion of monitor');
 
     window.scrollTo(0, 0);
 
@@ -81,6 +89,7 @@ export const DashboardPage = () => {
               if (typeof currentModelId === 'number' && modelId !== currentModelId) {
                 return null;
               }
+
               const toggle = prevModelId === modelId;
               prevModelId = modelId;
 

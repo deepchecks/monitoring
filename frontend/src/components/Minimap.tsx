@@ -1,13 +1,18 @@
-import { alpha, Box, Button, Stack, styled, useTheme } from '@mui/material';
-import { AlertSchema, AlertSeverity } from 'api/generated';
-import { FastForward, Rewind } from 'assets/icon/icon';
+import React, { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { Chart, ChartData, ChartOptions, registerables } from 'chart.js';
-import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { Line } from 'react-chartjs-2';
+import 'chartjs-adapter-dayjs-3';
+import mixpanel from 'mixpanel-browser';
+
+import { AlertSchema, AlertSeverity } from 'api/generated';
+
 import { drawAlertsOnMinimap } from 'helpers/diagramLine';
 import { GraphData } from 'helpers/types';
-import React, { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { Line } from 'react-chartjs-2';
+
+import { alpha, Box, Button, Stack, styled, useTheme } from '@mui/material';
+
+import { FastForward, Rewind } from 'assets/icon/icon';
 
 Chart.register(...registerables, zoomPlugin);
 
@@ -46,6 +51,8 @@ const StyledBoxLine = styled(Box)({
   height: 8
 });
 
+const trackNavigationBetweenAlerts = () => mixpanel.track('Navigation between alerts');
+
 export const Minimap = React.forwardRef(function MinimapComponent(
   { alerts, alertIndex, alertSeverity, changeAlertIndex, data, options }: MinimapProps,
   ref
@@ -54,10 +61,12 @@ export const Minimap = React.forwardRef(function MinimapComponent(
 
   const prevAlert = () => {
     changeAlertIndex(prevIndex => prevIndex - 1);
+    trackNavigationBetweenAlerts();
   };
 
   const nextAlert = () => {
     changeAlertIndex(prevIndex => prevIndex + 1);
+    trackNavigationBetweenAlerts();
   };
 
   return (

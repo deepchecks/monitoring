@@ -1,18 +1,24 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Button, Box, useTheme } from '@mui/material';
-import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
-import { Loader } from 'components/Loader';
-import { AlertRuleDialog } from '../components/AlertRuleDialog';
-import { AlertsFilters } from 'components/AlertsFilters';
+import mixpanel from 'mixpanel-browser';
+
+import { GlobalStateContext } from '../Context';
+import useHeader from 'hooks/useHeader';
+
 import {
   AlertRuleConfigSchema,
   GetAllAlertRulesApiV1ConfigAlertRulesGetParams,
   useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete,
   useGetAllAlertRulesApiV1ConfigAlertRulesGet
 } from '../api/generated';
+
+import { Button, Box, useTheme } from '@mui/material';
+
+import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
+import { Loader } from 'components/Loader';
+import { AlertRuleDialog } from '../components/AlertRuleDialog';
+import { AlertsFilters } from 'components/AlertsFilters';
+
 import { WhitePlusIcon } from 'assets/icon/icon';
-import useHeader from 'hooks/useHeader';
-import { GlobalStateContext } from '../Context';
 
 export const AlertRules = () => {
   const { Header, setChildren } = useHeader();
@@ -38,11 +44,15 @@ export const AlertRules = () => {
   };
 
   const onDialogOpen = (alertRule?: AlertRuleConfigSchema) => {
+    mixpanel.track(`Click on the ${alertRule ? 'Edit' : 'Add'} rule`);
+
     setIsDialogOpen(true);
     setEditableAlertRuleId(alertRule?.id);
   };
 
   const onAlertRuleDelete = async (alertRule: AlertRuleConfigSchema) => {
+    mixpanel.track('Click on delete rule');
+
     await deleteAlertRuleById({ alertRuleId: alertRule.id });
     refetchAlertRules();
   };

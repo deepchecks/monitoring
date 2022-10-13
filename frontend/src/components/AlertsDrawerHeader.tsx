@@ -1,3 +1,16 @@
+import React, { Dispatch, SetStateAction, useState } from 'react';
+import dayjs from 'dayjs';
+import mixpanel from 'mixpanel-browser';
+
+import useModels from 'hooks/useModels';
+
+import {
+  AlertRuleInfoSchema,
+  AlertSchema,
+  MonitorSchema,
+  useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost
+} from '../api/generated';
+
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
@@ -12,19 +25,12 @@ import {
   Typography,
   useTheme
 } from '@mui/material';
-import { ChartSvg } from 'assets/icon/chart';
-import dayjs from 'dayjs';
-import useModels from 'hooks/useModels';
-import React, { Dispatch, SetStateAction, useState } from 'react';
-import {
-  AlertRuleInfoSchema,
-  AlertSchema,
-  MonitorSchema,
-  useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost
-} from '../api/generated';
-import { Checkmark, CloseIcon, TestTube } from '../assets/icon/icon';
+
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
 import processFrequency from '../helpers/utils/processFrequency';
+
+import { Checkmark, CloseIcon, TestTube } from '../assets/icon/icon';
+import { ChartSvg } from 'assets/icon/chart';
 
 interface AlertsDrawerHeaderProps {
   alertIndex: number;
@@ -111,6 +117,8 @@ export const AlertsDrawerHeader = ({
   };
 
   const handleRunSuite = () => {
+    mixpanel.track('Run test suite click');
+
     const [modelVersionId] = Object.keys(alert.failed_values);
     runTest(modelVersionId);
   };

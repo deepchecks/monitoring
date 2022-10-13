@@ -98,10 +98,10 @@ export const AlertRuleConfigItem: FC<AlertRuleConfigItemProps> = ({ alertRule, o
           <Typography sx={{ fontSize: '16px', fontWeight: 600, lineHeight: '24px', mr: '10px' }}>Alert #:</Typography>
           <Stack direction="row">
             <Typography sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '24px', letterSpacing: '0.15px' }}>
-              {NonResolvedAlerts}
+              {NonResolvedAlerts || 0}
             </Typography>
             <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px', letterSpacing: '0.15px' }}>
-              /{totalAlerts}
+              /{totalAlerts || 0}
             </Typography>
           </Stack>
         </Stack>
@@ -110,7 +110,7 @@ export const AlertRuleConfigItem: FC<AlertRuleConfigItemProps> = ({ alertRule, o
             Recent Alert:
           </Typography>
           <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px' }}>
-            {dayjs(recentAlert).format('MMM. DD, YYYY')}
+            {recentAlert ? dayjs(recentAlert).format('MMM. DD, YYYY') : '-'}
           </Typography>
         </Stack>
       </Stack>

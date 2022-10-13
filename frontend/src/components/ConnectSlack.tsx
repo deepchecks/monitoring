@@ -1,14 +1,19 @@
-import { alpha, Box, Button, Stack, Typography } from '@mui/material';
+import React from 'react';
+import mixpanel from 'mixpanel-browser';
+
 import {
   useRemoveInstallationApiV1SlackAppsAppIdDelete,
   useRetrieveInstalationsApiV1SlackAppsGet,
   useRetriveOrganizationApiV1OrganizationGet,
   useUpdateOrganizationApiV1OrganizationPut
 } from 'api/generated';
-import React from 'react';
-import slack from '../assets/icon/slack.png';
+
+import { alpha, Box, Button, Stack, Typography } from '@mui/material';
+
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
 import { Loader } from './Loader';
+
+import slack from '../assets/icon/slack.png';
 
 interface App {
   id: number;
@@ -36,6 +41,8 @@ export function ConnectSlack() {
     isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
   const connectSlack = () => {
+    mixpanel.track('Clicked on integration with Slack');
+
     window.open(
       `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,
       '_blank',

@@ -1,9 +1,7 @@
-import React from 'react';
+import React, { memo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import dayjs from 'dayjs';
-import { memo, useState } from 'react';
-import { Checkmark, PencilDrawing } from '../../assets/icon/icon';
-import { AlertRule } from '../../helpers/types/alert';
+
 import {
   StyledBlur,
   StyledCaption,
@@ -16,6 +14,10 @@ import {
   StyledProperty,
   StyledTitle
 } from './AlertRuleItem.style';
+
+import { Checkmark, PencilDrawing } from '../../assets/icon/icon';
+
+import { AlertRule } from '../../helpers/types/alert';
 
 interface AlertRuleItemProps {
   alertRule: AlertRule;

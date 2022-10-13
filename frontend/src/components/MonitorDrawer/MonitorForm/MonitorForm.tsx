@@ -1,6 +1,6 @@
 import React, { ReactNode, useEffect, useMemo, memo, useRef, useState } from 'react';
-
 import { useFormik } from 'formik';
+import mixpanel from 'mixpanel-browser';
 
 import {
   MonitorCreationSchema,
@@ -141,6 +141,12 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     if (!values.check) return;
     setSelectedCheckId(+values.check);
   }, [values.check]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    formik.handleSubmit(e);
+
+    mixpanel.track('Saved successfully', { 'The monitor details': values });
+  };
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
     if (!Array.isArray(newValue)) {
@@ -296,7 +302,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   }, [resetMonitor]);
 
   return (
-    <form onSubmit={formik.handleSubmit}>
+    <form onSubmit={e => handleSubmit(e)}>
       <StyledStackContainer>
         <Box>
           <StyledTypography variant="h4">{`${monitor ? 'Edit' : 'New'} Monitor`}</StyledTypography>
@@ -447,9 +453,9 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
             size="large"
             disabled={
               !values.lookback ||
-              !values.check ||
               !values.frequency ||
-              (monitor ? isColumnsLoading : !values.aggregation_window)
+              !values.aggregation_window ||
+              (monitor ? isColumnsLoading : !values.check)
             }
           >
             Save

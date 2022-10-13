@@ -1,9 +1,12 @@
 import React, { memo, useState } from 'react';
 import { Link, LinkProps, useLocation } from 'react-router-dom';
-import { Arrow } from '../assets/icon/icon';
+import mixpanel from 'mixpanel-browser';
+
 import { PathInfo } from '../helpers/helper';
 
 import { Box, styled, Typography, useTheme } from '@mui/material';
+
+import { Arrow } from '../assets/icon/icon';
 import { colors } from '../theme/colors';
 
 interface StyledLinkWrapperProps {
@@ -67,6 +70,33 @@ function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
     setHover(false);
   };
 
+  const handleClick = (infoPath: string) => {
+    switch (infoPath) {
+      case '/dashboard':
+        mixpanel.track('Click on the Dashboard');
+        break;
+
+      case '/alerts':
+        mixpanel.track('Click on the Alerts');
+        break;
+
+      case '/configuration/alert-rules':
+        mixpanel.track('Click on the Alert Rules');
+        break;
+
+      case '/configuration/notifications':
+        mixpanel.track('Click on the Notification');
+        break;
+
+      case '/configuration/integrations':
+        mixpanel.track('Click on the Integrations');
+        break;
+
+      default:
+        break;
+    }
+  };
+
   const MenuItem = (
     <>
       <Box
@@ -74,6 +104,7 @@ function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
           display: 'flex',
           alignItems: 'center'
         }}
+        onClick={() => handleClick(info.link)}
       >
         {Icon && IconHover && ActiveIcon ? hover && !active ? <IconHover /> : active ? <ActiveIcon /> : <Icon /> : null}
         <Typography
@@ -208,6 +239,7 @@ function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
                 width: '100%',
                 borderRadius: '4px'
               }}
+              onClick={() => handleClick(childInfo.link)}
             >
               <Typography
                 sx={{
