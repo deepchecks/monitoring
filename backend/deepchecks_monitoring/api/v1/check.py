@@ -16,7 +16,6 @@ from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClass
 from fastapi import Query
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import and_, delete, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing_extensions import TypedDict
@@ -30,8 +29,9 @@ from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models import Check, Model
 from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.utils import IdResponse, MonitorCheckConf, exists_or_404, fetch_or_404, field_length
+from deepchecks_monitoring.utils import MonitorCheckConf, NameIdResponse, exists_or_404, fetch_or_404, field_length
 
+from .model import ModelSchema
 from .router import router
 
 
@@ -90,58 +90,52 @@ class CheckResultSchema(BaseModel):
 
 
 @router.post('/models/{model_id}/checks',
-             response_model=t.Union[IdResponse, t.List[IdResponse]],
+             response_model=t.List[NameIdResponse],
              tags=[Tags.CHECKS]
              )
-async def create_check(
+async def add_checks(
         model_id: int,
         checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]],
         session: AsyncSession = AsyncSessionDep
-) -> t.Union[t.Dict[t.Any, t.Any], t.List[t.Dict[t.Any, t.Any]]]:
-    """Create a new check.
+) -> t.List[t.Dict[t.Any, t.Any]]:
+    """Add a new check or checks to the model.
 
     Parameters
     ----------
     model_id : int
         ID of the model.
-    check : CheckCreationSchema
-        Check to create.
+    checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]]
+        Check or checks to add to model.
     session : AsyncSession, optional
         SQLAlchemy session.
 
     Returns
     -------
-    int
-        The check id.
+    t.List[t.Dict[t.Any, t.Any]]
+        List containing the names and ids for uploaded checks.
     """
-    await exists_or_404(session, Model, id=model_id)
-
-    if isinstance(checks, CheckCreationSchema):
-        check = Check(model_id=model_id, **checks.dict(exclude_none=True))
-        session.add(check)
-        try:
-            await session.flush()
-        except IntegrityError as error:
-            raise BadRequest('Model check name duplication') from error
-        return IdResponse.from_orm(check).dict()
+    model = await fetch_or_404(session, Model, id=model_id)
+    is_vision_model = 'vision' in ModelSchema.from_orm(model).task_type.value
+    if not isinstance(checks, t.Sequence):
+        checks = [checks]
+    existing_check_names = [x.name for x in await get_checks(model_id, session)]
 
     check_entities = []
+    for check_creation_schema in checks:
+        if check_creation_schema.name in existing_check_names:
+            raise BadRequest(f'Model already contains a check named {check_creation_schema.name}')
+        is_vision_check = str(check_creation_schema.config['module_name']).startswith('deepchecks.vision')
+        if is_vision_model != is_vision_check:
+            raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
+        check_object = Check(model_id=model_id, **check_creation_schema.dict(exclude_none=True))
+        check_entities.append(check_object)
+        session.add(check_object)
+
+    await session.flush()
     output = []
-
-    for check in checks:
-        check = Check(model_id=model_id, **check.dict(exclude_none=True))
-        check_entities.append(check)
-        session.add(check)
-
-    try:
-        await session.flush()
-    except IntegrityError as error:
-        raise BadRequest('Model check name duplication') from error
-
-    for check in check_entities:
-        await session.refresh(check)
-        output.append(IdResponse.from_orm(check).dict())
-
+    for check_object in check_entities:
+        await session.refresh(check_object)
+        output.append(NameIdResponse.from_orm(check_object).dict())
     return output
 
 

@@ -37,7 +37,7 @@ from torch.utils.data import Dataset as TorchDataset
 
 from client.deepchecks_client.core.client import DeepchecksClient
 from client.deepchecks_client.core.utils import maybe_raise
-from deepchecks_monitoring.api.v1.check import CheckCreationSchema, create_check
+from deepchecks_monitoring.api.v1.check import CheckCreationSchema, add_checks
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
@@ -322,9 +322,9 @@ async def classification_model_check_id(async_session: AsyncSession, classificat
         "module_name": "deepchecks.tabular.checks"
     })
 
-    result = await create_check(classification_model_id, schema, async_session)
+    result = await add_checks(classification_model_id, schema, async_session)
     await async_session.commit()
-    return result["id"]
+    return result[0]["id"]
 
 
 @pytest_asyncio.fixture()
@@ -335,9 +335,9 @@ async def classification_model_feature_check_id(async_session: AsyncSession, cla
         "module_name": "deepchecks.tabular.checks"
     })
 
-    result = await create_check(classification_model_id, schema, async_session)
+    result = await add_checks(classification_model_id, schema, async_session)
     await async_session.commit()
-    return result["id"]
+    return result[0]["id"]
 
 
 @pytest_asyncio.fixture()
@@ -349,9 +349,9 @@ async def classification_vision_model_property_check_id(async_session: AsyncSess
         "module_name": "deepchecks.vision.checks"
     })
 
-    result = await create_check(classification_vision_model_id, schema, async_session)
+    result = await add_checks(classification_vision_model_id, schema, async_session)
     await async_session.commit()
-    return result["id"]
+    return result[0]["id"]
 
 
 @pytest_asyncio.fixture()
@@ -362,9 +362,9 @@ async def regression_model_check_id(async_session: AsyncSession, regression_mode
         "module_name": "deepchecks.tabular.checks"
     })
 
-    result = await create_check(regression_model_id, schema, async_session)
+    result = await add_checks(regression_model_id, schema, async_session)
     await async_session.commit()
-    return result["id"]
+    return result[0]["id"]
 
 
 def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
@@ -407,7 +407,7 @@ def add_check(
 
     assert response.status_code == expected_status_code
 
-    data = response.json()
+    data = response.json()[0]
     assert isinstance(data, dict)
     assert "id" in data and isinstance(data["id"], int)
     # TODO: verify whether check was actually created

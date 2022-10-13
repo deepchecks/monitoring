@@ -36,7 +36,7 @@ async def test_add_check(classification_model_id, client: TestClient):
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     # Assert
     assert response.status_code == 200
-    assert response.json()["id"] == 1
+    assert response.json()[0]["id"] == 1
 
     response = client.get(f"/api/v1/models/{classification_model_id}/checks")
     assert response.status_code == 200
@@ -45,6 +45,46 @@ async def test_add_check(classification_model_id, client: TestClient):
     assert resp_json["name"] == request["name"]
     assert resp_json["config"] == request["config"]
 
+
+@pytest.mark.asyncio
+async def test_add_check_that_already_exist(classification_model_id, client: TestClient):
+    # Arrange
+    request = {
+        "name": "checky v1",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"reduce": "mean"},
+                   "module_name": "deepchecks.tabular.checks"
+                   },
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    # Assert
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == 1
+    # Act
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    # Assert
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Model already contains a check named checky v1"
+
+
+@pytest.mark.asyncio
+async def test_add_check_wrong_type(classification_model_id, client: TestClient):
+    # Arrange
+    request = {
+        "name": "checky v1",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"reduce": "mean"},
+                   "module_name": "deepchecks.vision.checks"
+                   },
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
+    # Assert
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Check checky v1 is not compatible with the model task type"
 
 @pytest.mark.asyncio
 async def test_delete_check_success(classification_model_id, client: TestClient):
@@ -57,7 +97,7 @@ async def test_delete_check_success(classification_model_id, client: TestClient)
     }
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     assert response.status_code == 200
-    assert response.json()["id"] == 1
+    assert response.json()[0]["id"] == 1
 
     request = {"names": ["checky v1"]}
     response = client.delete(f"/api/v1/models/{classification_model_id}/checks", params=request)
@@ -79,7 +119,7 @@ async def test_delete_check_fail(classification_model_id, client: TestClient):
     }
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     assert response.status_code == 200
-    assert response.json()["id"] == 1
+    assert response.json()[0]["id"] == 1
 
     request = {"names": ["checkyyyyyyyyyy"]}
     response = client.delete(f"/api/v1/models/{classification_model_id}/checks", params=request)
@@ -99,7 +139,7 @@ async def test_add_check_list(classification_model_id, client: TestClient):
     response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
     # Assert
     assert response.status_code == 200
-    assert response.json() == [{"id": 1}, {"id": 2}]
+    assert response.json() == [{"id": 1, "name": "checky v1"}, {"id": 2, "name": "checky v2"}]
 
 
 @pytest.mark.asyncio
