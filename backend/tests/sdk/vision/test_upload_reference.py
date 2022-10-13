@@ -44,12 +44,10 @@ async def test_detection_upload_reference(detection_vision_model_version_client:
                                           async_session):
     detection_vision_model_version_client.upload_reference(*vision_detection_and_prediction)
 
-    model_version_query = await async_session.execute(
-        select(ModelVersion)
-        .where(ModelVersion.id ==
-               detection_vision_model_version_client.model_version_id)
+    model_version = await async_session.get(
+        ModelVersion,
+        detection_vision_model_version_client.model_version_id
     )
-    model_version: ModelVersion = model_version_query.scalars().first()
 
     ref_table = model_version.get_reference_table(async_session)
     ref_arr = [dict(row) for row in (await async_session.execute(select(ref_table))).all()]

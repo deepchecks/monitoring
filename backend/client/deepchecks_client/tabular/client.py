@@ -12,7 +12,7 @@
 import io
 import warnings
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Sequence, Any
 
 import numpy as np
 import pandas as pd
@@ -62,14 +62,99 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         The id of the model version.
     """
 
-    def log_sample(self,
-                   sample_id: str,
-                   timestamp: Union[datetime, int, None] = None,
-                   prediction_proba=None,
-                   prediction=None,
-                   label=None,
-                   **values):
-        """Send sample for the model version.
+    def log_batch(
+        self, 
+        data: pd.DataFrame,
+        timestamp: Union["pd.Series[datetime]", "pd.Series[int]"],
+        prediction: Union["pd.Series[str]", "pd.Series[float]"],
+        prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
+        label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
+        samples_per_send: int = 100_000
+    ):
+        """Log batch of samples.
+        
+        Parameters
+        ==========
+        data : pandas.DataFrame
+            set of features and optionally of non-features.
+            Expected that dataframe will contain a 'sample_id' column, 
+            a set of identifiers that uniquely identifies each logged sample, 
+            but if the 'sample_id' column is not provided then the dataframe 
+            index will be used instead.
+        timestamp : Union[pandas.Series[datetime], pandas.Series[int]]
+            set of timestamps
+        prediction : Union[pandas.Series[str], pandas.Series[float]]
+            set of predictions
+        prediction_proba : Optional[pandas.Series[Sequence[float]]] , default None
+            set of prediction probabilities
+        label : Union[pandas.Series[str], pandas.Series[float], None] , default None
+            set of labels
+        samples_per_send : int , default 100_000
+            how many samples to send by one request
+        """
+        if samples_per_send < 1:
+            raise ValueError("'samples_per_send' must be '>=' than 1")
+        
+        if len(data) == 0:
+            raise ValueError("'data' cannot be empty")
+        
+        if "sample_id" in data.columns:
+            if data["sample_id"].is_unique is False:
+                raise ValueError("sample ids must be unique")
+            if not data["sample_id"].notna().all():
+                raise ValueError("'sample_id' column must not contain None/Nan")
+            data = data.set_index("sample_id")
+        else: 
+            if data.index.is_unique is False:
+                raise ValueError("'data.index' must contain unique values")
+        
+        error_template = (
+            "'{param}' and 'data' parameters indexes mismatch, "
+            "make sure that '{param}.index' is the same as "
+            "'data.index' (or data['sample_id'])"
+        )
+
+        if not data.index.equals(timestamp.index):
+            raise ValueError(error_template.format(param="timestamp"))
+        if not data.index.equals(prediction.index):
+            raise ValueError(error_template.format(param="prediction"))
+        
+        data = data.assign(prediction=prediction)
+        
+        if prediction_proba is not None:
+            if not data.index.equals(prediction_proba.index):
+                raise ValueError(error_template.format(param="prediction_proba"))
+            else:
+                data = data.assign(prediction_proba=prediction_proba)
+        
+        if label is not None:
+            if not data.index.equals(label.index):
+                raise ValueError(error_template.format(param="label"))
+            else:
+                data = data.assign(label=label)
+        
+        for i in range(0, len(data), samples_per_send):
+            self._log_batch(data.iloc[i:i+samples_per_send])
+        
+    def _log_batch(self, samples: pd.DataFrame):
+        for index, row in samples.iterrows():
+            sample = row.to_dict()
+            if "sample_id" in sample:
+                self.log_sample(**sample)
+            else:
+                self.log_sample(sample_id=str(index), **sample)
+        self.send()
+
+    def log_sample(
+        self,
+        sample_id: str,
+        prediction: Any,
+        timestamp: Union[datetime, int, None] = None,
+        prediction_proba=None,
+        label=None,
+        **values
+    ):
+        """Log sample for the model version.
 
         Parameters
         ----------
@@ -86,39 +171,40 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         values
             All features of the sample and optional non_features
         """
+        if timestamp is None:
+            warnings.warn("log_sample was called without timestamp, using current time instead")
+        
+        task_type = TaskType(self.model['task_type'])
         timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
-
+    
         sample = {
             DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id),
             DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
             **values
         }
 
-        if prediction is None:
-            raise Exception('Model prediction must be provided when logging a sample')
-
-        if TaskType(self.model['task_type']) in [TaskType.MULTICLASS, TaskType.BINARY]:
+        if task_type in {TaskType.MULTICLASS, TaskType.BINARY}:
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
             if prediction_proba is not None:
                 sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = prediction_proba
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = str(prediction)
-        elif TaskType(self.model['task_type']) == TaskType.REGRESSION:
+        elif task_type == TaskType.REGRESSION:
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = float(label)
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = float(prediction)
         else:
-            raise Exception(f'Unknown task type provided')
-
+            raise ValueError(f'Unknown or unsupported task type provided - {task_type}')
+        
         sample = DeepchecksEncoder.encode(sample)
-        DeepchecksJsonValidator(self.schema).validate(sample)
+        self.schema_validator.validate(sample)
         self._log_samples.append(sample)
-
+        
     def upload_reference(
             self,
             dataset: Dataset,
             prediction_proba: Optional[np.ndarray] = None,
-            prediction: np.ndarray = None
+            prediction: Optional[np.ndarray] = None
     ):
         """Upload reference data. Possible to upload only once for a given model version.
 

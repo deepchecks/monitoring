@@ -19,7 +19,7 @@ import pendulum as pdl
 import requests
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-from deepchecks_client.core.utils import maybe_raise, parse_timestamp, pretty_print
+from deepchecks_client.core.utils import maybe_raise, parse_timestamp, pretty_print, DeepchecksJsonValidator
 
 __all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
 __version__ = version("deepchecks_client")
@@ -118,12 +118,18 @@ class DeepchecksModelVersionClient:
             msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) reference schema.\n{{error}}"
         ).json()
 
+        self.schema_validator = DeepchecksJsonValidator(self.schema)
+        self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
+
     def log_sample(self, *args, **kwargs):
         """Send sample for the model version."""
         raise NotImplementedError
 
     def send(self):
         """Send all the aggregated samples."""
+        if not self._log_samples:
+            return
+
         maybe_raise(
             self.session.post(
                 f'model-versions/{self.model_version_id}/data',
@@ -131,6 +137,7 @@ class DeepchecksModelVersionClient:
             ),
             msg="Samples upload failure.\n{error}"
         )
+
         self._log_samples.clear()
 
     def upload_reference(self, *args, **kwargs):

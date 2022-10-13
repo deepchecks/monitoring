@@ -15,10 +15,13 @@ from datetime import datetime
 
 import numpy as np
 import pendulum as pdl
+import pendulum.datetime
 from jsonschema import validators
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
 from termcolor import cprint
+
+__all__ = ["parse_timestamp", "maybe_raise", "DeepchecksEncoder"]
 
 
 def maybe_raise(
@@ -111,7 +114,7 @@ class DeepchecksEncoder:
         return obj
 
 
-def parse_timestamp(timestamp):
+def parse_timestamp(timestamp: t.Union[int, datetime, None] = None) -> "pendulum.datetime.DateTime":
     """Parse timestamp to datetime object."""
     if isinstance(timestamp, int):
         return pdl.from_timestamp(timestamp, pdl.local_timezone())
@@ -119,7 +122,7 @@ def parse_timestamp(timestamp):
         # If no timezone in datetime, assumed to be UTC and converted to local timezone
         return pdl.instance(timestamp, pdl.local_timezone())
     else:
-        raise Exception(f'Not supported timestamp type: {type(timestamp)}')
+        raise ValueError(f'Not supported timestamp type: {type(timestamp)}')
 
 
 DeepchecksJsonValidator = validators.extend(

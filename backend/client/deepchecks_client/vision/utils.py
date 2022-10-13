@@ -8,12 +8,11 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-#
+import typing as t
 import math
 
 import numpy as np
 import torch
-from deepchecks.vision.task_type import TaskType
 from deepchecks.vision.utils.image_functions import crop_image
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
@@ -41,47 +40,55 @@ def create_static_predictions(vision_data: VisionData, model, device):
     return static_pred
 
 
-def _vision_props_to_static_format(indexes, vision_props):
-    index_properties = dict(zip(indexes, [dict(zip(vision_props, t)) for t in zip(*vision_props.values())]))
-    return index_properties
+def is_bbox_collapsed(x: float, y: float, w: float, h: float) -> bool:
+    return (
+        math.floor(w) == 0
+        or math.floor(h) == 0
+        or math.floor(w) + min(math.floor(x), 0) - 1 <= 0
+        or math.floor(h) <= 0 + min(math.floor(y), 0) - 1
+    )
 
 
-def calc_image_bbox_props(batch_imgs, batch_labels, task_type, image_properties):
-    image_props = calc_vision_properties(batch_imgs, image_properties)
-    if task_type == TaskType.OBJECT_DETECTION and batch_labels is not None:
-        bbox_props_list = []
-        count = 0
-        for img, labels in zip(batch_imgs, batch_labels):
-            imgs = []
-            for label in labels:
-                label = np.array(CoreDeepcheckEncoder().encode(label))
-                bbox = label[1:]
-                # make sure image is not out of bounds
-                if math.floor(bbox[2]) == 0 or math.floor(bbox[3]) == 0 or \
-                    math.floor(bbox[2]) + min(math.floor(bbox[0]), 0) - 1 <= 0 or \
-                        math.floor(bbox[3]) <= 0 + min(math.floor(bbox[1]), 0) - 1:
-                    continue
-                imgs.append(crop_image(img, *bbox))
-            count += len(imgs)
-            bbox_props_list.append(calc_vision_properties(imgs, image_properties))
-        bbox_props = {k: [dic[k] for dic in bbox_props_list] for k in bbox_props_list[0]}
-        return image_props, bbox_props
-    return image_props, None
+def calc_bbox_properties(
+    images_batch: t.Sequence[np.ndarray],
+    labels_batch: t.Sequence[np.ndarray],
+    image_properties: t.Sequence[t.Dict[str, t.Any]]
+) -> t.List[t.Dict[str, t.List[float]]]:
+    """Calculate samples bboxes properties.
+    
+    Parameters
+    ==========
+    images_batch : Sequence[np.ndarray]
+        batch of images
+    labels_batch : Sequence[np.ndarray]
+        batch of images
+    image_properties : Sequence[Dict[str, Any]]
+        properties to calculate
+    
+    Returns
+    =======
+    List[Dict[str, List[float]]] :
+        each sample bbox properties
+    """
+    assert len(image_properties) != 0
 
+    # list[dict[property-name, list[bbox-image-property-value]]]
+    bbox_properties = []
 
-def create_static_properties(vision_data: VisionData, image_properties):
-    static_prop = {}
-    for i, batch in enumerate(vision_data):
-        indexes = list(vision_data.data_loader.batch_sampler)[i]
-        batch_imgs = vision_data.batch_to_images(batch)
-        batch_labels = vision_data.batch_to_labels(batch)
-        task_type = vision_data.task_type
-        image_props, bbox_props = calc_image_bbox_props(batch_imgs, batch_labels, task_type, image_properties)
-        static_image_prop = _vision_props_to_static_format(indexes, image_props)
-        if bbox_props is not None:
-            static_bbox_prop = _vision_props_to_static_format(indexes, bbox_props)
-            static_prop.update({k: {'images': static_image_prop[k],
-                                    'partial_images': static_bbox_prop[k]} for k in indexes})
-        else:
-            static_prop.update({k: {'images': static_image_prop[k]} for k in indexes})
-    return static_prop
+    for img, labels in zip(images_batch, labels_batch):
+        cropped_images = []
+        
+        for label in labels:
+            label = np.array(DeepchecksEncoder.encode(label))
+            x, y, w, h = label[1:]  # bbox
+            if is_bbox_collapsed(x, y, w, h):
+                continue
+            if (img := crop_image(img, x, y, w, h)).size == 0:
+                continue
+            cropped_images.append(img)
+        
+        # dict[property-name, list[property-value-per-image]]
+        vision_properties = calc_vision_properties(cropped_images, image_properties)
+        bbox_properties.append(vision_properties)
+    
+    return bbox_properties
