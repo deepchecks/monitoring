@@ -2,10 +2,10 @@ import { ChartData } from 'chart.js';
 import { parseDataForChart } from 'helpers/utils/parseDataForChart';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
-  getGetDashboardApiV1DashboardsGetQueryKey,
+  getGetOrCreateDashboardApiV1DashboardsGetQueryKey,
   MonitorSchema,
   runMonitorLookbackApiV1MonitorsMonitorIdRunPost,
-  useGetDashboardApiV1DashboardsGet
+  useGetOrCreateDashboardApiV1DashboardsGet
 } from '../api/generated';
 import useModels from './useModels';
 
@@ -33,9 +33,9 @@ const useMonitorsData = () => {
 export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.Element => {
   const [lastMonitorsFetch, setLastMonitorsFetch] = useState(new Date());
 
-  const { data: dashboards } = useGetDashboardApiV1DashboardsGet({
+  const { data: dashboards } = useGetOrCreateDashboardApiV1DashboardsGet({
     query: {
-      queryKey: [getGetDashboardApiV1DashboardsGetQueryKey(), lastMonitorsFetch],
+      queryKey: [getGetOrCreateDashboardApiV1DashboardsGetQueryKey(), lastMonitorsFetch],
       refetchOnWindowFocus: false
     }
   });
