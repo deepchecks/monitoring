@@ -9,19 +9,60 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+import enum
 import json
 import typing as t
 from datetime import datetime
 
 import numpy as np
 import pendulum as pdl
-import pendulum.datetime
 from jsonschema import validators
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
 from termcolor import cprint
 
-__all__ = ["parse_timestamp", "maybe_raise", "DeepchecksEncoder"]
+__all__ = ['ColumnType', 'TaskType', 'DeepchecksColumns']
+
+
+class TaskType(enum.Enum):
+    """Enum containing supported task types."""
+
+    REGRESSION = "regression"
+    MULTICLASS = "multiclass"
+    BINARY = "binary"
+    VISION_CLASSIFICATION = "vision_classification"
+    VISION_DETECTION = "vision_detection"
+
+    @classmethod
+    def values(cls):
+        return [e.value for e in TaskType]
+
+
+class ColumnType(enum.Enum):
+    """Enum containing possible types of data."""
+
+    NUMERIC = "numeric"
+    INTEGER = "integer"
+    CATEGORICAL = "categorical"
+    BOOLEAN = "boolean"
+    TEXT = "text"
+    ARRAY_FLOAT = "array_float"
+    ARRAY_FLOAT_2D = "array_float_2d"
+    DATETIME = "datetime"
+
+    @classmethod
+    def values(cls):
+        return [e.value for e in ColumnType]
+
+
+class DeepchecksColumns(enum.Enum):
+    """Enum of saved deepchecks columns."""
+
+    SAMPLE_ID_COL = "_dc_sample_id"
+    SAMPLE_TS_COL = "_dc_time"
+    SAMPLE_LABEL_COL = "_dc_label"
+    SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
+    SAMPLE_PRED_COL = "_dc_prediction"
 
 
 def maybe_raise(

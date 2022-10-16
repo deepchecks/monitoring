@@ -7,15 +7,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-import pytest
 import pandas as pd
 import pendulum as pdl
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
-from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL
+from deepchecks_monitoring.models.model_version import ModelVersion
 
 
 @pytest.mark.asyncio

@@ -8,8 +8,8 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-import typing as t
 import math
+import typing as t
 
 import numpy as np
 import torch

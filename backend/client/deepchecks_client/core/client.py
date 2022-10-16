@@ -9,61 +9,25 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
-import enum
 import typing as t
 import warnings
 from importlib.metadata import version
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
+import numpy as np
 import pendulum as pdl
 import requests
 from deepchecks.core.checks import BaseCheck
+from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.core.reduce_classes import ReduceMixin
-from deepchecks_client.core.utils import maybe_raise, parse_timestamp, pretty_print, DeepchecksJsonValidator
+from deepchecks.tabular import Dataset
+from deepchecks_client.core.utils import DeepchecksJsonValidator, TaskType, maybe_raise, parse_timestamp, pretty_print
+from deepchecks_client.tabular.utils import read_schema
 
-__all__ = ['DeepchecksClient', 'ColumnType', 'TaskType', 'DeepchecksColumns']
+__all__ = ['DeepchecksClient']
 __version__ = version("deepchecks_client")
 
-
-class TaskType(enum.Enum):
-    """Enum containing supported task types."""
-
-    REGRESSION = "regression"
-    MULTICLASS = "multiclass"
-    BINARY = "binary"
-    VISION_CLASSIFICATION = "vision_classification"
-    VISION_DETECTION = "vision_detection"
-
-    @classmethod
-    def values(cls):
-        return [e.value for e in TaskType]
-
-
-class ColumnType(enum.Enum):
-    """Enum containing possible types of data."""
-
-    NUMERIC = "numeric"
-    INTEGER = "integer"
-    CATEGORICAL = "categorical"
-    BOOLEAN = "boolean"
-    TEXT = "text"
-    ARRAY_FLOAT = "array_float"
-    ARRAY_FLOAT_2D = "array_float_2d"
-    DATETIME = "datetime"
-
-    @classmethod
-    def values(cls):
-        return [e.value for e in ColumnType]
-
-
-class DeepchecksColumns(enum.Enum):
-    """Enum of saved deepchecks columns."""
-
-    SAMPLE_ID_COL = "_dc_sample_id"
-    SAMPLE_TS_COL = "_dc_time"
-    SAMPLE_LABEL_COL = "_dc_label"
-    SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
-    SAMPLE_PRED_COL = "_dc_prediction"
 
 
 class HttpSession(requests.Session):
@@ -499,3 +463,63 @@ class DeepchecksClient:
                 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
                 self._model_clients[model_id] = TabularDeepchecksModelClient(model_id, session=self.session)
         return self._model_clients[model_id]
+
+    def quick_version_with_data(self,
+                                model_name: str,
+                                reference_dataset: Dataset,
+                                predictions: np.ndarray,
+                                probas: Optional[np.ndarray],
+                                schema_file,
+                                feature_importance: Optional[Dict[str, float]] = None,
+                                task_type: Optional[str] = None,
+                                version_name: str = 'v1',
+                                description: str = ''
+                                ):
+
+        """
+        Creates a model version and uploads the reference data.
+
+        Parameters
+        ----------
+        model_name: str
+            A name for the model.
+        reference_dataset: Dataset
+            The reference dataset.
+        predictions: np.ndarray
+            The predicted result.
+        probas: np.ndarray
+            The predicted class probabilities, required for classification tasks.
+        schema_file:
+            Path to the schema file.
+        feature_importance:
+            a dictionary of feature names and their feature importance value.
+        task_type: Optional[str], default: None
+            The task type of the model, required if dataset.label_type is not set and overrides it otherwise.
+            possible values are regression, multiclass, binary, vision_classification and
+            vision_detection.
+        version_name: str, default: 'v1'
+            A name for the version.
+        description: str, default: ''
+            A short description of the model.
+        """
+        schema = read_schema(schema_file)
+        features_dict, non_features_dict = schema['features'], schema['non_features']
+        if set(features_dict.keys()) != set(reference_dataset.features):
+            raise DeepchecksValueError(f'Features found in reference dataset ({reference_dataset.features}) do not '
+                                       f'match feature schema ({features_dict.keys()}).')
+
+        task_type = task_type or reference_dataset.label_type
+        if task_type is None:
+            raise DeepchecksValueError(
+                'Task type must be set through the ref_ds.label_type attribute or passed implicitly '
+                'to the parameter task_type')
+
+        version_client = self.model(model_name, task_type, description) \
+            .version(version_name, features=features_dict, non_features=non_features_dict,
+                     feature_importance=feature_importance)
+        pretty_print(f'Model version {version_name} was successfully created.')
+
+        version_client.upload_reference(reference_dataset,
+                                        prediction_proba=probas,
+                                        prediction=predictions)
+        pretty_print('Reference data uploaded.')

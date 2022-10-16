@@ -7,9 +7,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+from datetime import datetime, timezone
+
 import numpy as np
 import pytest
-from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,8 +87,8 @@ async def test_detection_log(detection_vision_model_version_client: DeepchecksMo
 
 @pytest.mark.asyncio
 async def test_classification_batch_log(
-    vision_classification_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
+        vision_classification_model_version_client: DeepchecksModelVersionClient,
+        async_session: AsyncSession
 ):
     vision_classification_model_version_client.log_batch(
         sample_id=['1', '2', '3'],
@@ -139,8 +140,8 @@ async def test_classification_batch_log(
 
 @pytest.mark.asyncio
 async def test_detection_batch_log(
-    detection_vision_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
+        detection_vision_model_version_client: DeepchecksModelVersionClient,
+        async_session: AsyncSession
 ):
     detection_vision_model_version_client.log_batch(
         sample_id=['1', '2', '3'],

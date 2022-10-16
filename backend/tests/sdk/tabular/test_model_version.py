@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
+from deepchecks_client.tabular.utils import create_schema, read_schema
 
 from client.deepchecks_client.core.client import DeepchecksClient
 from deepchecks_monitoring.models.model import TaskType
@@ -26,8 +27,6 @@ def _get_wierd_df():
             "bool_feature": np.random.choice([True, False], size=1000),
             "fake_bool_feature": np.random.choice([True, False, 0, 1, np.nan],
                                                   p=[0.4, 0.4, 0.1, 0.05, 0.05], size=1000),
-            "weird_feature": np.random.choice(np.array([1, 100, 1.0, "ahh?", "wee", np.nan, 0],
-                                                       dtype="object"), size=1000),
             "classification_label": np.random.choice([0, 1, 9, 8], size=1000),
         }
     )
@@ -73,14 +72,12 @@ async def test_create_read_schema_string_io(classification_model_id, deepchecks_
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
     file = io.StringIO()
-    model_client.create_schema(dataset, file)
-    schema_dict = model_client.read_schema(file)
+    create_schema(dataset, file)
+    schema_dict = read_schema(file)
     assert schema_dict == {"features": {"binary_feature": "categorical",
                                         "fake_bool_feature": "categorical"},
                            "non_features": {"bool_feature": "boolean",
-                                            "index_col": "integer",
-                                            "weird_feature": None}}
-    schema_dict["non_features"].pop("weird_feature")
+                                            "index_col": "integer"}}
     model_version_client = model_client.version("v1",
                                                 features=schema_dict["features"],
                                                 non_features=schema_dict["non_features"])
@@ -94,9 +91,8 @@ async def test_create_read_schema_file(classification_model_id, deepchecks_sdk_c
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
     file = "test_schema.yaml"
-    model_client.create_schema(dataset, file)
-    schema_dict = model_client.read_schema(file)
-    schema_dict["non_features"].pop("weird_feature")
+    create_schema(dataset, file)
+    schema_dict = read_schema(file)
     model_version_client = model_client.version("v1",
                                                 features=schema_dict["features"],
                                                 non_features=schema_dict["non_features"])
