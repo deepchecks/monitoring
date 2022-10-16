@@ -92,6 +92,7 @@ export const AlertsDrawer = ({ onClose, onResolve, alertRule, ...props }: Alerts
                 alertIndex: alertIndex,
                 changeAlertIndex: setAlertIndex
               }}
+              minTimeUnit={monitor && monitor.frequency < 86400 ? 'hour' : 'day'}
               alert_rules={[alertRule]}
             />
             {/* eslint-enable @typescript-eslint/ban-ts-comment */}
