@@ -1,6 +1,6 @@
 import { ChartData } from 'chart.js';
-import { parseDataForChart } from 'helpers/utils/parseDataForChart';
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getGetOrCreateDashboardApiV1DashboardsGetQueryKey,
   MonitorSchema,
@@ -11,26 +11,7 @@ import useModels from './useModels';
 
 type MonitorId = MonitorSchema['id'];
 
-export type MonitorsDataProvider = {
-  children: JSX.Element;
-};
-
-export type MonitorsDataContext = {
-  monitors: MonitorSchema[];
-  chartDataList: ChartData<'line'>[];
-  refreshMonitors: (monitor?: MonitorSchema) => void;
-};
-
-const MonitorsDataContext = createContext<MonitorsDataContext | null>(null);
-
 const useMonitorsData = () => {
-  const context = useContext(MonitorsDataContext);
-  if (context === null) throw Error('UserContext is null');
-
-  return context;
-};
-
-export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.Element => {
   const [lastMonitorsFetch, setLastMonitorsFetch] = useState(new Date());
 
   const { data: dashboards } = useGetOrCreateDashboardApiV1DashboardsGet({
@@ -70,7 +51,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
       end_time: new Date(modelsMap[monitor?.check.model_id]?.latest_time * 1000)
     });
 
-    const parsedDataForChart = parseDataForChart(fetchedMonitor);
+    const parsedDataForChart = parseDataForLineChart(fetchedMonitor);
 
     setChartDataMap(prevState => ({ ...prevState, [monitor.id]: parsedDataForChart }));
   };
@@ -89,9 +70,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
     [currentMonitors, chartDataMap]
   );
 
-  const value = { monitors: currentMonitors, chartDataList, refreshMonitors };
-
-  return <MonitorsDataContext.Provider value={value}>{children}</MonitorsDataContext.Provider>;
+  return { monitors: currentMonitors, chartDataList, refreshMonitors };
 };
 
 export default useMonitorsData;

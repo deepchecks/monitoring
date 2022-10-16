@@ -3,10 +3,10 @@ import React, { memo } from 'react';
 import { SearchIcon } from '../assets/icon/icon';
 
 type SearchFieldComponentProps = {
-  reset: () => void;
+  onReset?: () => void;
 };
 
-const SearchFieldComponent = ({ reset, ...props }: SearchFieldComponentProps & TextFieldProps) => {
+const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps & TextFieldProps) => {
   const { onChange, value } = props;
 
   return (
@@ -20,28 +20,32 @@ const SearchFieldComponent = ({ reset, ...props }: SearchFieldComponentProps & T
       value={value}
       {...props}
       InputProps={{
-        endAdornment: !value ? (
-          <InputAdornment
-            position="end"
-            sx={{
-              cursor: 'pointer'
-            }}
-          >
-            <SearchIcon />
-          </InputAdornment>
-        ) : (
-          <InputAdornment
-            position="end"
-            sx={{
-              cursor: 'pointer'
-            }}
-            onClick={reset}
-          >
-            <Typography variant="subtitle2" color="primary.main">
-              Reset
-            </Typography>
-          </InputAdornment>
-        )
+        endAdornment:
+          !value || !onReset ? (
+            <InputAdornment
+              position="end"
+              sx={{
+                cursor: 'pointer',
+                svg: {
+                  fill: theme => theme.palette.text.disabled
+                }
+              }}
+            >
+              <SearchIcon />
+            </InputAdornment>
+          ) : (
+            <InputAdornment
+              position="end"
+              sx={{
+                cursor: 'pointer'
+              }}
+              onClick={onReset}
+            >
+              <Typography variant="subtitle2" color="primary.main">
+                Reset
+              </Typography>
+            </InputAdornment>
+          )
       }}
     />
   );

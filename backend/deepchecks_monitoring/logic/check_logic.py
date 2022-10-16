@@ -107,7 +107,8 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
             scorers += _metric_api_listify(classification_dict.keys())
     elif model.task_type == TaskType.REGRESSION:
         scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True}
-                   for scorer_name in regression_scorers_higher_is_better_dict.values()]
+                   for scorer_name
+                   in regression_scorers_higher_is_better_dict.keys()]  # pylint: disable=consider-iterating-dictionary
     elif model.task_type == TaskType.BINARY:
         scorers = [{"name": scorer_name, "is_agg": True} for scorer_name in binary_scorers_dict]
     elif model.task_type == TaskType.VISION_DETECTION:
@@ -204,6 +205,9 @@ async def run_check_per_window_in_range(
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
+
+    if end_time < start_time:
+        raise ValueError("start_time must be before end_time")
 
     # The range calculates from start to end excluding the end, so add interval to have the windows at their end time
     windows_end = [d + frequency for d in (end_time - start_time).range("seconds", frequency.in_seconds())

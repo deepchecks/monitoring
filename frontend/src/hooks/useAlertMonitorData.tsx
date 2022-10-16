@@ -6,7 +6,7 @@ import {
   CheckResultSchema,
   useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost
 } from '../api/generated';
-import { setGraphOptions } from '../helpers/setGraphOptions';
+import { setLineGraphOptions } from '../helpers/setGraphOptions';
 
 export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'line'> => ({
   datasets: Object.keys(graph.output)
@@ -28,7 +28,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
             const [key] = Object.keys(item);
             return item[key];
           }),
-          ...setGraphOptions(key, counter++)
+          ...setLineGraphOptions(key, counter++)
         };
       }
 
@@ -46,7 +46,7 @@ export const parseMonitorDataForChart = (graph: CheckResultSchema): ChartData<'l
 
       return Object.keys(lines).map(lineKey => ({
         data: lines[lineKey],
-        ...setGraphOptions(lineKey, counter++)
+        ...setLineGraphOptions(lineKey, counter++)
       }));
     })
     .flat(2),

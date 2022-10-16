@@ -1,9 +1,10 @@
 import { AlertRules } from 'pages/AlertRules';
 import { AlertsPage } from 'pages/AlertsPage';
 import { DashboardPage } from 'pages/DashboardPage';
-import { NotificationsPage } from 'pages/NotificationsPage';
 import { IntegrationsPage } from 'pages/IntegrationsPage';
+import { NotificationsPage } from 'pages/NotificationsPage';
 
+import { AnalysisPage } from 'pages/AnalysisPage';
 import { FC } from 'react';
 import {
   Alarm,
@@ -50,7 +51,7 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Analysis',
     link: '/analysis',
-    element: DashboardPage,
+    element: AnalysisPage,
     Icon: Analysis,
     IconHover: AnalysisHover,
     ActiveIcon: AnalysisActive

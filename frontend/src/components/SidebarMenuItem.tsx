@@ -1,12 +1,11 @@
+import mixpanel from 'mixpanel-browser';
 import React, { memo, useState } from 'react';
 import { Link, LinkProps, useLocation } from 'react-router-dom';
-import mixpanel from 'mixpanel-browser';
 
 import { PathInfo } from '../helpers/helper';
 
-import { Box, styled, Typography, useTheme } from '@mui/material';
-
-import { Arrow } from '../assets/icon/icon';
+import { Box, styled, Typography } from '@mui/material';
+import { Arrow } from 'assets/icon/icon';
 import { colors } from '../theme/colors';
 
 interface StyledLinkWrapperProps {
@@ -45,10 +44,10 @@ const StyledLinkWrapper = styled(
 interface SidebarMenuItemProps {
   width: number;
   info: PathInfo;
+  onOpenSumMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
-  const theme = useTheme();
+function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps) {
   const [hover, setHover] = useState<boolean>(false);
 
   const location = useLocation();
@@ -121,6 +120,7 @@ function SidebarMenuItemComponent({ info }: SidebarMenuItemProps) {
       </Box>
       {info.title === 'Analysis' && (
         <Box
+          onClick={onOpenSumMenu}
           sx={theme => ({
             width: 16,
             height: 16,

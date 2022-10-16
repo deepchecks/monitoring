@@ -5,6 +5,7 @@ import { ReactComponent as Analysis } from './analysis.svg';
 import { ReactComponent as AnalysisActive } from './analysisActiv.svg';
 import { ReactComponent as AnalysisHover } from './analysisHover.svg';
 import { ReactComponent as Arrow } from './arow.svg';
+import { ReactComponent as ArrowDropDown } from './arrowDropDown.svg';
 import { ReactComponent as Calendar } from './calendar.svg';
 import { ReactComponent as CheckboxDefault } from './checkboxDefault.svg';
 import { ReactComponent as CheckboxSelected } from './checkboxSelected.svg';
@@ -23,7 +24,9 @@ import { ReactComponent as DeleteIcon } from './delete.svg';
 import { ReactComponent as Email } from './email.svg';
 import { ReactComponent as EmailIcon } from './emailIcon.svg';
 import { ReactComponent as ExpandIcon } from './expand.svg';
+import { ReactComponent as ExpandMore } from './expandMore.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
+import { ReactComponent as FilterIcon } from './filterIcon.svg';
 import { ReactComponent as HomeIcon } from './home.svg';
 import { ReactComponent as Info } from './info.svg';
 import { ReactComponent as InfoIcon } from './infoIcon.svg';
@@ -40,6 +43,7 @@ import { ReactComponent as SearchIcon } from './search.svg';
 import { ReactComponent as Settings } from './settings.svg';
 import { ReactComponent as Slack } from './slack.svg';
 import { ReactComponent as Sort } from './sort.svg';
+import { ReactComponent as TableChart } from './tableChart.svg';
 import { ReactComponent as TestTube } from './testTube.svg';
 import { ReactComponent as Undo } from './undo.svg';
 import { ReactComponent as UserInvite } from './userInvite.svg';
@@ -53,6 +57,7 @@ export {
   AnalysisActive,
   AnalysisHover,
   Arrow,
+  ArrowDropDown,
   Calendar,
   CheckboxDefault,
   CheckboxSelected,
@@ -69,7 +74,9 @@ export {
   DashboardHover,
   Email,
   EmailIcon,
+  ExpandMore,
   FastForward,
+  FilterIcon,
   MenuVertical,
   HomeIcon,
   Info,
@@ -90,6 +97,7 @@ export {
   LockIcon,
   OpenLockIcon,
   NoDataToShow,
+  TableChart,
   TestTube,
   Undo
 };

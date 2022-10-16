@@ -49,7 +49,6 @@ export function ModelList({ activeModelId, filterMonitors, models }: ModelListPr
           acc.push(0);
         }
 
-
         return acc;
       }, [] as number[]),
     [criticalAlerts, models]
@@ -92,7 +91,7 @@ export function ModelList({ activeModelId, filterMonitors, models }: ModelListPr
           padding: '20px 30px 20px 22px'
         }}
       >
-        <SearchField size="small" fullWidth onChange={onSearch} value={modelName} reset={clearSearchBar} />
+        <SearchField size="small" fullWidth onChange={onSearch} value={modelName} onReset={clearSearchBar} />
       </Box>
       {isCriticalAlertsLoading ? (
         <Loader />

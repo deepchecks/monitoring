@@ -1,23 +1,21 @@
+import { Box, Divider, Stack } from '@mui/material';
+import { ChartData } from 'chart.js';
+import dayjs from 'dayjs';
+import useModels from 'hooks/useModels';
 import React, { FC, useEffect, useState } from 'react';
 import * as yup from 'yup';
 import {
-  AlertRuleSchema,
   Condition,
   MonitorSchema,
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from '../api/generated';
-import { AlertRuleDialogStep, AlertRuleDialogStepBase } from './AlertRuleDialogStep';
-import { SelectCondition } from './SelectCondition';
-import { SelectTimeframe } from './SelectTimeframe';
-import { Box, Divider, Stack } from '@mui/material';
-import { ChartData } from 'chart.js';
+import { NoDataToShow } from '../assets/icon/icon';
 import { GraphData } from '../helpers/types';
+import { parseDataForLineChart } from '../helpers/utils/parseDataForChart';
+import { AlertRuleDialogStep, AlertRuleDialogStepBase } from './AlertRuleDialogStep';
 import DiagramLine from './DiagramLine';
 import { Loader } from './Loader';
-import { NoDataToShow } from '../assets/icon/icon';
-import { parseDataForChart } from '../helpers/utils/parseDataForChart';
-import dayjs from 'dayjs';
-import useModels from 'hooks/useModels';
+import { SelectCondition } from './SelectCondition';
 
 export type AlertRuleDialogStep3Values = Condition;
 
@@ -50,7 +48,7 @@ export const AlertRuleDialogStep3: FC<AlertRuleDialogStep3> = ({ monitor, ...pro
     const data = await runCheck({
       checkId,
       data: {
-        start_time: new Date((endTime * 1000) - dayjs.duration(1, 'months').asMilliseconds()).toISOString(),
+        start_time: new Date(endTime * 1000 - dayjs.duration(1, 'months').asMilliseconds()).toISOString(),
         end_time: dayjs.unix(endTime).toISOString(),
         filter: filter?.filters[0].column ? filter : undefined,
         frequency: frequency,
@@ -58,7 +56,7 @@ export const AlertRuleDialogStep3: FC<AlertRuleDialogStep3> = ({ monitor, ...pro
       }
     });
 
-    setGraphData(parseDataForChart(data) as ChartData<'line', GraphData>);
+    setGraphData(parseDataForLineChart(data) as ChartData<'line', GraphData>);
   };
 
   useEffect(() => {

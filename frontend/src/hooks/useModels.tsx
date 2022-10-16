@@ -2,7 +2,11 @@ import { ModelsInfoSchema, useGetModelsApiV1ModelsGet } from 'api/generated';
 import { useMemo } from 'react';
 
 export const useModels = () => {
-  const { data: models = [], isLoading } = useGetModelsApiV1ModelsGet();
+  const { data: models = [], isLoading } = useGetModelsApiV1ModelsGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
 
   const modelsMap = useMemo(
     () =>

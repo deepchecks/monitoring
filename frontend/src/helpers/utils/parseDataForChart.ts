@@ -1,9 +1,21 @@
 import { CheckResultSchema } from 'api/generated';
-import { ChartData } from 'chart.js';
 import dayjs from 'dayjs';
-import { setGraphOptions } from 'helpers/setGraphOptions';
+import { setBarGraphOptions, setLineGraphOptions } from 'helpers/setGraphOptions';
 
-export const parseDataForChart = (graph: CheckResultSchema): ChartData<'line'> => {
+interface ChartOptions {
+  label?: string;
+  borderColor?: string;
+  pointBorderColor?: string;
+  pointBackgroundColor?: string;
+  pointHoverBackgroundColor?: string;
+  pointHoverBorderColor?: string;
+  hidden?: boolean;
+}
+
+const parseDataForChart = (
+  graph: CheckResultSchema,
+  setChartOptions: (label: string, index: number) => ChartOptions
+) => {
   if (!graph) return { datasets: [], labels: [] };
   let counter = 0;
   return {
@@ -38,10 +50,14 @@ export const parseDataForChart = (graph: CheckResultSchema): ChartData<'line'> =
         });
         return Object.keys(lines).map(lineKey => ({
           data: lines[lineKey],
-          ...setGraphOptions(`${lineKey}|${key}`, counter++)
+          ...setChartOptions(`${lineKey}|${key}`, counter++)
         }));
       })
       .flat(2),
-    labels: graph.time_labels?.map(date => dayjs(date).valueOf())
+    labels: graph.time_labels?.map(date => dayjs(new Date(date)).format('MMM. DD YYYY'))
   };
 };
+
+export const parseDataForLineChart = (graph: CheckResultSchema) => parseDataForChart(graph, setLineGraphOptions);
+
+export const parseDataForBarChart = (graph: CheckResultSchema) => parseDataForChart(graph, setBarGraphOptions);

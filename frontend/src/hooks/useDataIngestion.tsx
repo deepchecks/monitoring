@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 import { useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet } from '../api/generated';
-import { setGraphOptions } from '../helpers/setGraphOptions';
+import { setLineGraphOptions } from '../helpers/setGraphOptions';
 import useModels from './useModels';
 import useStatsTime from './useStatsTime';
 
@@ -27,7 +27,7 @@ const useDataIngestion = (modelId: number | null = null) => {
               x: dayjs(new Date(day * 1_000)).format('MMM. DD YYYY'),
               y: count
             })),
-          ...setGraphOptions(modelsMap ? modelsMap[key]?.name : key, index)
+          ...setLineGraphOptions(modelsMap ? modelsMap[key]?.name : key, index)
         })) ?? [],
       labels: Object.entries(data)
         .flatMap(([_, items]) => items.map(item => item.day * 1_000))

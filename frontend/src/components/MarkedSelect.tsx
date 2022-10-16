@@ -1,5 +1,5 @@
 import { FormControl, IconButton, SelectProps } from '@mui/material';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 
 import { InputLabel, Select, styled } from '@mui/material';
 import { Clear } from 'assets/icon/icon';
@@ -24,11 +24,7 @@ const sizeMap = {
   medium: 'normal'
 } as const;
 
-
 export function MarkedSelect({ children, label, fullWidth = false, size, clearValue, ...props }: MarkedSelectProps) {
-  
-  const [value, setValue] = useState(props.value);
-
   const handleClearClick = () => {
     if (clearValue) {
       clearValue();
@@ -38,25 +34,30 @@ export function MarkedSelect({ children, label, fullWidth = false, size, clearVa
   return (
     <FormControl fullWidth={fullWidth}>
       <StyledInputLabel size={size ? sizeMap[size] : sizeMap.medium}>{label}</StyledInputLabel>
-      <StyledSelect 
-      size={size} 
-      label={label } 
-      endAdornment={
-        clearValue ? 
-      <IconButton 
-        sx={{ 
-          visibility: props.value ? 'visible':'hidden', 
-          display: props.value ? 'auto' : 'none', 
-          background: 'transparent',
-          mr: 2,
-          p: 0,
-          '&:hover': {
-            background: 'transparent'
-          }}} 
-        onClick={handleClearClick}
-        >
-          <Clear/>
-      </IconButton> : null} {...props}>
+      <StyledSelect
+        size={size}
+        label={label}
+        endAdornment={
+          clearValue ? (
+            <IconButton
+              sx={{
+                visibility: props.value ? 'visible' : 'hidden',
+                display: props.value ? 'auto' : 'none',
+                background: 'transparent',
+                mr: 2,
+                p: 0,
+                '&:hover': {
+                  background: 'transparent'
+                }
+              }}
+              onClick={handleClearClick}
+            >
+              <Clear />
+            </IconButton>
+          ) : null
+        }
+        {...props}
+      >
         {children}
       </StyledSelect>
     </FormControl>

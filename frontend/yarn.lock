@@ -2770,6 +2770,11 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.59.tgz#823f238b9063ccc3b3b7f13186f143a57926c4f6"
   integrity sha512-6u+36Dj3aDzhfBVUf/mfmc92OEdzQ2kx2jcXGdigfl70E/neV21ZHE6UCz4MDzTRcVqGAM27fk+DLXvyDsn3Jw==
 
+"@types/overlayscrollbars@^1.12.1":
+  version "1.12.1"
+  resolved "https://registry.yarnpkg.com/@types/overlayscrollbars/-/overlayscrollbars-1.12.1.tgz#fb637071b545834fb12aea94ee309a2ff4cdc0a8"
+  integrity sha512-V25YHbSoKQN35UasHf0EKD9U2vcmexRSp78qa8UglxFH8H3D+adEa9zGZwrqpH4TdvqeMrgMqVqsLB4woAryrQ==
+
 "@types/parse-json@^4.0.0":
   version "4.0.0"
   resolved "https://registry.npmjs.org/@types/parse-json/-/parse-json-4.0.0.tgz"
@@ -8342,6 +8347,11 @@ osenv@^0.1.4:
   dependencies:
     os-homedir "^1.0.0"
     os-tmpdir "^1.0.0"
+
+overlayscrollbars@^2.0.0-beta.2:
+  version "2.0.0-beta.2"
+  resolved "https://registry.yarnpkg.com/overlayscrollbars/-/overlayscrollbars-2.0.0-beta.2.tgz#b771a50fb13fb0dec44ecbd678e8a0ad4b833504"
+  integrity sha512-OVcUnAZTf8hGppl0y+6IMEUSAMAJWzPE/bWtoHygyObcI4p33+JNDqFEwxxToviNWr6Vo6GgI1T7gwGiuzAlzw==
 
 p-limit@^2.0.0, p-limit@^2.2.0:
   version "2.3.0"

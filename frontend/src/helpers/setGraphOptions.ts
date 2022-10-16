@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material';
 import { colors as pointColor } from '../theme/colors';
 
 export const graphColors = [
@@ -19,7 +20,7 @@ export const graphColors = [
   '#0DDFEC'
 ];
 
-export const setGraphOptions = (label: string, index: number) => ({
+export const setLineGraphOptions = (label: string, index: number) => ({
   label,
   borderColor: graphColors[index],
   pointBorderColor: '#fff',
@@ -27,4 +28,11 @@ export const setGraphOptions = (label: string, index: number) => ({
   pointHoverBackgroundColor: 'rgb(255, 255, 255)',
   pointHoverBorderColor: pointColor.primary.violet[400],
   hidden: false
+});
+
+export const setBarGraphOptions = (label: string, index: number) => ({
+  label,
+  backgroundColor: alpha(graphColors[index], 0.5),
+  borderColor: graphColors[index],
+  barPercentage: 0.3
 });
