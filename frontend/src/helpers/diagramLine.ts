@@ -206,7 +206,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
         const xData = meta.data[index].x;
         const yData = meta.data[index].y;
         alerts.forEach(({ end_time }, alertIndex) => {
-          if (label === dayjs(end_time).format('MMM. DD YYYY') && alertIndex !== activeIndex) {
+          if (+label === dayjs(end_time).valueOf() && alertIndex !== activeIndex) {
             let xLineMin = xData - deviation < xCursor;
             let xLineMax = xData + deviation > xCursor;
             const currentTop = yData - outerRadius < top ? yData - outerRadius : top;
@@ -345,7 +345,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     if (chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
-          if (label === dayjs(end_time).format('MMM. DD YYYY')) {
+          if (+label === dayjs(end_time).valueOf() ) {
             alertIndex === activeIndex ? drawActiveAlert(index) : drawAlert(index);
           }
         });
@@ -414,7 +414,7 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
     if (chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
-          if (label === dayjs(end_time).format('MMM. DD YYYY')) {
+          if (+label === dayjs(end_time).valueOf() ) {
             alertIndex === activeIndex ? drawActiveAlert(index) : drawAlert(index);
           }
         });
