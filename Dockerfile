@@ -46,12 +46,14 @@ RUN if [ -z "$GPU_BUILD" ]; then pip install -q "torch==1.11.0+cpu" "torchvision
 			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; else pip install -e "torch==1.11.0+cu111" "torchvision==0.12.0+cu111" "torchaudio==0.11.0" \
 		 	 -f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; fi;
 COPY backend/requirements.txt ./
+
+# TODO: not secure, use docker build-kit instead
+ARG DEEPCHECKS_CI_TOKEN
+
 RUN pip install -U pip \
-    && \
-    pip install pyinstrument && \
-    pip install -q -r requirements.txt --compile --no-cache-dir
-    # && \
-    # apk del .build-deps
+    && pip install pyinstrument \
+    && DEEPCHECKS_CI_TOKEN=$DEEPCHECKS_CI_TOKEN pip install -q -r requirements.txt --compile --no-cache-dir
+    # && apk del .build-deps
 
 RUN pip install uvicorn pyinstrument
 

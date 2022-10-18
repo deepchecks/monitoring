@@ -12,7 +12,6 @@ name: Build
 
 env:
   DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
 
 on:
@@ -40,8 +39,9 @@ jobs:
       env: 
         ECR_IMAGE: ${{ secrets.MON_IMAGE_NAME }}
         IMAGE_TAG: ${{ github.sha }}
+        DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
       run: |
-        docker build -t $ECR_IMAGE:$IMAGE_TAG .
+        docker build -t $ECR_IMAGE:$IMAGE_TAG --build-arg=$DEEPCHECKS_CI_TOKEN .
         docker tag $ECR_IMAGE:$IMAGE_TAG $ECR_IMAGE:latest
         docker push $ECR_IMAGE:$IMAGE_TAG
         docker push $ECR_IMAGE:latest
