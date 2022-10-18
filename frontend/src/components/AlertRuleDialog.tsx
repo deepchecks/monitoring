@@ -83,7 +83,7 @@ const initialAlertRule = {
 
 const initialMonitor = {
   name: '',
-  lookback: 0,
+  // lookback: 0,
   check: {
     id: 0,
     model_id: 0
@@ -212,14 +212,14 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
                     model_id: values.model_id
                   },
                   data_filters:
-                    isModelIdChanged || !values.data_filter
+                    isModelIdChanged || !values.data_filter || (values.data_filter.column == "" && values.data_filter.value == "")
                       ? undefined
-                      : deepmerge<DataFilterList | undefined, DeepPartial<DataFilterList>>(prevMonitor.data_filters, {
+                      : {
                           filters: [values.data_filter]
-                        }),
+                        },
                   frequency: values.frequency,
                   aggregation_window: values.aggregation_window,
-                  lookback: dayjs.duration(1, 'months').milliseconds()
+                  lookback: prevMonitor.lookback ?? dayjs.duration(1, 'months').asSeconds()
                 });
               });
             })}

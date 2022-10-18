@@ -20,6 +20,7 @@ import {
   DashboardActive,
   DashboardHover
 } from '../assets/icon/icon';
+import { APIKeyPage } from 'pages/APIKeyPage';
 
 export interface PathInfo {
   title: string;
@@ -85,6 +86,14 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/integrations',
         Icon: null,
         element: IntegrationsPage,
+        IconHover: null,
+        ActiveIcon: null
+      },
+      {
+        title: 'API Key',
+        link: '/configuration/api-key',
+        Icon: null,
+        element: APIKeyPage,
         IconHover: null,
         ActiveIcon: null
       }

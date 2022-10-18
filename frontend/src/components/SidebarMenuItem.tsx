@@ -90,6 +90,10 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
       case '/configuration/integrations':
         mixpanel.track('Click on the Integrations');
         break;
+      
+      case '/configuration/api-key':
+        mixpanel.track('Click on the API Key');
+        break;
 
       default:
         break;

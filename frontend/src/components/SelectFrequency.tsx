@@ -30,7 +30,7 @@ export const SelectFrequency = ({timeWindows=TIME_WINDOWS, setFieldValue, ...pro
         setFieldValue('frequency', event.target.value as number);
         setFrequency(event.target.value as number);
         if (!advanced) {
-            setAggWindow(event.target.value as number);
+            handleAggWindowChange(event);
         }
     };
     
