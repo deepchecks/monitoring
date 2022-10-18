@@ -12,6 +12,8 @@ name: Build
 
 env:
   DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
 
 on:
   push:

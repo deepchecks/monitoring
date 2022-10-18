@@ -12,6 +12,8 @@ name: License Check
 
 env:
   DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
 
 on:
   push:
@@ -33,7 +35,7 @@ jobs:
         python-version: '3.8'
     - name: Get explicit and transitive dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -q -r requirements.txt
         pip freeze > requirements-all.txt
       working-directory: ./backend
     - name: Check python

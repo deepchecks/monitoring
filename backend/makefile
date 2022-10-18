@@ -124,7 +124,7 @@ env: $(ENV) requirements dev-requirements
 $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
-	@$(PIP) install -e .
+	@$(PIP) install -q -e .
 
 
 requirements: $(ENV)

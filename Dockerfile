@@ -49,7 +49,7 @@ COPY backend/requirements.txt ./
 RUN pip install -U pip \
     && \
     pip install pyinstrument && \
-    pip install -r requirements.txt --compile --no-cache-dir
+    pip install -q -r requirements.txt --compile --no-cache-dir
     # && \
     # apk del .build-deps
 
@@ -70,7 +70,7 @@ COPY --from=frontend /code/frontend/build /code/frontend/dist
 USER root
 
 # RUN pip install deepchecks-monitoring --no-index --find-links file:///code/backend/
-RUN pip install -e backend/
+RUN pip install -q -e backend/
 
 RUN apt-get update && apt-get install -y "npm" \
     && npm install -g yarn \
