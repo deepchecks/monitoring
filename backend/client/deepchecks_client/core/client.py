@@ -29,7 +29,6 @@ __all__ = ['DeepchecksClient']
 __version__ = version("deepchecks_client")
 
 
-
 class HttpSession(requests.Session):
 
     def __init__(self, base_url: str, token=None):
@@ -155,13 +154,26 @@ class DeepchecksModelClient:
         self.session = session
         self.model = maybe_raise(
             self.session.get(f'models/{model_id}'),
-            msg=f"Failed to obtaine Model(id:{model_id}).\n{{error}}"
+            msg=f"Failed to obtain Model(id:{model_id}).\n{{error}}"
         ).json()
         self._model_version_clients = {}
 
     def version(self, *args, **kwargs) -> DeepchecksModelVersionClient:
         """Get or create a new model version."""
         raise NotImplementedError
+
+    def _get_existing_version_id_or_none(self, version_name: str, **kwargs):
+        """Get a model version if it exists, otherwise return None."""
+        existing_versions = maybe_raise(
+            self.session.get(f'models/{self.model["id"]}/versions'),
+            msg=f"Failed to retrieve existing versions for model id {self.model['id']}. \n{{error}}"
+        ).json()
+        if version_name in [v['name'] for v in existing_versions]:
+            existing_version = [v for v in existing_versions if v['name'] == version_name][0]
+            # TODO: add validations of existing version params vs received params
+            return existing_version['id']
+        else:
+            return
 
     def _get_model_version_id(self, model_version_name):
         versions = self.get_versions()
@@ -395,7 +407,7 @@ class DeepchecksClient:
     def model(
             self,
             name: str,
-            task_type: str,
+            task_type: Optional[str] = None,
             description: t.Optional[str] = None,
             create_defaults: bool = True
     ) -> DeepchecksModelClient:
@@ -405,19 +417,34 @@ class DeepchecksClient:
         ----------
         name: str
             Display name of the model.
-        task_type: str
+        task_type: str, default: None
             Task type of the model, possible values are regression, multiclass, binary, vision_classification and
-            vision_detection.
-        description
+            vision_detection. Required for creation of a new model.
+        description: str, default: None
             Additional description for the model.
-        create_defaults
+        create_defaults: bool, default: True
             Whether to add default check, monitors and alerts to the model.
         Returns
         -------
         DeepchecksModelClient
             Client to interact with the created model.
         """
-        if task_type not in TaskType.values():
+        available_models = maybe_raise(
+            self.session.get('models'),
+            msg="Failed to retrieve existing models from session.\n{error}"
+        ).json()
+
+        if name in [model['name'] for model in available_models]:
+            model = [model for model in available_models if model['name'] == name][0]
+            if task_type is not None and task_type != model['task_type']:
+                raise ValueError(f'Model with name {name} already exists, but has different task type.')
+            if description is not None and description != model['description']:
+                raise ValueError(f'Model with name {name} already exists, but has different description.')
+            return self._model_client(model['id'], model['task_type'])
+
+        if task_type is None:
+            raise ValueError(f'task_type must be provided for creation of a new model')
+        elif task_type not in TaskType.values():
             raise ValueError(f'task_type must be one of {TaskType.values()}')
 
         response = maybe_raise(
@@ -428,15 +455,14 @@ class DeepchecksClient:
             }),
             msg="Failed to create a new model instance.\n{error}"
         ).json()
-
         model_id = response['id']
+
         model = self._model_client(model_id, task_type)
-        if len(model.get_checks()) == 0:  # a new model was created
-            msg = f"Model {name} was successfully created!."
-            if create_defaults:
-                model._add_defaults()
-                msg += " Default checks, monitors and alerts added."
-            pretty_print(msg)
+        msg = f"Model {name} was successfully created!."
+        if create_defaults:
+            model._add_defaults()
+            msg += " Default checks, monitors and alerts added."
+        pretty_print(msg)
 
         return model
 
@@ -464,62 +490,103 @@ class DeepchecksClient:
                 self._model_clients[model_id] = TabularDeepchecksModelClient(model_id, session=self.session)
         return self._model_clients[model_id]
 
-    def quick_version_with_data(self,
-                                model_name: str,
-                                reference_dataset: Dataset,
-                                predictions: np.ndarray,
-                                probas: Optional[np.ndarray],
-                                schema_file,
-                                feature_importance: Optional[Dict[str, float]] = None,
-                                task_type: Optional[str] = None,
-                                version_name: str = 'v1',
-                                description: str = ''
-                                ):
+    def get_model_version(self, model_name: str, version_name: str) -> DeepchecksModelVersionClient:
+        """Get client to interact with a specific model version.
+
+        Parameters
+        ----------
+        model_name: str
+            Name of the model.
+        version_name: str
+            Name of the model version.
+        Returns
+        -------
+        DeepchecksModelVersionClient
+            Client to interact with the model version.
+        """
+        available_models = maybe_raise(
+            self.session.get('models'),
+            msg="Failed to retrieve existing models from session.\n{error}"
+        ).json()
+
+        if model_name not in [model['name'] for model in available_models]:
+            raise ValueError(f'Model with name {model_name} does not exist.')
+        model = self.model(model_name)
+
+        existing_version_id = model._get_existing_version_id_or_none(version_name=version_name)
+        if existing_version_id is None:
+            raise ValueError(f'Model {model_name} does not have a version with name {version_name}.')
+        else:
+            return model.version(version_name)
+
+    def create_tabular_model_version(self,
+                                     model_name: str,
+                                     schema_file,
+                                     version_name: str = 'v1',
+                                     reference_dataset: Optional[Dataset] = None,
+                                     reference_predictions: Optional[np.ndarray] = None,
+                                     reference_probas: Optional[np.ndarray] = None,
+                                     feature_importance: Optional[Dict[str, float]] = None,
+                                     task_type: Optional[str] = None,
+                                     description: str = ''
+                                     ):
 
         """
-        Creates a model version and uploads the reference data.
+        Creates a tabular model version and uploads the reference data if provided.
 
         Parameters
         ----------
         model_name: str
             A name for the model.
-        reference_dataset: Dataset
-            The reference dataset.
-        predictions: np.ndarray
-            The predicted result.
-        probas: np.ndarray
-            The predicted class probabilities, required for classification tasks.
         schema_file:
-            Path to the schema file.
-        feature_importance:
-            a dictionary of feature names and their feature importance value.
-        task_type: Optional[str], default: None
-            The task type of the model, required if dataset.label_type is not set and overrides it otherwise.
-            possible values are regression, multiclass, binary, vision_classification and
-            vision_detection.
+            String path or file like object to the schema file.
         version_name: str, default: 'v1'
             A name for the version.
+        reference_dataset: Optional[Dataset], default: None
+            The reference dataset object.
+        reference_predictions: np.ndarray, default: None
+            The model predictions for the reference data.
+        reference_probas: np.ndarray, default: None
+            The model predicted class probabilities for the reference data, relevant only for classification tasks.
+        feature_importance: Optional[Dict[str, float]], default: None
+            a dictionary of feature names and their feature importance value.
+        task_type: Optional[str], default: None
+            The task type of the model, required for creation of a new model. Can be inferred from
+             dataset.label_type if set. Possible values are regression, multiclass, binary
         description: str, default: ''
             A short description of the model.
+        Returns
+        -------
+        DeepchecksModelVersionClient
+            Return the created model version client.
         """
+        try:
+            model_version = self.get_model_version(model_name=model_name, version_name=version_name)
+            warnings.warn(f'Model {model_name} already has a version named {version_name}. '
+                          f'Use get_model_version to retrieve it or create a new version with a different name.')
+            return model_version
+        except ValueError:
+            pass
+
         schema = read_schema(schema_file)
         features_dict, non_features_dict = schema['features'], schema['non_features']
         if set(features_dict.keys()) != set(reference_dataset.features):
             raise DeepchecksValueError(f'Features found in reference dataset ({reference_dataset.features}) do not '
                                        f'match feature schema ({features_dict.keys()}).')
 
-        task_type = task_type or reference_dataset.label_type
-        if task_type is None:
-            raise DeepchecksValueError(
-                'Task type must be set through the ref_ds.label_type attribute or passed implicitly '
-                'to the parameter task_type')
+        if task_type is None and reference_dataset.label_type is not None:
+            task_type = reference_dataset.label_type
+            warnings.warn(f'Task type was inferred to be {task_type} based on reference dataset provided. '
+                          f'It is recommended to provide it directly via the task_type argument.')
 
         version_client = self.model(model_name, task_type, description) \
             .version(version_name, features=features_dict, non_features=non_features_dict,
                      feature_importance=feature_importance)
-        pretty_print(f'Model version {version_name} was successfully created.')
 
-        version_client.upload_reference(reference_dataset,
-                                        prediction_proba=probas,
-                                        prediction=predictions)
-        pretty_print('Reference data uploaded.')
+        if reference_dataset is not None:
+            version_client.upload_reference(reference_dataset,
+                                            prediction_proba=reference_probas,
+                                            prediction=reference_predictions)
+            pretty_print('Reference data uploaded.')
+
+        return version_client

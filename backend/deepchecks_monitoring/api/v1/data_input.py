@@ -108,7 +108,8 @@ async def save_reference(
     ref_table = model_version.get_reference_table(session)
     count_result = await session.execute(select(count()).select_from(ref_table))
     if count_result.scalar() > 0:
-        raise BadRequest("Already have reference data")
+        raise BadRequest("Version already have reference data, create a new model version in order to "
+                         "upload new reference data.")
 
     contents = await file.read()
     data = pd.read_json(StringIO(contents.decode()), orient="table")

@@ -236,7 +236,8 @@ async def test_send_reference_twice(client: TestClient, classification_model_ver
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
     assert response.status_code == 400
-    assert response.json() == {"detail": "Already have reference data"}
+    assert response.json() == {"detail": "Version already have reference data, create a new model version in "
+                                         "order to upload new reference data."}
 
 
 @pytest.mark.asyncio

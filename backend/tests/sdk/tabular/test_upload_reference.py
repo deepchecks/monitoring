@@ -12,10 +12,10 @@ import io
 import pandas as pd
 import pytest
 from deepchecks.tabular.dataset import Dataset
-from deepchecks_client.tabular.utils import create_schema
 from sqlalchemy import select
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
+from deepchecks_client.tabular.utils import create_schema
 from deepchecks_monitoring.models.model_version import ModelVersion
 
 
@@ -69,13 +69,13 @@ async def test_quick_version(deepchecks_sdk_client, async_session):
     proba = [[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]]
     pred = [2, 1]
     # Act
-    deepchecks_sdk_client.quick_version_with_data(model_name='test',
-                                                  reference_dataset=dataset,
-                                                  predictions=pred,
-                                                  probas=proba,
-                                                  schema_file=schema_file,
-                                                  task_type='multiclass',
-                                                  version_name='ver')
+    deepchecks_sdk_client.create_tabular_model_version(model_name='test',
+                                                       reference_dataset=dataset,
+                                                       reference_predictions=pred,
+                                                       reference_probas=proba,
+                                                       schema_file=schema_file,
+                                                       task_type='multiclass',
+                                                       version_name='ver')
     # Assert
     model = deepchecks_sdk_client.model(name='test', task_type='multiclass')
     assert model.get_versions() == {'ver': 1}
@@ -87,3 +87,30 @@ async def test_quick_version(deepchecks_sdk_client, async_session):
     assert len(ref_data) == 2
     assert len(ref_data[0]) == 6
     assert len(ref_data[0][5]) == 3
+
+
+@pytest.mark.asyncio
+async def test_quick_start_flow(deepchecks_sdk_client):
+    # Arrange
+    data = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    dataset = Dataset(data, label='label', cat_features=['b'])
+    schema_file = io.StringIO()
+    create_schema(dataset, schema_file)
+    proba = [[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]]
+    pred = [2, 1]
+    timestamp = pd.Series([1662076799, 1662076899])
+    # Act
+    version = deepchecks_sdk_client.create_tabular_model_version(model_name='test',
+                                                                 reference_dataset=dataset,
+                                                                 reference_predictions=pred,
+                                                                 reference_probas=proba,
+                                                                 schema_file=schema_file,
+                                                                 task_type='multiclass',
+                                                                 version_name='ver')
+    version.log_batch(data=data.iloc[:, :3], timestamp=timestamp,
+                      prediction=pd.Series(pred), prediction_proba=pd.Series(proba), label=data['label'])
+    # Assert
+    version = deepchecks_sdk_client.get_model_version(model_name='test', version_name='ver')
+    assert version.model_version_id == 1
+    assert version.time_window_statistics(timestamp[0], timestamp[1] + 1) == \
+           {'num_samples': 2, 'num_labeled_samples': 2}

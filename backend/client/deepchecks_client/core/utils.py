@@ -154,7 +154,7 @@ class DeepchecksEncoder:
 
 def parse_timestamp(timestamp: t.Union[int, datetime]) -> "pendulum.datetime.DateTime":
     """Parse timestamp to datetime object."""
-    if isinstance(timestamp, int):
+    if isinstance(timestamp, int) or np.issubdtype(type(timestamp), np.integer):
         return pdl.from_timestamp(timestamp, pdl.local_timezone())
     elif isinstance(timestamp, datetime):
         # If no timezone in datetime, assumed to be UTC and converted to local timezone
@@ -176,4 +176,4 @@ def pretty_print(msg: str):
     """Pretty print the attached massage to the user terminal.
 
     Used for information massages which are not errors or warnings."""
-    cprint(msg, "yellow", attrs=["bold"])
+    cprint(msg, "green", attrs=["bold"])

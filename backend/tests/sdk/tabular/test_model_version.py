@@ -63,6 +63,10 @@ async def test_add_model_version(classification_model_id,
                                                 features={"a": "numeric", "b": "categorical"},
                                                 non_features={"c": "numeric"})
     assert model_version_client.model_version_id == 1
+    model_version_client = model_client.version("v2",
+                                                features={"a": "numeric", "b": "categorical"},
+                                                non_features={"c": "numeric"})
+    assert model_version_client.model_version_id == 2
 
 
 @pytest.mark.asyncio

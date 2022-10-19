@@ -303,7 +303,7 @@ class ModelManagmentSchema(BaseModel):
     description="Retrieve list of available models."
 )
 async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> t.List[ModelManagmentSchema]:
-    """Retrieve list of models for the "Models managment" screen."""
+    """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.cte()
     monitors_count = MonitorsCountPerModel.cte()
 

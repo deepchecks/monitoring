@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
-import io
 import warnings
 from datetime import datetime
 from typing import Any, Dict, Optional, Sequence, Union
@@ -17,15 +16,15 @@ from typing import Any, Dict, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-import yaml
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (CategoryMismatchTrainTest, SingleDatasetPerformance, TrainTestFeatureDrift,
                                        TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
+
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
-                                          TaskType, maybe_raise, parse_timestamp)
+                                          TaskType, maybe_raise, parse_timestamp, pretty_print)
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -40,13 +39,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     """
 
     def log_batch(
-        self, 
-        data: pd.DataFrame,
-        timestamp: Union["pd.Series[datetime]", "pd.Series[int]"],
-        prediction: Union["pd.Series[str]", "pd.Series[float]"],
-        prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
-        label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
-        samples_per_send: int = 100_000
+            self,
+            data: pd.DataFrame,
+            timestamp: Union["pd.Series[datetime]", "pd.Series[int]"],
+            prediction: Union["pd.Series[str]", "pd.Series[float]"],
+            prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
+            label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
+            samples_per_send: int = 100_000
     ):
         """Log batch of samples.
         
@@ -71,20 +70,20 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """
         if samples_per_send < 1:
             raise ValueError("'samples_per_send' must be '>=' than 1")
-        
+
         if len(data) == 0:
             raise ValueError("'data' cannot be empty")
-        
+
         if "sample_id" in data.columns:
             if data["sample_id"].is_unique is False:
                 raise ValueError("sample ids must be unique")
             if not data["sample_id"].notna().all():
                 raise ValueError("'sample_id' column must not contain None/Nan")
             data = data.set_index("sample_id")
-        else: 
+        else:
             if data.index.is_unique is False:
                 raise ValueError("'data.index' must contain unique values")
-        
+
         error_template = (
             "'{param}' and 'data' parameters indexes mismatch, "
             "make sure that '{param}.index' is the same as "
@@ -95,24 +94,25 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             raise ValueError(error_template.format(param="timestamp"))
         if not data.index.equals(prediction.index):
             raise ValueError(error_template.format(param="prediction"))
-        
+
         data = data.assign(prediction=prediction)
-        
+        data = data.assign(timestamp=timestamp)
+
         if prediction_proba is not None:
             if not data.index.equals(prediction_proba.index):
                 raise ValueError(error_template.format(param="prediction_proba"))
             else:
                 data = data.assign(prediction_proba=prediction_proba)
-        
+
         if label is not None:
             if not data.index.equals(label.index):
                 raise ValueError(error_template.format(param="label"))
             else:
                 data = data.assign(label=label)
-        
+
         for i in range(0, len(data), samples_per_send):
-            self._log_batch(data.iloc[i:i+samples_per_send])
-        
+            self._log_batch(data.iloc[i:i + samples_per_send])
+
     def _log_batch(self, samples: pd.DataFrame):
         for index, row in samples.iterrows():
             sample = row.to_dict()
@@ -123,13 +123,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         self.send()
 
     def log_sample(
-        self,
-        sample_id: str,
-        prediction: Any,
-        timestamp: Union[datetime, int, None] = None,
-        prediction_proba=None,
-        label=None,
-        **values
+            self,
+            sample_id: str,
+            prediction: Any,
+            timestamp: Union[datetime, int, None] = None,
+            prediction_proba=None,
+            label=None,
+            **values
     ):
         """Log sample for the model version.
 
@@ -150,10 +150,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """
         if timestamp is None:
             warnings.warn("log_sample was called without timestamp, using current time instead")
-        
+
         task_type = TaskType(self.model['task_type'])
         timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
-    
+
         sample = {
             DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id),
             DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
@@ -172,11 +172,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = float(prediction)
         else:
             raise ValueError(f'Unknown or unsupported task type provided - {task_type}')
-        
+
         sample = DeepchecksEncoder.encode(sample)
         self.schema_validator.validate(sample)
         self._log_samples.append(sample)
-        
+
     def upload_reference(
             self,
             dataset: Dataset,
@@ -287,17 +287,22 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         ----------
         name: str
             Name to display for new version
-        features: Optional[Dict[str, str]]
-            a dictionary of feature names and values from ColumnType enum
-        non_features: Optional[Dict[str, str]]
-            a dictionary of non feature names and values from ColumnType enum
-        feature_importance: Optional[Dict[str, float]]
-            a dictionary of non feature names and their feature importance value
+        features: Optional[Dict[str, str]], default: None
+            A dictionary of feature names and values from ColumnType enum. Required for creation of a new version.
+        non_features: Optional[Dict[str, str]], default: None
+            A dictionary of non feature names and values from ColumnType enum. Required for creation of a new version.
+        feature_importance: Optional[Dict[str, float]], default: None
+            A dictionary of feature names and their feature importance value.
         Returns
         -------
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
+
+        existing_version_id = self._get_existing_version_id_or_none(version_name=name)
+        if existing_version_id is not None:
+            return self._version_client(existing_version_id)
+
         if features is None:
             model_version_id = self._get_model_version_id(name)
             if model_version_id is None:
@@ -348,7 +353,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 }),
                 msg="Failed to create new model version.\n{error}"
             ).json()
-
+            pretty_print(f'Model version {name} was successfully created.')
             model_version_id = response['id']
         return self._version_client(model_version_id)
 

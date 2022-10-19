@@ -355,6 +355,10 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
+        existing_version_id = self._get_existing_version_id_or_none(version_name=name)
+        if existing_version_id is not None:
+            return self._version_client(existing_version_id, image_properties=image_properties)
+
         if vision_data is None:
             model_version_id = self._get_model_version_id(name)
             if model_version_id is None:
