@@ -12,10 +12,10 @@ import io
 import pandas as pd
 import pytest
 from deepchecks.tabular.dataset import Dataset
+from deepchecks_client.tabular.utils import create_schema
 from sqlalchemy import select
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
-from deepchecks_client.tabular.utils import create_schema
 from deepchecks_monitoring.models.model_version import ModelVersion
 
 

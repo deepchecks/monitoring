@@ -7,10 +7,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
+# pylint: disable=ungrouped-imports
 """Module defining utility functions for the deepchecks_monitoring app."""
 import enum
+import logging
+import logging.handlers
 import operator
+import sys
 import typing as t
 
 import orjson
@@ -18,7 +21,14 @@ from pydantic import BaseModel
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring import __version__
+from deepchecks_monitoring.bgtasks.telemetry import TelemetyLoggingHandler
 from deepchecks_monitoring.exceptions import NotFound
+
+try:
+    import uptrace
+except ImportError:
+    uptrace = None
 
 if t.TYPE_CHECKING is True:
     from deepchecks_monitoring.models.base import Base  # pylint: disable=unused-import
@@ -39,7 +49,8 @@ __all__ = [
     "IdResponse",
     "CheckParameterTypeEnum",
     "NameIdResponse",
-    "field_length"
+    "field_length",
+    "configure_logger"
 ]
 
 
@@ -353,3 +364,43 @@ def field_length(column) -> int:
     if not isinstance(result, int):
         raise ValueError(f"Field {column.expression.key} does not have length or it is not set")
     return result
+
+
+def configure_logger(
+    name: str,
+    log_level: str = "INFO",
+    message_format: str = "%(asctime)s %(levelname)s %(name)s %(message)s",
+    logfile: t.Optional[str] = None,
+    logfile_backup_count: int = 3,
+    uptrace_dsn: t.Optional[str] = None
+):
+    """Configure logger instance."""
+    logger = logging.getLogger(name)
+    logger.propagate = True
+    logger.setLevel(log_level)
+    formatter = logging.Formatter(message_format)
+
+    h = logging.StreamHandler(sys.stdout)
+    h.setLevel(log_level)
+    h.setFormatter(formatter)
+    logger.addHandler(h)
+
+    if uptrace_dsn and uptrace:
+        h = TelemetyLoggingHandler()
+        h.setLevel(log_level)
+        h.setFormatter(formatter)
+        logger.addHandler(h)
+
+    if uptrace_dsn and not uptrace:
+        logger.warning("UPTRACE_DSN was provided but 'uptrace' package is not installed")
+
+    if logfile:
+        h = logging.handlers.RotatingFileHandler(
+            filename=logfile,
+            maxBytes=logfile_backup_count,
+        )
+        h.setLevel(log_level)
+        h.setFormatter(formatter)
+        logger.addHandler(h)
+
+    return logger

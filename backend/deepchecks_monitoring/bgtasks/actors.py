@@ -11,7 +11,6 @@
 """Alert execution logic."""
 import logging
 import logging.handlers
-import sys
 import typing as t
 from collections import defaultdict
 
@@ -22,7 +21,9 @@ import uvloop
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
+from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
+from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
@@ -31,7 +32,7 @@ from deepchecks_monitoring.models.alert_rule import AlertRule, Condition
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import DataFilterList, make_oparator_func
+from deepchecks_monitoring.utils import DataFilterList, configure_logger, make_oparator_func
 
 __all__ = ["execute_monitor"]
 
@@ -167,6 +168,7 @@ class WorkerSettings(DatabaseSettings):
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
+    uptrace_dsn: t.Optional[str] = None
 
     class Config:
         """Model config."""
@@ -185,24 +187,24 @@ class WorkerBootstrap:
 
     async def run(self):
         settings = self.settings_type()  # type: ignore
+        service_name = "deepchecks-worker"
 
-        logger = logging.getLogger("alerts-executor")
-        logger.setLevel(settings.worker_loglevel)
-        logger.propagate = True
-
-        h = logging.StreamHandler(sys.stdout)
-        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
-        h.setLevel(settings.worker_loglevel)
-        logger.addHandler(h)
-
-        if settings.worker_logfile:
-            h = logging.handlers.RotatingFileHandler(
-                filename=settings.worker_logfile,
-                maxBytes=settings.worker_logfile_backup_count,
+        if settings.uptrace_dsn:
+            import uptrace  # pylint: disable=import-outside-toplevel
+            uptrace.configure_opentelemetry(
+                dsn=settings.uptrace_dsn,
+                service_name=service_name,
+                service_version=__version__,
             )
-            h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
-            h.setLevel(settings.worker_loglevel)
-            logger.addHandler(h)
+            collect_telemetry(Worker)
+
+        logger = configure_logger(
+            name=service_name,
+            log_level=settings.worker_loglevel,
+            logfile=settings.worker_logfile,
+            logfile_backup_count=settings.worker_logfile_backup_count,
+            uptrace_dsn=settings.uptrace_dsn,
+        )
 
         async with self.resources_provider_type(settings) as rp:
             async with anyio.create_task_group() as g:

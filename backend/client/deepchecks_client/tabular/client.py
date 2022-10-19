@@ -21,7 +21,6 @@ from deepchecks.tabular.checks import (CategoryMismatchTrainTest, SingleDatasetP
                                        TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
-
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
                                           TaskType, maybe_raise, parse_timestamp, pretty_print)

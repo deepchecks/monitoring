@@ -12,7 +12,6 @@
 import asyncio
 import logging
 import logging.handlers
-import sys
 import typing as t
 from textwrap import dedent
 
@@ -24,10 +23,12 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Executable
 
+from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.core import Task
+from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import DatabaseSettings
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import TimeUnit
+from deepchecks_monitoring.utils import TimeUnit, configure_logger
 
 __all__ = ["AlertsScheduler"]
 
@@ -183,39 +184,45 @@ EnqueueTasks = sa.text(dedent("""
 )
 
 
+class SchedulerSettings(DatabaseSettings):
+    """Scheduler settings."""
+
+    scheduler_sleep_seconds: int = 30
+    scheduler_logfile: t.Optional[str] = None
+    scheduler_loglevel: str = "INFO"
+    scheduler_logfile_maxsize: int = 10000000  # 10MB
+    scheduler_logfile_backup_count: int = 3
+    uptrace_dsn: t.Optional[str] = None
+
+    class Config:
+        """Model config."""
+
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
 def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
-    class Settings(DatabaseSettings):
-        scheduler_sleep_seconds: int = 30
-        scheduler_logfile: t.Optional[str] = None
-        scheduler_loglevel: str = "INFO"
-        scheduler_logfile_maxsize: int = 10000000  # 10MB
-        scheduler_logfile_backup_count: int = 3
-
-        class Config:
-            env_file = ".env"
-            env_file_encoding = "utf-8"
-
     async def main():
-        settings = Settings()  # type: ignore
+        settings = SchedulerSettings()  # type: ignore
+        service_name = "alerts-scheduler"
 
-        logger = logging.getLogger("alerts-scheduler")
-        logger.setLevel(settings.scheduler_loglevel)
-        logger.propagate = True
-
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(settings.scheduler_loglevel)
-        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
-        logger.addHandler(h)
-
-        if settings.scheduler_logfile:
-            h = logging.handlers.RotatingFileHandler(
-                filename=settings.scheduler_logfile,
-                maxBytes=settings.scheduler_logfile_backup_count,
+        if settings.uptrace_dsn:
+            import uptrace  # pylint: disable=import-outside-toplevel
+            uptrace.configure_opentelemetry(
+                dsn=settings.uptrace_dsn,
+                service_name=service_name,
+                service_version=__version__,
             )
-            h.setLevel(settings.scheduler_loglevel)
-            h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
-            logger.addHandler(h)
+            collect_telemetry(scheduler_implementation)
+
+        logger = configure_logger(
+            name=service_name,
+            log_level=settings.scheduler_loglevel,
+            logfile=settings.scheduler_logfile,
+            logfile_backup_count=settings.scheduler_logfile_backup_count,
+            uptrace_dsn=settings.uptrace_dsn,
+        )
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
@@ -230,4 +237,14 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
 
 
 if __name__ == "__main__":
-    execute_alerts_scheduler(scheduler_implementation=AlertsScheduler)
+    # NOTE:
+    # it looks weird but a problem is that python creates
+    # a __main__ module by copying deepchecks_monitoring.bgtasks.scheduler
+    # module as a result of this, we will have two types of alert scheduler:
+    # 1. __main__.AlertsSchedulers
+    # 2. deepchecks_monitoring.bgtasks.scheduler.AlertsSchedulers
+    # this might cause 'execute_alerts_scheduler' to fail, therefore
+    # we need to reimport AlertsScheduler type
+    #
+    from deepchecks_monitoring.bgtasks import scheduler
+    execute_alerts_scheduler(scheduler.AlertsScheduler)
