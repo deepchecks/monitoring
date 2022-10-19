@@ -80,9 +80,6 @@ export const AlertsDrawer = ({ onClose, onResolve, alertRule, ...props }: Alerts
           <StyledDiagramWrapper>
             {/* eslint-disable @typescript-eslint/ban-ts-comment */}
             <DiagramLine
-              alerts={alerts}
-              alertIndex={alertIndex}
-              changeAlertIndex={setAlertIndex}
               //@ts-ignore
               data={graphData}
               height={350}
