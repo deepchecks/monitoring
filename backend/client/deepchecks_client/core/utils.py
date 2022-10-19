@@ -15,6 +15,7 @@ import typing as t
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 import pendulum as pdl
 from jsonschema import validators
 from requests import HTTPError, Response
@@ -139,23 +140,19 @@ class DeepchecksEncoder:
     @classmethod
     def encode(cls, obj):
         if isinstance(obj, np.generic):
-            if np.isnan(obj):
-                return None
             return obj.item()
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
         if isinstance(obj, np.ndarray):
-            return obj.tolist()
+            return cls.encode(obj.tolist())
         if isinstance(obj, dict):
             return {k: cls.encode(v) for k, v in obj.items()}
         if isinstance(obj, list):
-            return tuple([cls.encode(v) for v in obj])
+            return tuple(cls.encode(v) for v in obj)
+        if pd.isna(obj):
+            return None
         return obj
 
 
-def parse_timestamp(timestamp: t.Union[int, datetime, None] = None) -> "pendulum.datetime.DateTime":
+def parse_timestamp(timestamp: t.Union[int, datetime]) -> "pendulum.datetime.DateTime":
     """Parse timestamp to datetime object."""
     if isinstance(timestamp, int):
         return pdl.from_timestamp(timestamp, pdl.local_timezone())

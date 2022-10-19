@@ -17,4 +17,5 @@ deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
 opentelemetry-instrumentation-asyncpg
 opentelemetry-instrumentation-fastapi
 redis[hiredis]>=4.3.4
+pandas>=1.1.5,<1.5.0
 deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main

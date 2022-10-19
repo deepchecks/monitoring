@@ -26,8 +26,6 @@ from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
                                           TaskType, maybe_raise, parse_timestamp)
-from deepchecks_client.tabular.utils import _get_series_column_type
-from pandas.core.dtypes.common import is_bool_dtype, is_integer_dtype
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
