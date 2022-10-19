@@ -7,10 +7,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import datetime
+
 import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
 
+from deepchecks_monitoring.models.monitor import Monitor
+from deepchecks_monitoring.utils import fetch_or_404
 from tests.conftest import add_alert_rule, add_classification_data
 
 
@@ -46,6 +50,73 @@ async def test_add_monitor_no_filter(classification_model_check_id, client: Test
     # Assert
     assert response.status_code == 200
     assert response.json()["id"] == 1
+
+
+@pytest.mark.asyncio
+async def test_add_monitor_month_schedule(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    request = {
+        "name": "monitory",
+        "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400 * 30,
+    }
+    # Act
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["id"] == 1
+    monitor: Monitor = await fetch_or_404(async_session, Monitor, id=1)
+    now = datetime.datetime.now()
+    now = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(tz=datetime.timezone.utc)
+    mon_sched = monitor.scheduling_start
+    assert mon_sched == now
+
+
+@pytest.mark.asyncio
+async def test_add_monitor_day_schedule(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    request = {
+        "name": "monitory",
+        "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400 * 2,
+    }
+    # Act
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["id"] == 1
+    monitor: Monitor = await fetch_or_404(async_session, Monitor, id=1)
+    now = datetime.datetime.now()
+    now = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(tz=datetime.timezone.utc)
+    mon_sched = monitor.scheduling_start
+    assert mon_sched == now
+
+
+@pytest.mark.asyncio
+async def test_add_monitor_day_schedule_from_version(classification_model_check_id,
+                                                     classification_model_version_id,
+                                                     client: TestClient, async_session):
+    # Arrange
+    add_classification_data(classification_model_version_id, client)
+    request = {
+        "name": "monitory",
+        "lookback": 86400 * 7,
+        "aggregation_window": 86400 * 30,
+        "frequency": 86400 * 2,
+    }
+    # Act
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/monitors", json=request)
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["id"] == 1
+    monitor: Monitor = await fetch_or_404(async_session, Monitor, id=1)
+    # model version data was day before
+    now = datetime.datetime.now() - datetime.timedelta(days=1)
+    now = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(tz=datetime.timezone.utc)
+    mon_sched = monitor.scheduling_start
+    assert mon_sched == now
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,8 @@
 import typing as t
 
 import sqlalchemy as sa
+from sqlalchemy.engine.default import DefaultExecutionContext
+from sqlalchemy.future import select
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
@@ -23,6 +25,32 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.models.dashboard import Dashboard  # pylint: disable=unused-import
 
 __all__ = ["Monitor"]
+
+
+def _get_time_str(frequency):
+    if frequency >= 86400 * 30:
+        return "month"
+    if frequency >= 86400 * 7:
+        return "week"
+    if frequency >= 86400:
+        return "day"
+    if frequency >= 3600:
+        return "hour"
+    return "second"
+
+
+def _get_start_schedule_time(context: DefaultExecutionContext):
+    # pylint: disable=import-outside-toplevel, redefined-outer-name
+    from deepchecks_monitoring.models.check import Check
+    from deepchecks_monitoring.models.model_version import ModelVersion
+
+    check_id = context.get_current_parameters()["check_id"]
+    frequency = context.get_current_parameters()["frequency"]
+    select_obj = select(sa.func.date_trunc(_get_time_str(frequency),
+                                           sa.func.coalesce(sa.func.min(ModelVersion.start_time), sa.func.now()))) \
+        .join(Check, Check.id == check_id) \
+        .where(ModelVersion.model_id == Check.model_id)
+    return context.connection.execute(select_obj).scalar()
 
 
 class Monitor(Base):
@@ -42,18 +70,18 @@ class Monitor(Base):
     frequency = sa.Column(sa.Integer, nullable=False)
 
     latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=True)
-    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, server_default=sa.func.now())
+    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, default=_get_start_schedule_time)
 
     check_id = sa.Column(
         sa.Integer,
         sa.ForeignKey("checks.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
+
     check: Mapped["Check"] = relationship(
         "Check",
         back_populates="monitors"
     )
-
     dashboard_id = sa.Column(
         sa.Integer,
         sa.ForeignKey("dashboards.id", ondelete="SET NULL", onupdate="RESTRICT"),
