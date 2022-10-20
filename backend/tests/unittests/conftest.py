@@ -9,7 +9,12 @@
 # ----------------------------------------------------------------------------
 #
 # pylint: disable=import-outside-toplevel
+from datetime import datetime, timedelta
+
 import pytest
+import sqlalchemy as sa
+
+from deepchecks_monitoring.models.model_version import ModelVersion
 
 
 @pytest.fixture(scope="package", autouse=True)
@@ -20,3 +25,10 @@ def _():
     from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
     collect_telemetry(Worker)
     collect_telemetry(AlertsScheduler)
+
+
+async def update_model_version_end(async_engine, classification_model_version_id):
+    async with async_engine.connect() as c:
+        await c.execute(sa.update(ModelVersion).where(ModelVersion.id == classification_model_version_id)
+                        .values({ModelVersion.end_time: datetime.now() + timedelta(days=1)}))
+        await c.commit()

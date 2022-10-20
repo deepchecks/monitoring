@@ -22,6 +22,7 @@ from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.models import Alert
 from deepchecks_monitoring.utils import TimeUnit
 from tests.conftest import add_alert_rule, add_check, add_classification_data, add_model_version, add_monitor
+from tests.unittests.conftest import update_model_version_end
 
 
 @pytest.mark.asyncio
@@ -83,8 +84,11 @@ async def test_alert_scheduling(
     async_engine: AsyncEngine,
     client: TestClient,
     classification_model_id: int,
+    classification_model_version_id: int,
 ):
     # TODO: add description to the test
+    await update_model_version_end(async_engine, classification_model_version_id)
+
     check_id = t.cast(int, add_check(
         classification_model_id,
         client=client

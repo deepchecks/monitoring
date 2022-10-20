@@ -11,8 +11,8 @@ import os
 import pathlib
 import re
 import typing as t
-import setuptools
 
+import setuptools
 
 SETUP_MODULE = pathlib.Path(__file__).absolute()
 ROOTDIR = SETUP_MODULE.parent

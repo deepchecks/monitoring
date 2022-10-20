@@ -129,12 +129,28 @@ def is_serialization_error(error: DBAPIError):
 #
 EnqueueTasks = sa.text(dedent("""
     WITH
+        mons_with_endtime AS (
+            SELECT
+                m.id as monitor_id,
+                m.frequency as frequency,
+                m.scheduling_start as scheduling_start,
+                m.latest_schedule as latest_schedule,
+                max(mv.end_time) as end_time
+            FROM
+                monitors as m,
+                checks as c,
+                model_versions as mv
+            WHERE
+                m.check_id = c.id AND
+                c.model_id = mv.model_id
+            GROUP BY m.id
+        ),
         scheduling_series AS (
             SELECT
-                id AS monitor_id,
+                mons_with_endtime.monitor_id as monitor_id,
                 GENERATE_SERIES(info.last_scheduling, NOW(), info.frequency) AS timestamp
             FROM
-                monitors,
+                mons_with_endtime,
                 LATERAL (
                     SELECT
                         (frequency || ' seconds')::INTERVAL AS frequency,
@@ -143,7 +159,8 @@ EnqueueTasks = sa.text(dedent("""
                             ELSE latest_schedule
                         END AS last_scheduling
                 ) as info(frequency, last_scheduling)
-            WHERE (info.last_scheduling + info.frequency) <= NOW()
+            WHERE (info.last_scheduling + info.frequency) <= NOW() AND
+                  (info.last_scheduling + info.frequency) <= end_time
         ),
         latest_schedule AS (
             SELECT
