@@ -13,7 +13,6 @@ import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
-from datetime import timedelta
 
 import anyio
 import pendulum as pdl
@@ -40,11 +39,11 @@ __all__ = ["execute_monitor"]
 
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
 async def execute_monitor(
-    monitor_id: int,
-    timestamp: str,
-    session: AsyncSession,
-    logger: t.Optional[logging.Logger] = None,
-    **kwargs  # pylint: disable=unused-argument
+        monitor_id: int,
+        timestamp: str,
+        session: AsyncSession,
+        logger: t.Optional[logging.Logger] = None,
+        **kwargs  # pylint: disable=unused-argument
 ) -> t.List[Alert]:
     """Execute monitor alert rules."""
     logger = logger or logging.getLogger("monitor-executor")
@@ -128,8 +127,8 @@ async def execute_monitor(
 
 
 def assert_check_results(
-    alert_rule: AlertRule,
-    results: t.Dict[int, t.Dict[str, t.Any]]
+        alert_rule: AlertRule,
+        results: t.Dict[int, t.Dict[str, t.Any]]
 ) -> t.Optional[Alert]:
     """Assert check result in accordance to alert rule."""
     alert_condition = t.cast(Condition, alert_rule.condition)

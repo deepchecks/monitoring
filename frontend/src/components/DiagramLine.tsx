@@ -293,7 +293,7 @@ function DiagramLine({
           pinch: {
             enabled: false
           },
-          mode: 'xy'
+          mode: 'x'
         }
       }
     },

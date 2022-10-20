@@ -590,3 +590,29 @@ class DeepchecksClient:
             pretty_print('Reference data uploaded.')
 
         return version_client
+
+    def delete_model(self, model_name: str):
+        """Delete a model by its name.
+
+        Parameters
+        ----------
+        model_name: str
+            The model to delete
+        """
+        available_models = maybe_raise(
+            self.session.get('models'),
+            msg="Failed to retrieve existing models from session.\n{error}"
+        ).json()
+
+        if model_name in [model['name'] for model in available_models]:
+            model_id = [model['id'] for model in available_models if model['name'] == model_name][0]
+        else:
+            raise ValueError(f'Model {model_name} does not exist.')
+
+        maybe_raise(
+            self.session.delete(
+                f'models/{model_id}'
+            ),
+            msg=f"Failed to drop Model(id:{model_id}).\n{{error}}"
+        )
+        pretty_print(f"The following model was successfully deleted: {model_name}")
