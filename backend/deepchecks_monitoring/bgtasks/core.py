@@ -574,7 +574,7 @@ class Worker:
         actors: t.Sequence[Actor],
         tasks_broker: TasksBroker,
         worker_name: str = "tasks-executor",
-        expire_after: timedelta = timedelta(days=2),  # TODO: consider moving it to actor type
+        expire_after: timedelta = timedelta(days=365*3),  # TODO: consider moving it to actor type
         additional_params: t.Optional[t.Dict[str, t.Any]] = None,
         logger: t.Optional[logging.Logger] = None,
     ):

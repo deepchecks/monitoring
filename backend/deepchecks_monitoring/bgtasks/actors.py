@@ -214,8 +214,7 @@ class WorkerBootstrap:
                     task_broker_type=self.task_broker_type,
                     actors=self.actors,
                     additional_params={"resources_provider": rp},
-                    logger=logger,
-                    expire_after=timedelta(days=365*3)
+                    logger=logger
                 ).start)
 
     def bootstrap(self):
