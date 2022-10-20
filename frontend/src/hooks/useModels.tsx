@@ -1,12 +1,10 @@
-import { ModelsInfoSchema, useGetModelsApiV1ModelsGet } from 'api/generated';
+import { ModelsInfoSchema, useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
 import { useMemo } from 'react';
 
 export const useModels = () => {
-  const { data: models = [], isLoading } = useGetModelsApiV1ModelsGet({
-    query: {
+  const { data: models = [], isLoading, refetch: refetchModels } = useRetrieveAvailableModelsApiV1AvailableModelsGet(query: {
       refetchOnWindowFocus: false
-    }
-  });
+    });
 
   const modelsMap = useMemo(
     () =>
@@ -18,7 +16,7 @@ export const useModels = () => {
     [models]
   );
 
-  return { modelsMap, models, isLoading };
+  return { modelsMap, models, isLoading, refetchModels };
 };
 
 export default useModels;

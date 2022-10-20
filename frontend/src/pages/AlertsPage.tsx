@@ -10,19 +10,19 @@ import {
   useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost
 } from '../api/generated';
 
-import { Box, List, styled, Typography } from '@mui/material';
+import { Box, List, styled } from '@mui/material';
 
 // import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
 // import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
 import { AlertsDrawer } from '../components/AlertsDrawer';
-import { AlertsFilters } from '../components/AlertsFilters';
+import { FiltersSort } from '../components/FiltersSort/FiltersSort';
 import { AlertsHeader } from '../components/AlertsHeader';
 import { AlertsResolveDialog } from '../components/AlertsResolveDialog';
 import { AlertsRulesItem } from '../components/AlertsRulesItem';
 import { AlertsSnackbar } from '../components/AlertsSnackbar';
 import { Loader } from '../components/Loader';
 
-import { EmptyAlerts } from 'assets/bg/backgrounds';
+import NoResults from 'components/NoResults';
 
 const snackbarPosition = {
   vertical: 'bottom',
@@ -62,7 +62,7 @@ export const AlertsPage = () => {
     <>
       <AlertsHeader />
       <Box>
-        <AlertsFilters />
+        <FiltersSort />
         <StyledList>
           {isLoading ? (
             <Loader />
@@ -77,30 +77,7 @@ export const AlertsPage = () => {
               </StyledListItem>
             ))
           ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: '207px' }}>
-              <Box width={444}>
-                <EmptyAlerts />
-                <Typography
-                  variant="body1"
-                  sx={{
-                    mt: '60px',
-                    color: theme => theme.palette.text.disabled,
-                    textAlign: 'center',
-                    padding: '0 20px'
-                  }}
-                >
-                  No results found for the applied filters maybe try to{' '}
-                  <Typography
-                    sx={{ color: theme => theme.palette.primary.main, cursor: 'pointer' }}
-                    component={'span'}
-                    onClick={resetFilters}
-                  >
-                    reset the filters
-                  </Typography>{' '}
-                  and start over
-                </Typography>
-              </Box>
-            </Box>
+            <NoResults marginTop="207" handleReset={resetFilters} />
           )}
         </StyledList>
       </Box>

@@ -16,14 +16,15 @@ import { Button, Box, useTheme } from '@mui/material';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
 import { Loader } from 'components/Loader';
 import { AlertRuleDialog } from '../components/AlertRuleDialog';
-import { AlertsFilters } from 'components/AlertsFilters';
+import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 
 import { WhitePlusIcon } from 'assets/icon/icon';
+import NoResults from 'components/NoResults';
 
 export const AlertRules = () => {
   const { Header, setChildren } = useHeader();
   const theme = useTheme();
-  const { alertFilters: filters } = useContext(GlobalStateContext);
+  const { alertFilters: filters, resetFilters } = useContext(GlobalStateContext);
 
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editableAlertRuleId, setEditableAlertRuleId] = useState<AlertRuleConfigSchema['id'] | undefined>(undefined);
@@ -90,7 +91,7 @@ export const AlertRules = () => {
           }
         }}
       >
-        <AlertsFilters isFilterByTimeLine={false} />
+        <FiltersSort isFilterByTimeLine={false} />
         <Box
           sx={{
             padding: 0,
@@ -102,7 +103,7 @@ export const AlertRules = () => {
         >
           {isLoading ? (
             <Loader />
-          ) : (
+          ) : alertRules.length !== 0 ? (
             alertRules.map(alertRule => (
               <AlertRuleConfigItem
                 key={alertRule.id}
@@ -111,6 +112,8 @@ export const AlertRules = () => {
                 onDelete={() => onAlertRuleDelete(alertRule)}
               />
             ))
+          ) : (
+            <NoResults marginTop="184px" handleReset={resetFilters} />
           )}
         </Box>
       </Box>

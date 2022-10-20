@@ -6,12 +6,13 @@ import { useLocation } from 'react-router-dom';
 import { theme } from 'theme';
 
 export type HeaderProvider = {
-  children: JSX.Element;
+  children: React.ReactNode;
 };
 
 export interface HeaderContext {
   setChildren: React.Dispatch<React.SetStateAction<React.ReactNode>>;
   Header: React.FC;
+  setHeaderTitle: React.Dispatch<React.SetStateAction<string>>;
 }
 const HeaderContext = createContext<HeaderContext | null>(null);
 
@@ -22,9 +23,12 @@ const useHeader = () => {
   return context;
 };
 
-export const HeaderProvider = ({ children }: HeaderProvider): JSX.Element => {
+export const HeaderProvider = ({ children }: HeaderProvider) => {
   const location = useLocation();
+
   const [headerChildren, setHeaderChildren] = React.useState<React.ReactNode | null>(null);
+  const [headerTitle, setHeaderTitle] = React.useState('');
+
   const pathsGroupedByPath = groupBy(
     pathsInfo.flatMap(pathInfo => [pathInfo, ...(pathInfo.children ?? [])]),
     'link'
@@ -42,11 +46,12 @@ export const HeaderProvider = ({ children }: HeaderProvider): JSX.Element => {
       sx={{
         padding: ' 21px 0',
         width: '100%',
+        height: 83,
         borderBottom: `1px dotted ${theme.palette.grey[300]}`
       }}
     >
       <Typography variant="h4" sx={{ color: theme => theme.palette.text.disabled }}>
-        {pathInfo[0]?.title}
+        {headerTitle || pathInfo[0]?.title}
       </Typography>
       {headerChildren}
     </Stack>
@@ -54,7 +59,8 @@ export const HeaderProvider = ({ children }: HeaderProvider): JSX.Element => {
 
   const value = {
     setChildren: setHeaderChildren,
-    Header
+    Header,
+    setHeaderTitle
   };
 
   return <HeaderContext.Provider value={value}>{children}</HeaderContext.Provider>;

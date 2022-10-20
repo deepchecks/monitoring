@@ -1,3 +1,3 @@
-import { ReactComponent as EmptyAlerts } from './emptyAlerts.svg';
+import { ReactComponent as NoResultsImage } from './noResultsImage.svg';
 
-export { EmptyAlerts };
+export { NoResultsImage };

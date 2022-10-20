@@ -1,11 +1,13 @@
+import { FC } from 'react';
+
+import { AnalysisPage } from 'pages/AnalysisPage';
 import { AlertRules } from 'pages/AlertRules';
 import { AlertsPage } from 'pages/AlertsPage';
 import { DashboardPage } from 'pages/DashboardPage';
 import { IntegrationsPage } from 'pages/IntegrationsPage';
 import { NotificationsPage } from 'pages/NotificationsPage';
+import { ModelsPage } from 'pages/ModelsPage';
 
-import { AnalysisPage } from 'pages/AnalysisPage';
-import { FC } from 'react';
 import {
   Alarm,
   AlarmActive,
@@ -70,6 +72,14 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/alert-rules',
         Icon: null,
         element: AlertRules,
+        IconHover: null,
+        ActiveIcon: null
+      },
+      {
+        title: 'Models',
+        link: '/configuration/Models',
+        Icon: null,
+        element: ModelsPage,
         IconHover: null,
         ActiveIcon: null
       },

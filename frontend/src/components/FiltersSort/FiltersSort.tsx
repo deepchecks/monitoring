@@ -11,28 +11,24 @@ import {
   useGetModelsApiV1ModelsGet
 } from 'api/generated';
 
-import {
-  Box,
-  Button,
-  Divider,
-  Menu,
-  MenuItem,
-  SelectChangeEvent,
-  Stack,
-  styled,
-  TextField,
-  Typography
-} from '@mui/material';
+import { Box, Divider, Menu, MenuItem, SelectChangeEvent, Stack, styled, TextField, Typography } from '@mui/material';
 
-import { DatePicker } from './DatePicker/DatePicker';
-import { SelectPrimary } from './SelectPrimary/SelectPrimary';
-import { SelectSeverity, SeverityAll, severityAll } from './SelectSeverity';
+import { DatePicker } from '../DatePicker/DatePicker';
+import { SelectPrimary } from '../SelectPrimary/SelectPrimary';
+import { SelectSeverity, SeverityAll, severityAll } from '../SelectSeverity';
+import FiltersResetButton from './FiltersResetButton';
+import FiltersSortButton from './FiltersSortButton';
 
-import { Sort, Undo } from '../assets/icon/icon';
+import { colors } from 'theme/colors';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
 };
+
+export enum sortOptionsVariants {
+  AZ = 'Alphabetically A-Z',
+  ZA = 'Alphabetically Z-A'
+}
 
 const oneYear = 60 * 60 * 24 * 365 * 1000;
 
@@ -40,16 +36,16 @@ const initStartDate = new Date(Date.now() - oneYear);
 const initEndDate = new Date(Date.now());
 
 const sortMethodMap = {
-  'Alphabetically A-Z': 'severity:asc',
-  'Alphabetically Z-A': 'severity:desc'
+  [sortOptionsVariants.AZ]: 'severity:asc',
+  [sortOptionsVariants.ZA]: 'severity:desc'
 } as const;
 
-const sortOptions = ['Alphabetically A-Z', 'Alphabetically Z-A'] as const;
+export const sortOptions = [sortOptionsVariants.AZ, sortOptionsVariants.ZA] as const;
 
 const trackFiltersAndSortChange = (path: string) =>
   mixpanel.track(`${path === '/alerts' ? 'Alerts' : 'Alerts Rules'}: changed filters & sort`);
 
-export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
+export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
   const { pathname } = useLocation();
   const { alertFilters, changeAlertFilters, resetFilters } = useContext(GlobalStateContext);
 
@@ -58,6 +54,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
   const [model, setModel] = useState<number>(-1);
   const [severity, setSeverity] = useState<AlertSeverity | SeverityAll>(severityAll);
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<null | HTMLElement>(null);
+  const [selectedSortVariant, setSelectedSortVariant] = useState<sortOptionsVariants | ''>('');
 
   const filtered = endDate !== initEndDate || startDate !== initStartDate || model !== -1 || severity !== severityAll;
   const openSortMenu = Boolean(anchorElSortMenu);
@@ -77,6 +74,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
 
     const currentModel = event.target.value as number;
     setModel(currentModel);
+
     if (currentModel === -1 && alertFilters.models) {
       changeAlertFilters(prevAlertFilters => {
         const currentParams = { ...prevAlertFilters };
@@ -137,7 +135,9 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
     }
   };
 
-  const onSort = (sortMethod: GetAlertRulesApiV1AlertRulesGetSortbyItem) => {
+  const onSort = (sortMethod: GetAlertRulesApiV1AlertRulesGetSortbyItem, sort: sortOptionsVariants) => {
+    setSelectedSortVariant(sort);
+
     changeAlertFilters(prevAlertFilters => {
       const currentAlertFilters = { ...prevAlertFilters };
 
@@ -165,6 +165,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
   useEffect(() => {
     if (alertFilters.models) {
       const [currentModel] = alertFilters.models;
+
       if (currentModel !== model) {
         setModel(currentModel);
       }
@@ -185,6 +186,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
     if (alertFilters.start) {
       const currentStart = alertFilters.start;
       const currentStartDate = new Date(currentStart);
+
       if (currentStartDate !== startDate) {
         setStartDate(currentStartDate ? currentStartDate : initStartDate);
       }
@@ -195,6 +197,7 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
     if (alertFilters.end) {
       const currentEnd = alertFilters.end;
       const currentEndDate = new Date(currentEnd);
+
       if (currentEndDate !== endDate) {
         setEndDate(currentEndDate ? currentEndDate : initEndDate);
       }
@@ -269,44 +272,11 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
 
         {filtered ? (
           <Stack direction="row" spacing="11px">
-            <Button
-              variant="text"
-              startIcon={<Undo />}
-              onClick={handleReset}
-              disabled={isModelsLoading}
-              sx={{ minHeight: 30 }}
-            >
-              Reset
-            </Button>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={theme => ({
-                borderColor: theme.palette.grey[300],
-                alignSelf: 'center',
-                height: 24
-              })}
-            />
-            <Button
-              variant="text"
-              startIcon={<Sort />}
-              onClick={handleOpenSortMenu}
-              disabled={isModelsLoading}
-              sx={{ minHeight: 30 }}
-            >
-              Sort
-            </Button>
+            <FiltersResetButton handleReset={handleReset} isLoading={isModelsLoading} />
+            <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isModelsLoading} />
           </Stack>
         ) : (
-          <Button
-            variant="text"
-            startIcon={<Sort />}
-            onClick={handleOpenSortMenu}
-            disabled={isModelsLoading}
-            sx={{ minHeight: 30 }}
-          >
-            Sort
-          </Button>
+          <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isModelsLoading} />
         )}
       </StyledMainWrapper>
       <Menu
@@ -326,9 +296,14 @@ export const AlertsFilters = ({ isFilterByTimeLine = true }: AlertsFiltersProps)
         }}
       >
         {sortOptions.map(sort => (
-          <MenuItem sx={{ py: '12px', pl: '12px' }} key={sort} onClick={() => onSort(sortMethodMap[sort])}>
+          <StyledSortMenuItem
+            sort={sort}
+            sortMethod={selectedSortVariant}
+            key={sort}
+            onClick={() => onSort(sortMethodMap[sort], sort)}
+          >
             <Typography variant="subtitle2">{sort}</Typography>
-          </MenuItem>
+          </StyledSortMenuItem>
         ))}
       </Menu>
     </>
@@ -351,4 +326,17 @@ const StyledDateWrapper = styled(Box)({
 const StyledDivider = styled(Divider)(({ theme }) => ({
   margin: '0 18px',
   borderColor: theme.palette.grey[200]
+}));
+
+interface StyledSortMenuItemProps {
+  sort: string;
+  sortMethod: sortOptionsVariants | '';
+}
+
+const StyledSortMenuItem = styled(MenuItem, {
+  shouldForwardProp: prop => prop !== 'sort' && prop !== 'sortMethod'
+})<StyledSortMenuItemProps>(({ sort, sortMethod }) => ({
+  color: sort === sortMethod ? colors.primary.violet[400] : colors.neutral.darkText,
+  py: '12px',
+  pl: '12px'
 }));

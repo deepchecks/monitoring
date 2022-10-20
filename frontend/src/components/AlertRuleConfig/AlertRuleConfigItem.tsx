@@ -1,10 +1,14 @@
-import React, { FC, useState } from 'react';
-import { alpha, Button, Stack, Typography, useTheme } from '@mui/material';
+import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { AlertCount } from './AlertCount';
+
 import { AlertRuleConfigSchema } from 'api/generated';
+
+import { alpha, Button, Stack, Typography, useTheme } from '@mui/material';
+
+import { AlertCount } from './AlertCount';
+
 import { DeleteIcon, PencilDrawing } from 'assets/icon/icon';
 
 interface AlertRuleConfigItemProps {
@@ -13,7 +17,7 @@ interface AlertRuleConfigItemProps {
   onDelete: () => Promise<void>;
 }
 
-export const AlertRuleConfigItem: FC<AlertRuleConfigItemProps> = ({ alertRule, onEdit, onDelete }) => {
+export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleConfigItemProps) => {
   dayjs.extend(duration);
   dayjs.extend(relativeTime);
 
@@ -29,7 +33,7 @@ export const AlertRuleConfigItem: FC<AlertRuleConfigItemProps> = ({ alertRule, o
     name
   } = alertRule;
 
-  const checkFrequencyFormated = dayjs.duration(frequency, 'seconds').humanize();
+  const checkFrequencyFormatted = dayjs.duration(frequency, 'seconds').humanize();
 
   const theme = useTheme();
   return (
@@ -91,7 +95,7 @@ export const AlertRuleConfigItem: FC<AlertRuleConfigItemProps> = ({ alertRule, o
             Check Frequency:
           </Typography>
           <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px' }}>
-            Once {checkFrequencyFormated}
+            Once {checkFrequencyFormatted}
           </Typography>
         </Stack>
         <Stack direction="row">

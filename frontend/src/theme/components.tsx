@@ -221,7 +221,7 @@ export const componentOptions: Components<Theme> = {
       },
       tooltip: {
         padding: '4px 16px',
-        backgroundColor: colors.neutral.blue,
+        backgroundColor: colors.neutral.blue[100],
         fontSize: 16,
         lineHeight: '24px',
         letterSpacing: '0.15px',
@@ -233,7 +233,7 @@ export const componentOptions: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }) => ({
         height: 28,
-        backgroundColor: colors.neutral.blue,
+        backgroundColor: colors.neutral.blue[100],
         color: theme.palette.common.white,
         fontSize: 12,
         lineHeight: '18px',

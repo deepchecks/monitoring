@@ -262,7 +262,7 @@ function DiagramLine({
         minimapRef: minimapRef.current[1]
       },
       tooltip: {
-        backgroundColor: colors.neutral.blue,
+        backgroundColor: colors.neutral.blue[100],
         padding: {
           bottom: 4,
           left: 16,

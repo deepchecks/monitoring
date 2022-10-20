@@ -15,7 +15,10 @@ export const colors = {
   },
   neutral: {
     black: '#000000',
-    blue: '#101F39',
+    blue: {
+      70: alpha('#101F39', 0.7),
+      100: '#101F39'
+    },
     darkText: '#3A474E',
     lightText: '#94A4AD',
     grey: {
