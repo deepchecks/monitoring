@@ -2,9 +2,9 @@ import { ModelsInfoSchema, useRetrieveAvailableModelsApiV1AvailableModelsGet } f
 import { useMemo } from 'react';
 
 export const useModels = () => {
-  const { data: models = [], isLoading, refetch: refetchModels } = useRetrieveAvailableModelsApiV1AvailableModelsGet(query: {
+  const { data: models = [], isLoading, refetch: refetchModels } = useRetrieveAvailableModelsApiV1AvailableModelsGet({ query: {
       refetchOnWindowFocus: false
-    });
+    }});
 
   const modelsMap = useMemo(
     () =>

@@ -217,7 +217,7 @@ export const componentOptions: Components<Theme> = {
   MuiTooltip: {
     styleOverrides: {
       arrow: {
-        color: colors.neutral.blue
+        color: colors.neutral.blue[100]
       },
       tooltip: {
         padding: '4px 16px',
