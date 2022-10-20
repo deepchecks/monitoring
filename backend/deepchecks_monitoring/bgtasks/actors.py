@@ -13,6 +13,7 @@ import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
+from datetime import timedelta
 
 import anyio
 import pendulum as pdl
@@ -213,7 +214,8 @@ class WorkerBootstrap:
                     task_broker_type=self.task_broker_type,
                     actors=self.actors,
                     additional_params={"resources_provider": rp},
-                    logger=logger
+                    logger=logger,
+                    expire_after=timedelta(days=365*3)
                 ).start)
 
     def bootstrap(self):
