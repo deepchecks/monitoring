@@ -270,10 +270,11 @@ class DataIngestionBackend:
         """
         if self.use_kafka:
             topic_name = self.generate_topic_name(model_version, request)
+            producer = await self.resources_provider.kafka_producer
             send_future = None
             for sample in data:
                 message = json.dumps({"type": "update", "data": sample}).encode("utf-8")
-                send_future = await self.resources_provider.kafka_producer.send(topic_name, message)
+                send_future = await producer.send(topic_name, value=message)
             # Waiting on the last future since the messages are sent in order anyway
             await send_future
         else:

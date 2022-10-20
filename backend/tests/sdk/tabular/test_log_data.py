@@ -20,8 +20,8 @@ from deepchecks_monitoring.models.model_version import ModelVersion
 
 @pytest.mark.asyncio
 async def test_classification_log(
-    multiclass_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
+        multiclass_model_version_client: DeepchecksModelVersionClient,
+        async_session: AsyncSession
 ):
     multiclass_model_version_client.log_sample('1', prediction='2',
                                                prediction_proba=[0.1, 0.3, 0.6], label=2,
@@ -70,22 +70,21 @@ async def test_regression_log(regression_model_version_client: DeepchecksModelVe
 
 @pytest.mark.asyncio
 async def test_classification_batch_log(
-    multiclass_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
+        multiclass_model_version_client: DeepchecksModelVersionClient,
+        async_session: AsyncSession
 ):
-
     multiclass_model_version_client.log_batch(
         data=pd.DataFrame.from_records([
-            {'sample_id': '1','a': 2,'b': '2','c': 1},
-            {'sample_id': '2','a': 3,'b': '4','c': -1},
-            {'sample_id': '3','a': 2,'b': '0','c': 0},
+            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
+            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
+            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
         timestamp=pd.Series([
             pdl.now().int_timestamp,
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
         ], index=['1', '2', '3']),
-        prediction=pd.Series(['2','1','0'], index=['1', '2', '3']),
+        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
         prediction_proba=pd.Series([[0.1, 0.3, 0.6], [0.1, 0.6, 0.1], [0.1, 0.6, 0.1]], index=['1', '2', '3']),
         label=pd.Series([2, 2, 1], index=['1', '2', '3'])
     )
@@ -105,8 +104,8 @@ async def test_classification_batch_log(
 
 @pytest.mark.asyncio
 async def test_regression_batch_log(
-    regression_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
+        regression_model_version_client: DeepchecksModelVersionClient,
+        async_session: AsyncSession
 ):
     regression_model_version_client.log_batch(
         data=pd.DataFrame.from_records([
@@ -119,7 +118,7 @@ async def test_regression_batch_log(
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
         ], index=['1', '2', '3']),
-        prediction=pd.Series(['2','1','0'], index=['1', '2', '3']),
+        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
         label=pd.Series([2, 2, 1], index=['1', '2', '3'])
     )
 
@@ -137,8 +136,58 @@ async def test_regression_batch_log(
 
 
 @pytest.mark.asyncio
+async def test_regression_single_update(regression_model_version_client: DeepchecksModelVersionClient):
+    time = pdl.now().int_timestamp
+    regression_model_version_client.log_batch(
+        data=pd.DataFrame.from_records([
+            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
+            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
+            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+        ]),
+        timestamp=pd.Series([time, time, time], index=['1', '2', '3']),
+        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+
+    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
+    assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
+
+    regression_model_version_client.update_sample(sample_id=str(1), label=1)
+    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
+    assert stats == {'num_samples': 3, 'num_labeled_samples': 1}
+
+
+@pytest.mark.asyncio
+async def test_regression_single_update_none(regression_model_version_client: DeepchecksModelVersionClient):
+    time = pdl.now().int_timestamp
+    regression_model_version_client.log_batch(
+        data=pd.DataFrame.from_records([
+            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
+            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
+            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+        ]),
+        timestamp=pd.Series([time, time, time], index=['1', '2', '3']),
+        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
+        label=pd.Series(['2', None, '0'], index=['1', '2', '3']))
+
+    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
+    assert stats == {'num_samples': 3, 'num_labeled_samples': 2}
+
+    regression_model_version_client.update_sample(sample_id=str(2), label=1)
+    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
+    assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
+
+    regression_model_version_client.update_sample(sample_id=str(1), label=1)
+    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
+    assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
+
+    # Does not work yet
+    # regression_model_version_client.update_sample(sample_id=str(3), label=None)
+    # stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
+    # assert stats == {'num_samples': 3, 'num_labeled_samples': 2}
+
+
+@pytest.mark.asyncio
 async def test_batch_log_with_parameters_of_different_length(
-    regression_model_version_client: DeepchecksModelVersionClient,
+        regression_model_version_client: DeepchecksModelVersionClient,
 ):
     with pytest.raises(ValueError):
         regression_model_version_client.log_batch(
@@ -147,7 +196,7 @@ async def test_batch_log_with_parameters_of_different_length(
                 {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
                 {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
             ]),
-            prediction=pd.Series(['2','1','0', '0'], index=['1', '2', '3']),
+            prediction=pd.Series(['2', '1', '0', '0'], index=['1', '2', '3']),
             label=pd.Series([2, 2, 1, 1], index=['1', '2', '3']),
             timestamp=pd.Series([
                 pdl.now().int_timestamp,
@@ -159,8 +208,8 @@ async def test_batch_log_with_parameters_of_different_length(
 
 @pytest.mark.asyncio
 async def test_batch_log_without_sample_id_column(
-    regression_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
+        regression_model_version_client: DeepchecksModelVersionClient,
+        async_session: AsyncSession
 ):
     regression_model_version_client.log_batch(
         data=pd.DataFrame.from_records([
@@ -168,7 +217,7 @@ async def test_batch_log_without_sample_id_column(
             {'a': 3, 'b': '4', 'c': -1},
             {'a': 2, 'b': '0', 'c': 0},
         ]),
-        prediction=pd.Series(['2','1','0']),
+        prediction=pd.Series(['2', '1', '0']),
         label=pd.Series([2, 2, 1]),
         timestamp=pd.Series([
             pdl.now().int_timestamp,
@@ -188,6 +237,3 @@ async def test_batch_log_without_sample_id_column(
     ids = await async_session.scalars(select(monitor_table.c[SAMPLE_ID_COL]))
 
     assert set(ids) == {'0', '1', '2'}
-
-
-

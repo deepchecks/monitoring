@@ -19,7 +19,7 @@ from deepchecks_client.core.utils import ColumnType
 from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype,
                                        is_string_dtype)
 
-__all__ = ['create_schema']
+__all__ = ['create_schema', 'read_schema']
 
 
 def _get_series_column_type(series: pd.Series):

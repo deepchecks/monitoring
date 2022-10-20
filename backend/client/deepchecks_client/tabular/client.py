@@ -245,14 +245,15 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             "required": [DeepchecksColumns.SAMPLE_ID_COL.value]
         }
 
-        update = {DeepchecksColumns.SAMPLE_ID_COL.value: sample_id, **values}
+        update = {DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id), **values}
+        task_type = TaskType(self.model['task_type'])
 
         if label:
+            label = float(label) if task_type == TaskType.REGRESSION else str(label)
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         update = DeepchecksEncoder.encode(update)
         DeepchecksJsonValidator(optional_columns_schema).validate(update)
-
         maybe_raise(
             self.session.put(
                 f'model-versions/{self.model_version_id}/data',
@@ -316,21 +317,16 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 if value not in ColumnType.values():
                     raise ValueError(f'value of features must be one of {ColumnType.values()} but got {value}')
 
-            if feature_importance:
+            if feature_importance is not None:
                 if not isinstance(feature_importance, dict):
                     raise ValueError('feature_importance must be a dict')
-                symmetric_diff = set(feature_importance.keys()).symmetric_difference(features.keys())
-                if symmetric_diff:
-                    raise ValueError(
-                        f'feature_importance and features must contain the same keys, found not shared keys: '
-                        f'{symmetric_diff}')
                 if any((not isinstance(v, float) for v in feature_importance.values())):
                     raise ValueError('feature_importance must contain only values of type float')
             else:
                 warnings.warn('It is recommended to provide feature importance for more insightful results.\n'
                               'Accurate feature importance can be calculated via deepchecks.tabular.feature_importance')
 
-            if non_features:
+            if non_features is not None:
                 if not isinstance(non_features, dict):
                     raise ValueError('non_features must be a dict')
                 intersection = set(non_features.keys()).intersection(features.keys())

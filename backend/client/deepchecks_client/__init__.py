@@ -9,6 +9,8 @@
 # ----------------------------------------------------------------------------
 #
 """Defines the entrance points for the client."""
-from deepchecks_client.core import ColumnType, DeepchecksClient, TaskType
+from deepchecks_client.core import DeepchecksClient, TaskType
+from deepchecks_client.tabular import create_schema, read_schema
 
-__all__ = ['DeepchecksClient', 'ColumnType', 'TaskType']
+__all__ = ['DeepchecksClient', 'TaskType', 'create_schema', 'read_schema']
+

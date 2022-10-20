@@ -529,7 +529,7 @@ class DeepchecksClient:
                                      feature_importance: Optional[Dict[str, float]] = None,
                                      task_type: Optional[str] = None,
                                      description: str = ''
-                                     ):
+                                     ) -> 'tabular.client.DeepchecksModelVersionClient':
 
         """
         Creates a tabular model version and uploads the reference data if provided.
@@ -557,7 +557,7 @@ class DeepchecksClient:
             A short description of the model.
         Returns
         -------
-        DeepchecksModelVersionClient
+        tabular.client.DeepchecksModelVersionClient
             Return the created model version client.
         """
         try:
