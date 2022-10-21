@@ -217,27 +217,19 @@ async def test_send_reference_features_and_non_features(client: TestClient, clas
 
 
 @pytest.mark.asyncio
-async def test_send_reference_too_many_samples(client: TestClient, classification_model_version_id: int):
+async def test_send_reference_samples_exceed_limit(
+    client: TestClient,
+    classification_model_version_id: int,
+):
     # Arrange
     sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
     # Act
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100_001)
-    # Assert
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Maximum number of samples allowed for reference is 100,000 but got: 100001"}
+    response = send_reference_request(client, classification_model_version_id, [sample] * 100_000)
+    assert response.status_code == 200
 
-
-@pytest.mark.asyncio
-async def test_send_reference_twice(client: TestClient, classification_model_version_id: int):
-    # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
-    # Act
-    send_reference_request(client, classification_model_version_id, [sample] * 100)
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100)
-    # Assert
+    response = send_reference_request(client, classification_model_version_id, [sample] * 10)
     assert response.status_code == 400
-    assert response.json() == {"detail": "Version already have reference data, create a new model version in "
-                                         "order to upload new reference data."}
+    assert response.json() == {"detail": "Maximum allowed number of reference data samples is already uploaded"}
 
 
 @pytest.mark.asyncio

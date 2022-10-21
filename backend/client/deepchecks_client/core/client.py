@@ -16,6 +16,7 @@ from typing import Dict, Optional
 from urllib.parse import urljoin
 
 import numpy as np
+import pandas as pd
 import pendulum as pdl
 import requests
 from deepchecks.core.checks import BaseCheck
@@ -106,6 +107,21 @@ class DeepchecksModelVersionClient:
     def upload_reference(self, *args, **kwargs):
         """Upload reference data. Possible to upload only once for a given model version."""
         raise NotImplementedError
+    
+    def _upload_reference(
+        self, 
+        data: pd.DataFrame,
+        samples_per_request: int = 5000,
+    ):
+        for i in range(0, len(data), samples_per_request):
+            content = data.iloc[i:i + samples_per_request]
+            maybe_raise(
+                self.session.post(
+                    f'model-versions/{self.model_version_id}/reference',
+                    files={'batch': content.to_json(orient='table', index=False)}
+                ),
+                msg="Reference batch upload failure.\n{error}"
+            )
 
     def update_sample(self, sample_id: str, label=None, **values):
         """Update sample. Possible to update only non_features and label."""

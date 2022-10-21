@@ -15,8 +15,9 @@ import fastapi
 import numpy as np
 import pandas as pd
 from fastapi import Body, Depends, Response, UploadFile, status
+from jsonschema.exceptions import ValidationError
 from jsonschema.validators import validate
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
 
@@ -85,7 +86,7 @@ async def update_data_batch(
 
 @router.post(
     "/model-versions/{model_version_id}/reference",
-    dependencies=[Depends(limit_request_size(500_000_000))],
+    dependencies=[Depends(limit_request_size(20_000_000))],
     tags=[Tags.DATA],
     summary="Upload reference data for a given model version.",
     description="This API uploads asynchronously a reference data file for a given model version,"
@@ -93,38 +94,57 @@ async def update_data_batch(
 )
 async def save_reference(
     model_version_id: int,
-    file: UploadFile,
+    batch: UploadFile,
     session: AsyncSession = AsyncSessionDep
 ):
     """Upload reference data for a given model version.
 
     Parameters
     ----------
-    model_version_id
-    file
-    session
+    model_version_id:
+        model version primary key
+    batch:
+        batch of reference samples
+    session:
+        database session instance
     """
+    max_samples = 100_000
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     ref_table = model_version.get_reference_table(session)
-    count_result = await session.execute(select(count()).select_from(ref_table))
-    if count_result.scalar() > 0:
-        raise BadRequest("Version already have reference data, create a new model version in order to "
-                         "upload new reference data.")
+    n_of_samples_query = select(count()).select_from(ref_table)
+    limit_exeedee_message = "Maximum allowed number of reference data samples is already uploaded"
 
-    contents = await file.read()
-    data = pd.read_json(StringIO(contents.decode()), orient="table")
-    data = data.replace(np.NaN, pd.NA).where(data.notnull(), None)
-    if len(data) > 100_000:
-        raise BadRequest(f"Maximum number of samples allowed for reference is 100,000 but got: {len(data)}")
+    # check available reference samples number to prevent
+    # unneeded work (data read and data validation)
+    if (await session.scalar(n_of_samples_query)) >= max_samples:
+        raise BadRequest(limit_exeedee_message)
+
+    content = await batch.read()
+    reference_batch = pd.read_json(StringIO(content.decode()), orient="table")
+    reference_batch = reference_batch.replace(np.NaN, pd.NA).where(reference_batch.notnull(), None)
 
     items = []
-    for (_, row) in data.iterrows():
+
+    for _, row in reference_batch.iterrows():
         item = row.to_dict()
         try:
             validate(schema=model_version.reference_json_schema, instance=item)
-        except Exception as e:
+            items.append(item)
+        except ValidationError as e:
             raise BadRequest(f"Invalid reference data: {e}") from e
-        items.append(item)
+
+    # lock will be released automatically at transaction commit/rollback
+    await session.execute(select(func.pg_advisory_xact_lock(model_version_id)))
+
+    # check available reference samples number after a lock acquire
+    # to ensure the limit of 100_000 records
+    n_of_samples = await session.scalar(n_of_samples_query)
+    if n_of_samples > max_samples:
+        raise BadRequest(limit_exeedee_message)
+
+    # trim received data to ensure the limit of 100_000 records
+    if (len(items) + n_of_samples) > max_samples:
+        items = items[:max_samples - n_of_samples]
 
     await session.execute(ref_table.insert(), items)
     return Response(status_code=status.HTTP_200_OK)

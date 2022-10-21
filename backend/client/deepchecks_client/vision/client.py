@@ -201,7 +201,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def upload_reference(
             self,
             vision_data: VisionData,
-            predictions: t.Optional[t.Dict[int, torch.Tensor]] = None
+            predictions: t.Optional[t.Dict[int, torch.Tensor]] = None,
+            samples_per_request: int = 5000,
     ):
         """Upload reference data. Possible to upload only once for a given model version.
 
@@ -259,15 +260,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         for _, row in data.iterrows():
             self.ref_schema_validator.validate(instance=row.to_dict())
-
-        maybe_raise(
-            self.session.post(
-                f'model-versions/{self.model_version_id}/reference',
-                files={'file': data.to_json(orient='table', index=False)}
-            ),
-            msg="Reference upload failure.\n{error}"
+        
+        self._upload_reference(
+            data=data,
+            samples_per_request=samples_per_request
         )
-
+    
     def update_sample(self, sample_id: str, img: np.ndarray = None, label=None, **values):
         """Update sample. Possible to update only non_features and label.
 

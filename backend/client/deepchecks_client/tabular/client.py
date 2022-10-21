@@ -179,8 +179,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def upload_reference(
             self,
             dataset: Dataset,
+            prediction: np.ndarray,
             prediction_proba: Optional[np.ndarray] = None,
-            prediction: Optional[np.ndarray] = None
+            samples_per_request: int = 5000
     ):
         """Upload reference data. Possible to upload only once for a given model version.
 
@@ -190,10 +191,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         prediction_proba: np.ndarray
         prediction: np.ndarray
         """
-        if prediction is None:
-            raise Exception('Model predictions on the reference data is required')
-
         data = dataset.features_columns.copy()
+        
         if self.model['task_type'] == TaskType.REGRESSION.value:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
@@ -202,8 +201,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(str))
             if prediction_proba is None:
-                raise Exception('Model predictions probabilities on the reference data is required for '
-                                'classification task type')
+                raise ValueError('Model predictions probabilities on the reference data is required for '
+                                 'classification task type')
             elif isinstance(prediction_proba, pd.DataFrame):
                 prediction_proba = np.asarray(prediction_proba)
             data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_proba)
@@ -214,19 +213,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
 
         validator = DeepchecksJsonValidator(self.ref_schema)
-        for (_, row) in data.iterrows():
+        for _, row in data.iterrows():
             item = row.to_dict()
             item = DeepchecksEncoder.encode(item)
             validator.validate(item)
-
-        maybe_raise(
-            self.session.post(
-                f'model-versions/{self.model_version_id}/reference',
-                files={'file': data.to_json(orient='table', index=False)}
-            ),
-            msg="Reference upload failure.\n{error}"
-        )
-
+        
+        self._upload_reference(data, samples_per_request)
+    
     def update_sample(self, sample_id: str, label=None, **values):
         """Update sample. Possible to update only non_features and label.
 

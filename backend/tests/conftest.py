@@ -570,7 +570,7 @@ def send_reference_request(client, model_version_id, dicts: list):
     data = df.to_json(orient="table", index=False)
     return client.post(
         f"/api/v1/model-versions/{model_version_id}/reference",
-        files={"file": ("data.json", data)}
+        files={"batch": ("data.json", data)}
     )
 
 
