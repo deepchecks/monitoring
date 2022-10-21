@@ -231,6 +231,7 @@ const StyledAutocompleteTextField = styled(TextField)(({ theme }) => ({
     backgroundColor: theme.palette.text.disabled,
 
     '&:hover': {
+      backgroundColor: theme.palette.text.disabled,
       opacity: 0.5
     }
   }

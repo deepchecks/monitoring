@@ -37,6 +37,7 @@ import { Minimap } from './Minimap';
 import { colors } from '../theme/colors';
 
 import { GraphData } from '../helpers/types';
+import DiagramTutorialTooltip from './DiagramTutorialTooltip';
 
 declare module 'chart.js' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -274,9 +275,13 @@ function DiagramLine({
       },
       zoom: {
         limits: {
+          x: {
+            min: 'original',
+            max: 'original'
+          },
           y: {
             min: range.current.min,
-            max: range.current.max + addSpace(range.current.max),
+            max: range.current.max * 20,
             minRange: (range.current.max - range.current.min) / 2
           }
         },
@@ -291,7 +296,7 @@ function DiagramLine({
             enabled: true
           },
           pinch: {
-            enabled: false
+            enabled: true
           },
           mode: 'x'
         }
@@ -336,9 +341,12 @@ function DiagramLine({
     <Loader />
   ) : (
     <>
-      <Box height={height ? height - 61 : 'auto'} sx={{ position: 'relative' }}>
-        <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
-      </Box>
+      <DiagramTutorialTooltip>
+        <Box height={height ? height - 61 : 'auto'} sx={{ position: 'relative' }}>
+          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
+        </Box>
+      </DiagramTutorialTooltip>
+
       <Box
         sx={{
           display: 'flex',
@@ -404,6 +412,7 @@ function DiagramLine({
         )}
         {children && <Box sx={{ ml: '42px' }}>{children}</Box>}
       </Box>
+
       {changeAlertIndex && !!alerts.length && (
         <Minimap
           alerts={alerts}

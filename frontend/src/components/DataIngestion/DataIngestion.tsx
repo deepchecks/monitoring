@@ -8,6 +8,7 @@ import { MenuItem } from '@mui/material';
 
 import { StyledSelect } from 'components/MarkedSelect';
 import DiagramLine from '../DiagramLine';
+import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
 
 import {
   StyledDiagramWrapper,
@@ -41,15 +42,21 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
         <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
       </StyledFlexWrapper>
       <StyledDiagramWrapper>
-        <DiagramLine data={graphData} height={392}>
-          <StyledSelect value={currentTime.value.toString()} onChange={ev => handleTime(ev.target.value)} size="small">
-            {timeOptions.map(({ label, value }) => (
-              <MenuItem value={value.toString()} key={label}>
-                {label}
-              </MenuItem>
-            ))}
-          </StyledSelect>
-        </DiagramLine>
+        <DiagramTutorialTooltip>
+          <DiagramLine data={graphData} height={392}>
+            <StyledSelect
+              value={currentTime.value.toString()}
+              onChange={ev => handleTime(ev.target.value)}
+              size="small"
+            >
+              {timeOptions.map(({ label, value }) => (
+                <MenuItem value={value.toString()} key={label}>
+                  {label}
+                </MenuItem>
+              ))}
+            </StyledSelect>
+          </DiagramLine>
+        </DiagramTutorialTooltip>
       </StyledDiagramWrapper>
     </StyledFlexContent>
   );

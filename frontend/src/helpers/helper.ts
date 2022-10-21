@@ -1,10 +1,10 @@
 import { FC } from 'react';
 
-import { AnalysisPage } from 'pages/AnalysisPage';
 import { AlertRules } from 'pages/AlertRules';
 import { AlertsPage } from 'pages/AlertsPage';
 import { DashboardPage } from 'pages/DashboardPage';
 import { IntegrationsPage } from 'pages/IntegrationsPage';
+import { AnalysisPage } from 'pages/AnalysisPage';
 import { NotificationsPage } from 'pages/NotificationsPage';
 import { ModelsPage } from 'pages/ModelsPage';
 
@@ -77,7 +77,7 @@ export const pathsInfo: PathInfo[] = [
       },
       {
         title: 'Models',
-        link: '/configuration/Models',
+        link: '/configuration/models',
         Icon: null,
         element: ModelsPage,
         IconHover: null,
