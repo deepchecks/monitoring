@@ -372,43 +372,45 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 )
               : values.check && checkInfo && <CheckInfo checkInfo={checkInfo} setFieldValue={setFieldValue} />}
 
-            <MarkedSelect
-              label="Frequency"
-              size="small"
-              clearValue={() => {
-                setFieldValue('frequency', '');
-              }}
-              {...getFieldProps('frequency')}
-              fullWidth
-              required
-            >
-              {timeWindow.map(({ label, value }, index) => (
-                <MenuItem key={index} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-
-            <MarkedSelect
-              label="Aggregation Window"
-              size="small"
-              clearValue={() => {
-                setFieldValue('aggregation_window', '');
-              }}
-              {...getFieldProps('aggregation_window')}
-              fullWidth
-              required
-            >
-              {timeWindow.map(({ label, value }, index) => (
-                <MenuItem key={index} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-
-            <TooltipInputWrapper title="Time">
+            <TooltipInputWrapper title="The frequency of sampling the monitor data">
               <MarkedSelect
-                label="Lookback"
+                label="Frequency"
+                size="small"
+                clearValue={() => {
+                  setFieldValue('frequency', '');
+                }}
+                {...getFieldProps('frequency')}
+                fullWidth
+                required
+              >
+                {timeWindow.map(({ label, value }, index) => (
+                  <MenuItem key={index} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </MarkedSelect>
+            </TooltipInputWrapper>
+            <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">
+              <MarkedSelect
+                label="Aggregation Window"
+                size="small"
+                clearValue={() => {
+                  setFieldValue('aggregation_window', '');
+                }}
+                {...getFieldProps('aggregation_window')}
+                fullWidth
+                required
+              >
+                {timeWindow.map(({ label, value }, index) => (
+                  <MenuItem key={index} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </MarkedSelect>
+            </TooltipInputWrapper>
+            <TooltipInputWrapper title="The range of viewing the monitor: e.g. from <date> to <date>">
+              <MarkedSelect
+                label="Time Range"
                 size="small"
                 clearValue={() => {
                   setFieldValue('lookback', '');

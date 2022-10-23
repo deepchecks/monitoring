@@ -39,21 +39,23 @@ export function ModelList({ activeModelId, filterMonitors, models }: ModelListPr
     setFilteredModels(models.filter(({ name }) => name.toLowerCase().includes(value.toLowerCase())));
   };
 
+  /* eslint-disable no-param-reassign */
   const alertsCount = useMemo(
     () =>
-      models.reduce((acc, { id }) => {
+      models.reduce<Record<number, number>>((acc, { id }) => {
         const currentAlert = criticalAlerts.find(alert => alert.model_id === id);
         if (currentAlert && currentAlert.alerts_count) {
-          acc.push(currentAlert.alerts_count);
+          acc[id] = currentAlert.alerts_count;
         } else {
-          acc.push(0);
+          acc[id] = 0;
         }
 
         return acc;
-      }, [] as number[]),
+      }, {} as Record<number, number>),
     [criticalAlerts, models]
   );
-
+  /* eslint-disable no-param-reassign */
+  
   const handleModelClick = (modelId: number) => {
     filterMonitors(modelId);
   };
@@ -101,7 +103,7 @@ export function ModelList({ activeModelId, filterMonitors, models }: ModelListPr
             <ModelItem
               key={index}
               activeModel={activeModelId === model.id}
-              alertsCount={alertsCount[index]}
+              alertsCount={alertsCount[model.id]}
               onModelClick={handleModelClick}
               onReset={onReset}
               model={model}

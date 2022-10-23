@@ -36,7 +36,7 @@ export interface PathInfo {
 
 export const pathsInfo: PathInfo[] = [
   {
-    title: 'My Dashboard',
+    title: 'Dashboard',
     link: '/dashboard',
     element: DashboardPage,
     Icon: Dashboard,

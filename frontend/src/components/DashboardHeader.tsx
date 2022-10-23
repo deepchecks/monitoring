@@ -44,7 +44,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
             color: '#94a4ad'
           }}
         >
-          My Dashboard
+          Dashboard
         </Box>
         <Box
           sx={{
