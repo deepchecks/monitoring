@@ -48,10 +48,10 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
     check_id = context.get_current_parameters()["check_id"]
     frequency = context.get_current_parameters()["frequency"]
     select_obj = select(sa.func.date_trunc(_get_time_str(frequency),
-                                           sa.func.greatest(
-                                                sa.func.least(sa.func.min(ModelVersion.start_time), sa.func.now()),
-                                                sa.func.now() + timedelta(seconds=-frequency * 10)
-                                           ))) \
+                                           sa.func.least(sa.func.greatest(
+                                                sa.func.min(ModelVersion.start_time),
+                                                sa.func.max(ModelVersion.end_time) - timedelta(seconds=frequency * 10)
+                                           ), sa.func.now()))) \
         .join(Check, Check.id == check_id) \
         .where(ModelVersion.model_id == Check.model_id)
     return context.connection.execute(select_obj).scalar()
