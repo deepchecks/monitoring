@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hotjar } from 'react-hotjar';
 import mixpanel from 'mixpanel-browser';
+import { useLDClient } from 'launchdarkly-react-client-sdk';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -40,13 +41,16 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   }, [user, isUserDetailsComplete]);
 
   const value = { user, isUserDetailsComplete };
-
-  if (user && isUserDetailsComplete && hotjar.initialized()) {
-    hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
-  }
+  const ldClient = useLDClient();
 
   if (user && isUserDetailsComplete) {
+    if (hotjar.initialized()) {
+      hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
+    }
+    
     mixpanel.identify(user.email);
+    
+    ldClient?.identify({ key: user.email, email: user.email, name: user.full_name, custom: { organization: user.organization ? user.organization.id : ''} });
   }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

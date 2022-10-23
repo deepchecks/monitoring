@@ -1,10 +1,11 @@
 import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
 import { UserInvite } from 'assets/icon/icon';
+import { GlobalStateContext } from 'Context';
 import { useScrollBar } from 'hooks/useScrollBar';
 import mixpanel from 'mixpanel-browser';
-import React, { useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { colors } from 'theme/colors';
-import { PathInfo, pathsInfo } from '../helpers/helper';
+import { PathInfo } from '../helpers/helper';
 import useWindowResize from '../hooks/windowResize';
 import { AnalysisSubMenu } from './AnalysisSubMenu';
 import { Logo } from './Logo';
@@ -50,6 +51,8 @@ export const Sidebar = () => {
   const closeAnalysisSubMenu = () => {
     setOpenAnalysisSubMenu(false);
   };
+
+  const { pathsInfo } = useContext(GlobalStateContext);
 
   return (
     <AppBar

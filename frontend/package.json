@@ -22,6 +22,7 @@
     "deepmerge": "^4.2.2",
     "formik": "^2.2.9",
     "hammerjs": "^2.0.8",
+    "launchdarkly-react-client-sdk": "^2.29.1",
     "lodash": "^4.17.21",
     "mixpanel-browser": "^2.45.0",
     "overlayscrollbars": "^2.0.0-beta.2",

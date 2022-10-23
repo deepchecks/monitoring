@@ -1,5 +1,7 @@
 import { GetAlertRulesApiV1AlertRulesGetParams } from 'api/generated';
+import { PathInfo, pathsInfo as paths } from 'helpers/helper';
 import React, { createContext, Dispatch, FC, SetStateAction, useCallback, useContext, useState } from 'react';
+import { useFlags } from 'launchdarkly-react-client-sdk'
 
 export interface IContext {
   dashboard_id: number;
@@ -10,6 +12,7 @@ export interface IContext {
   changeAlertFilters: Dispatch<SetStateAction<GetAlertRulesApiV1AlertRulesGetParams>>;
   isLoggedIn: boolean;
   resetFilters: () => void;
+  pathsInfo: PathInfo[];
 }
 
 const initialFilters = {
@@ -22,7 +25,8 @@ const initialValue: IContext = {
   changeAlertFilters: () => 1,
   dashboard_id: 1,
   isLoggedIn: false,
-  resetFilters: () => 1
+  resetFilters: () => 1,
+  pathsInfo: []
 };
 
 export const GlobalStateContext = createContext<IContext>(initialValue);
@@ -34,9 +38,16 @@ export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children })
     setAlertFilters(initialFilters);
   }, [setAlertFilters]);
 
+  const flags = useFlags();
+
+  let pathsInfo = paths;
+  if (!flags.analysisEnabled) {
+    pathsInfo = pathsInfo.filter(obj => obj.title !== 'Analysis')
+  }
+
   return (
     <GlobalStateContext.Provider
-      value={{ ...initialValue, alertFilters, changeAlertFilters: setAlertFilters, resetFilters }}
+      value={{ ...initialValue, alertFilters, changeAlertFilters: setAlertFilters, resetFilters, pathsInfo }}
     >
       {children}
     </GlobalStateContext.Provider>

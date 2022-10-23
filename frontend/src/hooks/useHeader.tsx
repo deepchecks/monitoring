@@ -1,5 +1,5 @@
 import { Stack, Typography } from '@mui/material';
-import { pathsInfo } from 'helpers/helper';
+import { GlobalStateContext } from 'Context';
 import groupBy from 'lodash/groupBy';
 import React, { createContext, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -28,6 +28,7 @@ export const HeaderProvider = ({ children }: HeaderProvider) => {
 
   const [headerChildren, setHeaderChildren] = React.useState<React.ReactNode | null>(null);
   const [headerTitle, setHeaderTitle] = React.useState('');
+  const { pathsInfo } = useContext(GlobalStateContext);
 
   const pathsGroupedByPath = groupBy(
     pathsInfo.flatMap(pathInfo => [pathInfo, ...(pathInfo.children ?? [])]),
