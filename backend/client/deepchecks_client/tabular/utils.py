@@ -15,7 +15,7 @@ import warnings
 import pandas as pd
 import yaml
 from deepchecks.tabular import Dataset
-from deepchecks_client.core.utils import ColumnType
+from deepchecks_client.core.utils import ColumnType, pretty_print
 from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype,
                                        is_string_dtype)
 
@@ -41,15 +41,15 @@ def _get_series_column_type(series: pd.Series):
     return None
 
 
-def create_schema(dataset: Dataset, schema_file):
+def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     """Automatically infer schema and saves it to yaml.
 
     Parameters
     ----------
     dataset: deepchecks.tabular.Dataset
         the dataset to infer its schema
-    schema_file
-        file like object or path
+    schema_output_file: , default: 'schema.yaml'
+        file like object or path in which the generated schema will be saved into
     """
     non_features = {}
     features = {}
@@ -88,13 +88,14 @@ def create_schema(dataset: Dataset, schema_file):
                       '# None values are inserted if we failed to infer, please update the values manually.\n')
     yaml_schema.write(yaml_schema_val)
 
-    if isinstance(schema_file, str):
-        with open(schema_file, 'w', encoding='utf-8') as f:
+    if isinstance(schema_output_file, str):
+        with open(schema_output_file, 'w', encoding='utf-8') as f:
             f.write(yaml_schema.getvalue())
-    elif isinstance(schema_file, io.IOBase):
-        schema_file.write(yaml_schema.getvalue())
+    elif isinstance(schema_output_file, io.IOBase):
+        schema_output_file.write(yaml_schema.getvalue())
     else:
-        raise TypeError(f'Unsupported type of "schema_file" parameter - {type(schema_file)}')
+        raise TypeError(f'Unsupported type of "schema_file" parameter - {type(schema_output_file)}')
+    pretty_print(f'Schema was successfully generated and saved to {schema_output_file}.')
 
 
 def read_schema(schema_file):

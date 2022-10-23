@@ -217,6 +217,7 @@ async def test_send_reference_features_and_non_features(client: TestClient, clas
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="takes a long time to run")
 async def test_send_reference_samples_exceed_limit(
     client: TestClient,
     classification_model_version_id: int,

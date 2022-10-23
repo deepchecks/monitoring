@@ -11,7 +11,7 @@
 """Module containing deepchecks monitoring client."""
 import warnings
 from datetime import datetime
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             prediction: Union["pd.Series[str]", "pd.Series[float]"],
             prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
             label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
-            samples_per_send: int = 100_000
+            samples_per_send: int = 10_000
     ):
         """Log batch of samples.
         
@@ -64,7 +64,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             set of prediction probabilities
         label : Union[pandas.Series[str], pandas.Series[float], None] , default None
             set of labels
-        samples_per_send : int , default 100_000
+        samples_per_send : int , default 10_000
             how many samples to send by one request
         """
         if samples_per_send < 1:
@@ -219,7 +219,88 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             validator.validate(item)
         
         self._upload_reference(data, samples_per_request)
-    
+
+    def update_batch(
+            self,
+            samples_to_update: Union[pd.DataFrame, Sequence],
+            label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
+            timestamp: Union["pd.Series[datetime]", "pd.Series[int]"] = None,
+            prediction: Union["pd.Series[str]", "pd.Series[float]"] = None,
+            prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
+            samples_per_send: int = 10_000
+    ):
+        """Update values of already uploaded samples.
+
+        Parameters
+        ==========
+        samples_to_update: Union[pd.DataFrame, Sequence]
+            Either a sequence of sample ids to update or a dataframe which contain a 'sample_id' column,
+            in addition to other values to update for those samples.
+        timestamp : Union[pandas.Series[datetime], pandas.Series[int]], default None
+            set of timestamps
+        prediction : Union[pandas.Series[str], pandas.Series[float]], default None
+            set of predictions
+        prediction_proba : Optional[pandas.Series[Sequence[float]]], default None
+            set of prediction probabilities
+        label : Union[pandas.Series[str], pandas.Series[float], None], default None
+            set of labels
+        samples_per_send : int , default 10_000
+            how many samples to send by one request
+        """
+        if samples_per_send < 1:
+            raise ValueError("'samples_per_send' must be '>=' than 1")
+
+        if len(samples_to_update) == 0:
+            raise ValueError("'samples_to_update' cannot be empty")
+
+        if not isinstance(samples_to_update, pd.DataFrame):
+            samples_to_update = pd.DataFrame(samples_to_update, columns=["sample_id"])
+
+        if "sample_id" in samples_to_update.columns:
+            if samples_to_update["sample_id"].is_unique is False:
+                raise ValueError("sample ids must be unique")
+            if not samples_to_update["sample_id"].notna().all():
+                raise ValueError("'sample_id' column must not contain None/Nan")
+            samples_to_update = samples_to_update.set_index("sample_id")
+        else:
+            if samples_to_update.index.is_unique is False:
+                raise ValueError("'data.index' must contain unique values")
+
+        error_template = (
+            "'{param}' and 'data' parameters indexes mismatch, "
+            "make sure that '{param}.index' is the same as "
+            "'data.index' (or data['sample_id'])"
+        )
+
+        if timestamp is not None:
+            if not samples_to_update.index.equals(timestamp.index):
+                raise ValueError(error_template.format(param="timestamp"))
+            samples_to_update = samples_to_update.assign(timestamp=timestamp)
+        if prediction is not None:
+            if not samples_to_update.index.equals(prediction.index):
+                raise ValueError(error_template.format(param="prediction"))
+            samples_to_update = samples_to_update.assign(prediction=prediction)
+        if prediction_proba is not None:
+            if not samples_to_update.index.equals(prediction_proba.index):
+                raise ValueError(error_template.format(param="prediction_proba"))
+            samples_to_update = samples_to_update.assign(prediction_proba=prediction_proba)
+        if label is not None:
+            if not samples_to_update.index.equals(label.index):
+                raise ValueError(error_template.format(param="label"))
+            samples_to_update = samples_to_update.assign(label=label)
+
+        for i in range(0, len(samples_to_update), samples_per_send):
+            self._update_batch(samples_to_update.iloc[i:i + samples_per_send])
+
+    def _update_batch(self, samples: pd.DataFrame):
+        for index, row in samples.iterrows():
+            sample = row.to_dict()
+            if "sample_id" in sample:
+                self.update_sample(**sample)
+            else:
+                self.update_sample(sample_id=str(index), **sample)
+        self.send()
+
     def update_sample(self, sample_id: str, label=None, **values):
         """Update sample. Possible to update only non_features and label.
 
@@ -229,14 +310,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         label
         values
         """
-        # Create update schema, which contains only non-required columns and sample id
-        required_columns = set(self.schema["required"])
-        optional_columns_schema = {
-            "type": "object",
-            "properties": {k: v for k, v in self.schema["properties"].items()
-                           if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
-            "required": [DeepchecksColumns.SAMPLE_ID_COL.value]
-        }
 
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id), **values}
         task_type = TaskType(self.model['task_type'])
@@ -246,14 +319,18 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         update = DeepchecksEncoder.encode(update)
+
+        # Create update schema, which contains only non-required columns and sample id
+        required_columns = set(self.schema["required"])
+        optional_columns_schema = {
+            "type": "object",
+            "properties": {k: v for k, v in self.schema["properties"].items()
+                           if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
+            "required": [DeepchecksColumns.SAMPLE_ID_COL.value]
+        }
         DeepchecksJsonValidator(optional_columns_schema).validate(update)
-        maybe_raise(
-            self.session.put(
-                f'model-versions/{self.model_version_id}/data',
-                json=[update]
-            ),
-            msg="Sample update failure.\n{error}"
-        )
+
+        self._update_samples.append(update)
 
 
 class DeepchecksModelClient(core_client.DeepchecksModelClient):

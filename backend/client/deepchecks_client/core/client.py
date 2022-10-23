@@ -60,6 +60,7 @@ class DeepchecksModelVersionClient:
     schema: dict
     ref_schema: dict
     _log_samples: list
+    _update_samples: list
 
     def __init__(
             self,
@@ -71,6 +72,7 @@ class DeepchecksModelVersionClient:
         self.model = model
         self.model_version_id = model_version_id
         self._log_samples = []
+        self._update_samples = []
 
         self.schema = maybe_raise(
             self.session.get(f'model-versions/{model_version_id}/schema'),
@@ -90,19 +92,26 @@ class DeepchecksModelVersionClient:
         raise NotImplementedError
 
     def send(self):
-        """Send all the aggregated samples."""
-        if not self._log_samples:
-            return
+        """Send all the aggregated samples for upload or update."""
+        if len(self._log_samples) > 0:
+            maybe_raise(
+                self.session.post(
+                    f'model-versions/{self.model_version_id}/data',
+                    json=self._log_samples
+                ),
+                msg="Samples upload failure.\n{error}"
+            )
+            self._log_samples.clear()
 
-        maybe_raise(
-            self.session.post(
-                f'model-versions/{self.model_version_id}/data',
-                json=self._log_samples
-            ),
-            msg="Samples upload failure.\n{error}"
-        )
-
-        self._log_samples.clear()
+        if len(self._update_samples) > 0:
+            maybe_raise(
+                self.session.put(
+                    f'model-versions/{self.model_version_id}/data',
+                    json=self._update_samples
+                ),
+                msg="Samples update failure.\n{error}"
+            )
+            self._update_samples.clear()
 
     def upload_reference(self, *args, **kwargs):
         """Upload reference data. Possible to upload only once for a given model version."""
@@ -555,7 +564,7 @@ class DeepchecksClient:
         model_name: str
             A name for the model.
         schema_file:
-            String path or file like object to the schema file.
+            String path or file like object containing the data schema.
         version_name: str, default: 'v1'
             A name for the version.
         reference_dataset: Optional[Dataset], default: None
@@ -578,9 +587,8 @@ class DeepchecksClient:
         """
         try:
             model_version = self.get_model_version(model_name=model_name, version_name=version_name)
-            warnings.warn(f'Model {model_name} already has a version named {version_name}. '
-                          f'Use get_model_version to retrieve it or create a new version with a different name.')
-            return model_version
+            raise AssertionError(f'Model {model_name} already has a version named {version_name}. '
+                                 f'Use get_model_version to retrieve it or create a new version with a different name.')
         except ValueError:
             pass
 
