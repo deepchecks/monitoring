@@ -96,18 +96,25 @@ export const AlertsDrawerHeader = ({
 
   const { color, ...criticalityRange } = criticalityMap[alert_severity!];
 
-  const runTest = async (modelVersionId: string) => {
-    const result = await mutateRunSuit({
-      modelVersionId: parseInt(modelVersionId),
-      data: {
-        start_time: alert?.start_time,
-        end_time: alert?.end_time,
-        filter: monitor!.data_filters
-      }
-    });
+  const runTest = async (modelVersionName: string) => {
+    const versionId = modelsMap[alertRule.model_id].versions.find(v => v.name == modelVersionName)?.id;
 
-    const winUrl = URL.createObjectURL(new Blob([result], { type: 'text/html' }));
-    window.open(winUrl);
+    if (versionId) {
+      const result = await mutateRunSuit({
+        modelVersionId: versionId,
+        data: {
+          start_time: alert?.start_time,
+          end_time: alert?.end_time,
+          filter: monitor!.data_filters
+        }
+      });
+
+      const winUrl = URL.createObjectURL(new Blob([result], { type: 'text/html' }));
+      window.open(winUrl);
+    }
+    else {
+      console.log("ERROR");
+    }
   };
 
   const handleModelVersionIdChange = (event: SelectChangeEvent<unknown>) => {
@@ -118,7 +125,6 @@ export const AlertsDrawerHeader = ({
 
   const handleRunSuite = () => {
     mixpanel.track('Run test suite click');
-
     const [modelVersionId] = Object.keys(alert.failed_values);
     runTest(modelVersionId);
   };

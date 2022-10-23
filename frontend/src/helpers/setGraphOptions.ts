@@ -22,7 +22,7 @@ export const graphColors = [
 
 export const setLineGraphOptions = (label: string, index: number) => ({
   label,
-  borderColor: graphColors[index],
+  borderColor: graphColors[(index % graphColors.length)],
   pointBorderColor: '#fff',
   pointBackgroundColor: graphColors[index],
   pointHoverBackgroundColor: 'rgb(255, 255, 255)',

@@ -1,4 +1,4 @@
-import { ModelsInfoSchema, useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
+import { ModelManagmentSchema, useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
 import { useMemo } from 'react';
 
 export const useModels = () => {
@@ -12,7 +12,7 @@ export const useModels = () => {
         // eslint-disable-next-line no-param-reassign
         acc[model.id] = model;
         return acc;
-      }, {} as Record<string, ModelsInfoSchema>),
+      }, {} as Record<string, ModelManagmentSchema>),
     [models]
   );
 
