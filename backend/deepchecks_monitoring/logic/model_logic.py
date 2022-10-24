@@ -10,7 +10,6 @@
 
 """Module defining utility functions for specific db objects."""
 import logging
-import traceback
 import typing as t
 from collections import defaultdict
 from numbers import Number
@@ -265,7 +264,7 @@ async def get_results_for_model_versions_per_window(
                     curr_result = finalize_reduced_results(reduced, additional_kwargs)
                 # In case of exception in the run putting none result
                 except DeepchecksBaseError as e:
-                    logging.getLogger("monitor_run_logger").error(f'{e.message}:\n{traceback.format_exc()}')
+                    logging.getLogger('monitor_run_logger').exception(e.message)
                     curr_result = None
 
             reduced_outs.append(curr_result)

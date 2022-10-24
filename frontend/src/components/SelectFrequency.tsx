@@ -16,8 +16,8 @@ const TIME_WINDOWS = [
     { label: '1 hour', value: 60 * 60 },
     { label: '1 day', value: 60 * 60 * 24 },
     { label: '1 week', value: 60 * 60 * 24 * 7 },
-    { label: '1 month', value: 60 * 60 * 24 * 31 },
-    { label: '3 months', value: 60 * 60 * 24 * 31 * 3 }
+    { label: '1 month', value: 60 * 60 * 24 * 30 },
+    { label: '3 months', value: 60 * 60 * 24 * 30 * 3 }
   ];
 
 
