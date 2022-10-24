@@ -15,6 +15,7 @@ import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/materi
 import { Loader } from './Loader';
 
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
+import { AlertRuleDialog } from './AlertRuleDialog';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -29,6 +30,7 @@ const titles = ['Model', 'Check', 'Condition', 'Check Frequency'];
 
 export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }: AlertRuleItemProps) => {
   const [hover, setHover] = useState<boolean>(false);
+  const [editedAlertRule, setEditedAlertRule] = useState<number | undefined>(undefined);
 
   const { modelsMap } = useModels();
 
@@ -50,6 +52,17 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
 
     event.stopPropagation();
     return onResolveOpen();
+  };
+
+  const handleEditRuleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    mixpanel.track('Click on Edit Rule button');
+
+    event.stopPropagation();
+    setEditedAlertRule(alertRule.id)
+  };
+
+  const onEditRuleClose = () => {
+    setEditedAlertRule(undefined);
   };
 
   const handleOpenDrawer = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -85,7 +98,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
       </StyledInfo>
       {hover && (
         <StyledBlur>
-          <Box>
+          <Box onClick={handleEditRuleClick}>
             <StyledIconButton>
               <PencilDrawing width={30} height={30} />
             </StyledIconButton>
@@ -99,6 +112,8 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
           </Box>
         </StyledBlur>
       )}
+
+    <AlertRuleDialog open={editedAlertRule !== undefined} onClose={onEditRuleClose} alertRuleId={editedAlertRule} />
     </StyledMainWrapper>
   );
 });
