@@ -148,7 +148,7 @@ EnqueueTasks = sa.text(dedent("""
         scheduling_series AS (
             SELECT
                 mons_with_endtime.monitor_id as monitor_id,
-                GENERATE_SERIES(info.last_scheduling, NOW(), info.frequency) AS timestamp
+                GENERATE_SERIES(info.last_scheduling, LEAST(NOW(), end_time), info.frequency) AS timestamp
             FROM
                 mons_with_endtime,
                 LATERAL (
