@@ -170,12 +170,6 @@ class WorkerSettings(DatabaseSettings):
     worker_logfile_backup_count: int = 3
     uptrace_dsn: t.Optional[str] = None
 
-    class Config:
-        """Model config."""
-
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
 
 class WorkerBootstrap:
     """Worer initialization script."""

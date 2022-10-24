@@ -21,7 +21,15 @@ __all__ = ['Settings', 'tags_metadata', 'Tags', 'DatabaseSettings', 'RedisSettin
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
 
-class KafkaSettings(BaseSettings):
+class BaseDeepchecksSettings(BaseSettings):
+    class Config:
+        """Settings configuration."""
+
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+
+class KafkaSettings(BaseDeepchecksSettings):
     """Settings for kafka usage for data ingestion."""
 
     kafka_host: t.Optional[str] = None
@@ -30,12 +38,6 @@ class KafkaSettings(BaseSettings):
     kafka_username: t.Optional[str] = None
     kafka_password: t.Optional[str] = None
     kafka_replication_factor: int = 1
-
-    class Config:
-        """Settings configuration."""
-
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
 
     @property
     def kafka_params(self):
@@ -50,17 +52,11 @@ class KafkaSettings(BaseSettings):
         }
 
 
-class DatabaseSettings(BaseSettings):
+class DatabaseSettings(BaseDeepchecksSettings):
     """Database settings."""
 
     database_uri: PostgresDsn
     echo_sql: bool = True
-
-    class Config:
-        """Settings configuration."""
-
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
 
     @property
     def async_database_uri(self) -> PostgresDsn:
@@ -71,16 +67,10 @@ class DatabaseSettings(BaseSettings):
         ))
 
 
-class RedisSettings(BaseSettings):
+class RedisSettings(BaseDeepchecksSettings):
     """Redis settings."""
 
     redis_uri: t.Optional[RedisDsn]
-
-    class Config:
-        """Settings configuration."""
-
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
 
 
 class Settings(DatabaseSettings, KafkaSettings, RedisSettings):
@@ -89,12 +79,6 @@ class Settings(DatabaseSettings, KafkaSettings, RedisSettings):
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     debug_mode: bool = False
     instrument_telemetry: bool = False
-
-    class Config:
-        """Config for the deepchecks_monitoring package."""
-
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
 
 
 class Tags(Enum):
