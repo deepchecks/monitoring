@@ -19,7 +19,7 @@ from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multic
                                                      regression_scorers_higher_is_better_dict)
 from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import NotFound
@@ -35,7 +35,7 @@ from deepchecks_monitoring.models.check import Check
 from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL
 from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
-                                         MonitorCheckConfSchema, fetch_or_404)
+                                         MonitorCheckConfSchema, TimeUnit, fetch_or_404)
 
 
 class AlertCheckOptions(BaseModel):
@@ -62,6 +62,33 @@ class MonitorOptions(BaseModel):
     def end_time_dt(self) -> pdl.DateTime:
         """Get end time as datetime object."""
         return pdl.parse(self.end_time)
+
+    @classmethod
+    @root_validator()
+    def check_dates_range(cls, values):
+        """Check end_time is after start_time by an hour plus."""
+        seconds_range = (pdl.parse(values["end_time"]) - pdl.parse(values["start_time"])).in_seconds()
+        if seconds_range < 0:
+            raise ValueError("end_time must be after start_time")
+        if seconds_range < TimeUnit.HOUR:
+            raise ValueError("end_time must be at least an hour after start_time")
+        return values
+
+    @classmethod
+    @validator("frequency")
+    def check_frequency_min(cls, v):
+        """Check frequency is at least an hour."""
+        if v and v < TimeUnit.HOUR:
+            raise ValueError(f"frequency must be at least {TimeUnit.HOUR}")
+        return v
+
+    @classmethod
+    @validator("aggregation_window")
+    def check_aggregation_window(cls, v):
+        """Check aggergation_windwow is at least an hour."""
+        if v and v < TimeUnit.HOUR:
+            raise ValueError(f"aggregation_window must be at least {TimeUnit.HOUR}")
+        return v
 
 
 class FilterWindowOptions(MonitorOptions):

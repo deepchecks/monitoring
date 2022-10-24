@@ -73,6 +73,7 @@ def get_time_ranges_for_monitor(lookback: int, frequency: int = None, end_time: 
     end_time.EPOCH = ORIGIN_START_TIME
 
     frequency = lookback / 12 if frequency is None else frequency
+    assert frequency > 0
 
     # start time is calculated such that end_time - look back will fall in [start_time, start_time + window size]
     num_windows_from_start = (end_time.int_timestamp - lookback) // frequency
