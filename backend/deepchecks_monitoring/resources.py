@@ -16,6 +16,8 @@ from aiokafka import AIOKafkaProducer
 from kafka import KafkaAdminClient
 from pydantic import BaseSettings
 from redis.client import Redis
+from redis.cluster import RedisCluster
+from redis.exceptions import RedisClusterException
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -224,5 +226,8 @@ class ResourcesProvider(BaseResourcesProvider):
     def redis_client(self) -> t.Optional[Redis]:
         """Return redis client if redis defined, else None."""
         if self._redis_client is None and self.redis_settings.redis_uri:
-            self._redis_client = Redis.from_url(self.redis_settings.redis_uri)
+            try:
+                self._redis_client = RedisCluster.from_url(self.redis_settings.redis_uri)
+            except RedisClusterException:
+                self._redis_client = Redis.from_url(self.redis_settings.redis_uri)
         return self._redis_client
