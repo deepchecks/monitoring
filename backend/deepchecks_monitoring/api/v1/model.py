@@ -145,15 +145,15 @@ async def retrieve_models_data_ingestion(
         result = await session.execute(select(Model).options(selectinload(Model.versions)))
         models = t.cast(t.List[Model], result.scalars().all())
 
-    if not models:
-        return {}
-
     # TODO: move query creation logic into Model type definition
     tables = (
         (model.id, version.get_monitor_table(session))
         for model in models
         for version in model.versions
     )
+
+    if not tables:
+        return {}
 
     union = union_all(*(
         select(
