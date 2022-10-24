@@ -254,7 +254,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             raise ValueError("'samples_to_update' cannot be empty")
 
         if not isinstance(samples_to_update, pd.DataFrame):
-            samples_to_update = pd.DataFrame(samples_to_update, columns=["sample_id"])
+            samples_to_update = pd.DataFrame(list(samples_to_update), columns=["sample_id"])
 
         if "sample_id" in samples_to_update.columns:
             if samples_to_update["sample_id"].is_unique is False:
@@ -267,7 +267,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 raise ValueError("'data.index' must contain unique values")
 
         error_template = (
-            "'{param}' and 'data' parameters indexes mismatch, "
+            "'{param}' and 'samples_to_update' parameters indexes mismatch, "
             "make sure that '{param}.index' is the same as "
             "'data.index' (or data['sample_id'])"
         )
