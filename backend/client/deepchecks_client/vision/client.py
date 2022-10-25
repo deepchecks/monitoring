@@ -213,7 +213,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         predictions: Optional[Dict[int, np.ndarray]]
             The predictions for the reference data in format {<index>: <prediction>}.
         """
-        if len(vision_data) > 100_000:
+        if vision_data.num_samples > 100_000:
             vision_data = vision_data.copy(shuffle=True, n_samples=100_000, random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
 
@@ -243,7 +243,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             )
 
             for sample_batch_index, sample_index in enumerate(indexes):
-                data[sample_index][label_field] = DeepchecksEncoder.encode(labels_batch[sample_index])
+                data[sample_index][label_field] = DeepchecksEncoder.encode(labels_batch[sample_batch_index])
 
                 if predictions:
                     data[sample_index][prediction_field] = DeepchecksEncoder.encode(predictions[sample_index])
