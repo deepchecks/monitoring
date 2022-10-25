@@ -91,7 +91,7 @@ function CreateAlert({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
     const lookbackCheckData: LookbackCheckProps = {
       checkId,
       data: {
-        start_time: new Date(Date.now() - monitor.lookback * 1000).toISOString(),
+        start_time: new Date(new Date(end_time).getTime() - monitor.lookback * 1000).toISOString(),
         end_time,
         additional_kwargs: monitor.additional_kwargs || checkInfoInitValue(),
         frequency: monitor.frequency,
