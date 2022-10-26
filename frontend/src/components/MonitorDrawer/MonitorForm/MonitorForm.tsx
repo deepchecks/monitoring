@@ -121,7 +121,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         data: {
           start_time: new Date(end_time.getTime() - +values.lookback * 1000).toISOString(),
           end_time: end_time.toISOString(),
-          additional_kwargs: values.additional_kwargs,
+          additional_kwargs: values.additional_kwargs || monitor?.additional_kwargs,
           frequency: +values.frequency,
           aggregation_window: +values.aggregation_window
         }
@@ -284,7 +284,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       clearTimeout(timer.current);
     };
   }, [
-    values.check,
+    !monitor && values.check,
     values.column,
     values.category,
     values.numericValue,
@@ -366,7 +366,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
               ? checkInfo && (
                   <CheckInfo
                     checkInfo={checkInfo}
-                    initialCheckInfoValues={values.additional_kwargs}
+                    initialCheckInfoValues={values.additional_kwargs || monitor.additional_kwargs}
                     setFieldValue={setFieldValue}
                   />
                 )

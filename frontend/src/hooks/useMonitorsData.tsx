@@ -1,6 +1,6 @@
+import React, { useEffect, useMemo, useState, createContext, useContext } from 'react';
 import { ChartData } from 'chart.js';
-import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
-import { useEffect, useMemo, useState } from 'react';
+
 import {
   getGetOrCreateDashboardApiV1DashboardsGetQueryKey,
   MonitorSchema,
@@ -9,12 +9,33 @@ import {
 } from '../api/generated';
 import useModels from './useModels';
 
+import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
+
 type MonitorId = MonitorSchema['id'];
 
+export type MonitorsDataProvider = {
+  children: JSX.Element;
+};
+
+export type MonitorsDataContext = {
+  monitors: MonitorSchema[];
+  chartDataList: ChartData<'line'>[];
+  refreshMonitors: (monitor?: MonitorSchema) => void;
+};
+
+const MonitorsDataContext = createContext<MonitorsDataContext | null>(null);
+
 const useMonitorsData = () => {
+  const context = useContext(MonitorsDataContext);
+  if (context === null) throw Error('MonitorsData is null');
+
+  return context;
+};
+
+export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.Element => {
   const [lastMonitorsFetch, setLastMonitorsFetch] = useState(new Date());
 
-  const { data: dashboards } = useGetOrCreateDashboardApiV1DashboardsGet({
+  const { data: dashboards, refetch } = useGetOrCreateDashboardApiV1DashboardsGet({
     query: {
       queryKey: [getGetOrCreateDashboardApiV1DashboardsGetQueryKey(), lastMonitorsFetch],
       refetchOnWindowFocus: false
@@ -24,14 +45,14 @@ const useMonitorsData = () => {
   const [chartDataMap, setChartDataMap] = useState<Record<MonitorId, ChartData<'line'>>>({});
   const [currentMonitors, setCurrentMonitors] = useState<MonitorSchema[]>([]);
 
-  useEffect(() => console.log('UPDATE', { lastMonitorsFetch }), [lastMonitorsFetch]);
-
   const { modelsMap } = useModels();
 
   const monitors: MonitorSchema[] = dashboards?.monitors || [];
 
   const refreshMonitors = async (monitor?: MonitorSchema) => {
     if (!monitors.length) return;
+
+    refetch();
 
     if (monitor) {
       console.log('Case 1');
@@ -70,7 +91,9 @@ const useMonitorsData = () => {
     [currentMonitors, chartDataMap]
   );
 
-  return { monitors: currentMonitors, chartDataList, refreshMonitors };
+  const value = { monitors: currentMonitors, chartDataList, refreshMonitors };
+
+  return <MonitorsDataContext.Provider value={value}>{children}</MonitorsDataContext.Provider>;
 };
 
 export default useMonitorsData;

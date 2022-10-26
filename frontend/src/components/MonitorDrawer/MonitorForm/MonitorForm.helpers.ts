@@ -39,7 +39,7 @@ export const monitorSchemaData = (
   operator: monitorSchemaDataOperator,
   value: monitorSchemaDataOperatorValue
 ) => ({
-  name: monitor?.name || values.name,
+  name: values.name,
   lookback: +values.lookback,
   aggregation_window: +values.aggregation_window,
   frequency: +values.frequency,

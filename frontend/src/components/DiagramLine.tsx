@@ -28,9 +28,9 @@ import {
   setAlertLine
 } from '../helpers/diagramLine';
 
-import { alpha, Box, Tooltip, Typography } from '@mui/material';
+import { alpha, Box } from '@mui/material';
 
-import { HorizontalScrolling } from './HorizontalScrolling';
+import LegendsList from './LegendsList';
 import { Loader } from './Loader';
 import { Minimap } from './Minimap';
 
@@ -69,13 +69,6 @@ declare module 'chart.js' {
 
 Chart.register(...registerables, zoomPlugin);
 
-function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, colorStart: string, colorEnd: string) {
-  const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
-  gradient.addColorStop(0, colorStart);
-  gradient.addColorStop(1, colorEnd);
-  return gradient;
-}
-
 interface IMinimap {
   alertSeverity: AlertSeverity;
   alertIndex: number;
@@ -94,6 +87,13 @@ export interface DiagramLineProps {
   tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>>;
 }
 
+function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, colorStart: string, colorEnd: string) {
+  const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+  gradient.addColorStop(0, colorStart);
+  gradient.addColorStop(1, colorEnd);
+  return gradient;
+}
+
 const defaultTooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> =
   {
     labelColor: (context: TooltipItem<'line'>) => ({
@@ -110,8 +110,6 @@ const initMinimap: IMinimap = {
   alerts: [],
   changeAlertIndex: () => 1
 };
-
-const maxLengthOfTooltipText = 120;
 
 function DiagramLine({
   data,
@@ -184,6 +182,7 @@ function DiagramLine({
       const right = ((max - originalMinMax.min) / (originalMinMax.max - originalMinMax.min)) * 100;
       const lf = left > 0 ? (left > 98 ? 98 : left) : 0;
       const rg = right < 100 ? (right < 2 ? 2 : right) : 100;
+
       minimapRef.current[0].style.width = `${lf}%`;
       minimapRef.current[1].style.width = `${rg - lf}%`;
       minimapRef.current[1].style.left = `${lf}%`;
@@ -346,73 +345,9 @@ function DiagramLine({
           <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
         </Box>
       </DiagramTutorialTooltip>
-
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: 1,
-          marginTop: '30px'
-        }}
-      >
-        {!!chartData?.labels?.length && !!legends.length && (
-          <Box sx={{ padding: '6.5px 0', minWidth: '70%' }}>
-            <HorizontalScrolling>
-              {legends.map((legendItem, index) => {
-                const text = legendItem?.text?.split('|');
-                return (
-                  <Tooltip
-                    title={legendItem?.text || ''}
-                    disableHoverListener={legendItem?.text?.length <= maxLengthOfTooltipText}
-                    key={index}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        m: '0 7px',
-                        minWidth: 'max-content',
-                        cursor: 'pointer',
-                        padding: 0,
-                        p: '3px 0'
-                      }}
-                      onClick={() => hideLine(legendItem)}
-                      key={index}
-                    >
-                      <Box
-                        sx={{
-                          width: 9,
-                          height: 9,
-                          borderRadius: '3px',
-                          backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
-                        }}
-                      />
-                      <Typography
-                        variant="subtitle2"
-                        ml="5px"
-                        sx={{
-                          textDecoration: lineIndexMap[
-                            typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
-                          ]
-                            ? 'line-through'
-                            : 'none'
-                        }}
-                      >
-                        {text[0].length > maxLengthOfTooltipText
-                          ? `${text[0].slice(0, maxLengthOfTooltipText)}...`
-                          : text[0]}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
-                );
-              })}
-            </HorizontalScrolling>
-          </Box>
-        )}
-        {children && <Box sx={{ ml: '42px' }}>{children}</Box>}
-      </Box>
-
+      <LegendsList chartData={chartData} lineIndexMap={lineIndexMap} hideLine={hideLine} legends={legends}>
+        {children}
+      </LegendsList>
       {changeAlertIndex && !!alerts.length && (
         <Minimap
           alerts={alerts}
