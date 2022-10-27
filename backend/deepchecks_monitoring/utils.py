@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-# pylint: disable=ungrouped-imports
+# pylint: disable=ungrouped-imports,import-outside-toplevel
 """Module defining utility functions for the deepchecks_monitoring app."""
 import enum
 import logging
@@ -17,9 +17,11 @@ import sys
 import typing as t
 
 import orjson
+import sqlalchemy as sa
 from pydantic import BaseModel
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.telemetry import TelemetyLoggingHandler
@@ -50,7 +52,7 @@ __all__ = [
     "CheckParameterTypeEnum",
     "NameIdResponse",
     "field_length",
-    "configure_logger"
+    "configure_logger",
 ]
 
 
@@ -404,3 +406,23 @@ def configure_logger(
         logger.addHandler(h)
 
     return logger
+
+
+def fetch_unused_monitoring_tables(session: Session) -> t.List[str]:
+    """Fetch names of unused monitoring tables."""
+    from deepchecks_monitoring.models import ModelVersion
+
+    model_versions = session.scalars(sa.select(ModelVersion)).all()
+    active_monitoring_tables = set()
+
+    for version in model_versions:
+        active_monitoring_tables.add(version.get_monitor_table_name())
+        active_monitoring_tables.add(version.get_reference_table_name())
+
+    existing_tables = session.scalars(sa.text(
+        "SELECT DISTINCT tablename "
+        "FROM pg_catalog.pg_tables "
+        "WHERE tablename LIKE 'model_%_monitor_data_%' OR tablename LIKE 'model_%_ref_data_%'"
+    )).all()
+
+    return list(set(existing_tables).difference(active_monitoring_tables))

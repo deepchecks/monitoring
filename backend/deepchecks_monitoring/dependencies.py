@@ -23,7 +23,7 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 __all__ = ["AsyncSessionDep", "limit_request_size", "KafkaAdminDep", "SettingsDep", "DataIngestionDep",
-           "CacheFunctionsDep", "CacheInvalidatorDep"]
+           "CacheFunctionsDep", "CacheInvalidatorDep", "ResourcesProviderDep"]
 
 
 async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["ExtendedAsyncSession"]:
@@ -69,12 +69,17 @@ def get_cache_functions(request: fastapi.Request):
     return state.cache_functions
 
 
+def get_resources_provider(request: fastapi.Request) -> "ResourcesProvider":
+    return t.cast("ResourcesProvider", request.app.state.resources_provider)
+
+
 AsyncSessionDep = fastapi.Depends(get_async_session)
 KafkaAdminDep = fastapi.Depends(get_kafka_admin)
 SettingsDep = fastapi.Depends(get_settings)
 DataIngestionDep = fastapi.Depends(get_data_ingestion_backend)
 CacheFunctionsDep = fastapi.Depends(get_cache_functions)
 CacheInvalidatorDep = fastapi.Depends(get_cache_invalidator)
+ResourcesProviderDep = fastapi.Depends(get_resources_provider)
 
 
 # Examples of how to use those dependencies:

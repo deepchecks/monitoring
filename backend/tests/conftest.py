@@ -405,7 +405,7 @@ def add_check(
         assert response.status_code == expected_status_code, (response.status_code, response.json())
         return response
 
-    assert response.status_code == expected_status_code
+    assert response.status_code == expected_status_code, (response.status_code, response.reason)
 
     data = response.json()[0]
     assert isinstance(data, dict)

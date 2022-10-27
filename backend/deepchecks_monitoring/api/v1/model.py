@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime
 
 import pendulum as pdl
+from fastapi import BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy import Integer as SQLInteger
 from sqlalchemy import delete, func, literal, select, text, union_all
@@ -20,7 +21,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, MonitorsCountPerModel,
                                                              get_alerts_per_model)
@@ -28,8 +29,9 @@ from deepchecks_monitoring.models import Model
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, exists_or_404, fetch_or_404, field_length
+from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, fetch_or_404, field_length
 
 from .router import router
 
@@ -355,10 +357,49 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
     tags=[Tags.MODELS, "models-managment"],
     description="Delete model"
 )
-async def delete_model(model_id: int, session: AsyncSession = AsyncSessionDep):
+async def delete_model(
+    model_id: int,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = AsyncSessionDep,
+    resources_provider: ResourcesProvider = ResourcesProviderDep
+):
     """Delete model instance."""
-    await exists_or_404(session, Model, id=model_id)
+    model = await session.fetchone_or_404(
+        select(Model)
+        .where(Model.id == model_id)
+        .options(joinedload(Model.versions)),
+        message=f"Model with next set of arguments does not exist: id={model_id}"
+    )
+
+    tables = []
+    for version in model.versions:
+        tables.append(version.get_monitor_table_name())
+        tables.append(version.get_reference_table_name())
+
+    background_tasks.add_task(
+        drop_tables,
+        resources_provider=resources_provider,
+        tables=tables
+    )
+
     await session.execute(delete(Model).where(Model.id == model_id))
+
+    # NOTE:
+    # tests will hung without statement below,
+    # it looks like that it happens because in test env
+    # background task is called in sync manner before
+    # finalizing database session context manager (generator)
+    # and that leads to the deadlock
+    await session.commit()
+
+
+async def drop_tables(resources_provider: ResourcesProvider, tables: t.List[str]):
+    """Drop specified tables."""
+    if not tables:
+        return
+    async with resources_provider.async_database_engine.begin() as connection:
+        for name in tables:
+            await connection.execute(text(f'DROP TABLE IF EXISTS "{name}"'))
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])

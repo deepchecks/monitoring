@@ -13,6 +13,7 @@ from io import StringIO
 
 import fastapi
 import pendulum as pdl
+from fastapi import BackgroundTasks
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from pydantic import BaseModel, Field
@@ -25,7 +26,7 @@ from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, CacheInvalidatorDep, DataIngestionDep, KafkaAdminDep,
-                                                SettingsDep)
+                                                ResourcesProviderDep, SettingsDep)
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
@@ -34,6 +35,7 @@ from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABE
                                                       column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404, field_length
 
 from .check import MonitorOptions
@@ -346,7 +348,9 @@ async def get_count_samples(
 @router.delete('/model-versions/{model_version_id}', tags=[Tags.MODELS])
 async def delete_model_version(
         model_version_id: int,
-        session: AsyncSession = AsyncSessionDep
+        background_tasks: BackgroundTasks,
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Delete model version by id.
 
@@ -357,6 +361,24 @@ async def delete_model_version(
     session : AsyncSession, optional
         SQLAlchemy session.
     """
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    from .model import drop_tables  # pylint: disable=import-outside-toplevel
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
     await session.delete(model_version)
+
+    background_tasks.add_task(
+        drop_tables,
+        resources_provider=resources_provider,
+        tables=[
+            model_version.get_monitor_table_name(),
+            model_version.get_reference_table_name()
+        ]
+    )
+
+    # NOTE:
+    # tests will hung without statement below,
+    # it looks like that it happens because in test env
+    # background task is called in sync manner before
+    # finalizing database session context manager (generator)
+    # and that leads to the deadlock
+    await session.commit()
     return fastapi.Response()
