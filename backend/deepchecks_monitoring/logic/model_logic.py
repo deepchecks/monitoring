@@ -59,6 +59,7 @@ async def get_model_versions_for_time_range(session: AsyncSession,
                                             end_time: pdl.DateTime) -> t.Tuple[Model, t.List[ModelVersion]]:
     """Get model versions for a time window."""
     model_results = await session.execute(select(Model).where(Model.id == check.model_id,
+                                                              Model.id == ModelVersion.model_id,
                                                               ModelVersion.end_time >= start_time,
                                                               ModelVersion.start_time <= end_time)
                                           .options(selectinload(Model.versions)))
