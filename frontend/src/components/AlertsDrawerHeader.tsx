@@ -163,7 +163,7 @@ export const AlertsDrawerHeader = ({
                   marginTop: '10px'
                 }}
               >
-                {dayjs(alert.start_time).format('DD.MM.YYYY')}
+                {dayjs(alert.end_time).format('DD.MM.YYYY')}
               </Typography>
             </Box>
             <Box>
