@@ -19,10 +19,12 @@ header:
     - 'LICENSE'
     - 'VERSION'
     - 'assets/.keep'
-    - 'deepchecks_monitoring.egg-info/PKG-INFO'
+    - 'deepchecks_client.egg-info/PKG-INFO'
     - 'makefile'
     - 'migrations/script.py.mako'
     - 'migrations/README'
+    - 'client/deepchecks_client/core/AmazonRootCA1.cer'
+    - 'client/MANIFEST.in'
   comment: on-failure
 
 dependency:

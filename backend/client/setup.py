@@ -83,9 +83,9 @@ setuptools.setup(
     author="deepchecks",
     author_email="info@deepchecks.com",
     description="The SDK client for communicating with Deepchecks monitoring service",
-    package_dir={"": "."},
     packages=setuptools.find_packages(),
-    python_requires='>=3.8',
+    python_requires='>=3.6',
     install_requires=install_requires,
     dependency_links=dependency_links,
+    include_package_data=True,
 )

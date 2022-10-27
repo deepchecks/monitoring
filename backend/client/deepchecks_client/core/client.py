@@ -9,9 +9,14 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+import os
 import typing as t
 import warnings
-from importlib.metadata import version
+try:
+    from importlib import metadata
+except ImportError: # for Python<3.8
+    import importlib_metadata as metadata
+
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
@@ -27,7 +32,7 @@ from deepchecks_client.core.utils import DeepchecksJsonValidator, TaskType, mayb
 from deepchecks_client.tabular.utils import read_schema
 
 __all__ = ['DeepchecksClient']
-__version__ = version("deepchecks_client")
+__version__ = metadata.version("deepchecks_client")
 
 
 class HttpSession(requests.Session):
@@ -42,7 +47,12 @@ class HttpSession(requests.Session):
         headers = kwargs.get('headers', {})
         if self.token:
             headers['Authorization'] = f'Basic {self.token}'
-        return super().request(method, url, *args, headers=headers, **kwargs)
+        return super().request(method,
+                               url,
+                               *args,
+                               headers=headers,
+                               verify=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AmazonRootCA1.cer'),
+                               **kwargs)
 
 
 class DeepchecksModelVersionClient:

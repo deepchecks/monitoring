@@ -1,8 +1,9 @@
 numpy
 pandas
 deepchecks
-requests
+requests>=2.28.1
 pendulum==2.1.2
 jsonschema==4.7.2
 termcolor
 PyYAML
+importlib_metadata; python_version < '3.8'
