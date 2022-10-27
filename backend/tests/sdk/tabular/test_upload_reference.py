@@ -25,8 +25,8 @@ async def test_classification_upload(multiclass_model_version_client: Deepchecks
     proba = [[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]]
     pred = [2, 1]
     multiclass_model_version_client.upload_reference(Dataset(df, features=['a', 'b'], label='label'),
-                                                     prediction_proba=proba,
-                                                     prediction=pred)
+                                                     prediction_probas=proba,
+                                                     predictions=pred)
 
     model_version_query = await async_session.execute(select(ModelVersion)
                                                       .where(ModelVersion.id ==
@@ -45,7 +45,7 @@ async def test_regression_upload(regression_model_version_client: DeepchecksMode
     df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
     pred = [2, 1]
     regression_model_version_client.upload_reference(Dataset(df, features=['a', 'b'], label='label'),
-                                                     prediction=pred)
+                                                     predictions=pred)
 
     model_version_query = await async_session.execute(select(ModelVersion)
                                                       .where(ModelVersion.id ==
@@ -107,8 +107,8 @@ async def test_quick_start_flow(deepchecks_sdk_client):
                                                                  schema_file=schema_file,
                                                                  task_type='multiclass',
                                                                  version_name='ver')
-    version.log_batch(data=data.iloc[:, :3], timestamp=timestamp,
-                      prediction=pd.Series(pred), prediction_proba=pd.Series(proba), label=data['label'])
+    version.log_batch(data=data.iloc[:, :3], timestamps=timestamp,
+                      predictions=pd.Series(pred), prediction_probas=pd.Series(proba), labels=data['label'])
     # Assert
     version = deepchecks_sdk_client.get_model_version(model_name='test', version_name='ver')
     assert version.model_version_id == 1

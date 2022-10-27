@@ -79,14 +79,14 @@ async def test_classification_batch_log(
             {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
             {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamp=pd.Series([
+        timestamps=pd.Series([
             pdl.now().int_timestamp,
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
         ], index=['1', '2', '3']),
-        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
-        prediction_proba=pd.Series([[0.1, 0.3, 0.6], [0.1, 0.6, 0.1], [0.1, 0.6, 0.1]], index=['1', '2', '3']),
-        label=pd.Series([2, 2, 1], index=['1', '2', '3'])
+        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
+        prediction_probas=pd.Series([[0.1, 0.3, 0.6], [0.1, 0.6, 0.1], [0.1, 0.6, 0.1]], index=['1', '2', '3']),
+        labels=pd.Series([2, 2, 1], index=['1', '2', '3'])
     )
 
     model_version = await async_session.get(
@@ -113,13 +113,13 @@ async def test_regression_batch_log(
             {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
             {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamp=pd.Series([
+        timestamps=pd.Series([
             pdl.now().int_timestamp,
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
         ], index=['1', '2', '3']),
-        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
-        label=pd.Series([2, 2, 1], index=['1', '2', '3'])
+        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
+        labels=pd.Series([2, 2, 1], index=['1', '2', '3'])
     )
 
     model_version = await async_session.get(
@@ -145,14 +145,14 @@ async def test_regression_batch_update(regression_model_version_client: Deepchec
             {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
             {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamp=pd.Series([time, time, time], index=['1', '2', '3']),
-        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
+        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
     data_to_update = pd.DataFrame([['1', 1], ['2', 2], ['3', 3]], columns=['sample_id', 'a'])
-    regression_model_version_client.update_batch(data_to_update, label=pd.Series([1, 2, 1], index=['1', '2', '3']))
+    regression_model_version_client.update_batch(data_to_update, labels=pd.Series([1, 2, 1], index=['1', '2', '3']))
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
@@ -176,13 +176,13 @@ async def test_regression_batch_update_only_label(regression_model_version_clien
             {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
             {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamp=pd.Series([time, time, time], index=['1', '2', '3']),
-        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
+        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
-    regression_model_version_client.update_batch(['1', '2', '3'], label=pd.Series([1, 2, 1], index=['1', '2', '3']))
+    regression_model_version_client.update_batch(['1', '2', '3'], labels=pd.Series([1, 2, 1], index=['1', '2', '3']))
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
@@ -196,8 +196,8 @@ async def test_regression_single_update(regression_model_version_client: Deepche
             {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
             {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamp=pd.Series([time, time, time], index=['1', '2', '3']),
-        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
+        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
@@ -217,9 +217,9 @@ async def test_regression_single_update_none(regression_model_version_client: De
             {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
             {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamp=pd.Series([time, time, time], index=['1', '2', '3']),
-        prediction=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
-        label=pd.Series(['2', None, '0'], index=['1', '2', '3']))
+        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
+        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
+        labels=pd.Series(['2', None, '0'], index=['1', '2', '3']))
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 2}
@@ -235,7 +235,7 @@ async def test_regression_single_update_none(regression_model_version_client: De
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
     # Does not work yet
-    # regression_model_version_client.update_sample(sample_id=str(3), label=None)
+    # regression_model_version_client.update_sample(sample_id=str(3), labels=None)
     # stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     # assert stats == {'num_samples': 3, 'num_labeled_samples': 2}
 
@@ -251,9 +251,9 @@ async def test_batch_log_with_parameters_of_different_length(
                 {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
                 {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
             ]),
-            prediction=pd.Series(['2', '1', '0', '0'], index=['1', '2', '3']),
-            label=pd.Series([2, 2, 1, 1], index=['1', '2', '3']),
-            timestamp=pd.Series([
+            predictions=pd.Series(['2', '1', '0', '0'], index=['1', '2', '3']),
+            labels=pd.Series([2, 2, 1, 1], index=['1', '2', '3']),
+            timestamps=pd.Series([
                 pdl.now().int_timestamp,
                 pdl.now().int_timestamp,
                 pdl.now().int_timestamp
@@ -272,9 +272,9 @@ async def test_batch_log_without_sample_id_column(
             {'a': 3, 'b': '4', 'c': -1},
             {'a': 2, 'b': '0', 'c': 0},
         ]),
-        prediction=pd.Series(['2', '1', '0']),
-        label=pd.Series([2, 2, 1]),
-        timestamp=pd.Series([
+        predictions=pd.Series(['2', '1', '0']),
+        labels=pd.Series([2, 2, 1]),
+        timestamps=pd.Series([
             pdl.now().int_timestamp,
             pdl.now().int_timestamp,
             pdl.now().int_timestamp

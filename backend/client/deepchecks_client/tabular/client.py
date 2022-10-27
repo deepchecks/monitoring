@@ -40,10 +40,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def log_batch(
             self,
             data: pd.DataFrame,
-            timestamp: Union["pd.Series[datetime]", "pd.Series[int]"],
-            prediction: Union["pd.Series[str]", "pd.Series[float]"],
-            prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
-            label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
+            timestamps: Union["pd.Series[datetime]", "pd.Series[int]"],
+            predictions: Union["pd.Series[str]", "pd.Series[float]"],
+            prediction_probas: Optional["pd.Series[Sequence[float]]"] = None,
+            labels: Union["pd.Series[str]", "pd.Series[float]", None] = None,
             samples_per_send: int = 10_000
     ):
         """Log batch of samples.
@@ -56,13 +56,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             a set of identifiers that uniquely identifies each logged sample, 
             but if the 'sample_id' column is not provided then the dataframe 
             index will be used instead.
-        timestamp : Union[pandas.Series[datetime], pandas.Series[int]]
+        timestamps : Union[pandas.Series[datetime], pandas.Series[int]]
             set of timestamps
-        prediction : Union[pandas.Series[str], pandas.Series[float]]
+        predictions : Union[pandas.Series[str], pandas.Series[float]]
             set of predictions
-        prediction_proba : Optional[pandas.Series[Sequence[float]]] , default None
-            set of prediction probabilities
-        label : Union[pandas.Series[str], pandas.Series[float], None] , default None
+        prediction_probas : Optional[pandas.Series[Sequence[float]]] , default None
+            set of predictions probabilities
+        labels : Union[pandas.Series[str], pandas.Series[float], None] , default None
             set of labels
         samples_per_send : int , default 10_000
             how many samples to send by one request
@@ -89,25 +89,25 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             "'data.index' (or data['sample_id'])"
         )
 
-        if not data.index.equals(timestamp.index):
-            raise ValueError(error_template.format(param="timestamp"))
-        if not data.index.equals(prediction.index):
-            raise ValueError(error_template.format(param="prediction"))
+        if not data.index.equals(timestamps.index):
+            raise ValueError(error_template.format(param="timestamps"))
+        if not data.index.equals(predictions.index):
+            raise ValueError(error_template.format(param="predictions"))
 
-        data = data.assign(prediction=prediction)
-        data = data.assign(timestamp=timestamp)
+        data = data.assign(prediction=predictions)
+        data = data.assign(timestamp=timestamps)
 
-        if prediction_proba is not None:
-            if not data.index.equals(prediction_proba.index):
-                raise ValueError(error_template.format(param="prediction_proba"))
+        if prediction_probas is not None:
+            if not data.index.equals(prediction_probas.index):
+                raise ValueError(error_template.format(param="prediction_probas"))
             else:
-                data = data.assign(prediction_proba=prediction_proba)
+                data = data.assign(prediction_proba=prediction_probas)
 
-        if label is not None:
-            if not data.index.equals(label.index):
-                raise ValueError(error_template.format(param="label"))
+        if labels is not None:
+            if not data.index.equals(labels.index):
+                raise ValueError(error_template.format(param="labels"))
             else:
-                data = data.assign(label=label)
+                data = data.assign(label=labels)
 
         for i in range(0, len(data), samples_per_send):
             self._log_batch(data.iloc[i:i + samples_per_send])
@@ -179,8 +179,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def upload_reference(
             self,
             dataset: Dataset,
-            prediction: np.ndarray,
-            prediction_proba: Optional[np.ndarray] = None,
+            predictions: np.ndarray,
+            prediction_probas: Optional[np.ndarray] = None,
             samples_per_request: int = 5000
     ):
         """Upload reference data. Possible to upload only once for a given model version.
@@ -188,25 +188,25 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         Parameters
         ----------
         dataset: deepchecks.tabular.Dataset
-        prediction_proba: np.ndarray
-        prediction: np.ndarray
+        prediction_probas: np.ndarray
+        predictions: np.ndarray
         """
         data = dataset.features_columns.copy()
         
         if self.model['task_type'] == TaskType.REGRESSION.value:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
-            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [float(x) for x in prediction]
+            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [float(x) for x in predictions]
         else:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(str))
-            if prediction_proba is None:
+            if prediction_probas is None:
                 raise ValueError('Model predictions probabilities on the reference data is required for '
                                  'classification task type')
-            elif isinstance(prediction_proba, pd.DataFrame):
-                prediction_proba = np.asarray(prediction_proba)
-            data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_proba)
-            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [str(x) for x in prediction]
+            elif isinstance(prediction_probas, pd.DataFrame):
+                prediction_probas = np.asarray(prediction_probas)
+            data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_probas)
+            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [str(x) for x in predictions]
 
         if len(dataset) > 100_000:
             data = data.sample(100_000, random_state=42)
@@ -223,10 +223,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def update_batch(
             self,
             samples_to_update: Union[pd.DataFrame, Sequence],
-            label: Union["pd.Series[str]", "pd.Series[float]", None] = None,
-            timestamp: Union["pd.Series[datetime]", "pd.Series[int]"] = None,
-            prediction: Union["pd.Series[str]", "pd.Series[float]"] = None,
-            prediction_proba: Optional["pd.Series[Sequence[float]]"] = None,
+            labels: Union["pd.Series[str]", "pd.Series[float]", None] = None,
+            timestamps: Union["pd.Series[datetime]", "pd.Series[int]"] = None,
+            predictions: Union["pd.Series[str]", "pd.Series[float]"] = None,
+            prediction_probas: Optional["pd.Series[Sequence[float]]"] = None,
             samples_per_send: int = 10_000
     ):
         """Update values of already uploaded samples.
@@ -236,13 +236,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         samples_to_update: Union[pd.DataFrame, Sequence]
             Either a sequence of sample ids to update or a dataframe which contain a 'sample_id' column,
             in addition to other values to update for those samples.
-        timestamp : Union[pandas.Series[datetime], pandas.Series[int]], default None
+        timestamps : Union[pandas.Series[datetime], pandas.Series[int]], default None
             set of timestamps
-        prediction : Union[pandas.Series[str], pandas.Series[float]], default None
+        predictions : Union[pandas.Series[str], pandas.Series[float]], default None
             set of predictions
-        prediction_proba : Optional[pandas.Series[Sequence[float]]], default None
-            set of prediction probabilities
-        label : Union[pandas.Series[str], pandas.Series[float], None], default None
+        prediction_probas : Optional[pandas.Series[Sequence[float]]], default None
+            set of predictions probabilities
+        labels : Union[pandas.Series[str], pandas.Series[float], None], default None
             set of labels
         samples_per_send : int , default 10_000
             how many samples to send by one request
@@ -272,22 +272,22 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             "'data.index' (or data['sample_id'])"
         )
 
-        if timestamp is not None:
-            if not samples_to_update.index.equals(timestamp.index):
-                raise ValueError(error_template.format(param="timestamp"))
-            samples_to_update = samples_to_update.assign(timestamp=timestamp)
-        if prediction is not None:
-            if not samples_to_update.index.equals(prediction.index):
-                raise ValueError(error_template.format(param="prediction"))
-            samples_to_update = samples_to_update.assign(prediction=prediction)
-        if prediction_proba is not None:
-            if not samples_to_update.index.equals(prediction_proba.index):
-                raise ValueError(error_template.format(param="prediction_proba"))
-            samples_to_update = samples_to_update.assign(prediction_proba=prediction_proba)
-        if label is not None:
-            if not samples_to_update.index.equals(label.index):
-                raise ValueError(error_template.format(param="label"))
-            samples_to_update = samples_to_update.assign(label=label)
+        if timestamps is not None:
+            if not samples_to_update.index.equals(timestamps.index):
+                raise ValueError(error_template.format(param="timestamps"))
+            samples_to_update = samples_to_update.assign(timestamp=timestamps)
+        if predictions is not None:
+            if not samples_to_update.index.equals(predictions.index):
+                raise ValueError(error_template.format(param="predictions"))
+            samples_to_update = samples_to_update.assign(prediction=predictions)
+        if prediction_probas is not None:
+            if not samples_to_update.index.equals(prediction_probas.index):
+                raise ValueError(error_template.format(param="prediction_probas"))
+            samples_to_update = samples_to_update.assign(prediction_proba=prediction_probas)
+        if labels is not None:
+            if not samples_to_update.index.equals(labels.index):
+                raise ValueError(error_template.format(param="labels"))
+            samples_to_update = samples_to_update.assign(label=labels)
 
         for i in range(0, len(samples_to_update), samples_per_send):
             self._update_batch(samples_to_update.iloc[i:i + samples_per_send])
@@ -302,7 +302,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         self.send()
 
     def update_sample(self, sample_id: str, label=None, **values):
-        """Update sample. Possible to update only non_features and label.
+        """Update sample. Possible to update only non_features and labels.
 
         Parameters
         ----------

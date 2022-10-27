@@ -92,18 +92,18 @@ async def test_classification_batch_log(
 ):
     vision_classification_model_version_client.log_batch(
         sample_id=['1', '2', '3'],
-        timestamp=[
+        timestamps=[
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
             datetime.now(timezone.utc)
         ],
-        label=[2, 0, 1],
-        img=[
+        labels=[2, 0, 1],
+        images=[
             np.array([[[1, 2, 0], [3, 4, 0]]]),
             np.array([[[1, 3, 5]]]),
             np.array([[[7, 9, 0], [9, 6, 0]]])
         ],
-        prediction=[
+        predictions=[
             [0.1, 0.3, 0.6],
             [0.1, 0.3, 0.6],
             [0.1, 0.3, 0.6]
@@ -145,12 +145,12 @@ async def test_detection_batch_log(
 ):
     detection_vision_model_version_client.log_batch(
         sample_id=['1', '2', '3'],
-        timestamp=[
+        timestamps=[
             datetime.now(timezone.utc),
             datetime.now(timezone.utc),
             datetime.now(timezone.utc)
         ],
-        img=[
+        images=[
             np.array([[[1, 2, 0], [3, 4, 0]]]),
             np.array([[[1, 3, 5]]]),
             np.array([
@@ -160,12 +160,12 @@ async def test_detection_batch_log(
                 [[7, 9, 0], [9, 6, 0], [9, 6, 0]]
             ])
         ],
-        prediction=[
+        predictions=[
             [[0, 0, 1, 1, 0.6, 2]],
             [[0, 0, 1, 1, 0.6, 2]],
             [[0, 0, 2, 2, 0.6, 2]]
         ],
-        label=[
+        labels=[
             [[1, 0, 0, 1, 1]],
             [[0, 0, 0, 1, 1]],
             [[2, 0, 0, 2, 2]]

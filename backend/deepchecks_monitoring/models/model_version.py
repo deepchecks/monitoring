@@ -132,7 +132,7 @@ class ModelVersion(Base):
         return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)
 
     async def update_timestamps(self, timestamps: t.List[datetime], session: AsyncSession):
-        """Update start and end date if needed based on given timestamp.
+        """Update start and end date if needed based on given timestamps.
 
         Parameters
         ----------

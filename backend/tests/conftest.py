@@ -587,7 +587,7 @@ class _VisionDataset(TorchDataset):
         self.imgs = imgs
 
     def __getitem__(self, index) -> torch.Tensor:
-        """Get label by index."""
+        """Get labels by index."""
         return self.imgs[index], self.labels[index]
 
     def __len__(self) -> int:

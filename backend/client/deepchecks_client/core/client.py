@@ -609,8 +609,8 @@ class DeepchecksClient:
 
         if reference_dataset is not None:
             version_client.upload_reference(reference_dataset,
-                                            prediction_proba=reference_probas,
-                                            prediction=reference_predictions)
+                                            prediction_probas=reference_probas,
+                                            predictions=reference_predictions)
             pretty_print('Reference data uploaded.')
 
         return version_client

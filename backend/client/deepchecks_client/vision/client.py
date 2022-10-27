@@ -69,28 +69,35 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def log_batch(
             self,
             sample_id: t.Sequence[str],
-            img: t.Sequence[np.ndarray],
-            timestamp: t.Union[t.Sequence[int], t.Sequence[datetime]],
-            prediction: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
-            label: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+            images: t.Sequence[np.ndarray],
+            timestamps: t.Union[t.Sequence[int], t.Sequence[datetime]],
+            predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+            labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             samples_per_send: int = 100_000
     ):
-        """Log batch of samples.
+        """Log a batch of images.
+
+        The required format for the supplied images, predictions and labels can be found at
+        https://docs.deepchecks.com/stable/user-guide/vision/data-classes/index.html
+        Please look at the following entries:
+        - image format - https://docs.deepchecks.com/stable/user-guide/vision/data-classes/VisionData.html
+        - label & prediction format - look at documentation of the respective VisionData subclass according to your task
+          type
 
         Parameters
         ==========
         sample_id : Sequence[str]
-            set of keys that uniquely identify each sample
-        img: Sequence[numpy.ndarray]
-            set of images
-        timestamp : Union[Sequence[datetime], Sequence[int]]
+            Sequence of keys that uniquely identify each sample
+        images: Sequence[numpy.ndarray]
+            Sequence of images
+        timestamps : Union[Sequence[datetime], Sequence[int]]
             samples timestamps
-        prediction : Optional[Union[Sequence[str], Sequence[float]]] , default None
-            set of predictions
-        prediction : Optional[Union[Sequence[str], Sequence[float]]] , default None
-            set of labels
+        predictions : Optional[Union[Sequence[str], Sequence[float]]] , default None
+            Sequence of predictions or predicted probabilities, according to the expected format for the task type.
+        labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
+            Sequence of labels, according to the expected format for the task type.
         samples_per_send : int , default 100_000
-            how many samples to send by one request
+            How many samples to send by one request
         """
         if samples_per_send < 1:
             raise ValueError("'samples_per_send' must be '>=' than 1")
@@ -98,34 +105,34 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if any(v != 1 for v in Counter(sample_id).values()):
             raise ValueError("'sample_id' must contain unique values")
 
-        if len(img) == 0:
-            raise ValueError("'img' cannot be empty")
+        if len(images) == 0:
+            raise ValueError("'images' cannot be empty")
 
-        n_of_sample = len(img)
+        n_of_sample = len(images)
         error_template = "number of rows/items in each given parameter must be the same yet{additional}"
 
         if n_of_sample != len(sample_id):
-            raise ValueError(error_template.format(additional=" len(sample_id) != len(img)"))
-        if n_of_sample != len(timestamp):
-            raise ValueError(error_template.format(additional=" len(timestamp) != len(img)"))
+            raise ValueError(error_template.format(additional=" len(sample_id) != len(images)"))
+        if n_of_sample != len(timestamps):
+            raise ValueError(error_template.format(additional=" len(timestamps) != len(images)"))
 
         data: t.Dict[str, t.Sequence[t.Any]] = {
-            "img": img,
-            "timestamp": timestamp,
+            "img": images,
+            "timestamp": timestamps,
             "sample_id": sample_id
         }
 
-        if prediction is not None:
-            if n_of_sample != len(prediction):
-                raise ValueError(error_template.format(additional=" len(prediction) != len(img)"))
+        if predictions is not None:
+            if n_of_sample != len(predictions):
+                raise ValueError(error_template.format(additional=" len(predictions) != len(images)"))
             else:
-                data["prediction"] = prediction
+                data["prediction"] = predictions
 
-        if label is not None:
-            if n_of_sample != len(label):
-                raise ValueError(error_template.format(additional=" len(label) != len(img)"))
+        if labels is not None:
+            if n_of_sample != len(labels):
+                raise ValueError(error_template.format(additional=" len(labels) != len(images)"))
             else:
-                data["label"] = label
+                data["label"] = labels
 
         samples = zip(*data.values())
         samples = [dict(zip(data.keys(), sample)) for sample in samples]
@@ -147,23 +154,31 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             label=None
     ):
         """Send sample for the model version.
+
+        The required format for the supplied images, predictions and labels can be found at
+        https://docs.deepchecks.com/stable/user-guide/vision/data-classes/index.html
+        Please look at the following entries:
+        - image format - https://docs.deepchecks.com/stable/user-guide/vision/data-classes/VisionData.html
+        - label & prediction format - look at documentation of the respective VisionData subclass according to your task
+          type
+
         Parameters
         ----------
         sample_id: str
             The sample ID
         img: np.ndarray
-            the image to log it's predictions, label and properties to
+            The image to log it's predictions, labels and properties to
         timestamp: Union[datetime, int]
             If no timezone info is provided on the datetime assumes local timezone.
         prediction
-            Prediction value if exists
+            Prediction value or predicted probability if exists, according to the expected format for the task type.
         label
-            label value if exists
+            labels value if exists, according to the expected format for the task type.
         """
         assert self.image_properties is not None
 
         if timestamp is None:
-            warnings.warn("log_sample was called without timestamp, using current time instead")
+            warnings.warn("log_sample was called without timestamps, using current time instead")
 
         task_type = self._get_vision_task_type()
         image_properties = self.image_properties
@@ -211,7 +226,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         vision_data: VisionData
             The vision data that containes the refrense data.
         predictions: Optional[Dict[int, np.ndarray]]
-            The predictions for the reference data in format {<index>: <prediction>}.
+            The predictions for the reference data in format {<index>: <predictions>}.
         """
         if vision_data.num_samples > 100_000:
             vision_data = vision_data.copy(shuffle=True, n_samples=100_000, random_state=42)
@@ -267,16 +282,16 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         )
     
     def update_sample(self, sample_id: str, img: np.ndarray = None, label=None, **values):
-        """Update sample. Possible to update only non_features and label.
+        """Update sample. Possible to update only non_features and labels.
 
         Parameters
         ----------
         sample_id: str
             The sample ID
         img: np.ndarray
-            the image to calculate the partial image properties if the label has been updated
+            the image to calculate the partial image properties if the labels has been updated
         label: Any
-            label value if exists
+            labels value if exists
         values:
             any additional values to update
         """
