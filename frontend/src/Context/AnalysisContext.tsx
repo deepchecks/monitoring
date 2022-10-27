@@ -12,7 +12,7 @@ export interface AnalysisContextValues {
   setPeriod: Dispatch<SetStateAction<[Date, Date]>>;
 }
 
-const initDate: [Date, Date] = [new Date(), new Date(Date.now() - timeMap.week)];
+const initDate: [Date, Date] = [new Date(Date.now() - timeMap.week), new Date()];
 
 export const AnalysisContext = createContext<AnalysisContextValues>({
   filters: {},
