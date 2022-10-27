@@ -13,7 +13,7 @@ const useRunMonitorLookback = (monitorId: number | null, modelId: string | null)
 
     if (!monitorModel) return;
 
-    const end_time = monitorModel.latest_time ? new Date(monitorModel.latest_time).toISOString() : '';
+    const end_time = monitorModel.latest_time ? new Date(monitorModel.latest_time * 1000).toISOString() : '';
     runMonitor.mutateAsync({ monitorId, data: { end_time } });
   }, [modelsMap, monitorId]);
 };

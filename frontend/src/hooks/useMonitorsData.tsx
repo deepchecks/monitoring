@@ -64,12 +64,12 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider): JSX.El
   };
 
   const fetchMonitor = async (monitor: MonitorSchema, isForceRefetch = false) => {
-    if (!isForceRefetch && chartDataMap[monitor.id]) return;
+    if (!modelsMap || (!isForceRefetch && chartDataMap[monitor.id])) return;
 
     const fetchedMonitor = await runMonitorLookbackApiV1MonitorsMonitorIdRunPost(monitor.id, {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      end_time: new Date(modelsMap[monitor?.check.model_id]?.latest_time * 1000)
+      end_time: new Date(modelsMap[monitor.check.model_id].latest_time * 1000)
     });
 
     const parsedDataForChart = parseDataForLineChart(fetchedMonitor);
