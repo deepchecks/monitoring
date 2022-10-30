@@ -21,35 +21,37 @@ const Layout = () => {
   if (!isUserDetailsComplete) return null;
 
   return (
-    <main>
-      <Box
-        sx={theme => ({
-          [theme.breakpoints.up(1920)]: {
-            borderRight: '1px solid rgba(209, 216, 220, 0.5)',
-            borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
-            height: '100%'
-          }
-        })}
-      >
+    <MonitorsDataProvider>
+      <main>
         <Box
-          sx={{
-            display: 'flex'
-          }}
+          sx={theme => ({
+            [theme.breakpoints.up(1920)]: {
+              borderRight: '1px solid rgba(209, 216, 220, 0.5)',
+              borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
+              height: '100%'
+            }
+          })}
         >
-          <Sidebar />
           <Box
             sx={{
-              background: BACKGROUND_COLOR_MAX_WIDTH,
-              padding: '0 35px',
-              minWidth: '1200px',
-              width: '100%'
+              display: 'flex'
             }}
           >
-            <Outlet />
+            <Sidebar />
+            <Box
+              sx={{
+                background: BACKGROUND_COLOR_MAX_WIDTH,
+                padding: '0 35px',
+                minWidth: '1200px',
+                width: '100%'
+              }}
+            >
+              <Outlet />
+            </Box>
           </Box>
         </Box>
-      </Box>
-    </main>
+      </main>
+    </MonitorsDataProvider>
   );
 };
 
@@ -60,7 +62,6 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <CssBaseline />
-      <MonitorsDataProvider>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <GlobalStateProvider>
             <UserProvider>
@@ -80,7 +81,6 @@ const App = () => {
             </UserProvider>
           </GlobalStateProvider>
         </LocalizationProvider>
-      </MonitorsDataProvider>
     </QueryClientProvider>
   );
 };

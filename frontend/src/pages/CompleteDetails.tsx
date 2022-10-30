@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { ThemeProvider } from '@mui/material/styles';
 
 import { useGetCompleteDetailsApiV1UsersCompleteDetailsGet } from '../api/generated';
+import { useFlags } from 'launchdarkly-react-client-sdk'
 
 // Services:
 import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../services/userService';
@@ -25,6 +26,8 @@ export const CompleteDetails = () => {
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('');
   const [acceptInvite, setAcceptInvite] = useState(false);
+
+  const flags = useFlags();
 
   useEffect(() => {
     if (completeDetailsData?.user_full_name && completeDetailsData?.organization_name) {
@@ -60,11 +63,34 @@ export const CompleteDetails = () => {
 
   if (isLoading) return <Loader />;
 
-  return (
-    <ThemeProvider theme={theme}>
-      <Grid container component="main" sx={{ height: '100vh' }}>
-        <CssBaseline />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+  let detailsGrid = null;
+
+  if (!acceptInvite && !flags.signUpEnabled) {
+    detailsGrid = (
+      <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+        <Box
+            sx={{
+              my: 8,
+              mx: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >        
+            <Logo isColored={true} />
+            <Typography sx={{ fontWeight: 700, my:8}}>
+              At this point, Deepchecks Pro will only be available by invitation. Please contact us at info@deepchecks.com to get an invite.
+            </Typography>
+          </Box>
+
+      </Grid>
+    )
+  }
+
+  else {
+    detailsGrid = (
+      <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
           <Box
             sx={{
               my: 8,
@@ -103,19 +129,23 @@ export const CompleteDetails = () => {
                 </Typography>{' '}
                 go ahead to get in.
                 <br />
-                Want to create a new organization instead?{' '}
-                <Link
-                  href="#"
-                  variant="body2"
-                  sx={{
-                    margin: '0 auto'
-                  }}
-                  onClick={() => {
-                    setAcceptInvite(false);
-                  }}
-                >
-                  Click here
-                </Link>
+                {flags.signUpEnabled ? 
+                <>
+                  Want to create a new organization instead?{' '}
+                  <Link
+                    href="#"
+                    variant="body2"
+                    sx={{
+                      margin: '0 auto'
+                    }}
+                    onClick={() => {
+                      setAcceptInvite(false);
+                    }}
+                  >
+                    Click here
+                  </Link>
+                </>
+                : ''}
               </Alert>
             ) : (
               ''
@@ -155,17 +185,16 @@ export const CompleteDetails = () => {
               <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2, height: '56px', width: '306px' }}>
                 Submit
               </Button>
-
-              <Grid container>
-                <Grid item>
-                  <Link href="#" variant="body2">
-                    {"Don't have an account? Sign Up"}
-                  </Link>
-                </Grid>
-              </Grid>
             </Box>
           </Box>
         </Grid>
+    )
+  }
+  return (
+    <ThemeProvider theme={theme}>
+      <Grid container component="main" sx={{ height: '100vh' }}>
+        <CssBaseline />
+        { detailsGrid }
         <Grid
           item
           xs={false}
