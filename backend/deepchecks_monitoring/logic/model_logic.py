@@ -96,8 +96,8 @@ def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000)
     return sampled_select_obj.order_by(order_func).limit(n_samples)
 
 
-def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: t.Dict, top_feat: t.List[str]) -> \
-        t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version: ModelVersion, top_feat: t.List[str]) \
+        -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None or len(df) == 0:
         return None, None, None
@@ -112,13 +112,15 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], feat_schema: 
             y_proba = np.array(df[SAMPLE_PRED_PROBA_COL].to_list())
         df.drop(SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
 
-    cat_features = [feat[0] for feat in feat_schema.items() if feat[0] in top_feat and feat[1]
+    cat_features = [feat[0] for feat in model_version.features_columns.items() if feat[0] in top_feat and feat[1]
                     in [ColumnType.CATEGORICAL.value, ColumnType.BOOLEAN.value]]
+    dataset_params = {'cat_features': cat_features, 'label_type': model_version.model.task_type.value}
     if df[SAMPLE_LABEL_COL].isna().all():
         df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
-        dataset = Dataset(df, cat_features=cat_features)
     else:
-        dataset = Dataset(df, label=SAMPLE_LABEL_COL, cat_features=cat_features)
+        dataset_params['label'] = SAMPLE_LABEL_COL
+
+    dataset = Dataset(df, **dataset_params)
     return dataset, y_pred, y_proba
 
 
@@ -216,7 +218,7 @@ async def get_results_for_model_versions_per_window(
         reduced_outs = []
         if not is_vision_check:
             reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-                reference_table_dataframe, model_version.features_columns, top_feat)
+                reference_table_dataframe, model_version, top_feat)
         else:
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
                 reference_table_dataframe, task_type)
@@ -234,7 +236,7 @@ async def get_results_for_model_versions_per_window(
             else:
                 if not is_vision_check:
                     test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(current_data,
-                                                                                   model_version.features_columns,
+                                                                                   model_version,
                                                                                    top_feat)
                 else:
                     test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(current_data,

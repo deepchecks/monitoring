@@ -90,8 +90,16 @@ async def run_suite_for_model_version(
     """
     top_feat, feat_imp = model_version.get_top_features()
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options)
-    test_df = DataFrame.from_dict((await test_session).all()) if test_session else DataFrame()
-    ref_df = DataFrame.from_dict((await ref_session).all()) if ref_session else DataFrame()
+    if test_session:
+        test_session = await test_session
+        test_df = DataFrame(test_session.all(), columns=test_session.keys())
+    else:
+        test_df = DataFrame()
+    if ref_session:
+        ref_session = await ref_session
+        ref_df = DataFrame(ref_session.all(), columns=ref_session.keys())
+    else:
+        ref_df = DataFrame()
     # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily
     await session.commit()
 
@@ -100,9 +108,9 @@ async def run_suite_for_model_version(
     if task_type in [TaskType.MULTICLASS, TaskType.BINARY, TaskType.REGRESSION]:
         suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
         test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
-            test_df, model_version.features_columns, top_feat)
+            test_df, model_version, top_feat)
         reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-            ref_df, model_version.features_columns, top_feat)
+            ref_df, model_version, top_feat)
 
     elif task_type in [TaskType.VISION_DETECTION, TaskType.VISION_CLASSIFICATION]:
         suite = _create_vision_suite(suite_name, task_type, len(ref_df) > 0)
