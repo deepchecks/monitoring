@@ -23,6 +23,7 @@ import {
   DashboardHover
 } from '../assets/icon/icon';
 import { APIKeyPage } from 'pages/APIKeyPage';
+import { MonitorsDataProvider } from 'hooks/useMonitorsData';
 
 export interface PathInfo {
   title: string;
@@ -38,7 +39,7 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Dashboard',
     link: '/dashboard',
-    element: DashboardPage,
+    element: () => (<MonitorsDataProvider><DashboardPage /></MonitorsDataProvider>),
     Icon: Dashboard,
     IconHover: DashboardHover,
     ActiveIcon: DashboardActive

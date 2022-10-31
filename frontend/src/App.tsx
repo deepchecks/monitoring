@@ -21,37 +21,35 @@ const Layout = () => {
   if (!isUserDetailsComplete) return null;
 
   return (
-    <MonitorsDataProvider>
-      <main>
+    <main>
+      <Box
+        sx={theme => ({
+          [theme.breakpoints.up(1920)]: {
+            borderRight: '1px solid rgba(209, 216, 220, 0.5)',
+            borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
+            height: '100%'
+          }
+        })}
+      >
         <Box
-          sx={theme => ({
-            [theme.breakpoints.up(1920)]: {
-              borderRight: '1px solid rgba(209, 216, 220, 0.5)',
-              borderLeft: '1px solid rgba(209, 216, 220, 0.5)',
-              height: '100%'
-            }
-          })}
+          sx={{
+            display: 'flex'
+          }}
         >
+          <Sidebar />
           <Box
             sx={{
-              display: 'flex'
+              background: BACKGROUND_COLOR_MAX_WIDTH,
+              padding: '0 35px',
+              minWidth: '1200px',
+              width: '100%'
             }}
           >
-            <Sidebar />
-            <Box
-              sx={{
-                background: BACKGROUND_COLOR_MAX_WIDTH,
-                padding: '0 35px',
-                minWidth: '1200px',
-                width: '100%'
-              }}
-            >
-              <Outlet />
-            </Box>
+            <Outlet />
           </Box>
         </Box>
-      </main>
-    </MonitorsDataProvider>
+      </Box>
+    </main>
   );
 };
 
@@ -69,7 +67,7 @@ const App = () => {
                 <StatsTimeProvider>
                   <Routes>
                     <Route element={<Layout />}>
-                      <Route path="/" element={<DashboardPage />} />
+                      <Route path="/" element={<MonitorsDataProvider><DashboardPage /></MonitorsDataProvider>} />
                       {flatPathsInfo.map(({ link, element: PageElement }) => (
                         <Route key={link} path={link} element={<PageElement />} />
                       ))}
