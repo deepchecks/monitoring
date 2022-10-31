@@ -12,6 +12,7 @@
 import os
 import typing as t
 import warnings
+
 try:
     from importlib import metadata
 except ImportError: # for Python<3.8
@@ -84,15 +85,17 @@ class DeepchecksModelVersionClient:
         self._log_samples = []
         self._update_samples = []
 
-        self.schema = maybe_raise(
+        schemas = maybe_raise(
             self.session.get(f'model-versions/{model_version_id}/schema'),
-            msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) schema.\n{{error}}"
+            msg=f"Failed to obtain ModelVersion(id:{model_version_id}) schema.\n{{error}}"
         ).json()
 
-        self.ref_schema = maybe_raise(
-            self.session.get(f'model-versions/{model_version_id}/reference-schema'),
-            msg=f"Failed to obtaine ModelVersion(id:{model_version_id}) reference schema.\n{{error}}"
-        ).json()
+        self.schema = schemas['monitor_schema']
+        self.ref_schema = schemas['reference_schema']
+
+        self.categorical_columns = [feat for feat, value in
+                                     dict(schemas['features'], **schemas['non_features']).items()
+                                     if value == 'categorical']
 
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
@@ -126,11 +129,11 @@ class DeepchecksModelVersionClient:
     def upload_reference(self, *args, **kwargs):
         """Upload reference data. Possible to upload only once for a given model version."""
         raise NotImplementedError
-    
+
     def _upload_reference(
-        self, 
-        data: pd.DataFrame,
-        samples_per_request: int = 5000,
+            self,
+            data: pd.DataFrame,
+            samples_per_request: int = 5000,
     ):
         for i in range(0, len(data), samples_per_request):
             content = data.iloc[i:i + samples_per_request]
@@ -565,9 +568,8 @@ class DeepchecksClient:
                                      task_type: Optional[str] = None,
                                      description: str = ''
                                      ) -> 'tabular.client.DeepchecksModelVersionClient':
-
         """
-        Creates a tabular model version and uploads the reference data if provided.
+        Create a tabular model version and uploads the reference data if provided.
 
         Parameters
         ----------

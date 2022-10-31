@@ -163,6 +163,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
             if prediction_proba is not None:
+                if isinstance(prediction_proba, pd.Series):
+                    prediction_proba = np.asarray(prediction_proba)
                 sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = prediction_proba
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = str(prediction)
         elif task_type == TaskType.REGRESSION:
@@ -171,6 +173,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = float(prediction)
         else:
             raise ValueError(f'Unknown or unsupported task type provided - {task_type}')
+
+        # Make sure that integer categorical columns are still sent as strings:
+        for col in self.categorical_columns:
+            sample[col] = str(sample[col])
 
         sample = DeepchecksEncoder.encode(sample)
         self.schema_validator.validate(sample)
@@ -190,6 +196,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         dataset: deepchecks.tabular.Dataset
         prediction_probas: np.ndarray
         predictions: np.ndarray
+        samples_per_request: int
         """
         data = dataset.features_columns.copy()
         
@@ -211,6 +218,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if len(dataset) > 100_000:
             data = data.sample(100_000, random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
+
+        # Make sure that integer categorical columns are still sent as strings:
+        data[self.categorical_columns] = data[self.categorical_columns].astype(str)
 
         validator = DeepchecksJsonValidator(self.ref_schema)
         for _, row in data.iterrows():
@@ -318,6 +328,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             label = float(label) if task_type == TaskType.REGRESSION else str(label)
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
+        # Make sure that integer categorical columns are still sent as strings:
+        for col in self.categorical_columns:
+            if col in update.keys():
+                update[col] = str(update[col])
         update = DeepchecksEncoder.encode(update)
 
         # Create update schema, which contains only non-required columns and sample id

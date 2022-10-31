@@ -207,31 +207,20 @@ async def get_schema(
         SQLAlchemy session.
     Returns
     -------
-    json schema of the model version
+    dictionary containing:
+        json schema of the monitored data in model version
+        json schema of the reference data in model version
+        feature columns schema
+        non-feature columns schema
     """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    return model_version.monitor_json_schema
-
-
-@router.get('/model-versions/{model_version_id}/reference-schema', tags=[Tags.MODELS])
-async def get_reference_schema(
-        model_version_id: int,
-        session: AsyncSession = AsyncSessionDep
-):
-    """Return json schema of the model version data to use in validation on client-side.
-
-    Parameters
-    ----------
-    model_version_id : int
-        Version id to run function on.
-    session : AsyncSession, optional
-        SQLAlchemy session.
-    Returns
-    -------
-    json schema of the model version
-    """
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    return model_version.reference_json_schema
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    result = {
+        'monitor_schema': model_version.monitor_json_schema,
+        'reference_schema': model_version.reference_json_schema,
+        'features': model_version.features_columns,
+        'non_features': model_version.non_features_columns,
+    }
+    return result
 
 
 @router.post('/model-versions/{model_version_id}/suite-run', tags=[Tags.CHECKS], response_class=HTMLResponse)

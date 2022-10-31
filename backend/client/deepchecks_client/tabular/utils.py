@@ -79,7 +79,7 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
 
     # a bit of ugly code to write the content at the start
     yaml_schema = io.StringIO()
-    yaml_schema.write('# Automatically infered schema.\n'
+    yaml_schema.write('# Automatically inferred schema.\n'
                       '# Some inferred types may be incorrect, please check carefully as it cannot be changed.\n'
                       '# Possible values are: "numeric", "integer", "categorical", '
                       '"boolean", "text", "array_float", "array_float_2d".\n'

@@ -169,7 +169,7 @@ async def test_update_data_no_id_column(client: TestClient, classification_model
 async def test_get_schema(client: TestClient, classification_model_version_id: int):
     response = client.get(f"/api/v1/model-versions/{classification_model_version_id}/schema")
     assert response.status_code == 200
-    assert response.json() == {
+    assert response.json()["monitor_schema"] == {
         "properties": {
             "_dc_label": {"type": ["string", "null"]},
             "_dc_prediction": {"type": "string"},
