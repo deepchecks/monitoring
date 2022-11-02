@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 import requests
+import certifi
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.core.reduce_classes import ReduceMixin
@@ -52,7 +53,7 @@ class HttpSession(requests.Session):
                                url,
                                *args,
                                headers=headers,
-                               verify=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'AmazonRootCA1.cer'),
+                               verify=certifi.where(),
                                **kwargs)
 
 
@@ -159,6 +160,7 @@ class DeepchecksModelVersionClient:
             The start time of the time window. If no timezone info is provided on the datetime assumes local timezone.
         end_time: Union[datetime, int], default = None
             The end time of the time window. If no timezone info is provided on the datetime assumes local timezone.
+
         Returns
         -------
         statistics: dict
@@ -291,6 +293,7 @@ class DeepchecksModelClient:
             The severity level associated with the alert. Possible values are: critical, high, mid and low.
         greater_than: bool, default: True
             Whether the alert condition requires the check value to be larger or smaller than provided threshold.
+
         Returns
         -------
             alert_id: int
@@ -332,6 +335,7 @@ class DeepchecksModelClient:
             Name for the created monitor.
         add_monitor_to_dashboard: bool, default: False
             Whether to add a corresponding monitor to the dashboard screen.
+
         Returns
         -------
             alert_id: int
@@ -367,6 +371,7 @@ class DeepchecksModelClient:
             Whether to add the monitor to the dashboard screen.
         kwargs_for_check: t.Dict, default = None
             Additional kwargs to pass on to check.
+
         Returns
         -------
             monitor_id: int
@@ -423,7 +428,8 @@ class DeepchecksClient:
     ----------
     host: str
         The deepchecks monitoring API host.
-    token
+    token: Optional[str]
+        The deepchecks API token
     """
 
     host: str
@@ -462,6 +468,7 @@ class DeepchecksClient:
             Additional description for the model.
         create_defaults: bool, default: True
             Whether to add default check, monitors and alerts to the model.
+
         Returns
         -------
         DeepchecksModelClient
@@ -514,6 +521,7 @@ class DeepchecksClient:
         task_type: str
             Task type of the model, possible values are regression, multiclass, binary, vision_classification and
             vision_detection.
+
         Returns
         -------
         DeepchecksModelClient
@@ -537,6 +545,7 @@ class DeepchecksClient:
             Name of the model.
         version_name: str
             Name of the model version.
+
         Returns
         -------
         DeepchecksModelVersionClient
@@ -592,6 +601,7 @@ class DeepchecksClient:
              dataset.label_type if set. Possible values are regression, multiclass, binary
         description: str, default: ''
             A short description of the model.
+
         Returns
         -------
         tabular.client.DeepchecksModelVersionClient

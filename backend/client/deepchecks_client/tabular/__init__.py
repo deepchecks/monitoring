@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-"""Module defining the core client functionality."""
+"""Module defining the tabular client functionality."""
 from deepchecks_client.tabular.utils import create_schema, read_schema
 
 __all__ = ['create_schema', 'read_schema']
