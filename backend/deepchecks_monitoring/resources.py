@@ -151,7 +151,7 @@ class ResourcesProvider(BaseResourcesProvider):
     @contextmanager
     def create_database_session(self) -> t.Iterator[Session]:
         """Create sqlalchemy database session."""
-        with self.session_factory() as session:
+        with self.session_factory() as session:  # pylint: disable=not-callable
             try:
                 yield session
                 session.commit()
@@ -191,7 +191,7 @@ class ResourcesProvider(BaseResourcesProvider):
     @asynccontextmanager
     async def create_async_database_session(self) -> t.AsyncIterator[ExtendedAsyncSession]:
         """Create async sqlalchemy database session."""
-        async with self.async_session_factory() as session:
+        async with self.async_session_factory() as session:  # pylint: disable=not-callable
             try:
                 yield session
                 await session.commit()

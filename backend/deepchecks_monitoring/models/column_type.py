@@ -52,7 +52,7 @@ class ColumnType(str, enum.Enum):
         }
         return types_map[self]
 
-    def to_json_schema_type(self, nullable=False):
+    def to_json_schema_type(self, nullable=False, min_items: int = None, max_items: int = None):
         """Return the json type of the column type."""
         types_map = {
             ColumnType.NUMERIC: {"type": "number"},
@@ -67,6 +67,10 @@ class ColumnType(str, enum.Enum):
         schema = types_map[self]
         if nullable:
             schema["type"] = (schema["type"], "null")
+        if min_items and self == ColumnType.ARRAY_FLOAT:
+            schema["minItems"] = min_items
+        if max_items and self == ColumnType.ARRAY_FLOAT:
+            schema["maxItems"] = max_items
         return schema
 
     def to_statistics_stub(self):
@@ -84,12 +88,13 @@ class ColumnType(str, enum.Enum):
         return types_map[self]
 
 
-def get_model_columns_by_type(task_type: TaskType) -> t.Tuple[t.Dict[str, ColumnType], t.List]:
+def get_model_columns_by_type(task_type: TaskType, have_classes: bool) -> t.Tuple[t.Dict[str, ColumnType], t.List]:
     """Get deepchecks' saved columns to be used in json schema based on given task type.
 
     Parameters
     ----------
     task_type
+    have_classes
 
     Returns
     -------
@@ -102,11 +107,17 @@ def get_model_columns_by_type(task_type: TaskType) -> t.Tuple[t.Dict[str, Column
             SAMPLE_PRED_COL: ColumnType.NUMERIC
         }, [SAMPLE_PRED_COL]
     elif task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
-        return {
-            SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
-            SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
-            SAMPLE_PRED_PROBA_COL: ColumnType.ARRAY_FLOAT
-        }, [SAMPLE_PRED_COL]
+        if have_classes:
+            return {
+               SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
+               SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
+               SAMPLE_PRED_PROBA_COL: ColumnType.ARRAY_FLOAT
+            }, [SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL]
+        else:
+            return {
+               SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
+               SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
+            }, [SAMPLE_PRED_COL]
     elif task_type == TaskType.VISION_CLASSIFICATION:
         return {
             SAMPLE_LABEL_COL: ColumnType.INTEGER,

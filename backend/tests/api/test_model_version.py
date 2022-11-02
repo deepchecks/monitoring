@@ -12,8 +12,121 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect
 
-from deepchecks_monitoring.models import ModelVersion
-from tests.conftest import add_classification_data, send_reference_request
+from deepchecks_monitoring.models import ModelVersion, TaskType
+from tests.conftest import add_classification_data, send_reference_request, add_model
+
+
+@pytest.mark.asyncio
+async def test_add_model_version_binary_no_classes(client: TestClient):
+    # Arrange
+    model_id = add_model(client, task_type=TaskType.BINARY)
+    request = {
+        "name": "xxx",
+        "features": {
+            "x": "numeric",
+        },
+        "non_features": {
+            "a": "numeric",
+        }
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{model_id}/version", json=request)
+
+    # Assert
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_add_model_version_binary_with_classes(client: TestClient):
+    # Arrange
+    model_id = add_model(client, task_type=TaskType.BINARY)
+    request = {
+        "name": "xxx",
+        "features": {
+            "x": "numeric",
+        },
+        "non_features": {
+            "a": "numeric",
+        },
+        "classes": ["1", "2"]
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{model_id}/version", json=request)
+
+    # Assert
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_add_model_version_binary_with_too_many_classes(client: TestClient):
+    # Arrange
+    model_id = add_model(client, task_type=TaskType.BINARY)
+    request = {
+        "name": "xxx",
+        "features": {
+            "x": "numeric",
+        },
+        "non_features": {
+            "a": "numeric",
+        },
+        "classes": ["1", "2", "3"]
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{model_id}/version", json=request)
+
+    # Assert
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Got 3 classes but task type is binary"
+
+
+@pytest.mark.asyncio
+async def test_add_model_version_classes_not_sorted(client: TestClient):
+    # Arrange
+    model_id = add_model(client, task_type=TaskType.MULTICLASS)
+    request = {
+        "name": "xxx",
+        "features": {
+            "x": "numeric",
+        },
+        "non_features": {
+            "a": "numeric",
+        },
+        "classes": ["1", "2", "3", "0"]
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{model_id}/version", json=request)
+
+    # Assert
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Classes list must be sorted alphabetically"
+
+
+@pytest.mark.asyncio
+async def test_add_model_version_classes_for_regression(client: TestClient):
+    # Arrange
+    model_id = add_model(client, task_type=TaskType.REGRESSION)
+    request = {
+        "name": "xxx",
+        "features": {
+            "x": "numeric",
+        },
+        "non_features": {
+            "a": "numeric",
+        },
+        "classes": ["1", "2", "3"]
+    }
+
+    # Act
+    response = client.post(f"/api/v1/models/{model_id}/version", json=request)
+
+    # Assert
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Classes parameter is valid only for classification, bot model task is " \
+                                        "regression"
 
 
 @pytest.mark.asyncio
@@ -117,7 +230,8 @@ async def test_time_window_statistics(client: TestClient, classification_model_v
 @pytest.mark.asyncio
 async def test_count_tables(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
+    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1",
+              "_dc_prediction_probabilities": [0, 1, 2]}
     send_reference_request(client, classification_model_version_id, [sample] * 100)
     add_classification_data(classification_model_version_id, client)
     # Act
@@ -147,3 +261,86 @@ async def test_remove_version(client: TestClient, classification_model_version_i
 
     assert mon_table_name not in tables
     assert ref_table_name not in tables
+
+
+@pytest.mark.asyncio
+async def test_get_schema(client: TestClient, classification_model_version_id: int):
+    response = client.get(f"/api/v1/model-versions/{classification_model_version_id}/schema")
+    assert response.status_code == 200
+    assert response.json() == {
+        "monitor_schema": {
+            "type": "object",
+            "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction", "_dc_prediction_probabilities"],
+            "properties": {
+                "a": {
+                    "type": ["number", "null"]
+                },
+                "b": {
+                    "type": ["string", "null"]
+                },
+                "c": {
+                    "type": ["number", "null"]
+                },
+                "_dc_time": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "_dc_label": {
+                    "type": ["string", "null"]
+                },
+                "_dc_sample_id": {
+                    "type": "string"
+                },
+                "_dc_prediction": {
+                    "type": "string"
+                },
+                "_dc_prediction_probabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "maxItems": 3,
+                    "minItems": 3
+                }
+            },
+            "additionalProperties": False
+        },
+        "reference_schema": {
+            "type": "object",
+            "required": ["a", "b", "_dc_prediction", "_dc_prediction_probabilities"],
+            "properties": {
+                "a": {
+                    "type": ["number", "null"]
+                },
+                "b": {
+                    "type": ["string", "null"]
+                },
+                "c": {
+                    "type": ["number", "null"]
+                },
+                "_dc_label": {
+                    "type": ["string", "null"]
+                },
+                "_dc_prediction": {
+                    "type": "string"
+                },
+                "_dc_prediction_probabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "maxItems": 3,
+                    "minItems": 3
+                }
+            },
+            "additionalProperties": False
+        },
+        "features": {
+            "a": "numeric",
+            "b": "categorical"
+        },
+        "non_features": {
+            "c": "numeric"
+        },
+        "classes": ["0", "1", "2"]
+    }

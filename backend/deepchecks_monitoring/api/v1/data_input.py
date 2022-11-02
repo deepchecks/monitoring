@@ -112,12 +112,12 @@ async def save_reference(
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     ref_table = model_version.get_reference_table(session)
     n_of_samples_query = select(count()).select_from(ref_table)
-    limit_exeedee_message = "Maximum allowed number of reference data samples is already uploaded"
+    limit_exceeded_message = "Maximum allowed number of reference data samples is already uploaded"
 
     # check available reference samples number to prevent
     # unneeded work (data read and data validation)
     if (await session.scalar(n_of_samples_query)) >= max_samples:
-        raise BadRequest(limit_exeedee_message)
+        raise BadRequest(limit_exceeded_message)
 
     content = await batch.read()
     reference_batch = pd.read_json(StringIO(content.decode()), orient="table")
@@ -140,7 +140,7 @@ async def save_reference(
     # to ensure the limit of 100_000 records
     n_of_samples = await session.scalar(n_of_samples_query)
     if n_of_samples > max_samples:
-        raise BadRequest(limit_exeedee_message)
+        raise BadRequest(limit_exceeded_message)
 
     # trim received data to ensure the limit of 100_000 records
     if (len(items) + n_of_samples) > max_samples:

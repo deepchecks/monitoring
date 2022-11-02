@@ -245,12 +245,12 @@ async def get_results_for_model_versions_per_window(
                     if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                         reduced = dp_check.run(test_ds, feature_importance=feat_imp,
                                                y_pred_train=test_pred, y_proba_train=test_proba,
-                                               with_display=False).reduce_output()
+                                               with_display=False, model_classes=model_version.classes).reduce_output()
                     elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
                         reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
                                                y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                                                y_pred_test=test_pred, y_proba_test=test_proba,
-                                               with_display=False).reduce_output()
+                                               with_display=False, model_classes=model_version.classes).reduce_output()
                     elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
                         reduced = dp_check.run(test_ds,
                                                train_predictions=test_pred, train_properties=test_props,

@@ -165,31 +165,9 @@ async def test_update_data_no_id_column(client: TestClient, classification_model
     await assert_ingestion_errors_count(1, async_session)
 
 
-@pytest.mark.asyncio
-async def test_get_schema(client: TestClient, classification_model_version_id: int):
-    response = client.get(f"/api/v1/model-versions/{classification_model_version_id}/schema")
-    assert response.status_code == 200
-    assert response.json()["monitor_schema"] == {
-        "properties": {
-            "_dc_label": {"type": ["string", "null"]},
-            "_dc_prediction": {"type": "string"},
-            "_dc_prediction_probabilities": {"items": {"type": "number"}, "type": ["array", "null"]},
-            "_dc_sample_id": {"type": "string"},
-            "_dc_time": {"format": "datetime", "type": "string"},
-            "a": {"type": ["number", "null"]},
-            "b": {"type": ["string", "null"]},
-            "c": {"type": ["number", "null"]}
-        },
-        "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction"],
-        "type": "object",
-        "additionalProperties": False
-    }
-
-
-@pytest.mark.asyncio
 async def test_send_reference_features(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
+    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1", "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -199,7 +177,8 @@ async def test_send_reference_features(client: TestClient, classification_model_
 @pytest.mark.asyncio
 async def test_send_reference_features_and_labels(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
+    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1",
+              "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert
@@ -209,7 +188,7 @@ async def test_send_reference_features_and_labels(client: TestClient, classifica
 @pytest.mark.asyncio
 async def test_send_reference_features_and_non_features(client: TestClient, classification_model_version_id: int):
     # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction": "1"}
+    sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction": "1", "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
     # Act
     response = send_reference_request(client, classification_model_version_id, [sample] * 100)
     # Assert

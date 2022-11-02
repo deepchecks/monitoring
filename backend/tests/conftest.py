@@ -253,7 +253,8 @@ async def classification_model_version_id(classification_model_id: int, client):
         "name": "v1",
         "features": {"a": "numeric", "b": "categorical"},
         "feature_importance": {"a": 0.1, "b": 0.5},
-        "non_features": {"c": "numeric"}
+        "non_features": {"c": "numeric"},
+        "classes": ["0", "1", "2"]
     }
     response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
     return response.json()["id"]
@@ -308,7 +309,8 @@ async def classification_model_version_no_fi_id(classification_model_id: int, cl
     request = {
         "name": "v1",
         "features": {"a": "numeric", "b": "categorical"},
-        "non_features": {"c": "numeric"}
+        "non_features": {"c": "numeric"},
+        "classes": ["0", "1", "2"]
     }
     response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
     return response.json()["id"]
@@ -423,7 +425,7 @@ def add_model(
 ) -> t.Union[Response, int]:
     payload = {}
     payload["name"] = name or randomname.get_name()
-    payload["task_type"] = task_type or random.choice(list(TaskType)).value.lower()
+    payload["task_type"] = (task_type or random.choice(list(TaskType))).value
     payload["description"] = description or ""
 
     response = client.post("/api/v1/models", json=payload)
@@ -447,11 +449,15 @@ def add_model_version(
         name: t.Optional[str] = None,
         features: t.Optional[t.Dict[str, str]] = None,
         non_features: t.Optional[t.Dict[str, str]] = None,
+        feature_importance: t.Optional[t.Dict[str, float]] = None,
+        classes: t.Optional[t.List[str]] = None
 ) -> t.Union[int, Response]:
     payload = {}
     payload["name"] = name or randomname.get_name()
     payload["features"] = features if features is not None else {"a": "numeric", "b": "categorical"}
     payload["non_features"] = non_features if non_features is not None else {"c": "numeric"}
+    payload["feature_importance"] = feature_importance
+    payload["classes"] = classes
 
     response = client.post(f"/api/v1/models/{model_id}/version", json=payload)
 
@@ -515,7 +521,8 @@ def add_classification_data(
         client: TestClient,
         daterange: t.Optional[t.Sequence[pdl.DateTime]] = None,
         id_prefix="",
-        is_labeled=True
+        is_labeled=True,
+        with_proba=True,
 ):
     if daterange is None:
         curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
@@ -527,15 +534,17 @@ def add_classification_data(
     for i, date in enumerate(daterange):
         time = date.isoformat()
         label = ("2" if i != 1 else "1") if is_labeled else None
-        data.append({
+        sample = {
             "_dc_sample_id": f"{id_prefix}{i}",
             "_dc_time": time,
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
             "_dc_prediction": "2" if i % 2 else "1",
             "_dc_label": label,
             "a": 10 + i,
             "b": "ppppp",
-        })
+        }
+        if with_proba:
+            sample["_dc_prediction_probabilities"] = [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3]
+        data.append(sample)
 
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
     return resp, daterange[0], daterange[-1]

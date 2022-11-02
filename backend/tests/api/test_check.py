@@ -14,7 +14,9 @@ import pytest
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 
-from tests.conftest import add_classification_data, add_vision_classification_data, send_reference_request
+from deepchecks_monitoring.models import TaskType
+from tests.conftest import add_classification_data, add_vision_classification_data, send_reference_request, add_model, \
+    add_model_version, add_check
 
 
 def prettify(data) -> str:
@@ -152,7 +154,7 @@ async def test_metric_check_w_res_conf(classification_model_check_id, classifica
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
                                  "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}, "res_conf": ["1"]}})
-    assert response.json() == {"v1": {"F1 Per Class 1": 0.0}}
+    assert response.json() == {"v1": {"F1 Per Class 1": 0}}
     response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat(),
@@ -413,12 +415,12 @@ async def run_check(classification_model_id, classification_model_version_id, cl
     }]
     # Act
     response = send_reference_request(client, classification_model_version_id, samples * 100)
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
 
     # test no filter
     response = client.post("/api/v1/checks/1/run/lookback", json={"start_time": day_before_curr_time.isoformat(),
                                                                   "end_time": curr_time.isoformat()})
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
     json_rsp = response.json()
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
 
@@ -719,3 +721,18 @@ async def test_property_check_w_properties(classification_vision_model_property_
                                                                       "property": ["images Area"]},
                                                        "res_conf": None}})
     assert response.json() == {"v1": {"Area": 0}}
+
+
+@pytest.mark.asyncio
+async def test_check_classification_without_classes(client: TestClient):
+    model_id = add_model(client, task_type=TaskType.BINARY)
+    version_id = add_model_version(model_id, client, name="v1", features={"a": "numeric", "b": "categorical"},
+                                   non_features={"c": "numeric"}, feature_importance={"a": 0.1, "b": 0.5})
+    check_id = add_check(model_id, client)
+    assert add_classification_data(version_id, client, with_proba=False)[0].status_code == 200
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    response = client.post(f"/api/v1/checks/{check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat()})
+    assert response.json() == {"v1":  {"accuracy": 0.2, "f1_macro": 0.16666666666666666}}

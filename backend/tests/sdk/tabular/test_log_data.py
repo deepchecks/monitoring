@@ -10,12 +10,16 @@
 import pandas as pd
 import pendulum as pdl
 import pytest
+from hamcrest import assert_that, calling, raises
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
+from deepchecks_client import TaskType
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL
 from deepchecks_monitoring.models.model_version import ModelVersion
+from tests.conftest import add_model, add_model_version
 
 
 @pytest.mark.asyncio
@@ -42,6 +46,33 @@ async def test_classification_log(
     assert set(stats['_dc_label']['values']) == set(['1', '2'])
     assert set(stats['_dc_prediction']['values']) == set(['0', '1', '2'])
     assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert stats['a'] == {'max': 3, 'min': 2}
+    assert stats['c'] == {'max': 1, 'min': -1}
+
+
+@pytest.mark.asyncio
+async def test_classification_log_without_probas(
+        deepchecks_sdk_client, client: TestClient, async_session: AsyncSession
+):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    version_id = add_model_version(model_id, client, name='v1')
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+
+    # Act
+    dc_client.log_sample('1', prediction='2', label=2, a=2, b='2', c=1)
+    dc_client.log_sample('2', prediction='1', label=2, a=3, b='4', c=-1)
+    dc_client.log_sample('3', prediction='0', label=1, a=2, b='0', c=0)
+    dc_client.send()
+
+    # Assert
+    model_version_query = await async_session.execute(select(ModelVersion)
+                                                      .where(ModelVersion.id == version_id))
+    model_version: ModelVersion = model_version_query.scalars().first()
+    stats = model_version.statistics
+    assert set(stats['_dc_label']['values']) == {'1', '2'}
+    assert set(stats['_dc_prediction']['values']) == {'0', '1', '2'}
+    assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
 
@@ -292,3 +323,59 @@ async def test_batch_log_without_sample_id_column(
     ids = await async_session.scalars(select(monitor_table.c[SAMPLE_ID_COL]))
 
     assert set(ids) == {'0', '1', '2'}
+
+
+@pytest.mark.asyncio
+async def test_classification_log_pass_probas_without_classes(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1')
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.log_sample).with_args(
+        '1', prediction='2', prediction_proba=[0.1, 0.3, 0.6], label=2, a=2, b='2', c=1
+    ),
+        raises(ValueError, 'Can\'t pass prediction_proba if version was not configured with model classes'))
+
+
+@pytest.mark.asyncio
+async def test_classification_log_pass_probas_not_same_length_as_classes(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.log_sample).with_args(
+        '1', prediction='2', prediction_proba=[0.1, 0.3, 0.5, 0.1], label=2, a=2, b='2', c=1
+    ),
+        raises(ValueError, 'Number of classes in prediction_proba does not match number of classes in model classes.'))
+
+
+@pytest.mark.asyncio
+async def test_classification_log_pass_prediction_not_in_classes(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.log_sample).with_args(
+        '1', prediction='10', prediction_proba=[0.1, 0.3, 0.6], label=2, a=2, b='2', c=1
+    ),
+        raises(ValueError, 'Provided prediction not in allowed model classes: 10'))
+
+
+@pytest.mark.asyncio
+async def test_regression_log_sample_pass_proba(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.REGRESSION)
+    add_model_version(model_id, client, name='v1')
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.REGRESSION.value).version('v1')
+    assert_that(calling(dc_client.log_sample).with_args(
+        '1', prediction=10, prediction_proba=[0.1], label=2, a=2, b='2', c=1
+    ),
+        raises(ValueError, 'Can\'t pass prediction_proba for regression task.'))

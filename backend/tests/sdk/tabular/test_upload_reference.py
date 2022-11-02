@@ -7,22 +7,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-import io
-
+import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular.dataset import Dataset
-from deepchecks_client.tabular.utils import create_schema
+from hamcrest import assert_that, calling, raises
 from sqlalchemy import select
+from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
+from deepchecks_client import TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
+from tests.conftest import add_model, add_model_version
 
 
 @pytest.mark.asyncio
 async def test_classification_upload(multiclass_model_version_client: DeepchecksModelVersionClient, async_session):
     df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
-    proba = [[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]]
+    proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
     pred = [2, 1]
     multiclass_model_version_client.upload_reference(Dataset(df, features=['a', 'b'], label='label'),
                                                      prediction_probas=proba,
@@ -37,6 +39,31 @@ async def test_classification_upload(multiclass_model_version_client: Deepchecks
     assert ref_dict == [
         (2.0, '2', None, '2', '2', [0.1, 0.30000000000000004, 0.6000000000000001]),
         (2.0, '2', None, '0', '1', [0.1, 0.6000000000000001, 0.30000000000000004]),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_classification_upload_without_classes(client, deepchecks_sdk_client, async_session):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    version_id = add_model_version(model_id, client, name='v1')
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    ds = Dataset(df, features=['a', 'b'], label='label')
+    pred = [2, 1]
+
+    # Act
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client.upload_reference(ds, predictions=pred)
+
+    # Assert
+    model_version_query = await async_session.execute(select(ModelVersion)
+                                                      .where(ModelVersion.id == version_id))
+    model_version: ModelVersion = model_version_query.scalars().first()
+    ref_table = model_version.get_reference_table(async_session)
+    ref_dict = (await async_session.execute(select(ref_table))).all()
+    assert ref_dict == [
+        (2.0, '2', None, '2', '2'),
+        (2.0, '2', None, '0', '1')
     ]
 
 
@@ -60,57 +87,81 @@ async def test_regression_upload(regression_model_version_client: DeepchecksMode
 
 
 @pytest.mark.asyncio
-async def test_quick_version(deepchecks_sdk_client, async_session):
+async def test_pass_probas_to_regression(deepchecks_sdk_client, client: TestClient):
     # Arrange
-    dataset = Dataset(pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
-                      label='label', cat_features=['b'])
-    schema_file = io.StringIO()
-    create_schema(dataset, schema_file)
-    proba = [[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]]
+    model_id = add_model(client, name='model', task_type=TaskType.REGRESSION)
+    add_model_version(model_id, client, name='v1')
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    ds = Dataset(df, features=['a', 'b'], label='label')
+    proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
     pred = [2, 1]
-    # Act
-    deepchecks_sdk_client.create_tabular_model_version(model_name='test',
-                                                       reference_dataset=dataset,
-                                                       reference_predictions=pred,
-                                                       reference_probas=proba,
-                                                       schema_file=schema_file,
-                                                       task_type='multiclass',
-                                                       version_name='ver')
-    # Assert
-    model = deepchecks_sdk_client.model(name='test', task_type='multiclass')
-    assert model.get_versions() == {'ver': 1}
-    model_version_query = await async_session.execute(select(ModelVersion)
-                                                      .where(ModelVersion.id == 1))
-    model_version: ModelVersion = model_version_query.scalars().first()
-    ref_table = model_version.get_reference_table(async_session)
-    ref_data = (await async_session.execute(select(ref_table))).all()
-    assert len(ref_data) == 2
-    assert len(ref_data[0]) == 6
-    assert len(ref_data[0][5]) == 3
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.REGRESSION.value).version('v1')
+    assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
+                raises(ValueError, 'Can\'t pass prediction_probas to regression task.'))
 
 
 @pytest.mark.asyncio
-async def test_quick_start_flow(deepchecks_sdk_client):
+async def test_pass_probas_without_model_classes(deepchecks_sdk_client, client: TestClient):
     # Arrange
-    data = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
-    dataset = Dataset(data, label='label', cat_features=['b'])
-    schema_file = io.StringIO()
-    create_schema(dataset, schema_file)
-    proba = [[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]]
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1')
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    ds = Dataset(df, features=['a', 'b'], label='label')
+    proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
     pred = [2, 1]
-    timestamp = pd.Series([1662076799, 1662076899])
-    # Act
-    version = deepchecks_sdk_client.create_tabular_model_version(model_name='test',
-                                                                 reference_dataset=dataset,
-                                                                 reference_predictions=pred,
-                                                                 reference_probas=proba,
-                                                                 schema_file=schema_file,
-                                                                 task_type='multiclass',
-                                                                 version_name='ver')
-    version.log_batch(data=data.iloc[:, :3], timestamps=timestamp,
-                      predictions=pd.Series(pred), prediction_probas=pd.Series(proba), labels=data['label'])
-    # Assert
-    version = deepchecks_sdk_client.get_model_version(model_name='test', version_name='ver')
-    assert version.model_version_id == 1
-    assert version.time_window_statistics(timestamp[0], timestamp[1] + 1) == \
-           {'num_samples': 2, 'num_labeled_samples': 2}
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
+                raises(ValueError, 'Can\'t pass prediction_probas if version was not configured with model classes.'))
+
+
+@pytest.mark.asyncio
+async def test_pass_probas_different_length_than_model_classes(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    ds = Dataset(df, features=['a', 'b'], label='label')
+    proba = np.asarray([[0.1, 0.3, 0.5, 0.1], [0.1, 0.6, 0.2, 0.1]])
+    pred = [2, 1]
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
+                raises(ValueError,
+                       'number of classes in prediction_probas does not match number of classes in model classes.'))
+
+
+@pytest.mark.asyncio
+async def test_pass_new_predictions_not_in_model_classes(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    ds = Dataset(df, features=['a', 'b'], label='label')
+    proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
+    pred = [3, 1]
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
+                raises(ValueError, 'Got predictions not in model classes: {\'3\'}'))
+
+
+@pytest.mark.asyncio
+async def test_pass_new_label_not_in_model_classes(deepchecks_sdk_client, client: TestClient):
+    # Arrange
+    model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
+    add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=4), dict(a=2, b='2', c=1, label=0)])
+    ds = Dataset(df, features=['a', 'b'], label='label')
+    proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
+    pred = [2, 1]
+
+    # Act & Assert
+    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
+                raises(ValueError, 'Got labels not in model classes: {\'4\'}'))

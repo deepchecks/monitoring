@@ -31,9 +31,10 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
-from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL, ColumnType,
-                                                      column_types_to_table_columns, get_model_columns_by_type)
-from deepchecks_monitoring.models.model import Model
+from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_PROBA_COL,
+                                                      SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
+                                                      get_model_columns_by_type)
+from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import IdResponse, fetch_or_404, field_length
@@ -49,6 +50,7 @@ class ModelVersionCreationSchema(BaseModel):
     features: t.Dict[str, ColumnType]
     non_features: t.Dict[str, ColumnType]
     feature_importance: t.Optional[t.Dict[str, float]] = None
+    classes: t.Optional[t.List[str]] = None
 
     class Config:
         """Config for ModelVersion schema."""
@@ -100,6 +102,9 @@ async def get_or_create_version(
                 model_version.feature_importance != info.feature_importance:
             raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
                              'different feature importance')
+        if info.classes is not None and model_version.classes != info.classes:
+            raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
+                             f'different classes: {model_version.classes}')
         return {'id': model_version.id}
     # Validate features importance have all the features
     if info.feature_importance:
@@ -113,12 +118,26 @@ async def get_or_create_version(
     if intersects_names:
         raise BadRequest(f'Can\'t use same column name in both features and non_features: {intersects_names}')
 
+    # Validate classes parameter
+    have_classes = info.classes is not None
+    classes = info.classes
+    if have_classes:
+        if model.task_type not in [TaskType.MULTICLASS, TaskType.BINARY]:
+            raise BadRequest(f'Classes parameter is valid only for classification, bot model task is '
+                             f'{model.task_type.value}')
+        if len(classes) < 2:
+            raise BadRequest(f'Got {len(classes)} classes but minimal number of classes is 2')
+        if len(classes) > 2 and model.task_type == TaskType.BINARY:
+            raise BadRequest(f'Got {len(classes)} classes but task type is binary')
+        if sorted(classes) != classes:
+            raise BadRequest('Classes list must be sorted alphabetically')
+
     # Create meta columns
     meta_columns = {
         SAMPLE_ID_COL: ColumnType.TEXT,
         SAMPLE_TS_COL: ColumnType.DATETIME
     }
-    model_related_cols, required_model_cols = get_model_columns_by_type(model.task_type)
+    model_related_cols, required_model_cols = get_model_columns_by_type(model.task_type, have_classes)
     # Validate no intersections between user columns and dc columns
     saved_keys = set(meta_columns.keys()) | set(model_related_cols.keys())
     intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.non_features.keys()))
@@ -130,17 +149,27 @@ async def get_or_create_version(
 
     # Create json schema
     not_null_columns = list(meta_columns.keys()) + required_model_cols
+    # Define the length of the array for probabilities column
+    length_columns = {SAMPLE_PRED_PROBA_COL: len(classes) if have_classes else None}
     monitor_table_schema = {
         'type': 'object',
-        'properties': {name: data_type.to_json_schema_type(nullable=name not in not_null_columns)
-                       for name, data_type in monitor_table_columns.items()},
+        'properties': {name: data_type.to_json_schema_type(
+            nullable=name not in not_null_columns,
+            min_items=length_columns.get(name),
+            max_items=length_columns.get(name),
+        )
+           for name, data_type in monitor_table_columns.items()},
         'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols,
         'additionalProperties': False
     }
     reference_table_schema = {
         'type': 'object',
-        'properties': {name: data_type.to_json_schema_type(nullable=name not in not_null_columns)
-                       for name, data_type in ref_table_columns.items()},
+        'properties': {name: data_type.to_json_schema_type(
+            nullable=name not in not_null_columns,
+            min_items=length_columns.get(name),
+            max_items=length_columns.get(name),
+        )
+           for name, data_type in ref_table_columns.items()},
         'required': list(info.features.keys()) + required_model_cols,
         'additionalProperties': False
     }
@@ -153,16 +182,16 @@ async def get_or_create_version(
         name=info.name, model_id=model_id, monitor_json_schema=monitor_table_schema,
         reference_json_schema=reference_table_schema, features_columns=info.features,
         non_features_columns=info.non_features, meta_columns=meta_columns, model_columns=model_related_cols,
-        feature_importance=info.feature_importance, statistics=empty_statistics
+        feature_importance=info.feature_importance, statistics=empty_statistics, classes=info.classes,
     )
     session.add(model_version)
     # flushing to get an id for the model version, used to create the monitor + reference table names.
     await session.flush()
 
     # Monitor data table
-    montior_table_columns_sqlalchemy = column_types_to_table_columns(monitor_table_columns)
+    monitor_table_columns_sqlalchemy = column_types_to_table_columns(monitor_table_columns)
     # using md5 hash index in queries to get random order of samples, so adding index for it
-    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *montior_table_columns_sqlalchemy,
+    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns_sqlalchemy,
                           Index(f'_{model_version.get_monitor_table_name()}_md5_index', text(f'md5({SAMPLE_ID_COL})')))
     await session.execute(CreateTable(monitor_table))
     # Create indices
@@ -219,6 +248,7 @@ async def get_schema(
         'reference_schema': model_version.reference_json_schema,
         'features': model_version.features_columns,
         'non_features': model_version.non_features_columns,
+        'classes': model_version.classes
     }
     return result
 

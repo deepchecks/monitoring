@@ -17,8 +17,8 @@ import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
 from pydantic.main import BaseModel
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, event, func,
-                        select)
+from sqlalchemy import (ARRAY, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, event,
+                        func, select)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
@@ -70,6 +70,7 @@ class ModelVersion(Base):
     meta_columns = Column(JSONB)
     feature_importance = Column(JSONB, nullable=True)
     statistics = Column(JSONB)
+    classes = Column(ARRAY(String), nullable=True)
 
     model_id = Column(
         Integer,

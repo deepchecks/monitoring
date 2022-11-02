@@ -57,9 +57,9 @@ async def test_monitor_executor(
         condition={"operator": "less_than", "value": 0}
     ))
     versions = [
-        t.cast(int, add_model_version(classification_model_id, client, name="v1")),
-        t.cast(int, add_model_version(classification_model_id, client, name="v2")),
-        t.cast(int, add_model_version(classification_model_id, client, name="v3")),
+        t.cast(int, add_model_version(classification_model_id, client, name="v1", classes=["0", "1", "2"])),
+        t.cast(int, add_model_version(classification_model_id, client, name="v2", classes=["0", "1", "2"])),
+        t.cast(int, add_model_version(classification_model_id, client, name="v3", classes=["0", "1", "2"])),
     ]
 
     for version_id in versions[:2]:

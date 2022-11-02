@@ -163,14 +163,24 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
             if prediction_proba is not None:
+                if self.model_classes is None:
+                    raise ValueError('Can\'t pass prediction_proba if version was not configured with model classes.')
                 if isinstance(prediction_proba, pd.Series):
                     prediction_proba = np.asarray(prediction_proba)
+                if len(prediction_proba) != len(self.model_classes):
+                    raise ValueError('Number of classes in prediction_proba does not match number of classes in '
+                                     'model classes.')
                 sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = prediction_proba
-            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = str(prediction)
+            prediction = str(prediction)
+            if self.model_classes and prediction not in self.model_classes:
+                raise ValueError(f'Provided prediction not in allowed model classes: {prediction}')
+            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = prediction
         elif task_type == TaskType.REGRESSION:
             if label is not None:
                 sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = float(label)
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = float(prediction)
+            if prediction_proba is not None:
+                raise ValueError('Can\'t pass prediction_proba for regression task.')
         else:
             raise ValueError(f'Unknown or unsupported task type provided - {task_type}')
 
@@ -204,16 +214,30 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
             data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [float(x) for x in predictions]
+            if prediction_probas is not None:
+                raise ValueError('Can\'t pass prediction_probas to regression task.')
         else:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(str))
-            if prediction_probas is None:
-                raise ValueError('Model predictions probabilities on the reference data is required for '
-                                 'classification task type')
-            elif isinstance(prediction_probas, pd.DataFrame):
-                prediction_probas = np.asarray(prediction_probas)
-            data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_probas)
+            if prediction_probas is not None:
+                if self.model_classes is None:
+                    raise ValueError('Can\'t pass prediction_probas if version was not configured with model classes.')
+                if isinstance(prediction_probas, pd.DataFrame):
+                    prediction_probas = np.asarray(prediction_probas)
+                if prediction_probas.shape[1] != len(self.model_classes):
+                    raise ValueError('number of classes in prediction_probas does not match number of classes in '
+                                     'model classes.')
+                # TODO: add validation probas sum to one for each row?
+                data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_probas)
             data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [str(x) for x in predictions]
+
+            if self.model_classes:
+                new_labels = set(data[DeepchecksColumns.SAMPLE_LABEL_COL.value]) - set(self.model_classes)
+                if new_labels:
+                    raise ValueError(f'Got labels not in model classes: {new_labels}')
+                new_predictions = set(data[DeepchecksColumns.SAMPLE_PRED_COL.value]) - set(self.model_classes)
+                if new_predictions:
+                    raise ValueError(f'Got predictions not in model classes: {new_predictions}')
 
         if len(dataset) > 100_000:
             data = data.sample(100_000, random_state=42)
@@ -363,7 +387,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             name: str,
             features: Optional[Dict[str, str]] = None,
             non_features: Optional[Dict[str, str]] = None,
-            feature_importance: Optional[Dict[str, float]] = None
+            feature_importance: Optional[Dict[str, float]] = None,
+            model_classes: Optional[Sequence[str]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version.
 
@@ -377,6 +402,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             A dictionary of non feature names and values from ColumnType enum. Required for creation of a new version.
         feature_importance: Optional[Dict[str, float]], default: None
             A dictionary of feature names and their feature importance value.
+        model_classes: Optional[Sequence[str]], default: None
+            List of classes used by the model. Must define classes in order to send probabilities.
         Returns
         -------
         DeepchecksModelVersionClient
@@ -390,7 +417,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         if features is None:
             model_version_id = self._get_model_version_id(name)
             if model_version_id is None:
-                raise ValueError('Model Version Name does not exists for this model and no features were provided.')
+                raise ValueError('Model Version name does not exists for this model and no features were provided.')
         else:
             # Start with validation
             if not isinstance(features, dict):
@@ -423,12 +450,23 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     if value not in ColumnType.values():
                         raise ValueError(f'value of non_features must be one of {ColumnType.values()} but got {value}')
 
+            if model_classes:
+                if not isinstance(model_classes, Sequence):
+                    raise ValueError(f'model_classes must be a sequence but got type {type(model_classes)}')
+                if len(model_classes) < 2:
+                    raise ValueError(f'model_classes length must be at least 2 but got {len(model_classes)}')
+                # Stringify the classes
+                model_classes = [str(x) for x in model_classes]
+                if sorted(model_classes) != model_classes:
+                    raise ValueError(f'model_classes must be sorted alphabetically')
+
             response = maybe_raise(
                 self.session.post(f'models/{self.model["id"]}/version', json={
                     'name': name,
                     'features': features,
                     'non_features': non_features or {},
-                    'feature_importance': feature_importance
+                    'feature_importance': feature_importance,
+                    'classes': model_classes
                 }),
                 msg="Failed to create new model version.\n{error}"
             ).json()

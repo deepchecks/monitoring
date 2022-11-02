@@ -83,17 +83,17 @@ class DeepchecksModelVersionClient:
         self._log_samples = []
         self._update_samples = []
 
-        schemas = maybe_raise(
+        schema_response = maybe_raise(
             self.session.get(f'model-versions/{model_version_id}/schema'),
             msg=f"Failed to obtain ModelVersion(id:{model_version_id}) schema.\n{{error}}"
         ).json()
 
-        self.schema = schemas['monitor_schema']
-        self.ref_schema = schemas['reference_schema']
-
+        self.schema = schema_response['monitor_schema']
+        self.ref_schema = schema_response['reference_schema']
+        self.model_classes = schema_response['classes']
         self.categorical_columns = [feat for feat, value in
-                                     dict(schemas['features'], **schemas['non_features']).items()
-                                     if value == 'categorical']
+                                    {**schema_response['features'], **schema_response['non_features']}.items()
+                                    if value == 'categorical']
 
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
@@ -572,7 +572,8 @@ class DeepchecksClient:
                                      reference_probas: Optional[np.ndarray] = None,
                                      feature_importance: Optional[Dict[str, float]] = None,
                                      task_type: Optional[str] = None,
-                                     description: str = ''
+                                     description: str = '',
+                                     model_classes: Optional[t.Sequence[str]] = None
                                      ) -> 'tabular.client.DeepchecksModelVersionClient':
         """
         Create a tabular model version and uploads the reference data if provided.
@@ -598,6 +599,9 @@ class DeepchecksClient:
              dataset.label_type if set. Possible values are regression, multiclass, binary
         description: str, default: ''
             A short description of the model.
+        model_classes: Optional[Sequence[str]], default: None
+            List of classes used by the model. If not defined and `reference_probas` is passed, then classes are
+            inferred from predictions and label.
 
         Returns
         -------
@@ -605,9 +609,10 @@ class DeepchecksClient:
             Return the created model version client.
         """
         try:
-            model_version = self.get_model_version(model_name=model_name, version_name=version_name)
-            raise AssertionError(f'Model {model_name} already has a version named {version_name}. '
-                                 f'Use get_model_version to retrieve it or create a new version with a different name.')
+            self.get_model_version(model_name=model_name, version_name=version_name)
+            raise DeepchecksValueError(f'Model {model_name} already has a version named {version_name}. '
+                                       f'Use get_model_version to retrieve it or create a new version with a different '
+                                       f'name.')
         except ValueError:
             pass
 
@@ -618,13 +623,30 @@ class DeepchecksClient:
                                        f'match feature schema ({features_dict.keys()}).')
 
         if task_type is None and reference_dataset.label_type is not None:
-            task_type = reference_dataset.label_type
+            task_type = reference_dataset.label_type.value
             warnings.warn(f'Task type was inferred to be {task_type} based on reference dataset provided. '
                           f'It is recommended to provide it directly via the task_type argument.')
 
+        if reference_probas is not None:
+            # validate reference probabilities
+            if task_type not in ['multiclass', 'binary']:
+                raise DeepchecksValueError(f'Can\'t pass probabilities for task_type {task_type}')
+            if not isinstance(reference_probas, np.ndarray):
+                raise DeepchecksValueError(f'reference_probas have to be numpy array but got '
+                                           f'{type(reference_probas).__name__}')
+            # Inferring the model classes if needed
+            if model_classes is None:
+                model_classes = sorted(set(np.unique(reference_predictions)) |
+                                       set(reference_dataset.label_col.unique()))
+                warnings.warn(f'Model classes were inferred based on reference predictions and dataset label. '
+                              f'It is recommended to provide it directly via the model_classes argument.')
+            if len(model_classes) != reference_probas.shape[1]:
+                raise DeepchecksValueError(f'Got {reference_probas.shape[1]} columns in reference_probas, but ' 
+                                           f'{len(model_classes)} model classes were provided.')
+
         version_client = self.model(model_name, task_type, description) \
             .version(version_name, features=features_dict, non_features=non_features_dict,
-                     feature_importance=feature_importance)
+                     feature_importance=feature_importance, model_classes=model_classes)
 
         if reference_dataset is not None:
             version_client.upload_reference(reference_dataset,
