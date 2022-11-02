@@ -2,9 +2,9 @@ numpy
 pandas
 deepchecks
 requests>=2.28.1
-certifi>=2022.9.24
 pendulum==2.1.2
 jsonschema==4.7.2
 termcolor
 PyYAML
 importlib_metadata; python_version < '3.8'
+pip-system-certs>=3.1

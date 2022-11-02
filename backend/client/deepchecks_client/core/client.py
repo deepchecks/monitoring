@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
-import os
 import typing as t
 import warnings
 
@@ -25,7 +24,6 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 import requests
-import certifi
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.core.reduce_classes import ReduceMixin
@@ -53,7 +51,6 @@ class HttpSession(requests.Session):
                                url,
                                *args,
                                headers=headers,
-                               verify=certifi.where(),
                                **kwargs)
 
 
