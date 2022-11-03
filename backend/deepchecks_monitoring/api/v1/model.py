@@ -193,7 +193,7 @@ async def retrieve_models_data_ingestion(
             timestamp=row.timestamp
         ))
 
-    return result[model_id] if model_id is not None else result
+    return result
 
 
 @router.get("/models/{model_id}", response_model=ModelSchema, tags=[Tags.MODELS])
