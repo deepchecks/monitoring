@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------------
 import pytest
 
-from client.deepchecks_client.core.client import DeepchecksClient
+from client.deepchecks_client import DeepchecksClient
 from deepchecks_monitoring.models.model import TaskType
 
 

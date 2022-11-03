@@ -36,8 +36,11 @@ def _get_series_column_type(series: pd.Series):
         return ColumnType.CATEGORICAL.value
     if is_string_dtype(series) and series.dtype != 'object':
         return ColumnType.TEXT.value
-    warnings.warn(f"Received unsupported dtype: {series.dtype}."
-                  "Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.")
+    warnings.warn(
+        f'Received unsupported dtype: {series.dtype}. '
+        'Supported dtypes for auto infer are numerical, '
+        'integer, boolean, string and categorical.'
+    )
     return None
 
 
@@ -112,7 +115,7 @@ def read_schema(schema_file):
         dictionary in format {'features': <features>, 'non_features': <non_features>}
     """
     if isinstance(schema_file, str):
-        with open(schema_file, 'r') as f:
+        with open(schema_file, 'r', encoding='utf-8') as f:
             schema = yaml.safe_load(f.read())
     elif isinstance(schema_file, io.IOBase):
         schema_file.seek(0)

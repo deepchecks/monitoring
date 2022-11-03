@@ -14,9 +14,8 @@ import pandas as pd
 import pytest
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.tabular.dataset import Dataset
-from hamcrest import assert_that, calling, raises, has_property, contains_exactly, is_
-
 from deepchecks_client.tabular.utils import create_schema
+from hamcrest import assert_that, calling, contains_exactly, has_property, is_, raises
 from sqlalchemy import select
 
 from deepchecks_monitoring.models.model_version import ModelVersion

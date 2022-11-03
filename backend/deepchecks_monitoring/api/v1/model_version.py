@@ -305,8 +305,11 @@ class TimeWindowOutputStatsSchema(BaseModel):
     num_samples: int = None
 
 
-@router.post('/model-versions/{model_version_id}/time-window-statistics', response_model=TimeWindowOutputStatsSchema,
-             tags=[Tags.DATA])
+@router.get(
+    '/model-versions/{model_version_id}/time-window-statistics',
+    response_model=TimeWindowOutputStatsSchema,
+    tags=[Tags.DATA]
+)
 async def get_time_window_statistics(
         model_version_id: int,
         body: TimeWindowSchema,
@@ -322,6 +325,7 @@ async def get_time_window_statistics(
         Description of the time window to provide statistics for.
     session : AsyncSession, optional
         SQLAlchemy session.
+
     Returns
     -------
     json schema of the model version

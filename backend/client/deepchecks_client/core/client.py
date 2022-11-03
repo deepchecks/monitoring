@@ -8,50 +8,23 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+# pylint: disable=import-outside-toplevel
 """Module containing deepchecks monitoring client."""
 import typing as t
 import warnings
 
-try:
-    from importlib import metadata
-except ImportError: # for Python<3.8
-    import importlib_metadata as metadata
-
-from typing import Dict, Optional
-from urllib.parse import urljoin
-
-import numpy as np
 import pandas as pd
 import pendulum as pdl
-import requests
 from deepchecks.core.checks import BaseCheck
-from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.core.reduce_classes import ReduceMixin
-from deepchecks.tabular import Dataset
-from deepchecks_client.core.utils import DeepchecksJsonValidator, TaskType, maybe_raise, parse_timestamp, pretty_print
-from deepchecks_client.tabular.utils import read_schema
+from deepchecks_client.core.utils import DeepchecksJsonValidator, parse_timestamp, pretty_print
 
-__all__ = ['DeepchecksClient']
-__version__ = metadata.version("deepchecks_client")
+from .api import API
 
+if t.TYPE_CHECKING:
+    from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
 
-class HttpSession(requests.Session):
-
-    def __init__(self, base_url: str, token=None):
-        super().__init__()
-        self.base_url = base_url
-        self.token = token
-
-    def request(self, method, url, *args, **kwargs) -> requests.Response:
-        url = urljoin(self.base_url, url)
-        headers = kwargs.get('headers', {})
-        if self.token:
-            headers['Authorization'] = f'Basic {self.token}'
-        return super().request(method,
-                               url,
-                               *args,
-                               headers=headers,
-                               **kwargs)
+__all__ = ['DeepchecksModelVersionClient', 'DeepchecksModelClient']
 
 
 class DeepchecksModelVersionClient:
@@ -65,38 +38,40 @@ class DeepchecksModelVersionClient:
     session: requests.Session
     """
 
+    api: API
+    model: t.Dict[str, t.Any]
     model_version_id: int
-    schema: dict
-    ref_schema: dict
-    _log_samples: list
-    _update_samples: list
+    schema: t.Dict[str, t.Any]
+    ref_schema: t.Dict[str, t.Any]
+    categorical_columns: t.List[str]
+    _log_samples: t.List[t.Dict[str, t.Any]]
+    _update_samples: t.List[t.Dict[str, t.Any]]
 
     def __init__(
             self,
             model_version_id: int,
-            model: dict,
-            session: requests.Session,
+            model: t.Dict[str, t.Any],
+            api: API,
     ):
-        self.session = session
+        self.api = api
         self.model = model
         self.model_version_id = model_version_id
         self._log_samples = []
         self._update_samples = []
 
-        schema_response = maybe_raise(
-            self.session.get(f'model-versions/{model_version_id}/schema'),
-            msg=f"Failed to obtain ModelVersion(id:{model_version_id}) schema.\n{{error}}"
-        ).json()
-
-        self.schema = schema_response['monitor_schema']
-        self.ref_schema = schema_response['reference_schema']
-        self.model_classes = schema_response['classes']
-        self.categorical_columns = [feat for feat, value in
-                                    {**schema_response['features'], **schema_response['non_features']}.items()
-                                    if value == 'categorical']
+        schemas = t.cast(t.Dict[str, t.Any], self.api.fetch_model_version_schema(model_version_id))
+        self.schema = schemas['monitor_schema']
+        self.ref_schema = schemas['reference_schema']
+        self.model_classes = schemas['classes']
 
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
+
+        self.categorical_columns = [
+            feat
+            for feat, value in {**schemas['features'], **schemas['non_features']}.items()
+            if value == 'categorical'
+        ]
 
     def log_sample(self, *args, **kwargs):
         """Send sample for the model version."""
@@ -105,23 +80,10 @@ class DeepchecksModelVersionClient:
     def send(self):
         """Send all the aggregated samples for upload or update."""
         if len(self._log_samples) > 0:
-            maybe_raise(
-                self.session.post(
-                    f'model-versions/{self.model_version_id}/data',
-                    json=self._log_samples
-                ),
-                msg="Samples upload failure.\n{error}"
-            )
+            self.api.upload_samples(self.model_version_id, self._log_samples)
             self._log_samples.clear()
-
         if len(self._update_samples) > 0:
-            maybe_raise(
-                self.session.put(
-                    f'model-versions/{self.model_version_id}/data',
-                    json=self._update_samples
-                ),
-                msg="Samples update failure.\n{error}"
-            )
+            self.api.update_samples(self.model_version_id, self._update_samples)
             self._update_samples.clear()
 
     def upload_reference(self, *args, **kwargs):
@@ -135,27 +97,24 @@ class DeepchecksModelVersionClient:
     ):
         for i in range(0, len(data), samples_per_request):
             content = data.iloc[i:i + samples_per_request]
-            maybe_raise(
-                self.session.post(
-                    f'model-versions/{self.model_version_id}/reference',
-                    files={'batch': content.to_json(orient='table', index=False)}
-                ),
-                msg="Reference batch upload failure.\n{error}"
-            )
+            self.api.upload_reference(self.model_version_id, content.to_json(orient='table', index=False))
 
-    def update_sample(self, sample_id: str, label=None, **values):
+    def update_sample(self, sample_id: str, **values):
         """Update sample. Possible to update only non_features and label."""
         raise NotImplementedError
 
-    def time_window_statistics(self, start_time: t.Union[pdl.datetime, int, None] = None,
-                               end_time: t.Union[pdl.datetime, int, None] = None) -> t.Dict[str, float]:
+    def time_window_statistics(
+        self,
+        start_time: t.Union['PendulumDateTime', int, None] = None,
+        end_time: t.Union['PendulumDateTime', int, None] = None
+    ) -> t.Dict[str, float]:
         """Get statistics on samples in a provided time window.
 
         Parameters
         ----------
-        start_time: Union[datetime, int], default = None
+        start_time: Union[PendulumDateTime, int, None], default = None
             The start time of the time window. If no timezone info is provided on the datetime assumes local timezone.
-        end_time: Union[datetime, int], default = None
+        end_time: Union[PendulumDateTime, int, None], default = None
             The end time of the time window. If no timezone info is provided on the datetime assumes local timezone.
 
         Returns
@@ -165,15 +124,14 @@ class DeepchecksModelVersionClient:
         """
         start_time = parse_timestamp(start_time) if start_time is not None else pdl.datetime(1970, 1, 1)
         end_time = parse_timestamp(end_time) if end_time is not None else pdl.now()
-
-        response = maybe_raise(
-            self.session.post(
-                url=f'model-versions/{self.model_version_id}/time-window-statistics',
-                json={'start_time': start_time.isoformat(), 'end_time': end_time.isoformat()}
-            ),
-            msg="Failed to get statistics for samples within provided time window.\n{error}"
+        return t.cast(
+            t.Dict[str, t.Any],
+            self.api.fetch_model_version_time_window_statistics(
+                self.model_version_id,
+                start_time.isoformat(),
+                end_time.isoformat()
+            )
         )
-        return response.json()
 
 
 class DeepchecksModelClient:
@@ -187,30 +145,22 @@ class DeepchecksModelClient:
         The id of the model.
     """
 
-    def __init__(self, model_id: int, session: requests.Session):
-        self.session = session
-        self.model = maybe_raise(
-            self.session.get(f'models/{model_id}'),
-            msg=f"Failed to obtain Model(id:{model_id}).\n{{error}}"
-        ).json()
+    def __init__(self, model_id: int, api: API):
+        self.api = api
+        self.model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_id(model_id))
         self._model_version_clients = {}
 
     def version(self, *args, **kwargs) -> DeepchecksModelVersionClient:
         """Get or create a new model version."""
         raise NotImplementedError
 
-    def _get_existing_version_id_or_none(self, version_name: str, **kwargs):
+    def _get_existing_version_id_or_none(self, version_name: str):
         """Get a model version if it exists, otherwise return None."""
-        existing_versions = maybe_raise(
-            self.session.get(f'models/{self.model["id"]}/versions'),
-            msg=f"Failed to retrieve existing versions for model id {self.model['id']}. \n{{error}}"
-        ).json()
-        if version_name in [v['name'] for v in existing_versions]:
-            existing_version = [v for v in existing_versions if v['name'] == version_name][0]
-            # TODO: add validations of existing version params vs received params
-            return existing_version['id']
-        else:
-            return
+        versions = self.api.fetch_all_model_versions(self.model['id'])
+        versions = t.cast(t.List[t.Dict[str, t.Any]], versions)
+        for it in versions:
+            if it['name'] == version_name:
+                return it['id']
 
     def _get_model_version_id(self, model_version_name):
         versions = self.get_versions()
@@ -227,8 +177,8 @@ class DeepchecksModelClient:
     def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False) -> t.Dict[str, int]:
         """Add new checks for the model and returns their checks' id."""
         serialized_checks = []
-
         checks_in_model = self.get_checks()
+
         for name, check in checks.items():
             if not isinstance(check, ReduceMixin):
                 raise TypeError('Checks that do not implement "ReduceMixin" are not supported')
@@ -237,47 +187,42 @@ class DeepchecksModelClient:
                               f'set the force_replace argument to true')
             elif name in checks_in_model and force_replace:
                 warnings.warn(f'Check named {name} already exist, was modified to newly added check.')
-                raise Exception("Currently unsupported")
+                raise Exception('Currently unsupported')
             else:
                 serialized_checks.append({'name': name, 'config': check.config()})
 
-        response = maybe_raise(
-            self.session.post(
-                url=f'models/{self.model["id"]}/checks',
-                json=serialized_checks
-            ),
-            msg="Failed to create new check instances.\n{error}"
-        )
-        return {serialized_checks[idx]['name']: int(d['id']) for idx, d in enumerate(response.json())}
+        created_checks = self.api.create_checks(self.model['id'], serialized_checks)
+        created_checks = t.cast(t.List[t.Dict[str, t.Any]], created_checks)
+        return {
+            # TODO:
+            # - no guarantee that checks will be returned in the same
+            # order as they were passed will be the same
+            # - why do we assigning id to name?
+            serialized_checks[index]['name']: int(check['id'])
+            for index, check in enumerate(created_checks)
+        }
 
-    def _get_id_of_check(self, check_name: str) -> int:
-        """ Return the check id of a provided check name."""
-        model_id = self.model["id"]
-        data = maybe_raise(
-            self.session.get(f'models/{self.model["id"]}/checks'),
-            msg=f"Failed to obtain Model(id:{model_id}) checks.\n{{error}}").json()
-
-        for check in data:
+    def _get_id_of_check(self, check_name: str) -> t.Optional[int]:
+        """Return the check id of a provided check name."""
+        checks = self.api.fetch_all_model_checks_by_id(self.model['id'])
+        checks = t.cast(t.List[t.Dict[str, t.Any]], checks)
+        for check in checks:
             if check['name'] == check_name:
                 return check['id']
-        return None
 
     def get_checks(self) -> t.Dict[str, BaseCheck]:
         """Return dictionary of check instances."""
-        model_id = self.model["id"]
+        checks = self.api.fetch_all_model_checks_by_id(self.model['id'])
+        checks = t.cast(t.List[t.Dict[str, t.Any]], checks)
+        return {it['name']: BaseCheck.from_config(it['config']) for it in checks}
 
-        data = maybe_raise(
-            self.session.get(f'models/{self.model["id"]}/checks'),
-            msg=f"Failed to obtain Model(id:{model_id}) checks.\n{{error}}"
-        ).json()
-
-        if not isinstance(data, list):
-            raise ValueError('Expected server to return a list of check configs.')
-
-        return {it['name']: BaseCheck.from_config(it['config']) for it in data}
-
-    def add_alert_rule_on_existing_monitor(self, monitor_id: int, threshold: float, alert_severity: str = "mid",
-                                           greater_than: bool = True) -> int:
+    def add_alert_rule_on_existing_monitor(
+        self,
+        monitor_id: int,
+        threshold: float,
+        alert_severity: str = 'mid',
+        greater_than: bool = True
+    ) -> int:
         """Create an alert based on an existing monitor.
 
         Parameters
@@ -295,22 +240,40 @@ class DeepchecksModelClient:
         -------
             alert_id: int
         """
-        if alert_severity not in ['low', 'mid', 'high', 'critical']:
-            raise Exception(f'Alert severity must be of one of low, mid, high, critical received {alert_severity}.')
+        if alert_severity not in {'low', 'mid', 'high', 'critical'}:
+            raise ValueError(
+                'Alert severity must be of one of low, mid, '
+                f'high, critical received {alert_severity}.'
+            )
 
-        response = maybe_raise(
-            self.session.post(
-                url=f'monitors/{monitor_id}/alert-rules', json={
-                    'condition': {'operator': "greater_than" if greater_than else "less_than",
-                                  'value': threshold},
-                    'alert_severity': alert_severity,
-                }), msg="Failed to create new alert for check.\n{error}")
-        return response.json()['id']
+        rule = self.api.create_alert_rule(
+            monitor_id=monitor_id,
+            alert_rule={
+                'alert_severity': alert_severity,
+                'condition': {
+                    'operator': ('greater_than' if greater_than else 'less_than'),
+                    'value': threshold
+                }
+            }
+        )
 
-    def add_alert_rule(self, check_name: str, threshold: float, frequency: int, alert_severity: str = "mid",
-                       aggregation_window: int = None, greater_than: bool = True, kwargs_for_check: t.Dict = None,
-                       monitor_name: str = None, add_monitor_to_dashboard: bool = False) -> int:
+        rule = t.cast(t.Dict[str, t.Any], rule)
+        return rule['id']
+
+    def add_alert_rule(
+        self,
+        check_name: str,
+        threshold: float,
+        frequency: int,
+        alert_severity: str = 'mid',
+        aggregation_window: t.Optional[int] = None,
+        greater_than: bool = True,
+        kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None,
+        monitor_name: t.Optional[str] = None,
+        add_monitor_to_dashboard: bool = False
+    ) -> int:
         """Create an alert based on provided arguments. Alert is run on a specific check result.
+
         Parameters
         ----------
         check_name: str
@@ -337,23 +300,44 @@ class DeepchecksModelClient:
         -------
             alert_id: int
         """
-        if alert_severity not in ['low', 'mid', 'high', 'critical']:
-            raise Exception(f'Alert severity must be of one of low, mid, high, critical received {alert_severity}.')
+        if alert_severity not in {'low', 'mid', 'high', 'critical'}:
+            raise ValueError(
+                'Alert severity must be of one of low, mid, '
+                f'high, critical received {alert_severity}.'
+            )
+        monitor_id = self.add_monitor(
+            check_name=check_name,
+            frequency=frequency,
+            aggregation_window=aggregation_window,
+            name=monitor_name,
+            kwargs_for_check=kwargs_for_check,
+            add_to_dashboard=add_monitor_to_dashboard
+        )
+        return self.add_alert_rule_on_existing_monitor(
+            monitor_id=monitor_id,
+            threshold=threshold,
+            alert_severity=alert_severity,
+            greater_than=greater_than
+        )
 
-        monitor_id = self.add_monitor(check_name=check_name, frequency=frequency, aggregation_window=aggregation_window,
-                                      name=monitor_name, kwargs_for_check=kwargs_for_check,
-                                      add_to_dashboard=add_monitor_to_dashboard)
-        return self.add_alert_rule_on_existing_monitor(monitor_id=monitor_id, threshold=threshold,
-                                                       alert_severity=alert_severity, greater_than=greater_than)
-
-    def add_monitor(self, check_name: str, frequency: int, aggregation_window: int = None, lookback: int = None,
-                    name: str = None, description: str = None, add_to_dashboard: bool = True,
-                    kwargs_for_check: t.Dict = None) -> int:
+    def add_monitor(
+        self,
+        check_name: str,
+        frequency: int,
+        aggregation_window: t.Optional[int] = None,
+        lookback: t.Optional[int] = None,
+        name: t.Optional[str] = None,
+        description: t.Optional[str] = None,
+        add_to_dashboard: bool = True,
+        kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None
+    ) -> int:
         """Create a monitor based on check to be displayed in dashboard.
+
         Parameters
         ----------
         check_name: str
-            The check to monitor. The alert will monitor the value produced by the check's reduce function.
+            The check to monitor. The alert will monitor the value produced
+            by the check's reduce function.
         frequency: int
             How often the minitor would be calculated, provided in seconds.
         aggregation_window: int, default: None
@@ -373,311 +357,45 @@ class DeepchecksModelClient:
         -------
             monitor_id: int
         """
+        if add_to_dashboard:
+            dashboard = t.cast(t.Dict[str, t.Any], self.api.fetch_dashboard())
+            dashboard_id = dashboard['id']
+        else:
+            dashboard_id = None
+
         check_id = self._get_id_of_check(check_name)
-        response = maybe_raise(
-            self.session.post(
-                url=f'checks/{check_id}/monitors', json={
-                    'name': name if name is not None else f'{check_name} Monitor',
-                    'lookback': frequency * 12 if lookback is None else lookback,
-                    'frequency': frequency,
-                    'aggregation_window': frequency if aggregation_window is None else aggregation_window,
-                    'dashboard_id': self.session.get('dashboards/').json()['id'] if add_to_dashboard else None,
-                    'description': description,
-                    'additional_kwargs': kwargs_for_check
-                }), msg="Failed to create new monitor for check.\n{error}")
-        return response.json()['id']
+
+        if check_id is None:
+            raise ValueError(f'Check(id:{check_id}) does not exist')
+
+        monitor = self.api.create_monitor(
+            check_id=check_id,
+            monitor={
+                'name': name if name is not None else f'{check_name} Monitor',
+                'lookback': frequency * 12 if lookback is None else lookback,
+                'frequency': frequency,
+                'aggregation_window': frequency if aggregation_window is None else aggregation_window,
+                'dashboard_id': dashboard_id,
+                'description': description,
+                'additional_kwargs': kwargs_for_check
+            }
+        )
+
+        monitor = t.cast(t.Dict[str, t.Any], monitor)
+        return monitor['id']
 
     def get_versions(self) -> t.Dict[str, str]:
         """Return list of model version (id and name)."""
-        model_id = self.model["id"]
-
-        model_versions = maybe_raise(
-            self.session.get(f'models/{self.model["id"]}/versions'),
-            msg=f"Failed to obtain Model(id:{model_id}) checks.\n{{error}}"
-        ).json()
-
-        if not isinstance(model_versions, list):
-            raise ValueError('Expected server to return a list of model versions.')
-
-        return {model_version['name']: model_version['id'] for model_version in model_versions}
+        versions = self.api.fetch_all_model_versions(self.model['id'])
+        versions = t.cast(t.List[t.Dict[str, t.Any]], versions)
+        return {it['name']: it['id'] for it in versions}
 
     def delete_checks(self, names: t.List[str]):
-        model_id = self.model["id"]
         checks_not_in_model = [x for x in names if x not in self.get_checks().keys()]
+
         if len(checks_not_in_model) > 0:
             warnings.warn(f'The following checks do not exist in model: {checks_not_in_model}')
 
-        checks_in_model = [x for x in names if x not in checks_not_in_model]
-        maybe_raise(
-            self.session.delete(
-                f'models/{model_id}/checks',
-                params={'names': checks_in_model}
-            ),
-            msg=f"Failed to drop Model(id:{model_id}) checks.\n{{error}}"
-        )
-        pretty_print(f"The following checks were successfully deleted: {checks_in_model}")
-
-
-class DeepchecksClient:
-    """Client to interact with deepchecks monitoring.
-
-    Parameters
-    ----------
-    host: str
-        The deepchecks monitoring API host.
-    token: Optional[str]
-        The deepchecks API token
-    """
-
-    host: str
-
-    def __init__(
-            self,
-            host: str,
-            token: t.Optional[str] = None
-    ):
-        self.host = host + '/api/v1/'
-        self.session = HttpSession(base_url=self.host, token=token)
-        self._model_clients = {}
-
-        maybe_raise(
-            self.session.get('say-hello'),
-            msg="Server not available.\n{error}"
-        )
-
-    def model(
-            self,
-            name: str,
-            task_type: Optional[str] = None,
-            description: t.Optional[str] = None,
-            create_defaults: bool = True
-    ) -> DeepchecksModelClient:
-        """Get or create a new model.
-
-        Parameters
-        ----------
-        name: str
-            Display name of the model.
-        task_type: str, default: None
-            Task type of the model, possible values are regression, multiclass, binary, vision_classification and
-            vision_detection. Required for creation of a new model.
-        description: str, default: None
-            Additional description for the model.
-        create_defaults: bool, default: True
-            Whether to add default check, monitors and alerts to the model.
-
-        Returns
-        -------
-        DeepchecksModelClient
-            Client to interact with the created model.
-        """
-        available_models = maybe_raise(
-            self.session.get('models'),
-            msg="Failed to retrieve existing models from session.\n{error}"
-        ).json()
-
-        if name in [model['name'] for model in available_models]:
-            model = [model for model in available_models if model['name'] == name][0]
-            if task_type is not None and task_type != model['task_type']:
-                raise ValueError(f'Model with name {name} already exists, but has different task type.')
-            if description is not None and description != model['description']:
-                raise ValueError(f'Model with name {name} already exists, but has different description.')
-            return self._model_client(model['id'], model['task_type'])
-
-        if task_type is None:
-            raise ValueError(f'task_type must be provided for creation of a new model')
-        elif task_type not in TaskType.values():
-            raise ValueError(f'task_type must be one of {TaskType.values()}')
-
-        response = maybe_raise(
-            self.session.post('models', json={
-                'name': name,
-                'task_type': task_type,
-                'description': description
-            }),
-            msg="Failed to create a new model instance.\n{error}"
-        ).json()
-        model_id = response['id']
-
-        model = self._model_client(model_id, task_type)
-        msg = f"Model {name} was successfully created!."
-        if create_defaults:
-            model._add_defaults()
-            msg += " Default checks, monitors and alerts added."
-        pretty_print(msg)
-
-        return model
-
-    def _model_client(self, model_id: int, task_type: str) -> DeepchecksModelClient:
-        """Get client to interact with a specific model.
-
-        Parameters
-        ----------
-        model_id: int
-            Model id to get client for.
-        task_type: str
-            Task type of the model, possible values are regression, multiclass, binary, vision_classification and
-            vision_detection.
-
-        Returns
-        -------
-        DeepchecksModelClient
-            Client to interact with the model.
-        """
-        if self._model_clients.get(model_id) is None:
-            if 'vision' in task_type:
-                from deepchecks_client.vision.client import DeepchecksModelClient as VisionDeepchecksModelClient
-                self._model_clients[model_id] = VisionDeepchecksModelClient(model_id, session=self.session)
-            else:
-                from deepchecks_client.tabular.client import DeepchecksModelClient as TabularDeepchecksModelClient
-                self._model_clients[model_id] = TabularDeepchecksModelClient(model_id, session=self.session)
-        return self._model_clients[model_id]
-
-    def get_model_version(self, model_name: str, version_name: str) -> DeepchecksModelVersionClient:
-        """Get client to interact with a specific model version.
-
-        Parameters
-        ----------
-        model_name: str
-            Name of the model.
-        version_name: str
-            Name of the model version.
-
-        Returns
-        -------
-        DeepchecksModelVersionClient
-            Client to interact with the model version.
-        """
-        available_models = maybe_raise(
-            self.session.get('models'),
-            msg="Failed to retrieve existing models from session.\n{error}"
-        ).json()
-
-        if model_name not in [model['name'] for model in available_models]:
-            raise ValueError(f'Model with name {model_name} does not exist.')
-        model = self.model(model_name)
-
-        existing_version_id = model._get_existing_version_id_or_none(version_name=version_name)
-        if existing_version_id is None:
-            raise ValueError(f'Model {model_name} does not have a version with name {version_name}.')
-        else:
-            return model.version(version_name)
-
-    def create_tabular_model_version(self,
-                                     model_name: str,
-                                     schema_file,
-                                     version_name: str = 'v1',
-                                     reference_dataset: Optional[Dataset] = None,
-                                     reference_predictions: Optional[np.ndarray] = None,
-                                     reference_probas: Optional[np.ndarray] = None,
-                                     feature_importance: Optional[Dict[str, float]] = None,
-                                     task_type: Optional[str] = None,
-                                     description: str = '',
-                                     model_classes: Optional[t.Sequence[str]] = None
-                                     ) -> 'tabular.client.DeepchecksModelVersionClient':
-        """
-        Create a tabular model version and uploads the reference data if provided.
-
-        Parameters
-        ----------
-        model_name: str
-            A name for the model.
-        schema_file:
-            String path or file like object containing the data schema.
-        version_name: str, default: 'v1'
-            A name for the version.
-        reference_dataset: Optional[Dataset], default: None
-            The reference dataset object.
-        reference_predictions: np.ndarray, default: None
-            The model predictions for the reference data.
-        reference_probas: np.ndarray, default: None
-            The model predicted class probabilities for the reference data, relevant only for classification tasks.
-        feature_importance: Optional[Dict[str, float]], default: None
-            a dictionary of feature names and their feature importance value.
-        task_type: Optional[str], default: None
-            The task type of the model, required for creation of a new model. Can be inferred from
-             dataset.label_type if set. Possible values are regression, multiclass, binary
-        description: str, default: ''
-            A short description of the model.
-        model_classes: Optional[Sequence[str]], default: None
-            List of classes used by the model. If not defined and `reference_probas` is passed, then classes are
-            inferred from predictions and label.
-
-        Returns
-        -------
-        tabular.client.DeepchecksModelVersionClient
-            Return the created model version client.
-        """
-        try:
-            self.get_model_version(model_name=model_name, version_name=version_name)
-            raise DeepchecksValueError(f'Model {model_name} already has a version named {version_name}. '
-                                       f'Use get_model_version to retrieve it or create a new version with a different '
-                                       f'name.')
-        except ValueError:
-            pass
-
-        schema = read_schema(schema_file)
-        features_dict, non_features_dict = schema['features'], schema['non_features']
-        if set(features_dict.keys()) != set(reference_dataset.features):
-            raise DeepchecksValueError(f'Features found in reference dataset ({reference_dataset.features}) do not '
-                                       f'match feature schema ({features_dict.keys()}).')
-
-        if task_type is None and reference_dataset.label_type is not None:
-            task_type = reference_dataset.label_type.value
-            warnings.warn(f'Task type was inferred to be {task_type} based on reference dataset provided. '
-                          f'It is recommended to provide it directly via the task_type argument.')
-
-        if reference_probas is not None:
-            # validate reference probabilities
-            if task_type not in ['multiclass', 'binary']:
-                raise DeepchecksValueError(f'Can\'t pass probabilities for task_type {task_type}')
-            if not isinstance(reference_probas, np.ndarray):
-                raise DeepchecksValueError(f'reference_probas have to be numpy array but got '
-                                           f'{type(reference_probas).__name__}')
-            # Inferring the model classes if needed
-            if model_classes is None:
-                model_classes = sorted(set(np.unique(reference_predictions)) |
-                                       set(reference_dataset.label_col.unique()))
-                warnings.warn(f'Model classes were inferred based on reference predictions and dataset label. '
-                              f'It is recommended to provide it directly via the model_classes argument.')
-            if len(model_classes) != reference_probas.shape[1]:
-                raise DeepchecksValueError(f'Got {reference_probas.shape[1]} columns in reference_probas, but ' 
-                                           f'{len(model_classes)} model classes were provided.')
-
-        version_client = self.model(model_name, task_type, description) \
-            .version(version_name, features=features_dict, non_features=non_features_dict,
-                     feature_importance=feature_importance, model_classes=model_classes)
-
-        if reference_dataset is not None:
-            version_client.upload_reference(reference_dataset,
-                                            prediction_probas=reference_probas,
-                                            predictions=reference_predictions)
-            pretty_print('Reference data uploaded.')
-
-        return version_client
-
-    def delete_model(self, model_name: str):
-        """Delete a model by its name.
-
-        Parameters
-        ----------
-        model_name: str
-            The model to delete
-        """
-        available_models = maybe_raise(
-            self.session.get('models'),
-            msg="Failed to retrieve existing models from session.\n{error}"
-        ).json()
-
-        if model_name in [model['name'] for model in available_models]:
-            model_id = [model['id'] for model in available_models if model['name'] == model_name][0]
-        else:
-            raise ValueError(f'Model {model_name} does not exist.')
-
-        maybe_raise(
-            self.session.delete(
-                f'models/{model_id}'
-            ),
-            msg=f"Failed to drop Model(id:{model_id}).\n{{error}}"
-        )
-        pretty_print(f"The following model was successfully deleted: {model_name}")
+        checks_to_delete = [x for x in names if x not in checks_not_in_model]
+        self.api.delete_model_checks_by_name(self.model['id'], checks_to_delete)
+        pretty_print(f'The following checks were successfully deleted: {checks_to_delete}')

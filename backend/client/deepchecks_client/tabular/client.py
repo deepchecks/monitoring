@@ -9,9 +9,9 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+import typing as t
 import warnings
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
-                                          TaskType, maybe_raise, parse_timestamp, pretty_print)
+                                          TaskType, parse_timestamp, pretty_print)
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -40,21 +40,21 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def log_batch(
             self,
             data: pd.DataFrame,
-            timestamps: Union["pd.Series[datetime]", "pd.Series[int]"],
-            predictions: Union["pd.Series[str]", "pd.Series[float]"],
-            prediction_probas: Optional["pd.Series[Sequence[float]]"] = None,
-            labels: Union["pd.Series[str]", "pd.Series[float]", None] = None,
+            timestamps: t.Union['pd.Series[datetime]', 'pd.Series[int]'],
+            predictions: t.Union['pd.Series[str]', 'pd.Series[float]'],
+            prediction_probas: t.Optional['pd.Series[t.Sequence[float]]'] = None,
+            labels: t.Union['pd.Series[str]', 'pd.Series[float]', None] = None,
             samples_per_send: int = 10_000
     ):
         """Log batch of samples.
-        
+
         Parameters
         ==========
         data : pandas.DataFrame
             set of features and optionally of non-features.
-            Expected that dataframe will contain a 'sample_id' column, 
-            a set of identifiers that uniquely identifies each logged sample, 
-            but if the 'sample_id' column is not provided then the dataframe 
+            Expected that dataframe will contain a 'sample_id' column,
+            a set of identifiers that uniquely identifies each logged sample,
+            but if the 'sample_id' column is not provided then the dataframe
             index will be used instead.
         timestamps : Union[pandas.Series[datetime], pandas.Series[int]]
             set of timestamps
@@ -68,44 +68,44 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             how many samples to send by one request
         """
         if samples_per_send < 1:
-            raise ValueError("'samples_per_send' must be '>=' than 1")
+            raise ValueError('"samples_per_send" must be ">=" than 1')
 
         if len(data) == 0:
-            raise ValueError("'data' cannot be empty")
+            raise ValueError('"data" cannot be empty')
 
-        if "sample_id" in data.columns:
-            if data["sample_id"].is_unique is False:
-                raise ValueError("sample ids must be unique")
-            if not data["sample_id"].notna().all():
-                raise ValueError("'sample_id' column must not contain None/Nan")
-            data = data.set_index("sample_id")
+        if 'sample_id' in data.columns:
+            if data['sample_id'].is_unique is False:
+                raise ValueError('sample ids must be unique')
+            if not data['sample_id'].notna().all():
+                raise ValueError('"sample_id" column must not contain None/Nan')
+            data = data.set_index('sample_id')
         else:
             if data.index.is_unique is False:
-                raise ValueError("'data.index' must contain unique values")
+                raise ValueError('"data.index" must contain unique values')
 
         error_template = (
-            "'{param}' and 'data' parameters indexes mismatch, "
-            "make sure that '{param}.index' is the same as "
-            "'data.index' (or data['sample_id'])"
+            '"{param}" and "data" parameters indexes mismatch, '
+            'make sure that "{param}.index" is the same as '
+            '"data.index" (or data["sample_id"])'
         )
 
         if not data.index.equals(timestamps.index):
-            raise ValueError(error_template.format(param="timestamps"))
+            raise ValueError(error_template.format(param='timestamps'))
         if not data.index.equals(predictions.index):
-            raise ValueError(error_template.format(param="predictions"))
+            raise ValueError(error_template.format(param='predictions'))
 
         data = data.assign(prediction=predictions)
         data = data.assign(timestamp=timestamps)
 
         if prediction_probas is not None:
             if not data.index.equals(prediction_probas.index):
-                raise ValueError(error_template.format(param="prediction_probas"))
+                raise ValueError(error_template.format(param='prediction_probas'))
             else:
                 data = data.assign(prediction_proba=prediction_probas)
 
         if labels is not None:
             if not data.index.equals(labels.index):
-                raise ValueError(error_template.format(param="labels"))
+                raise ValueError(error_template.format(param='labels'))
             else:
                 data = data.assign(label=labels)
 
@@ -115,7 +115,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def _log_batch(self, samples: pd.DataFrame):
         for index, row in samples.iterrows():
             sample = row.to_dict()
-            if "sample_id" in sample:
+            if 'sample_id' in sample:
                 self.log_sample(**sample)
             else:
                 self.log_sample(sample_id=str(index), **sample)
@@ -124,8 +124,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def log_sample(
             self,
             sample_id: str,
-            prediction: Any,
-            timestamp: Union[datetime, int, None] = None,
+            prediction: t.Any,
+            timestamp: t.Union[datetime, int, None] = None,
             prediction_proba=None,
             label=None,
             **values
@@ -148,7 +148,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             All features of the sample and optional non_features
         """
         if timestamp is None:
-            warnings.warn("log_sample was called without timestamp, using current time instead")
+            warnings.warn('log_sample was called without timestamp, using current time instead')
 
         task_type = TaskType(self.model['task_type'])
         timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
@@ -196,7 +196,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             dataset: Dataset,
             predictions: np.ndarray,
-            prediction_probas: Optional[np.ndarray] = None,
+            prediction_probas: t.Optional[np.ndarray] = None,
             samples_per_request: int = 5000
     ):
         """Upload reference data. Possible to upload only once for a given model version.
@@ -209,7 +209,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         samples_per_request: int
         """
         data = dataset.features_columns.copy()
-        
+
         if self.model['task_type'] == TaskType.REGRESSION.value:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(float))
@@ -251,16 +251,16 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             item = row.to_dict()
             item = DeepchecksEncoder.encode(item)
             validator.validate(item)
-        
+
         self._upload_reference(data, samples_per_request)
 
     def update_batch(
             self,
-            samples_to_update: Union[pd.DataFrame, Sequence],
-            labels: Union["pd.Series[str]", "pd.Series[float]", None] = None,
-            timestamps: Union["pd.Series[datetime]", "pd.Series[int]"] = None,
-            predictions: Union["pd.Series[str]", "pd.Series[float]"] = None,
-            prediction_probas: Optional["pd.Series[Sequence[float]]"] = None,
+            samples_to_update: t.Union[pd.DataFrame, t.Sequence],
+            labels: t.Union['pd.Series[str]', 'pd.Series[float]', None] = None,
+            timestamps: t.Union['pd.Series[datetime]', 'pd.Series[int]', None] = None,
+            predictions: t.Union['pd.Series[str]', 'pd.Series[float]', None] = None,
+            prediction_probas: t.Optional['pd.Series[t.Sequence[float]]'] = None,
             samples_per_send: int = 10_000
     ):
         """Update values of already uploaded samples.
@@ -288,39 +288,39 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             raise ValueError("'samples_to_update' cannot be empty")
 
         if not isinstance(samples_to_update, pd.DataFrame):
-            samples_to_update = pd.DataFrame(list(samples_to_update), columns=["sample_id"])
+            samples_to_update = pd.DataFrame(list(samples_to_update), columns=['sample_id'])
 
-        if "sample_id" in samples_to_update.columns:
-            if samples_to_update["sample_id"].is_unique is False:
-                raise ValueError("sample ids must be unique")
-            if not samples_to_update["sample_id"].notna().all():
-                raise ValueError("'sample_id' column must not contain None/Nan")
-            samples_to_update = samples_to_update.set_index("sample_id")
+        if 'sample_id' in samples_to_update.columns:
+            if samples_to_update['sample_id'].is_unique is False:
+                raise ValueError('sample ids must be unique')
+            if not samples_to_update['sample_id'].notna().all():
+                raise ValueError('"sample_id" column must not contain None/Nan')
+            samples_to_update = samples_to_update.set_index('sample_id')
         else:
             if samples_to_update.index.is_unique is False:
-                raise ValueError("'data.index' must contain unique values")
+                raise ValueError('"data.index" must contain unique values')
 
         error_template = (
-            "'{param}' and 'samples_to_update' parameters indexes mismatch, "
-            "make sure that '{param}.index' is the same as "
-            "'data.index' (or data['sample_id'])"
+            '"{param}" and "samples_to_update" parameters indexes mismatch, '
+            'make sure that "{param}.index" is the same as '
+            '"data.index" (or data["sample_id"])'
         )
 
         if timestamps is not None:
             if not samples_to_update.index.equals(timestamps.index):
-                raise ValueError(error_template.format(param="timestamps"))
+                raise ValueError(error_template.format(param='timestamps'))
             samples_to_update = samples_to_update.assign(timestamp=timestamps)
         if predictions is not None:
             if not samples_to_update.index.equals(predictions.index):
-                raise ValueError(error_template.format(param="predictions"))
+                raise ValueError(error_template.format(param='predictions'))
             samples_to_update = samples_to_update.assign(prediction=predictions)
         if prediction_probas is not None:
             if not samples_to_update.index.equals(prediction_probas.index):
-                raise ValueError(error_template.format(param="prediction_probas"))
+                raise ValueError(error_template.format(param='prediction_probas'))
             samples_to_update = samples_to_update.assign(prediction_proba=prediction_probas)
         if labels is not None:
             if not samples_to_update.index.equals(labels.index):
-                raise ValueError(error_template.format(param="labels"))
+                raise ValueError(error_template.format(param='labels'))
             samples_to_update = samples_to_update.assign(label=labels)
 
         for i in range(0, len(samples_to_update), samples_per_send):
@@ -329,7 +329,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def _update_batch(self, samples: pd.DataFrame):
         for index, row in samples.iterrows():
             sample = row.to_dict()
-            if "sample_id" in sample:
+            if 'sample_id' in sample:
                 self.update_sample(**sample)
             else:
                 self.update_sample(sample_id=str(index), **sample)
@@ -344,7 +344,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         label
         values
         """
-
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id), **values}
         task_type = TaskType(self.model['task_type'])
 
@@ -353,18 +352,19 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
         # Make sure that integer categorical columns are still sent as strings:
+        provided_values = set(update.keys())
         for col in self.categorical_columns:
-            if col in update.keys():
+            if col in provided_values:
                 update[col] = str(update[col])
         update = DeepchecksEncoder.encode(update)
 
         # Create update schema, which contains only non-required columns and sample id
-        required_columns = set(self.schema["required"])
+        required_columns = set(self.schema['required'])
         optional_columns_schema = {
-            "type": "object",
-            "properties": {k: v for k, v in self.schema["properties"].items()
+            'type': 'object',
+            'properties': {k: v for k, v in self.schema['properties'].items()
                            if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
-            "required": [DeepchecksColumns.SAMPLE_ID_COL.value]
+            'required': [DeepchecksColumns.SAMPLE_ID_COL.value]
         }
         DeepchecksJsonValidator(optional_columns_schema).validate(update)
 
@@ -385,10 +385,10 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def version(
             self,
             name: str,
-            features: Optional[Dict[str, str]] = None,
-            non_features: Optional[Dict[str, str]] = None,
-            feature_importance: Optional[Dict[str, float]] = None,
-            model_classes: Optional[Sequence[str]] = None
+            features: t.Optional[t.Dict[str, str]] = None,
+            non_features: t.Optional[t.Dict[str, str]] = None,
+            feature_importance: t.Optional[t.Dict[str, float]] = None,
+            model_classes: t.Optional[t.Sequence[str]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version.
 
@@ -404,6 +404,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             A dictionary of feature names and their feature importance value.
         model_classes: Optional[Sequence[str]], default: None
             List of classes used by the model. Must define classes in order to send probabilities.
+
         Returns
         -------
         DeepchecksModelVersionClient
@@ -451,27 +452,29 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                         raise ValueError(f'value of non_features must be one of {ColumnType.values()} but got {value}')
 
             if model_classes:
-                if not isinstance(model_classes, Sequence):
+                if not isinstance(model_classes, t.Sequence):
                     raise ValueError(f'model_classes must be a sequence but got type {type(model_classes)}')
                 if len(model_classes) < 2:
                     raise ValueError(f'model_classes length must be at least 2 but got {len(model_classes)}')
-                # Stringify the classes
                 model_classes = [str(x) for x in model_classes]
                 if sorted(model_classes) != model_classes:
-                    raise ValueError(f'model_classes must be sorted alphabetically')
+                    raise ValueError('model_classes must be sorted alphabetically')
 
-            response = maybe_raise(
-                self.session.post(f'models/{self.model["id"]}/version', json={
+            created_version = self.api.create_model_version(
+                self.model['id'],
+                model_version={
                     'name': name,
                     'features': features,
                     'non_features': non_features or {},
                     'feature_importance': feature_importance,
                     'classes': model_classes
-                }),
-                msg="Failed to create new model version.\n{error}"
-            ).json()
+                }
+            )
+
             pretty_print(f'Model version {name} was successfully created.')
-            model_version_id = response['id']
+            created_version = t.cast(t.Dict[str, t.Any], created_version)
+            model_version_id = created_version['id']
+
         return self._version_client(model_version_id)
 
     def _version_client(self, model_version_id: int) -> DeepchecksModelVersionClient:
@@ -488,8 +491,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
         """
         if self._model_version_clients.get(model_version_id) is None:
-            self._model_version_clients[model_version_id] = \
-                DeepchecksModelVersionClient(model_version_id, self.model, session=self.session)
+            version_client = DeepchecksModelVersionClient(model_version_id, self.model, api=self.api)
+            self._model_version_clients[model_version_id] = version_client
         return self._model_version_clients[model_version_id]
 
     def _add_defaults(self):
@@ -508,15 +511,15 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             checks['Performance'] = SingleDatasetPerformance(scorers={'RMSE': 'rmse'})
         self.add_checks(checks=checks)
 
-        self.add_alert_rule(check_name="Feature Drift", threshold=0.25, frequency=24 * 60 * 60, alert_severity="high",
-                            monitor_name="Aggregated Feature Drift", add_monitor_to_dashboard=True)
-        self.add_alert_rule(check_name="Feature Drift", threshold=0.3, frequency=24 * 60 * 60,
-                            monitor_name="Top 5 Feature Drift",
-                            kwargs_for_check={"res_conf": None, "check_conf": {"aggregation method": ["top_5"]}})
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=24 * 60 * 60, alert_severity='high',
+                            monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True)
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.3, frequency=24 * 60 * 60,
+                            monitor_name='Top 5 Feature Drift',
+                            kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['top_5']}})
 
-        self.add_alert_rule(check_name="Prediction Drift", threshold=0.25, frequency=24 * 60 * 60,
-                            monitor_name="Prediction Drift", add_monitor_to_dashboard=True, alert_severity="high")
-        self.add_alert_rule(check_name="Label Drift", threshold=0.25, frequency=24 * 60 * 60,
-                            monitor_name="Label Drift", add_monitor_to_dashboard=True, alert_severity="high")
+        self.add_alert_rule(check_name='Prediction Drift', threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
+        self.add_alert_rule(check_name='Label Drift', threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='high')
 
         self.add_monitor(check_name='Performance', frequency=24 * 60 * 60, name='Performance')

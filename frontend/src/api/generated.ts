@@ -2993,58 +2993,78 @@ body : TimeWindowSchema
     Description of the time window to provide statistics for.
 session : AsyncSession, optional
     SQLAlchemy session.
+
 Returns
 -------
 json schema of the model version
  * @summary Get Time Window Statistics
  */
-export const getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost = (
+export const getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet = (
   modelVersionId: number,
-  timeWindowSchema: TimeWindowSchema
+  timeWindowSchema: TimeWindowSchema,
+  signal?: AbortSignal
 ) =>
   customInstance<TimeWindowOutputStatsSchema>({
     url: `/api/v1/model-versions/${modelVersionId}/time-window-statistics`,
-    method: 'post',
+    method: 'get',
     headers: { 'Content-Type': 'application/json' },
-    data: timeWindowSchema
+    signal
   });
 
-export type GetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost>>
+export const getGetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGetQueryKey = (
+  modelVersionId: number,
+  timeWindowSchema: TimeWindowSchema
+) => [`/api/v1/model-versions/${modelVersionId}/time-window-statistics`, timeWindowSchema];
+
+export type GetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet>>
 >;
-export type GetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPostMutationBody =
-  TimeWindowSchema;
-export type GetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPostMutationError =
+export type GetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGetQueryError =
   ErrorType<HTTPValidationError>;
 
-export const useGetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost>>,
+export const useGetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet = <
+  TData = Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelVersionId: number,
+  timeWindowSchema: TimeWindowSchema,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGetQueryKey(
+      modelVersionId,
+      timeWindowSchema
+    );
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet>>
+  > = ({ signal }) =>
+    getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet(
+      modelVersionId,
+      timeWindowSchema,
+      signal
+    );
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGet>>,
     TError,
-    { modelVersionId: number; data: TimeWindowSchema },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost>>,
-    { modelVersionId: number; data: TimeWindowSchema }
-  > = props => {
-    const { modelVersionId, data } = props ?? {};
-
-    return getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost(modelVersionId, data);
+    TData
+  >(queryKey, queryFn, { enabled: !!modelVersionId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
   };
 
-  return useMutation<
-    Awaited<ReturnType<typeof getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsPost>>,
-    TError,
-    { modelVersionId: number; data: TimeWindowSchema },
-    TContext
-  >(mutationFn, mutationOptions);
+  query.queryKey = queryKey;
+
+  return query;
 };
 
 /**

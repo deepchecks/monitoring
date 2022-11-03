@@ -12,7 +12,6 @@ import asyncio
 import random
 import string
 import typing as t
-from copy import copy
 from unittest import mock
 from unittest.mock import patch
 
@@ -27,6 +26,8 @@ import randomname
 import testing.postgresql
 import torch
 from deepchecks.vision import ClassificationData, DetectionData
+from deepchecks_client import DeepchecksClient
+from deepchecks_client.core.api import API
 from fastapi.testclient import TestClient
 from requests import Response
 from sqlalchemy import MetaData, Table, inspect
@@ -35,8 +36,6 @@ from sqlalchemy.orm import sessionmaker
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 
-from client.deepchecks_client.core.client import DeepchecksClient
-from client.deepchecks_client.core.utils import maybe_raise
 from deepchecks_monitoring.api.v1.check import CheckCreationSchema, add_checks
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.core import Base as TasksBase
@@ -138,28 +137,15 @@ async def reset_database(async_engine):
 
 @pytest.fixture()
 def client(application) -> t.Iterator[TestClient]:
-    with TestClient(app=application, base_url="http://test") as client:
+    with TestClient(app=application, base_url="http://test/api/v1/") as client:
         yield client
 
 
 @pytest.fixture()
 def deepchecks_sdk_client(client: TestClient):
     # pylint: disable=super-init-not-called
-    class DeepchecksTestClient(DeepchecksClient):
-        def __init__(
-                self,
-        ):
-            self.host = "http://test/api/v1/"
-            self.session = copy(client)
-            self.session.base_url = self.host
-            self._model_clients = {}
-
-            maybe_raise(
-                self.session.get("say-hello"),
-                msg="Server not available.\n{error}"
-            )
-
-    return DeepchecksTestClient()
+    api = API(session=client)
+    return DeepchecksClient(api=api)
 
 
 @pytest.fixture()

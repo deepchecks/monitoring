@@ -17,7 +17,6 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-import requests
 import torch
 from deepchecks.vision import VisionData
 from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerformance, TrainTestLabelDrift,
@@ -27,7 +26,8 @@ from deepchecks.vision.utils.image_properties import default_image_properties
 from deepchecks.vision.utils.vision_properties import PropertiesInputType, calc_vision_properties
 from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
-from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, maybe_raise, parse_timestamp
+from deepchecks_client.core.api import API
+from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp
 from deepchecks_client.vision.utils import DeepchecksEncoder, calc_bbox_properties
 
 
@@ -52,10 +52,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             model_version_id: int,
             model: dict,
-            session: requests.Session,
+            api: API,
             image_properties: t.Optional[t.List[t.Dict[str, t.Any]]],
     ):
-        super().__init__(model_version_id, model, session)
+        super().__init__(model_version_id, model, api)
         self.image_properties = image_properties
 
     def _get_vision_task_type(self):
@@ -100,39 +100,39 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             How many samples to send by one request
         """
         if samples_per_send < 1:
-            raise ValueError("'samples_per_send' must be '>=' than 1")
+            raise ValueError('"samples_per_send" must be ">=" than 1')
 
         if any(v != 1 for v in Counter(sample_id).values()):
-            raise ValueError("'sample_id' must contain unique values")
+            raise ValueError('"sample_id" must contain unique values')
 
         if len(images) == 0:
-            raise ValueError("'images' cannot be empty")
+            raise ValueError('"images" cannot be empty')
 
         n_of_sample = len(images)
-        error_template = "number of rows/items in each given parameter must be the same yet{additional}"
+        error_template = 'number of rows/items in each given parameter must be the same yet{additional}'
 
         if n_of_sample != len(sample_id):
-            raise ValueError(error_template.format(additional=" len(sample_id) != len(images)"))
+            raise ValueError(error_template.format(additional=' len(sample_id) != len(images)'))
         if n_of_sample != len(timestamps):
-            raise ValueError(error_template.format(additional=" len(timestamps) != len(images)"))
+            raise ValueError(error_template.format(additional=' len(timestamps) != len(images)'))
 
         data: t.Dict[str, t.Sequence[t.Any]] = {
-            "img": images,
-            "timestamp": timestamps,
-            "sample_id": sample_id
+            'img': images,
+            'timestamp': timestamps,
+            'sample_id': sample_id
         }
 
         if predictions is not None:
             if n_of_sample != len(predictions):
-                raise ValueError(error_template.format(additional=" len(predictions) != len(images)"))
+                raise ValueError(error_template.format(additional=' len(predictions) != len(images)'))
             else:
-                data["prediction"] = predictions
+                data['prediction'] = predictions
 
         if labels is not None:
             if n_of_sample != len(labels):
-                raise ValueError(error_template.format(additional=" len(labels) != len(images)"))
+                raise ValueError(error_template.format(additional=' len(labels) != len(images)'))
             else:
-                data["label"] = labels
+                data['label'] = labels
 
         samples = zip(*data.values())
         samples = [dict(zip(data.keys(), sample)) for sample in samples]
@@ -178,7 +178,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         assert self.image_properties is not None
 
         if timestamp is None:
-            warnings.warn("log_sample was called without timestamps, using current time instead")
+            warnings.warn('log_sample was called without timestamps, using current time instead')
 
         task_type = self._get_vision_task_type()
         image_properties = self.image_properties
@@ -275,13 +275,19 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         for _, row in data.iterrows():
             self.ref_schema_validator.validate(instance=row.to_dict())
-        
+
         self._upload_reference(
             data=data,
             samples_per_request=samples_per_request
         )
-    
-    def update_sample(self, sample_id: str, img: np.ndarray = None, label=None, **values):
+
+    def update_sample(
+        self,
+        sample_id: str,
+        img: t.Optional[np.ndarray] = None,
+        label: t.Any = None,
+        **values
+    ):
         """Update sample. Possible to update only non_features and labels.
 
         Parameters
@@ -296,12 +302,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             any additional values to update
         """
         # Create update schema, which contains only non-required columns and sample id
-        required_columns = set(self.schema["required"])
+        required_columns = set(self.schema['required'])
         optional_columns_schema = {
-            "type": "object",
-            "properties": {k: v for k, v in self.schema["properties"].items()
+            'type': 'object',
+            'properties': {k: v for k, v in self.schema['properties'].items()
                            if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
-            "required": [DeepchecksColumns.SAMPLE_ID_COL.value]
+            'required': [DeepchecksColumns.SAMPLE_ID_COL.value]
         }
 
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: sample_id, **values}
@@ -325,14 +331,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         update = DeepchecksEncoder.encode(update)
         DeepchecksJsonValidator(schema=optional_columns_schema).validate(update)
-
-        maybe_raise(
-            self.session.put(
-                f'model-versions/{self.model_version_id}/data',
-                json=[update]
-            ),
-            msg="Sample update failure.\n{error}"
-        )
+        self.api.update_samples(self.model_version_id, [update])
 
 
 class DeepchecksModelClient(core_client.DeepchecksModelClient):
@@ -349,8 +348,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def version(
             self,
             name: str,
-            vision_data: VisionData = None,
-            image_properties: t.List[t.Dict[str, t.Any]] = default_image_properties
+            vision_data: t.Optional[VisionData] = None,
+            image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version for vision data.
 
@@ -368,7 +367,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
+        image_properties = image_properties or default_image_properties
         existing_version_id = self._get_existing_version_id_or_none(version_name=name)
+
         if existing_version_id is not None:
             return self._version_client(existing_version_id, image_properties=image_properties)
 
@@ -389,19 +390,24 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     features[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = ColumnType.ARRAY_FLOAT.value
 
             # Send request
-            response = self.session.post(f'models/{self.model["id"]}/version', json={
-                'name': name,
-                'features': features,
-                'non_features': {},
-            })
-            response.raise_for_status()
-            model_version_id = response.json()['id']
+            created_version = self.api.create_model_version(
+                model_id=self.model['id'],
+                model_version={
+                    'name': name,
+                    'features': features,
+                    'non_features': {},
+                }
+            )
+            created_version = t.cast(t.Dict[str, t.Any], created_version)
+            model_version_id = created_version['id']
+
         return self._version_client(model_version_id, image_properties=image_properties)
 
-    def _version_client(self,
-                        model_version_id: int,
-                        image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None) \
-            -> DeepchecksModelVersionClient:
+    def _version_client(
+        self,
+        model_version_id: int,
+        image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
+    ) -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model.
 
         Parameters
@@ -415,9 +421,12 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
         """
         if self._model_version_clients.get(model_version_id) is None:
-            self._model_version_clients[model_version_id] = \
-                DeepchecksModelVersionClient(model_version_id, self.model, session=self.session,
-                                             image_properties=image_properties)
+            self._model_version_clients[model_version_id] = DeepchecksModelVersionClient(
+                model_version_id,
+                self.model,
+                api=self.api,
+                image_properties=image_properties
+            )
         return self._model_version_clients[model_version_id]
 
     def _add_defaults(self):
@@ -434,20 +443,20 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             checks['Performance'] = SingleDatasetPerformance(scorers={'Precision': 'precision_macro'})
         self.add_checks(checks=checks)
 
-        self.add_alert_rule(check_name="Property Drift", threshold=0.25, frequency=24 * 60 * 60, alert_severity="high",
-                            monitor_name="Property Drift", add_monitor_to_dashboard=True)
-        self.add_alert_rule(check_name="Prediction Drift", threshold=0.25, frequency=24 * 60 * 60,
-                            monitor_name="Prediction Drift", add_monitor_to_dashboard=True, alert_severity="high")
-        self.add_alert_rule(check_name="Label Drift", threshold=0.25, frequency=24 * 60 * 60,
-                            monitor_name="Label Drift", add_monitor_to_dashboard=True, alert_severity="high")
+        self.add_alert_rule(check_name='Property Drift', threshold=0.25, frequency=24 * 60 * 60, alert_severity='high',
+                            monitor_name='Property Drift', add_monitor_to_dashboard=True)
+        self.add_alert_rule(check_name='Prediction Drift', threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
+        self.add_alert_rule(check_name='Label Drift', threshold=0.25, frequency=24 * 60 * 60,
+                            monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='high')
         self.add_monitor(check_name='Performance', frequency=24 * 60 * 60, name='Performance')
 
 
 def image_property_field(name: str) -> str:
     """Form image property field name."""
-    return f"{PropertiesInputType.IMAGES.value} {name}"
+    return f'{PropertiesInputType.IMAGES.value} {name}'
 
 
 def bbox_property_field(name: str) -> str:
     """Form bbox property field name."""
-    return f"{PropertiesInputType.PARTIAL_IMAGES.value} {name}"
+    return f'{PropertiesInputType.PARTIAL_IMAGES.value} {name}'

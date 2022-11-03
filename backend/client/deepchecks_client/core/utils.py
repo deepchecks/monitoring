@@ -22,34 +22,49 @@ from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
 from termcolor import cprint
 
+if t.TYPE_CHECKING:
+    from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
+
+
 __all__ = ['ColumnType', 'TaskType', 'DeepchecksColumns']
+
+
+T = t.TypeVar('T')
 
 
 class TaskType(enum.Enum):
     """Enum containing supported task types."""
 
-    REGRESSION = "regression"
-    MULTICLASS = "multiclass"
-    BINARY = "binary"
-    VISION_CLASSIFICATION = "vision_classification"
-    VISION_DETECTION = "vision_detection"
+    REGRESSION = 'regression'
+    MULTICLASS = 'multiclass'
+    BINARY = 'binary'
+    VISION_CLASSIFICATION = 'vision_classification'
+    VISION_DETECTION = 'vision_detection'
 
     @classmethod
     def values(cls):
         return [e.value for e in TaskType]
 
+    @classmethod
+    def vision_types(cls):
+        return {cls.VISION_CLASSIFICATION, cls.VISION_DETECTION}
+
+    @classmethod
+    def tabular_types(cls):
+        return {cls.REGRESSION, cls.MULTICLASS, cls.BINARY}
+
 
 class ColumnType(enum.Enum):
     """Enum containing possible types of data."""
 
-    NUMERIC = "numeric"
-    INTEGER = "integer"
-    CATEGORICAL = "categorical"
-    BOOLEAN = "boolean"
-    TEXT = "text"
-    ARRAY_FLOAT = "array_float"
-    ARRAY_FLOAT_2D = "array_float_2d"
-    DATETIME = "datetime"
+    NUMERIC = 'numeric'
+    INTEGER = 'integer'
+    CATEGORICAL = 'categorical'
+    BOOLEAN = 'boolean'
+    TEXT = 'text'
+    ARRAY_FLOAT = 'array_float'
+    ARRAY_FLOAT_2D = 'array_float_2d'
+    DATETIME = 'datetime'
 
     @classmethod
     def values(cls):
@@ -59,11 +74,11 @@ class ColumnType(enum.Enum):
 class DeepchecksColumns(enum.Enum):
     """Enum of saved deepchecks columns."""
 
-    SAMPLE_ID_COL = "_dc_sample_id"
-    SAMPLE_TS_COL = "_dc_time"
-    SAMPLE_LABEL_COL = "_dc_label"
-    SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
-    SAMPLE_PRED_COL = "_dc_prediction"
+    SAMPLE_ID_COL = '_dc_sample_id'
+    SAMPLE_TS_COL = '_dc_time'
+    SAMPLE_LABEL_COL = '_dc_label'
+    SAMPLE_PRED_PROBA_COL = '_dc_prediction_probabilities'
+    SAMPLE_PRED_COL = '_dc_prediction'
 
 
 def maybe_raise(
@@ -78,10 +93,10 @@ def maybe_raise(
     response : Response
         http response instance
     expected : Union[int, Tuple[int, int]] , default (200, 299)
-        HTTP status code that is expected to receive 
+        HTTP status code that is expected to receive
     msg: Optional[str] , default None
         error message to show in case of unexpected status code,
-        next template parameters available: 
+        next template parameters available:
         - status (HTTP status code)
         - reason (HTTP reason message)
         - url (request url)
@@ -96,9 +111,9 @@ def maybe_raise(
     url = response.url
     reason = response.reason
 
-    error_template = "Error: {status} {reason} url {url}.\nBody:\n{body}"
-    client_error_template = "{status} Client Error: {reason} for url: {url}.\nBody:\n{body}"
-    server_error_template = "{status} Server Internal Error: {reason} for url: {url}.\nBody:\n{body}"
+    error_template = 'Error: {status} {reason} url {url}.\nBody:\n{body}'
+    client_error_template = '{status} Client Error: {reason} for url: {url}.\nBody:\n{body}'
+    server_error_template = '{status} Server Internal Error: {reason} for url: {url}.\nBody:\n{body}'
 
     def select_template(status):
         if 400 <= status <= 499:
@@ -123,7 +138,7 @@ def maybe_raise(
             else msg.format(status=status, reason=reason, url=url, body=body, error=error)
         )
 
-    if isinstance(expected, (tuple, list)) and not (expected[0] <= status <= expected[1]):
+    if isinstance(expected, (tuple, list)) and not expected[0] <= status <= expected[1]:
         body = process_body()
         error = select_template(status).format(status=status, reason=reason, url=url, body=body)
         raise HTTPError(
@@ -136,6 +151,7 @@ def maybe_raise(
 
 
 class DeepchecksEncoder:
+    """Deepchecks encoder."""
 
     @classmethod
     def encode(cls, obj):
@@ -152,7 +168,7 @@ class DeepchecksEncoder:
         return obj
 
 
-def parse_timestamp(timestamp: t.Union[int, datetime]) -> "pendulum.datetime.DateTime":
+def parse_timestamp(timestamp: t.Union[int, datetime]) -> 'PendulumDateTime':
     """Parse timestamp to datetime object."""
     if isinstance(timestamp, int) or np.issubdtype(type(timestamp), np.integer):
         return pdl.from_timestamp(timestamp, pdl.local_timezone())
@@ -166,7 +182,7 @@ def parse_timestamp(timestamp: t.Union[int, datetime]) -> "pendulum.datetime.Dat
 DeepchecksJsonValidator = validators.extend(
     validators.Draft202012Validator,
     type_checker=validators.Draft202012Validator.TYPE_CHECKER.redefine(
-        "array",
+        'array',
         lambda _, instance: isinstance(instance, (list, tuple))
     )
 )
@@ -176,4 +192,4 @@ def pretty_print(msg: str):
     """Pretty print the attached massage to the user terminal.
 
     Used for information massages which are not errors or warnings."""
-    cprint(msg, "green", attrs=["bold"])
+    cprint(msg, 'green', attrs=['bold'])

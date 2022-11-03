@@ -52,6 +52,7 @@ SOURCES := $(or $(PACKAGE), $(wildcard *.py))
 
 # Test and Analyize
 TEST_CODE := tests/
+CLIENT_CODE := client/deepchecks_client
 
 PYLINT_LOG = .pylint.log
 
@@ -164,8 +165,8 @@ validate: pylint docstring
 
 
 pylint: dev-requirements
-	$(ANALIZE) $(SOURCES) $(TEST_CODE)
-	$(FLAKE8) $(SOURCES)
+	$(ANALIZE) $(SOURCES) $(TEST_CODE) $(CLIENT_CODE)
+	$(FLAKE8) $(SOURCES) $(CLIENT_CODE)
 # 	$(FLAKE8_RST) $(SOURCES)
 
 
@@ -265,6 +266,7 @@ clean-docs: $(DOCS)
 trailing-spaces:
 	@find ./deepchecks_monitoring/ -name "*.py" -type f -print0 | xargs -0 sed -i "s/[[:space:]]*$$//"
 	@find ./tests/ -name "*.py" -type f -print0 | xargs -0 sed -i "s/[[:space:]]*$$//"
+	@find ./client/deepchecks_client -name "*.py" -type f -print0 | xargs -0 sed -i "s/[[:space:]]*$$//"
 
 
 ### Release ######################################################

@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import inspect
 
 from deepchecks_monitoring.models import ModelVersion, TaskType
-from tests.conftest import add_classification_data, send_reference_request, add_model
+from tests.conftest import add_classification_data, add_model, send_reference_request
 
 
 @pytest.mark.asyncio
@@ -220,8 +220,8 @@ async def test_time_window_statistics(client: TestClient, classification_model_v
     add_classification_data(classification_model_version_id, client)
     add_classification_data(classification_model_version_id, client, is_labeled=False, id_prefix="unlabeled")
     # Act
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/time-window-statistics",
-                           json={"end_time": pdl.now().isoformat()})
+    response = client.get(f"/api/v1/model-versions/{classification_model_version_id}/time-window-statistics",
+                          json={"end_time": pdl.now().isoformat()})
     # Assert
     assert response.status_code == 200
     assert response.json() == {"num_samples": 10, "num_labeled_samples": 5}

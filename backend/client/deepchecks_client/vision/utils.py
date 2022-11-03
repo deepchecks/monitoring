@@ -55,7 +55,7 @@ def calc_bbox_properties(
     image_properties: t.Sequence[t.Dict[str, t.Any]]
 ) -> t.List[t.Dict[str, t.List[float]]]:
     """Calculate samples bboxes properties.
-    
+
     Parameters
     ==========
     images_batch : Sequence[np.ndarray]
@@ -64,7 +64,7 @@ def calc_bbox_properties(
         batch of images
     image_properties : Sequence[Dict[str, Any]]
         properties to calculate
-    
+
     Returns
     =======
     List[Dict[str, List[float]]] :
@@ -77,7 +77,7 @@ def calc_bbox_properties(
 
     for img, labels in zip(images_batch, labels_batch):
         cropped_images = []
-        
+
         for label in labels:
             label = np.array(DeepchecksEncoder.encode(label))
             x, y, w, h = label[1:]  # bbox
@@ -86,9 +86,9 @@ def calc_bbox_properties(
             if (img := crop_image(img, x, y, w, h)).size == 0:
                 continue
             cropped_images.append(img)
-        
+
         # dict[property-name, list[property-value-per-image]]
         vision_properties = calc_vision_properties(cropped_images, image_properties)
         bbox_properties.append(vision_properties)
-    
+
     return bbox_properties

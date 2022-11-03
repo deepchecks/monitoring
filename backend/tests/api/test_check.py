@@ -15,8 +15,8 @@ from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models import TaskType
-from tests.conftest import add_classification_data, add_vision_classification_data, send_reference_request, add_model, \
-    add_model_version, add_check
+from tests.conftest import (add_check, add_classification_data, add_model, add_model_version,
+                            add_vision_classification_data, send_reference_request)
 
 
 def prettify(data) -> str:

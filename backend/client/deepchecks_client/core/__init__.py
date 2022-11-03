@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Module defining the core client functionality."""
-from deepchecks_client.core.client import DeepchecksClient
 from deepchecks_client.core.utils import ColumnType, TaskType
 
-__all__ = ['DeepchecksClient', 'ColumnType', 'TaskType']
+__all__ = ['ColumnType', 'TaskType']
