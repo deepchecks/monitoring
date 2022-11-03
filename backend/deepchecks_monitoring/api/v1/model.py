@@ -158,11 +158,11 @@ async def retrieve_models_data_ingestion(
         return {}
 
     if time_filter == TimeUnit.HOUR:
-        agg_time_unit = 'minute'
+        agg_time_unit = "minute"
     elif time_filter == TimeUnit.DAY:
-        agg_time_unit = 'hour'
+        agg_time_unit = "hour"
     else:
-        agg_time_unit = 'day'
+        agg_time_unit = "day"
     union = union_all(*(
         select(
             literal(model_id).label("model_id"),
