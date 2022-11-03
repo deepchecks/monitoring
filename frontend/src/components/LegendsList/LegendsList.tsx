@@ -1,11 +1,11 @@
 import React, { ReactNode, useMemo } from 'react';
 import { ChartData, LegendItem } from 'chart.js';
 
-import { Box, Tooltip, Typography } from '@mui/material';
+import { styled, Box, Tooltip, Typography } from '@mui/material';
 
-import { HorizontalScrolling } from './HorizontalScrolling';
+import { HorizontalScrolling } from './components/HorizontalScrolling/HorizontalScrolling';
 
-import { GraphData } from '../helpers/types';
+import { GraphData } from 'helpers/types';
 
 interface LegendsListProps {
   children: ReactNode;
@@ -20,15 +20,7 @@ const MAX_LENGTH_OF_TOOLTIP_TEXT = 120;
 const LegendsList = ({ children, chartData, lineIndexMap, hideLine, legends }: LegendsListProps) => {
   const legendsBox = useMemo(
     () => (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: 1,
-          marginTop: '0px'
-        }}
-      >
+      <StyledLegendsList>
         {!!chartData?.labels?.length && !!legends.length && (
           <Box sx={{ padding: '6.5px 0', minWidth: '70%' }}>
             <HorizontalScrolling>
@@ -41,24 +33,9 @@ const LegendsList = ({ children, chartData, lineIndexMap, hideLine, legends }: L
                     disableHoverListener={legendItem?.text?.length <= MAX_LENGTH_OF_TOOLTIP_TEXT}
                     key={index}
                   >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        m: '0 7px',
-                        minWidth: 'max-content',
-                        cursor: 'pointer',
-                        padding: 0,
-                        p: '3px 0'
-                      }}
-                      onClick={() => hideLine(legendItem)}
-                      key={index}
-                    >
-                      <Box
+                    <StyledLegendsListLegendItem onClick={() => hideLine(legendItem)} key={index}>
+                      <StyledLegendsListLegendItemDot
                         sx={{
-                          width: 9,
-                          height: 9,
-                          borderRadius: '3px',
                           backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
                         }}
                       />
@@ -77,7 +54,7 @@ const LegendsList = ({ children, chartData, lineIndexMap, hideLine, legends }: L
                           ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...`
                           : text[0]}
                       </Typography>
-                    </Box>
+                    </StyledLegendsListLegendItem>
                   </Tooltip>
                 );
               })}
@@ -85,12 +62,35 @@ const LegendsList = ({ children, chartData, lineIndexMap, hideLine, legends }: L
           </Box>
         )}
         {children && <Box sx={{ ml: '42px' }}>{children}</Box>}
-      </Box>
+      </StyledLegendsList>
     ),
-    [legends, lineIndexMap]
+    [legends, lineIndexMap, chartData?.labels?.length, children, hideLine]
   );
 
   return legendsBox;
 };
+
+const StyledLegendsList = styled(Box)({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width: '100%',
+  marginTop: '0px'
+});
+
+const StyledLegendsListLegendItem = styled(Box)({
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  minWidth: 'max-content',
+  margin: '0 7px',
+  padding: '3px 0'
+});
+
+const StyledLegendsListLegendItemDot = styled(Box)({
+  width: 9,
+  height: 9,
+  borderRadius: '3px'
+});
 
 export default LegendsList;

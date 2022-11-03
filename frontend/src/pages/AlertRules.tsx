@@ -1,8 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from '../Context';
-import useHeader from 'hooks/useHeader';
+import { GlobalStateContext } from '../context';
 
 import {
   AlertRuleConfigSchema,
@@ -13,6 +12,7 @@ import {
 
 import { Button, Box, useTheme } from '@mui/material';
 
+import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
 import { Loader } from 'components/Loader';
 import { AlertRuleDialog } from '../components/AlertRuleDialog';
@@ -22,7 +22,6 @@ import { WhitePlusIcon } from 'assets/icon/icon';
 import NoResults from 'components/NoResults';
 
 export const AlertRules = () => {
-  const { Header, setChildren } = useHeader();
   const theme = useTheme();
   const { alertFilters: filters, resetFilters } = useContext(GlobalStateContext);
 
@@ -58,30 +57,22 @@ export const AlertRules = () => {
     refetchAlertRules();
   };
 
-  useEffect(() => {
-    setChildren(
-      <Button
-        sx={{
-          height: '40px'
-        }}
-        disableElevation
-        startIcon={<WhitePlusIcon />}
-        onClick={() => onDialogOpen()}
-      >
-        New Alert Rule
-      </Button>
-    );
-
-    return () => {
-      setChildren(null);
-    };
-  }, []);
-
   const isLoading = isAlertRulesLoading || isDeleteAlertRuleLoading;
 
   return (
     <Box>
-      <Header />
+      <HeaderLayout>
+        <Button
+          sx={{
+            height: '40px'
+          }}
+          disableElevation
+          startIcon={<WhitePlusIcon />}
+          onClick={() => onDialogOpen()}
+        >
+          New Alert Rule
+        </Button>
+      </HeaderLayout>
       <Box
         sx={{
           padding: '40px 0 ',

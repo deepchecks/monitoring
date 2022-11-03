@@ -32,6 +32,7 @@ import { ReactComponent as Info } from './info.svg';
 import { ReactComponent as InfoIcon } from './infoIcon.svg';
 import { ReactComponent as LockIcon } from './lock.svg';
 import { ReactComponent as MenuVertical } from './menuVertical.svg';
+import { ReactComponent as NLPModel } from './NLPModel.svg';
 import { ReactComponent as NoDataToShow } from './noDataToShow.svg';
 import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as PauseIcon } from './pause.svg';
@@ -47,6 +48,7 @@ import { ReactComponent as TableChart } from './tableChart.svg';
 import { ReactComponent as TestTube } from './testTube.svg';
 import { ReactComponent as Undo } from './undo.svg';
 import { ReactComponent as UserInvite } from './userInvite.svg';
+import { ReactComponent as VisualModel } from './visualModel.svg';
 import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
 
 export {
@@ -78,6 +80,7 @@ export {
   FastForward,
   FilterIcon,
   MenuVertical,
+  NLPModel,
   HomeIcon,
   Info,
   InfoIcon,
@@ -99,5 +102,6 @@ export {
   NoDataToShow,
   TableChart,
   TestTube,
+  VisualModel,
   Undo
 };

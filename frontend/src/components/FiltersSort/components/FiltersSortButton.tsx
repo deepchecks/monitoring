@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Button } from '@mui/material';
 
-import { Sort } from '../../assets/icon/icon';
+import { Sort } from '../../../assets/icon/icon';
 
 interface FiltersSortButtonProps {
   handleOpenSortMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;

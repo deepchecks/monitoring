@@ -1,6 +1,6 @@
 import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
 import { UserInvite } from 'assets/icon/icon';
-import { GlobalStateContext } from 'Context';
+import { GlobalStateContext } from 'context';
 import { useScrollBar } from 'hooks/useScrollBar';
 import mixpanel from 'mixpanel-browser';
 import React, { useContext, useRef, useState } from 'react';

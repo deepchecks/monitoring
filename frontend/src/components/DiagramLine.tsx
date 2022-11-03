@@ -1,4 +1,4 @@
-import React, { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from 'react';
+import React, { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
 import {
   Chart,
   ChartArea,
@@ -19,18 +19,11 @@ import mixpanel from 'mixpanel-browser';
 
 import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
 
-import {
-  addSpace,
-  drawAlerts,
-  drawCircle,
-  minimapPanorama,
-  OriginalMinMax,
-  setAlertLine
-} from '../helpers/diagramLine';
+import { drawAlerts, drawCircle, minimapPanorama, OriginalMinMax, setAlertLine } from '../helpers/diagramLine';
 
 import { alpha, Box } from '@mui/material';
 
-import LegendsList from './LegendsList';
+import LegendsList from './LegendsList/LegendsList';
 import { Loader } from './Loader';
 import { Minimap } from './Minimap';
 
@@ -85,6 +78,7 @@ export interface DiagramLineProps {
   isLoading?: boolean;
   minimap?: IMinimap;
   tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>>;
+  analysis?: boolean;
 }
 
 function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, colorStart: string, colorEnd: string) {
@@ -119,7 +113,8 @@ function DiagramLine({
   minTimeUnit = 'day',
   isLoading,
   minimap = initMinimap,
-  tooltipCallbacks = defaultTooltipCallbacks
+  tooltipCallbacks = defaultTooltipCallbacks,
+  analysis
 }: DiagramLineProps) {
   const { alerts, alertIndex, alertSeverity, changeAlertIndex } = minimap;
   const chartRef = useRef<Chart<'line', number[], string>>();
@@ -130,7 +125,7 @@ function DiagramLine({
   const [legends, setLegends] = useState<LegendItem[]>([]);
   const [chartData, setChartData] = useState(data);
 
-  const getNewData = () => {
+  const getNewData = useCallback(() => {
     const char = chartRef.current;
 
     if (!char) {
@@ -172,7 +167,7 @@ function DiagramLine({
         };
       })
     };
-  };
+  }, [data]);
 
   const onChange = ({ chart }: { chart: Chart }) => {
     if (chart.originalMinMax && minimapRef?.current?.length) {
@@ -204,7 +199,7 @@ function DiagramLine({
     return currentPlugins;
   };
 
-  const hideLine = (item: LegendItem) => {
+  const hideLine = useCallback((item: LegendItem) => {
     mixpanel.track('Click on a legend on the graph');
 
     const chart = chartRef.current;
@@ -217,7 +212,7 @@ function DiagramLine({
         [typeof item.datasetIndex === 'number' ? item.datasetIndex : -1]: isDatasetVisible
       }));
     }
-  };
+  }, []);
 
   const options: ChartOptions<'line'> = {
     maintainAspectRatio: false,
@@ -280,7 +275,7 @@ function DiagramLine({
           },
           y: {
             min: range.current.min,
-            max: range.current.max * 20,
+            max: range.current.max * 2,
             minRange: (range.current.max - range.current.min) / 2
           }
         },
@@ -313,10 +308,20 @@ function DiagramLine({
           unit: minTimeUnit
         }
       },
-      y: {
-        min: range.current.min,
-        max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
-      }
+      y: analysis
+        ? {
+            ticks: {
+              stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
+              align: 'end'
+            },
+            grid: { drawBorder: false, drawTicks: false },
+            min: range.current.min,
+            max: range.current.max === 0 ? 1 : range.current.max * 1.2
+          }
+        : {
+            min: range.current.min,
+            max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
+          }
     }
   };
 
@@ -324,7 +329,7 @@ function DiagramLine({
     if (chartRef.current) {
       setChartData(getNewData());
     }
-  }, [chartRef.current, data]);
+  }, [data, getNewData]);
 
   useEffect(() => {
     if (chartRef.current && chartRef.current?.legend?.legendItems?.length) {
@@ -341,7 +346,11 @@ function DiagramLine({
   ) : (
     <>
       <DiagramTutorialTooltip>
-        <Box height={height ? height - 61 : 'auto'} sx={{ position: 'relative' }}>
+        <Box
+          height={height ? height - 61 : 'auto'}
+          sx={{ position: 'relative' }}
+          onMouseLeave={() => chartRef.current?.resetZoom()}
+        >
           <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
         </Box>
       </DiagramTutorialTooltip>

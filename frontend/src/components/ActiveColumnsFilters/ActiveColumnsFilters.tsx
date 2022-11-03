@@ -1,6 +1,9 @@
+import React, { useContext, useEffect, useMemo, useCallback, useRef, useState } from 'react';
+
+import { AnalysisContext, FilterValue } from 'context/analysis-context';
+
 import { Box, Popover, Stack, Tooltip } from '@mui/material';
-import { AnalysisContext, FilterValue } from 'Context/AnalysisContext';
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+
 import { ColumnChip } from './components/ColumnChip';
 
 const maxCharacters = 100;
@@ -8,11 +11,12 @@ const initCounterWidth = 50;
 
 export function ActiveColumnsFilters() {
   const { filters, setFilters } = useContext(AnalysisContext);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const [menuFilterRange, setMenuFilterRange] = useState(0);
   const [counterWidth, setCounterWidth] = useState(initCounterWidth);
+  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
-  const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const handleMenuOpen = () => {
     setAnchorEl(containerRef.current);
@@ -22,19 +26,21 @@ export function ActiveColumnsFilters() {
     setAnchorEl(null);
   };
 
-  const deleteFilter =
+  const deleteFilter = useCallback(
     (column: string, value: FilterValue, category = '') =>
-    () => {
-      if (value) {
-        setFilters(prevFilters => {
-          if (Array.isArray(value)) {
-            return { ...prevFilters, [column]: null };
-          }
+      () => {
+        if (value) {
+          setFilters(prevFilters => {
+            if (Array.isArray(value)) {
+              return { ...prevFilters, [column]: null };
+            }
 
-          return { ...prevFilters, [column]: { ...prevFilters[column], [category]: false } };
-        });
-      }
-    };
+            return { ...prevFilters, [column]: { ...prevFilters[column], [category]: false } };
+          });
+        }
+      },
+    [setFilters]
+  );
 
   useEffect(
     () => () => {
@@ -64,7 +70,7 @@ export function ActiveColumnsFilters() {
       setCounterWidth(initCounterWidth);
       setMenuFilterRange(0);
     },
-    [containerRef.current, filters, containerRef?.current?.children, containerRef?.current?.children?.length]
+    [filters, containerRef?.current?.children, containerRef?.current?.children?.length]
   );
 
   const Filters = useMemo(
@@ -109,18 +115,12 @@ export function ActiveColumnsFilters() {
           }
         }
       }),
-    [filters, counterWidth]
+    [filters, deleteFilter]
   );
 
   return (
     <>
-      <Stack
-        direction="row"
-        spacing="10px"
-        ref={containerRef}
-        mt="50px"
-        sx={{ overflow: 'hidden', position: 'relative' }}
-      >
+      <Stack direction="row" spacing="10px" ref={containerRef} sx={{ overflow: 'hidden', position: 'relative' }}>
         {Filters}
         {!!menuFilterRange && (
           <>

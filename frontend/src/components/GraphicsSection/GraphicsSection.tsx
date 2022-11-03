@@ -39,6 +39,13 @@ interface MonitorInfo {
   text: string | undefined;
 }
 
+const filterMap: { [key: string]: string } = {
+  greater_than_equals: '>',
+  greater_than: '>',
+  equals: '=',
+  contains: 'contains'
+};
+
 function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: GraphicsSectionProps) {
   const [hover, setHover] = useState<boolean>(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<null | HTMLElement>(null);
@@ -46,13 +53,6 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
   const infoRef = useRef<HTMLDivElement>(null);
 
   const openRootMenu = Boolean(anchorElRootMenu);
-
-  const filterMap: { [key: string]: string } = {
-    greater_than_equals: '>',
-    greater_than: '>',
-    equals: '=',
-    contains: 'contains'
-  };
 
   const modelName = useMemo(() => {
     let name;
@@ -171,7 +171,7 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
     }
 
     return currentMonitorInfo;
-  }, [monitor, infoRef.current, models.length, modelName, infoRef.current?.children[0].clientWidth]);
+  }, [monitor, modelName]);
 
   return (
     <>
@@ -203,12 +203,13 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
           })}
         </StyledInfo>
         <StyledDiagramWrapper>
-          <DiagramLine 
-            data={data} 
-            tooltipCallbacks={tooltipCallbacks} 
-            alert_rules={monitor.alert_rules} 
+          <DiagramLine
+            data={data}
+            tooltipCallbacks={tooltipCallbacks}
+            alert_rules={monitor.alert_rules}
             height={320}
-            minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'} />
+            minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'}
+          />
         </StyledDiagramWrapper>
       </StyledFlexContent>
       <StyledRootMenu

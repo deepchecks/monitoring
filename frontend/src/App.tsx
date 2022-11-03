@@ -1,20 +1,24 @@
+import React from 'react';
+import { Outlet, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { GlobalStateProvider } from './context';
+import { MonitorsDataProvider } from 'hooks/useMonitorsData';
+import { StatsTimeProvider } from './hooks/useStatsTime';
+import useUser, { UserProvider } from './hooks/useUser';
+
 import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import { pathsInfo } from 'helpers/helper';
-import { HeaderProvider } from 'hooks/useHeader';
-import 'overlayscrollbars/overlayscrollbars.css';
-import { DashboardPage } from 'pages/DashboardPage';
-import React from 'react';
-import { Outlet, Route, Routes } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
-import { GlobalStateProvider } from './Context';
 import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
-import { StatsTimeProvider } from './hooks/useStatsTime';
-import useUser, { UserProvider } from './hooks/useUser';
+
+import { DashboardPage } from 'pages/DashboardPage';
 import { CompleteDetails } from './pages/CompleteDetails';
-import { MonitorsDataProvider } from 'hooks/useMonitorsData';
+import { Sidebar } from './components/Sidebar';
+
+import 'overlayscrollbars/overlayscrollbars.css';
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -60,25 +64,30 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <CssBaseline />
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <GlobalStateProvider>
-            <UserProvider>
-              <HeaderProvider>
-                <StatsTimeProvider>
-                  <Routes>
-                    <Route element={<Layout />}>
-                      <Route path="/" element={<MonitorsDataProvider><DashboardPage /></MonitorsDataProvider>} />
-                      {flatPathsInfo.map(({ link, element: PageElement }) => (
-                        <Route key={link} path={link} element={<PageElement />} />
-                      ))}
-                    </Route>
-                    <Route path="/complete-details" element={<CompleteDetails />} />
-                  </Routes>
-                </StatsTimeProvider>
-              </HeaderProvider>
-            </UserProvider>
-          </GlobalStateProvider>
-        </LocalizationProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <GlobalStateProvider>
+          <UserProvider>
+            <StatsTimeProvider>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route
+                    path="/"
+                    element={
+                      <MonitorsDataProvider>
+                        <DashboardPage />
+                      </MonitorsDataProvider>
+                    }
+                  />
+                  {flatPathsInfo.map(({ link, element: PageElement }) => (
+                    <Route key={link} path={link} element={<PageElement />} />
+                  ))}
+                </Route>
+                <Route path="/complete-details" element={<CompleteDetails />} />
+              </Routes>
+            </StatsTimeProvider>
+          </UserProvider>
+        </GlobalStateProvider>
+      </LocalizationProvider>
     </QueryClientProvider>
   );
 };

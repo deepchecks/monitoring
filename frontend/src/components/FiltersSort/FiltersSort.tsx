@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from 'Context';
+import { GlobalStateContext } from 'context';
 
 import {
   AlertSeverity,
@@ -16,8 +16,8 @@ import { Box, Divider, Menu, MenuItem, SelectChangeEvent, Stack, styled, TextFie
 import { DatePicker } from '../DatePicker/DatePicker';
 import { SelectPrimary } from '../SelectPrimary/SelectPrimary';
 import { SelectSeverity, SeverityAll, severityAll } from '../SelectSeverity';
-import FiltersResetButton from './FiltersResetButton';
-import FiltersSortButton from './FiltersSortButton';
+import FiltersResetButton from './components/FiltersResetButton';
+import FiltersSortButton from './components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
 

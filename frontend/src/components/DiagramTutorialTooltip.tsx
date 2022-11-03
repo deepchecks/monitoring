@@ -1,20 +1,25 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { useState, useEffect, useRef, ReactElement } from 'react';
 
-import { styled, Tooltip, TooltipProps, tooltipClasses, Typography, Fade } from '@mui/material';
+import { styled, Box, Tooltip, TooltipProps, tooltipClasses, Typography, Fade } from '@mui/material';
 
 import { getStorageItem, setStorageItem } from 'helpers/utils/localStorage';
+
+import { WindowTimeout } from 'helpers/types/index';
 
 interface DiagramTutorialTooltipProps {
   children: ReactElement<any, any>;
 }
 
-type WindowTimeout = ReturnType<typeof setTimeout>;
-
 const TOOLTIP_COUNT = 'TOOLTIP_COUNT';
+const ENTER_DELAY = 2600;
+const CLOSE_DELAY = 5000;
+const TRANSITION_TIMEOUT = 600;
 
 let tooltipCount: number;
 
 const DiagramTutorialTooltip = ({ children }: DiagramTutorialTooltipProps) => {
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+
   const [open, setOpen] = useState(false);
   const [closeTimeout, setCloseTimeout] = useState<WindowTimeout>();
 
@@ -32,7 +37,7 @@ const DiagramTutorialTooltip = ({ children }: DiagramTutorialTooltipProps) => {
       setOpen(true);
       setStorageItem<number>(TOOLTIP_COUNT, tooltipCount + 1);
 
-      const closeDelay = setTimeout(() => setOpen(false), 5000);
+      const closeDelay = setTimeout(() => setOpen(false), CLOSE_DELAY);
       setCloseTimeout(closeDelay);
     }
   };
@@ -45,17 +50,17 @@ const DiagramTutorialTooltip = ({ children }: DiagramTutorialTooltipProps) => {
           <Typography>Zoom in/zoom out with mouse scroll.</Typography>
         </>
       }
-      enterDelay={2600}
-      enterNextDelay={2600}
+      enterDelay={ENTER_DELAY}
+      enterNextDelay={ENTER_DELAY}
       TransitionComponent={Fade}
-      TransitionProps={{ timeout: 600 }}
+      TransitionProps={{ timeout: TRANSITION_TIMEOUT }}
       followCursor
       placement="top"
       open={open}
       onOpen={handleOpen}
       onClose={handleClose}
     >
-      {children}
+      <Box ref={tooltipRef}>{children}</Box>
     </StyledTooltip>
   );
 };

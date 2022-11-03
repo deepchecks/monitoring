@@ -7,6 +7,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { colors } from 'theme/colors';
 import { SearchField } from './SearchField';
 
+import { WindowTimeout } from 'helpers/types/index';
+
 interface AnalysisSubMenuProps {
   open: boolean;
   onClose: () => void;
@@ -52,7 +54,7 @@ export function AnalysisSubMenu({ onClose, open }: AnalysisSubMenuProps) {
   const location = useLocation();
   const [searchModelName, setSearchModelName] = useState('');
   const [currentModels, setCurrentModels] = useState(models);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<WindowTimeout>();
 
   const style = useScrollBar(scrollRef);
 

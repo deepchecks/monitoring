@@ -1,13 +1,15 @@
 import { MonitorSchema, OperatorsEnum } from 'api/generated';
 
-import { IContext } from 'Context';
+import { IContext } from 'context';
+
+import { timeValues } from 'helpers/timeValue';
 
 export const timeWindow = [
-  { label: '1 hour', value: 60 * 60 },
-  { label: '1 day', value: 60 * 60 * 24 },
-  { label: '1 week', value: 60 * 60 * 24 * 7 },
-  { label: '1 month', value: 60 * 60 * 24 * 30 },
-  { label: '3 months', value: 60 * 60 * 24 * 30 * 3 }
+  { label: '1 hour', value: timeValues.hour },
+  { label: '1 day', value: timeValues.day },
+  { label: '1 week', value: timeValues.week },
+  { label: '1 month', value: timeValues.mouth },
+  { label: '3 months', value: timeValues.threeMouths }
 ];
 
 export const checkInfoInitValue = () => ({

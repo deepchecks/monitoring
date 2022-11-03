@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useMemo, memo, useRef, useState } from 'react';
+import React, { ReactNode, useEffect, useCallback, useMemo, memo, useRef, useState } from 'react';
 import { useFormik } from 'formik';
 import mixpanel from 'mixpanel-browser';
 
@@ -12,7 +12,7 @@ import {
   useGetModelColumnsApiV1ModelsModelIdColumnsGet
 } from 'api/generated';
 
-import useGlobalState from 'Context';
+import useGlobalState from 'context';
 import useModels from 'hooks/useModels';
 import useModelsMap from 'hooks/useModels';
 import useMonitorsData from '../../../hooks/useMonitorsData';
@@ -40,23 +40,25 @@ import { timeWindow, checkInfoInitValue, formikInitValues, monitorSchemaData } f
 
 import { LookbackCheckProps } from '../MonitorDrawer.types';
 import { MonitorFormProps } from './MonitorForm.types';
+import { WindowTimeout } from 'helpers/types/index';
 
 function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setResetMonitor }: MonitorFormProps) {
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const [selectedModelId, setSelectedModelId] = useState(Number);
   const [selectedCheckId, setSelectedCheckId] = useState(Number);
 
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<WindowTimeout>();
 
   const globalState = useGlobalState();
-  const { modelsMap } = monitor ? useModels() : useModelsMap();
+  const { modelsMap } = useModelsMap();
+  const { modelsMap: monitorModelsMap } = useModels();
   const { refreshMonitors } = useMonitorsData();
 
   const modelId = useMemo(() => monitor?.check.model_id ?? null, [monitor]);
   const modelName = useMemo(() => {
     if (!modelId) return;
-    return modelsMap[modelId].name;
-  }, [modelId]);
+    return monitorModelsMap[modelId].name;
+  }, [modelId, monitorModelsMap]);
 
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor ? monitor.check.id : selectedCheckId);
   const { data: columns = {} as ColumnsSchema, isLoading: isColumnsLoading } =
@@ -66,7 +68,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const { mutateAsync: createMonitor } = useCreateMonitorApiV1ChecksCheckIdMonitorsPost();
   const { mutateAsync: updateMonitor } = useUpdateMonitorApiV1MonitorsMonitorIdPut();
 
-  monitor && useRunMonitorLookback(+monitor.id, modelId?.toString() ?? null);
+  useRunMonitorLookback(monitor?.id || null, modelId?.toString() ?? null);
 
   const { values, handleChange, handleBlur, getFieldProps, setFieldValue, ...formik } = useFormik({
     initialValues: formikInitValues(monitor),
@@ -107,35 +109,49 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     }
   });
 
-  const updateGraph = (operator?: OperatorsEnum | undefined, value: string | number = '') => {
-    const checkId = monitor ? +monitor.check.id : +values.check;
-    const id = monitor ? modelId : selectedModelId;
+  const updateGraph = useCallback(
+    (operator?: OperatorsEnum | undefined, value: string | number = '') => {
+      const checkId = monitor ? +monitor.check.id : +values.check;
+      const map = monitor ? (modelId ? monitorModelsMap[modelId] : false) : modelsMap[selectedModelId];
 
-    if (id) {
-      const end_time = modelsMap[id]?.latest_time
-        ? new Date((modelsMap[id]?.latest_time as number) * 1000)
-        : new Date();
+      if (map) {
+        const end_time = map.latest_time ? new Date((map.latest_time as number) * 1000) : new Date();
 
-      const lookbackCheckData: LookbackCheckProps = {
-        checkId,
-        data: {
-          start_time: new Date(end_time.getTime() - +values.lookback * 1000).toISOString(),
-          end_time: end_time.toISOString(),
-          additional_kwargs: values.additional_kwargs || monitor?.additional_kwargs,
-          frequency: +values.frequency,
-          aggregation_window: +values.aggregation_window
-        }
-      };
-
-      if (operator) {
-        lookbackCheckData.data.filter = {
-          filters: [{ column: values.column, operator, value }]
+        const lookbackCheckData: LookbackCheckProps = {
+          checkId,
+          data: {
+            start_time: new Date(end_time.getTime() - +values.lookback * 1000).toISOString(),
+            end_time: end_time.toISOString(),
+            additional_kwargs: values.additional_kwargs || monitor?.additional_kwargs,
+            frequency: +values.frequency,
+            aggregation_window: +values.aggregation_window
+          }
         };
-      }
 
-      runCheckLookback(lookbackCheckData);
-    }
-  };
+        if (operator) {
+          lookbackCheckData.data.filter = {
+            filters: [{ column: values.column, operator, value }]
+          };
+        }
+
+        runCheckLookback(lookbackCheckData);
+      }
+    },
+    [
+      modelId,
+      modelsMap,
+      monitor,
+      monitorModelsMap,
+      runCheckLookback,
+      selectedModelId,
+      values.additional_kwargs,
+      values.aggregation_window,
+      values.check,
+      values.column,
+      values.frequency,
+      values.lookback
+    ]
+  );
 
   useEffect(() => {
     if (!values.check) return;
@@ -148,17 +164,23 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     mixpanel.track('Saved successfully', { 'The monitor details': values });
   };
 
-  const handleSliderChange = (event: Event, newValue: number | number[]) => {
-    if (!Array.isArray(newValue)) {
-      setFieldValue('numericValue', newValue);
-    }
-  };
+  const handleSliderChange = useCallback(
+    (event: Event, newValue: number | number[]) => {
+      if (!Array.isArray(newValue)) {
+        setFieldValue('numericValue', newValue);
+      }
+    },
+    [setFieldValue]
+  );
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFieldValue('numericValue', event.target.value ? +event.target.value : '');
-  };
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFieldValue('numericValue', event.target.value ? +event.target.value : '');
+    },
+    [setFieldValue]
+  );
 
-  const handleInputBlur = () => {
+  const handleInputBlur = useCallback(() => {
     const column = columns[values.column];
     const stats = column.stats as ColumnStatsNumeric;
 
@@ -167,7 +189,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     } else if (+values.numericValue > stats.max) {
       setFieldValue('numericValue', stats.max);
     }
-  };
+  }, [columns, setFieldValue, values.column, values.numericValue]);
 
   const handleModelChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as string;
@@ -238,7 +260,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         return;
       }
     }
-  }, [values.column, values.category, values.numericValue, isColumnsLoading]);
+  }, [values.column, values.category, values.numericValue]);
 
   useEffect(() => {
     const column = columns[values.column];
@@ -246,7 +268,9 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     if (column?.type === ColumnType.categorical) {
       setFieldValue('category', column?.stats?.values?.[0] || '');
     }
-  }, [values.column]);
+  }, [values.column, columns, setFieldValue]);
+
+  const valuesCheck = !monitor && values.check;
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -284,7 +308,12 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       clearTimeout(timer.current);
     };
   }, [
-    !monitor && values.check,
+    valuesCheck,
+    columns,
+    monitor,
+    setFieldValue,
+    updateGraph,
+    values.check,
     values.column,
     values.category,
     values.numericValue,
@@ -299,7 +328,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       setResetMonitor(false);
       formik.resetForm();
     }
-  }, [resetMonitor]);
+  }, [resetMonitor, formik, setResetMonitor]);
 
   return (
     <form onSubmit={e => handleSubmit(e)}>

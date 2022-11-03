@@ -6,7 +6,7 @@ import {
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from 'api/generated';
 import { ChartData } from 'chart.js';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { parseDataForLineChart } from '../../helpers/utils/parseDataForChart';
 import CreateAlert from './AlertForm/CreateAlert';
 import { GraphView } from './GraphView';
@@ -56,27 +56,30 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
-  const handleOnClose = () => {
+  const handleOnClose = useCallback(() => {
     setGraphData(undefined);
     onClose();
 
     mixpanel.track('Exited add/edit monitor window without saving');
-  };
+  }, [onClose]);
 
-  const handleLookback = async (graphData: LookbackCheckProps) => {
-    const { checkId, data } = graphData;
+  const handleLookback = useCallback(
+    async (graphData: LookbackCheckProps) => {
+      const { checkId, data } = graphData;
 
-    try {
-      const res = await runCheck({
-        checkId,
-        data
-      });
-      const parsedChartData = parseDataForLineChart(res);
-      setGraphData(parsedChartData);
-    } catch (e) {
-      setGraphData(undefined);
-    }
-  };
+      try {
+        const res = await runCheck({
+          checkId,
+          data
+        });
+        const parsedChartData = parseDataForLineChart(res);
+        setGraphData(parsedChartData);
+      } catch (e) {
+        setGraphData(undefined);
+      }
+    },
+    [runCheck]
+  );
 
   const Content = useMemo(() => {
     switch (drawerName) {
@@ -116,7 +119,7 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
           />
         );
     }
-  }, [drawerName, monitor]);
+  }, [drawerName, monitor, handleLookback, handleOnClose, resetMonitor]);
 
   return (
     <Drawer {...props}>

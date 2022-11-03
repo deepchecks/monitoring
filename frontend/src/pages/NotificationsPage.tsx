@@ -1,13 +1,15 @@
-import { Box, Stack } from '@mui/material';
 import React from 'react';
+
+import { Box, Stack } from '@mui/material';
+
 import { AlertNotifications } from '../components/AlertNotifications';
-import { PageHeader } from '../components/PageHeader';
+import HeaderLayout from 'components/HeaderLayout';
 
 export const NotificationsPage = function () {
   return (
     <Box>
       <Stack spacing="50px">
-        <PageHeader text="Alert Notifications" />
+        <HeaderLayout title="Alert Notifications" />
         <AlertNotifications />
       </Stack>
     </Box>

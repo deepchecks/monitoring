@@ -1,23 +1,29 @@
-import { Box, Stack } from '@mui/material';
-import { useGetChecksApiV1ModelsModelIdChecksGet } from 'api/generated';
-import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters/ActiveColumnsFilters';
-import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
-import { AnalysisHeader } from 'components/AnalysisHeader';
-import { AnalysisItem } from 'components/AnalysisItem';
-import { Loader } from 'components/Loader';
-import { AnalysisProvider } from 'Context/AnalysisContext';
-import { getParams } from 'helpers/utils/getParams';
-import useModels from 'hooks/useModels';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+
+import { AnalysisProvider } from 'context/analysis-context';
+import { ModelManagmentSchema, useGetChecksApiV1ModelsModelIdChecksGet } from 'api/generated';
+import useModels from 'hooks/useModels';
+
+import { getParams } from 'helpers/utils/getParams';
+
+import { Box, Stack } from '@mui/material';
+
+import { Loader } from 'components/Loader';
+import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters/ActiveColumnsFilters';
+import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
+import { AnalysisHeader } from 'components/AnalisysHeader/AnalysisHeader';
+import { AnalysisItem } from 'components/AnalysisItem';
 
 const emptyModel = {
   id: -1,
   name: 'Empty'
-};
+} as ModelManagmentSchema;
 
 export function AnalysisPage() {
+  const location = useLocation();
   const { models, isLoading: isModelsLoading } = useModels();
+
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
 
   const {
@@ -29,7 +35,6 @@ export function AnalysisPage() {
       enabled: false
     }
   });
-  const location = useLocation();
 
   useEffect(() => {
     if (models) {
@@ -53,21 +58,19 @@ export function AnalysisPage() {
     if (models && modelId && modelId > -1) {
       refetch();
     }
-  }, [modelId]);
+  }, [modelId, models, refetch]);
 
   const isLoading = isModelsLoading || isChecksLoading;
 
   return (
     <AnalysisProvider>
       <Box>
-        <Stack spacing={'42px'}>
+        <Stack spacing="42px" mb="35px">
           <AnalysisHeader changeModel={setModelId} models={models} model={currentModel} />
-          {/* eslint-disable @typescript-eslint/ban-ts-comment */}
-          {/* @ts-ignore */}
           <AnalysisFilters model={currentModel} />
         </Stack>
         <ActiveColumnsFilters />
-        <Stack spacing="30px" mt="30px">
+        <Stack spacing="30px" mb="30px">
           {isLoading ? (
             <Loader />
           ) : (

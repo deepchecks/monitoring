@@ -1,10 +1,14 @@
-import { List, Popover, PopoverProps } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
 import { ColumnType, GetModelColumnsApiV1ModelsModelIdColumnsGet200 } from 'api/generated';
+
+import { List, Popover, PopoverProps } from '@mui/material';
+
 import { NestedMenu } from 'components/NestedMenu/NestedMenu';
 import { SearchField } from 'components/SearchField';
-import React, { useEffect, useRef, useState } from 'react';
 import { CategoricalFilter } from './CategoricalFilter';
 import { NumericFilter } from './NumericFilter';
+
+import { WindowTimeout } from 'helpers/types/index';
 
 interface DropDownFilterProps extends PopoverProps {
   columns: GetModelColumnsApiV1ModelsModelIdColumnsGet200;
@@ -15,7 +19,7 @@ export function DropDownFilter({ columns, onClose, ...props }: DropDownFilterPro
   const [currentColumns, setCurrentColumns] = useState(columns);
   const [searchColumnName, setSearchColumnName] = useState('');
 
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<WindowTimeout>();
 
   const filterColumns = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;

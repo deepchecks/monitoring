@@ -7,7 +7,7 @@ import {
   useGetChecksApiV1ModelsModelIdChecksGet,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet
 } from 'api/generated';
-import useGlobalState from 'Context';
+import useGlobalState from 'context';
 import { useFormik } from 'formik';
 import React, { Dispatch, ReactNode, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { ColumnsSchema, ColumnStatsCategorical, ColumnStatsNumeric, ColumnType } from '../../../helpers/types/model';
@@ -27,6 +27,7 @@ import useModelsMap from 'hooks/useModels';
 import useMonitorsData from '../../../hooks/useMonitorsData';
 import { CheckInfo } from '../CheckInfo';
 import { LookbackCheckProps } from '../MonitorDrawer.types';
+import { WindowTimeout } from 'helpers/types/index';
 
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
@@ -47,7 +48,7 @@ export function CreateMonitor({ onClose, resetMonitor, runCheckLookback, setRese
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const [selectedModelId, setSelectedModelId] = useState(Number);
   const [selectedCheckId, setSelectedCheckId] = useState(Number);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<WindowTimeout>();
   const { refreshMonitors } = useMonitorsData();
   const globalState = useGlobalState();
   const { modelsMap } = useModelsMap();

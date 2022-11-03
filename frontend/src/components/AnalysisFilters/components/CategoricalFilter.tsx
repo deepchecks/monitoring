@@ -9,7 +9,7 @@ import {
   ListItemText,
   MenuItem
 } from '@mui/material';
-import { AnalysisContext } from 'Context/AnalysisContext';
+import { AnalysisContext } from 'context/analysis-context';
 import React, { useContext, useState } from 'react';
 
 interface CategoricalFilterProps {

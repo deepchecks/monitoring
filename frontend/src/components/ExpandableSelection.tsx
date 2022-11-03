@@ -1,10 +1,14 @@
+import React, { useContext, useRef, useState } from 'react';
+import dayjs from 'dayjs';
+
+import { AnalysisContext } from 'context/analysis-context';
+
 import { Box, Button, MenuItem, Popover, SelectChangeEvent, SelectProps, styled, TextField } from '@mui/material';
 import { StaticDateTimePicker } from '@mui/x-date-pickers';
-import { AnalysisContext } from 'Context/AnalysisContext';
-import dayjs from 'dayjs';
-import React, { useContext, useRef, useState } from 'react';
-import { colors } from 'theme/colors';
+
 import { MarkedSelect } from './MarkedSelect';
+
+import { colors } from 'theme/colors';
 
 interface ExpandableSelectionProps extends SelectProps {
   data: { label: string; value: number }[];
@@ -13,52 +17,13 @@ interface ExpandableSelectionProps extends SelectProps {
   endTime: number | undefined;
 }
 
-const StyledStaticDateTimePicker = styled(StaticDateTimePicker)(({ theme }) => ({
-  '& .MuiPickersFadeTransitionGroup-root': {
-    fontSize: 12
-  },
-  '& .MuiTypography-caption': {
-    fontSize: 12,
-    color: theme.palette.text.disabled,
-    lineHeight: '17px'
-  },
-  '& .MuiButtonBase-root': {
-    fontSize: 12,
-    lineHeight: '17px'
-  },
-  '& .MuiButtonBase-root.MuiPickersDay-root:hover': {
-    backgroundColor: theme.palette.primary.contrastText
-  },
-  '& .MuiDialogActions-root': {
-    display: 'none'
-  },
-  '& .MuiPickersCalendarHeader-root .MuiButtonBase-root ': {
-    background: 'transparent',
-    '& svg': {
-      color: colors.neutral.blue
-    }
-  },
-  '& .MuiClock-root': {
-    '& .MuiButtonBase-root': {
-      borderRadius: '50%',
-
-      '.MuiTypography-root': {
-        color: theme.palette.common.white
-      },
-
-      '&:disabled': {
-        color: theme.palette.text.disabled
-      }
-    }
-  }
-})) as typeof StaticDateTimePicker;
-
-const today = new Date();
+const TODAY = new Date();
 
 export function ExpandableSelection({ label, changeState, data, endTime, ...props }: ExpandableSelectionProps) {
-  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
-  const [date, setDate] = useState<Date | null>(today);
   const { setPeriod } = useContext(AnalysisContext);
+
+  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
+  const [date, setDate] = useState<Date | null>(TODAY);
 
   const selectRef = useRef<HTMLDivElement>();
   const openDatePicker = Boolean(anchorEl);
@@ -80,8 +45,9 @@ export function ExpandableSelection({ label, changeState, data, endTime, ...prop
   const handleLookbackChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as number;
     changeState(value);
-    const time = endTime ? endTime * 1000 : Date.now();
+
     if (value) {
+      const time = endTime ? endTime * 1000 : Date.now();
       setPeriod([new Date(time - value), new Date(time)]);
     }
   };
@@ -90,7 +56,7 @@ export function ExpandableSelection({ label, changeState, data, endTime, ...prop
     if (date) {
       const numericDateFormat = +new Date(date);
       data.push({
-        label: dayjs.duration(numericDateFormat - +today).humanize(true),
+        label: dayjs.duration(numericDateFormat - +TODAY).humanize(true),
         value: numericDateFormat
       });
       setAnchorEl(null);
@@ -100,8 +66,8 @@ export function ExpandableSelection({ label, changeState, data, endTime, ...prop
 
   return (
     <>
-      <Box ref={selectRef} sx={{ width: 'max-content' }}>
-        <MarkedSelect size="small" onChange={handleLookbackChange} {...props} label={label} sx={{ minWidth: 330 }}>
+      <Box ref={selectRef}>
+        <MarkedSelect size="small" onChange={handleLookbackChange} label={label} sx={{ minWidth: 330 }} {...props}>
           {data.map(({ label, value }) => (
             <MenuItem key={value} value={value}>
               {label}
@@ -146,3 +112,43 @@ export function ExpandableSelection({ label, changeState, data, endTime, ...prop
     </>
   );
 }
+
+const StyledStaticDateTimePicker = styled(StaticDateTimePicker)(({ theme }) => ({
+  '& .MuiPickersFadeTransitionGroup-root': {
+    fontSize: 12
+  },
+  '& .MuiTypography-caption': {
+    fontSize: 12,
+    color: theme.palette.text.disabled,
+    lineHeight: '17px'
+  },
+  '& .MuiButtonBase-root': {
+    fontSize: 12,
+    lineHeight: '17px'
+  },
+  '& .MuiButtonBase-root.MuiPickersDay-root:hover': {
+    backgroundColor: theme.palette.primary.contrastText
+  },
+  '& .MuiDialogActions-root': {
+    display: 'none'
+  },
+  '& .MuiPickersCalendarHeader-root .MuiButtonBase-root ': {
+    background: 'transparent',
+    '& svg': {
+      color: colors.neutral.blue
+    }
+  },
+  '& .MuiClock-root': {
+    '& .MuiButtonBase-root': {
+      borderRadius: '50%',
+
+      '.MuiTypography-root': {
+        color: theme.palette.common.white
+      },
+
+      '&:disabled': {
+        color: theme.palette.text.disabled
+      }
+    }
+  }
+})) as typeof StaticDateTimePicker;

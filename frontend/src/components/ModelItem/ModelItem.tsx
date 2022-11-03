@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from 'Context';
+import { GlobalStateContext } from 'context';
 import { ModelsInfoSchema } from 'api/generated';
 
 import { alpha, Box, Typography } from '@mui/material';
@@ -33,9 +33,9 @@ export function ModelItem({ activeModel, alertsCount, onModelClick, onReset, mod
   const handleClickModel = () => {
     mixpanel.track('Click on a model in the model list');
 
-    onModelClick(model.id)
+    onModelClick(model.id);
   };
-  
+
   return (
     <StyledContainer active={activeModel} onClick={handleClickModel}>
       <StyledModelInfo>

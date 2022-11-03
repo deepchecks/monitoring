@@ -1,7 +1,9 @@
-import { alpha, Box, Button, Slider, Stack, styled, TextField } from '@mui/material';
+import React, { useContext, useState } from 'react';
+
 import { ColumnStatistics } from 'api/generated';
-import { AnalysisContext } from 'Context/AnalysisContext';
-import React, { useContext } from 'react';
+import { AnalysisContext } from 'context/analysis-context';
+
+import { alpha, Box, Button, Slider, Stack, styled, TextField } from '@mui/material';
 
 interface NumericFilterProps {
   data: ColumnStatistics;
@@ -9,42 +11,32 @@ interface NumericFilterProps {
   onClose: () => void;
 }
 
-const StyledNumericField = styled(TextField)(({ theme }) => ({
-  width: 48,
-  '.MuiInputBase-input': {
-    padding: '8px',
-    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-      WebkitAppearance: 'none',
-      margin: 0
-    }
-  },
-  '.MuiOutlinedInput-notchedOutline': {
-    borderColor: theme.palette.grey[200]
+function setStep(data: ColumnStatistics) {
+  if (typeof data.min === 'number' && typeof data.max === 'number') {
+    if (data.max === data.min) return data.max / 10;
+
+    return (data.max - data.min) / 10;
   }
-}));
+
+  return 100;
+}
 
 export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
   const { filters, setFilters } = useContext(AnalysisContext);
 
-  const minValue = typeof data.min === 'number' ? data.min : -999;
+  const minValue = typeof data.min === 'number' ? (data.min === data.max ? -data.min : data.min) : -999;
   const maxValue = typeof data.max === 'number' ? data.max : 999;
 
-  const [values, setValues] = React.useState<(number | '')[]>(() => {
+  const [values, setValues] = useState<(number | '')[]>(() => {
     const filter = filters[column];
+
     if (filter && typeof filter[0] === 'number' && typeof filter[1] === 'number') {
       return [filter[0], filter[1]];
     }
-    const step = setStep();
+
+    const step = setStep(data);
     return [minValue + step * 4, maxValue - step * 4];
   });
-
-  function setStep() {
-    if (typeof data.min === 'number' && typeof data.max === 'number') {
-      return (data.max - data.min) / 10;
-    }
-
-    return 100;
-  }
 
   const handleValuesChange = (event: Event, newValue: number | number[], activeThumb: number) => {
     if (!Array.isArray(newValue) || typeof values[0] !== 'number' || typeof values[1] !== 'number') {
@@ -52,9 +44,9 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
     }
 
     if (activeThumb === 0) {
-      setValues([Math.min(newValue[0], values[1] - setStep()), values[1]]);
+      setValues([Math.min(newValue[0], values[1] - setStep(data)), values[1]]);
     } else {
-      setValues([values[0], Math.max(newValue[1], values[0] + setStep())]);
+      setValues([values[0], Math.max(newValue[1], values[0] + setStep(data))]);
     }
   };
 
@@ -103,7 +95,7 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
           disableSwap
           value={values.map(value => +value)}
           marks
-          step={setStep()}
+          step={setStep(data)}
           min={minValue}
           max={maxValue}
         />
@@ -154,3 +146,17 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
     </Box>
   );
 }
+
+const StyledNumericField = styled(TextField)(({ theme }) => ({
+  width: 65,
+  '.MuiInputBase-input': {
+    padding: '8px',
+    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0
+    }
+  },
+  '.MuiOutlinedInput-notchedOutline': {
+    borderColor: theme.palette.grey[200]
+  }
+}));

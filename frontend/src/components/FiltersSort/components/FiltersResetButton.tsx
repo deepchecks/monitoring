@@ -2,17 +2,18 @@ import React from 'react';
 
 import { Stack, Button, Divider, styled } from '@mui/material';
 
-import { Undo } from '../../assets/icon/icon';
+import { Undo } from '../../../assets/icon/icon';
 
 interface FiltersResetButtonProps {
+  title?: string;
   handleReset: () => void;
   isLoading: boolean;
 }
 
-const FiltersResetButton = ({ handleReset, isLoading }: FiltersResetButtonProps) => (
+const FiltersResetButton = ({ title = 'Reset', handleReset, isLoading }: FiltersResetButtonProps) => (
   <Stack direction="row" spacing="11px">
     <Button variant="text" startIcon={<Undo />} onClick={handleReset} disabled={isLoading} sx={{ minHeight: 30 }}>
-      Reset
+      {title}
     </Button>
     <StyledResetDivider orientation="vertical" flexItem />
   </Stack>

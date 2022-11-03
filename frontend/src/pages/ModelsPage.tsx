@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 
 import { ModelManagmentSchema, deleteModelApiV1ModelsModelIdDelete } from 'api/generated';
 
-import useHeader from 'hooks/useHeader';
 import useModels from 'hooks/useModels';
 
 import { Box, Menu, MenuItem, Stack, styled, TextField, Autocomplete, Typography } from '@mui/material';
 
+import HeaderLayout from 'components/HeaderLayout';
 import { Loader } from 'components/Loader';
 import ModelInfoItem from 'components/ModelInfoItem/ModelInfoItem';
 import NoResults from 'components/NoResults';
-import FiltersResetButton from 'components/FiltersSort/FiltersResetButton';
-import FiltersSortButton from 'components/FiltersSort/FiltersSortButton';
+import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
+import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
 
@@ -37,7 +37,6 @@ const sortModels = (models: ModelManagmentSchema[], sortMethod: sortOptionsVaria
 
 export const ModelsPage = () => {
   const { models, isLoading, refetchModels } = useModels();
-  const { Header, setHeaderTitle } = useHeader();
 
   const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>(models);
   const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ModelManagmentSchema[]>(models);
@@ -48,12 +47,6 @@ export const ModelsPage = () => {
 
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
-
-  useEffect(() => {
-    setHeaderTitle('Connected Models');
-
-    return () => setHeaderTitle('');
-  }, []);
 
   useEffect(() => {
     setModelsList(models);
@@ -73,7 +66,7 @@ export const ModelsPage = () => {
     }
 
     setModelNamesArray(mapModelsNames(m));
-  }, [models]);
+  }, [models, searchInputValue, searchValue, sort]);
 
   useEffect(() => {
     if (!searchValue && !searchInputValue) {
@@ -91,7 +84,7 @@ export const ModelsPage = () => {
     }
 
     setFilteredAndSortedModelsList(filtered);
-  }, [searchValue, searchInputValue]);
+  }, [searchValue, searchInputValue, modelsList, sort]);
 
   const handleOpenSortMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorElSortMenu(e.currentTarget);
@@ -125,7 +118,7 @@ export const ModelsPage = () => {
 
   return (
     <Box>
-      <Header />
+      <HeaderLayout title="Connected Models" />
       <StyledModelsContainer>
         <Stack direction="row" justifyContent="space-between">
           <Autocomplete

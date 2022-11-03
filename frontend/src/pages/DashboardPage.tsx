@@ -21,8 +21,8 @@ export const DashboardPage = () => {
   const { models } = useModels();
   const { monitors, chartDataList, refreshMonitors } = useMonitorsData();
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState<boolean>(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState(false);
   const [currMonitor, setCurrMonitor] = useState<MonitorSchema>();
   const [drawerName, setDrawerName] = useState<DrawerNames>(DrawerNamesMap.CreateMonitor);
   const [currentModelId, setCurrentModelId] = useState<number | null>(null);
@@ -55,12 +55,12 @@ export const DashboardPage = () => {
     if (!currMonitor) return;
     if (!confirm) return setIsDeleteMonitorDialogOpen(false);
 
-    if (confirm) mixpanel.track('Click on confirm deletion of monitor');
+    mixpanel.track('Click on confirm deletion of monitor');
 
     window.scrollTo(0, 0);
 
-    await DeleteMonitorById({ monitorId: currMonitor.id });
     setIsDeleteMonitorDialogOpen(false);
+    await DeleteMonitorById({ monitorId: currMonitor.id });
     setCurrMonitor(undefined);
     refreshMonitors();
   };

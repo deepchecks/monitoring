@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from 'Context';
+import { GlobalStateContext } from 'context';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 
 import {

@@ -11,6 +11,8 @@ import { PlusIcon } from '../assets/icon/icon';
 
 import { DrawerNames, DrawerNamesMap } from './MonitorDrawer/MonitorDrawer.types';
 
+import { colors } from 'theme/colors';
+
 interface DashboardHeaderProps {
   onOpen: (monitorName: DrawerNames) => void;
 }
@@ -68,7 +70,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
             <Button
               sx={{
                 padding: '11px 8px',
-                color: '#9D60FB',
+                color: colors.primary.violet[400],
                 fontSize: '12px',
                 lineHeight: '17px',
                 fontWeight: 400,

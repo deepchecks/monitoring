@@ -1,6 +1,6 @@
 import { alpha, Box, Typography, useTheme } from '@mui/material';
 import { AlertSeverity } from 'api/generated';
-import { GlobalStateContext } from 'Context';
+import { GlobalStateContext } from 'context';
 import React, { FC, memo, useContext, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ReactComponent as CriticalSeverityIcon } from '../assets/icon/severity/critical.svg';

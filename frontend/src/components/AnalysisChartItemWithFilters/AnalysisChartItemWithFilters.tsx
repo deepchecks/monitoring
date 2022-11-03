@@ -1,8 +1,13 @@
-import { Button, MenuItem, SelectChangeEvent, SelectProps, Stack, styled } from '@mui/material';
-import { MonitorCheckConfSchemaCheckConf, MonitorValueConf } from 'api/generated';
-import { AnalysisChartItem } from 'components/AnalysisChartItem';
 import React, { Dispatch, ReactNode, SetStateAction } from 'react';
+
+import { MonitorCheckConfSchemaCheckConf, MonitorValueConf } from 'api/generated';
+
+import { Button, MenuItem, SelectChangeEvent, SelectProps, Stack, styled } from '@mui/material';
+
+import { AnalysisChartItem } from 'components/AnalysisChartItem';
 import { RoundedSelect } from './components/RoundedSelect';
+
+import { colors } from 'theme/colors';
 
 interface AnalysisChartItemWithFiltersProps extends SelectProps {
   activeFilter: number;
@@ -14,25 +19,6 @@ interface AnalysisChartItemWithFiltersProps extends SelectProps {
   subtitle: string;
   title: string;
 }
-
-interface StyledButtonOptions {
-  active: boolean;
-}
-
-const StyledButton = styled(Button, {
-  shouldForwardProp: prop => prop !== 'active'
-})<StyledButtonOptions>(({ active, theme }) => ({
-  borderRadius: '1000px',
-  padding: '6.5px 10px',
-  textTransform: 'none',
-  minHeight: '30px',
-  height: 30,
-  fontSize: 12,
-  fontWeight: active ? 700 : 400,
-  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
-  transition: 'all 0s',
-  boxShadow: 'none'
-}));
 
 export function AnalysisChartItemWithFilters({
   activeFilter,
@@ -49,7 +35,7 @@ export function AnalysisChartItemWithFilters({
     setSelectValue(event.target.value as string);
   };
 
-  const handleActiveItemChenge = (index: number) => {
+  const handleActiveItemChange = (index: number) => {
     changeActiveFilter(index);
     setSelectValue('');
   };
@@ -65,12 +51,12 @@ export function AnalysisChartItemWithFilters({
               key={type}
               variant="outlined"
               active={activeFilter === index}
-              onClick={() => handleActiveItemChenge(index)}
+              onClick={() => handleActiveItemChange(index)}
             >
               {type}
             </StyledButton>
           ))}
-          <RoundedSelect size="small" onChange={handleSelectValueChange} {...props} label="Selected Classes">
+          <RoundedSelect size="small" onChange={handleSelectValueChange} {...props} label="Select Class/es">
             {selectData.map(({ name }, index) => (
               <MenuItem key={index} value={name}>
                 {name}
@@ -84,3 +70,25 @@ export function AnalysisChartItemWithFilters({
     </AnalysisChartItem>
   );
 }
+
+interface StyledButtonOptions {
+  active: boolean;
+}
+
+const StyledButton = styled(Button, {
+  shouldForwardProp: prop => prop !== 'active'
+})<StyledButtonOptions>(({ active, theme }) => ({
+  textTransform: 'none',
+  fontSize: 12,
+  letterSpacing: '0.17px',
+  fontWeight: active ? 700 : 400,
+  lineHeight: '14.4px',
+  height: 30,
+  minHeight: '30px',
+  padding: '10px',
+  color: colors.primary.violet[400],
+  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
+  boxShadow: 'none',
+  borderRadius: '1000px',
+  transition: 'all 0s'
+}));

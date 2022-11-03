@@ -1,7 +1,6 @@
-import { FormControl, SelectProps, Typography } from '@mui/material';
 import React, { ReactNode } from 'react';
 
-import { InputLabel, Select } from '@mui/material';
+import { FormControl, SelectProps, Typography, InputLabel, Select } from '@mui/material';
 
 interface RoundedSelectProps extends SelectProps {
   children: ReactNode;
@@ -44,7 +43,7 @@ export function RoundedSelect({ children, label, fullWidth = false, size, ...pro
         size={size}
         label={label}
         sx={theme => ({
-          minWidth: 140,
+          minWidth: 135,
           minHeight: 30,
           fontSize: 12,
           lineHeight: '17px',
@@ -55,7 +54,7 @@ export function RoundedSelect({ children, label, fullWidth = false, size, ...pro
             borderColor: theme.palette.primary.main
           },
           '& .MuiSelect-select': {
-            padding: '6.5px 32px 6.5px 10px'
+            padding: '6.5px 22px 6.5px 10px'
           },
           '& legend': {
             width: 80

@@ -27,6 +27,8 @@ import {
   StyledTypographyLabel
 } from './MonitorForm.style';
 
+import { WindowTimeout } from 'helpers/types/index';
+
 const timeWindow = [
   { label: '1 hour', value: 60 * 60 },
   { label: '1 day', value: 60 * 60 * 24 },
@@ -49,7 +51,7 @@ function EditMonitor({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const { refreshMonitors } = useMonitorsData();
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor.check.id);
 
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<WindowTimeout>();
   const modelId = useMemo(() => monitor?.check.model_id ?? null, [monitor]);
 
   useRunMonitorLookback(+monitor.id, modelId?.toString() ?? null);

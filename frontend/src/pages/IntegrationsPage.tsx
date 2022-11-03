@@ -1,13 +1,15 @@
-import { Box, Stack } from '@mui/material';
 import React from 'react';
+
+import { Box, Stack } from '@mui/material';
+
 import { ConnectSlack } from '../components/ConnectSlack';
-import { PageHeader } from '../components/PageHeader';
+import HeaderLayout from 'components/HeaderLayout';
 
 export const IntegrationsPage = function () {
   return (
     <Box>
       <Stack spacing="40px">
-        <PageHeader text="Integrations" />
+        <HeaderLayout title="Integrations" />
         <ConnectSlack />
       </Stack>
     </Box>

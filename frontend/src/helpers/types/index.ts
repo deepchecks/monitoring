@@ -14,3 +14,6 @@ export interface ChartResponse {
 }
 
 export type GraphData = (number | null)[] | string[] | { x: string; y: number }[];
+
+export type WindowTimeout = ReturnType<typeof setTimeout>;
+export type WindowInterval = ReturnType<typeof setInterval>;
