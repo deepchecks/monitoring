@@ -310,6 +310,7 @@ export interface ModelVersionCreationSchema {
   features: ModelVersionCreationSchemaFeatures;
   non_features: ModelVersionCreationSchemaNonFeatures;
   feature_importance?: ModelVersionCreationSchemaFeatureImportance;
+  classes?: string[];
 }
 
 /**
@@ -338,7 +339,7 @@ export interface ModelManagmentSchema {
 
 export interface ModelDailyIngestion {
   count: number;
-  day: number;
+  timestamp: number;
 }
 
 /**
@@ -519,7 +520,7 @@ export interface CheckCreationSchema {
 }
 
 export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost {
-  file: Blob;
+  batch: Blob;
 }
 
 /**
@@ -2743,7 +2744,7 @@ export const saveReferenceApiV1ModelVersionsModelVersionIdReferencePost = (
   bodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost: BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost
 ) => {
   const formData = new FormData();
-  formData.append('file', bodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost.file);
+  formData.append('batch', bodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost.batch);
 
   return customInstance<unknown>({
     url: `/api/v1/model-versions/${modelVersionId}/reference`,
@@ -2866,7 +2867,11 @@ session : AsyncSession, optional
     SQLAlchemy session.
 Returns
 -------
-json schema of the model version
+dictionary containing:
+    json schema of the monitored data in model version
+    json schema of the reference data in model version
+    feature columns schema
+    non-feature columns schema
  * @summary Get Schema
  */
 export const getSchemaApiV1ModelVersionsModelVersionIdSchemaGet = (modelVersionId: number, signal?: AbortSignal) =>
@@ -2908,72 +2913,6 @@ export const useGetSchemaApiV1ModelVersionsModelVersionIdSchemaGet = <
     queryFn,
     { enabled: !!modelVersionId, ...queryOptions }
   ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Return json schema of the model version data to use in validation on client-side.
-
-Parameters
-----------
-model_version_id : int
-    Version id to run function on.
-session : AsyncSession, optional
-    SQLAlchemy session.
-Returns
--------
-json schema of the model version
- * @summary Get Reference Schema
- */
-export const getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet = (
-  modelVersionId: number,
-  signal?: AbortSignal
-) =>
-  customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}/reference-schema`, method: 'get', signal });
-
-export const getGetReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGetQueryKey = (
-  modelVersionId: number
-) => [`/api/v1/model-versions/${modelVersionId}/reference-schema`];
-
-export type GetReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet>>
->;
-export type GetReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGetQueryError =
-  ErrorType<HTTPValidationError>;
-
-export const useGetReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet = <
-  TData = Awaited<ReturnType<typeof getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet>>,
-  TError = ErrorType<HTTPValidationError>
->(
-  modelVersionId: number,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet>>,
-      TError,
-      TData
-    >;
-  }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getGetReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGetQueryKey(modelVersionId);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet>>
-  > = ({ signal }) => getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet(modelVersionId, signal);
-
-  const query = useQuery<
-    Awaited<ReturnType<typeof getReferenceSchemaApiV1ModelVersionsModelVersionIdReferenceSchemaGet>>,
-    TError,
-    TData
-  >(queryKey, queryFn, { enabled: !!modelVersionId, ...queryOptions }) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
 
   query.queryKey = queryKey;
 

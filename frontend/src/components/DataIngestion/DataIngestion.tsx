@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
 import useStatsTime from 'hooks/useStatsTime';
 import useDataIngestion from '../../hooks/useDataIngestion';
 
-import { MenuItem } from '@mui/material';
+import { Box, MenuItem } from '@mui/material';
 
 import { StyledSelect } from 'components/MarkedSelect';
 import DiagramLine from '../DiagramLine';
@@ -16,19 +16,32 @@ import {
   StyledFlexWrapper,
   StyledTypographyTitle
 } from './DataIngestion.style';
+import { Loader } from 'components/Loader';
+import { TimeUnit } from 'chart.js';
 
 interface DataIngestionProps {
   modelId: number | null;
 }
 
 export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
-  const { graphData } = useDataIngestion(modelId);
+  const { graphData, isLoading } = useDataIngestion(modelId);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
+  const [minTimeUnit, setMinTimeUnit ] = useState<TimeUnit>('day');
 
   const handleTime = (newTimeValue: unknown) => {
     if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
 
     const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
+
+    if (+newTimeValue <= 3600) {
+      setMinTimeUnit('minute');
+    }
+    else if (+newTimeValue <= 86400) {
+      setMinTimeUnit('hour');
+    }
+    else {
+      setMinTimeUnit('day');
+    }
     setCurrentTime(timeOptions[newTimeIndex].id);
 
     mixpanel.track('Change of time filter for Prediction Data status', {
@@ -41,23 +54,32 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
       <StyledFlexWrapper>
         <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
       </StyledFlexWrapper>
-      <StyledDiagramWrapper>
-        <DiagramTutorialTooltip>
-          <DiagramLine data={graphData} height={392}>
-            <StyledSelect
-              value={currentTime.value.toString()}
-              onChange={ev => handleTime(ev.target.value)}
-              size="small"
-            >
-              {timeOptions.map(({ label, value }) => (
-                <MenuItem value={value.toString()} key={label}>
-                  {label}
-                </MenuItem>
-              ))}
-            </StyledSelect>
-          </DiagramLine>
-        </DiagramTutorialTooltip>
-      </StyledDiagramWrapper>
+      { isLoading ? 
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Loader/>
+        </Box> : 
+        <StyledDiagramWrapper> 
+          <DiagramTutorialTooltip>
+            <DiagramLine data={graphData} height={392} minTimeUnit={minTimeUnit}>
+              <StyledSelect
+                value={currentTime.value.toString()}
+                onChange={ev => handleTime(ev.target.value)}
+                size="small"
+              >
+                {timeOptions.map(({ label, value }) => (
+                  <MenuItem value={value.toString()} key={label}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </StyledSelect>
+            </DiagramLine>
+          </DiagramTutorialTooltip>
+        </StyledDiagramWrapper>
+      }
     </StyledFlexContent>
   );
 };

@@ -22,15 +22,15 @@ const useDataIngestion = (modelId: number | null = null) => {
       datasets:
         Object.entries(data).map(([key, item], index) => ({
           data: item
-            .sort((a, b) => a.day - b.day)
-            .map(({ count, day }) => ({
-              x: dayjs(new Date(day * 1_000)).format('MMM. DD YYYY'),
+            .sort((a, b) => a.timestamp - b.timestamp)
+            .map(({ count, timestamp }) => ({
+              x: dayjs(new Date(timestamp * 1_000)).format('MMM. DD YYYY'),
               y: count
             })),
           ...setLineGraphOptions(modelsMap ? modelsMap[key]?.name : key, index)
         })) ?? [],
       labels: Object.entries(data)
-        .flatMap(([_, items]) => items.map(item => item.day * 1_000))
+        .flatMap(([_, items]) => items.map(item => item.timestamp * 1_000))
         .sort()
         .map(day => dayjs(day).format('MMM. DD YYYY'))
     }),

@@ -67,7 +67,7 @@ class ModelDailyIngestion(TypedDict):
     """Model ingestion record."""
 
     count: int
-    day: int
+    timestamp: int
 
 
 class ModelsInfoSchema(ModelSchema):
@@ -124,8 +124,8 @@ async def retrieve_models_data_ingestion(
     def is_within_dateframe(col, end_time):
         return col > text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
 
-    def truncate_date(col):
-        return func.cast(func.extract("epoch", func.date_trunc("day", col)), SQLInteger)
+    def truncate_date(col, agg_time_unit: str = "day"):
+        return func.cast(func.extract("epoch", func.date_trunc(agg_time_unit, col)), SQLInteger)
 
     def sample_id(columns):
         return getattr(columns, SAMPLE_ID_COL)
@@ -157,11 +157,17 @@ async def retrieve_models_data_ingestion(
     if not tables:
         return {}
 
+    if time_filter == TimeUnit.HOUR:
+        agg_time_unit = 'minute'
+    elif time_filter == TimeUnit.DAY:
+        agg_time_unit = 'hour'
+    else:
+        agg_time_unit = 'day'
     union = union_all(*(
         select(
             literal(model_id).label("model_id"),
             sample_id(table.c).label("sample_id"),
-            truncate_date(sample_timestamp(table.c)).label("day")
+            truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
         )
         .where(is_within_dateframe(
             sample_timestamp(table.c),
@@ -174,9 +180,9 @@ async def retrieve_models_data_ingestion(
     rows = (await session.execute(
         select(
             union.c.model_id,
-            union.c.day,
+            union.c.timestamp,
             func.count(union.c.sample_id).label("count"))
-        .group_by(union.c.model_id, union.c.day),
+        .group_by(union.c.model_id, union.c.timestamp),
     )).fetchall()
 
     result = defaultdict(list)
@@ -184,7 +190,7 @@ async def retrieve_models_data_ingestion(
     for row in rows:
         result[row.model_id].append(ModelDailyIngestion(
             count=row.count,
-            day=row.day
+            timestamp=row.timestamp
         ))
 
     return result[model_id] if model_id is not None else result
