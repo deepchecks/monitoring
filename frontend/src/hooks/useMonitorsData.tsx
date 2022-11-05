@@ -76,7 +76,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider) => {
   );
 
   useEffect(() => {
-    const currentMonitors = [...monitors.sort((a, b) => a.check.model_id - b.check.model_id)];
+    const currentMonitors = [...monitors.sort((a, b) => modelsMap[a.check.model_id].name.localeCompare(modelsMap[b.check.model_id].name))];
     currentMonitors.forEach(monitor => fetchMonitor(monitor));
 
     setCurrentMonitors(currentMonitors);

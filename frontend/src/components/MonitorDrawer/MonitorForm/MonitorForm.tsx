@@ -14,7 +14,6 @@ import {
 
 import useGlobalState from 'context';
 import useModels from 'hooks/useModels';
-import useModelsMap from 'hooks/useModels';
 import useMonitorsData from '../../../hooks/useMonitorsData';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 
@@ -50,8 +49,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const timer = useRef<WindowTimeout>();
 
   const globalState = useGlobalState();
-  const { modelsMap } = useModelsMap();
-  const { modelsMap: monitorModelsMap } = useModels();
+  const { modelsMap: monitorModelsMap, models: modelsList } = useModels();
   const { refreshMonitors } = useMonitorsData();
 
   const modelId = useMemo(() => monitor?.check.model_id ?? null, [monitor]);
@@ -112,7 +110,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const updateGraph = useCallback(
     (operator?: OperatorsEnum | undefined, value: string | number = '') => {
       const checkId = monitor ? +monitor.check.id : +values.check;
-      const map = monitor ? (modelId ? monitorModelsMap[modelId] : false) : modelsMap[selectedModelId];
+      const map = monitor ? (modelId ? monitorModelsMap[modelId] : false) : monitorModelsMap[selectedModelId];
 
       if (map) {
         const end_time = map.latest_time ? new Date((map.latest_time as number) * 1000) : new Date();
@@ -139,9 +137,8 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     },
     [
       modelId,
-      modelsMap,
-      monitor,
       monitorModelsMap,
+      monitor,
       runCheckLookback,
       selectedModelId,
       values.additional_kwargs,
@@ -364,7 +361,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                   fullWidth
                   required
                 >
-                  {Object.values(modelsMap).map(({ name, id }, index) => (
+                  {modelsList.map(({ name, id }, index) => (
                     <MenuItem key={index} value={id}>
                       {name}
                     </MenuItem>

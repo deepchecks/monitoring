@@ -20,6 +20,7 @@ import FiltersResetButton from './components/FiltersResetButton';
 import FiltersSortButton from './components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
+import useModels from 'hooks/useModels';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
@@ -59,7 +60,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
   const filtered = endDate !== initEndDate || startDate !== initStartDate || model !== -1 || severity !== severityAll;
   const openSortMenu = Boolean(anchorElSortMenu);
 
-  const { data: models = [], isLoading: isModelsLoading } = useGetModelsApiV1ModelsGet();
+  const { models = [], isLoading: isModelsLoading } = useModels();
 
   const handleCloseSortMenu = () => {
     setAnchorElSortMenu(null);

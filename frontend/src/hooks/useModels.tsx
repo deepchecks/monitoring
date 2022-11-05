@@ -5,7 +5,8 @@ export const useModels = () => {
   const { data: models = [], isLoading, refetch: refetchModels } = useRetrieveAvailableModelsApiV1AvailableModelsGet({ query: {
       refetchOnWindowFocus: false
     }});
-
+  
+  models.sort((a, b) => a.name.localeCompare(b.name))
   const modelsMap = useMemo(
     () =>
       models.reduce((acc, model) => {
