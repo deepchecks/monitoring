@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from 'react';
+import React, { PropsWithChildren, memo } from 'react';
 import { ChartData, LegendItem } from 'chart.js';
 
 import { styled, Box, Tooltip, Typography } from '@mui/material';
@@ -8,8 +8,7 @@ import { HorizontalScrolling } from './components/HorizontalScrolling/Horizontal
 import { GraphData } from 'helpers/types';
 
 interface LegendsListProps {
-  children: ReactNode;
-  chartData: ChartData<'line', GraphData, unknown>;
+  data: ChartData<'line', GraphData, unknown>;
   lineIndexMap: Record<number, boolean>;
   hideLine: (item: LegendItem) => void;
   legends: LegendItem[];
@@ -17,58 +16,51 @@ interface LegendsListProps {
 
 const MAX_LENGTH_OF_TOOLTIP_TEXT = 120;
 
-const LegendsList = ({ children, chartData, lineIndexMap, hideLine, legends }: LegendsListProps) => {
-  const legendsBox = useMemo(
-    () => (
-      <StyledLegendsList>
-        {!!chartData?.labels?.length && !!legends.length && (
-          <Box sx={{ padding: '6.5px 0', minWidth: '70%' }}>
-            <HorizontalScrolling>
-              {legends.map((legendItem, index) => {
-                const text = legendItem?.text?.split('|');
+const LegendsList = ({ data, lineIndexMap, hideLine, legends, children }: PropsWithChildren<LegendsListProps>) => (
+  <StyledLegendsList>
+    {!!data?.labels?.length && !!legends.length && (
+      <StyledLegendsListContainer>
+        <HorizontalScrolling>
+          {legends.map((legendItem, index) => {
+            const text = legendItem?.text?.split('|');
 
-                return (
-                  <Tooltip
-                    title={legendItem?.text || ''}
-                    disableHoverListener={legendItem?.text?.length <= MAX_LENGTH_OF_TOOLTIP_TEXT}
-                    key={index}
+            return (
+              <Tooltip
+                title={legendItem?.text || ''}
+                disableHoverListener={legendItem?.text?.length <= MAX_LENGTH_OF_TOOLTIP_TEXT}
+                key={index}
+              >
+                <StyledLegendsListLegendItem onClick={() => hideLine(legendItem)} key={index}>
+                  <StyledLegendsListLegendItemPoint
+                    sx={{
+                      backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
+                    }}
+                  />
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      ml: '5px',
+                      textDecoration: lineIndexMap[
+                        typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
+                      ]
+                        ? 'line-through'
+                        : 'none'
+                    }}
                   >
-                    <StyledLegendsListLegendItem onClick={() => hideLine(legendItem)} key={index}>
-                      <StyledLegendsListLegendItemDot
-                        sx={{
-                          backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
-                        }}
-                      />
-                      <Typography
-                        variant="subtitle2"
-                        ml="5px"
-                        sx={{
-                          textDecoration: lineIndexMap[
-                            typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
-                          ]
-                            ? 'line-through'
-                            : 'none'
-                        }}
-                      >
-                        {text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT
-                          ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...`
-                          : text[0]}
-                      </Typography>
-                    </StyledLegendsListLegendItem>
-                  </Tooltip>
-                );
-              })}
-            </HorizontalScrolling>
-          </Box>
-        )}
-        {children && <Box sx={{ ml: '42px' }}>{children}</Box>}
-      </StyledLegendsList>
-    ),
-    [legends, lineIndexMap, chartData?.labels?.length, children, hideLine]
-  );
-
-  return legendsBox;
-};
+                    {text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT
+                      ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...`
+                      : text[0]}
+                  </Typography>
+                </StyledLegendsListLegendItem>
+              </Tooltip>
+            );
+          })}
+        </HorizontalScrolling>
+      </StyledLegendsListContainer>
+    )}
+    {children}
+  </StyledLegendsList>
+);
 
 const StyledLegendsList = styled(Box)({
   display: 'flex',
@@ -76,6 +68,11 @@ const StyledLegendsList = styled(Box)({
   alignItems: 'center',
   width: '100%',
   marginTop: '0px'
+});
+
+const StyledLegendsListContainer = styled(Box)({
+  padding: '6.5px 0',
+  minWidth: '70%'
 });
 
 const StyledLegendsListLegendItem = styled(Box)({
@@ -87,10 +84,10 @@ const StyledLegendsListLegendItem = styled(Box)({
   padding: '3px 0'
 });
 
-const StyledLegendsListLegendItemDot = styled(Box)({
+const StyledLegendsListLegendItemPoint = styled(Box)({
   width: 9,
   height: 9,
   borderRadius: '3px'
 });
 
-export default LegendsList;
+export default memo(LegendsList);

@@ -1,5 +1,7 @@
-import { CheckResultSchema } from 'api/generated';
 import dayjs from 'dayjs';
+
+import { CheckResultSchema } from 'api/generated';
+
 import { setBarGraphOptions, setLineGraphOptions } from 'helpers/setGraphOptions';
 
 interface ChartOptions {
@@ -10,14 +12,21 @@ interface ChartOptions {
   pointHoverBackgroundColor?: string;
   pointHoverBorderColor?: string;
   hidden?: boolean;
+  dashed?: boolean;
 }
+
+type LinesType = { [key: string]: (number | null)[] };
+type GraphOutputType = { [key: string]: number | null };
 
 const parseDataForChart = (
   graph: CheckResultSchema,
-  setChartOptions: (label: string, index: number) => ChartOptions
+  setChartOptions: (label: string, index: number, dashed: boolean) => ChartOptions,
+  dashed = false
 ) => {
   if (!graph) return { datasets: [], labels: [] };
+
   let counter = 0;
+
   return {
     datasets: Object.keys(graph.output)
       .map(key => {
@@ -25,9 +34,10 @@ const parseDataForChart = (
           return [];
         }
 
-        const lines: { [key: string]: (number | null)[] } = {};
+        const lines: LinesType = {};
+
         for (let i = 0; i < graph.output[key].length; i++) {
-          graph.output[key].forEach((item: any) => {
+          graph.output[key].forEach((item: GraphOutputType) => {
             if (item) {
               Object.keys(item).forEach(itemKey => {
                 lines[itemKey] = [];
@@ -36,7 +46,7 @@ const parseDataForChart = (
           });
         }
 
-        graph.output[key].forEach((item: any) => {
+        graph.output[key].forEach((item: GraphOutputType) => {
           if (item) {
             Object.keys(item).forEach(itemKey => {
               lines[itemKey].push(item[itemKey]);
@@ -48,9 +58,10 @@ const parseDataForChart = (
             lines[itemKey].push(null);
           });
         });
+
         return Object.keys(lines).map(lineKey => ({
           data: lines[lineKey],
-          ...setChartOptions(`${lineKey}|${key}`, counter++)
+          ...setChartOptions(`${lineKey}|${key}`, counter++, dashed)
         }));
       })
       .flat(2),
@@ -58,6 +69,8 @@ const parseDataForChart = (
   };
 };
 
-export const parseDataForLineChart = (graph: CheckResultSchema) => parseDataForChart(graph, setLineGraphOptions);
+export const parseDataForLineChart = (graph: CheckResultSchema, dashed = false) =>
+  parseDataForChart(graph, setLineGraphOptions, dashed);
 
-export const parseDataForBarChart = (graph: CheckResultSchema) => parseDataForChart(graph, setBarGraphOptions);
+export const parseDataForBarChart = (graph: CheckResultSchema, dashed = false) =>
+  parseDataForChart(graph, setBarGraphOptions, dashed);

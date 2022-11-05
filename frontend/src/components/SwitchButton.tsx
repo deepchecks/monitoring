@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { styled, Grid, Switch, SwitchProps } from '@mui/material';
 
 import { colors } from 'theme/colors';
 
 interface SwitchButtonProps extends SwitchProps {
-  titleLeft?: string;
-  titleRight?: string;
+  leftLabel?: string;
+  rightLabel?: string;
+  checked: boolean;
+  setChecked: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function SwitchButton({ titleLeft, titleRight, sx, ...props }: SwitchButtonProps) {
-  const [checked, setChecked] = useState(true);
-
+export function SwitchButton({ checked, setChecked, leftLabel, rightLabel, sx, ...props }: SwitchButtonProps) {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked);
   };
@@ -24,7 +24,7 @@ export function SwitchButton({ titleLeft, titleRight, sx, ...props }: SwitchButt
           color: theme => (!checked ? theme.palette.text.primary : theme.palette.text.disabled)
         }}
       >
-        {titleLeft}
+        {leftLabel}
       </Grid>
       <Grid item>
         <StyledSwitch
@@ -42,7 +42,7 @@ export function SwitchButton({ titleLeft, titleRight, sx, ...props }: SwitchButt
           color: theme => (checked ? theme.palette.text.primary : theme.palette.text.disabled)
         }}
       >
-        {titleRight}
+        {rightLabel}
       </Grid>
     </Grid>
   );

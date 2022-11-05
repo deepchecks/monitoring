@@ -8,8 +8,8 @@ import {
 
 import { AnalysisContext, ColumnsFilters } from 'context/analysis-context';
 
-import { timeMap } from 'helpers/timeValue';
 import { ColumnType } from 'helpers/types/model';
+import { lookBackData, frequencyData } from './AnalysisFilters.helpers';
 
 import { alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box } from '@mui/material';
 
@@ -20,28 +20,15 @@ import { DropDownFilter } from './components/DropDownFilter';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
 
-import { timeValues } from 'helpers/timeValue';
-
 import { FilterIcon } from 'assets/icon/icon';
 
 interface AnalysisFiltersProps {
   model: ModelManagmentSchema;
 }
 
-const lookBackData = [
-  { label: 'Last 7 Days', value: timeMap.week },
-  { label: 'Last 30 Days', value: timeMap.month }
-];
-
-const frequencyData = [
-  { label: 'Hourly', value: timeValues.hour },
-  { label: 'Daily', value: timeValues.day },
-  { label: 'Weekly', value: timeValues.week },
-  { label: 'Monthly', value: timeValues.mouth }
-];
-
 export function AnalysisFilters({ model }: AnalysisFiltersProps) {
-  const { setFilters, setPeriod, frequency, setFrequency } = useContext(AnalysisContext);
+  const { referencePreviousPeriod, setReferencePreviousPeriod, setFilters, setPeriod, frequency, setFrequency } =
+    useContext(AnalysisContext);
 
   const [lookback, setLookback] = useState(lookBackData[0].value);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -82,8 +69,6 @@ export function AnalysisFilters({ model }: AnalysisFiltersProps) {
     console.log('reset filters');
   };
 
-  console.log(frequency);
-
   useEffect(() => {
     const time = model.latest_time ? model.latest_time * 1000 : Date.now();
     setPeriod([new Date(time - lookBackData[0].value), new Date(time)]);
@@ -98,22 +83,28 @@ export function AnalysisFilters({ model }: AnalysisFiltersProps) {
   useEffect(() => {
     if (Object.keys(columns).length) {
       const currentFilters: ColumnsFilters = {};
+
       Object.entries(columns).forEach(([key, value]) => {
         if (value.type === ColumnType.categorical) {
           if (value.stats.values) {
             const categories: Record<string, boolean> = {};
+
             value.stats.values.forEach(filter => {
               categories[filter] = false;
             });
+
             currentFilters[key] = categories;
             return;
           }
+
           currentFilters[key] = {};
         }
+
         if (value.type === ColumnType.numeric) {
           currentFilters[key] = null;
         }
       });
+
       setFilters(currentFilters);
     }
   }, [columns, setFilters]);
@@ -122,7 +113,12 @@ export function AnalysisFilters({ model }: AnalysisFiltersProps) {
     <>
       <Stack direction="row" alignItems="center">
         <Stack direction="row" alignItems="center">
-          <SwitchButton titleLeft="Reference" titleRight="Previous period" />
+          <SwitchButton
+            checked={referencePreviousPeriod}
+            setChecked={setReferencePreviousPeriod}
+            leftLabel="Reference"
+            rightLabel="Previous period"
+          />
           <ExpandableSelection
             label="Look Back Window"
             changeState={setLookback}

@@ -13,7 +13,7 @@ import { Loader } from 'components/Loader';
 import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters/ActiveColumnsFilters';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/AnalisysHeader/AnalysisHeader';
-import { AnalysisItem } from 'components/AnalysisItem';
+import { AnalysisItem } from 'components/AnalysisItem/AnalysisItem';
 
 const emptyModel = {
   id: -1,

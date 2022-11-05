@@ -1,4 +1,4 @@
-import React, { Dispatch, memo, SetStateAction, useEffect, useRef, useState } from 'react';
+import React, { Dispatch, memo, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { ModelSchema } from 'api/generated';
@@ -48,10 +48,10 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
     }, 300);
   };
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setSearchModelName('');
     setFilteredModels(models);
-  };
+  }, [models]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -73,7 +73,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
 
   useEffect(() => {
     handleReset();
-  }, [models]);
+  }, [models, handleReset]);
 
   useEffect(() => {
     handleCloseModelsMenu();

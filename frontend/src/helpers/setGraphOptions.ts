@@ -20,19 +20,21 @@ export const graphColors = [
   '#0DDFEC'
 ];
 
-export const setLineGraphOptions = (label: string, index: number) => ({
-  label,
-  borderColor: graphColors[(index % graphColors.length)],
+export const setLineGraphOptions = (label: string, index: number, dashed = false) => ({
+  label: dashed ? label + '_d' : label,
+  borderColor: graphColors[index % graphColors.length],
   pointBorderColor: '#fff',
   pointBackgroundColor: graphColors[index],
-  pointHoverBackgroundColor: 'rgb(255, 255, 255)',
+  pointHoverBackgroundColor: '#fff',
   pointHoverBorderColor: pointColor.primary.violet[400],
-  hidden: false
+  hidden: false,
+  borderDash: dashed ? [10, 5] : []
 });
 
-export const setBarGraphOptions = (label: string, index: number) => ({
-  label,
+export const setBarGraphOptions = (label: string, index: number, dashed = false) => ({
+  label: dashed ? label + '_d' : label,
   backgroundColor: alpha(graphColors[index], 0.5),
   borderColor: graphColors[index],
-  barPercentage: 0.3
+  barPercentage: 0.3,
+  borderDash: dashed ? [10, 5] : []
 });

@@ -1,4 +1,4 @@
-import React, { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
+import React, { Dispatch, PropsWithChildren, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
 import {
   Chart,
   ChartArea,
@@ -18,19 +18,20 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 import mixpanel from 'mixpanel-browser';
 
 import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
+import useMonitorsData from 'hooks/useMonitorsData';
 
 import { drawAlerts, drawCircle, minimapPanorama, OriginalMinMax, setAlertLine } from '../helpers/diagramLine';
 
 import { alpha, Box } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
+import DiagramTutorialTooltip from './DiagramTutorialTooltip';
 import { Loader } from './Loader';
 import { Minimap } from './Minimap';
 
 import { colors } from '../theme/colors';
 
 import { GraphData } from '../helpers/types';
-import DiagramTutorialTooltip from './DiagramTutorialTooltip';
 
 declare module 'chart.js' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -60,8 +61,6 @@ declare module 'chart.js' {
   /* eslint-enable @typescript-eslint/no-unused-vars */
 }
 
-Chart.register(...registerables, zoomPlugin);
-
 interface IMinimap {
   alertSeverity: AlertSeverity;
   alertIndex: number;
@@ -72,7 +71,6 @@ interface IMinimap {
 export interface DiagramLineProps {
   alert_rules?: Array<AlertRuleSchema>;
   data: ChartData<'line', GraphData>;
-  children?: ReactNode;
   height?: number;
   minTimeUnit?: TimeUnit;
   isLoading?: boolean;
@@ -105,6 +103,8 @@ const initMinimap: IMinimap = {
   changeAlertIndex: () => 1
 };
 
+Chart.register(...registerables, zoomPlugin);
+
 function DiagramLine({
   data,
   children,
@@ -115,20 +115,22 @@ function DiagramLine({
   minimap = initMinimap,
   tooltipCallbacks = defaultTooltipCallbacks,
   analysis
-}: DiagramLineProps) {
+}: PropsWithChildren<DiagramLineProps>) {
+  const [chartData, setChartData] = useState(data);
+  const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
+  const [legends, setLegends] = useState<LegendItem[]>([]);
+
   const { alerts, alertIndex, alertSeverity, changeAlertIndex } = minimap;
+  const _tCallbacks = { ...defaultTooltipCallbacks, ...tooltipCallbacks };
+
   const chartRef = useRef<Chart<'line', number[], string>>();
   const minimapRef = useRef<HTMLDivElement[]>([]);
   const range = useRef({ min: 0, max: 0 });
-  const _tCallbacks = { ...defaultTooltipCallbacks, ...tooltipCallbacks };
-  const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
-  const [legends, setLegends] = useState<LegendItem[]>([]);
-  const [chartData, setChartData] = useState(data);
 
   const getNewData = useCallback(() => {
-    const char = chartRef.current;
+    const currentChart = chartRef.current;
 
-    if (!char) {
+    if (!currentChart) {
       return data;
     }
 
@@ -146,10 +148,12 @@ function DiagramLine({
             }
             return;
           }
+
           if (item && typeof item === 'object') {
             if (item.y < range.current.min) {
               range.current.min = item.y;
             }
+
             if (item.y > range.current.max) {
               range.current.max = item.y;
             }
@@ -159,8 +163,8 @@ function DiagramLine({
         return {
           ...el,
           backgroundColor: createGradient(
-            char.ctx,
-            char.chartArea,
+            currentChart.ctx,
+            currentChart.chartArea,
             alpha(el.borderColor as string, 0),
             alpha(el.borderColor as string, 0.1)
           )
@@ -169,7 +173,7 @@ function DiagramLine({
     };
   }, [data]);
 
-  const onChange = ({ chart }: { chart: Chart }) => {
+  const onChange = useCallback(({ chart }: { chart: Chart }) => {
     if (chart.originalMinMax && minimapRef?.current?.length) {
       const { min, max } = chart.scales.x;
       const { originalMinMax } = chart;
@@ -183,10 +187,11 @@ function DiagramLine({
       minimapRef.current[1].style.left = `${lf}%`;
       minimapRef.current[2].style.width = `${100 - rg}%`;
     }
-  };
+  }, []);
 
-  const getActivePlugins = () => {
+  const getActivePlugins = useCallback(() => {
     const currentPlugins = [drawCircle];
+
     if (alerts.length) {
       currentPlugins.push(drawAlerts(alerts));
       currentPlugins.push(minimapPanorama(onChange));
@@ -197,7 +202,7 @@ function DiagramLine({
     }
 
     return currentPlugins;
-  };
+  }, [onChange, alert_rules, alerts]);
 
   const hideLine = useCallback((item: LegendItem) => {
     mixpanel.track('Click on a legend on the graph');
@@ -301,7 +306,6 @@ function DiagramLine({
         grid: {
           display: false
         },
-        // max: 15,
         type: 'timeseries',
         time: {
           minUnit: minTimeUnit,
@@ -329,12 +333,12 @@ function DiagramLine({
     if (chartRef.current) {
       setChartData(getNewData());
     }
-  }, [data, getNewData]);
+  }, [getNewData]);
 
   useEffect(() => {
     if (chartRef.current && chartRef.current?.legend?.legendItems?.length) {
-      setLegends(chartRef.current?.legend?.legendItems);
-      chartRef.current?.legend?.legendItems.forEach(item => {
+      setLegends(chartRef.current.legend.legendItems);
+      chartRef.current.legend.legendItems.forEach(item => {
         chartRef.current?.setDatasetVisibility(item.datasetIndex || 0, true);
       });
       setLineIndexMap({});
@@ -354,7 +358,7 @@ function DiagramLine({
           <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
         </Box>
       </DiagramTutorialTooltip>
-      <LegendsList chartData={chartData} lineIndexMap={lineIndexMap} hideLine={hideLine} legends={legends}>
+      <LegendsList data={chartData} lineIndexMap={lineIndexMap} hideLine={hideLine} legends={legends}>
         {children}
       </LegendsList>
       {changeAlertIndex && !!alerts.length && (
