@@ -67,10 +67,8 @@ async def test_add_monitor_month_schedule(classification_model_check_id, client:
     assert response.status_code == 200
     assert response.json()["id"] == 1
     monitor: Monitor = await fetch_or_404(async_session, Monitor, id=1)
-    now = datetime.datetime.now()
-    now = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(tz=datetime.timezone.utc)
-    mon_sched = monitor.scheduling_start
-    assert mon_sched == now
+
+    assert pdl.instance(monitor.scheduling_start).int_timestamp % monitor.frequency == 0
 
 
 @pytest.mark.asyncio
@@ -88,10 +86,8 @@ async def test_add_monitor_day_schedule(classification_model_check_id, client: T
     assert response.status_code == 200
     assert response.json()["id"] == 1
     monitor: Monitor = await fetch_or_404(async_session, Monitor, id=1)
-    now = datetime.datetime.now()
-    now = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(tz=datetime.timezone.utc)
-    mon_sched = monitor.scheduling_start
-    assert mon_sched == now
+
+    assert pdl.instance(monitor.scheduling_start).int_timestamp % monitor.frequency == 0
 
 
 @pytest.mark.asyncio
@@ -114,9 +110,8 @@ async def test_add_monitor_day_schedule_from_version(classification_model_check_
     monitor: Monitor = await fetch_or_404(async_session, Monitor, id=1)
     # model version data was day before
     now = datetime.datetime.now() - datetime.timedelta(days=1)
-    now = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(tz=datetime.timezone.utc)
-    mon_sched = monitor.scheduling_start
-    assert mon_sched == now
+    assert pdl.instance(monitor.scheduling_start) < pdl.instance(now)
+    assert pdl.instance(monitor.scheduling_start).int_timestamp % monitor.frequency == 0
 
 
 @pytest.mark.asyncio
@@ -215,6 +210,27 @@ async def test_update_monitor(classification_model_check_id, client: TestClient)
     # Act
     response = client.put(f"/api/v1/monitors/{monitor_id}", json=request)
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_update_monitor_freq(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
+    monitor: Monitor = await fetch_or_404(async_session, Monitor, id=monitor_id)
+    latest_schedule = monitor.scheduling_start + datetime.timedelta(seconds=10)
+
+    await Monitor.update(async_session, monitor_id, {"latest_schedule": latest_schedule})
+    await async_session.commit()
+    await async_session.refresh(monitor)
+
+    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency != 0
+
+    response = client.put(f"/api/v1/monitors/{monitor_id}", json={"frequency": 86400 * 30})
+
+    assert response.status_code == 200
+    await async_session.refresh(monitor)
+    assert monitor.frequency == 86400 * 30
+    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
 
 
 @pytest.mark.asyncio

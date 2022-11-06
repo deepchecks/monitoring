@@ -11,6 +11,7 @@
 import typing as t
 from datetime import timedelta
 
+import pendulum as pdl
 import sqlalchemy as sa
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.future import select
@@ -28,33 +29,23 @@ if t.TYPE_CHECKING:
 __all__ = ["Monitor"]
 
 
-def _get_time_str(frequency):
-    if frequency >= 86400 * 30:
-        return "month"
-    if frequency >= 86400 * 7:
-        return "week"
-    if frequency >= 86400:
-        return "day"
-    if frequency >= 3600:
-        return "hour"
-    return "second"
-
-
 def _get_start_schedule_time(context: DefaultExecutionContext):
     # pylint: disable=import-outside-toplevel, redefined-outer-name
+    from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
     from deepchecks_monitoring.models.check import Check
     from deepchecks_monitoring.models.model_version import ModelVersion
 
     check_id = context.get_current_parameters()["check_id"]
     frequency = context.get_current_parameters()["frequency"]
-    select_obj = select(sa.func.date_trunc(_get_time_str(frequency),
-                                           sa.func.least(sa.func.greatest(
-                                                sa.func.min(ModelVersion.start_time),
-                                                sa.func.max(ModelVersion.end_time) - timedelta(seconds=frequency * 10)
-                                           ), sa.func.now()))) \
+    select_obj = select(sa.func.least(sa.func.greatest(
+        sa.func.min(ModelVersion.start_time),
+        sa.func.max(ModelVersion.end_time) - timedelta(seconds=frequency * 10)
+    ), sa.func.now()))\
         .join(Check, Check.id == check_id) \
         .where(ModelVersion.model_id == Check.model_id)
-    return context.connection.execute(select_obj).scalar()
+    time_to_round = context.connection.execute(select_obj).scalar()
+    return get_time_ranges_for_monitor(frequency, frequency,
+                                       pdl.instance(time_to_round + pdl.duration(seconds=frequency)))[0]
 
 
 class Monitor(Base):
@@ -73,8 +64,8 @@ class Monitor(Base):
     aggregation_window = sa.Column(sa.Integer, nullable=False)
     frequency = sa.Column(sa.Integer, nullable=False)
 
-    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=True)
     scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, default=_get_start_schedule_time)
+    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
     check_id = sa.Column(
         sa.Integer,

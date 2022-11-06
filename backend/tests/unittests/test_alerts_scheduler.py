@@ -72,7 +72,7 @@ async def test_alert_rules_scheduler(classification_model_check_id,
         classification_model_check_id, client,
         lookback=3600 * 3,
         name="Test alert",
-        frequency=10,  # seconds
+        frequency=11,  # seconds
     )
     await update_model_version_end(async_engine, classification_model_version_id)
 

@@ -129,8 +129,16 @@ async def update_monitor(
     cache_funcs: CacheFunctions = CacheFunctionsDep
 ):
     """Update monitor by id."""
-    await fetch_or_404(session, Monitor, id=monitor_id)
-    await Monitor.update(session, monitor_id, body.dict(exclude_none=True))
+    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+    update_dict = body.dict(exclude_none=True)
+    # if frequency is updated we should update latest_schedule accordingly
+    if body.frequency is not None and monitor.latest_schedule is not None:
+        frequency = body.frequency
+        update_dict["latest_schedule"], _, _ = \
+            get_time_ranges_for_monitor(frequency,
+                                        frequency,
+                                        pdl.instance(monitor.latest_schedule + pdl.duration(seconds=frequency)))
+    await Monitor.update(session, monitor_id, update_dict)
     cache_key_base = cache_funcs.get_key_base_by_request(request)
     cache_funcs.clear_monitor(cache_key_base, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
