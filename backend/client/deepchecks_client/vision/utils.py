@@ -14,6 +14,7 @@ import typing as t
 import numpy as np
 import torch
 from deepchecks.vision.utils.image_functions import crop_image
+from deepchecks.vision.utils.image_properties import calc_default_image_properties, default_image_properties
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
 from deepchecks_client.core.utils import DeepchecksEncoder as CoreDeepcheckEncoder
@@ -40,6 +41,21 @@ def create_static_predictions(vision_data: VisionData, model, device):
     return static_pred
 
 
+def calc_additional_and_default_vision_properties(images: t.Sequence[np.ndarray],
+                                                  additional_image_properties: t.Sequence[t.Dict[str, t.Any]]) \
+        -> t.Dict[str, list]:
+    """Helper function to calculate the default properties and the additional properties."""
+    if len(images) == 0:
+        vision_properties = {}
+        for prop in additional_image_properties or [] + default_image_properties:
+            vision_properties[prop["name"]] = []
+        return vision_properties
+    vision_properties: t.Dict[str, list] = calc_default_image_properties(images)
+    if additional_image_properties is not None:
+        vision_properties.update(calc_vision_properties(images, additional_image_properties))
+    return vision_properties
+
+
 def is_bbox_collapsed(x: float, y: float, w: float, h: float) -> bool:
     return (
         math.floor(w) == 0
@@ -52,7 +68,7 @@ def is_bbox_collapsed(x: float, y: float, w: float, h: float) -> bool:
 def calc_bbox_properties(
     images_batch: t.Sequence[np.ndarray],
     labels_batch: t.Sequence[np.ndarray],
-    image_properties: t.Sequence[t.Dict[str, t.Any]]
+    additional_image_properties: t.Sequence[t.Dict[str, t.Any]]
 ) -> t.List[t.Dict[str, t.List[float]]]:
     """Calculate samples bboxes properties.
 
@@ -62,7 +78,7 @@ def calc_bbox_properties(
         batch of images
     labels_batch : Sequence[np.ndarray]
         batch of images
-    image_properties : Sequence[Dict[str, Any]]
+    additional_image_properties : Sequence[Dict[str, Any]]
         properties to calculate
 
     Returns
@@ -70,8 +86,6 @@ def calc_bbox_properties(
     List[Dict[str, List[float]]] :
         each sample bbox properties
     """
-    assert len(image_properties) != 0
-
     # list[dict[property-name, list[bbox-image-property-value]]]
     bbox_properties = []
 
@@ -88,7 +102,17 @@ def calc_bbox_properties(
             cropped_images.append(img)
 
         # dict[property-name, list[property-value-per-image]]
-        vision_properties = calc_vision_properties(cropped_images, image_properties)
+        vision_properties = calc_additional_and_default_vision_properties(cropped_images, additional_image_properties)
         bbox_properties.append(vision_properties)
 
     return bbox_properties
+
+
+properties_schema = {
+    "type": "array",
+    "items": {"properties": {
+        "method": {"type": "callable"},
+        "name": {"type": "string"},
+        "output_type": {"type": "string"},
+    }},
+}

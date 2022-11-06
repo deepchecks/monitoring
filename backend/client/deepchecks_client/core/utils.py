@@ -179,11 +179,14 @@ def parse_timestamp(timestamp: t.Union[int, datetime]) -> 'PendulumDateTime':
         raise ValueError(f'Not supported timestamp type: {type(timestamp)}')
 
 
-DeepchecksJsonValidator = validators.extend(
+DeepchecksJsonValidator: t.Type[validators.Draft202012Validator] = validators.extend(
     validators.Draft202012Validator,
     type_checker=validators.Draft202012Validator.TYPE_CHECKER.redefine(
         'array',
         lambda _, instance: isinstance(instance, (list, tuple))
+    ).redefine(
+        'callable',
+        lambda _, instance: isinstance(instance, t.Callable)
     )
 )
 

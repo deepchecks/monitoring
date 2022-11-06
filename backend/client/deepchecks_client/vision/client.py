@@ -23,12 +23,13 @@ from deepchecks.vision.checks import (ImagePropertyDrift, SingleDatasetPerforman
                                       TrainTestPredictionDrift)
 from deepchecks.vision.task_type import TaskType as VisionTaskType
 from deepchecks.vision.utils.image_properties import default_image_properties
-from deepchecks.vision.utils.vision_properties import PropertiesInputType, calc_vision_properties
+from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.api import API
 from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp
-from deepchecks_client.vision.utils import DeepchecksEncoder, calc_bbox_properties
+from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
+                                            calc_bbox_properties, properties_schema)
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -40,8 +41,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         The deepchecks monitoring API session.
     model_version_id: int
         The id of the model version.
-    image_properties : Optional[List[Dict[str, Any]]]
-        The image properties to use for the reference.
+    additional_image_properties : Optional[List[Dict[str, Any]]]
+        The additional image properties to use for the reference.
     """
 
     model_version_id: int
@@ -53,10 +54,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             model_version_id: int,
             model: dict,
             api: API,
-            image_properties: t.Optional[t.List[t.Dict[str, t.Any]]],
+            additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]],
     ):
         super().__init__(model_version_id, model, api)
-        self.image_properties = image_properties
+        self.additional_image_properties = additional_image_properties
 
     def _get_vision_task_type(self):
         task_type = TaskType(self.model['task_type'])
@@ -175,25 +176,24 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         label
             labels value if exists, according to the expected format for the task type.
         """
-        assert self.image_properties is not None
-
         if timestamp is None:
             warnings.warn('log_sample was called without timestamps, using current time instead')
 
         task_type = self._get_vision_task_type()
-        image_properties = self.image_properties
+        additional_image_properties = self.additional_image_properties
 
         timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
         images_batch = [img]
         labels_batch = [label] if label is not None else None
         properties_fields = {}
 
-        if calculated_properties := calc_vision_properties(images_batch, image_properties):
+        if calculated_properties := calc_additional_and_default_vision_properties(images_batch,
+                                                                                  additional_image_properties):
             for name, values in calculated_properties.items():
                 properties_fields[image_property_field(name)] = values[0]  # we have only one image (only one value)
 
         if task_type == VisionTaskType.OBJECT_DETECTION and labels_batch:
-            bbox_properties = calc_bbox_properties(images_batch, labels_batch, image_properties)
+            bbox_properties = calc_bbox_properties(images_batch, labels_batch, additional_image_properties)
             # we have only one image (only one value with bbox properties)
             for name, values in bbox_properties[0].items():
                 properties_fields[bbox_property_field(name)] = list(values)
@@ -238,8 +238,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         prediction_field = DeepchecksColumns.SAMPLE_PRED_COL.value
         label_field = DeepchecksColumns.SAMPLE_LABEL_COL.value
 
-        assert self.image_properties is not None
-
         for i, batch in enumerate(vision_data):
             indexes = samples_indexes[i]
             images_batch = vision_data.batch_to_images(batch)
@@ -247,12 +245,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             task_type = vision_data.task_type
 
             # dict[property-name, list[image-1-value, ..., image-N-value]]
-            image_properties = calc_vision_properties(images_batch, self.image_properties)
+            image_properties = calc_additional_and_default_vision_properties(images_batch,
+                                                                             self.additional_image_properties)
 
             # list[dict[property-name, list[bbox-1-value, ..., bbox-N-value]]]
             # bbox properties for each sample
             bbox_properties = (
-                calc_bbox_properties(images_batch, labels_batch, self.image_properties)
+                calc_bbox_properties(images_batch, labels_batch, self.additional_image_properties)
                 if task_type == VisionTaskType.OBJECT_DETECTION
                 else None
             )
@@ -319,8 +318,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             labels_batch = [label]
 
             if task_type == VisionTaskType.OBJECT_DETECTION:
-                img_properties = calc_vision_properties(images_batch, self.image_properties)
-                bbox_properties = calc_bbox_properties(images_batch, labels_batch, self.image_properties)
+                img_properties = calc_additional_and_default_vision_properties(images_batch,
+                                                                               self.additional_image_properties)
+                bbox_properties = calc_bbox_properties(images_batch, labels_batch, self.additional_image_properties)
 
                 for name, values in img_properties.items():
                     update[image_property_field(name)] = values[0]  # we have only one image (only one value)
@@ -349,7 +349,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             self,
             name: str,
             vision_data: t.Optional[VisionData] = None,
-            image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
+            additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version for vision data.
 
@@ -359,19 +359,21 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             The name of the new version.
         vision_data : VisionData
             The vision data to use as reference.
-        image_properties : List[Dict[str, Any]]
-            The image properties to use for the reference.
+        additional_image_properties : List[Dict[str, Any]]
+            The additional image properties to use for the reference.
+            Should be in format:
+                [{'name': <str>, 'method': <callable>, 'output_type': <'continuous'/'discrete'/'class_id'>}]
+            See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
 
         Returns
         -------
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
-        image_properties = image_properties or default_image_properties
         existing_version_id = self._get_existing_version_id_or_none(version_name=name)
 
         if existing_version_id is not None:
-            return self._version_client(existing_version_id, image_properties=image_properties)
+            return self._version_client(existing_version_id, additional_image_properties=additional_image_properties)
 
         if vision_data is None:
             model_version_id = self._get_model_version_id(name)
@@ -379,11 +381,12 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 raise ValueError('Model Version Name does not exists for this model and no vision data were provided.')
         else:
             # Start with validation
-            if not isinstance(image_properties, list):
-                raise Exception('image properties must be a list')
+            if additional_image_properties is not None:
+                DeepchecksJsonValidator(properties_schema).validate(additional_image_properties)
 
             features = {}
-            for prop in image_properties:
+            all_image_props = additional_image_properties or [] + default_image_properties
+            for prop in all_image_props:
                 prop_name = prop['name']
                 features[PropertiesInputType.IMAGES.value + ' ' + prop_name] = ColumnType.NUMERIC.value
                 if vision_data.task_type == VisionTaskType.OBJECT_DETECTION:
@@ -401,20 +404,20 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             created_version = t.cast(t.Dict[str, t.Any], created_version)
             model_version_id = created_version['id']
 
-        return self._version_client(model_version_id, image_properties=image_properties)
+        return self._version_client(model_version_id, additional_image_properties=additional_image_properties)
 
     def _version_client(
         self,
         model_version_id: int,
-        image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
+        additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
     ) -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model.
 
         Parameters
         ----------
         model_version_id: int
-        image_properties : Optional[List[Dict[str, Any]]]
-            The image properties to use for the reference.
+        additional_image_properties : Optional[List[Dict[str, Any]]]
+            The additional image properties to use for the reference.
 
         Returns
         -------
@@ -425,7 +428,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 model_version_id,
                 self.model,
                 api=self.api,
-                image_properties=image_properties
+                additional_image_properties=additional_image_properties
             )
         return self._model_version_clients[model_version_id]
 
