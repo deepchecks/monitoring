@@ -14,8 +14,8 @@ jinja2==3.1.2
 aiokafka==0.7.2
 uvloop==0.16.0
 deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
-opentelemetry-instrumentation-asyncpg
-opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-asyncpg===0.34b0
+opentelemetry-instrumentation-fastapi===0.34b0
 redis[hiredis]>=4.3.4
 pandas>=1.1.5,<1.5.0
 deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main
