@@ -23,8 +23,9 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.check_logic import (MonitorOptions, get_feature_property_info, get_metric_class_info,
-                                                     run_check_per_window_in_range, run_check_window)
+from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, MonitorOptions, get_feature_property_info,
+                                                     get_metric_class_info, run_check_per_window_in_range,
+                                                     run_check_window)
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models import Check, Model
@@ -266,6 +267,41 @@ async def get_check_window(
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
     return await run_check_window(check, monitor_options, session, model, model_versions)
+
+
+@router.post('/checks/{check_id}/run/reference', tags=[Tags.CHECKS])
+async def get_check_reference(
+        check_id: int,
+        monitor_options: BasicMonitorOptions,
+        session: AsyncSession = AsyncSessionDep
+):
+    """Run a check on the reference data.
+
+    Parameters
+    ----------
+    check_id : int
+        ID of the check.
+    monitor_options : BasicMonitorOptions
+        The monitor options.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    CheckSchema
+        Created check.
+    """
+    check: Check = await fetch_or_404(session, Check, id=check_id)
+    model_results = await session.execute(select(Model).where(Model.id == check.model_id,
+                                                              Model.id == ModelVersion.model_id)
+                                          .options(selectinload(Model.versions)))
+    model: Model = model_results.scalars().first()
+    if model is None:
+        model, model_versions = await fetch_or_404(session, Model, id=check.model_id), []
+    else:
+        model_versions: t.List[ModelVersion] = model.versions
+    return await run_check_window(check, monitor_options, session, model, model_versions,
+                                  reference_only=True, n_samples=100_000)
 
 
 @router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])

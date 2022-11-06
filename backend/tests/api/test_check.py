@@ -467,6 +467,45 @@ async def test_run_check_no_fi(classification_model_id, classification_model_ver
 
 
 @pytest.mark.asyncio
+async def test_run_check_vision_reference(classification_vision_model_id,
+                                classification_vision_model_version_id, client: TestClient):
+    request = {
+        "name": "checky v3",
+        "config": {"class_name": "SingleDatasetPerformance",
+                   "params": {"scorers": ["accuracy"]},
+                   "module_name": "deepchecks.vision.checks"
+                   },
+    }
+    # Act
+    response = client.post(f"/api/v1/models/{classification_vision_model_id}/checks", json=request)
+    assert response.status_code == 200
+
+    request = []
+    for i, hour in enumerate([1, 3, 7, 13]):
+        for j in range(10):
+            request.append({
+                "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+                "_dc_label": 2,
+                "images Aspect Ratio": 0.677 / hour,
+                "images Brightness": 0.5,
+                "images Area": 0.5 + (1 / (j + 1)),
+                "images RMS Contrast": 0.5,
+                "images Mean Red Relative Intensity": 0.5,
+                "images Mean Blue Relative Intensity": 0.5,
+                "images Mean Green Relative Intensity": 0.5,
+
+            })
+    # Act
+    response = send_reference_request(client, classification_vision_model_version_id, request)
+    assert response.status_code == 200
+
+    response = client.post("/api/v1/checks/1/run/reference",
+                           json={"filter": {"filters": [{"column": "images Aspect Ratio",
+                                                         "operator": "greater_than", "value": 0}]}})
+    json_rsp = response.json()
+    assert json_rsp == {"v1": {"accuracy": 0.5}}
+
+@pytest.mark.asyncio
 async def test_run_check_vision(classification_vision_model_id,
                                 classification_vision_model_version_id, client: TestClient):
     request = {

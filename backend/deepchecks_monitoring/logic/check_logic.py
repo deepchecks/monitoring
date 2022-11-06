@@ -22,12 +22,13 @@ from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from pydantic import BaseModel, root_validator, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.exceptions import NotFound
+from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
+                                                     get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf, random_sample)
 from deepchecks_monitoring.models import ModelVersion
@@ -45,15 +46,20 @@ class AlertCheckOptions(BaseModel):
     grace_period: t.Optional[bool] = True
 
 
-class MonitorOptions(BaseModel):
+class BasicMonitorOptions(BaseModel):
+    """Basic monitor schema without any time related fields."""
+
+    filter: t.Optional[DataFilterList] = None
+    additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
+
+
+class MonitorOptions(BasicMonitorOptions):
     """Monitor run schema."""
 
     end_time: str
     start_time: str
     frequency: t.Optional[int] = None
     aggregation_window: t.Optional[int] = None
-    filter: t.Optional[DataFilterList] = None
-    additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
 
     def start_time_dt(self) -> pdl.DateTime:
         """Get start time as datetime object."""
@@ -95,6 +101,16 @@ class FilterWindowOptions(MonitorOptions):
     """Window with filter run schema."""
 
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
+
+
+def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
+    for kwarg_type, kwarg_val in model_config.check_conf.items():
+        kwarg_type = CheckParameterTypeEnum(kwarg_type)
+        kwarg_name = kwarg_type.to_kwarg_name()
+        if kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
+            kwarg_val = kwarg_val[0]
+        if kwarg_type != CheckParameterTypeEnum.PROPERTY:
+            check_conf["params"][kwarg_name] = kwarg_val
 
 
 def _get_properties_by_type(property_type: PropertiesInputType, vision_features):
@@ -306,38 +322,65 @@ async def run_check_window(
         check: Check,
         monitor_options: MonitorOptions,
         session: AsyncSession,
-        model,
-        model_versions
-):
-    """Run a check for each time window by lookback.
+        model: Model,
+        model_versions: t.List[ModelVersion],
+        reference_only: bool = False,
+        n_samples: int = 10_000,
+) -> t.Dict[str, t.Any]:
+    """Run a check for each time window by lookback or for reference only.
 
     Parameters
     ----------
     check : Check
+        The check to run.
     monitor_options : MonitorOptions
-        The window options.
-    session : AsyncSession, optional
-        SQLAlchemy session.
-    model
-    model_versions
+        The monitor options to use.
+    session : AsyncSession
+        The database session to use.
+    model : Model
+        The model to run the check on.
+    model_versions : List[ModelVersion]
+        The model versions to run the check on.
+    reference_only : bool, optional
+        Whether to run the check on reference data only.
+    n_samples : int, optional
+        The number of samples to use.
+
+    Returns
+    -------
+    model_reduces : Dict[str, Any]
+        The results of the check.
     """
     # get the relevant objects from the db
     dp_check = check.initialize_check()
+    if monitor_options.additional_kwargs is not None:
+        check_conf = dp_check.config()
+        _check_kwarg_filter(check_conf, monitor_options.additional_kwargs)
+        dp_check = BaseCheck.from_config(check_conf)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
 
-    load_reference = isinstance(dp_check, TrainTestBaseCheck)
+    is_train_test_check = isinstance(dp_check, TrainTestBaseCheck)
+    if reference_only and is_train_test_check:
+        raise BadRequest("Running a check on reference data only relevant "
+                         f"for single dataset checks, received {type(dp_check)}")
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
     for model_version in model_versions:
-        info = {"start": monitor_options.start_time_dt(), "end": monitor_options.end_time_dt()}
         test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
-                                                        with_reference=load_reference)
-        info["query"] = test_session
+                                                        with_reference=is_train_test_check or reference_only,
+                                                        with_test=not reference_only,
+                                                        n_samples=n_samples)
+        if reference_only:
+            info = {}
+        else:
+            info = {"start": monitor_options.start_time_dt(),
+                    "end": monitor_options.end_time_dt(),
+                    "query": test_session}
 
         model_versions_sessions.append((ref_session, [info]))
 
@@ -347,11 +390,18 @@ async def run_check_window(
     await session.commit()
 
     # get result from active sessions and run the check per each model version
-    model_reduces_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
-                                                                               model_versions,
-                                                                               model,
-                                                                               dp_check,
-                                                                               monitor_options.additional_kwargs)
+    if not reference_only:
+        model_reduces_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
+                                                                                   model_versions,
+                                                                                   model,
+                                                                                   dp_check,
+                                                                                   monitor_options.additional_kwargs)
+    else:
+        model_reduces_per_window = await get_results_for_model_versions_for_reference(model_version_dataframes,
+                                                                                      model_versions,
+                                                                                      model,
+                                                                                      dp_check,
+                                                                                      monitor_options.additional_kwargs)
     # the original function is more general and runs it per window, we have only 1 window here
     model_reduces = {}
     for model_version_name, reduces_per_window in model_reduces_per_window.items():
@@ -364,7 +414,9 @@ def load_data_for_check(
         session: AsyncSession,
         features: t.List[str],
         options: MonitorOptions,
-        with_reference=True
+        with_reference=True,
+        with_test=True,
+        n_samples=10_000,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
 
@@ -376,6 +428,10 @@ def load_data_for_check(
     options
     with_reference: bool
         Whether to load reference
+    with_test: bool
+        Whether to load test
+    n_sample: int, default: 10,000
+        The number of samples to collect
 
     Returns
     -------
@@ -391,23 +447,27 @@ def load_data_for_check(
         reference_query = filter_table_selection_by_data_filters(reference_table,
                                                                  reference_query,
                                                                  options.filter)
-        reference_query = session.execute(random_sample(reference_query, reference_table))
+        reference_query = session.execute(random_sample(reference_query, reference_table, n_samples=n_samples))
     else:
         reference_query = None
 
-    test_table = model_version.get_monitor_table(session)
-    select_obj = create_model_version_select_object(model_version, test_table, features)
-    # create the session
-    filtered_select_obj = filter_monitor_table_by_window_and_data_filters(
-        model_version=model_version,
-        table_selection=select_obj,
-        mon_table=test_table,
-        start_time=options.start_time_dt(),
-        end_time=options.end_time_dt(),
-        data_filter=options.filter
-    )
-    if filtered_select_obj is not None:
-        test_query = session.execute(filtered_select_obj)
+    if with_test:
+        test_table = model_version.get_monitor_table(session)
+        select_obj = create_model_version_select_object(model_version, test_table, features)
+        # create the session
+        filtered_select_obj = filter_monitor_table_by_window_and_data_filters(
+            model_version=model_version,
+            table_selection=select_obj,
+            mon_table=test_table,
+            start_time=options.start_time_dt(),
+            end_time=options.end_time_dt(),
+            data_filter=options.filter,
+            n_samples=n_samples
+        )
+        if filtered_select_obj is not None:
+            test_query = session.execute(filtered_select_obj)
+        else:
+            test_query = None
     else:
         test_query = None
 

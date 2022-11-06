@@ -43,16 +43,6 @@ from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList,
                                          make_oparator_func)
 
 
-def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
-    for kwarg_type, kwarg_val in model_config.check_conf.items():
-        kwarg_type = CheckParameterTypeEnum(kwarg_type)
-        kwarg_name = kwarg_type.to_kwarg_name()
-        if kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
-            kwarg_val = kwarg_val[0]
-        if kwarg_type != CheckParameterTypeEnum.PROPERTY:
-            check_conf['params'][kwarg_name] = kwarg_val
-
-
 async def get_model_versions_for_time_range(session: AsyncSession,
                                             check: Check,
                                             start_time: pdl.DateTime,
@@ -197,11 +187,6 @@ async def get_results_for_model_versions_per_window(
         cache_key_base: str = ''
 ) -> t.Dict[str, t.Optional[t.Dict[str, Number]]]:
     """Get results for active model version sessions per window."""
-    if additional_kwargs is not None:
-        check_conf = dp_check.config()
-        _check_kwarg_filter(check_conf, additional_kwargs)
-        dp_check = BaseCheck.from_config(check_conf)
-
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
     task_type = model.task_type
     is_vision_check = isinstance(dp_check,
@@ -281,17 +266,70 @@ async def get_results_for_model_versions_per_window(
     return model_reduces
 
 
+async def get_results_for_model_versions_for_reference(
+        model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
+        model_versions: t.List[ModelVersion],
+        model: Model,
+        dp_check: BaseCheck,
+        additional_kwargs: MonitorCheckConfSchema,
+) -> t.Dict[str, t.Optional[t.Dict[str, Number]]]:
+    """Get results for active model version sessions for reference."""
+    top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
+    task_type = model.task_type
+    is_vision_check = isinstance(dp_check,
+                                 (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
+
+    model_reduces = {}
+    # there is not test_info objects as in the run check per window because test isn't used here
+    for (reference_table_dataframe, _), model_version in zip(model_versions_dataframes, model_versions):
+        if reference_table_dataframe.empty:
+            model_reduces[model_version.name] = None
+            continue
+
+        reduced_outs = []
+        if not is_vision_check:
+            reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
+                reference_table_dataframe, model_version, top_feat)
+        else:
+            reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
+                reference_table_dataframe, task_type)
+        try:
+            if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
+                reduced = dp_check.run(reference_table_ds, feature_importance=feat_imp,
+                                       y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
+                                       with_display=False).reduce_output()
+            elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
+                reduced = dp_check.run(reference_table_ds,
+                                       train_predictions=reference_table_pred, train_properties=reference_table_props,
+                                       with_display=False).reduce_output()
+            else:
+                raise ValueError('incompatible check type')
+
+            curr_result = finalize_reduced_results(reduced, additional_kwargs)
+        # In case of exception in the run putting none result
+        except DeepchecksBaseError as e:
+            logging.getLogger('monitor_run_logger').exception(e.message)
+            curr_result = None
+
+        reduced_outs.append(curr_result)
+
+        model_reduces[model_version.name] = reduced_outs
+
+    return model_reduces
+
+
 def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
                                                     table_selection: Select,
                                                     mon_table: Table,
                                                     start_time: pdl.DateTime,
                                                     end_time: pdl.DateTime,
-                                                    data_filter: t.Optional[DataFilterList] = None):
+                                                    data_filter: t.Optional[DataFilterList] = None,
+                                                    n_samples=10_000):
     """Filter monitor table by window and data filter."""
     if start_time <= model_version.end_time and end_time >= model_version.start_time:
         select_time_filtered = filter_select_object_by_window(table_selection, mon_table, start_time, end_time)
         select_time_filtered = filter_table_selection_by_data_filters(mon_table, select_time_filtered, data_filter)
-        return random_sample(select_time_filtered, mon_table)
+        return random_sample(select_time_filtered, mon_table, n_samples=n_samples)
     else:
         return None
 
