@@ -17,7 +17,7 @@ from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.models import AlertRule, Check, Model, ModelVersion, Monitor
+from deepchecks_monitoring.models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from tests.conftest import add_alert, add_alert_rule, add_check, add_model, add_model_version, add_monitor
 
@@ -36,23 +36,51 @@ async def test_add_model(client: TestClient):
 
 
 @pytest.mark.asyncio
-async def test_get_columns_model(classification_model_id, classification_model_version_id, client: TestClient):
-    response = client.get(f"/api/v1/models/{classification_model_id}/columns")
+@pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
+async def test_get_columns_model(
+    classification_model_id: int,
+    classification_model_version_id: int,
+    client: TestClient,
+    async_session: AsyncSession,
+    identifier_kind: str
+):
+    if identifier_kind == "by-name":
+        model = await async_session.get(Model, classification_model_id)
+        response = client.get(f"/api/v1/models/{model.name}/columns", params={"identifier_kind": "name"})
+    else:
+        response = client.get(f"/api/v1/models/{classification_model_id}/columns")
+
     assert classification_model_version_id == 1
     assert response.status_code == 200
-    diff = DeepDiff(response.json(), {
-        "a": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}},
-        "b": {"type": "categorical", "stats": {"max": None, "min": None, "values": []}},
-        "c": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}}
-    },
-        ignore_order=True)
+
+    diff = DeepDiff(
+        ignore_order=True,
+        t1=response.json(),
+        t2={
+            "a": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}},
+            "b": {"type": "categorical", "stats": {"max": None, "min": None, "values": []}},
+            "c": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}}
+        }
+    )
+
     assert not diff
 
 
 @pytest.mark.asyncio
-async def test_get_columns_model_without_versions(classification_model_id, client: TestClient):
-    response = client.get(f"/api/v1/models/{classification_model_id}/columns")
-    assert response.status_code == 200
+@pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
+async def test_get_columns_model_without_versions(
+    classification_model_id: int,
+    client: TestClient,
+    async_session: AsyncSession,
+    identifier_kind: str,
+):
+    if identifier_kind == "by-name":
+        model = await async_session.get(Model, classification_model_id)
+        response = client.get(f"/api/v1/models/{model.name}/columns", params={"identifier_kind": "name"})
+    else:
+        response = client.get(f"/api/v1/models/{classification_model_id}/columns")
+
+    assert response.status_code == 200, (response.reason, response.json())
     assert response.json() == {}
 
 
@@ -111,8 +139,13 @@ async def test_get_models_latest_time(classification_model_id, client: TestClien
 
 
 @pytest.mark.asyncio
-async def test_model_deletion(client: TestClient, async_session: AsyncSession):
-    model_id = t.cast(int, add_model(client))
+@pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
+async def test_model_deletion(
+    client: TestClient,
+    async_session: AsyncSession,
+    identifier_kind: str
+):
+    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
     version_id = t.cast(int, add_model_version(model_id, client))
     check_id = t.cast(int, add_check(model_id, client))
     monitor_id = t.cast(int, add_monitor(check_id, client))
@@ -124,9 +157,15 @@ async def test_model_deletion(client: TestClient, async_session: AsyncSession):
     assert (await async_session.scalar(TableExists, params={"name": monitor_table_name})) is True
     assert (await async_session.scalar(TableExists, params={"name": reference_table_name})) is True
 
-    response = client.delete(f"/api/v1/models/{model_id}")
-    assert response.status_code == 200
+    if identifier_kind == "by-name":
+        model = await async_session.get(Model, model_id)
+        response = client.delete(f"/api/v1/models/{model.name}", params={"identifier_kind": "name"})
+    else:
+        response = client.delete(f"/api/v1/models/{model_id}")
 
+    assert response.status_code == 200, (response.reason, response.json())
+
+    async_session.expire_all()
     assert (await async_session.get(Model, model_id)) is None
     assert (await async_session.get(ModelVersion, version_id)) is None
     assert (await async_session.get(Check, check_id)) is None

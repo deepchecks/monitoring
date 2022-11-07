@@ -37,10 +37,13 @@ from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABE
 from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import IdResponse, fetch_or_404, field_length
+from deepchecks_monitoring.utils import IdResponse, ModelIdentifier, fetch_or_404, field_length
 
 from .check import MonitorOptions
 from .router import router
+
+if t.TYPE_CHECKING:
+    import pendulum.datetime  # pylint: disable=unused-import
 
 
 class ModelVersionCreationSchema(BaseModel):
@@ -61,8 +64,8 @@ class ModelVersionCreationSchema(BaseModel):
 @router.post('/models/{model_id}/version', response_model=IdResponse, tags=[Tags.MODELS])
 async def get_or_create_version(
         request: fastapi.Request,
-        model_id: int,
         info: ModelVersionCreationSchema,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         kafka_admin: KafkaAdminClient = KafkaAdminDep,
         settings=SettingsDep,
@@ -74,8 +77,8 @@ async def get_or_create_version(
     Parameters
     ----------
     request
-    model_id : int
-        ID of the model.
+    model_identifier : ModelIdentifier
+        ID or name of the model.
     info : VersionInfo
         Information about the model version.
     session : AsyncSession, optional
@@ -85,11 +88,14 @@ async def get_or_create_version(
     data_ingest
     cache_invalidator
     """
-    # TODO: all this logic must be implemented (encapsulated) within Model type
-    model: Model = await fetch_or_404(session, Model, id=model_id)
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+
     model_version: ModelVersion = (await session.execute(
-        select(ModelVersion).where(ModelVersion.name == info.name, ModelVersion.model_id == model_id))
-                                   ).scalars().first()
+        select(ModelVersion)
+        .where(ModelVersion.name == info.name, ModelVersion.model_id == model.id)
+        .limit(1)
+    )).scalars().first()
+
     if model_version is not None:
         if model_version.features_columns != {key: val.value for key, val in info.features.items()}:
             raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
@@ -179,7 +185,7 @@ async def get_or_create_version(
                         if data_type.to_statistics_stub() is not None}
     # Save version entity
     model_version = ModelVersion(
-        name=info.name, model_id=model_id, monitor_json_schema=monitor_table_schema,
+        name=info.name, model_id=model.id, monitor_json_schema=monitor_table_schema,
         reference_json_schema=reference_table_schema, features_columns=info.features,
         non_features_columns=info.non_features, meta_columns=meta_columns, model_columns=model_related_cols,
         feature_importance=info.feature_importance, statistics=empty_statistics, classes=info.classes,
@@ -234,6 +240,7 @@ async def get_schema(
         Version id to run function on.
     session : AsyncSession, optional
         SQLAlchemy session.
+
     Returns
     -------
     dictionary containing:
@@ -268,6 +275,7 @@ async def run_suite_on_model_version(
     monitor_options
     session : AsyncSession, optional
         SQLAlchemy session.
+
     Returns
     -------
     HTML of the suite result.
@@ -286,14 +294,14 @@ async def run_suite_on_model_version(
 class TimeWindowSchema(BaseModel):
     """Monitor run schema."""
 
-    end_time: str = None
-    start_time: str = None
+    end_time: t.Optional[str] = None
+    start_time: t.Optional[str] = None
 
-    def start_time_dt(self) -> pdl.DateTime:
+    def start_time_dt(self) -> 'pendulum.datetime.DateTime':
         """Get start time as datetime object."""
         return pdl.datetime(1970, 1, 1) if self.start_time is None else pdl.parse(self.start_time)
 
-    def end_time_dt(self) -> pdl.DateTime:
+    def end_time_dt(self) -> 'pendulum.datetime.DateTime':
         """Get end time as datetime object."""
         return pdl.now() if self.end_time is None else pdl.parse(self.end_time)
 
@@ -301,8 +309,8 @@ class TimeWindowSchema(BaseModel):
 class TimeWindowOutputStatsSchema(BaseModel):
     """Monitor run schema."""
 
-    num_labeled_samples: int = None
-    num_samples: int = None
+    num_labeled_samples: t.Optional[int] = None
+    num_samples: t.Optional[int] = None
 
 
 @router.get(
@@ -336,8 +344,13 @@ async def get_time_window_statistics(
     sample_label = test_table.c[SAMPLE_LABEL_COL]
     sample_timestamp = test_table.c[SAMPLE_TS_COL]
 
-    query = select(func.count(sample_id), func.count(sample_id).filter(sample_label.is_not(None))). \
-        where(and_(sample_timestamp < body.end_time_dt(), sample_timestamp >= body.start_time_dt()))
+    query = select(
+        func.count(sample_id),
+        func.count(sample_id).filter(sample_label.is_not(None))
+    ).where(and_(
+        sample_timestamp < body.end_time_dt(),
+        sample_timestamp >= body.start_time_dt()
+    ))
 
     result = (await session.execute(query)).first()
     return {'num_samples': result[0], 'num_labeled_samples': result[1]}
@@ -356,6 +369,7 @@ async def get_count_samples(
         Version id to run function on.
     session : AsyncSession, optional
         SQLAlchemy session.
+
     Returns
     -------
     json schema of the model version
@@ -398,7 +412,7 @@ async def delete_model_version(
     )
 
     # NOTE:
-    # tests will hung without statement below,
+    # tests will hung without commit statement below,
     # it looks like that it happens because in test env
     # background task is called in sync manner before
     # finalizing database session context manager (generator)

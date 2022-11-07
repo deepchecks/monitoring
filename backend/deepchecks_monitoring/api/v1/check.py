@@ -15,14 +15,14 @@ from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
 from pydantic import BaseModel, Field, validator
-from sqlalchemy import and_, delete, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, MonitorOptions, get_feature_property_info,
                                                      get_metric_class_info, run_check_per_window_in_range,
                                                      run_check_window)
@@ -30,9 +30,9 @@ from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models import Check, Model
 from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.utils import MonitorCheckConf, NameIdResponse, exists_or_404, fetch_or_404, field_length
+from deepchecks_monitoring.utils import (CheckIdentifier, ExtendedAsyncSession, ModelIdentifier, MonitorCheckConf,
+                                         NameIdResponse, exists_or_404, fetch_or_404, field_length)
 
-from .model import ModelSchema
 from .router import router
 
 
@@ -90,21 +90,22 @@ class CheckResultSchema(BaseModel):
     time_labels: t.List[str]
 
 
-@router.post('/models/{model_id}/checks',
-             response_model=t.List[NameIdResponse],
-             tags=[Tags.CHECKS]
-             )
+@router.post(
+    '/models/{model_id}/checks',
+    response_model=t.List[NameIdResponse],
+    tags=[Tags.CHECKS]
+)
 async def add_checks(
-        model_id: int,
         checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]],
-        session: AsyncSession = AsyncSessionDep
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: ExtendedAsyncSession = AsyncSessionDep
 ) -> t.List[t.Dict[t.Any, t.Any]]:
     """Add a new check or checks to the model.
 
     Parameters
     ----------
-    model_id : int
-        ID of the model.
+    model_identifier : ModelIdentifier
+        ID or name of the model.
     checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]]
         Check or checks to add to model.
     session : AsyncSession, optional
@@ -115,11 +116,16 @@ async def add_checks(
     t.List[t.Dict[t.Any, t.Any]]
         List containing the names and ids for uploaded checks.
     """
-    model = await fetch_or_404(session, Model, id=model_id)
-    is_vision_model = 'vision' in ModelSchema.from_orm(model).task_type.value
-    if not isinstance(checks, t.Sequence):
-        checks = [checks]
-    existing_check_names = [x.name for x in await get_checks(model_id, session)]
+    model = t.cast(Model, await session.fetchone_or_404(
+        select(Model)
+        .where(model_identifier.as_expression)
+        .options(joinedload(Model.checks)),
+        message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
+    ))
+
+    is_vision_model = 'vision' in model.task_type.value
+    checks = [checks] if not isinstance(checks, t.Sequence) else checks
+    existing_check_names = [t.cast(str, x.name) for x in t.cast(t.List[Check], model.checks)]
 
     check_entities = []
     for check_creation_schema in checks:
@@ -128,7 +134,7 @@ async def add_checks(
         is_vision_check = str(check_creation_schema.config['module_name']).startswith('deepchecks.vision')
         if is_vision_model != is_vision_check:
             raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
-        check_object = Check(model_id=model_id, **check_creation_schema.dict(exclude_none=True))
+        check_object = Check(model_id=model.id, **check_creation_schema.dict(exclude_none=True))
         check_entities.append(check_object)
         session.add(check_object)
 
@@ -142,42 +148,61 @@ async def add_checks(
 
 @router.delete('/models/{model_id}/checks/{check_id}', tags=[Tags.CHECKS])
 async def delete_check_by_id(
-        model_id: int,
-        check_id: int,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        check_identifier: CheckIdentifier = CheckIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep
 ):
     """Delete check instance by identifier."""
-    await exists_or_404(session, Model, id=model_id)
-    await exists_or_404(session, Check, id=check_id)
-    await Check.delete(session, check_id)
+    await exists_or_404(session, Model, **model_identifier.as_kwargs)
+    await exists_or_404(session, Check, **check_identifier.as_kwargs)
+    await delete(Check).where(check_identifier.as_expression)
 
 
 @router.delete('/models/{model_id}/checks', tags=[Tags.CHECKS])
 async def delete_checks_by_name(
-        model_id: int,
-        names: t.List[str] = Query(...),
-        session: AsyncSession = AsyncSessionDep
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        names: t.List[str] = Query(..., description='Checks names'),
+        session: ExtendedAsyncSession = AsyncSessionDep
 ):
     """Delete check instances by name if they exist, otherwise returns 404."""
-    await exists_or_404(session, Model, id=model_id)
+    model = (await session.fetchone_or_404(
+        select(Model)
+        .where(model_identifier.as_expression)
+        .options(joinedload(Model.checks))
+        .limit(1),
+        message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
+    ))
+
+    model = t.cast(Model, model)
+    existing_checks = {check.name: check.id for check in model.checks}
+    checks_to_delete = []
+
     for name in names:
-        await exists_or_404(session, Check, name=name, model_id=model_id)
-    await session.execute(delete(Check).where(and_(
-        Check.model_id == model_id,
-        Check.name.in_(names))))
+        if name not in existing_checks:
+            raise NotFound(f"'Check' with next set of arguments does not exist: name={name}")
+        checks_to_delete.append(existing_checks[name])
+
+    await session.execute(
+        delete(Check)
+        .where(Check.id.in_(checks_to_delete))
+    )
 
 
-@router.get('/models/{model_id}/checks', response_model=t.List[CheckSchema], tags=[Tags.CHECKS])
+@router.get(
+    '/models/{model_id}/checks',
+    response_model=t.List[CheckSchema],
+    tags=[Tags.CHECKS]
+)
 async def get_checks(
-        model_id: int,
-        session: AsyncSession = AsyncSessionDep
-) -> dict:
+    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+    session: AsyncSession = AsyncSessionDep
+) -> t.List[CheckSchema]:
     """Return all the checks for a given model.
 
     Parameters
     ----------
-    model_id : int
-        ID of the model.
+    model_identifier : ModelIdentifier
+        ID or name of the model.
     session : AsyncSession, optional
         SQLAlchemy session.
 
@@ -186,11 +211,10 @@ async def get_checks(
     List[CheckSchema]
         All the checks for a given model.
     """
-    await exists_or_404(session, Model, id=model_id)
-    select_checks = select(Check)
-    select_checks = select_checks.where(Check.model_id == model_id)
-    results = await session.execute(select_checks)
-    return [CheckSchema.from_orm(res) for res in results.scalars().all()]
+    await exists_or_404(session, Model, **model_identifier.as_kwargs)
+    q = select(Check).join(Check.model).where(model_identifier.as_expression)
+    results = (await session.scalars(q)).all()
+    return [CheckSchema.from_orm(res) for res in results]
 
 
 @router.post('/checks/{check_id}/run/lookback', response_model=CheckResultSchema, tags=[Tags.CHECKS])

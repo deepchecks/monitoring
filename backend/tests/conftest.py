@@ -36,7 +36,6 @@ from sqlalchemy.orm import sessionmaker
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 
-from deepchecks_monitoring.api.v1.check import CheckCreationSchema, add_checks
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
@@ -63,9 +62,7 @@ def postgres():
 @pytest.fixture(scope="function")
 def settings(postgres):
     database_uri = postgres.url()
-    yield Settings(
-        database_uri=database_uri,
-    )
+    yield Settings(database_uri=database_uri)
 
 
 @pytest.fixture(scope="function")
@@ -291,68 +288,76 @@ async def classification_vision_model_version_id(classification_vision_model_id:
 
 
 @pytest_asyncio.fixture()
-async def classification_model_version_no_fi_id(classification_model_id: int, client):
-    request = {
-        "name": "v1",
-        "features": {"a": "numeric", "b": "categorical"},
-        "non_features": {"c": "numeric"},
-        "classes": ["0", "1", "2"]
-    }
-    response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
+async def classification_model_version_no_fi_id(classification_model_id: int, client: TestClient):
+    response = client.post(
+        f"/api/v1/models/{classification_model_id}/version",
+        json={
+            "name": "v1",
+            "features": {"a": "numeric", "b": "categorical"},
+            "non_features": {"c": "numeric"},
+            "classes": ["0", "1", "2"]
+        }
+    )
     return response.json()["id"]
 
 
 @pytest_asyncio.fixture()
-async def classification_model_check_id(async_session: AsyncSession, classification_model_id: int):
-    schema = CheckCreationSchema(name="check", config={
-        "class_name": "SingleDatasetPerformance",
-        "params": {},
-        "module_name": "deepchecks.tabular.checks"
-    })
-
-    result = await add_checks(classification_model_id, schema, async_session)
-    await async_session.commit()
-    return result[0]["id"]
-
-
-@pytest_asyncio.fixture()
-async def classification_model_feature_check_id(async_session: AsyncSession, classification_model_id: int):
-    schema = CheckCreationSchema(name="check", config={
-        "class_name": "CategoryMismatchTrainTest",
-        "params": {},
-        "module_name": "deepchecks.tabular.checks"
-    })
-
-    result = await add_checks(classification_model_id, schema, async_session)
-    await async_session.commit()
-    return result[0]["id"]
+async def classification_model_check_id(classification_model_id: int, client: TestClient) -> int:
+    return t.cast(int, add_check(
+        model_id=classification_model_id,
+        client=client,
+        name="check",
+        config={
+            "class_name": "SingleDatasetPerformance",
+            "params": {},
+            "module_name": "deepchecks.tabular.checks"
+        }
+    ))
 
 
 @pytest_asyncio.fixture()
-async def classification_vision_model_property_check_id(async_session: AsyncSession,
-                                                        classification_vision_model_id: int):
-    schema = CheckCreationSchema(name="check", config={
-        "class_name": "ImagePropertyDrift",
-        "params": {},
-        "module_name": "deepchecks.vision.checks"
-    })
-
-    result = await add_checks(classification_vision_model_id, schema, async_session)
-    await async_session.commit()
-    return result[0]["id"]
+async def classification_model_feature_check_id(classification_model_id: int, client: TestClient) -> int:
+    return t.cast(int, add_check(
+        model_id=classification_model_id,
+        client=client,
+        name="check",
+        config={
+            "class_name": "CategoryMismatchTrainTest",
+            "params": {},
+            "module_name": "deepchecks.tabular.checks"
+        }
+    ))
 
 
 @pytest_asyncio.fixture()
-async def regression_model_check_id(async_session: AsyncSession, regression_model_id: int):
-    schema = CheckCreationSchema(name="check", config={
-        "class_name": "TrainTestPerformance",
-        "params": {"reduce": "mean"},
-        "module_name": "deepchecks.tabular.checks"
-    })
+async def classification_vision_model_property_check_id(
+    classification_vision_model_id: int,
+    client: TestClient
+) -> int:
+    return t.cast(int, add_check(
+        model_id=classification_vision_model_id,
+        client=client,
+        name="check",
+        config={
+            "class_name": "ImagePropertyDrift",
+            "params": {},
+            "module_name": "deepchecks.vision.checks"
+        }
+    ))
 
-    result = await add_checks(regression_model_id, schema, async_session)
-    await async_session.commit()
-    return result[0]["id"]
+
+@pytest_asyncio.fixture()
+async def regression_model_check_id(regression_model_id: int, client: TestClient) -> int:
+    return t.cast(int, add_check(
+        model_id=regression_model_id,
+        client=client,
+        name="check",
+        config={
+            "class_name": "TrainTestPerformance",
+            "params": {"reduce": "mean"},
+            "module_name": "deepchecks.tabular.checks"
+        }
+    ))
 
 
 def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
@@ -393,7 +398,7 @@ def add_check(
         assert response.status_code == expected_status_code, (response.status_code, response.json())
         return response
 
-    assert response.status_code == expected_status_code, (response.status_code, response.reason)
+    assert response.status_code == expected_status_code, (response.status_code, response.reason, response.json())
 
     data = response.json()[0]
     assert isinstance(data, dict)

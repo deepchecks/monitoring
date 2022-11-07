@@ -22,6 +22,10 @@ PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
 
 class BaseDeepchecksSettings(BaseSettings):
+
+    def __init__(self, *args, **kwargs):  # pylint: disable=useless-super-delegation
+        super().__init__(*args, **kwargs)
+
     class Config:
         """Settings configuration."""
 
@@ -70,7 +74,7 @@ class DatabaseSettings(BaseDeepchecksSettings):
 class RedisSettings(BaseDeepchecksSettings):
     """Redis settings."""
 
-    redis_uri: t.Optional[RedisDsn]
+    redis_uri: t.Optional[RedisDsn] = None
 
 
 class Settings(DatabaseSettings, KafkaSettings, RedisSettings):

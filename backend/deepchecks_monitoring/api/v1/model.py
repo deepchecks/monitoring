@@ -31,7 +31,8 @@ from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import IdResponse, NameIdResponse, TimeUnit, fetch_or_404, field_length
+from deepchecks_monitoring.utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
+                                         field_length)
 
 from .router import router
 
@@ -77,9 +78,14 @@ class ModelsInfoSchema(ModelSchema):
     latest_time: t.Optional[int]
 
 
-@router.post("/models", response_model=IdResponse, tags=[Tags.MODELS], summary="Create a new model if does not exist.",
-             description="Create a new model with its name, task type, and description. Returns the ID of the model."
-                         " If the model already exists, returns the ID of the existing model.")
+@router.post(
+    "/models",
+    response_model=IdResponse,
+    tags=[Tags.MODELS],
+    summary="Create a new model if does not exist.",
+    description="Create a new model with its name, task type, and description. Returns the ID of the model. "
+                "If the model already exists, returns the ID of the existing model."
+)
 async def get_create_model(
         model_schema: ModelCreationSchema,
         session: AsyncSession = AsyncSessionDep
@@ -109,17 +115,22 @@ async def get_create_model(
     return {"id": model.id}
 
 
-@router.get("/models/data-ingestion", response_model=t.Dict[int, t.List[ModelDailyIngestion]], tags=[Tags.MODELS])
-@router.get("/models/{model_id}/data-ingestion", response_model=t.List[ModelDailyIngestion], tags=[Tags.MODELS])
+@router.get(
+    "/models/data-ingestion",
+    response_model=t.Dict[int, t.List[ModelDailyIngestion]],
+    tags=[Tags.MODELS]
+)
+@router.get(
+    "/models/{model_id}/data-ingestion",
+    response_model=t.List[ModelDailyIngestion],
+    tags=[Tags.MODELS]
+)
 async def retrieve_models_data_ingestion(
-        model_id: t.Optional[int] = None,
+        model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(is_optional=True),
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep
-) -> t.Union[
-    t.Dict[int, t.List[ModelDailyIngestion]],
-    t.List[ModelDailyIngestion]
-]:
+) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
     def is_within_dateframe(col, end_time):
         return col > text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
@@ -133,23 +144,25 @@ async def retrieve_models_data_ingestion(
     def sample_timestamp(columns):
         return getattr(columns, SAMPLE_TS_COL)
 
+    model_identifier_name = model_identifier.column_name if model_identifier else "id"
     end_time = pdl.parse(end_time) if end_time else pdl.now()
-    if model_id is not None:
+    models_query = select(Model).options(selectinload(Model.versions))
+
+    if model_identifier is not None:
+        model_identifier_name = model_identifier.column_name
         models = [
             t.cast(Model, await session.fetchone_or_404(
-                select(Model)
-                .where(Model.id == model_id)
-                .options(selectinload(Model.versions)),
-                message=f"Model with next set of arguments does not exist: id={model_id}"
+                models_query.where(model_identifier.as_expression),
+                message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
             ))
         ]
     else:
-        result = await session.execute(select(Model).options(selectinload(Model.versions)))
+        result = await session.execute(models_query)
         models = t.cast(t.List[Model], result.scalars().all())
 
     # TODO: move query creation logic into Model type definition
     tables = (
-        (model.id, version.get_monitor_table(session))
+        (getattr(model, model_identifier_name), version.get_monitor_table(session))
         for model in models
         for version in model.versions
     )
@@ -163,6 +176,7 @@ async def retrieve_models_data_ingestion(
         agg_time_unit = "hour"
     else:
         agg_time_unit = "day"
+
     union = union_all(*(
         select(
             literal(model_id).label("model_id"),
@@ -182,7 +196,8 @@ async def retrieve_models_data_ingestion(
             union.c.model_id,
             union.c.timestamp,
             func.count(union.c.sample_id).label("count"))
-        .group_by(union.c.model_id, union.c.timestamp),
+        .group_by(union.c.model_id, union.c.timestamp)
+        .order_by(union.c.model_id, union.c.timestamp, "count"),
     )).fetchall()
 
     result = defaultdict(list)
@@ -198,14 +213,14 @@ async def retrieve_models_data_ingestion(
 
 @router.get("/models/{model_id}", response_model=ModelSchema, tags=[Tags.MODELS])
 async def get_model(
-        model_id: int,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep
 ) -> ModelSchema:
     """Get a model from database based on model id.
 
     Parameters
     ----------
-    model_id : int
+    model_identifier : ModelIdentifier
         Model to return.
     session : AsyncSession, optional
         SQLAlchemy session.
@@ -215,20 +230,20 @@ async def get_model(
     ModelSchema
         Requested model.
     """
-    model = await fetch_or_404(session, Model, id=model_id)
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     return ModelSchema.from_orm(model)
 
 
 @router.get("/models/{model_id}/versions", response_model=t.List[NameIdResponse], tags=[Tags.MODELS])
 async def get_versions_per_model(
-        model_id: int,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep
 ) -> ModelSchema:
     """Create a new model.
 
     Parameters
     ----------
-    model_id : int
+    model_identifier : ModelIdentifier
         Model to return.
     session : AsyncSession, optional
         SQLAlchemy session.
@@ -239,10 +254,13 @@ async def get_versions_per_model(
         Created model.
     """
     model_versions = (await session.execute(
-        select(ModelVersion.id, ModelVersion.name).where(ModelVersion.model_id == model_id))
-                      ).all()
+        select(ModelVersion.id, ModelVersion.name)
+        .where(model_identifier.as_expression))
+    ).all()
+
     if model_versions is None:
         return []
+
     return [NameIdResponse.from_orm(model_version) for model_version in model_versions]
 
 
@@ -364,17 +382,17 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
     description="Delete model"
 )
 async def delete_model(
-    model_id: int,
     background_tasks: BackgroundTasks,
+    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
     session: AsyncSession = AsyncSessionDep,
     resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Delete model instance."""
     model = await session.fetchone_or_404(
         select(Model)
-        .where(Model.id == model_id)
+        .where(model_identifier.as_expression)
         .options(joinedload(Model.versions)),
-        message=f"Model with next set of arguments does not exist: id={model_id}"
+        message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
     )
 
     tables = []
@@ -388,7 +406,7 @@ async def delete_model(
         tables=tables
     )
 
-    await session.execute(delete(Model).where(Model.id == model_id))
+    await session.execute(delete(Model).where(model_identifier.as_expression))
 
     # NOTE:
     # tests will hung without statement below,
@@ -410,15 +428,15 @@ async def drop_tables(resources_provider: ResourcesProvider, tables: t.List[str]
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
 async def get_model_columns(
-        model_id: int,
-        session: AsyncSession = AsyncSessionDep
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep,
 ):
     """Get statistics of columns for model.
 
     Parameters
     ----------
-    model_id : int
-        Model get columns for.
+    model_identifier : ModelIdentifier
+        Identifier of a model column of which to return.
     session : AsyncSession, optional
         SQLAlchemy session.
 
@@ -427,14 +445,18 @@ async def get_model_columns(
     Dict[str, ColumnMetadata]
         Column name and metadata (type and value if available).
     """
-    options = selectinload(Model.versions)
-    model = await fetch_or_404(session, Model, id=model_id, options=options)
+    model = await fetch_or_404(
+        session,
+        Model,
+        **model_identifier.as_kwargs,
+        options=selectinload(Model.versions)
+    )
+
     # If model is new and there are no versions, return empty dict
     if len(model.versions) == 0:
         return {}
 
     latest_version = model.versions[0]
-
     column_dict: t.Dict[str, ColumnMetadata] = {}
 
     return_columns = list(latest_version.features_columns.items()) + list(latest_version.non_features_columns.items())

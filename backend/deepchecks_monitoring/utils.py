@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 # pylint: disable=ungrouped-imports,import-outside-toplevel
 """Module defining utility functions for the deepchecks_monitoring app."""
+import abc
 import enum
 import logging
 import logging.handlers
@@ -18,14 +19,16 @@ import typing as t
 
 import orjson
 import sqlalchemy as sa
+from fastapi import Depends, Path, Query
 from pydantic import BaseModel
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import ColumnOperators
 
 from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.telemetry import TelemetyLoggingHandler
-from deepchecks_monitoring.exceptions import NotFound
+from deepchecks_monitoring.exceptions import BadRequest, NotFound
 
 try:
     import uptrace
@@ -198,6 +201,16 @@ class ExtendedAsyncSession(AsyncSession):
         if row is None:
             raise NotFound(message)
         return row
+
+    async def exists_or_404(
+        self,
+        statement: t.Any,
+        message: str
+    ):
+        """Make sure the record exists, otherwise, raise "Not Found" exception."""
+        result = await self.scalar(sa.select(sa.exists(statement)))
+        if result is False:
+            raise NotFound(message)
 
 
 A = t.TypeVar("A", bound="Base")
@@ -426,3 +439,164 @@ def fetch_unused_monitoring_tables(session: Session) -> t.List[str]:
     )).all()
 
     return list(set(existing_tables).difference(active_monitoring_tables))
+
+
+class EntityIdentifierError(ValueError):
+    pass
+
+
+TEntityIdentifier = t.TypeVar("TEntityIdentifier", bound="EntityIdentifier")
+IdentifierKind = t.Union[t.Literal["id"], t.Literal["name"]]
+
+
+class EntityIdentifier(abc.ABC):
+    """Orm entities utility class.
+
+    The purpose of this class is to facilitate ORM entities
+    lookup (selection) by their unique identifier - 'id' and 'name'
+
+    Parameters
+    ==========
+    value : Union[int, str]
+        value of unique identifier
+    model : Any
+        ORM model type
+    kind : Union[Literal[id], Literal[name]] , default "id"
+        kind of unique identifier
+
+    Attributes
+    ==========
+    as_kwargs : Dict[str, Any]
+        a dictionary instance that contains identifier name->value pair
+    as_expression : ColumnOperators
+        sqlalchemy filtering expression (identifier-name == identifier-value)
+    """
+
+    path_parameter_name: t.ClassVar[str] = "identifier"
+    path_parameter_desc: t.ClassVar[str] = ""
+    as_kwargs: t.Dict[str, t.Union[int, str]]
+    as_expression: ColumnOperators
+
+    @classmethod
+    def from_request_params(
+        cls: t.Type[TEntityIdentifier],
+        value: t.Union[int, str],
+        kind: t.Union[t.Literal["id"], t.Literal["name"]] = "id",
+        additional_parameter_name: str = "identifier_kind",
+    ) -> TEntityIdentifier:
+        """Create an identity identifier.
+
+        This method exists only for use in the HTTP handler
+        context in order to re-raise 'EntityIdentifierError'
+        exception as a 'BadRequest' exception. Raising a 'BadRequest'
+        exception instance in the 'EntityIdentifier' constructor
+        directly will make this utility class unusable in other contexts,
+        therefore we need this method.
+        """
+        try:
+            return cls(value=value, kind=kind)
+        except EntityIdentifierError as e:
+            raise BadRequest(
+                f"{e.args[0]}, if you use an entity name to query "
+                "data then you need to provide an additional HTTP "
+                f"query parameter: {additional_parameter_name}=name"
+            ) from e
+
+    def __init__(
+        self,
+        value: t.Union[int, str],
+        kind: t.Union[t.Literal["id"], t.Literal["name"]] = "id",
+    ):
+        if not isinstance(value, (int, str)):
+            raise ValueError(f"Expected a integer|string value but got - {type(value)}")
+        entity = self.entity
+        if kind == "name":
+            self.value = str(value)
+            self.column = entity.name
+            self.column_name = "name"
+            self.as_kwargs = {"name": self.value}
+            self.as_expression = entity.name == self.value
+            self._repr = f"name={self.value}"
+        elif kind == "id":
+            try:
+                self.value = int(value)
+            except ValueError as e:
+                raise EntityIdentifierError("entity id value must be of an integer type") from e
+            else:
+                self.column = entity.id
+                self.column_name = "id"
+                self.as_kwargs = {"id": self.value}
+                self.as_expression = entity.id == self.value
+                self._repr = f"id={self.value}"
+
+    def __repr__(self) -> str:
+        return self._repr
+
+    @property
+    @abc.abstractmethod
+    def entity(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def resolver(
+        cls,
+        *,
+        parameter_name: t.Optional[str] = None,
+        parameter_desc: t.Optional[str] = None,
+        is_optional: bool = False,
+    ) -> t.Any:
+        """Create fastapi dependency resolver.
+
+        Creates a callable instance that will resolve an
+        EntityIdentifier instance from HTTP request data.
+        """
+        parameter_name = parameter_name or cls.path_parameter_name
+        parameter_desc = parameter_desc or cls.path_parameter_desc
+        query_dependency = Query(
+            default="id",
+            description="A flag that indicates which kind of entity identifier to use: id or name"
+        )
+        if is_optional is False:
+            def resolver_fn(
+                identifier: t.Union[str, int] = Path(
+                    alias=parameter_name,
+                    description=parameter_desc
+                ),
+                identifier_kind: IdentifierKind = query_dependency
+            ):
+                return cls.from_request_params(value=identifier, kind=identifier_kind)
+        else:
+            def resolver_fn(
+                identifier: t.Union[str, int, None] = Path(
+                    default=None,
+                    alias=parameter_name,
+                    description=parameter_desc
+                ),
+                identifier_kind: IdentifierKind = query_dependency
+            ):
+                return (
+                    cls.from_request_params(value=identifier, kind=identifier_kind)
+                    if identifier is not None
+                    else None
+                )
+        return Depends(resolver_fn)
+
+
+class ModelIdentifier(EntityIdentifier):
+    path_parameter_name = "model_id"
+    path_parameter_desc = "Model id or name"
+
+    @property
+    def entity(self):
+        from deepchecks_monitoring.models import Model
+        return Model
+
+
+class CheckIdentifier(EntityIdentifier):
+    path_parameter_name = "check_id"
+    path_parameter_desc = "Check id or name"
+
+    @property
+    def entity(self):
+        from deepchecks_monitoring.models import Check
+        return Check

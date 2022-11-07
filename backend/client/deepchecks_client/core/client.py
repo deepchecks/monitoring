@@ -142,7 +142,7 @@ class DeepchecksModelClient:
     session: requests.Session
         The deepchecks monitoring API session.
     model_id: int
-        The id of the model.
+        The id or name of the model.
     """
 
     def __init__(self, model_id: int, api: API):
