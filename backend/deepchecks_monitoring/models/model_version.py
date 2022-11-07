@@ -17,8 +17,8 @@ import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
 from pydantic.main import BaseModel
-from sqlalchemy import (ARRAY, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, event,
-                        func, select)
+from sqlalchemy import (ARRAY, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, func,
+                        select)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
@@ -58,6 +58,15 @@ class ModelVersion(Base):
     __table_args__ = (
         UniqueConstraint("model_id", "name", name="model_version_name_uniqueness"),
     )
+
+    # TODO: modify next fields to not nullable
+    # - name
+    # - monitor_json_schema
+    # - features_columns
+    # - non_features_columns
+    # - model_columns
+    # - meta_columns
+
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     start_time = Column(DateTime(timezone=True), default=pdl.datetime(3000, 1, 1))
@@ -217,6 +226,8 @@ def unify_statistics(original_statistics: dict, added_statistics: dict):
 
 # ~~~~~ Automatic triggers to delete the data tables when a model version is deleted ~~~~~~
 
+# NOTE: they cause deadlocks therefore currently we do not use them
+
 PGDataTableDropFunc = sa.DDL("""
 CREATE OR REPLACE FUNCTION drop_model_version_tables()
 RETURNS TRIGGER AS $$
@@ -232,14 +243,14 @@ CREATE OR REPLACE TRIGGER trigger_model_version_delete AFTER DELETE ON model_ver
 FOR EACH ROW EXECUTE PROCEDURE drop_model_version_tables();
 """)
 
-event.listen(
-    Base.metadata,
-    "after_create",
-    PGDataTableDropFunc.execute_if(dialect="postgresql")
-)
+# event.listen(
+#     Base.metadata,
+#     "after_create",
+#     PGDataTableDropFunc.execute_if(dialect="postgresql")
+# )
 
-event.listen(
-    Base.metadata,
-    "after_create",
-    PGDataTableDropTrigger.execute_if(dialect="postgresql")
-)
+# event.listen(
+#     Base.metadata,
+#     "after_create",
+#     PGDataTableDropTrigger.execute_if(dialect="postgresql")
+# )

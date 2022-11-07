@@ -9,15 +9,18 @@
 # ----------------------------------------------------------------------------
 """V1 API of the model version."""
 import typing as t
+from datetime import datetime
 from io import StringIO
 
 import fastapi
 import pendulum as pdl
 from fastapi import BackgroundTasks
+from fastapi import status as HttpStatus
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
-from pydantic import BaseModel, Field
-from sqlalchemy import Index, MetaData, Table, and_, func, select, text
+from pydantic import BaseModel, Field, root_validator
+from sqlalchemy import Index, MetaData, Table, and_, func, select, text, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.schema import CreateTable
@@ -27,7 +30,7 @@ from starlette.responses import HTMLResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, CacheInvalidatorDep, DataIngestionDep, KafkaAdminDep,
                                                 ResourcesProviderDep, SettingsDep)
-from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
@@ -138,6 +141,7 @@ async def get_or_create_version(
         if sorted(classes) != classes:
             raise BadRequest('Classes list must be sorted alphabetically')
 
+    # TODO: all this logic must be implemented (encapsulated) within Model type
     # Create meta columns
     meta_columns = {
         SAMPLE_ID_COL: ColumnType.TEXT,
@@ -225,6 +229,111 @@ async def get_or_create_version(
         kafka_admin.create_topics([data_topic, invalidation_topic])
 
     return {'id': model_version.id}
+
+
+class ModelVersionUpdateSchema(BaseModel):
+    """ModelVersion update schema."""
+
+    name: t.Optional[str] = None
+    feature_importance: t.Optional[t.Dict[str, float]] = None
+
+    @root_validator(pre=False, skip_on_failure=True)
+    @classmethod
+    def validate_instance(cls, values: t.Dict[str, t.Any]):
+        """Make sure that at least one field was provided."""
+        if values.get('name') is None and values.get('feature_importance') is None:
+            raise ValueError('at least one of the fields must be provided')
+        return values
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+@router.put(
+    '/model-versions/{model_version_id}',
+    tags=[Tags.MODELS],
+    description='Update model version',
+    status_code=HttpStatus.HTTP_200_OK
+)
+async def update_model_version(
+    model_version_id: int,
+    data: ModelVersionUpdateSchema,
+    session: AsyncSession = AsyncSessionDep,
+):
+    """Update model version."""
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+
+    if data.feature_importance is not None:
+        # TODO: move to ModelVersion
+        existing_features = set(model_version.features_columns.keys())
+        provided_features = set(data.feature_importance.keys())
+        unknown_features = provided_features.difference(existing_features)
+        missing_features = existing_features.difference(provided_features)
+        errors = []
+
+        if len(unknown_features) > 0:
+            errors.append(f'Unknown features: {list(unknown_features)}')
+        if len(missing_features) > 0:
+            errors.append(f'Missing features: {list(missing_features)}')
+
+        if errors:
+            msg = '. '.join(errors)
+            raise BadRequest(
+                '"feature_importance" must contain exactly same '
+                f'features as model version. {msg}.'
+            )
+
+    try:
+        await session.execute(
+            update(ModelVersion)
+            .where(ModelVersion.id == model_version_id)
+            .values(**data.dict(exclude_none=True))
+        )
+    except IntegrityError as error:
+        if is_unique_constraint_violation_error(error):
+            raise BadRequest('version with provided name already exists') from error
+        else:
+            raise
+
+
+class ModelVersionSchema(BaseModel):
+    """Model version schema."""
+
+    id: int
+    model_id: int
+    name: str
+    start_time: datetime
+    end_time: datetime
+    features_columns: t.Dict[str, t.Any]
+    non_features_columns: t.Dict[str, t.Any]
+    model_columns: t.Dict[str, t.Any]
+    meta_columns: t.Dict[str, t.Any]
+    feature_importance: t.Optional[t.Dict[str, t.Any]]
+    statistics: t.Optional[t.Dict[str, t.Any]]
+    classes: t.Optional[t.List[str]]
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+@router.get(
+    '/model-versions/{model_version_id}',
+    tags=[Tags.MODELS],
+    description='Retrieve model version.',
+    response_model=ModelVersionSchema,
+    status_code=HttpStatus.HTTP_200_OK
+)
+async def retrieve_model_version(
+    model_version_id: int,
+    session: AsyncSession = AsyncSessionDep
+) -> ModelVersionSchema:
+    """Retrieve model version record."""
+    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    return ModelVersionSchema.from_orm(model_version)
 
 
 @router.get('/model-versions/{model_version_id}/schema', tags=[Tags.MODELS])

@@ -9,10 +9,13 @@
 # ----------------------------------------------------------------------------
 #
 """Defines the entrance points for the client."""
+import io
+import pathlib
 import typing as t
 import warnings
 
 import numpy as np
+import pandas as pd
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.tabular import Dataset
 from deepchecks_client.core.api import API
@@ -21,6 +24,7 @@ from deepchecks_client.core.utils import TaskType, pretty_print
 from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
+from deepchecks_client.tabular.utils import DataSchema
 from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
 
 try:
@@ -242,16 +246,15 @@ class DeepchecksClient:
         else:
             return model.version(version_name)
 
-    # TODO: why this method is here and not in tabular.DeepchecksModelClient?
     def create_tabular_model_version(
         self,
         model_name: str,
-        schema_file,
+        schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema],
         version_name: str = 'v1',
         reference_dataset: t.Optional[Dataset] = None,
         reference_predictions: t.Optional[np.ndarray] = None,
         reference_probas: t.Optional[np.ndarray] = None,
-        feature_importance: t.Optional[t.Dict[str, float]] = None,
+        feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]', None] = None,
         task_type: t.Union[str, TaskType, None] = None,
         description: str = '',
         model_classes: t.Optional[t.Sequence[str]] = None
@@ -263,8 +266,16 @@ class DeepchecksClient:
         ----------
         model_name: str
             A name for the model.
-        schema_file:
-            String path or file like object containing the data schema.
+        schema: Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, str]]]
+            File path, file like object, or a dictionary instance that
+            represents the data schema.
+            This method expects that provided file will be in the next yaml format:
+                features:
+                    foo: <feature-type>
+                    bar: <feature-type>
+                non_features:
+                    foo: <feature-type>
+                    bar: <feature-type>
         version_name: str, default: 'v1'
             A name for the version.
         reference_dataset: Optional[Dataset], default: None
@@ -273,8 +284,8 @@ class DeepchecksClient:
             The model predictions for the reference data.
         reference_probas: np.ndarray, default: None
             The model predicted class probabilities for the reference data, relevant only for classification tasks.
-        feature_importance: Optional[Dict[str, float]], default: None
-            a dictionary of feature names and their feature importance value.
+        feature_importance: Union[Dict[str, float], pandas.Series[float], None], default: None
+            a dictionary or pandas series of feature names and their feature importance value.
         task_type: Optional[str], default: None
             The task type of the model, required for creation of a new model. Can be inferred from
             dataset.label_type if set. Possible values are regression, multiclass, binary
@@ -299,8 +310,9 @@ class DeepchecksClient:
         except ValueError:
             pass
 
-        schema = read_schema(schema_file)
+        schema = read_schema(schema)
         features_dict, non_features_dict = schema['features'], schema['non_features']
+
         if set(features_dict.keys()) != set(reference_dataset.features):
             raise DeepchecksValueError(
                 f'Features found in reference dataset ({reference_dataset.features}) do not '

@@ -68,7 +68,7 @@ class ColumnType(enum.Enum):
 
     @classmethod
     def values(cls):
-        return [e.value for e in ColumnType]
+        return [it.value for it in cls]
 
 
 class DeepchecksColumns(enum.Enum):

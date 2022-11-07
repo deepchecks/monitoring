@@ -66,6 +66,19 @@ class API:
         else:
             return self.session.get('say-hello')
 
+    def fetch_model_version(
+        self,
+        model_version_id: int,
+        raise_on_status: bool = True,
+    ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
+        if raise_on_status:
+            return maybe_raise(
+                self.session.get(f'model-versions/{model_version_id}'),
+                msg=f'Failed to obtain ModelVersion(id:{model_version_id}).\n{{error}}'
+            ).json()
+        else:
+            return self.session.get(f'model-versions/{model_version_id}')
+
     def fetch_model_version_schema(
         self,
         model_version_id: int,
@@ -73,8 +86,8 @@ class API:
     ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
         """Fetch model version schema."""
         if raise_on_status:
-            return maybe_raise(self.session.get(
-                f'model-versions/{model_version_id}/schema'),
+            return maybe_raise(
+                self.session.get(f'model-versions/{model_version_id}/schema'),
                 msg=f'Failed to obtain ModelVersion(id:{model_version_id}) schema.\n{{error}}'
             ).json()
         else:
@@ -254,6 +267,21 @@ class API:
             ).json()
         else:
             return self.session.post(f'models/{model_id}/version', json=model_version)
+
+    def update_model_version(
+        self,
+        model_version_id: int,
+        data: t.Dict[str, t.Any],
+        raise_on_status: bool = True
+    ) -> t.Optional[requests.Response]:
+        """Update model version."""
+        if raise_on_status:
+            maybe_raise(
+                self.session.put(f'model-versions/{model_version_id}', json=data),
+                msg='Failed to update model version.\n{error}'
+            )
+        else:
+            return self.session.put(f'model-versions/{model_version_id}', json=data)
 
     def create_checks(
         self,

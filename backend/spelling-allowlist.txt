@@ -41,3 +41,5 @@ reimport
 bbox
 dtype
 probas
+PGDataTableDropTrigger
+PGDataTableDropFunc

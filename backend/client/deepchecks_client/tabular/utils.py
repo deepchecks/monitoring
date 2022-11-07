@@ -10,6 +10,8 @@
 #
 """Module containing deepchecks monitoring client."""
 import io
+import pathlib
+import typing as t
 import warnings
 
 import pandas as pd
@@ -44,16 +46,10 @@ def _get_series_column_type(series: pd.Series):
     return None
 
 
-def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
-    """Automatically infer schema and saves it to yaml.
+DataSchema = t.Dict[str, t.Dict[str, str]]  # TODO: rename
 
-    Parameters
-    ----------
-    dataset: deepchecks.tabular.Dataset
-        the dataset to infer its schema
-    schema_output_file: , default: 'schema.yaml'
-        file like object or path in which the generated schema will be saved into
-    """
+
+def describe_dataset(dataset: Dataset) -> DataSchema:
     non_features = {}
     features = {}
     for column in dataset.data.columns:
@@ -75,8 +71,22 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
                     features[column] = ColumnType.TEXT.value
         else:
             non_features[column] = _get_series_column_type(col_series)
+    return {'features': features, 'non_features': non_features}
+
+
+def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
+    """Automatically infer schema and saves it to yaml.
+
+    Parameters
+    ----------
+    dataset: deepchecks.tabular.Dataset
+        the dataset to infer its schema
+    schema_output_file: , default: 'schema.yaml'
+        file like object or path in which the generated schema will be saved into
+    """
+    schema = describe_dataset(dataset)
     yaml_schema = io.StringIO()
-    yaml.dump({'features': features, 'non_features': non_features}, yaml_schema)
+    yaml.dump(schema, yaml_schema)
     yaml_schema_val = yaml_schema.getvalue()
     yaml_schema.close()
 
@@ -101,35 +111,60 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     pretty_print(f'Schema was successfully generated and saved to {schema_output_file}.')
 
 
-def read_schema(schema_file):
-    """Convert schema file created by `create_schema` to features and non_features dict.
+def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -> DataSchema:
+    """Read and validate model schema.
 
     Parameters
     ----------
-    schema_file
-        file like object or path
+    schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]]
+        path to a schema file, file like object with schema,
+        or a dictionary representing a schema
 
     Returns
     -------
-    dict
-        dictionary in format {'features': <features>, 'non_features': <non_features>}
+    Dict[str, Dict[str, Any]]
+        dictionary in format
+        {
+            "features": {"<feature-name>": "<column-type>"},
+            "non_features": {"<feature-name>": "<column-type>"}
+        }
     """
-    if isinstance(schema_file, str):
-        with open(schema_file, 'r', encoding='utf-8') as f:
-            schema = yaml.safe_load(f.read())
-    elif isinstance(schema_file, io.IOBase):
-        schema_file.seek(0)
-        schema = yaml.safe_load(schema_file)
-    else:
-        raise TypeError(f'Unsupported type of "schema_file" parameter - {type(schema_file)}')
+    if isinstance(schema, str):
+        schema = pathlib.Path(schema)
 
-    if not isinstance(schema, dict) or list(schema.keys()) != ['features', 'non_features']:
+    if isinstance(schema, pathlib.Path):
+        if not schema.exists():
+            raise ValueError(f'Provided schema file does not exist - {schema}')
+        if not schema.is_file():
+            raise ValueError(f'Provided schema is not a file - {schema}')
+        with schema.open('r', encoding='utf-8') as f:
+            schema = t.cast(DataSchema, yaml.safe_load(f.read()))
+    elif isinstance(schema, io.TextIOBase):
+        schema.seek(0)
+        schema = t.cast(DataSchema, yaml.safe_load(schema))
+    elif isinstance(schema, dict):
+        pass  # validate its correctness below
+    else:
+        raise TypeError(f'Unsupported type of "schema" parameter - {type(schema)}')
+
+    if set(schema.keys()) != {'features', 'non_features'}:
         raise ValueError('Wrong schema format. Schema must contain 2 dictionaries for features and non_features.')
+
+    allowed_column_types = set(ColumnType.values())
+    features = schema['features']
+    non_features = schema['non_features']
+
+    if not isinstance(features, dict):
+        raise ValueError('Wrong schema format, "features" key expected to be a dictionary')
+    if not isinstance(non_features, dict):
+        raise ValueError('Wrong schema format, "non_features" key expected to be a dictionary')
+
     for key, val in schema['features'].items():
-        if val not in ColumnType.values():
+        if val not in allowed_column_types:
             raise TypeError(f'Unsupported column type {val} for feature {key}')
+
     for key, val in schema['non_features'].items():
-        if val not in ColumnType.values():
+        if val not in allowed_column_types:
             raise TypeError(f'Unsupported column type {val} for non feature {key}')
 
     return schema

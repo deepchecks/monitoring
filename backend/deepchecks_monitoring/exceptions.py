@@ -11,9 +11,19 @@
 import abc
 import typing as t
 
+from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
-__all__ = ['BaseHTTPException', 'BadRequest', 'NotFound', 'InternalError', 'ContentLengthRequired', 'RequestTooLarge']
+__all__ = [
+    'BaseHTTPException',
+    'BadRequest',
+    'NotFound',
+    'InternalError',
+    'ContentLengthRequired',
+    'RequestTooLarge',
+    'is_unique_constraint_violation_error'
+]
 
 
 class BaseHTTPException(abc.ABC, HTTPException):
@@ -58,3 +68,10 @@ class RequestTooLarge(BaseHTTPException):
     """Too Large Request exception."""
 
     status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+
+
+def is_unique_constraint_violation_error(error: IntegrityError) -> bool:
+    """Verify whether this integrity error was caused by a unique constraint violation."""
+    cause = getattr(error, 'orig', None)
+    sqlstate = getattr(cause, 'sqlstate', None)
+    return isinstance(cause, UniqueViolationError) or sqlstate == UniqueViolationError.sqlstate

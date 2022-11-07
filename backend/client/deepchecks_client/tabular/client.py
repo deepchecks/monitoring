@@ -37,6 +37,46 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         The id of the model version.
     """
 
+    def set_feature_importance(
+        self,
+        feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]']
+    ):
+        """Set model version feature importance.
+
+        Parameters
+        ==========
+        feature_importance : Union[Dict[str, float], pandas.Series[float]]
+            A dictionary or pandas series of feature names and their feature importance values.
+            Overrides existing feature importance, note that this may change value of certain checks.
+        """
+        model_version = self.api.fetch_model_version(self.model_version_id)
+        model_version = t.cast(t.Dict[str, t.Any], model_version)
+
+        if not model_version.get('feature_importance'):
+            warnings.warn('Model version already has feature importance.')
+
+        feature_importance = (
+            dict(feature_importance)
+            if isinstance(feature_importance, pd.Series)
+            else feature_importance
+        )
+
+        if not all(isinstance(it, float) for it in feature_importance.values()):
+            raise ValueError('feature_importance must contain only values of type float')
+
+        self.api.update_model_version(
+            model_version_id=self.model_version_id,
+            data={'feature_importance': feature_importance}
+        )
+
+        model_version_name = model_version.get('name')
+
+        pretty_print(
+            f'Feature importance of "{model_version_name}" model version was updated. '
+            'Please, note that feature importance modification may change value of '
+            'certain checks.'
+        )
+
     def log_batch(
             self,
             data: pd.DataFrame,
@@ -387,7 +427,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             name: str,
             features: t.Optional[t.Dict[str, str]] = None,
             non_features: t.Optional[t.Dict[str, str]] = None,
-            feature_importance: t.Optional[t.Dict[str, float]] = None,
+            feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]', None] = None,
             model_classes: t.Optional[t.Sequence[str]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version.
@@ -400,8 +440,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             A dictionary of feature names and values from ColumnType enum. Required for creation of a new version.
         non_features: Optional[Dict[str, str]], default: None
             A dictionary of non feature names and values from ColumnType enum. Required for creation of a new version.
-        feature_importance: Optional[Dict[str, float]], default: None
-            A dictionary of feature names and their feature importance value.
+        feature_importance: Union[Dict[str, float], pandas.Series[float]], default: None
+            A dictionary or pandas series of feature names and their feature importance value.
         model_classes: Optional[Sequence[str]], default: None
             List of classes used by the model. Must define classes in order to send probabilities.
 
@@ -430,13 +470,17 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     raise ValueError(f'value of features must be one of {ColumnType.values()} but got {value}')
 
             if feature_importance is not None:
+                if isinstance(feature_importance, pd.Series):
+                    feature_importance = dict(feature_importance)
                 if not isinstance(feature_importance, dict):
                     raise ValueError('feature_importance must be a dict')
                 if any((not isinstance(v, float) for v in feature_importance.values())):
                     raise ValueError('feature_importance must contain only values of type float')
             else:
-                warnings.warn('It is recommended to provide feature importance for more insightful results.\n'
-                              'Accurate feature importance can be calculated via deepchecks.tabular.feature_importance')
+                warnings.warn(
+                    'It is recommended to provide feature importance for more insightful results.\n'
+                    'Accurate feature importance can be calculated via "deepchecks.tabular.feature_importance"'
+                )
 
             if non_features is not None:
                 if not isinstance(non_features, dict):
