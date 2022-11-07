@@ -17,6 +17,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pendulum as pdl
+from deepchecks.tabular.utils.task_type import TaskType as TabularTaskType
+from deepchecks.vision.task_type import TaskType as VisionTaskType
 from jsonschema import validators
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
@@ -27,9 +29,6 @@ if t.TYPE_CHECKING:
 
 
 __all__ = ['ColumnType', 'TaskType', 'DeepchecksColumns']
-
-
-T = t.TypeVar('T')
 
 
 class TaskType(enum.Enum):
@@ -52,6 +51,26 @@ class TaskType(enum.Enum):
     @classmethod
     def tabular_types(cls):
         return {cls.REGRESSION, cls.MULTICLASS, cls.BINARY}
+
+    @classmethod
+    def convert(
+        cls,
+        task_type: t.Union[str, TabularTaskType, VisionTaskType, 'TaskType']
+    ) -> 'TaskType':
+        if isinstance(task_type, cls):
+            return task_type
+        if isinstance(task_type, str):
+            return cls(task_type)
+        elif isinstance(task_type, TabularTaskType):
+            return cls(task_type.value)
+        elif isinstance(task_type, VisionTaskType):
+            if task_type in {VisionTaskType.SEMANTIC_SEGMENTATION, VisionTaskType.OTHER}:
+                raise ValueError(f'Not supported vision task type - {task_type}')
+            if task_type is VisionTaskType.CLASSIFICATION:
+                return cls.VISION_CLASSIFICATION
+            if task_type is VisionTaskType.OBJECT_DETECTION:
+                return cls.VISION_DETECTION
+        raise ValueError(f'Unknown task type - {task_type}')
 
 
 class ColumnType(enum.Enum):

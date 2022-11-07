@@ -16,8 +16,10 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import torch
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.tabular import Dataset
+from deepchecks.vision import VisionData
 from deepchecks_client.core.api import API
 from deepchecks_client.core.client import DeepchecksModelClient, DeepchecksModelVersionClient
 from deepchecks_client.core.utils import TaskType, pretty_print
@@ -246,6 +248,81 @@ class DeepchecksClient:
         else:
             return model.version(version_name)
 
+    def create_vision_model_version(
+        self,
+        *,
+        model_name: str,
+        reference_dataset: VisionData,
+        version_name: str = 'v1',
+        description: str = '',
+        reference_predictions: t.Optional[t.Dict[int, torch.Tensor]] = None,
+        task_type: t.Union[str, TaskType, None] = None,
+        image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
+        samples_per_request: int = 5000
+    ):
+        """
+        Create a vision model version and upload the reference data if provided.
+
+        Parameters
+        ----------
+        model_name: str
+            A name for the model.
+        version_name: str, default: 'v1'
+            A name for the version.
+        description: str, default: ''
+            A short description of the model.
+        task_type: Union[str, TaskType, None], default: None
+            The task type of the model, required for creation of a new model.
+            Can be inferred from 'reference_dataset.task_type' if set.
+            Possible string values: 'vision_classification', 'vision_detection'
+        reference_dataset: Optional[VisionData], default: None
+            The reference dataset object.
+        reference_predictions: Optional[Dict[int, torch.Tensor]], default: None
+            The model predictions for the reference data.
+        image_properties : List[Dict[str, Any]]
+            The image properties to use for the reference.
+            Should be in format:
+                [{'name': <str>, 'method': <callable>, 'output_type': <'continuous'/'discrete'/'class_id'>}]
+            See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
+        samples_per_request: int , default 5000
+            data to the server is sent by batches,
+            this parameter controls batch size
+
+        Returns
+        -------
+        deepchecks_client.vision.client.DeepchecksModelVersionClient
+        """
+        try:
+            self.get_model_version(model_name=model_name, version_name=version_name)
+            raise DeepchecksValueError(
+                f'Model {model_name} already has a version named {version_name}. '
+                'Use get_model_version to retrieve it or create a new version '
+                'with a different name.'
+            )
+        except ValueError:
+            pass
+
+        if task_type is not None:
+            task_type = TaskType.convert(task_type)
+        else:
+            task_type = TaskType.convert(reference_dataset.task_type)
+            warnings.warn(
+                f'Task type was inferred to be {task_type.value} based on reference dataset provided. '
+                'It is recommended to provide it directly via the task_type argument. '
+                'Allowed values for task_type argument are "vision_classification" and "vision_detection"'
+            )
+
+        model_client = self.vision_model(model_name, task_type, description)
+        version_client = model_client.version(version_name, reference_dataset, image_properties)
+
+        version_client.upload_reference(
+            vision_data=reference_dataset,
+            predictions=reference_predictions,
+            samples_per_request=samples_per_request
+        )
+
+        return version_client
+
     def create_tabular_model_version(
         self,
         model_name: str,
@@ -297,7 +374,7 @@ class DeepchecksClient:
 
         Returns
         -------
-        tabular.client.DeepchecksModelVersionClient
+        deepchecks_client.tabular.client.DeepchecksModelVersionClient
             Return the created model version client.
         """
         try:
@@ -319,10 +396,10 @@ class DeepchecksClient:
                 f'match feature schema ({features_dict.keys()}).'
             )
 
-        task_type = TaskType(task_type) if task_type is not None else None
+        task_type = TaskType.convert(task_type) if task_type is not None else None
 
         if task_type is None and reference_dataset.label_type is not None:
-            task_type = TaskType(reference_dataset.label_type)
+            task_type = TaskType.convert(reference_dataset.label_type)
             warnings.warn(
                 f'Task type was inferred to be {task_type.value} based on reference dataset provided. '
                 f'It is recommended to provide it directly via the task_type argument.'
@@ -370,7 +447,6 @@ class DeepchecksClient:
                 prediction_probas=reference_probas,
                 predictions=reference_predictions
             )
-            pretty_print('Reference data uploaded.')
 
         return version_client
 

@@ -293,6 +293,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             validator.validate(item)
 
         self._upload_reference(data, samples_per_request)
+        pretty_print('Reference data uploaded.')
 
     def update_batch(
             self,

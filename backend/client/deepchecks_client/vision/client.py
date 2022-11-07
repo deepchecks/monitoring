@@ -27,7 +27,7 @@ from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.api import API
-from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp
+from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp, pretty_print
 from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
                                             calc_bbox_properties, properties_schema)
 
@@ -279,6 +279,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             data=data,
             samples_per_request=samples_per_request
         )
+        pretty_print('Reference data uploaded.')
 
     def update_sample(
         self,
