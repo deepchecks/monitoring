@@ -9,7 +9,8 @@ import {
   useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
   useGetCheckInfoApiV1ChecksCheckIdInfoGet,
   useGetChecksApiV1ModelsModelIdChecksGet,
-  useGetModelColumnsApiV1ModelsModelIdColumnsGet
+  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
+  getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet
 } from 'api/generated';
 
 import useGlobalState from 'context';
@@ -17,7 +18,7 @@ import useModels from 'hooks/useModels';
 import useMonitorsData from '../../../hooks/useMonitorsData';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 
-import { Box, MenuItem, SelectChangeEvent, TextField } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Modal, SelectChangeEvent, TextField, Typography } from '@mui/material';
 
 import { CheckInfo } from '../CheckInfo';
 import { Subcategory } from '../Subcategory';
@@ -45,6 +46,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const [ColumnComponent, setColumnComponent] = useState<ReactNode>(null);
   const [selectedModelId, setSelectedModelId] = useState(Number);
   const [selectedCheckId, setSelectedCheckId] = useState(Number);
+  const [activeAlertsModalOpen, setActiveAlertsModalOpen] = useState(false);
 
   const timer = useRef<WindowTimeout>();
 
@@ -71,9 +73,34 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   const { values, handleChange, handleBlur, getFieldProps, setFieldValue, ...formik } = useFormik({
     initialValues: formikInitValues(monitor),
     onSubmit: async values => {
-      let operator;
-      let value;
+      
+      if (monitor) {
+        // Check if this monitor has active alerts
+        let hasActiveAlerts = false;
+        for (const alertRule of monitor.alert_rules) {
+          const alerts = await getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule.id)
+          const nonResolved = alerts.filter(a => a.resolved === false);
+          if (nonResolved && nonResolved.length > 0) {
+            hasActiveAlerts = true;
+            setActiveAlertsModalOpen(true);
+            break;
+          }
+        }
+        if (hasActiveAlerts ) {
+          return
+        }
+      } 
+      
+      await saveMonitor();
 
+    }
+  });
+
+  const saveMonitor = async () => {
+    let operator;
+    let value;
+
+    if (monitor) {
       const column = columns[values.column];
 
       if (column) {
@@ -88,24 +115,32 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         }
       }
 
-      if (monitor) {
-        const monitorSchema = {
-          monitorId: monitor.id,
-          data: monitorSchemaData(values, monitor, globalState, operator, value)
-        };
+      const monitorSchema = {
+        monitorId: monitor.id,
+        data: monitorSchemaData(values, monitor, globalState, operator, value)
+      };
 
-        await updateMonitor(monitorSchema);
-      } else {
-        const monitorSchema: MonitorCreationSchema = monitorSchemaData(values, monitor, globalState, operator, value);
-
-        await createMonitor({ checkId: parseInt(values.check), data: monitorSchema });
-      }
-
-      refreshMonitors(monitor);
-      formik.resetForm();
-      onClose();
+      await updateMonitor(monitorSchema);
     }
-  });
+    else {
+      const monitorSchema: MonitorCreationSchema = monitorSchemaData(values, monitor, globalState, operator, value);
+
+      await createMonitor({ checkId: parseInt(values.check), data: monitorSchema });
+    }
+
+    refreshMonitors(monitor);
+    formik.resetForm();
+    onClose();
+  };
+
+  const handleActiveAlertResolve = async () => {
+    
+    if (monitor) {
+      await saveMonitor();
+    }
+
+    setActiveAlertsModalOpen(false);
+  };
 
   const updateGraph = useCallback(
     (operator?: OperatorsEnum | undefined, value: string | number = '') => {
@@ -248,8 +283,8 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
               handleInputChange={handleInputChange}
               name="numericValue"
               value={+values.numericValue || 0}
-              min={stats.min}
-              max={stats.max}
+              min={+(stats.min - 0.01).toFixed(2)}
+              max={+(stats.max + 0.01).toFixed(2)}
               valueLabelDisplay="auto"
             />
           </Box>
@@ -490,6 +525,24 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
           </StyledButton>
         </StyledButtonWrapper>
       </StyledStackContainer>
+
+      <Dialog
+        open={activeAlertsModalOpen}
+      >
+        <DialogTitle>Confirmation</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            This monitor has active alerts connected to it. In order to edit the monitor, all alerts must be resolved first. 
+            Are you sure you want to edit this monitor and resolve all alerts connected to it?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+        <Button autoFocus onClick={() => setActiveAlertsModalOpen(false)}>
+          Cancel
+        </Button>
+        <Button onClick={handleActiveAlertResolve}>OK</Button>
+        </DialogActions>
+      </Dialog>
     </form>
   );
 }

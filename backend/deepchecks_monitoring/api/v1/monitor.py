@@ -13,8 +13,9 @@ import typing as t
 import pendulum as pdl
 from fastapi import Request, Response, status
 from pydantic import BaseModel, Field, validator
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
@@ -23,7 +24,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDe
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
-from deepchecks_monitoring.models import Check
+from deepchecks_monitoring.models import Alert, AlertRule, Check
 from deepchecks_monitoring.models.monitor import Monitor
 from deepchecks_monitoring.utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
                                          fetch_or_404, field_length)
@@ -129,7 +130,8 @@ async def update_monitor(
     cache_funcs: CacheFunctions = CacheFunctionsDep
 ):
     """Update monitor by id."""
-    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+    monitor = await fetch_or_404(session, Monitor, id=monitor_id,
+                                 options=selectinload(Monitor.alert_rules).load_only(AlertRule.id))
     update_dict = body.dict(exclude_none=True)
     # if frequency is updated we should update latest_schedule accordingly
     if body.frequency is not None and monitor.latest_schedule is not None:
@@ -138,6 +140,12 @@ async def update_monitor(
             get_time_ranges_for_monitor(frequency,
                                         frequency,
                                         pdl.instance(monitor.latest_schedule + pdl.duration(seconds=frequency)))
+
+    # Resolving all alerts which are connected to this monitor
+    alert_rule_ids = [x.id for x in monitor.alert_rules]
+    await session.execute(update(Alert).where(Alert.alert_rule_id.in_(alert_rule_ids))
+                          .values({Alert.resolved: True}))
+
     await Monitor.update(session, monitor_id, update_dict)
     cache_key_base = cache_funcs.get_key_base_by_request(request)
     cache_funcs.clear_monitor(cache_key_base, monitor_id)

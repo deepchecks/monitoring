@@ -106,7 +106,7 @@ export const Minimap = React.forwardRef(function MinimapComponent(
             },
             scales: {
               x: { display: false },
-              y: { display: false }
+              y: { display: false, min: options?.scales?.y?.min, max: options?.scales?.y?.max }
             },
             maintainAspectRatio: false
           }}
