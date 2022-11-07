@@ -17,17 +17,17 @@ import warnings
 import pandas as pd
 import yaml
 from deepchecks.tabular import Dataset
+from deepchecks.tabular.utils.feature_inference import is_categorical
 from deepchecks_client.core.utils import ColumnType, pretty_print
-from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype,
-                                       is_string_dtype)
+from pandas.core.dtypes.common import is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype
 
 __all__ = ['create_schema', 'read_schema']
 
 
 def _get_series_column_type(series: pd.Series):
     if series.dtype == 'object':
-        # object might still be only floats, so we rest the dtype
-        series = pd.Series(series.to_list())
+        # object might still be only of one type, so we re-infer the dtype
+        series = pd.Series(series.to_list(), name=series.name)
     if is_bool_dtype(series):
         return ColumnType.BOOLEAN.value
     if is_integer_dtype(series):
@@ -36,13 +36,11 @@ def _get_series_column_type(series: pd.Series):
         return ColumnType.NUMERIC.value
     if is_categorical_dtype(series):
         return ColumnType.CATEGORICAL.value
-    if is_string_dtype(series) and series.dtype != 'object':
+    if series.apply(type).eq(str).all():
+        if is_categorical(series):
+            return ColumnType.CATEGORICAL.value
         return ColumnType.TEXT.value
-    warnings.warn(
-        f'Received unsupported dtype: {series.dtype}. '
-        'Supported dtypes for auto infer are numerical, '
-        'integer, boolean, string and categorical.'
-    )
+    warnings.warn(f'Column {series.name} is of unsupported dtype - {series.dtype}.')
     return None
 
 
@@ -71,6 +69,12 @@ def describe_dataset(dataset: Dataset) -> DataSchema:
                     features[column] = ColumnType.TEXT.value
         else:
             non_features[column] = _get_series_column_type(col_series)
+    # if any columns failed to auto infer print this warnings
+    # moved to here to not annoy the user so much
+    if pd.Series(features.values()).hasnans or pd.Series(non_features.values()).hasnans:
+        warnings.warn('Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.\n'
+                      'You can set the type manually in the schema file/dict.\n'
+                      'DateTime format is supported using iso format only.')
     return {'features': features, 'non_features': non_features}
 
 
