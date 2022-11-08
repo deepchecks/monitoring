@@ -118,18 +118,49 @@ async def get_create_model(
 @router.get(
     "/models/data-ingestion",
     response_model=t.Dict[int, t.List[ModelDailyIngestion]],
-    tags=[Tags.MODELS]
+    tags=[Tags.MODELS],
+    description="Retrieve all models data ingestion statistics."
 )
+async def retrieve_all_models_data_ingestion(
+    time_filter: int = TimeUnit.HOUR * 24,
+    end_time: t.Optional[str] = None,
+    session: AsyncSession = AsyncSessionDep
+) -> t.Dict[int, t.List[ModelDailyIngestion]]:
+    """Retrieve all models data ingestion statistics."""
+    return await _retrieve_models_data_ingestion(
+        time_filter=time_filter,
+        end_time=end_time,
+        session=session,
+    )
+
+
 @router.get(
     "/models/{model_id}/data-ingestion",
     response_model=t.List[ModelDailyIngestion],
-    tags=[Tags.MODELS]
+    tags=[Tags.MODELS],
+    description="Retrieve model data ingestion statistics."
 )
 async def retrieve_models_data_ingestion(
-        model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(is_optional=True),
-        time_filter: int = TimeUnit.HOUR * 24,
-        end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+    model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(),
+    time_filter: int = TimeUnit.HOUR * 24,
+    end_time: t.Optional[str] = None,
+    session: AsyncSession = AsyncSessionDep
+) -> t.Dict[int, t.List[ModelDailyIngestion]]:
+    """Retrieve model data ingestion status."""
+    return await _retrieve_models_data_ingestion(
+        model_identifier=model_identifier,
+        time_filter=time_filter,
+        end_time=end_time,
+        session=session,
+    )
+
+
+async def _retrieve_models_data_ingestion(
+    *,
+    model_identifier: t.Optional[ModelIdentifier] = None,
+    time_filter: int = TimeUnit.HOUR * 24,
+    end_time: t.Optional[str] = None,
+    session: AsyncSession = AsyncSessionDep
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
     def is_within_dateframe(col, end_time):
@@ -234,11 +265,15 @@ async def get_model(
     return ModelSchema.from_orm(model)
 
 
-@router.get("/models/{model_id}/versions", response_model=t.List[NameIdResponse], tags=[Tags.MODELS])
+@router.get(
+    "/models/{model_id}/versions",
+    response_model=t.List[NameIdResponse],
+    tags=[Tags.MODELS]
+)
 async def get_versions_per_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep
-) -> ModelSchema:
+):
     """Create a new model.
 
     Parameters
@@ -253,15 +288,16 @@ async def get_versions_per_model(
     NameIdResponse
         Created model.
     """
-    model_versions = (await session.execute(
-        select(ModelVersion.id, ModelVersion.name)
-        .where(model_identifier.as_expression))
-    ).all()
-
-    if model_versions is None:
-        return []
-
-    return [NameIdResponse.from_orm(model_version) for model_version in model_versions]
+    model = await session.fetchone_or_404(
+        select(Model)
+        .where(model_identifier.as_expression)
+        .options(joinedload(Model.versions)),
+        message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
+    )
+    return [
+        NameIdResponse.from_orm(model_version)
+        for model_version in model.versions
+    ]
 
 
 @router.get("/models", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])

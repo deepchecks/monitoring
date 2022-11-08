@@ -446,7 +446,13 @@ class EntityIdentifierError(ValueError):
 
 
 TEntityIdentifier = t.TypeVar("TEntityIdentifier", bound="EntityIdentifier")
-IdentifierKind = t.Union[t.Literal["id"], t.Literal["name"]]
+
+
+class IdentifierKind(enum.Enum):
+    """Identifier kind."""
+
+    ID = "id"
+    NAME = "name"
 
 
 class EntityIdentifier(abc.ABC):
@@ -481,7 +487,7 @@ class EntityIdentifier(abc.ABC):
     def from_request_params(
         cls: t.Type[TEntityIdentifier],
         value: t.Union[int, str],
-        kind: t.Union[t.Literal["id"], t.Literal["name"]] = "id",
+        kind: IdentifierKind = IdentifierKind.ID,
         additional_parameter_name: str = "identifier_kind",
     ) -> TEntityIdentifier:
         """Create an identity identifier.
@@ -505,19 +511,19 @@ class EntityIdentifier(abc.ABC):
     def __init__(
         self,
         value: t.Union[int, str],
-        kind: t.Union[t.Literal["id"], t.Literal["name"]] = "id",
+        kind: IdentifierKind = IdentifierKind.ID,
     ):
         if not isinstance(value, (int, str)):
             raise ValueError(f"Expected a integer|string value but got - {type(value)}")
         entity = self.entity
-        if kind == "name":
+        if kind == IdentifierKind.NAME:
             self.value = str(value)
             self.column = entity.name
             self.column_name = "name"
             self.as_kwargs = {"name": self.value}
             self.as_expression = entity.name == self.value
             self._repr = f"name={self.value}"
-        elif kind == "id":
+        elif kind == IdentifierKind.ID:
             try:
                 self.value = int(value)
             except ValueError as e:
@@ -543,7 +549,6 @@ class EntityIdentifier(abc.ABC):
         *,
         parameter_name: t.Optional[str] = None,
         parameter_desc: t.Optional[str] = None,
-        is_optional: bool = False,
     ) -> t.Any:
         """Create fastapi dependency resolver.
 
@@ -552,33 +557,19 @@ class EntityIdentifier(abc.ABC):
         """
         parameter_name = parameter_name or cls.path_parameter_name
         parameter_desc = parameter_desc or cls.path_parameter_desc
-        query_dependency = Query(
-            default="id",
-            description="A flag that indicates which kind of entity identifier to use: id or name"
-        )
-        if is_optional is False:
-            def resolver_fn(
-                identifier: t.Union[str, int] = Path(
-                    alias=parameter_name,
-                    description=parameter_desc
-                ),
-                identifier_kind: IdentifierKind = query_dependency
-            ):
-                return cls.from_request_params(value=identifier, kind=identifier_kind)
-        else:
-            def resolver_fn(
-                identifier: t.Union[str, int, None] = Path(
-                    default=None,
-                    alias=parameter_name,
-                    description=parameter_desc
-                ),
-                identifier_kind: IdentifierKind = query_dependency
-            ):
-                return (
-                    cls.from_request_params(value=identifier, kind=identifier_kind)
-                    if identifier is not None
-                    else None
-                )
+
+        def resolver_fn(
+            identifier: t.Union[str, int] = Path(
+                alias=parameter_name,
+                description=parameter_desc
+            ),
+            identifier_kind: IdentifierKind = Query(
+                default=IdentifierKind.ID,
+                description="A flag that indicates which kind of entity identifier to use: id or name"
+            )
+        ):
+            return cls.from_request_params(value=identifier, kind=identifier_kind)
+
         return Depends(resolver_fn)
 
 
