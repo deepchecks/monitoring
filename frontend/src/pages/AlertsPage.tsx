@@ -10,7 +10,7 @@ import {
   useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost
 } from '../api/generated';
 
-import { Box, List, styled } from '@mui/material';
+import { Box, List, ListItem, styled } from '@mui/material';
 
 // import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
 // import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
@@ -114,13 +114,10 @@ const StyledList = styled(List)({
   marginTop: '40px'
 });
 
-const StyledListItem = styled(List)({
+const StyledListItem = styled(ListItem)({
   padding: 0,
   margin: '20px 0',
   ':first-of-type': {
     marginTop: 0
-  },
-  ':last-of-type': {
-    marginBottom: 0
   }
 });

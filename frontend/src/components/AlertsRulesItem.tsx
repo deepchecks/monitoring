@@ -127,6 +127,7 @@ const StyledMainWrapper = styled(Box)(({ theme }) => ({
   boxShadow: '0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
   minWidth: 'fit-content',
   height: 100,
+  width: '100%',
   position: 'relative',
   ':hover': {
     backgroundColor: theme.palette.primary.light,
