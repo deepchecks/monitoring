@@ -18,10 +18,9 @@ from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from pyinstrument import Profiler
 from starlette.responses import FileResponse
 
 from deepchecks_monitoring.api.v1.router import router as v1_router
@@ -29,6 +28,7 @@ from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.middlewares import ProfilingMiddleware
 from deepchecks_monitoring.resources import ResourcesProvider
 
 __all__ = ["create_application"]
@@ -105,17 +105,7 @@ def create_application(
             app.include_router(r)
 
     if settings.debug_mode:
-        @app.middleware("http")
-        async def profile_request(request: Request, call_next):
-            profiling = request.query_params.get("profile", False)
-            if profiling:
-                profiler = Profiler()
-                profiler.start()
-                await call_next(request)
-                profiler.stop()
-                return HTMLResponse(profiler.output_html())
-            else:
-                return await call_next(request)
+        app.add_middleware(ProfilingMiddleware)
 
     @app.exception_handler(jsonschema.exceptions.ValidationError)
     async def _(_: Request, exc: jsonschema.exceptions.ValidationError):
