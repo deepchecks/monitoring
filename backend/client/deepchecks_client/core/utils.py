@@ -19,7 +19,7 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular.utils.task_type import TaskType as TabularTaskType
 from deepchecks.vision.task_type import TaskType as VisionTaskType
-from jsonschema import validators
+from jsonschema import FormatChecker, validators
 from requests import HTTPError, Response
 from requests.exceptions import JSONDecodeError
 from termcolor import cprint
@@ -198,14 +198,21 @@ def parse_timestamp(timestamp: t.Union[int, datetime]) -> 'PendulumDateTime':
         raise ValueError(f'Not supported timestamp type: {type(timestamp)}')
 
 
+def _callable_validator(_, instance):
+    return isinstance(instance, t.Callable)
+
+
+def _array_validator(_, instance):
+    return isinstance(instance, (list, tuple))
+
+
 DeepchecksJsonValidator: t.Type[validators.Draft202012Validator] = validators.extend(
     validators.Draft202012Validator,
-    type_checker=validators.Draft202012Validator.TYPE_CHECKER.redefine(
-        'array',
-        lambda _, instance: isinstance(instance, (list, tuple))
-    ).redefine(
-        'callable',
-        lambda _, instance: isinstance(instance, t.Callable)
+    format_checker=FormatChecker(),
+    type_checker=(
+        validators.Draft202012Validator.TYPE_CHECKER
+        .redefine('array', _array_validator)
+        .redefine('callable', _callable_validator)
     )
 )
 

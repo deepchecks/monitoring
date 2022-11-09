@@ -283,7 +283,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
                 },
                 "_dc_time": {
                     "type": "string",
-                    "format": "datetime"
+                    "format": "date-time"
                 },
                 "_dc_label": {
                     "type": ["string", "null"]

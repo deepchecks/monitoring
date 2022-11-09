@@ -62,7 +62,7 @@ class ColumnType(str, enum.Enum):
             ColumnType.TEXT: {"type": "string"},
             ColumnType.ARRAY_FLOAT: {"type": "array", "items": {"type": "number"}},
             ColumnType.ARRAY_FLOAT_2D: {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
-            ColumnType.DATETIME: {"type": "string", "format": "datetime"}
+            ColumnType.DATETIME: {"type": "string", "format": "date-time"}
         }
         schema = types_map[self]
         if nullable:

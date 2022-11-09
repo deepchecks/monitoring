@@ -20,6 +20,7 @@ import fastapi
 import jsonschema.exceptions
 import pendulum as pdl
 import sqlalchemy.exc
+from jsonschema import FormatChecker
 from jsonschema.validators import validate
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -30,10 +31,9 @@ from deepchecks_monitoring.models import ModelVersion
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.ingestion_errors import IngestionError
 from deepchecks_monitoring.models.model_version import update_statistics_from_sample
+from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 __all__ = ["DataIngestionBackend", "log_data", "update_data"]
-
-from deepchecks_monitoring.utils import ExtendedAsyncSession
 
 
 async def log_data(
@@ -49,6 +49,7 @@ async def log_data(
     data
     session
     """
+    now = pdl.now()
     valid_data = {}
     errors = []
 
@@ -57,15 +58,33 @@ async def log_data(
         # to make sure all samples have same set of fields.
         model_version.fill_optional_fields(sample)
         try:
-            validate(schema=model_version.monitor_json_schema, instance=sample)
+            validate(
+                schema=model_version.monitor_json_schema,
+                instance=sample,
+                format_checker=FormatChecker()
+            )
         except jsonschema.exceptions.ValidationError as e:
-            errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
-                               model_version_id=model_version.id))
-            continue
-        # Timestamp is passed as string, convert it to datetime
-        sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])
-        # If getting an index more then once, it will be override here and the last one will be used in arbitrary
-        valid_data[sample[SAMPLE_ID_COL]] = sample
+            errors.append({
+                "sample": str(sample),
+                "sample_id": sample.get(SAMPLE_ID_COL),
+                "error": str(e),
+                "model_version_id": model_version.id
+            })
+        else:
+            # Timestamp is passed as string, convert it to datetime
+            sample_timestamp = pdl.parse(sample[SAMPLE_TS_COL])
+            if sample_timestamp <= now:
+                sample[SAMPLE_TS_COL] = sample_timestamp
+                # If getting an index more then once,
+                # it will be override here and the last one will be used in arbitrary
+                valid_data[sample[SAMPLE_ID_COL]] = sample
+            else:
+                errors.append({
+                    "sample": str(sample),
+                    "sample_id": sample.get(SAMPLE_ID_COL),
+                    "error": "Deepchecks disallow uploading of future data (timestamp > now)",
+                    "model_version_id": model_version.id
+                })
 
     # Insert samples, and log samples which failed on existing index
     if valid_data:
@@ -76,6 +95,7 @@ async def log_data(
         logged_ids = set(results)
     else:
         logged_ids = set()
+
     logged_samples = [v for k, v in valid_data.items() if k in logged_ids]
     not_logged_samples = [v for k, v in valid_data.items() if k not in logged_ids]
     for sample in not_logged_samples:
@@ -130,7 +150,11 @@ async def update_data(
     valid_data = {}
     for sample in data:
         try:
-            validate(schema=optional_columns_schema, instance=sample)
+            validate(
+                schema=optional_columns_schema,
+                instance=sample,
+                format_checker=FormatChecker()
+            )
         except jsonschema.exceptions.ValidationError as e:
             errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
                                model_version_id=model_version.id))
