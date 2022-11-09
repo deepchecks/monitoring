@@ -20,5 +20,5 @@ import './commands'
 // require('./commands')
 
 beforeEach(() => {
-  cy.login()
+  cy.resetState()
 })
