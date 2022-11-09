@@ -14,7 +14,8 @@ import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
 from deepchecks_client import DeepchecksClient
-from deepchecks_client.tabular.utils import create_schema, describe_dataset, read_schema
+from deepchecks_client.tabular.utils import _describe_dataset, create_schema, read_schema
+from requests.exceptions import HTTPError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.models import ModelVersion, TaskType
@@ -127,7 +128,7 @@ async def test_model_version_feature_importance_update(
 ):
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
-    dataset_schema = describe_dataset(dataset)
+    dataset_schema = _describe_dataset(dataset)
 
     model_client = deepchecks_sdk_client.tabular_model(
         name="classification model",
@@ -146,3 +147,27 @@ async def test_model_version_feature_importance_update(
     assert model_version is not None
     assert isinstance(model_version.feature_importance, dict)
     assert model_version.feature_importance == feature_importance
+
+
+def test_model_version_deletion(deepchecks_sdk_client: DeepchecksClient):
+    df = _get_wierd_df()
+    dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
+    dataset_schema = _describe_dataset(dataset)
+
+    model_client = deepchecks_sdk_client.tabular_model(
+        name="classification model",
+        task_type=TaskType.MULTICLASS.value
+    )
+    version_client = model_client.version(
+        name="test-version",
+        features=dataset_schema["features"],
+        non_features=dataset_schema["non_features"],
+    )
+
+    deepchecks_sdk_client.delete_model_version(
+        model_name="classification model",
+        version_name="test-version"
+    )
+
+    with pytest.raises(HTTPError):
+        deepchecks_sdk_client.api.fetch_model_version_by_id(version_client.model_version_id)

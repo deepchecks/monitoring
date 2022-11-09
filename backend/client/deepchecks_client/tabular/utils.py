@@ -18,8 +18,10 @@ import pandas as pd
 import yaml
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.utils.feature_inference import is_categorical
+from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import ColumnType, pretty_print
 from pandas.core.dtypes.common import is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype
+from typing_extensions import TypeAlias, TypedDict
 
 __all__ = ['create_schema', 'read_schema']
 
@@ -44,10 +46,17 @@ def _get_series_column_type(series: pd.Series):
     return None
 
 
-DataSchema = t.Dict[str, t.Dict[str, str]]  # TODO: rename
+ColumnTypeName: TypeAlias = str
 
 
-def describe_dataset(dataset: Dataset) -> DataSchema:
+class DataSchema(TypedDict):
+    """Data schema description."""
+
+    features: t.Dict[str, ColumnTypeName]
+    non_features: t.Dict[str, ColumnTypeName]
+
+
+def _describe_dataset(dataset: Dataset) -> DataSchema:
     non_features = {}
     features = {}
     for column in dataset.data.columns:
@@ -58,11 +67,17 @@ def describe_dataset(dataset: Dataset) -> DataSchema:
             continue
         elif column in dataset.features:
             if column in dataset.cat_features:
-                features[column] = ColumnType.BOOLEAN.value if is_bool_dtype(
-                    col_series) else ColumnType.CATEGORICAL.value
+                features[column] = (
+                    ColumnType.BOOLEAN.value
+                    if is_bool_dtype(col_series)
+                    else ColumnType.CATEGORICAL.value
+                )
             elif column in dataset.numerical_features:
-                features[column] = ColumnType.INTEGER.value if is_integer_dtype(
-                    col_series) else ColumnType.NUMERIC.value
+                features[column] = (
+                    ColumnType.INTEGER.value
+                    if is_integer_dtype(col_series)
+                    else ColumnType.NUMERIC.value
+                )
             else:
                 features[column] = _get_series_column_type(col_series)
                 if features[column] == ColumnType.CATEGORICAL.value:
@@ -88,7 +103,7 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     schema_output_file: , default: 'schema.yaml'
         file like object or path in which the generated schema will be saved into
     """
-    schema = describe_dataset(dataset)
+    schema = _describe_dataset(dataset)
     yaml_schema = io.StringIO()
     yaml.dump(schema, yaml_schema)
     yaml_schema_val = yaml_schema.getvalue()
@@ -115,23 +130,29 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     pretty_print(f'Schema was successfully generated and saved to {schema_output_file}.')
 
 
+@docstrings
 def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -> DataSchema:
     """Read and validate model schema.
 
     Parameters
     ----------
-    schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]]
-        path to a schema file, file like object with schema,
-        or a dictionary representing a schema
+    {schema_param:1*indent}
 
     Returns
     -------
-    Dict[str, Dict[str, Any]]
-        dictionary in format
-        {
-            "features": {"<feature-name>": "<column-type>"},
-            "non_features": {"<feature-name>": "<column-type>"}
-        }
+    DataSchema :
+        typed dictionary with the next keys:
+            - features: Dict[str, ColumnTypeValue]
+            - non_features: Dict[str, ColumnTypeValue]
+        where 'ColumnTypeValue' is one of:
+            - 'numeric'
+            - 'integer'
+            - 'categorical'
+            - 'boolean'
+            - 'text'
+            - 'array_float'
+            - 'array_float_2d'
+            - 'datetime'
     """
     if isinstance(schema, str):
         schema = pathlib.Path(schema)

@@ -480,6 +480,7 @@ class EntityIdentifier(abc.ABC):
 
     path_parameter_name: t.ClassVar[str] = "identifier"
     path_parameter_desc: t.ClassVar[str] = ""
+    kind: IdentifierKind
     as_kwargs: t.Dict[str, t.Union[int, str]]
     as_expression: ColumnOperators
 
@@ -515,7 +516,10 @@ class EntityIdentifier(abc.ABC):
     ):
         if not isinstance(value, (int, str)):
             raise ValueError(f"Expected a integer|string value but got - {type(value)}")
+
+        self.kind = kind
         entity = self.entity
+
         if kind == IdentifierKind.NAME:
             self.value = str(value)
             self.column = entity.name
@@ -581,6 +585,16 @@ class ModelIdentifier(EntityIdentifier):
     def entity(self):
         from deepchecks_monitoring.models import Model
         return Model
+
+
+class ModelVersionIdentifier(EntityIdentifier):
+    path_parameter_name = "model_version_id"
+    path_parameter_desc = "Model Version id or name"
+
+    @property
+    def entity(self):
+        from deepchecks_monitoring.models import ModelVersion
+        return ModelVersion
 
 
 class CheckIdentifier(EntityIdentifier):

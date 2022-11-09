@@ -17,6 +17,7 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
+from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import DeepchecksJsonValidator, parse_timestamp, pretty_print
 
 from .api import API
@@ -260,6 +261,7 @@ class DeepchecksModelClient:
         rule = t.cast(t.Dict[str, t.Any], rule)
         return rule['id']
 
+    @docstrings
     def add_alert_rule(
         self,
         check_name: str,
@@ -272,33 +274,15 @@ class DeepchecksModelClient:
         monitor_name: t.Optional[str] = None,
         add_monitor_to_dashboard: bool = False
     ) -> int:
-        """Create an alert based on provided arguments. Alert is run on a specific check result.
+        """{add_alert_rule_desc}
 
         Parameters
         ----------
-        check_name: str
-            The check to monitor. The alert will monitor the value produced by the check's reduce function.
-        threshold: float
-            The value to compare the check value to.
-        frequency: int, default: None
-            Control the frequency the alert will be calculated, provided in seconds.
-        aggregation_window: int
-            The time range (current time - window size) the check would run on, provided in seconds.
-            If None, uses window size as frequency.
-        alert_severity: str, default: "mid"
-            The severity level associated with the alert. Possible values are: critical, high, mid and low.
-        greater_than: bool, default: True
-            Whether the alert condition requires the check value to be larger or smaller than provided threshold.
-        kwargs_for_check: t.Dict, default = None
-            Additional kwargs to pass on to check.
-        monitor_name: str, default: None
-            Name for the created monitor.
-        add_monitor_to_dashboard: bool, default: False
-            Whether to add a corresponding monitor to the dashboard screen.
+        {add_alert_rule_params:2*indent}
 
         Returns
         -------
-            alert_id: int
+        int : alert rule id
         """
         if alert_severity not in {'low', 'mid', 'high', 'critical'}:
             raise ValueError(
@@ -320,6 +304,7 @@ class DeepchecksModelClient:
             greater_than=greater_than
         )
 
+    @docstrings
     def add_monitor(
         self,
         check_name: str,
@@ -331,31 +316,15 @@ class DeepchecksModelClient:
         add_to_dashboard: bool = True,
         kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None
     ) -> int:
-        """Create a monitor based on check to be displayed in dashboard.
+        """{add_monitor_desc}
 
         Parameters
         ----------
-        check_name: str
-            The check to monitor. The alert will monitor the value produced
-            by the check's reduce function.
-        frequency: int
-            How often the minitor would be calculated, provided in seconds.
-        aggregation_window: int, default: None
-            The aggregation window of each calculation of the minitor, provided in seconds.
-        lookback: int, default: None
-            Determines the time range seen on the monitor, provided in seconds.
-        name: str, default: None
-            The name to assigned to the monitor.
-        description: str, default: None
-            The description to assigned to the monitor.
-        add_to_dashboard: bool, default: True
-            Whether to add the monitor to the dashboard screen.
-        kwargs_for_check: t.Dict, default = None
-            Additional kwargs to pass on to check.
+        {add_monitor_params:2*indent}
 
         Returns
         -------
-            monitor_id: int
+        int : monitor id
         """
         if add_to_dashboard:
             dashboard = t.cast(t.Dict[str, t.Any], self.api.fetch_dashboard())

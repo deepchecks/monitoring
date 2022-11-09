@@ -14,7 +14,7 @@ from io import StringIO
 
 import fastapi
 import pendulum as pdl
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Path
 from fastapi import status as HttpStatus
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
@@ -40,7 +40,8 @@ from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABE
 from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import IdResponse, ModelIdentifier, fetch_or_404, field_length
+from deepchecks_monitoring.utils import (ExtendedAsyncSession, IdentifierKind, IdResponse, ModelIdentifier,
+                                         ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
 
 from .check import MonitorOptions
 from .router import router
@@ -327,12 +328,30 @@ class ModelVersionSchema(BaseModel):
     response_model=ModelVersionSchema,
     status_code=HttpStatus.HTTP_200_OK
 )
-async def retrieve_model_version(
+async def retrieve_model_version_by_id(
     model_version_id: int,
     session: AsyncSession = AsyncSessionDep
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    return ModelVersionSchema.from_orm(model_version)
+
+
+@router.get(
+    '/models/{model_name}/model-versions/{version_name}',
+    tags=[Tags.MODELS],
+    description='Retrieve model version.',
+    response_model=ModelVersionSchema,
+    status_code=HttpStatus.HTTP_200_OK
+)
+async def retrieve_model_version_by_name(
+    model_name: str = Path(..., description='Model name.'),
+    version_name: str = Path(..., description='Model version name.'),
+    session: ExtendedAsyncSession = AsyncSessionDep
+) -> ModelVersionSchema:
+    """Retrieve model version record."""
+    model = await fetch_or_404(session, Model, name=model_name)
+    model_version = await fetch_or_404(session, ModelVersion, name=version_name, model_id=model.id)
     return ModelVersionSchema.from_orm(model_version)
 
 
@@ -491,10 +510,37 @@ async def get_count_samples(
     return {'monitor_count': mon_count, 'reference_count': ref_count}
 
 
-@router.delete('/model-versions/{model_version_id}', tags=[Tags.MODELS])
-async def delete_model_version(
-        model_version_id: int,
+@router.delete(
+    '/models/{model_name}/model-versions/{version_name}',
+    tags=[Tags.MODELS],
+    description='Delete model version.'
+)
+async def delete_model_version_by_name(
+    background_tasks: BackgroundTasks,
+    model_name: str = Path(..., description='Model name'),
+    version_name: str = Path(..., description='Model version name'),
+    session: AsyncSession = AsyncSessionDep,
+    resources_provider: ResourcesProvider = ResourcesProviderDep
+):
+    """Delete model version by name."""
+    await _delete_model_version(
+        model_identifier=ModelIdentifier(model_name, kind=IdentifierKind.NAME),
+        version_identifier=ModelVersionIdentifier(version_name, kind=IdentifierKind.NAME),
+        session=session,
+        resources_provider=resources_provider,
+        background_tasks=background_tasks
+    )
+
+
+@router.delete(
+    '/model-versions/{model_version_id}',
+    tags=[Tags.MODELS],
+    description='Delete model version by unique numerical identifier',
+    status_code=HttpStatus.HTTP_200_OK
+)
+async def delete_model_version_by_id(
         background_tasks: BackgroundTasks,
+        model_version_id: int = Path(..., description='Model version id'),
         session: AsyncSession = AsyncSessionDep,
         resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
@@ -507,8 +553,37 @@ async def delete_model_version(
     session : AsyncSession, optional
         SQLAlchemy session.
     """
+    await _delete_model_version(
+        version_identifier=ModelVersionIdentifier.from_request_params(model_version_id),
+        session=session,
+        resources_provider=resources_provider,
+        background_tasks=background_tasks
+    )
+
+
+async def _delete_model_version(
+    *,
+    version_identifier: ModelVersionIdentifier,
+    model_identifier: t.Optional[ModelIdentifier] = None,
+    session: AsyncSession = AsyncSessionDep,
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
+    background_tasks: BackgroundTasks,
+):
+    """Delete model version.
+
+    A caller needs to make sure that version identifier uses id field
+    if model identifier is not given.
+    """
     from .model import drop_tables  # pylint: disable=import-outside-toplevel
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
+
+    if model_identifier is not None:
+        await exists_or_404(session, Model, **model_identifier.as_kwargs)
+        model_version = await fetch_or_404(session, ModelVersion, **version_identifier.as_kwargs)
+    else:
+        if version_identifier.kind != IdentifierKind.ID:
+            raise ValueError('Version name cannot be used without model identifier')
+        model_version = await fetch_or_404(session, ModelVersion, **version_identifier.as_kwargs)
+
     await session.delete(model_version)
 
     background_tasks.add_task(
@@ -527,4 +602,3 @@ async def delete_model_version(
     # finalizing database session context manager (generator)
     # and that leads to the deadlock
     await session.commit()
-    return fastapi.Response()

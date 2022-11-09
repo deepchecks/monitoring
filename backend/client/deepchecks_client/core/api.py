@@ -200,8 +200,13 @@ class API:
         raise_on_status: bool = True
     ) -> t.Optional[requests.Response]:
         """Delete model by its name."""
-        # TODO: corresponding PR is not merged into main yet
-        raise NotImplementedError()
+        if raise_on_status:
+            maybe_raise(
+                self.session.delete(f'models/{model_name}', params={'identifier_kind': 'name'}),
+                msg=f'Failed to drop Model(name:{model_name}).\n{{error}}'
+            )
+        else:
+            return self.session.delete(f'models/{model_name}', params={'identifier_kind': 'name'})
 
     def fetch_models(
         self,
@@ -222,8 +227,13 @@ class API:
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
         """Fetch model record by its name."""
-        # TODO: corresponding PR is not merged into main yet
-        raise NotImplementedError()
+        if raise_on_status:
+            return maybe_raise(
+                self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'}),
+                msg=f'Failed to obtain Model(name:{model_name}).\n{{error}}'
+            ).json()
+        else:
+            return self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'})
 
     def fetch_model_by_id(
         self,
@@ -282,6 +292,64 @@ class API:
             )
         else:
             return self.session.put(f'model-versions/{model_version_id}', json=data)
+
+    def delete_model_version_by_id(
+        self,
+        model_version_id: int,
+        raise_on_status: bool = True,
+    ) -> t.Optional[requests.Response]:
+        if raise_on_status:
+            maybe_raise(
+                self.session.delete(f'model-versions/{model_version_id}'),
+                msg=f'Failed to delete ModelVersion(id:{model_version_id})\n{{error}}'
+            )
+        else:
+            return self.session.delete(f'model-versions/{model_version_id}')
+
+    def delete_model_version_by_name(
+        self,
+        model_name: str,
+        model_version_name: str,
+        raise_on_status: bool = True,
+    ) -> t.Optional[requests.Response]:
+        params = {'identifier_kind': 'name'}
+        path = f'models/{model_name}/model-versions/{model_version_name}'
+        if raise_on_status:
+            maybe_raise(
+                self.session.delete(path, params=params),
+                msg=f'Failed to delete ModelVersion(name:{model_version_name}, model:{model_name})\n{{error}}'
+            )
+        else:
+            return self.session.delete(path, params=params)
+
+    def fetch_model_version_by_id(
+        self,
+        model_version_id: int,
+        raise_on_status: bool = True
+    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+        response = self.session.post(f'model-versions/{model_version_id}')
+        if raise_on_status:
+            return maybe_raise(
+                response=response,
+                msg='Failed to retrieve model version by id.\n{error}'
+            ).json()
+        else:
+            return response
+
+    def fetch_model_version_by_name(
+        self,
+        model_name: str,
+        model_version_name: str,
+        raise_on_status: bool = True
+    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+        response = self.session.post(f'models/{model_name}/model-versions/{model_version_name}')
+        if raise_on_status:
+            return maybe_raise(
+                response=response,
+                msg='Failed to retrieve model version by name.\n{error}'
+            ).json()
+        else:
+            return response
 
     def create_checks(
         self,

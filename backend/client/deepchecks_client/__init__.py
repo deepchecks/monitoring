@@ -20,6 +20,7 @@ import torch
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.tabular import Dataset
 from deepchecks.vision import VisionData
+from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.api import API
 from deepchecks_client.core.client import DeepchecksModelClient, DeepchecksModelVersionClient
 from deepchecks_client.core.utils import TaskType, pretty_print
@@ -323,6 +324,7 @@ class DeepchecksClient:
 
         return version_client
 
+    @docstrings
     def create_tabular_model_version(
         self,
         model_name: str,
@@ -343,16 +345,7 @@ class DeepchecksClient:
         ----------
         model_name: str
             A name for the model.
-        schema: Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, str]]]
-            File path, file like object, or a dictionary instance that
-            represents the data schema.
-            This method expects that provided file will be in the next yaml format:
-                features:
-                    foo: <feature-type>
-                    bar: <feature-type>
-                non_features:
-                    foo: <feature-type>
-                    bar: <feature-type>
+        {schema_param:2*indent}
         version_name: str, default: 'v1'
             A name for the version.
         reference_dataset: Optional[Dataset], default: None
@@ -458,17 +451,94 @@ class DeepchecksClient:
         model_name: str
             The model to delete
         """
-        available_models = self.api.fetch_models()
-        available_models = t.cast(t.List[t.Dict[str, t.Any]], available_models)
-        existing_model: t.Optional[t.Dict[str, t.Any]] = None
-
-        for model in available_models:
-            if model_name == model['name']:
-                existing_model = model
-                break
-
-        if existing_model is None:
-            raise ValueError(f'Model {model_name} does not exist.')
-
-        self.api.delete_model_by_id(existing_model['id'])
+        self.api.delete_model_by_name(model_name)
         pretty_print(f'The following model was successfully deleted: {model_name}')
+
+    def delete_model_version(self, model_name: str, version_name: str):
+        """Delete model version by name.
+
+        Parameters
+        ----------
+        model_name: str
+            The model named
+        version_name: str
+            The model version name
+        """
+        self.api.delete_model_version_by_name(model_name, version_name)
+        pretty_print(f'The following model version was successfully deleted: {model_name}:{version_name}')
+
+    @docstrings
+    def add_alert_rule(
+        self,
+        model_name: str,
+        check_name: str,
+        threshold: float,
+        frequency: int,
+        alert_severity: str = 'mid',
+        aggregation_window: t.Optional[int] = None,
+        greater_than: bool = True,
+        kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None,
+        monitor_name: t.Optional[str] = None,
+        add_monitor_to_dashboard: bool = False
+    ) -> int:
+        """{add_alert_rule_desc}
+
+        Parameters
+        ----------
+        model_name: str
+            name of the model to which to add a rule
+        {add_alert_rule_params:2*indent}
+
+        Returns
+        -------
+        int : alert rule id
+        """
+        model_client = self.model(name=model_name)
+        return model_client.add_alert_rule(
+            check_name=check_name,
+            threshold=threshold,
+            frequency=frequency,
+            alert_severity=alert_severity,
+            aggregation_window=aggregation_window,
+            greater_than=greater_than,
+            kwargs_for_check=kwargs_for_check,
+            monitor_name=monitor_name,
+            add_monitor_to_dashboard=add_monitor_to_dashboard
+        )
+
+    @docstrings
+    def add_monitor(
+        self,
+        model_name: str,
+        check_name: str,
+        frequency: int,
+        aggregation_window: t.Optional[int] = None,
+        lookback: t.Optional[int] = None,
+        name: t.Optional[str] = None,
+        description: t.Optional[str] = None,
+        add_to_dashboard: bool = True,
+        kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None
+    ) -> int:
+        """{add_monitor_desc}
+
+        Parameters
+        ----------
+        model_name: str
+            name of the model to which to add a monitor
+        {add_monitor_params:2*indent}
+
+        Returns
+        -------
+        int : monitor id
+        """
+        model_client = self.model(name=model_name)
+        return model_client.add_monitor(
+            check_name=check_name,
+            frequency=frequency,
+            aggregation_window=aggregation_window,
+            lookback=lookback,
+            name=name,
+            description=description,
+            add_to_dashboard=add_to_dashboard,
+            kwargs_for_check=kwargs_for_check
+        )

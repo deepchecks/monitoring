@@ -8,3 +8,4 @@ termcolor
 PyYAML
 importlib_metadata; python_version < '3.8'
 pip-system-certs>=3.1
+typing_extensions==4.4.0
