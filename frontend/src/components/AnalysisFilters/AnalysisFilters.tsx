@@ -38,7 +38,7 @@ export function AnalysisFilters({ model }: AnalysisFiltersProps) {
     data: columns = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
     refetch,
     isLoading
-  } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id, {
+  } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id, undefined, {
     query: {
       enabled: false
     }

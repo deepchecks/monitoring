@@ -30,7 +30,7 @@ export function AnalysisPage() {
     data: checks,
     isLoading: isChecksLoading,
     refetch
-  } = useGetChecksApiV1ModelsModelIdChecksGet(modelId, {
+  } = useGetChecksApiV1ModelsModelIdChecksGet(modelId, undefined, {
     query: {
       enabled: false
     }

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
-import { useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet } from '../api/generated';
+import { useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet, useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet } from '../api/generated';
 import { setLineGraphOptions } from '../helpers/setGraphOptions';
 import useModels from './useModels';
 import useStatsTime from './useStatsTime';
@@ -8,14 +8,30 @@ import useStatsTime from './useStatsTime';
 const useDataIngestion = (modelId: number | null = null) => {
   const [statsTime] = useStatsTime();
   const { modelsMap } = useModels();
-  const modelOptions = modelId ? { model_id: modelId } : {};
 
   const latestTime = modelId? (modelsMap[modelId].latest_time?? 0) : Math.max(...Object.values(modelsMap).map(o => (o.latest_time ? o.latest_time : 0)));
-  const { data = [], isLoading } = useRetrieveModelsDataIngestionApiV1ModelsDataIngestionGet({
-    time_filter: statsTime.value,
+  const { data : singleModelData = [], isLoading : singleLoading } = useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet(modelId as number, {
     end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined,
-    ...modelOptions
+    time_filter: statsTime.value
+  }, {
+    query: {
+      enabled: modelId!=undefined
+    }
+  }); 
+  const { data : allModelsData = [], isLoading: allLoading } = useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet({
+    time_filter: statsTime.value,
+    end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined
+
+  },
+  {
+    query: {
+      enabled: modelId==undefined
+    }
   });
+
+  const data = modelId ? singleModelData : allModelsData;
+  const isLoading = modelId ? singleLoading : allLoading;
+  
 
   const graphData = useMemo(
     () => ({

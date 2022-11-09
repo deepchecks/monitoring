@@ -136,7 +136,7 @@ async def retrieve_all_models_data_ingestion(
 
 @router.get(
     "/models/{model_id}/data-ingestion",
-    response_model=t.List[ModelDailyIngestion],
+    response_model=t.Dict[int, t.List[ModelDailyIngestion]],
     tags=[Tags.MODELS],
     description="Retrieve model data ingestion statistics."
 )
