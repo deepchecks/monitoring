@@ -31,6 +31,8 @@ from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValida
 from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
                                             calc_bbox_properties, properties_schema)
 
+ARRAY = t.TypeVar('ARRAY', np.ndarray, torch.Tensor)
+
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     """Client to interact with a given model version, including all functions to send data.
@@ -216,7 +218,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def upload_reference(
             self,
             vision_data: VisionData,
-            predictions: t.Optional[t.Dict[int, torch.Tensor]] = None,
+            predictions: t.Optional[t.Union[t.Dict[int, ARRAY], t.List[ARRAY]]] = None,
             samples_per_request: int = 5000,
     ):
         """Upload reference data. Possible to upload only once for a given model version.
@@ -224,9 +226,14 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         Parameters
         ----------
         vision_data: VisionData
-            The vision data that containes the refrense data.
-        predictions: Optional[Dict[int, np.ndarray]]
-            The predictions for the reference data in format {<index>: <predictions>}.
+            The vision data that contains the reference data.
+        predictions: Dict[int, torch.Tensor / np.ndarray]] / List[torch.Tensor / np.ndarray]], default: None
+            The predictions for the reference data in format {<index>: <predictions>} or [<predictions>]. If the
+            predictions are passed as a list, the order of the predictions must be the same as the order of the samples
+            returned by the dataloader of the vision data. If the predictions are passed as a dictionary, the keys must
+            be the indexes of the samples in the dataset from which the vision data dataloader was created.
+        samples_per_request: int, default: 5000
+            How many samples to send in each request. Decrease this number if having problems uploading the data.
         """
         if vision_data.num_samples > 100_000:
             vision_data = vision_data.copy(shuffle=True, n_samples=100_000, random_state=42)
@@ -238,11 +245,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         prediction_field = DeepchecksColumns.SAMPLE_PRED_COL.value
         label_field = DeepchecksColumns.SAMPLE_LABEL_COL.value
 
+        running_sample_index = 0
         for i, batch in enumerate(vision_data):
             indexes = samples_indexes[i]
             images_batch = vision_data.batch_to_images(batch)
             labels_batch = vision_data.batch_to_labels(batch)
             task_type = vision_data.task_type
+            batch_length = len(images_batch)
 
             # dict[property-name, list[image-1-value, ..., image-N-value]]
             image_properties = calc_additional_and_default_vision_properties(images_batch,
@@ -260,7 +269,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 data[sample_index][label_field] = DeepchecksEncoder.encode(labels_batch[sample_batch_index])
 
                 if predictions:
-                    data[sample_index][prediction_field] = DeepchecksEncoder.encode(predictions[sample_index])
+                    if isinstance(predictions, dict):
+                        data[sample_index][prediction_field] = DeepchecksEncoder.encode(predictions[sample_index])
+                    else:
+                        data[sample_index][prediction_field] = DeepchecksEncoder.encode(
+                            predictions[running_sample_index + sample_batch_index]
+                        )
 
                 for name, values in image_properties.items():
                     data[sample_index][image_property_field(name)] = DeepchecksEncoder.encode(
@@ -269,6 +283,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 if bbox_properties:
                     for name, values in bbox_properties[sample_batch_index].items():
                         data[sample_index][bbox_property_field(name)] = DeepchecksEncoder.encode(values)
+
+            running_sample_index += batch_length
 
         data = pd.DataFrame(data).T
 

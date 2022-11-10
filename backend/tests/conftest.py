@@ -626,6 +626,17 @@ def vision_classification_and_prediction():
 
 
 @pytest_asyncio.fixture()
+def vision_classification_and_list_prediction():
+    imgs = [np.array([[[1, 2, 0], [3, 4, 0]]]),
+            np.array([[[1, 3, 5]]]),
+            np.array([[[7, 9, 0], [9, 6, 0]]])]
+    labels = [2, 0, 1]
+    predictions = [[0.1, 0.3, 0.6], [0.6, 0.3, 0.1], [0.1, 0.6, 0.3]]
+    data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
+    return _MyClassificationVisionData(data_loader), predictions
+
+
+@pytest_asyncio.fixture()
 def vision_detection_and_prediction():
     imgs = [np.array([[[1, 2, 0], [3, 4, 0]]]),
             np.array([[[1, 3, 5]]]),

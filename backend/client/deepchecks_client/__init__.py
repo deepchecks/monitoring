@@ -28,7 +28,7 @@ from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
 from deepchecks_client.tabular.utils import DataSchema
-from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
+from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient, ARRAY
 
 try:
     from importlib import metadata
@@ -256,7 +256,7 @@ class DeepchecksClient:
         reference_dataset: VisionData,
         version_name: str = 'v1',
         description: str = '',
-        reference_predictions: t.Optional[t.Dict[int, torch.Tensor]] = None,
+        reference_predictions: t.Optional[t.Union[t.Dict[int, ARRAY], t.List[ARRAY]]] = None,
         task_type: t.Union[str, TaskType, None] = None,
         image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
         samples_per_request: int = 5000
@@ -278,7 +278,11 @@ class DeepchecksClient:
             Possible string values: 'vision_classification', 'vision_detection'
         reference_dataset: Optional[VisionData], default: None
             The reference dataset object.
-        reference_predictions: Optional[Dict[int, torch.Tensor]], default: None
+        reference_predictions: Dict[int, torch.Tensor / np.ndarray]] / List[torch.Tensor / np.ndarray]], default: None
+            The predictions for the reference data in format {<index>: <predictions>} or [<predictions>]. If the
+            predictions are passed as a list, the order of the predictions must be the same as the order of the samples
+            returned by the dataloader of the vision data. If the predictions are passed as a dictionary, the keys must
+            be the indexes of the samples in the dataset from which the vision data dataloader was created.
             The model predictions for the reference data.
         image_properties : List[Dict[str, Any]]
             The image properties to use for the reference.
