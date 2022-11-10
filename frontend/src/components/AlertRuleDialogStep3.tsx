@@ -13,7 +13,7 @@ import { NoDataToShow } from '../assets/icon/icon';
 import { GraphData } from '../helpers/types';
 import { parseDataForLineChart } from '../helpers/utils/parseDataForChart';
 import { AlertRuleDialogStep, AlertRuleDialogStepBase } from './AlertRuleDialogStep';
-import DiagramLine from './DiagramLine';
+import DiagramLine from './DiagramLine/DiagramLine';
 import { Loader } from './Loader';
 import { SelectCondition } from './SelectCondition';
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 
 import { Loader } from 'components/Loader';
-import DiagramLine from '../DiagramLine';
+import DiagramLine from '../DiagramLine/DiagramLine';
 
 import { CloseIcon, NoDataToShow } from '../../assets/icon/icon';
 

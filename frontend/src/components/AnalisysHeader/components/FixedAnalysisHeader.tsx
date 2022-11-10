@@ -1,36 +1,42 @@
 import React from 'react';
 
-import { ModelSchema } from 'api/generated';
+import { ModelManagmentSchema } from 'api/generated';
 
-import { Box } from '@mui/system';
+import { Stack, Box } from '@mui/system';
 
 import ModelSelect from './ModelSelect';
+import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
 
 interface FixedAnalysisHeaderProps {
-  model: ModelSchema;
+  model: ModelManagmentSchema;
   open: boolean;
   onOpenModelsMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 const FixedAnalysisHeader = ({ model, open, onOpenModelsMenu }: FixedAnalysisHeaderProps) => (
-  <Box
+  <Stack
     sx={{
-      background: theme => theme.palette.grey[100],
       position: 'fixed',
       top: 0,
       left: 0,
-      transform: open ? 'translateY(0)' : 'translateY(-100%)',
+      zIndex: 10,
       width: 1,
-      padding: '1px 0 3px 0',
-      transition: 'all 0.15s ease-in-out',
-      pl: '272px',
-      zIndex: 10
+      height: 75,
+      padding: '1px 17px 1px 255px',
+      background: theme => theme.palette.grey[100],
+      transition: 'all 0.35s ease-in-out',
+      transform: open ? 'translateY(0)' : 'translateY(-100%)'
     }}
   >
-    <Box sx={{ width: 1, height: '56px', m: '0 auto' }}>
-      <ModelSelect model={model} onOpen={onOpenModelsMenu} size="small" />
-    </Box>
-  </Box>
+    <Stack direction="row" alignItems="center" sx={{ transform: 'translateY(12.5px)' }}>
+      <Box sx={{ mr: 'auto' }}>
+        <ModelSelect model={model} onOpen={onOpenModelsMenu} size="small" />
+      </Box>
+      <Box sx={{ flex: 1 }}>
+        <AnalysisFilters model={model} fixedHeader />
+      </Box>
+    </Stack>
+  </Stack>
 );
 
 export default FixedAnalysisHeader;

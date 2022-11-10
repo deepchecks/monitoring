@@ -3,7 +3,7 @@ import { ChartData, LegendItem } from 'chart.js';
 
 import { styled, Box, Tooltip, Typography } from '@mui/material';
 
-import { HorizontalScrolling } from './components/HorizontalScrolling/HorizontalScrolling';
+import { HorizontalScrolling } from './HorizontalScrolling/HorizontalScrolling';
 
 import { GraphData } from 'helpers/types';
 

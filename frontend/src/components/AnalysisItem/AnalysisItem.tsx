@@ -2,7 +2,7 @@ import React, { memo, useContext, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 
 import { CheckSchema, DataFilter, MonitorOptions, useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
-import { AnalysisContext } from 'context/analysis-context';
+import { AnalysisContext, ComparisonModeOptions } from 'context/analysis-context';
 import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
 
 import { styled, Box } from '@mui/material';
@@ -25,14 +25,15 @@ interface IRunCheckBody {
 }
 
 function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
-  const { referencePreviousPeriod, filters, period, frequency } = useContext(AnalysisContext);
+  const { isComparisonModeOn, comparisonMode, filters, period, frequency } = useContext(AnalysisContext);
 
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(check.id);
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
   const [data, setData] = useState<typeof chartData>(chartData);
-  const [activeFilter, setActiveFilter] = useState(0);
-  const [filtersSelectValue, setFiltersSelectValue] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [filtersSingleSelectValue, setFiltersSingleSelectValue] = useState('');
+  const [filtersMultipleSelectValue, setFiltersMultipleSelectValue] = useState<string[]>([]);
 
   const checkConf = checkInfo?.check_conf;
 
@@ -83,12 +84,16 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         runCheckBody.data.filter = { filters: activeFilters };
       }
 
-      if (checkConf?.length && filtersSelectValue) {
-        const currentCheckConf = checkConf[activeFilter];
+      if (
+        checkConf?.length &&
+        (filtersSingleSelectValue || filtersMultipleSelectValue.length) &&
+        typeof activeFilter === 'string'
+      ) {
+        const filter = activeFilter === 'aggregation method' ? [filtersSingleSelectValue] : filtersMultipleSelectValue;
 
         runCheckBody.data.additional_kwargs = {
           check_conf: {
-            [currentCheckConf.type]: filtersSelectValue
+            [activeFilter]: filter
           },
           res_conf: []
         };
@@ -97,7 +102,7 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
       const response = await runCheck(runCheckBody);
       const parsedChartData = parseDataForLineChart(response);
 
-      if (referencePreviousPeriod) {
+      if (isComparisonModeOn && comparisonMode === ComparisonModeOptions.previousPeriod) {
         const periodsTimeDifference = period[1].getTime() - period[0].getTime();
         const runCheckPreviousPeriodBody: IRunCheckBody = {
           ...runCheckBody,
@@ -119,9 +124,12 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
 
     getData();
   }, [
-    referencePreviousPeriod,
+    isComparisonModeOn,
+    comparisonMode,
     filters,
-    filtersSelectValue,
+    filtersSingleSelectValue,
+    filtersMultipleSelectValue,
+
     period,
     frequency,
     activeFilter,
@@ -134,23 +142,23 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
     <StyledAnalysisItem>
       {checkConf && checkConf.length ? (
         <AnalysisChartItemWithFilters
-          activeFilter={activeFilter}
-          changeActiveFilter={setActiveFilter}
-          setSelectValue={setFiltersSelectValue}
-          filters={checkConf}
-          selectData={checkConf[activeFilter].values || []}
-          subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
-          value={filtersSelectValue}
           title={check?.name || '-'}
+          subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          setSingleSelectValue={setFiltersSingleSelectValue}
+          multipleSelectValue={filtersMultipleSelectValue}
+          setMultipleSelectValue={setFiltersMultipleSelectValue}
+          filters={checkConf}
         >
-          <AnalysisItemDiagram isLoading={isLoading} data={data} />
+          <AnalysisItemDiagram isLoading={isLoading} data={data} comparison={isComparisonModeOn} />
         </AnalysisChartItemWithFilters>
       ) : (
         <AnalysisChartItem
           subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
           title={check?.name || '-'}
         >
-          <AnalysisItemDiagram isLoading={isLoading} data={data} />
+          <AnalysisItemDiagram isLoading={isLoading} data={data} comparison={isComparisonModeOn} />
         </AnalysisChartItem>
       )}
     </StyledAnalysisItem>

@@ -8,14 +8,15 @@ interface FiltersResetButtonProps {
   title?: string;
   handleReset: () => void;
   isLoading: boolean;
+  divider?: boolean;
 }
 
-const FiltersResetButton = ({ title = 'Reset', handleReset, isLoading }: FiltersResetButtonProps) => (
+const FiltersResetButton = ({ title = 'Reset', handleReset, isLoading, divider = true }: FiltersResetButtonProps) => (
   <Stack direction="row" spacing="11px">
     <Button variant="text" startIcon={<Undo />} onClick={handleReset} disabled={isLoading} sx={{ minHeight: 30 }}>
       {title}
     </Button>
-    <StyledResetDivider orientation="vertical" flexItem />
+    {divider && <StyledResetDivider orientation="vertical" flexItem />}
   </Stack>
 );
 

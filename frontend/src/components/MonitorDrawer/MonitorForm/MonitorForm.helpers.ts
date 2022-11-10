@@ -2,7 +2,7 @@ import { MonitorSchema, OperatorsEnum } from 'api/generated';
 
 import { IContext } from 'context';
 
-import { timeValues } from 'helpers/timeValue';
+import { timeValues } from 'helpers/time';
 
 export const timeWindow = [
   { label: '1 hour', value: timeValues.hour },

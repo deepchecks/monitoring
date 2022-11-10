@@ -1,4 +1,6 @@
-import { timeMap, timeValues } from 'helpers/timeValue';
+import { timeMap, timeValues } from 'helpers/time';
+
+import { ComparisonModeOptions } from 'context/analysis-context';
 
 export const lookBackData = [
   { label: 'Last 7 Days', value: timeMap.week },
@@ -10,4 +12,9 @@ export const frequencyData = [
   { label: 'Daily', value: timeValues.day },
   { label: 'Weekly', value: timeValues.week },
   { label: 'Monthly', value: timeValues.mouth }
+];
+
+export const comparisonModeData = [
+  { label: 'Previous Period', value: ComparisonModeOptions.previousPeriod },
+  { label: 'Reference', value: ComparisonModeOptions.reference }
 ];

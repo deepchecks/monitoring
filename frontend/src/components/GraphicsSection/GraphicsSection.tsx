@@ -8,7 +8,7 @@ import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated
 
 import { Box, IconButton, Typography } from '@mui/material';
 
-import DiagramLine from 'components/DiagramLine';
+import DiagramLine from 'components/DiagramLine/DiagramLine';
 
 import { MenuVertical } from '../../assets/icon/icon';
 

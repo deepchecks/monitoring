@@ -1,107 +1,23 @@
-import React, { Dispatch, PropsWithChildren, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Chart,
-  ChartArea,
-  ChartData,
-  ChartOptions,
-  LegendItem,
-  registerables,
-  TimeUnit,
-  TooltipCallbacks,
-  TooltipItem,
-  TooltipModel
-} from 'chart.js';
-import { DistributiveArray, _DeepPartialObject } from 'chart.js/types/utils';
+import React, { PropsWithChildren, useEffect, useRef, useState, useCallback } from 'react';
+import { Chart, ChartOptions, LegendItem, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import mixpanel from 'mixpanel-browser';
 
-import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
-import useMonitorsData from 'hooks/useMonitorsData';
-
-import { drawAlerts, drawCircle, minimapPanorama, OriginalMinMax, setAlertLine } from '../helpers/diagramLine';
+import { drawAlerts, drawCircle, minimapPanorama, setAlertLine } from 'helpers/diagramLine';
+import { createGradient, defaultTooltipCallbacks, initMinimap } from './DiagramLine.helpers';
 
 import { alpha, Box } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
-import DiagramTutorialTooltip from './DiagramTutorialTooltip';
-import { Loader } from './Loader';
-import { Minimap } from './Minimap';
+import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
+import { Loader } from '../Loader';
+import { Minimap } from '../Minimap';
 
-import { colors } from '../theme/colors';
+import { colors } from 'theme/colors';
 
-import { GraphData } from '../helpers/types';
-
-declare module 'chart.js' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface PluginOptionsByType<TType extends ChartType> {
-    drawAlerts: {
-      activeIndex: number;
-      changeAlertIndex: Dispatch<SetStateAction<number>>;
-      severity: AlertSeverity;
-    };
-    minimapPanorama: {
-      minimapRef: HTMLDivElement;
-    };
-    drawAlertsOnMinimap: {
-      activeIndex: number;
-      changeAlertIndex: Dispatch<SetStateAction<number>>;
-      severity: AlertSeverity;
-    };
-  }
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  interface Chart<
-    TType extends keyof ChartTypeRegistry = keyof ChartTypeRegistry,
-    TData = DistributiveArray<ChartTypeRegistry[TType]['defaultDataPoint']>,
-    TLabel = unknown
-  > {
-    originalMinMax: OriginalMinMax;
-  }
-  /* eslint-enable @typescript-eslint/no-unused-vars */
-}
-
-interface IMinimap {
-  alertSeverity: AlertSeverity;
-  alertIndex: number;
-  alerts: AlertSchema[];
-  changeAlertIndex: Dispatch<SetStateAction<number>>;
-}
-
-export interface DiagramLineProps {
-  alert_rules?: Array<AlertRuleSchema>;
-  data: ChartData<'line', GraphData>;
-  height?: number;
-  minTimeUnit?: TimeUnit;
-  isLoading?: boolean;
-  minimap?: IMinimap;
-  tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>>;
-  analysis?: boolean;
-}
-
-function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, colorStart: string, colorEnd: string) {
-  const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
-  gradient.addColorStop(0, colorStart);
-  gradient.addColorStop(1, colorEnd);
-  return gradient;
-}
-
-const defaultTooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> =
-  {
-    labelColor: (context: TooltipItem<'line'>) => ({
-      backgroundColor: context.dataset?.borderColor as string,
-      borderColor: context.dataset?.borderColor as string
-    }),
-    title: (context: TooltipItem<'line'>[]) => context[0].formattedValue,
-    label: (context: TooltipItem<'line'>) => `${context.label}`
-  };
-
-const initMinimap: IMinimap = {
-  alertSeverity: 'low',
-  alertIndex: 0,
-  alerts: [],
-  changeAlertIndex: () => 1
-};
+import { DiagramLineProps } from './DiagramLine.types';
 
 Chart.register(...registerables, zoomPlugin);
 
@@ -114,7 +30,9 @@ function DiagramLine({
   isLoading,
   minimap = initMinimap,
   tooltipCallbacks = defaultTooltipCallbacks,
-  analysis
+
+  analysis,
+  comparison
 }: PropsWithChildren<DiagramLineProps>) {
   const [chartData, setChartData] = useState(data);
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
@@ -211,7 +129,9 @@ function DiagramLine({
 
     if (chart && typeof item.datasetIndex === 'number') {
       const isDatasetVisible = chart.isDatasetVisible(item.datasetIndex);
+
       chart.setDatasetVisibility(item.datasetIndex, !isDatasetVisible);
+
       setLineIndexMap(prevState => ({
         ...prevState,
         [typeof item.datasetIndex === 'number' ? item.datasetIndex : -1]: isDatasetVisible
@@ -336,11 +256,23 @@ function DiagramLine({
   }, [getNewData]);
 
   useEffect(() => {
+    if (comparison) {
+      legends.forEach((legend, index) => {
+        if (index !== 0 && index !== legends.length / 2) {
+          hideLine(legend);
+        }
+      });
+    }
+  }, [comparison, legends, hideLine]);
+
+  useEffect(() => {
     if (chartRef.current && chartRef.current?.legend?.legendItems?.length) {
       setLegends(chartRef.current.legend.legendItems);
+
       chartRef.current.legend.legendItems.forEach(item => {
         chartRef.current?.setDatasetVisibility(item.datasetIndex || 0, true);
       });
+
       setLineIndexMap({});
     }
   }, [chartData]);

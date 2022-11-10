@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useRef, useCallback, useState } from 'reac
 
 import { Box, styled } from '@mui/material';
 
-import HorizontalScrollingIconButton from './components/HorizontalScrollingIconButton';
+import HorizontalScrollingIconButton from './HorizontalScrollingIconButton';
 
 import { WindowInterval } from 'helpers/types/index';
 

@@ -1,16 +1,8 @@
-import { FormControl, IconButton, SelectProps } from '@mui/material';
 import React, { ReactNode } from 'react';
 
-import { InputLabel, Select, styled } from '@mui/material';
+import { styled, FormControl, IconButton, SelectProps, InputLabel, Select } from '@mui/material';
+
 import { Clear } from 'assets/icon/icon';
-
-export const StyledInputLabel = styled(InputLabel)(({ theme }) => ({
-  color: theme.palette.text.disabled
-}));
-
-export const StyledSelect = styled(Select)({
-  minWidth: 200
-});
 
 interface MarkedSelectProps extends SelectProps {
   children: ReactNode;
@@ -24,7 +16,15 @@ const sizeMap = {
   medium: 'normal'
 } as const;
 
-export function MarkedSelect({ children, label, fullWidth = false, size, clearValue, ...props }: MarkedSelectProps) {
+export function MarkedSelect({
+  children,
+  label,
+  fullWidth = false,
+  size,
+  clearValue,
+  disabled,
+  ...props
+}: MarkedSelectProps) {
   const handleClearClick = () => {
     if (clearValue) {
       clearValue();
@@ -32,7 +32,7 @@ export function MarkedSelect({ children, label, fullWidth = false, size, clearVa
   };
 
   return (
-    <FormControl fullWidth={fullWidth}>
+    <FormControl fullWidth={fullWidth} disabled={disabled}>
       <StyledInputLabel size={size ? sizeMap[size] : sizeMap.medium}>{label}</StyledInputLabel>
       <StyledSelect
         size={size}
@@ -63,3 +63,11 @@ export function MarkedSelect({ children, label, fullWidth = false, size, clearVa
     </FormControl>
   );
 }
+
+export const StyledInputLabel = styled(InputLabel)(({ theme }) => ({
+  color: theme.palette.text.disabled
+}));
+
+export const StyledSelect = styled(Select)({
+  minWidth: 200
+});

@@ -8,7 +8,7 @@ import {
 } from '../api/generated';
 import useMonitorData from '../hooks/useAlertMonitorData';
 import { AlertsDrawerHeader } from './AlertsDrawerHeader';
-import DiagramLine from './DiagramLine';
+import DiagramLine from './DiagramLine/DiagramLine';
 import { Loader } from './Loader';
 
 interface AlertsDrawerProps extends DrawerProps {

@@ -1,7 +1,7 @@
 import React, { Dispatch, memo, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { ModelSchema } from 'api/generated';
+import { ModelManagmentSchema } from 'api/generated';
 
 import { WindowTimeout } from 'helpers/types/index';
 
@@ -13,8 +13,8 @@ import FixedAnalysisHeader from './components/FixedAnalysisHeader';
 
 interface AnalysisHeaderProps {
   changeModel: Dispatch<SetStateAction<number>>;
-  models: ModelSchema[];
-  model: ModelSchema;
+  models: ModelManagmentSchema[];
+  model: ModelManagmentSchema;
 }
 
 function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
@@ -57,7 +57,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
     const onScroll = () => {
       const yPosition = window.pageYOffset;
 
-      if (yPosition > 60) {
+      if (yPosition > 88) {
         setIsScrolling(true);
       } else {
         setIsScrolling(false);

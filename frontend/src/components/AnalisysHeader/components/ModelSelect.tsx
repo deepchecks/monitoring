@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { Stack, Tooltip, Typography } from '@mui/material';
 
@@ -25,24 +25,27 @@ const sizeMap = {
   },
   small: {
     arrow: {
-      width: 20,
-      height: 20
+      width: 23,
+      height: 23
     },
     py: '10px',
-    variant: 'h6'
+    variant: 'h5'
   }
 } as const;
 
 const ModelSelect = ({ model, onOpen, size }: ModelSelectProps) => {
-  const taskType =
-    typeof model?.task_type === 'string' &&
-    (model?.task_type?.toLowerCase().includes('vision')
-      ? 'Visual'
-      : model?.task_type?.toLowerCase().includes('regression') ||
-        model?.task_type?.toLowerCase().includes('multiclass') ||
-        model?.task_type?.toLowerCase().includes('binary')
-      ? 'Tabular'
-      : 'NLP');
+  const taskType = useMemo(
+    () =>
+      typeof model?.task_type === 'string' &&
+      (model?.task_type?.toLowerCase().includes('vision')
+        ? 'Visual'
+        : model?.task_type?.toLowerCase().includes('regression') ||
+          model?.task_type?.toLowerCase().includes('multiclass') ||
+          model?.task_type?.toLowerCase().includes('binary')
+        ? 'Tabular'
+        : 'NLP'),
+    [model]
+  );
 
   return (
     <Stack

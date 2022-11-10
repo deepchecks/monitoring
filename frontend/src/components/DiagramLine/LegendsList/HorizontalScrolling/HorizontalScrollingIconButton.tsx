@@ -4,7 +4,7 @@ import { IconButton, styled } from '@mui/material';
 
 import { CollapseArrowLeft, CollapseArrowRight } from 'assets/icon/icon';
 
-import { SlideType } from '../HorizontalScrolling';
+import { SlideType } from './HorizontalScrolling';
 
 interface HorizontalScrollingIconButtonProps {
   type: SlideType;

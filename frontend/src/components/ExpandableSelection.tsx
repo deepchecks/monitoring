@@ -67,7 +67,7 @@ export function ExpandableSelection({ label, changeState, data, endTime, ...prop
   return (
     <>
       <Box ref={selectRef}>
-        <MarkedSelect size="small" onChange={handleLookbackChange} label={label} sx={{ minWidth: 330 }} {...props}>
+        <MarkedSelect size="small" onChange={handleLookbackChange} label={label} sx={{ minWidth: '330px' }} {...props}>
           {data.map(({ label, value }) => (
             <MenuItem key={value} value={value}>
               {label}

@@ -165,7 +165,7 @@ export const componentOptions: Components<Theme> = {
     styleOverrides: {
       list: {
         padding: '6px 0 10px',
-        maxHeight: 300
+        maxHeight: 480
       }
     }
   },
@@ -279,6 +279,9 @@ export const componentOptions: Components<Theme> = {
   MuiFormControl: {
     styleOverrides: {
       root: ({ theme }) => ({
+        '& .Mui-disabled': {
+          opacity: 0.35
+        },
         '& label': {
           color: theme.palette.text.disabled
         }

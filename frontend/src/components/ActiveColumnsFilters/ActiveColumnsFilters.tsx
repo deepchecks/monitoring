@@ -42,36 +42,35 @@ export function ActiveColumnsFilters() {
     [setFilters]
   );
 
-  useEffect(
-    () => () => {
-      if (containerRef.current && containerRef.current.clientWidth !== containerRef.current.scrollWidth) {
-        let width = containerRef.current.clientWidth - initCounterWidth;
-        const margin = 10;
+  useEffect(() => {
+    if (containerRef.current && containerRef.current.clientWidth !== containerRef.current.scrollWidth) {
+      let width = containerRef.current.clientWidth - initCounterWidth;
+      const margin = 10;
 
-        let numberOfvisibleElements = 0;
+      let numberOfVisibleElements = 0;
 
-        for (let i = 0; i < containerRef?.current?.children.length; i++) {
-          const element = containerRef?.current?.children[i];
-          if (width - element.clientWidth + margin > 0) {
-            width -= element.clientWidth;
-            numberOfvisibleElements++;
-          } else {
-            setCounterWidth(width + margin);
-            break;
-          }
+      for (let i = 0; i < containerRef?.current?.children.length; i++) {
+        const element = containerRef?.current?.children[i];
+
+        if (width - element.clientWidth + margin > 0) {
+          width -= element.clientWidth;
+          numberOfVisibleElements++;
+        } else {
+          setCounterWidth(width + margin);
+          break;
         }
-
-        if (numberOfvisibleElements !== Object.keys(filters).length) {
-          setMenuFilterRange(Object.keys(filters).length - numberOfvisibleElements - 1);
-        }
-        return;
       }
 
-      setCounterWidth(initCounterWidth);
-      setMenuFilterRange(0);
-    },
-    [filters, containerRef?.current?.children, containerRef?.current?.children?.length]
-  );
+      if (numberOfVisibleElements !== Object.keys(filters).length) {
+        setMenuFilterRange(Object.keys(filters).length - numberOfVisibleElements - 1);
+      }
+
+      return;
+    }
+
+    setCounterWidth(initCounterWidth);
+    setMenuFilterRange(0);
+  }, [filters, containerRef?.current?.children, containerRef?.current?.children?.length]);
 
   const Filters = useMemo(
     () =>
@@ -120,7 +119,13 @@ export function ActiveColumnsFilters() {
 
   return (
     <>
-      <Stack direction="row" spacing="10px" ref={containerRef} sx={{ overflow: 'hidden', position: 'relative' }}>
+      <Stack
+        direction="row"
+        height="70px"
+        spacing="10px"
+        ref={containerRef}
+        sx={{ overflow: 'hidden', position: 'relative' }}
+      >
         {Filters}
         {!!menuFilterRange && (
           <>

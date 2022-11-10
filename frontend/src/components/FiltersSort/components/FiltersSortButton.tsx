@@ -5,13 +5,14 @@ import { Button } from '@mui/material';
 import { Sort } from '../../../assets/icon/icon';
 
 interface FiltersSortButtonProps {
-  handleOpenSortMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  label?: string;
   isLoading: boolean;
+  handleOpenSortMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-const FiltersSortButton = ({ handleOpenSortMenu, isLoading }: FiltersSortButtonProps) => (
+const FiltersSortButton = ({ handleOpenSortMenu, isLoading, label = 'Sort' }: FiltersSortButtonProps) => (
   <Button variant="text" startIcon={<Sort />} onClick={handleOpenSortMenu} disabled={isLoading} sx={{ minHeight: 30 }}>
-    Sort
+    {label}
   </Button>
 );
 

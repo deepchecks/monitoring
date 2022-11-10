@@ -7,7 +7,7 @@ import useDataIngestion from '../../hooks/useDataIngestion';
 import { Box, MenuItem } from '@mui/material';
 
 import { StyledSelect } from 'components/MarkedSelect';
-import DiagramLine from '../DiagramLine';
+import DiagramLine from '../DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
 
 import {
