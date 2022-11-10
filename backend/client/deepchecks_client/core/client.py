@@ -36,17 +36,14 @@ class DeepchecksModelVersionClient:
     model_version_id: int
         The id of the model version.
     model: dict
-    session: requests.Session
+        The model
+    api: core.API
+        The instance of the API object
     """
 
     api: API
     model: t.Dict[str, t.Any]
     model_version_id: int
-    schema: t.Dict[str, t.Any]
-    ref_schema: t.Dict[str, t.Any]
-    categorical_columns: t.List[str]
-    _log_samples: t.List[t.Dict[str, t.Any]]
-    _update_samples: t.List[t.Dict[str, t.Any]]
 
     def __init__(
             self,

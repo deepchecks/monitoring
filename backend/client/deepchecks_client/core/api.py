@@ -19,7 +19,15 @@ __all__ = ['API']
 
 
 class HttpSession(requests.Session):
-    """Http session."""
+    """Http session.
+
+    Parameters
+    ----------
+    base_url : str
+        Base URL.
+    token: str, optional
+        The API token from deepchecks.
+    """
 
     def __init__(self, base_url: str, token: t.Optional[str] = None):
         super().__init__()
@@ -47,7 +55,13 @@ TAPI = t.TypeVar('TAPI', bound='API')
 # apply `typing.overload` to API class method for better dev experience
 
 class API:
-    """Backend API."""
+    """Backend API.
+
+    Parameters
+    ----------
+    session: requests.Session
+        The HTTP session object
+    """
 
     session: requests.Session
 
@@ -395,7 +409,22 @@ class API:
         alert_rule: t.Dict[str, t.Any],
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Create alert rule."""
+        """Create alert rule.
+
+        Parameters
+        ----------
+        monitor_id: int
+            The ID of the monitor
+        alert_rule: dict
+            The alert rule to create
+        raise_on_status: bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        Union[requests.Response, dict]
+            The response from the server
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.post(url=f'monitors/{monitor_id}/alert-rules', json=alert_rule),
@@ -410,7 +439,22 @@ class API:
         monitor: t.Dict[str, t.Any],
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Create monitor."""
+        """Create monitor.
+
+        Parameters
+        ----------
+        check_id: int
+            The ID of the check
+        monitor: dict
+            The monitor object
+        raise_on_status: bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        Union[requests.Response, dict]
+            The response from the server
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.post(url=f'checks/{check_id}/monitors', json=monitor),

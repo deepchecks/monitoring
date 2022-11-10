@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+# flake8: noqa: F821
 import typing as t
 import warnings
 from datetime import datetime
@@ -39,7 +40,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     def set_feature_importance(
         self,
-        feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]']
+        feature_importance: t.Union[t.Dict[str, float], 'pandas.Series[float]']
     ):
         """Set model version feature importance.
 
@@ -79,11 +80,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     def log_batch(
             self,
-            data: pd.DataFrame,
-            timestamps: t.Union['pd.Series[datetime]', 'pd.Series[int]'],
-            predictions: t.Union['pd.Series[str]', 'pd.Series[float]'],
-            prediction_probas: t.Optional['pd.Series[t.Sequence[float]]'] = None,
-            labels: t.Union['pd.Series[str]', 'pd.Series[float]', None] = None,
+            data: 'pandas.DataFrame',
+            timestamps: t.Union['pandas.Series[datetime]', 'pandas.Series[int]'],
+            predictions: t.Union['pandas.Series[str]', 'pandas.Series[float]'],
+            prediction_probas: t.Optional['pandas.Series[t.Sequence[float]]'] = None,
+            labels: t.Union['pandas.Series[str]', 'pandas.Series[float]', None] = None,
             samples_per_send: int = 10_000
     ):
         """Log batch of samples.
@@ -297,18 +298,18 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     def update_batch(
             self,
-            samples_to_update: t.Union[pd.DataFrame, t.Sequence],
-            labels: t.Union['pd.Series[str]', 'pd.Series[float]', None] = None,
-            timestamps: t.Union['pd.Series[datetime]', 'pd.Series[int]', None] = None,
-            predictions: t.Union['pd.Series[str]', 'pd.Series[float]', None] = None,
-            prediction_probas: t.Optional['pd.Series[t.Sequence[float]]'] = None,
+            samples_to_update: 't.Union[pandas.DataFrame, t.Sequence]',
+            labels: t.Union['pandas.Series[str]', 'pandas.Series[float]', None] = None,
+            timestamps: t.Union['pandas.Series[datetime]', 'pandas.Series[int]', None] = None,
+            predictions: t.Union['pandas.Series[str]', 'pandas.Series[float]', None] = None,
+            prediction_probas: t.Optional['pandas.Series[t.Sequence[float]]'] = None,
             samples_per_send: int = 10_000
     ):
         """Update values of already uploaded samples.
 
         Parameters
         ==========
-        samples_to_update: Union[pd.DataFrame, Sequence]
+        samples_to_update: Union[pandas.DataFrame, Sequence]
             Either a sequence of sample ids to update or a dataframe which contain a 'sample_id' column,
             in addition to other values to update for those samples.
         timestamps : Union[pandas.Series[datetime], pandas.Series[int]], default None
@@ -367,7 +368,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         for i in range(0, len(samples_to_update), samples_per_send):
             self._update_batch(samples_to_update.iloc[i:i + samples_per_send])
 
-    def _update_batch(self, samples: pd.DataFrame):
+    def _update_batch(self, samples: 'pandas.DataFrame'):
         for index, row in samples.iterrows():
             sample = row.to_dict()
             if 'sample_id' in sample:
