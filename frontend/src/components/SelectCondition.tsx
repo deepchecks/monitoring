@@ -19,7 +19,7 @@ interface SelectConditionProps {
 const OPERATORS = mapToOptionsList(OperatorsEnum);
 
 export const SelectCondition = ({
-  title = 'Activate alert When check value is:',
+  title = 'Activate alert when check value is:',
   operatorProps,
   valueProps
 }: SelectConditionProps) => (
@@ -27,7 +27,7 @@ export const SelectCondition = ({
     <Typography
       variant="body1"
       component="h2"
-      sx={{ mb: '40px', fontWeight: 600, fontSize: '12px', letterSpacing: '1px' }}
+      sx={{ mb: '40px', fontWeight: 600, fontSize: '16px', letterSpacing: '0.2px' }}
     >
       {title}
     </Typography>

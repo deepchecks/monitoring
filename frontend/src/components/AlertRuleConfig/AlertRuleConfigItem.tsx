@@ -67,7 +67,7 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
           <Typography
             sx={{
               fontWeight: 700,
-              fontSize: '24px'
+              fontSize: '20px'
             }}
           >
             {name} Alert
