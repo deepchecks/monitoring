@@ -88,6 +88,7 @@ async def test_add_check_wrong_type(classification_model_id, client: TestClient)
     assert response.status_code == 400
     assert response.json()["detail"] == "Check checky v1 is not compatible with the model task type"
 
+
 @pytest.mark.asyncio
 async def test_delete_check_success(classification_model_id, client: TestClient):
     request = {
@@ -468,7 +469,7 @@ async def test_run_check_no_fi(classification_model_id, classification_model_ver
 
 @pytest.mark.asyncio
 async def test_run_check_vision_reference(classification_vision_model_id,
-                                classification_vision_model_version_id, client: TestClient):
+                                          classification_vision_model_version_id, client: TestClient):
     request = {
         "name": "checky v3",
         "config": {"class_name": "SingleDatasetPerformance",
@@ -501,9 +502,11 @@ async def test_run_check_vision_reference(classification_vision_model_id,
 
     response = client.post("/api/v1/checks/1/run/reference",
                            json={"filter": {"filters": [{"column": "images Aspect Ratio",
-                                                         "operator": "greater_than", "value": 0}]}})
+                                                         "operator": "greater_than", "value": 0}]},
+                                 "additional_kwargs": {"check_conf": {"scorer": ["precision_macro"]}}})
     json_rsp = response.json()
-    assert json_rsp == {"v1": {"accuracy": 0.5}}
+    assert json_rsp == {"v1": {"precision_macro": 0.3333333333333333}}
+
 
 @pytest.mark.asyncio
 async def test_run_check_vision(classification_vision_model_id,

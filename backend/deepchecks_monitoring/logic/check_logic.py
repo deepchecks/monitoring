@@ -114,6 +114,15 @@ def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
             check_conf["params"][kwarg_name] = kwarg_val
 
 
+def _init_check_by_kwargs(check: Check, additional_kwargs: MonitorCheckConfSchema):
+    dp_check = check.initialize_check()
+    if additional_kwargs is not None:
+        check_conf = dp_check.config()
+        _check_kwarg_filter(check_conf, additional_kwargs)
+        dp_check = BaseCheck.from_config(check_conf)
+    return dp_check
+
+
 def _get_properties_by_type(property_type: PropertiesInputType, vision_features):
     props = []
     for feat in vision_features:
@@ -237,8 +246,7 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    check_conf = check.config
-    dp_check = BaseCheck.from_config(check_conf)
+    dp_check = _init_check_by_kwargs(check, additional_kwargs)
 
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
@@ -353,11 +361,7 @@ async def run_check_window(
         The results of the check.
     """
     # get the relevant objects from the db
-    dp_check = check.initialize_check()
-    if monitor_options.additional_kwargs is not None:
-        check_conf = dp_check.config()
-        _check_kwarg_filter(check_conf, monitor_options.additional_kwargs)
-        dp_check = BaseCheck.from_config(check_conf)
+    dp_check = _init_check_by_kwargs(check, monitor_options.additional_kwargs)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
