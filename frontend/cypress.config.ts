@@ -7,8 +7,9 @@ export default defineConfig({
     },
     experimentalSessionAndOrigin: true,
     chromeWebSecurity: false,
-    baseUrl: "https://staging-v2.deepchecks.com"
-    // baseUrl: "https://127.0.0.1:8000"
+    // baseUrl: "https://staging-v2.deepchecks.com",
+    defaultCommandTimeout: 10000,
+    baseUrl: "http://127.0.0.1:8000"
   },
   env: {
     auth0_username: "e2e-testing@deepchecks.com",

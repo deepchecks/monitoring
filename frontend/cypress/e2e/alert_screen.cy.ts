@@ -1,10 +1,13 @@
 describe('Alerts screen', () => {
   it('check alert values', () => {
-    cy.createModelAndVersion('alerts model', 'multiclass', 'v1');
-    cy.addDataToVersion(1, 'multiclass', 100, [13, 15, 18, 21])
-    cy.addChecksToModel(1);
-    cy.addMonitor(1);
-    cy.addAlertRule(1);
+    cy.createModelAndVersion('alerts model', 'multiclass', 'v1')
+    .then(modelInfo => {
+      cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21])
+      return cy.addCheck(modelInfo)
+    }
+    ).then(checkInfo => cy.addMonitor(checkInfo)
+    ).then(monitorInfo => cy.addAlertRule(monitorInfo))
+
     cy.wait(1000 * 30);
 
     cy.visit('/alerts');
