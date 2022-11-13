@@ -183,7 +183,7 @@ async def test_regression_batch_update(regression_model_version_client: Deepchec
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
-    data_to_update = pd.DataFrame([['1', 1], ['2', 2], ['3', 3]], columns=['sample_id', 'a'])
+    data_to_update = pd.DataFrame([['1'], ['2'], ['3']], columns=['sample_id'])
     regression_model_version_client.update_batch(data_to_update, labels=pd.Series([1, 2, 1], index=['1', '2', '3']))
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
@@ -196,7 +196,6 @@ async def test_regression_batch_update(regression_model_version_client: Deepchec
     stats = model_version.statistics
     assert stats['_dc_label'] == {'max': 2.0, 'min': 1.0}
     assert stats['_dc_prediction'] == {'max': 2.0, 'min': 0.0}
-    assert stats['a'] == {'max': 3, 'min': 1}
 
 
 @pytest.mark.asyncio

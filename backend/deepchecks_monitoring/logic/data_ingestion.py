@@ -140,7 +140,8 @@ async def update_data(
         "type": "object",
         "properties": {k: v for k, v in json_schema["properties"].items()
                        if k not in required_columns or k == SAMPLE_ID_COL},
-        "required": [SAMPLE_ID_COL]
+        "required": [SAMPLE_ID_COL],
+        "additionalProperties": False
     }
 
     table = model_version.get_monitor_table(session)

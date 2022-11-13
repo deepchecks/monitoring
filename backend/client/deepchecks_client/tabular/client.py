@@ -409,7 +409,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             'type': 'object',
             'properties': {k: v for k, v in self.schema['properties'].items()
                            if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
-            'required': [DeepchecksColumns.SAMPLE_ID_COL.value]
+            'required': [DeepchecksColumns.SAMPLE_ID_COL.value],
+            'additionalProperties': False
         }
         DeepchecksJsonValidator(optional_columns_schema).validate(update)
 
