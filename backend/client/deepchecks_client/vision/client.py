@@ -156,7 +156,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             prediction=None,
             label=None
     ):
-        """Send sample for the model version.
+        """Add a data sample for the model version update queue. Requires a call to send() to upload.
 
         The required format for the supplied images, predictions and labels can be found at
         https://docs.deepchecks.com/stable/user-guide/vision/data-classes/index.html
@@ -300,20 +300,20 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def update_sample(
         self,
         sample_id: str,
-        img: t.Optional[np.ndarray] = None,
+        image: t.Optional[np.ndarray] = None,
         label: t.Any = None,
         **values
     ):
-        """Update sample. Possible to update only non_features and labels.
+        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload.
 
         Parameters
         ----------
         sample_id: str
             The sample ID
-        img: np.ndarray
-            the image to calculate the partial image properties if the labels has been updated
-        label: Any
-            labels value if exists
+        image: t.Optional[np.ndarray], default: None
+            image to be attached to the provided sample id. required if updating the label for a object detection task.
+        label: Any, default: None
+            updated label for the sample.
         values:
             any additional values to update
         """
@@ -328,20 +328,19 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: sample_id, **values}
 
-        if label is not None and img is not None:
+        if image is not None:
+            img_properties = calc_additional_and_default_vision_properties([image], self.additional_image_properties)
+            for name, values in img_properties.items():
+                update[image_property_field(name)] = values[0]  # we have only one image (only one value)
+
+        if label is not None:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
             task_type = self._get_vision_task_type()
-            images_batch = [img]
-            labels_batch = [label]
-
+            # TODO: change to task_type not classification later
             if task_type == VisionTaskType.OBJECT_DETECTION:
-                img_properties = calc_additional_and_default_vision_properties(images_batch,
-                                                                               self.additional_image_properties)
-                bbox_properties = calc_bbox_properties(images_batch, labels_batch, self.additional_image_properties)
-
-                for name, values in img_properties.items():
-                    update[image_property_field(name)] = values[0]  # we have only one image (only one value)
-
+                if image is None:
+                    raise ValueError(f'For {task_type.value} task, updating label require also passing an image')
+                bbox_properties = calc_bbox_properties([image], [label], self.additional_image_properties)
                 # we have only one image (only one value with bbox properties)
                 for name, values in bbox_properties[0].items():
                     update[bbox_property_field(name)] = list(values)
@@ -352,7 +351,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
 
 class DeepchecksModelClient(core_client.DeepchecksModelClient):
-    """Client to interact with a model in monitoring.
+    """Client to interact with a model in monitoring. Created via the DeepchecksClient's get_or_create_model function.
 
     Parameters
     ----------
@@ -393,9 +392,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             return self._version_client(existing_version_id, additional_image_properties=additional_image_properties)
 
         if vision_data is None:
-            model_version_id = self._get_model_version_id(name)
-            if model_version_id is None:
-                raise ValueError('Model Version Name does not exists for this model and no vision data were provided.')
+            raise ValueError('Model Version Name does not exists for this model and no vision data were provided.')
         else:
             # Start with validation
             if additional_image_properties is not None:

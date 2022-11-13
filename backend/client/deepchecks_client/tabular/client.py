@@ -171,7 +171,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             label=None,
             **values
     ):
-        """Log sample for the model version.
+        """Add a data sample for the model version update queue. Requires a call to send() to upload.
 
         Parameters
         ----------
@@ -378,13 +378,16 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         self.send()
 
     def update_sample(self, sample_id: str, label=None, **values):
-        """Update sample. Possible to update only non_features and labels.
+        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload.
 
         Parameters
         ----------
         sample_id: str
+            Universal id for the sample. Used to retrieve and update the sample.
         label
+            True label of sample.
         values
+            Features of the sample and optional non_features we wise to update.
         """
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id), **values}
         task_type = TaskType(self.model['task_type'])
@@ -414,7 +417,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
 
 class DeepchecksModelClient(core_client.DeepchecksModelClient):
-    """Client to interact with a model in monitoring.
+    """Client to interact with a model in monitoring. Created via the DeepchecksClient's get_or_create_model function.
 
     Parameters
     ----------
@@ -458,9 +461,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             return self._version_client(existing_version_id)
 
         if features is None:
-            model_version_id = self._get_model_version_id(name)
-            if model_version_id is None:
-                raise ValueError('Model Version name does not exists for this model and no features were provided.')
+            raise ValueError('Model Version name does not exists for this model and no features were provided.')
         else:
             # Start with validation
             if not isinstance(features, dict):
@@ -529,8 +530,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         Parameters
         ----------
         model_version_id: int
-        image_properties : Optional[List[Dict[str, Any]]]
-            The image properties to use for the reference.
+            The id of the version.
 
         Returns
         -------

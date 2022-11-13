@@ -18,22 +18,23 @@ from deepchecks_monitoring.models.model import TaskType
 
 @pytest.mark.asyncio
 async def test_get_model_client(classification_vision_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               description="test", task_type=TaskType.VISION_CLASSIFICATION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
+                                                             description="test",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == classification_vision_model_id
 
 
 @pytest.mark.asyncio
 async def test_get_model_client_just_name(classification_vision_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == classification_vision_model_id
 
 
 @pytest.mark.asyncio
 async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model 2",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model 2",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == 1
     assert model_client.model["name"] == "vision classification model 2"
 
@@ -50,10 +51,11 @@ async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
         "latest_time": None
     }
 
+
 @pytest.mark.asyncio
 async def test_add_monitor(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == 1
 
     checks_name = list(model_client.get_checks().keys())[0]
@@ -63,9 +65,9 @@ async def test_add_monitor(deepchecks_sdk_client: DeepchecksClient):
 
 @pytest.mark.asyncio
 async def test_add_alert(classification_vision_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value,
-                                               create_defaults=False)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value,
+                                                             create_defaults=False)
     assert model_client.model["id"] == classification_vision_model_id
     model_client.add_checks({"check": SingleDatasetPerformance()})
 
@@ -77,14 +79,14 @@ async def test_add_alert(classification_vision_model_id, deepchecks_sdk_client: 
 
 @pytest.mark.asyncio
 async def test_add_defaults(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value,
-                                               create_defaults=True)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value,
+                                                             create_defaults=True)
     assert model_client.model["id"] == 1
     assert len(model_client.get_checks()) == 4
 
-    checks_added = model_client.add_checks({"check": SingleDatasetPerformance()})
-    assert checks_added["check"] == 5
+    model_client.add_checks({"check": SingleDatasetPerformance()})
+    assert "check" in model_client.get_checks().keys()
     monitor_id = model_client.add_monitor("check", 86400)
     assert monitor_id == 5
     alert_id = model_client.add_alert_rule("check", 0.3, 86400)

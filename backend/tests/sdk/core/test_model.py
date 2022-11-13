@@ -13,8 +13,8 @@ from deepchecks_client import DeepchecksClient
 
 @pytest.mark.asyncio
 async def test_create_delete_model(deepchecks_sdk_client: DeepchecksClient):
-    model = deepchecks_sdk_client.model(name='test_model', task_type='binary')
-    model2 = deepchecks_sdk_client.model('test_model')
+    model = deepchecks_sdk_client.get_or_create_model(name='test_model', task_type='binary')
+    model2 = deepchecks_sdk_client.get_or_create_model('test_model')
     assert model is model2
 
     # Delete

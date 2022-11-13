@@ -52,7 +52,7 @@ async def test_quick_version(deepchecks_sdk_client: DeepchecksClient, async_sess
     )
 
     # Assert
-    model = deepchecks_sdk_client.model(name='test', task_type='multiclass')
+    model = deepchecks_sdk_client.get_or_create_model(name='test', task_type='multiclass')
     assert model.get_versions() == {'ver': 1}
 
     model_version: ModelVersion = await async_session.scalar(
@@ -220,7 +220,7 @@ def test_create_tabular_model_infer_model_classes(deepchecks_sdk_client: Deepche
     )
 
     # Assert
-    model_ver = deepchecks_sdk_client.model(name='test', task_type='multiclass').version('ver')
+    model_ver = deepchecks_sdk_client.get_or_create_model(name='test', task_type='multiclass').version('ver')
     assert_that(model_ver, has_property('model_classes', contains_exactly('0', '1', '2')))
 
 
@@ -246,5 +246,5 @@ def test_create_tabular_without_probas_does_not_infer_classes(deepchecks_sdk_cli
     )
 
     # Assert
-    model_ver = deepchecks_sdk_client.model(name='test', task_type='multiclass').version('ver')
+    model_ver = deepchecks_sdk_client.get_or_create_model(name='test', task_type='multiclass').version('ver')
     assert_that(model_ver, has_property('model_classes', is_(None)))

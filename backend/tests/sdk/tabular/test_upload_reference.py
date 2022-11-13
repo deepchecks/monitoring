@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular.dataset import Dataset
-from deepchecks_client import TaskType
 from hamcrest import assert_that, calling, raises
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
+from deepchecks_client import TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
 from tests.conftest import add_model, add_model_version
 
@@ -52,7 +52,8 @@ async def test_classification_upload_without_classes(client, deepchecks_sdk_clie
     pred = [2, 1]
 
     # Act
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     dc_client.upload_reference(ds, predictions=pred)
 
     # Assert
@@ -97,7 +98,8 @@ async def test_pass_probas_to_regression(deepchecks_sdk_client, client: TestClie
     pred = [2, 1]
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.REGRESSION.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.REGRESSION.value).version(
+        'v1')
     assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
                 raises(ValueError, 'Can\'t pass prediction_probas to regression task.'))
 
@@ -113,7 +115,8 @@ async def test_pass_probas_without_model_classes(deepchecks_sdk_client, client: 
     pred = [2, 1]
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
                 raises(ValueError, 'Can\'t pass prediction_probas if version was not configured with model classes.'))
 
@@ -129,7 +132,8 @@ async def test_pass_probas_different_length_than_model_classes(deepchecks_sdk_cl
     pred = [2, 1]
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
                 raises(ValueError,
                        'number of classes in prediction_probas does not match number of classes in model classes.'))
@@ -146,7 +150,8 @@ async def test_pass_new_predictions_not_in_model_classes(deepchecks_sdk_client, 
     pred = [3, 1]
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
                 raises(ValueError, 'Got predictions not in model classes: {\'3\'}'))
 
@@ -162,6 +167,7 @@ async def test_pass_new_label_not_in_model_classes(deepchecks_sdk_client, client
     pred = [2, 1]
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
                 raises(ValueError, 'Got labels not in model classes: {\'4\'}'))

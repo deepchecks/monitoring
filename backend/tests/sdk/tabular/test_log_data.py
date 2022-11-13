@@ -10,13 +10,13 @@
 import pandas as pd
 import pendulum as pdl
 import pytest
-from deepchecks_client import TaskType
 from hamcrest import assert_that, calling, raises
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
+from deepchecks_client import TaskType
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL
 from deepchecks_monitoring.models.model_version import ModelVersion
 from tests.conftest import add_model, add_model_version
@@ -57,7 +57,8 @@ async def test_classification_log_without_probas(
     # Arrange
     model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
     version_id = add_model_version(model_id, client, name='v1')
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
 
     # Act
     dc_client.log_sample('1', prediction='2', label=2, a=2, b='2', c=1)
@@ -332,7 +333,8 @@ async def test_classification_log_pass_probas_without_classes(deepchecks_sdk_cli
     add_model_version(model_id, client, name='v1')
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.log_sample).with_args(
         '1', prediction='2', prediction_proba=[0.1, 0.3, 0.6], label=2, a=2, b='2', c=1
     ),
@@ -346,7 +348,8 @@ async def test_classification_log_pass_probas_not_same_length_as_classes(deepche
     add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.log_sample).with_args(
         '1', prediction='2', prediction_proba=[0.1, 0.3, 0.5, 0.1], label=2, a=2, b='2', c=1
     ),
@@ -360,7 +363,8 @@ async def test_classification_log_pass_prediction_not_in_classes(deepchecks_sdk_
     add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.MULTICLASS.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
+        'v1')
     assert_that(calling(dc_client.log_sample).with_args(
         '1', prediction='10', prediction_proba=[0.1, 0.3, 0.6], label=2, a=2, b='2', c=1
     ),
@@ -374,7 +378,8 @@ async def test_regression_log_sample_pass_proba(deepchecks_sdk_client, client: T
     add_model_version(model_id, client, name='v1')
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.model(name='model', task_type=TaskType.REGRESSION.value).version('v1')
+    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.REGRESSION.value).version(
+        'v1')
     assert_that(calling(dc_client.log_sample).with_args(
         '1', prediction=10, prediction_proba=[0.1], label=2, a=2, b='2', c=1
     ),

@@ -72,7 +72,7 @@ class DeepchecksModelVersionClient:
         ]
 
     def log_sample(self, *args, **kwargs):
-        """Send sample for the model version."""
+        """Add a data sample for the model version update queue. Requires a call to send() to upload."""
         raise NotImplementedError
 
     def send(self):
@@ -98,7 +98,7 @@ class DeepchecksModelVersionClient:
             self.api.upload_reference(self.model_version_id, content.to_json(orient='table', index=False))
 
     def update_sample(self, sample_id: str, **values):
-        """Update sample. Possible to update only non_features and label."""
+        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload."""
         raise NotImplementedError
 
     def time_window_statistics(
@@ -106,7 +106,7 @@ class DeepchecksModelVersionClient:
         start_time: t.Union['PendulumDateTime', int, None] = None,
         end_time: t.Union['PendulumDateTime', int, None] = None
     ) -> t.Dict[str, float]:
-        """Get statistics on samples in a provided time window.
+        """Get statistics on uploaded samples for the model version in a provided time window.
 
         Parameters
         ----------
@@ -133,7 +133,7 @@ class DeepchecksModelVersionClient:
 
 
 class DeepchecksModelClient:
-    """Client to interact with a model in monitoring.
+    """Client to interact with a model in monitoring. Created via the DeepchecksClient's get_or_create_model function.
 
     Parameters
     ----------
@@ -152,17 +152,13 @@ class DeepchecksModelClient:
         """Get or create a new model version."""
         raise NotImplementedError
 
-    def _get_existing_version_id_or_none(self, version_name: str):
+    def _get_existing_version_id_or_none(self, version_name: str) -> int:
         """Get a model version if it exists, otherwise return None."""
         versions = self.api.fetch_all_model_versions(self.model['id'])
         versions = t.cast(t.List[t.Dict[str, t.Any]], versions)
         for it in versions:
             if it['name'] == version_name:
                 return it['id']
-
-    def _get_model_version_id(self, model_version_name):
-        versions = self.get_versions()
-        return versions.get(model_version_name)
 
     def _version_client(self) -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model."""
@@ -172,7 +168,7 @@ class DeepchecksModelClient:
         """Add default checks, monitors and alerts to the model based on its task type."""
         raise NotImplementedError
 
-    def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False) -> t.Dict[str, int]:
+    def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False):
         """Add new checks for the model and returns their checks' id."""
         serialized_checks = []
         checks_in_model = self.get_checks()
@@ -189,16 +185,7 @@ class DeepchecksModelClient:
             else:
                 serialized_checks.append({'name': name, 'config': check.config()})
 
-        created_checks = self.api.create_checks(self.model['id'], serialized_checks)
-        created_checks = t.cast(t.List[t.Dict[str, t.Any]], created_checks)
-        return {
-            # TODO:
-            # - no guarantee that checks will be returned in the same
-            # order as they were passed will be the same
-            # - why do we assigning id to name?
-            serialized_checks[index]['name']: int(check['id'])
-            for index, check in enumerate(created_checks)
-        }
+        self.api.create_checks(self.model['id'], serialized_checks)
 
     def _get_id_of_check(self, check_name: str) -> t.Optional[int]:
         """Return the check id of a provided check name."""
@@ -350,13 +337,20 @@ class DeepchecksModelClient:
         monitor = t.cast(t.Dict[str, t.Any], monitor)
         return monitor['id']
 
-    def get_versions(self) -> t.Dict[str, str]:
-        """Return list of model version (id and name)."""
+    def get_versions(self) -> t.Dict[str, int]:
+        """Return the existing model versions.
+
+        Returns
+        -------
+        Dict[str, int]:
+            Dictionary of version name to version id.
+        """
         versions = self.api.fetch_all_model_versions(self.model['id'])
         versions = t.cast(t.List[t.Dict[str, t.Any]], versions)
         return {it['name']: it['id'] for it in versions}
 
     def delete_checks(self, names: t.List[str]):
+        """Delete checks by name."""
         checks_not_in_model = [x for x in names if x not in self.get_checks().keys()]
 
         if len(checks_not_in_model) > 0:

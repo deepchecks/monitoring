@@ -13,14 +13,13 @@ from deepchecks.utils.decorators import Substitution
 
 __all__ = ['docstrings']
 
-
 _shared_docstrings = {}
 
-
 _shared_docstrings['add_monitor_desc'] = """
-Create a monitor based on check to be displayed in dashboard.
-""".strip('\n')
+Create a new monitor to be displayed in the dashboard.
 
+A monitor runs a selected check on data over time and displays the check's result values.
+""".strip('\n')
 
 _shared_docstrings['add_monitor_params'] = """
 check_name: str
@@ -29,11 +28,13 @@ check_name: str
 frequency: int
     How often the minitor would be calculated, provided in seconds.
 aggregation_window: int, default: None
-    The aggregation window of each calculation of the minitor, provided in seconds.
+    The aggregation window of each calculation of the monitor, provided in seconds. If None, the aggregation window
+    will be the same as the frequency.
 lookback: int, default: None
-    Determines the time range seen on the monitor, provided in seconds.
+    Determines the time range for which the monitor is run, provided in seconds. If None, the lookback will be
+    inferred based on the frequency.
 name: str, default: None
-    The name to assigned to the monitor.
+    The name to assign to the monitor.
 description: str, default: None
     The description to assigned to the monitor.
 add_to_dashboard: bool, default: True
@@ -42,11 +43,12 @@ kwargs_for_check: t.Dict, default = None
     Additional kwargs to pass on to check.
 """.strip('\n')
 
-
 _shared_docstrings['add_alert_rule_desc'] = """
-Create an alert based on provided arguments. Alert is run on a specific check result.
-""".strip('\n')
+Create a new alert rule for provided model based on selected check.
 
+The alert will run the selected check on data in defined time intervals and verify if the check return value meets the
+defined condition.
+""".strip('\n')
 
 _shared_docstrings['add_alert_rule_params'] = """
 check_name: str
@@ -56,8 +58,8 @@ threshold: float
 frequency: int, default: None
     Control the frequency the alert will be calculated, provided in seconds.
 aggregation_window: int
-    The time range (current time - window size) the check would run on, provided in seconds.
-    If None, uses window size as frequency.
+    The aggregation window of each calculation of the alert, provided in seconds. If None, the aggregation window
+    will be the same as the frequency.
 alert_severity: str, default: "mid"
     The severity level associated with the alert. Possible values are: critical, high, mid and low.
 greater_than: bool, default: True
@@ -69,7 +71,6 @@ monitor_name: str, default: None
 add_monitor_to_dashboard: bool, default: False
     Whether to add a corresponding monitor to the dashboard screen.
 """.strip('\n')
-
 
 _shared_docstrings['schema_param'] = """
 schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]]
@@ -92,6 +93,5 @@ schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]]
             - 'array_float_2d'
             - 'datetime'
 """.strip('\n')
-
 
 docstrings = Substitution(**_shared_docstrings)

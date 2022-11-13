@@ -26,8 +26,6 @@ import randomname
 import testing.postgresql
 import torch
 from deepchecks.vision import ClassificationData, DetectionData
-from deepchecks_client import DeepchecksClient
-from deepchecks_client.core.api import API
 from fastapi.testclient import TestClient
 from requests import Response
 from sqlalchemy import MetaData, Table, inspect
@@ -36,6 +34,8 @@ from sqlalchemy.orm import sessionmaker
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 
+from deepchecks_client import DeepchecksClient
+from deepchecks_client.core.api import API
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
@@ -150,7 +150,8 @@ def deepchecks_sdk_client(client: TestClient):
 def multiclass_model_version_client(classification_model_id,
                                     classification_model_version_id,
                                     deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="classification model", task_type=TaskType.MULTICLASS.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
+                                                             task_type=TaskType.MULTICLASS.value)
     return model_client.version("v1")
 
 
@@ -159,7 +160,8 @@ def multiclass_model_version_client(classification_model_id,
 def regression_model_version_client(regression_model_id,
                                     regression_model_version_id,
                                     deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="regression model", task_type=TaskType.REGRESSION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="regression model",
+                                                             task_type=TaskType.REGRESSION.value)
     return model_client.version("v1")
 
 
@@ -168,8 +170,8 @@ def regression_model_version_client(regression_model_id,
 def vision_classification_model_version_client(classification_vision_model_id,
                                                classification_vision_model_version_id,
                                                deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision classification model",
-                                               task_type=TaskType.VISION_CLASSIFICATION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
+                                                             task_type=TaskType.VISION_CLASSIFICATION.value)
     return model_client.version("v1")
 
 
@@ -178,7 +180,8 @@ def vision_classification_model_version_client(classification_vision_model_id,
 def detection_vision_model_version_client(detection_vision_model_id,
                                           detection_vision_model_version_id,
                                           deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.model(name="vision detection model", task_type=TaskType.VISION_DETECTION.value)
+    model_client = deepchecks_sdk_client.get_or_create_model(name="vision detection model",
+                                                             task_type=TaskType.VISION_DETECTION.value)
     return model_client.version("v1")
 
 
@@ -331,8 +334,8 @@ async def classification_model_feature_check_id(classification_model_id: int, cl
 
 @pytest_asyncio.fixture()
 async def classification_vision_model_property_check_id(
-    classification_vision_model_id: int,
-    client: TestClient
+        classification_vision_model_id: int,
+        client: TestClient
 ) -> int:
     return t.cast(int, add_check(
         model_id=classification_vision_model_id,
@@ -408,11 +411,11 @@ def add_check(
 
 
 def add_model(
-    client: TestClient,
-    expected_status_code: int = 200,
-    name: t.Optional[str] = None,
-    task_type: t.Optional[TaskType] = None,
-    description: t.Optional[str] = None,
+        client: TestClient,
+        expected_status_code: int = 200,
+        name: t.Optional[str] = None,
+        task_type: t.Optional[TaskType] = None,
+        description: t.Optional[str] = None,
 ) -> t.Union[Response, int]:
     payload = {}
     payload["name"] = name or randomname.get_name()

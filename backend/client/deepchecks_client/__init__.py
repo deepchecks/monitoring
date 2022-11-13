@@ -16,7 +16,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import torch
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.tabular import Dataset
 from deepchecks.vision import VisionData
@@ -28,7 +27,8 @@ from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
 from deepchecks_client.tabular.utils import DataSchema
-from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient, ARRAY
+from deepchecks_client.vision.client import ARRAY
+from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
 
 try:
     from importlib import metadata
@@ -44,10 +44,12 @@ class DeepchecksClient:
 
     Parameters
     ----------
-    host: str
+    host: t.Optional[str]
         The deepchecks monitoring API host.
-    token: Optional[str]
-        The deepchecks API token
+    token: t.Optional[str]
+        The deepchecks API token.
+    api: t.Optional[API]
+        The deepchecks API client.
     """
 
     def __init__(
@@ -66,59 +68,17 @@ class DeepchecksClient:
         self._model_clients = {}
         self.api.say_hello()
 
-    def tabular_model(
-        self,
-        name: str,
-        task_type: t.Union[str, TaskType, None] = None,
-        description: t.Optional[str] = None,
-        create_defaults: bool = True
-    ) -> TabularModelClient:
-        """Get or create tabular model client."""
-        if task_type is not None:
-            task_type = TaskType(task_type)
-            if task_type not in TaskType.tabular_types():
-                raise ValueError(f'not a tabular task type - {task_type}')
-        client = self.model(
-            name=name,
-            task_type=task_type,
-            description=description,
-            create_defaults=create_defaults
-        )
-        if not isinstance(client, TabularModelClient):
-            raise ValueError(f'Model with name "{name}" exists but is not of tabular type')
-        return client
-
-    def vision_model(
-        self,
-        name: str,
-        task_type: t.Union[str, TaskType, None] = None,
-        description: t.Optional[str] = None,
-        create_defaults: bool = True
-    ) -> VisionModelClient:
-        """Get or create vision model client."""
-        if task_type is not None:
-            task_type = TaskType(task_type)
-            if task_type not in TaskType.vision_types():
-                raise ValueError(f'not a vision task type - {task_type}')
-        client = self.model(
-            name=name,
-            task_type=task_type,
-            description=description,
-            create_defaults=create_defaults
-        )
-        if not isinstance(client, VisionModelClient):
-            raise ValueError(f'Model with name "{name}" exists but is not of vision type')
-        return client
-
-    def model(
+    def get_or_create_model(
         self,
         name: str,
         task_type: t.Union[str, TaskType, None] = None,
         description: t.Optional[str] = None,
         create_defaults: bool = True
     ) -> DeepchecksModelClient:
-        """Get or create a new model.
+        """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
+        A model client is a client to interact with a specific model. It is used to update checks, monitors and alerts
+        associated with the model. In addition, it can be used to create a new model version.
         Parameters
         ----------
         name: str
@@ -134,7 +94,7 @@ class DeepchecksClient:
         Returns
         -------
         DeepchecksModelClient
-            Client to interact with the created model.
+            Client to interact with the model.
         """
         task_type = TaskType(task_type) if task_type is not None else None
         available_models = self.api.fetch_models()
@@ -152,8 +112,7 @@ class DeepchecksClient:
                 raise ValueError(f'Model with name {name} already exists, but has different task type.')
             if description is not None and description != existing_model['description']:
                 raise ValueError(f'Model with name {name} already exists, but has different description.')
-            client, _ = self._create_model_client(model_id=existing_model['id'], task_type=existing_model_type)
-            return client
+            return self._model_client_from_model_id(model_id=existing_model['id'], task_type=existing_model_type)
 
         if task_type is None:
             raise ValueError('task_type must be provided for creation of a new model')
@@ -165,12 +124,7 @@ class DeepchecksClient:
         })
 
         created_model = t.cast(t.Dict[str, t.Any], created_model)
-        created_model_id = created_model['id']
-        model_client, client_existed = self._create_model_client(model_id=created_model_id, task_type=task_type)
-
-        if client_existed:
-            return model_client
-
+        model_client = self._model_client_from_model_id(model_id=created_model['id'], task_type=task_type)
         msg = f'Model {name} was successfully created!.'
 
         if create_defaults:
@@ -180,47 +134,42 @@ class DeepchecksClient:
         pretty_print(msg)
         return model_client
 
-    def _select_model_client_type(self, task_type: TaskType) -> t.Union[
-        t.Type[TabularModelClient],
-        t.Type[VisionModelClient]
-    ]:
-        """Select model type."""
-        if task_type in TaskType.vision_types():
-            return VisionModelClient
-        elif task_type in TaskType.tabular_types():
-            return TabularModelClient
-        else:
-            raise ValueError(f'Unknow task type - {task_type}')
-
-    def _create_model_client(
+    def _model_client_from_model_id(
         self,
         model_id: int,
         task_type: TaskType
-    ) -> t.Tuple[DeepchecksModelClient, bool]:
-        """Get client to interact with a specific model.
+    ) -> DeepchecksModelClient:
+        """Get client to interact with a specific model from internal cache (based on id).
 
         Parameters
         ----------
         model_id: int
             Model id to get client for.
         task_type: TaskType
-            Task type of the model.
+            Task type of the model. Used to determine the correct client type.
 
         Returns
         -------
         DeepchecksModelClient
             Client to interact with the model.
         """
-        existed = True
-        if self._model_clients.get(model_id) is None:
-            existed = False
-            client_type = self._select_model_client_type(task_type)
-            self._model_clients[model_id] = client_type(model_id=model_id, api=self.api)
-        return self._model_clients[model_id], existed
+        if self._model_clients.get(model_id) is not None:
+            pass
+        elif task_type in TaskType.vision_types():
+            self._model_clients[model_id] = VisionModelClient(model_id=model_id, api=self.api)
+        elif task_type in TaskType.tabular_types():
+            self._model_clients[model_id] = TabularModelClient(model_id=model_id, api=self.api)
+        else:
+            raise ValueError(f'Unknown task type - {task_type}')
+        return self._model_clients[model_id]
 
     def get_model_version(self, model_name: str, version_name: str) -> DeepchecksModelVersionClient:
         """Get client to interact with a specific model version.
 
+        Raises
+        ------
+        ValueError
+            If model or version does not exist.
         Parameters
         ----------
         model_name: str
@@ -239,7 +188,7 @@ class DeepchecksClient:
         if model_name not in [model['name'] for model in available_models]:
             raise ValueError(f'Model with name {model_name} does not exist.')
 
-        model = self.model(model_name)
+        model = self.get_or_create_model(model_name)
         existing_version_id = model._get_existing_version_id_or_none(  # pylint: disable=protected-access
             version_name=version_name
         )
@@ -267,9 +216,9 @@ class DeepchecksClient:
         Parameters
         ----------
         model_name: str
-            A name for the model.
+            The model name. Can be an existing model or a name for a new model.
         version_name: str, default: 'v1'
-            A name for the version.
+            The version name. Version name must be unique per model.
         description: str, default: ''
             A short description of the model.
         task_type: Union[str, TaskType, None], default: None
@@ -317,7 +266,7 @@ class DeepchecksClient:
                 'Allowed values for task_type argument are "vision_classification" and "vision_detection"'
             )
 
-        model_client = self.vision_model(model_name, task_type, description)
+        model_client = self.get_or_create_model(model_name, task_type, description)
         version_client = model_client.version(version_name, reference_dataset, image_properties)
 
         version_client.upload_reference(
@@ -348,16 +297,21 @@ class DeepchecksClient:
         Parameters
         ----------
         model_name: str
-            A name for the model.
+            The model name. Can be an existing model or a name for a new model.
         {schema_param:2*indent}
         version_name: str, default: 'v1'
-            A name for the version.
+            The version name. Version name must be unique per model.
         reference_dataset: Optional[Dataset], default: None
-            The reference dataset object.
+            The reference dataset object, Required for uploading reference data.
+            See https://docs.deepchecks.com/stable/user-guide/tabular/dataset_object.html for more info.
         reference_predictions: np.ndarray, default: None
-            The model predictions for the reference data.
+            The model predictions for the reference data. Should be provided as an array of shape (n_samples,),
+            containing the predicted value for each sample in the dataset. Optional if probabilities are provided.
         reference_probas: np.ndarray, default: None
-            The model predicted class probabilities for the reference data, relevant only for classification tasks.
+            The model predicted class probabilities for the reference data, optional for classification tasks.
+            Should be provided as an array of shape (n_samples, n_classes) containing the predicted probability of
+            each possible class for each sample in the dataset. The classes should be ordered according to
+            alphanumeric order based on the classes names.
         feature_importance: Union[Dict[str, float], pandas.Series[float], None], default: None
             a dictionary or pandas series of feature names and their feature importance value.
         task_type: Optional[str], default: None
@@ -427,10 +381,13 @@ class DeepchecksClient:
             if len(model_classes) != reference_probas.shape[1]:
                 raise DeepchecksValueError(
                     f'Got {reference_probas.shape[1]} columns in reference_probas, but '
-                    f'{len(model_classes)} model classes were provided.'
+                    f'{len(model_classes)} model classes were provided / detected.'
                 )
+        elif task_type != TaskType.REGRESSION:
+            warnings.warn('If predicted probabilities are not supplied, checks and metrics that rely on the predicted '
+                          'probabilities (such as ROC Curve and the AUC metric) will not run.')
 
-        version_client = self.tabular_model(model_name, task_type, description).version(
+        version_client = self.get_or_create_model(model_name, task_type, description).version(
             version_name,
             features=features_dict,
             non_features=non_features_dict,
@@ -459,7 +416,7 @@ class DeepchecksClient:
         pretty_print(f'The following model was successfully deleted: {model_name}')
 
     def delete_model_version(self, model_name: str, version_name: str):
-        """Delete model version by name.
+        """Delete model version by its name.
 
         Parameters
         ----------
@@ -490,14 +447,15 @@ class DeepchecksClient:
         Parameters
         ----------
         model_name: str
-            name of the model to which to add a rule
+            name of the model to which the alert rule will be added
         {add_alert_rule_params:2*indent}
 
         Returns
         -------
-        int : alert rule id
+        int :
+            created alert rule id
         """
-        model_client = self.model(name=model_name)
+        model_client = self.get_or_create_model(name=model_name)
         return model_client.add_alert_rule(
             check_name=check_name,
             threshold=threshold,
@@ -528,14 +486,15 @@ class DeepchecksClient:
         Parameters
         ----------
         model_name: str
-            name of the model to which to add a monitor
+            name of the model to which the monitor will be added
         {add_monitor_params:2*indent}
 
         Returns
         -------
-        int : monitor id
+        int :
+            created monitor id
         """
-        model_client = self.model(name=model_name)
+        model_client = self.get_or_create_model(name=model_name)
         return model_client.add_monitor(
             check_name=check_name,
             frequency=frequency,
