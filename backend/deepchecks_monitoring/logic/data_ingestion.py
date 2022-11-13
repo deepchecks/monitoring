@@ -348,10 +348,11 @@ class DataIngestionBackend:
         async with self.get_session(tp) as session:
             topic = tp.topic
             model_version_id = int(topic[topic.rfind("-") + 1:])
-            messages_data = [m.value.decode() for m in messages[:5]]
-            samples = [json.loads(m)["data"] for m in messages_data]
-            values = [{"sample_id": s.get(SAMPLE_ID_COL), "sample": s, "error": str(exception),
+            samples = [json.loads(m.value.decode())["data"] for m in messages]
+            values = [{"sample_id": sample.get(SAMPLE_ID_COL),
+                       "sample": json.dumps(sample),
+                       "error": str(exception),
                        "model_version_id": model_version_id}
-                      for s in samples]
+                      for sample in samples]
             await session.execute(insert(IngestionError).values(values))
         return True
