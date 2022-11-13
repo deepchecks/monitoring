@@ -263,7 +263,8 @@ async def run_check_per_window_in_range(
 
     # The range calculates from start to end excluding the end, so add interval to have the windows at their end time
     windows_end = [d + frequency for d in (end_time - start_time).range("seconds", frequency.in_seconds())
-                   if d + frequency <= end_time]
+                   # Don't include window which end time is in the future
+                   if d + frequency <= pdl.now()]
     windows_start = [d - agg_window for d in windows_end]
 
     # execute an async session per each model version
