@@ -196,17 +196,19 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     const click = args.event.type;
     const xCursor = args.event.x;
     const yCursor = args.event.y;
-    const meta = chart.getDatasetMeta(0);
     const deviation = 4;
 
     const angle = Math.PI / 180;
 
     if (click === 'click' && xCursor && yCursor && chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
-        const xData = meta.data[index].x;
-        const yData = meta.data[index].y;
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() && alertIndex !== activeIndex) {
+            const failedValues = alerts[alertIndex].failed_values; 
+            const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.values(failedValues)[0]}|${Object.keys(failedValues)[0]}`===dataset.label))
+            const meta = datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+            const xData = meta.data[index].x;
+            const yData = meta.data[index].y;
             let xLineMin = xData - deviation < xCursor;
             let xLineMax = xData + deviation > xCursor;
             const currentTop = yData - outerRadius < top ? yData - outerRadius : top;
@@ -248,10 +250,10 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     } = chart;
     const angle = Math.PI / 180;
     const space = 8;
-    const meta = chart.getDatasetMeta(0);
+
     const criticalColor = '#17003E';
 
-    const drawActiveAlert = (index: number) => {
+    const drawActiveAlert = (index: number, meta: ChartMeta) => {
       const rectWidth = 100;
       const rectHeight = 32;
 
@@ -324,7 +326,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       drawExclamationMark(ctx, meta, '#fff', index, 20, 4);
     };
 
-    const drawAlert = (index: number) => {
+    const drawAlert = (index: number, meta: ChartMeta) => {
       ctx.beginPath();
       ctx.strokeStyle = criticalColor;
       ctx.lineWidth = 0.8;
@@ -346,7 +348,10 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() ) {
-            alertIndex === activeIndex ? drawActiveAlert(index) : drawAlert(index);
+            const failedValues = alerts[alertIndex].failed_values; 
+            const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.values(failedValues)[0]}|${Object.keys(failedValues)[0]}`===dataset.label))
+            const meta = datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+            alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
           }
         });
       });
@@ -368,11 +373,10 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
 
     const angle = Math.PI / 180;
 
-    const meta = chart.getDatasetMeta(0);
 
     const criticalColor = '#17003E';
 
-    const drawActiveAlert = (index: number) => {
+    const drawActiveAlert = (index: number, meta: ChartMeta) => {
       ctx.beginPath();
       ctx.lineWidth = 3;
       ctx.strokeStyle = criticalColor;
@@ -398,7 +402,7 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
       ctx.closePath();
     };
 
-    const drawAlert = (index: number) => {
+    const drawAlert = (index: number, meta: ChartMeta) => {
       ctx.beginPath();
       ctx.strokeStyle = '#17003E';
       ctx.lineWidth = 1;
@@ -415,7 +419,10 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() ) {
-            alertIndex === activeIndex ? drawActiveAlert(index) : drawAlert(index);
+            const failedValues = alerts[alertIndex].failed_values; 
+            const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.values(failedValues)[0]}|${Object.keys(failedValues)[0]}`===dataset.label))
+            const meta = datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+            alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
           }
         });
       });
