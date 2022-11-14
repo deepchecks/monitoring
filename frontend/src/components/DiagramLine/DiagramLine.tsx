@@ -212,10 +212,10 @@ function DiagramLine({
         zoom: {
           onZoom: alerts.length ? onChange : () => 1,
           wheel: {
-            enabled: true
+            enabled: false
           },
           pinch: {
-            enabled: true
+            enabled: false
           },
           mode: 'x'
         }
