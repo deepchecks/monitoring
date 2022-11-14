@@ -26,6 +26,8 @@ import randomname
 import testing.postgresql
 import torch
 from deepchecks.vision import ClassificationData, DetectionData
+from deepchecks_client import DeepchecksClient
+from deepchecks_client.core.api import API
 from fastapi.testclient import TestClient
 from requests import Response
 from sqlalchemy import MetaData, Table, inspect
@@ -34,8 +36,6 @@ from sqlalchemy.orm import sessionmaker
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 
-from deepchecks_client import DeepchecksClient
-from deepchecks_client.core.api import API
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
@@ -365,7 +365,9 @@ async def regression_model_check_id(regression_model_id: int, client: TestClient
 
 def add_alert(alert_rule_id, async_session: AsyncSession, resolved=True):
     dt = pdl.from_timestamp(1600000)
-    alert = Alert(failed_values={}, alert_rule_id=alert_rule_id, start_time=dt, end_time=dt, resolved=resolved)
+
+    alert = Alert(failed_values={"v1": {"Accuracy": 0.3}},
+                  alert_rule_id=alert_rule_id, start_time=dt, end_time=dt, resolved=resolved)
     async_session.add(alert)
     return alert
 

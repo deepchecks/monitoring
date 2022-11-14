@@ -11,8 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity
-from tests.api.test_alerts import add_alert
-from tests.conftest import add_alert_rule, add_monitor
+from tests.conftest import add_alert, add_alert_rule, add_monitor
 
 
 @pytest.mark.asyncio
@@ -178,6 +177,26 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
             "is_active": True
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_get_all_alerts_of_alert_rule(classification_model_check_id, client: TestClient, async_session):
+    # Arrange
+    monitor_id = add_monitor(classification_model_check_id, client)
+    alert_rule_id = add_alert_rule(
+        monitor_id,
+        client,
+        alert_severity=AlertSeverity.LOW.value,
+    )
+
+    add_alert(alert_rule_id, async_session, resolved=False)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    add_alert(alert_rule_id, async_session, resolved=False)
+    await async_session.commit()
+
+    # Act
+    response = client.get(f"/api/v1/alert-rules/{alert_rule_id}/alerts")
+    assert len(response.json()) == 3, response.json()
 
 
 @pytest.mark.asyncio

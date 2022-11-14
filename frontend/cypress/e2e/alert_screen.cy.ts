@@ -16,8 +16,8 @@ describe('Alerts screen', () => {
     alertDrawerLi.should('have.text', 2);
     alertDrawerLi.click();
 
-    cy.contains('div', 'monitor Alert'); // to wait for alert modal to load
-    cy.contains('div', 'monitor Alert').parent().parent().parent().within(() => {
+    cy.contains('h4', 'checky v1 Monitor'); // to wait for alert modal to load
+    cy.contains('h4', 'checky v1 Monitor').parent().parent().parent().parent().within(() => {
       cy.contains('p', 'Rule: Value < 0.5').should('exist');
       cy.contains('p', '8.11.2022').should('exist');
       cy.contains('h6', 'alerts model').should('exist');

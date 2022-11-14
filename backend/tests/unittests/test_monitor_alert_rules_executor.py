@@ -75,7 +75,7 @@ async def test_monitor_executor(
     assert isinstance(alert, Alert), alert
     assert alert.alert_rule_id == rule_that_should_raise_id
     assert isinstance(alert.failed_values, dict), alert.failed_values
-    assert alert.failed_values == {"v1": ["accuracy"], "v2": ["accuracy"]}, alert.failed_values
+    assert alert.failed_values == {"v1": {"accuracy": 0.2}, "v2": {"accuracy": 0.2}}, alert.failed_values
 
 
 @pytest.mark.asyncio
@@ -145,7 +145,7 @@ async def test_alert_scheduling(
         await anyio.sleep(10)  # give worker time to execute tasks
         g.cancel_scope.cancel()
 
-    alerts = (await async_session.scalars(sa.select(Alert))).all()
+    alerts: t.List[Alert] = (await async_session.scalars(sa.select(Alert))).all()
     tasks = (await async_session.scalars(sa.select(Task))).all()
 
     # number will vary from run to run
@@ -156,7 +156,7 @@ async def test_alert_scheduling(
     assert len([it for it in tasks if it.status == TaskStatus.COMPLETED]) > 0
 
     for alert in alerts:
-        assert alert.failed_values == {"v1": ["accuracy"]}, alert
+        assert alert.failed_values == {"v1": {"accuracy": 0.6666666666666666}}, alert.failed_values
         assert alert.alert_rule_id == 1
 
 

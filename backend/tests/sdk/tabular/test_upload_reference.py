@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular.dataset import Dataset
+from deepchecks_client import TaskType
 from hamcrest import assert_that, calling, raises
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
-from deepchecks_client import TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
 from tests.conftest import add_model, add_model_version
 

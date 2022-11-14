@@ -102,8 +102,8 @@ Cypress.Commands.add('addDataToVersion', (modelInfo: object, samplesPerHour=20, 
     const currTime = new Date('November 9, 2022 00:00:00').getTime();
     const dayBefore = currTime - (24 * 60 * 60 * 1000);
     for (let i = 0; i < samples; i++) {
-        const hourIndex = Math.floor(i / samplesPerHour)
-        const hour = hourArr[Math.floor(i / samplesPerHour)]
+        const hourIndex = i % hourArr.length
+        const hour = hourArr[hourIndex]
         const date = new Date(dayBefore + (hour * 60 * 60 * 1000));
         const label = modelInfo['task_type'] == 'regression' ? i : String(i % 3)
         const pred = modelInfo['task_type'] == 'regression' ? i + (i % (hourIndex + 1)) : String((i + (i % (hourIndex + 1))) % 3)

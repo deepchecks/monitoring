@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from deepchecks_monitoring import __version__
+from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import DatabaseSettings
@@ -113,6 +114,7 @@ async def execute_monitor(
         elif alert := assert_check_results(alert_rule, check_results):
             alert.start_time = start_time
             alert.end_time = end_time
+            AlertCreationSchema.validate(alert)
             session.add(alert)
             await session.commit()
             logger.info("Alert(id:%s) instance created for monitor(id:%s)", alert.id, monitor.id)
@@ -142,22 +144,24 @@ def assert_check_results(
             # JSON serialization fails with numerical keys,
             # therefore we cast id to string
             str(model_version),
-            value_name
+            value_name,
+            value
         )
         for model_version, version_results in results.items()
         for value_name, value in version_results.items()
         if assert_value(value)
     )
 
-    failed_values = defaultdict(list)
+    failed_values = defaultdict(defaultdict)
 
-    for version_id, failed_value_name in failures:
-        failed_values[version_id].append(failed_value_name)
+    for version_id, failed_value_name, failed_value_value in failures:
+        failed_values[version_id][failed_value_name] = failed_value_value
 
     if failed_values:
         return Alert(
             alert_rule_id=alert_rule.id,
-            failed_values=failed_values
+            failed_values=failed_values,
+            resolved=False
         )
 
 

@@ -25,21 +25,26 @@ from deepchecks_monitoring.utils import exists_or_404, fetch_or_404
 from .router import router
 
 
-class AlertSchema(BaseModel):
-    """Schema for the alert."""
+class AlertCreationSchema(BaseModel):
+    """Schema for the alert creation."""
 
-    id: int
     alert_rule_id: int
-    failed_values: t.Dict[str, t.List[str]]
+    failed_values: t.Dict[str, t.Dict[str, float]]
     start_time: pdl.DateTime
     end_time: pdl.DateTime
     resolved: bool
-    created_at: pdl.DateTime
 
     class Config:
         """Config for Alert schema."""
 
         orm_mode = True
+
+
+class AlertSchema(AlertCreationSchema):
+    """Schema for the alert."""
+
+    id: int
+    created_at: pdl.DateTime
 
 
 @router.get("/alerts/count_active", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])

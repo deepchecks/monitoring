@@ -1,4 +1,5 @@
-fastapi>=0.78.0
+fastapi==0.86.0
+starlette==0.20.4
 sqlalchemy[asyncio]==1.4.39
 dynaconf>=3.1.8
 pydantic[dotenv]>=1.9.1
