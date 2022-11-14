@@ -129,38 +129,27 @@ def is_serialization_error(error: DBAPIError):
 #
 EnqueueTasks = sa.text(dedent("""
     WITH
-        mons_with_endtime AS (
+        monitors_info AS (
             SELECT
-                m.id as monitor_id,
-                m.frequency as frequency,
-                m.scheduling_start as scheduling_start,
-                m.latest_schedule as latest_schedule,
-                max(mv.end_time) as end_time
-            FROM
-                monitors as m,
-                checks as c,
-                model_versions as mv
-            WHERE
-                m.check_id = c.id AND
-                c.model_id = mv.model_id
+                m.id AS monitor_id,
+                (m.frequency || ' seconds')::INTERVAL AS frequency,
+                MAX(mv.end_time) AS end_time,
+                CASE
+                    WHEN m.latest_schedule IS NULL THEN m.scheduling_start
+                    ELSE m.latest_schedule
+                END AS last_scheduling
+            FROM monitors AS m
+            JOIN checks AS c ON c.id = m.check_id
+            JOIN model_versions AS mv ON mv.model_id = c.model_id
             GROUP BY m.id
         ),
         scheduling_series AS (
             SELECT
-                mons_with_endtime.monitor_id as monitor_id,
-                GENERATE_SERIES(info.last_scheduling, LEAST(NOW(), end_time), info.frequency) AS timestamp
-            FROM
-                mons_with_endtime,
-                LATERAL (
-                    SELECT
-                        (frequency || ' seconds')::INTERVAL AS frequency,
-                        CASE
-                            WHEN latest_schedule IS NULL THEN scheduling_start
-                            ELSE latest_schedule
-                        END AS last_scheduling
-                ) as info(frequency, last_scheduling)
-            WHERE (info.last_scheduling + info.frequency) <= NOW() AND
-                  (info.last_scheduling + info.frequency) <= end_time
+                monitor_id AS monitor_id,
+                GENERATE_SERIES(last_scheduling, series_limit, frequency) AS timestamp
+            FROM monitors_info,
+            LATERAL LEAST(NOW(), end_time) AS series_limit
+            WHERE (last_scheduling + frequency) <= series_limit
         ),
         latest_schedule AS (
             SELECT

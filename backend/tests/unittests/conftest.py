@@ -29,6 +29,9 @@ def _():
 
 async def update_model_version_end(async_engine, classification_model_version_id):
     async with async_engine.connect() as c:
-        await c.execute(sa.update(ModelVersion).where(ModelVersion.id == classification_model_version_id)
-                        .values({ModelVersion.end_time: datetime.now() + timedelta(days=1)}))
+        await c.execute(
+            sa.update(ModelVersion)
+            .where(ModelVersion.id == classification_model_version_id)
+            .values({ModelVersion.end_time: datetime.now() + timedelta(days=1)})
+        )
         await c.commit()

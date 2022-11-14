@@ -35,7 +35,6 @@ if t.TYPE_CHECKING:
     from .core import Actor, Task, Worker  # pylint: disable=unused-import
     from .scheduler import AlertsScheduler  # pylint: disable=unused-import
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -186,14 +185,21 @@ class WorkerInstrumentor:
             logger.warning("Opentelemetry SDK is not installed")
             return
 
-        original_execute_task_fn = self.worker_type.execute_task
+        self.worker_type.atomic_task_execution = self.wrap_task_execution(
+            self.worker_type.atomic_task_execution
+        )
+        self.worker_type.not_atomic_task_execution = self.wrap_task_execution(
+            self.worker_type.not_atomic_task_execution
+        )
 
-        @wraps(original_execute_task_fn)
+    def wrap_task_execution(self, original_fn):
+        """Wrap worker task execution method."""
+        @wraps(original_fn)
         async def execute_task(
             worker: "Worker",
             session: "AsyncSession",
             actor: "Actor",
-            task: "Task"
+            task: "Task",
         ):
             with self.tracer.start_as_current_span("Worker.execute_task") as span:
                 span.set_attribute(SpanAttributes.CODE_NAMESPACE, "Worker")
@@ -231,7 +237,7 @@ class WorkerInstrumentor:
                 start_time = timer()
 
                 try:
-                    return await original_execute_task_fn(
+                    return await original_fn(
                         self=worker,
                         session=session,
                         actor=actor,
@@ -246,8 +252,7 @@ class WorkerInstrumentor:
                         span.set_status(Status(StatusCode.ERROR))
                         span.record_exception(error)
                     raise
-
-        self.worker_type.execute_task = execute_task
+        return execute_task
 
 
 class TelemetyLoggingHandler(logging.Handler):

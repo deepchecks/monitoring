@@ -51,8 +51,11 @@ async def get_alerts_per_model(session) -> dict:
     return dict(results)
 
 
-def get_time_ranges_for_monitor(lookback: int, frequency: int = None, end_time: pdl.DateTime = None) -> \
-        Tuple[pdl.DateTime, pdl.DateTime, pdl.Duration]:
+def get_time_ranges_for_monitor(
+    lookback: int,
+    frequency: int = None,
+    end_time: pdl.DateTime = None
+) -> Tuple[pdl.DateTime, pdl.DateTime, pdl.Duration]:
     """Return time ranges to run checks on. If no window_size is provided calculates one based on heuristic.
 
     Parameters
@@ -63,6 +66,7 @@ def get_time_ranges_for_monitor(lookback: int, frequency: int = None, end_time: 
         The windows size to divide the lookback segment into. If None is calculated based on lookback parameter.
     end_time: pdl.DateTime, default: None
         The end date of the time segment, If none the end_date is configured to be 30 minutes after current time.
+
     Returns
     -------
     Tuple[pdl.DateTime, pdl.DateTime, pdl.Duration]

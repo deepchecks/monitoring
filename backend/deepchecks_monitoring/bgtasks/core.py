@@ -10,6 +10,7 @@
 #  pylint: disable=redefined-outer-name
 """Contains Task ORM model and the 'Worker' implementation."""
 import asyncio
+import contextlib
 import dataclasses
 import enum
 import inspect
@@ -386,23 +387,45 @@ class TasksBroker:
 
     async def next_task(self, session: AsyncSession) -> t.AsyncIterator[Task]:
         """Pop next task from the queue or wait for it."""
-        queues_names: t.Optional[t.Sequence["QueueName"]] = None
-        actors_names: t.Optional[t.Sequence["ExecutorName"]] = None
-        while True:
-            task = await self.pop_task(
-                session=session,
-                queue_names=queues_names,
-                actor_names=actors_names,
-            )
-            if task is not None:
-                yield task
-            elif queues_names or actors_names:
-                queues_names = None
-                actors_names = None
-            else:
+        async with anyio.create_task_group() as g:
+            g.start_soon(self.listen_for_notifications)
+            queues_names: t.Optional[t.Sequence["QueueName"]] = None
+            actors_names: t.Optional[t.Sequence["ExecutorName"]] = None
+
+            while True:
+                async for it in self._next_task(
+                    session=session,
+                    queue_names=queues_names,
+                    actor_names=actors_names,
+                ):
+                    yield it
+
                 await session.rollback()  # closing any active transaction
+
                 if notifications := await self.wait_for_notifications():
                     queues_names, actors_names = self._process_notifications(notifications)
+                else:
+                    queues_names = None
+                    actors_names = None
+
+    async def _next_task(
+        self,
+        session: AsyncSession,
+        actor_names: t.Optional[t.Sequence["ExecutorName"]] = None,
+        queue_names: t.Optional[t.Sequence["QueueName"]] = None,
+        **kwargs
+    ) -> t.AsyncIterator[Task]:
+        """Pop all available tasks from qiven queues."""
+        while True:
+            if task := await self.pop_task(
+                session=session,
+                queue_names=queue_names,
+                actor_names=actor_names,
+                **kwargs
+            ):
+                yield task
+            else:
+                return
 
     def _process_notifications(self, notifications: t.Sequence["Notification"]):
         """Process notifications sequence."""
@@ -423,11 +446,28 @@ class TasksBroker:
         execution_options: t.Optional[t.Mapping[str, t.Any]] = None,
     ) -> t.Optional[Task]:
         """Pop next task from the queue."""
+        if actor_names is None:
+            actor_names = self.actors_names
+        elif diff := set(actor_names).difference(set(self.actors_names)):
+            raise ValueError(f"Unknown actor names - {list(diff)}")
+
+        if queue_names is None:
+            queue_names = self.queues_names
+        elif diff := set(queue_names).difference(set(self.queues_names)):
+            raise ValueError(f"Unknown queue names - {list(diff)}")
+
+        self.logger.info(
+            "Task lookup:\nQueues: %s\nActors: %s\nExecution Options: %s",
+            repr(list(queue_names)),
+            repr(list(actor_names)),
+            repr(execution_options)
+        )
+
         cte = (
             sa.select(Task)
             .where(sa.and_(
-                Task.executor.in_(actor_names or self.actors_names),
-                Task.queue.in_(queue_names or self.queues_names),
+                Task.executor.in_(actor_names),
+                Task.queue.in_(queue_names),
                 Task.status == TaskStatus.SCHEDULED,
                 Task.execute_after <= sa.func.now(),
             ))
@@ -443,10 +483,18 @@ class TasksBroker:
                 started_at=datetime.now(timezone.utc))
             .returning(Task)
         )
-        return await session.scalar(
+
+        task = await session.scalar(
             sa.select(Task).from_statement(cte),
             execution_options=execution_options
         )
+
+        if task:
+            self.logger.info("Retrieved a task: %s", repr(task))
+        else:
+            self.logger.info("No tasks")
+
+        return task
 
     async def wait_for_notifications(self) -> t.List["Notification"]:
         """Wait for a task enqueueing notification(s)."""
@@ -484,6 +532,8 @@ class Worker:
         sequence of Actor instances (task execution logic),
         also defines set of queues and tasks for worker to
         listen and consume
+    tasks_broker : TasksBroker
+        tasks broker instance
     worker_name : str , default "tasks-executor"
         name of the worker which will be seen in the logs
     notification_wait_timeout : float , default '1 minute'
@@ -535,7 +585,34 @@ class Worker:
         additional_params: t.Optional[t.Dict[str, t.Any]] = None,
         logger: t.Optional[logging.Logger] = None,
     ):
-        """Create worker instance."""
+        """Create worker instance.
+
+        Parameters
+        ==========
+        engine : AsyncEngine
+            database engine instance
+        actors : Sequence[Actor]
+            sequence of Actor instances (task execution logic),
+            also defines set of queues and tasks for worker to
+            listen and consume
+        tasks_broker_type : Type[TasksBroker]
+            type if a tasks broker to use
+        worker_name : str , default "tasks-executor"
+            name of the worker which will be seen in the logs
+        expire_after : timedelta , default '2 days'
+            max allowed time for a task to be in the 'scheduled' state,
+            after exceeding the time limit task is considered to be 'expired'
+            In short:
+            >> is_expired = (now() - task.execute_after) > expire_after
+        additional_params : Optional[Dict[Any, Any]] , default None
+            additional params that will be passed to the actor function
+        logger : Optional[logging.Logger]
+            logger instance to use
+
+        Returns
+        =======
+        Worker
+        """
         queues_names: t.Set[str] = set()
         actors_names: t.Set[str] = set()
 
@@ -593,45 +670,55 @@ class Worker:
             else:
                 self.actors[k] = a
 
-    async def start(self):
-        """Start processing tasks."""
+    @contextlib.asynccontextmanager
+    async def create_database_session(self):
+        """Create database session."""
         async with AsyncSession(self.engine, autoflush=False, expire_on_commit=False) as session:
             try:
-                async with anyio.create_task_group() as g:
-                    g.start_soon(self.tasks_broker.listen_for_notifications)
-                    g.start_soon(self.loop, session)
+                yield session
             finally:
                 with anyio.CancelScope(shield=True):
                     await session.rollback()
                     await session.close()
 
-    async def loop(self, session: AsyncSession):
-        """Loop over enqueued tasks."""
-        async for task in self.tasks_broker.next_task(session):
-            if (datetime.now(timezone.utc) - task.enqueued_at) > self.expire_after:
-                task.status = TaskStatus.EXPIRED
-                await session.flush()
-                await session.commit()
-            else:
-                k = (t.cast(str, task.queue), t.cast(str, task.executor))
-                actor: t.Optional[Actor] = self.actors.get(k)
-                if actor is None:
-                    self.logger.warning(f"No actor for task: {repr(task)}")
-                    await session.rollback()
-                else:
-                    await self.execute_task(session, actor, task)
+    async def start(self):
+        """Start processing tasks."""
+        async with self.create_database_session() as session:
+            async for task in self.tasks_broker.next_task(session):
+                await self.execute_task(session, task)
 
-    async def execute_task(self, session: AsyncSession, actor: Actor, task: Task):
+    async def execute_task(self, session: AsyncSession, task: Task):
         """Execute task logic."""
+        now = datetime.now(timezone.utc)
+
+        if now < task.execute_after:
+            self.logger.warning(f"Task(id:{task.id}).execute_after is greater than 'now'")
+            await session.rollback()
+            return
+
+        if (now - task.enqueued_at) > self.expire_after:
+            task.status = TaskStatus.EXPIRED
+            await session.flush()
+            await session.commit()
+            return
+
+        k = (t.cast(str, task.queue), t.cast(str, task.executor))
+        actor = self.actors.get(k)
+
+        if actor is None:
+            self.logger.warning(f"No actor for task: {repr(task)}")
+            await session.rollback()
+            return
+
         if actor.execution_strategy == ExecutionStrategy.ATOMIC:
             return await self.atomic_task_execution(session, actor, task)
         elif actor.execution_strategy == ExecutionStrategy.NOT_ATOMIC:
             return await self.not_atomic_task_execution(session, actor, task)
-        else:
-            raise ValueError(
-                f"Unexpected value of 'actor.execution_strategy' - {actor.execution_strategy}, "
-                f"actor: {repr(actor)}"
-            )
+
+        raise ValueError(
+            f"Unexpected value of 'actor.execution_strategy' - {actor.execution_strategy}, "
+            f"actor: {repr(actor)}"
+        )
 
     async def not_atomic_task_execution(self, session: AsyncSession, actor: Actor, task: Task):
         """Execute task in not atomic mode.
@@ -722,7 +809,7 @@ class Worker:
         until task execution ends.
 
         Pros:
-            we can not worry that a task could be lost or hung
+            we can stop worry that a task could be lost or hung
             in a 'running' state in a case of interruption or a
             worker failure, any side effects produced by a task
             (inserted/modified records in the DB) will be rolled
@@ -731,18 +818,17 @@ class Worker:
 
         Cons:
             a terrible choice for long runnin tasks, 'SELECT FOR UPDATE'
-            to addition to a row level lock that prevents selected records
-            from being updated/deleted also aquires table level 'ROW SHARE' lock
-            that prevents commands like 'REINDEX', 'ALTER INDEX', 'ALTER TABLE',
-            'VACUUM FULL' from running.
+            aquires 'ROW SHARE' lock that conflicts with the 'EXCLUSIVE'
+            and 'ACCESS EXCLUSIVE' lock that prevents commands like 'REINDEX',
+            'ALTER INDEX', 'ALTER TABLE','VACUUM FULL' from running.
 
             plus, an active transaction keeps all its resources in the memory
             which could lead to a situation when a server will not
-            have enough resources to process a user query/transaction
-            or at least to do it effectively
+            have enough resources to process a user query/transaction effectively
+            or to process it at all
 
         WARNING:
-        do not use 'ExecutionStrategy.ATOMIC' for long running tasks
+        do not use 'ExecutionStrategy.ATOMIC' for very long running tasks
 
         NOTE:
         the same sqlalchemy session instance that is used to fetch and acquire a task

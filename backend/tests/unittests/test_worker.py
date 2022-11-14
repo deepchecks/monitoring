@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-# pylint: disable=missing-class-docstring,unused-argument
+# pylint: disable=missing-class-docstring,unused-argument,protected-access
 import asyncio
 import random
 import typing as t
@@ -38,37 +38,38 @@ def generate_actor(*, fn=None, bind=None, execution_strategy=ExecutionStrategy.A
     return a if not bind else a.bind(bind)
 
 
-async def fetch_task(
+async def fetch_tasks(
     connection: t.Any,
-    task_id: int,
+    task_ids: t.Sequence[int],
     actor: t.Optional[Actor] = None,
     params: t.Optional[t.Dict[t.Any, t.Any]] = None,
-):
-    stm = sa.select(Task).where(Task.id == task_id)
+) -> t.List[Task]:
+    stm = sa.select(Task).where(Task.id.in_(list(task_ids)))
 
     if isinstance(connection, AsyncEngine):
         async with connection.connect() as c:
-            task = (await c.execute(stm)).first()
+            tasks = (await c.execute(stm)).all()
     elif isinstance(connection, AsyncConnection):
-        task = (await connection.execute(stm)).first()
+        tasks = (await connection.execute(stm)).all()
     elif isinstance(connection, AsyncSession):
-        task = await connection.scalar(stm)
+        tasks = (await connection.scalars(stm)).all()
     else:
         raise TypeError(f"Unexpected type - {type(connection)}")
 
     if actor is None:
-        return task
+        return tasks
 
-    assert task is not None
-    assert actor.name == task.executor
-    assert actor.description == task.description
-    assert actor.queue_name == task.queue
-    assert actor.priority == task.priority
+    for task in tasks:
+        assert task is not None
+        assert actor.name == task.executor
+        assert actor.description == task.description
+        assert actor.queue_name == task.queue
+        assert actor.priority == task.priority
 
-    if params is not None:
-        assert params == task.params
+        if params is not None:
+            assert params == task.params
 
-    return task
+    return tasks
 
 
 @pytest.mark.parametrize(
@@ -83,7 +84,7 @@ class TestTasksEnqueueing:
         args = {"foo": 1, "bar": 2}
         task_id = await actor.enqueue(**args)
         assert isinstance(task_id, int)
-        assert (await fetch_task(async_engine, task_id, actor=actor, params=args)) is not None
+        assert len(await fetch_tasks(async_engine, [task_id], actor=actor, params=args)) > 0
 
     @pytest.mark.asyncio
     async def test_with_orm_session(self, async_session: AsyncSession, execution_strategy: ExecutionStrategy):
@@ -92,7 +93,7 @@ class TestTasksEnqueueing:
         task_id = await actor.enqueue(**args)
         await async_session.commit()
         assert isinstance(task_id, int)
-        assert (await fetch_task(async_session, task_id, actor=actor, params=args)) is not None
+        assert len(await fetch_tasks(async_session, [task_id], actor=actor, params=args)) > 0
 
     @pytest.mark.asyncio
     async def test_with_connection(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
@@ -102,29 +103,31 @@ class TestTasksEnqueueing:
             task_id = await actor.enqueue(**args)
             await c.commit()
             assert isinstance(task_id, int)
-            assert (await fetch_task(c, task_id, actor=actor, params=args)) is not None
+            assert len(await fetch_tasks(c, [task_id], actor=actor, params=args))
 
 
 @pytest.mark.parametrize(
     "execution_strategy",
-    [ExecutionStrategy.ATOMIC, ExecutionStrategy.NOT_ATOMIC]
+    [
+        # NOTE:
+        # not used currently, commented to reduce tests time run
+        # ExecutionStrategy.ATOMIC,
+        ExecutionStrategy.NOT_ATOMIC
+    ]
 )
 class TestWorker:
 
     @pytest.mark.asyncio
-    async def test(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
+    async def test_tasks_execution(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
         actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
-        tasks_ids = [await actor.enqueue() for _ in range(3)]
         worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        tasks_ids = [await actor.enqueue() for _ in range(3)]
 
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            await anyio.sleep(5)
-            g.cancel_scope.cancel()
+        async with worker.create_database_session() as session:
+            for task in (await fetch_tasks(session, tasks_ids, actor=actor)):
+                await worker.execute_task(session, task)
 
-        tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
-
-        for task in tasks:
+        for task in await fetch_tasks(async_engine, tasks_ids):
             assert task is not None
             assert task.status == TaskStatus.COMPLETED
 
@@ -137,50 +140,19 @@ class TestWorker:
         tasks_ids = [await actor.enqueue() for _ in range(3)]
         worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
 
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            await anyio.sleep(5)
-            g.cancel_scope.cancel()
+        async with worker.create_database_session() as session:
+            # TODO:
+            # do not fetch all tasks at once
+            # explain why
+            for task_id in tasks_ids:
+                task, *_ = await fetch_tasks(session, [task_id], actor=actor)
+                await worker.execute_task(session, task)
 
-        tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
-
-        for task in tasks:
+        for task in (await fetch_tasks(async_engine, tasks_ids)):
             assert task is not None
             assert task.status == TaskStatus.FAILED
             assert task.error is not None
             assert task.traceback is not None
-
-    @pytest.mark.asyncio
-    async def test_queues_bound(
-        self,
-        async_engine: AsyncEngine,
-        execution_strategy: ExecutionStrategy
-    ):
-        # TODO: add descrption to the test
-        actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
-        second_actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
-
-        tasks_ids = [await actor.enqueue() for _ in range(3)]
-        second_actor_task_ids = [await second_actor.enqueue() for _ in range(3)]
-
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
-
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            await anyio.sleep(5)
-            g.cancel_scope.cancel()
-
-        tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
-
-        for task in tasks:
-            assert task is not None
-            assert task.status == TaskStatus.COMPLETED
-
-        second_actor_tasks = [await fetch_task(async_engine, id, actor=second_actor) for id in second_actor_task_ids]
-
-        for task in second_actor_tasks:
-            assert task is not None
-            assert task.status == TaskStatus.SCHEDULED
 
     @pytest.mark.asyncio
     async def test__execute_after__parameter(
@@ -189,22 +161,22 @@ class TestWorker:
         execution_strategy: ExecutionStrategy
     ):
         actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
+        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
 
         tasks_ids = [
             await actor.enqueue(execute_after=datetime.utcnow() + timedelta(days=2))
             for _ in range(3)
         ]
 
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        async with worker.create_database_session() as session:
+            # TODO:
+            # do not fetch all tasks at once
+            # explain why
+            for task_id in tasks_ids:
+                task, *_ = await fetch_tasks(session, [task_id], actor=actor)
+                await worker.execute_task(session, task)
 
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            await anyio.sleep(5)
-            g.cancel_scope.cancel()
-
-        tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
-
-        for task in tasks:
+        for task in await fetch_tasks(async_engine, tasks_ids):
             assert task is not None
             assert task.status == TaskStatus.SCHEDULED
 
@@ -232,14 +204,11 @@ class TestWorker:
             additional_params={"foo": 1}
         )
 
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            await anyio.sleep(5)
-            g.cancel_scope.cancel()
+        async with worker.create_database_session() as session:
+            for task in await fetch_tasks(session, tasks_ids, actor=actor):
+                await worker.execute_task(session, task)
 
-        tasks = [await fetch_task(async_engine, id, actor=actor) for id in tasks_ids]
-
-        for task in tasks:
+        for task in await fetch_tasks(async_engine, tasks_ids):
             assert task is not None
             assert task.status == TaskStatus.COMPLETED
 
@@ -249,24 +218,19 @@ class TestWorker:
         async_engine: AsyncEngine,
         execution_strategy: ExecutionStrategy
     ):
-        e = anyio.create_event()
-
         async def fn(**kwargs):
-            nonlocal e
-            e.set()
             await anyio.sleep(600)
 
         actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
         task_id = await actor.enqueue()
         worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=2)
 
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            with anyio.fail_after(delay=10):
-                await e.wait()  # wait for worker to pick up a task
-            g.cancel_scope.cancel()
+        async with worker.create_database_session() as session:
+            task, *_ = await fetch_tasks(session, [task_id], actor=actor)
+            with anyio.move_on_after(delay=1):
+                await worker.execute_task(session, task)
 
-        task = await fetch_task(async_engine, task_id, actor=actor)
+        task, *_ = await fetch_tasks(async_engine, [task_id], actor=actor)
 
         assert task is not None
 
@@ -276,48 +240,6 @@ class TestWorker:
             assert task.status == TaskStatus.CANCELED
         else:
             raise ValueError(f"Unexpected value of execution_strategy parameter {execution_strategy}")
-
-    @pytest.mark.asyncio
-    async def test_worker_wakeup_on_task_creation(
-        self,
-        async_engine: AsyncEngine,
-        execution_strategy: ExecutionStrategy
-    ):
-        async def fn(**kwargs):
-            print("Hello world")
-
-        actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=600)
-
-        async with anyio.create_task_group() as g:
-            g.start_soon(worker.start)
-            task_id = await actor.enqueue()
-            # TODO: too much time for 'sleep'
-            # weird, but if to set a smaller amount of time (for example 5 seconds)
-            # then this test with a big probability will fail either because
-            # 1. it will not be able handle the task in time
-            # 2. test async fixture finalization will fail with `asyncio.exceptions.CancelledError`
-            #
-            # I do not know what causes the second issue, but I suspect it might be
-            # some kind bug in 'pytest_asyncio'
-            #
-            # Importantly, along with its failure, some other tests might also fail,
-            # probably because fixture finalization failure prevents proper initialization
-            # of fixtures for the next tasks
-            #
-            # NOTE:
-            # this problem happens only when all tests from 'test_worker.py' are run at once
-            # but never when this test is run by itself
-            #
-            # This problem must be investigated
-            #
-            await anyio.sleep(10)
-            g.cancel_scope.cancel()
-
-        task = await fetch_task(async_engine, task_id, actor=actor)
-
-        assert task is not None
-        assert task.status == TaskStatus.COMPLETED
 
 
 class TestNotificationListener:
@@ -331,14 +253,14 @@ class TestNotificationListener:
 
         async with anyio.create_task_group() as g:
             g.start_soon(listener.listen, queue)
-            await anyio.sleep(5)  # we need to give him time to establish a connection
+            await anyio.sleep(1)  # we need to give listener a time to establish connection
 
             async with async_engine.begin() as c:
                 await c.execute(sa.text("NOTIFY first"))
                 await c.execute(sa.text("NOTIFY second"))
                 await c.commit()
 
-            await anyio.sleep(5)
+            await anyio.sleep(2)
             g.cancel_scope.cancel()
 
         assert queue.empty() is False
@@ -363,7 +285,7 @@ class TestNotificationListener:
 
         async with anyio.create_task_group() as g:
             g.start_soon(listener.listen, queue)
-            await anyio.sleep(8)
+            await anyio.sleep(5)
 
         assert queue.empty() is False
         assert isinstance(queue.get_nowait(), Exception)
@@ -399,7 +321,6 @@ class TestNotificationListener:
         assert n.channel == actor.channel
 
 
-
 class TestTasksBroker:
 
     @pytest.mark.asyncio
@@ -414,11 +335,7 @@ class TestTasksBroker:
             actors_names=[actor.name]
         )
 
-        iterator = broker.next_task(async_session)
-
-        with anyio.fail_after(delay=5):
-            tasks = [await iterator.__anext__() for _ in range(n_of_tasks)]
-
+        tasks = [it async for it in broker._next_task(async_session)]
         assert len(tasks) == 3
 
         for task in tasks:
@@ -427,7 +344,41 @@ class TestTasksBroker:
             assert task.status == TaskStatus.RUNNING
 
     @pytest.mark.asyncio
-    async def test_task_broker_notification_listening_capabilities(self, async_engine: AsyncEngine):
+    async def test_queues_bounds(self, async_session: AsyncSession):
+        """Test that broker picks up tasks only from own queue."""
+        first_actor = generate_actor(bind=async_session)
+        second_actor = generate_actor(bind=async_session)
+
+        first_task_id = await first_actor.enqueue()
+        second_task_id = await second_actor.enqueue()  # pylint: disable=unused-variable
+
+        await async_session.commit()
+
+        broker = TasksBroker(
+            database_url=async_session.get_bind().url,
+            queues_names=[first_actor.queue_name],
+            actors_names=[first_actor.name]
+        )
+
+        task = await broker.pop_task(
+            session=async_session,
+            queue_names=[first_actor.queue_name],
+            actor_names=[first_actor.name]
+        )
+
+        assert task is not None
+        assert task.id == first_task_id
+
+        with pytest.raises(ValueError):
+            await broker.pop_task(
+                session=async_session,
+                queue_names=[second_actor.queue_name],
+                actor_names=[second_actor.name]
+            )
+
+    @pytest.mark.asyncio
+    async def test_task_broker_wakup_on_task_enqueue(self, async_engine: AsyncEngine):
+        queue = asyncio.Queue()
         actor = generate_actor(bind=async_engine)
 
         broker = TasksBroker(
@@ -437,19 +388,26 @@ class TestTasksBroker:
             notification_wait_timeout=600
         )
 
+        async def loop(session):
+            nonlocal broker, queue
+            async for it in broker.next_task(session):
+                await queue.put(it)
+
         async with AsyncSession(async_engine) as s:
             async with anyio.create_task_group() as g:
-                g.start_soon(broker.listen_for_notifications)
-                iterator = broker.next_task(s)
-                future = asyncio.create_task(iterator.__anext__())
+                task = None
+                g.start_soon(loop, s)
+                await asyncio.sleep(1)  # give broker time to start listening for notifications
 
-                await asyncio.sleep(2)  # give broker time to start listening for notifications
-                assert future.done() is False
+                with anyio.move_on_after(delay=3):
+                    task = await queue.get()
+
+                assert task is None
 
                 task_id = await actor.enqueue()
 
-                with anyio.fail_after(delay=10):
-                    task = await future
+                with anyio.fail_after(delay=3):
+                    task = await queue.get()
 
                 g.cancel_scope.cancel()
 

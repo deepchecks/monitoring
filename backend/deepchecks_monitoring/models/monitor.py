@@ -37,15 +37,28 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
 
     check_id = context.get_current_parameters()["check_id"]
     frequency = context.get_current_parameters()["frequency"]
-    select_obj = select(sa.func.least(sa.func.greatest(
-        sa.func.min(ModelVersion.start_time),
-        sa.func.max(ModelVersion.end_time) - timedelta(seconds=frequency * 10)
-    ), sa.func.now()))\
-        .join(Check, Check.id == check_id) \
+
+    select_obj = (
+        select(
+            sa.func.least(
+                sa.func.greatest(
+                    sa.func.min(ModelVersion.start_time),
+                    sa.func.max(ModelVersion.end_time) - timedelta(seconds=frequency * 10)
+                ),
+                sa.func.now()
+            )
+        )
+        .join(Check, Check.id == check_id)
         .where(ModelVersion.model_id == Check.model_id)
+    )
+
     time_to_round = context.connection.execute(select_obj).scalar()
-    return get_time_ranges_for_monitor(frequency, frequency,
-                                       pdl.instance(time_to_round + pdl.duration(seconds=frequency)))[0]
+
+    return get_time_ranges_for_monitor(
+        frequency,
+        frequency,
+        pdl.instance(time_to_round + pdl.duration(seconds=frequency))
+    )[0]
 
 
 class Monitor(Base):

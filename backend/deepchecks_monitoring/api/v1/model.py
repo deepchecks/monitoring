@@ -175,7 +175,7 @@ async def _retrieve_models_data_ingestion(
     def sample_timestamp(columns):
         return getattr(columns, SAMPLE_TS_COL)
 
-    model_identifier_name = model_identifier.column_name if model_identifier else "id"
+    model_identifier_name = "id"
     end_time = pdl.parse(end_time) if end_time else pdl.now()
     models_query = select(Model).options(selectinload(Model.versions))
 

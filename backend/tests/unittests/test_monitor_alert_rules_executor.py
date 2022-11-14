@@ -7,9 +7,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+# pylint: disable=protected-access
 import typing as t
+from collections import defaultdict
 
-import anyio
 import pendulum as pdl
 import pytest
 import sqlalchemy as sa
@@ -19,10 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from deepchecks_monitoring.bgtasks.actors import execute_monitor
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.models import Alert
+from deepchecks_monitoring.models import Alert, Monitor
 from deepchecks_monitoring.utils import TimeUnit
 from tests.conftest import add_alert_rule, add_check, add_classification_data, add_model_version, add_monitor
 from tests.unittests.conftest import update_model_version_end
+from tests.unittests.test_alerts_scheduler import UpdateMonitor
 
 
 @pytest.mark.asyncio
@@ -51,6 +54,7 @@ async def test_monitor_executor(
         client,
         condition={"operator": "less_than", "value": 0.7}
     ))
+
     rule_that_does_nothing_id = t.cast(int, add_alert_rule(  # pylint: disable=unused-variable
         monitor_id,
         client,
@@ -87,6 +91,7 @@ async def test_alert_scheduling(
     classification_model_version_id: int,
 ):
     # TODO: add description to the test
+    # == Prepare
     await update_model_version_end(async_engine, classification_model_version_id)
 
     check_id = t.cast(int, add_check(
@@ -99,7 +104,7 @@ async def test_alert_scheduling(
             check_id,
             client,
             lookback=TimeUnit.DAY * 3,
-            frequency=TimeUnit.SECOND * 3,
+            frequency=TimeUnit.SECOND * 600,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         ),
@@ -108,7 +113,7 @@ async def test_alert_scheduling(
             client,
             lookback=TimeUnit.HOUR * 2,
             aggregation_window=TimeUnit.HOUR * 2,
-            frequency=TimeUnit.SECOND * 3,
+            frequency=TimeUnit.SECOND * 600,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         )
@@ -125,6 +130,7 @@ async def test_alert_scheduling(
             condition={"operator": "less_than", "value": 0.7}
         )),
     ]
+
     model_version_id = t.cast(int, add_model_version(
         classification_model_id,
         client,
@@ -135,29 +141,54 @@ async def test_alert_scheduling(
     daterange = [past_date.add(hours=h) for h in range(1, 24, 2)]
     add_classification_data(model_version_id, client, daterange=daterange)
 
-    async with anyio.create_task_group() as g:
-        g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=1).run)
-        await anyio.sleep(5)  # give scheduler time to enqueue tasks
-        g.cancel_scope.cancel()
+    for monitor_id in monitors:
+        async with async_engine.begin() as c:
+            (await c.execute(
+                UpdateMonitor,
+                parameters={
+                    "monitor_id": monitor_id,
+                    "start": pdl.now() - pdl.duration(hours=1)
+                }
+            )).first()
 
-    async with anyio.create_task_group() as g:
-        g.start_soon(Worker.create(engine=async_engine, actors=[execute_monitor]).start)
-        await anyio.sleep(10)  # give worker time to execute tasks
-        g.cancel_scope.cancel()
+    # == Act
+    worker = Worker.create(engine=async_engine, actors=[execute_monitor])
+    scheduler = AlertsScheduler(engine=None)
 
-    alerts: t.List[Alert] = (await async_session.scalars(sa.select(Alert))).all()
+    async with async_engine.connect() as c:
+        await scheduler.enqueue_tasks(c)
+
+    async with worker.create_database_session() as s:
+        async for task in worker.tasks_broker._next_task(s):
+            await worker.execute_task(s, task)
+
+    # == Assert
+    alerts = (await async_session.scalars(sa.select(Alert))).all()
     tasks = (await async_session.scalars(sa.select(Task))).all()
 
-    # number will vary from run to run
-    # therefore just lets check that it
-    # is bigger than zero
-    assert len(tasks) > 0
-    assert len(alerts) > 0
-    assert len([it for it in tasks if it.status == TaskStatus.COMPLETED]) > 0
+    monitors = (await async_session.scalars(
+        sa.select(Monitor).where(Monitor.id.in_(monitors))
+    )).all()
 
-    for alert in alerts:
-        assert alert.failed_values == {"v1": {"accuracy": 0.6666666666666666}}, alert.failed_values
-        assert alert.alert_rule_id == 1
+    alert_per_rule = defaultdict(list)
+    tasks_per_monitor = defaultdict(list)
+
+    for it in tasks:
+        tasks_per_monitor[it.reference].append(it)
+
+    for it in alerts:
+        alert_per_rule[it.alert_rule_id].append(it)
+
+    assert all(len(v) == 7 for v in tasks_per_monitor.values())
+    assert all(it.status == TaskStatus.COMPLETED for it in tasks)
+    assert len(alert_per_rule[rules[0]]) == 7
+    assert len(alert_per_rule[rules[1]]) == 1
+
+    for alert in alert_per_rule[rules[0]]:
+        assert alert.failed_values["v1"]["accuracy"] in (0.6666666666666666, 0.3333333333333333)
+
+    for alert in alert_per_rule[rules[1]]:
+        assert alert.failed_values == {"v1": {"accuracy": 0.0}}, alert.failed_values
 
 
 @pytest.mark.asyncio
