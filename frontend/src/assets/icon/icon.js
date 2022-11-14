@@ -27,6 +27,8 @@ import { ReactComponent as ExpandIcon } from './expand.svg';
 import { ReactComponent as ExpandMore } from './expandMore.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as FilterIcon } from './filterIcon.svg';
+import { ReactComponent as GraphLegendCurrent } from './graphLegendCurrent.svg';
+import { ReactComponent as GraphLegendPrevious } from './graphLegendPrevious.svg';
 import { ReactComponent as HomeIcon } from './home.svg';
 import { ReactComponent as Info } from './info.svg';
 import { ReactComponent as InfoIcon } from './infoIcon.svg';
@@ -79,6 +81,8 @@ export {
   ExpandMore,
   FastForward,
   FilterIcon,
+  GraphLegendCurrent,
+  GraphLegendPrevious,
   MenuVertical,
   NLPModel,
   HomeIcon,

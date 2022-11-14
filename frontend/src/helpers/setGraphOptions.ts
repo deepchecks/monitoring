@@ -1,6 +1,8 @@
 import { alpha } from '@mui/material';
 import { colors as pointColor } from '../theme/colors';
 
+export const PREVIOUS_PERIOD = '|previous_period';
+
 export const graphColors = [
   '#01A9DB',
   '#A57DBD',
@@ -21,7 +23,7 @@ export const graphColors = [
 ];
 
 export const setLineGraphOptions = (label: string, index: number, dashed = false) => ({
-  label: dashed ? label + '_d' : label,
+  label: dashed ? label + PREVIOUS_PERIOD : label,
   borderColor: graphColors[index % graphColors.length],
   pointBorderColor: '#fff',
   pointBackgroundColor: graphColors[index],
@@ -32,7 +34,7 @@ export const setLineGraphOptions = (label: string, index: number, dashed = false
 });
 
 export const setBarGraphOptions = (label: string, index: number, dashed = false) => ({
-  label: dashed ? label + '_d' : label,
+  label: dashed ? label + PREVIOUS_PERIOD : label,
   backgroundColor: alpha(graphColors[index], 0.5),
   borderColor: graphColors[index],
   barPercentage: 0.3,

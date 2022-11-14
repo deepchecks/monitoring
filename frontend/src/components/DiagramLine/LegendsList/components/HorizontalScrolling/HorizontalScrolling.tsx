@@ -96,6 +96,7 @@ const StyledHorizontalScrollingChildrenContainer = styled(Box)({
   msOverflowStyle: 'none',
   scrollbarWidth: 'none',
   transition: 'all 0.4 easy',
+
   '::-webkit-scrollbar': {
     width: 0,
     height: 0

@@ -7,12 +7,14 @@ import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
 
 import { styled, Box } from '@mui/material';
 
-import { AnalysisChartItemWithFilters } from 'components/AnalysisChartItemWithFilters/AnalysisChartItemWithFilters';
-import { AnalysisChartItem } from 'components/AnalysisChartItem';
+import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters/AnalysisChartItemWithFilters';
+import { AnalysisChartItem } from './components/AnalysisChartItem';
 import AnalysisItemDiagram from './components/AnalysisItemDiagram';
 
 import { OperatorsMap } from 'helpers/conditionOperator';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
+
+import { AGGREGATION } from './AnalysisItem.variables';
 
 interface AnalysisItemProps {
   check: CheckSchema;
@@ -89,7 +91,7 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         (filtersSingleSelectValue || filtersMultipleSelectValue.length) &&
         typeof activeFilter === 'string'
       ) {
-        const filter = activeFilter === 'aggregation method' ? [filtersSingleSelectValue] : filtersMultipleSelectValue;
+        const filter = activeFilter === AGGREGATION ? [filtersSingleSelectValue] : filtersMultipleSelectValue;
 
         runCheckBody.data.additional_kwargs = {
           check_conf: {
@@ -129,7 +131,6 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
     filters,
     filtersSingleSelectValue,
     filtersMultipleSelectValue,
-
     period,
     frequency,
     activeFilter,

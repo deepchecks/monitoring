@@ -12,7 +12,7 @@ interface AnalysisItemDiagramProps {
 }
 
 const AnalysisItemDiagram = ({ isLoading, data, comparison }: AnalysisItemDiagramProps) => (
-  <DiagramLine data={data} height={440} isLoading={isLoading} analysis comparison={comparison} />
+  <DiagramLine data={data} height={420} isLoading={isLoading} analysis comparison={comparison} />
 );
 
 export default AnalysisItemDiagram;

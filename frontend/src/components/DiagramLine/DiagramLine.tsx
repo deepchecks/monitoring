@@ -18,6 +18,7 @@ import { Minimap } from '../Minimap';
 import { colors } from 'theme/colors';
 
 import { DiagramLineProps } from './DiagramLine.types';
+import { PREVIOUS_PERIOD } from 'helpers/setGraphOptions';
 
 Chart.register(...registerables, zoomPlugin);
 
@@ -30,7 +31,6 @@ function DiagramLine({
   isLoading,
   minimap = initMinimap,
   tooltipCallbacks = defaultTooltipCallbacks,
-
   analysis,
   comparison
 }: PropsWithChildren<DiagramLineProps>) {
@@ -205,7 +205,7 @@ function DiagramLine({
           }
         },
         pan: {
-          enabled: true,
+          enabled: false,
           onPan: alerts.length ? onChange : () => 1,
           mode: 'xy'
         },
@@ -258,7 +258,7 @@ function DiagramLine({
   useEffect(() => {
     if (comparison) {
       legends.forEach((legend, index) => {
-        if (index !== 0 && index !== legends.length / 2) {
+        if (index !== 0 && index !== legends.findIndex(legend => legend.text === legends[0].text + PREVIOUS_PERIOD)) {
           hideLine(legend);
         }
       });
@@ -287,10 +287,17 @@ function DiagramLine({
           sx={{ position: 'relative' }}
           onMouseLeave={() => chartRef.current?.resetZoom()}
         >
-          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
+          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={1} />
         </Box>
       </DiagramTutorialTooltip>
-      <LegendsList data={chartData} lineIndexMap={lineIndexMap} hideLine={hideLine} legends={legends}>
+      <LegendsList
+        data={chartData}
+        lineIndexMap={lineIndexMap}
+        hideLine={hideLine}
+        legends={legends}
+        analysis={analysis}
+        comparison={comparison}
+      >
         {children}
       </LegendsList>
       {changeAlertIndex && !!alerts.length && (

@@ -1,93 +1,163 @@
-import React, { PropsWithChildren, memo } from 'react';
-import { ChartData, LegendItem } from 'chart.js';
+import React, { PropsWithChildren, memo, useState, useEffect } from 'react';
+import { ChartData, LegendItem as ILegendItem } from 'chart.js';
 
-import { styled, Box, Tooltip, Typography } from '@mui/material';
+import { styled, Box, Stack, Typography } from '@mui/material';
 
-import { HorizontalScrolling } from './HorizontalScrolling/HorizontalScrolling';
+import HorizontalScrolling from './components/HorizontalScrolling';
+import LegendItem from './components/LegendItem';
 
 import { GraphData } from 'helpers/types';
+import { PREVIOUS_PERIOD } from 'helpers/setGraphOptions';
 
 interface LegendsListProps {
   data: ChartData<'line', GraphData, unknown>;
   lineIndexMap: Record<number, boolean>;
-  hideLine: (item: LegendItem) => void;
-  legends: LegendItem[];
+  hideLine: (item: ILegendItem) => void;
+  legends: ILegendItem[];
+  analysis?: boolean;
+  comparison?: boolean;
 }
 
-const MAX_LENGTH_OF_TOOLTIP_TEXT = 120;
+const ANALYSIS_LEGENDS_CONTAINER_HEIGHT = '60px';
 
-const LegendsList = ({ data, lineIndexMap, hideLine, legends, children }: PropsWithChildren<LegendsListProps>) => (
-  <StyledLegendsList>
-    {!!data?.labels?.length && !!legends.length && (
-      <StyledLegendsListContainer>
-        <HorizontalScrolling>
-          {legends.map((legendItem, index) => {
-            const text = legendItem?.text?.split('|');
+function replacePreviousPeriodSubstring(legend: ILegendItem) {
+  return legend.text.replace(PREVIOUS_PERIOD, '');
+}
 
-            return (
-              <Tooltip
-                title={legendItem?.text || ''}
-                disableHoverListener={legendItem?.text?.length <= MAX_LENGTH_OF_TOOLTIP_TEXT}
-                key={index}
-              >
-                <StyledLegendsListLegendItem onClick={() => hideLine(legendItem)} key={index}>
-                  <StyledLegendsListLegendItemPoint
-                    sx={{
-                      backgroundColor: legendItem.strokeStyle ? legendItem.strokeStyle.toString() : '#00F0FF'
-                    }}
-                  />
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      ml: '5px',
-                      textDecoration: lineIndexMap[
-                        typeof legendItem.datasetIndex === 'number' ? legendItem.datasetIndex : -2
-                      ]
-                        ? 'line-through'
-                        : 'none'
-                    }}
-                  >
-                    {text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT
-                      ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...`
-                      : text[0]}
-                  </Typography>
-                </StyledLegendsListLegendItem>
-              </Tooltip>
-            );
-          })}
-        </HorizontalScrolling>
-      </StyledLegendsListContainer>
-    )}
-    {children}
-  </StyledLegendsList>
-);
+const LegendsList = ({
+  data,
+  lineIndexMap,
+  hideLine,
+  legends,
+  analysis,
+  comparison,
+  children
+}: PropsWithChildren<LegendsListProps>) => {
+  const [sortedLegends, setSortedLegends] = useState<ILegendItem[]>([]);
+  const [delayedComparison, setDelayedComparison] = useState(comparison);
+
+  useEffect(() => {
+    setTimeout(() => setDelayedComparison(comparison), 0);
+  }, [comparison]);
+
+  useEffect(() => {
+    if (comparison) {
+      const paired: ILegendItem[] = [];
+      const single: ILegendItem[] = [];
+
+      legends.forEach(legend => {
+        if (legend.text.endsWith(PREVIOUS_PERIOD)) {
+          legends.find(l => legend.text === l.text + PREVIOUS_PERIOD) ? paired.push(legend) : single.push(legend);
+        } else {
+          legends.find(l => l.text === legend.text + PREVIOUS_PERIOD) ? paired.push(legend) : single.push(legend);
+        }
+      });
+
+      setSortedLegends(paired.concat(single));
+    }
+  }, [comparison, legends, hideLine]);
+
+  const handleCurrentPeriodLegendClick = (legendItem: ILegendItem) => {
+    hideLine(legendItem);
+
+    const previousLegendItem = legends.find(legend => legend.text === legendItem.text + PREVIOUS_PERIOD);
+    if (previousLegendItem) hideLine(previousLegendItem);
+  };
+
+  const handlePreviousPeriodLegendClick = (legendItem: ILegendItem) => {
+    hideLine(legendItem);
+
+    const currentLegendItem = legends.find(legend => legend.text === replacePreviousPeriodSubstring(legendItem));
+    if (currentLegendItem) hideLine(currentLegendItem);
+  };
+
+  return (
+    <StyledLegendsList>
+      {!!data?.labels?.length && !!legends.length && (
+        <StyledLegendsListContainer
+          direction={delayedComparison ? 'column' : 'row'}
+          height={analysis ? ANALYSIS_LEGENDS_CONTAINER_HEIGHT : 'auto'}
+          marginTop={analysis ? '13px' : '15px'}
+        >
+          <HorizontalScrolling>
+            {delayedComparison ? (
+              <Stack justifyContent="space-between" height={ANALYSIS_LEGENDS_CONTAINER_HEIGHT}>
+                <StyledLegendsStack>
+                  <StyledLegendsHeader>Current</StyledLegendsHeader>
+                  {sortedLegends.map(
+                    (legendItem, index) =>
+                      !legendItem.text.endsWith(PREVIOUS_PERIOD) && (
+                        <LegendItem
+                          key={index}
+                          item={legendItem}
+                          lineIndexMap={lineIndexMap}
+                          analysis={analysis}
+                          current={true}
+                          onClick={() => handleCurrentPeriodLegendClick(legendItem)}
+                        />
+                      )
+                  )}
+                </StyledLegendsStack>
+                <StyledLegendsStack>
+                  <StyledLegendsHeader>Previous</StyledLegendsHeader>
+                  {legends.map(
+                    (legendItem, index) =>
+                      legendItem.text.endsWith(PREVIOUS_PERIOD) && (
+                        <LegendItem
+                          key={index}
+                          item={legendItem}
+                          lineIndexMap={lineIndexMap}
+                          analysis={analysis}
+                          current={false}
+                          onClick={() => handlePreviousPeriodLegendClick(legendItem)}
+                        />
+                      )
+                  )}
+                </StyledLegendsStack>
+              </Stack>
+            ) : (
+              legends.map((legendItem, index) => (
+                <LegendItem
+                  key={index}
+                  item={legendItem}
+                  lineIndexMap={lineIndexMap}
+                  analysis={analysis}
+                  current={true}
+                  onClick={() => hideLine(legendItem)}
+                />
+              ))
+            )}
+          </HorizontalScrolling>
+        </StyledLegendsListContainer>
+      )}
+      {children}
+    </StyledLegendsList>
+  );
+};
 
 const StyledLegendsList = styled(Box)({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  width: '100%',
-  marginTop: '0px'
+  width: '100%'
 });
 
-const StyledLegendsListContainer = styled(Box)({
-  padding: '6.5px 0',
+const StyledLegendsListContainer = styled(Stack)({
+  justifyContent: 'center',
   minWidth: '70%'
 });
 
-const StyledLegendsListLegendItem = styled(Box)({
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  minWidth: 'max-content',
-  margin: '0 7px',
-  padding: '3px 0'
+const StyledLegendsHeader = styled(Typography)({
+  fontWeight: '700',
+  fontSize: '12px',
+  lineHeight: '140%',
+  letterSpacing: '0.17px',
+  width: '75px'
 });
 
-const StyledLegendsListLegendItemPoint = styled(Box)({
-  width: 9,
-  height: 9,
-  borderRadius: '3px'
+const StyledLegendsStack = styled(Stack)({
+  flexDirection: 'row',
+  alignItems: 'center'
 });
 
 export default memo(LegendsList);

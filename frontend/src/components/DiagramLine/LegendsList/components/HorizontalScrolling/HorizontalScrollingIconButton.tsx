@@ -32,13 +32,14 @@ const HorizontalScrollingIconButton = ({
 );
 
 const StyledIconButton = styled(IconButton)({
+  height: 24,
+  width: 24,
   padding: 0,
   background: 'none',
+
   ':hover': {
     background: 'none'
-  },
-  width: 24,
-  height: 24
+  }
 });
 
 export default HorizontalScrollingIconButton;
