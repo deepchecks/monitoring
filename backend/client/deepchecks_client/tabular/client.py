@@ -32,9 +32,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     Parameters
     ----------
-    host: str
+    host : str
         The deepchecks monitoring API host.
-    model_version_id: int
+    model_version_id : int
         The id of the model version.
     """
 
@@ -45,7 +45,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """Set model version feature importance.
 
         Parameters
-        ==========
+        ----------
         feature_importance : Union[Dict[str, float], pandas.Series[float]]
             A dictionary or pandas series of feature names and their feature importance values.
             Overrides existing feature importance, note that this may change value of certain checks.
@@ -90,7 +90,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """Log batch of samples.
 
         Parameters
-        ==========
+        ----------
         data : pandas.DataFrame
             set of features and optionally of non-features.
             Expected that dataframe will contain a 'sample_id' column,
@@ -175,9 +175,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         Parameters
         ----------
-        sample_id: str
+        sample_id : str
             Universal id for the sample. Used to retrieve and update the sample.
-        timestamp: Union[datetime, int]
+        timestamp : Union[datetime, int], optional
             If no timezone info is provided on the datetime assumes local timezone.
         prediction_proba
             Prediction value if exists
@@ -244,10 +244,14 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         Parameters
         ----------
-        dataset: deepchecks.tabular.Dataset
-        prediction_probas: np.ndarray
-        predictions: np.ndarray
-        samples_per_request: int
+        dataset : deepchecks.tabular.Dataset
+            The reference dataset.
+        prediction_probas : np.ndarray
+            The prediction probabilities.
+        predictions : np.ndarray
+            The prediction labels.
+        samples_per_request : int
+            The samples per batch request.
         """
         data = dataset.features_columns.copy()
 
@@ -308,8 +312,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """Update values of already uploaded samples.
 
         Parameters
-        ==========
-        samples_to_update: Union[pandas.DataFrame, Sequence]
+        ----------
+        samples_to_update : Union[pandas.DataFrame, Sequence]
             Either a sequence of sample ids to update or a dataframe which contain a 'sample_id' column,
             in addition to other values to update for those samples.
         timestamps : Union[pandas.Series[datetime], pandas.Series[int]], default None
@@ -382,7 +386,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         Parameters
         ----------
-        sample_id: str
+        sample_id : str
             Universal id for the sample. Used to retrieve and update the sample.
         label
             True label of sample.
@@ -422,9 +426,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
     Parameters
     ----------
-    host: str
+    host : str
         The deepchecks monitoring API host.
-    model_id: int
+    model_id : int
         The id of the model.
     """
 
@@ -440,15 +444,15 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         Parameters
         ----------
-        name: str
+        name : str
             Name to display for new version
-        features: Optional[Dict[str, str]], default: None
+        features : Optional[Dict[str, str]], default: None
             A dictionary of feature names and values from ColumnType enum. Required for creation of a new version.
-        non_features: Optional[Dict[str, str]], default: None
+        non_features : Optional[Dict[str, str]], default: None
             A dictionary of non feature names and values from ColumnType enum. Required for creation of a new version.
-        feature_importance: Union[Dict[str, float], pandas.Series[float]], default: None
+        feature_importance : Union[Dict[str, float], pandas.Series[float]], default: None
             A dictionary or pandas series of feature names and their feature importance value.
-        model_classes: Optional[Sequence[str]], default: None
+        model_classes : Optional[Sequence[str]], default: None
             List of classes used by the model. Must define classes in order to send probabilities.
 
         Returns
@@ -530,7 +534,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         Parameters
         ----------
-        model_version_id: int
+        model_version_id : int
             The id of the version.
 
         Returns

@@ -33,11 +33,11 @@ class DeepchecksModelVersionClient:
 
     Parameters
     ----------
-    model_version_id: int
+    model_version_id : int
         The id of the model version.
-    model: dict
+    model : dict
         The model
-    api: core.API
+    api : core.API
         The instance of the API object
     """
 
@@ -72,7 +72,15 @@ class DeepchecksModelVersionClient:
         ]
 
     def log_sample(self, *args, **kwargs):
-        """Add a data sample for the model version update queue. Requires a call to send() to upload."""
+        """Add a data sample for the model version update queue. Requires a call to send() to upload.
+
+        Parameters
+        ----------
+        *args
+            The args.
+        *kwargs
+            The kwargs.
+        """
         raise NotImplementedError
 
     def send(self):
@@ -85,7 +93,15 @@ class DeepchecksModelVersionClient:
             self._update_samples.clear()
 
     def upload_reference(self, *args, **kwargs):
-        """Upload reference data. Possible to upload only once for a given model version."""
+        """Upload reference data. Possible to upload only once for a given model version.
+
+        Parameters
+        ----------
+        *args
+            The args.
+        *kwargs
+            The kwargs.
+        """
         raise NotImplementedError
 
     def _upload_reference(
@@ -98,7 +114,15 @@ class DeepchecksModelVersionClient:
             self.api.upload_reference(self.model_version_id, content.to_json(orient='table', index=False))
 
     def update_sample(self, sample_id: str, **values):
-        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload."""
+        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload.
+
+        Parameters
+        ----------
+        sample_id : str
+             The sample id.
+        **values
+            The values to update.
+        """
         raise NotImplementedError
 
     def time_window_statistics(
@@ -110,14 +134,14 @@ class DeepchecksModelVersionClient:
 
         Parameters
         ----------
-        start_time: Union[PendulumDateTime, int, None], default = None
+        start_time : Union[PendulumDateTime, int, None], default = None
             The start time of the time window. If no timezone info is provided on the datetime assumes local timezone.
-        end_time: Union[PendulumDateTime, int, None], default = None
+        end_time : Union[PendulumDateTime, int, None], default = None
             The end time of the time window. If no timezone info is provided on the datetime assumes local timezone.
 
         Returns
         -------
-        statistics: dict
+        dict
             A dictionary containing the statistics.
         """
         start_time = parse_timestamp(start_time) if start_time is not None else pdl.datetime(1970, 1, 1)
@@ -137,10 +161,10 @@ class DeepchecksModelClient:
 
     Parameters
     ----------
-    session: requests.Session
-        The deepchecks monitoring API session.
-    model_id: int
+    model_id : int
         The id or name of the model.
+    api : core.API
+        The instance of the API object
     """
 
     def __init__(self, model_id: int, api: API):
@@ -149,11 +173,35 @@ class DeepchecksModelClient:
         self._model_version_clients = {}
 
     def version(self, *args, **kwargs) -> DeepchecksModelVersionClient:
-        """Get or create a new model version."""
+        """Get or create a new model version.
+
+        Parameters
+        ----------
+        *args
+            The args.
+        *kwargs
+            The kwargs.
+
+        Returns
+        -------
+        DeepchecksModelVersionClient
+            The model version client.
+        """
         raise NotImplementedError
 
     def _get_existing_version_id_or_none(self, version_name: str) -> int:
-        """Get a model version if it exists, otherwise return None."""
+        """Get a model version if it exists, otherwise return None.
+
+        Parameters
+        ----------
+        version_name : str
+            The version name.
+
+        Returns
+        -------
+        int
+            The version ID.
+        """
         versions = self.api.fetch_all_model_versions(self.model['id'])
         versions = t.cast(t.List[t.Dict[str, t.Any]], versions)
         for it in versions:
@@ -169,7 +217,20 @@ class DeepchecksModelClient:
         raise NotImplementedError
 
     def add_checks(self, checks: t.Dict[str, BaseCheck], force_replace: bool = False):
-        """Add new checks for the model and returns their checks' id."""
+        """Add new checks for the model and returns their checks' id.
+
+        Parameters
+        ----------
+        checks : dict
+            The checks to be added.
+        force_replace : bool, default=False
+            If True, replace existing checks.
+
+        Returns
+        -------
+        dict
+            The checks' ids.
+        """
         serialized_checks = []
         checks_in_model = self.get_checks()
 
@@ -196,7 +257,13 @@ class DeepchecksModelClient:
                 return check['id']
 
     def get_checks(self) -> t.Dict[str, BaseCheck]:
-        """Return dictionary of check instances."""
+        """Return dictionary of check instances.
+
+        Returns
+        -------
+        dict
+            The checks.
+        """
         checks = self.api.fetch_all_model_checks_by_id(self.model['id'])
         checks = t.cast(t.List[t.Dict[str, t.Any]], checks)
         return {it['name']: BaseCheck.from_config(it['config']) for it in checks}
@@ -212,18 +279,19 @@ class DeepchecksModelClient:
 
         Parameters
         ----------
-        monitor_id: int
+        monitor_id : int
             The monitor on which we wise to add an alert.
-        threshold: float
+        threshold : float
             The value to compare the check value to.
-        alert_severity: str, default: "mid"
+        alert_severity : str, default: "mid"
             The severity level associated with the alert. Possible values are: critical, high, mid and low.
-        greater_than: bool, default: True
+        greater_than : bool, default: True
             Whether the alert condition requires the check value to be larger or smaller than provided threshold.
 
         Returns
         -------
-            alert_id: int
+        int
+            The alert id.
         """
         if alert_severity not in {'low', 'mid', 'high', 'critical'}:
             raise ValueError(
@@ -266,7 +334,8 @@ class DeepchecksModelClient:
 
         Returns
         -------
-        int : alert rule id
+        int
+            The alert rule ID.
         """
         if alert_severity not in {'low', 'mid', 'high', 'critical'}:
             raise ValueError(
@@ -308,7 +377,8 @@ class DeepchecksModelClient:
 
         Returns
         -------
-        int : monitor id
+        int
+            The monitor id.
         """
         if add_to_dashboard:
             dashboard = t.cast(t.Dict[str, t.Any], self.api.fetch_dashboard())
@@ -342,7 +412,7 @@ class DeepchecksModelClient:
 
         Returns
         -------
-        Dict[str, int]:
+        Dict[str, int]
             Dictionary of version name to version id.
         """
         versions = self.api.fetch_all_model_versions(self.model['id'])
@@ -350,7 +420,13 @@ class DeepchecksModelClient:
         return {it['name']: it['id'] for it in versions}
 
     def delete_checks(self, names: t.List[str]):
-        """Delete checks by name."""
+        """Delete checks by name.
+
+        Parameters
+        ----------
+        names : list
+            The checks' names.
+        """
         checks_not_in_model = [x for x in names if x not in self.get_checks().keys()]
 
         if len(checks_not_in_model) > 0:

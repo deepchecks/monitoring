@@ -39,9 +39,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     Parameters
     ----------
-    session: requests.Session
+    session : requests.Session
         The deepchecks monitoring API session.
-    model_version_id: int
+    model_version_id : int
         The id of the model version.
     additional_image_properties : Optional[List[Dict[str, Any]]]
         The additional image properties to use for the reference.
@@ -88,10 +88,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
           type
 
         Parameters
-        ==========
+        ----------
         sample_id : Sequence[str]
             Sequence of keys that uniquely identify each sample
-        images: Sequence[numpy.ndarray]
+        images : Sequence[numpy.ndarray]
             Sequence of images
         timestamps : Union[Sequence[datetime], Sequence[int]]
             samples timestamps
@@ -167,11 +167,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         Parameters
         ----------
-        sample_id: str
+        sample_id : str
             The sample ID
-        img: np.ndarray
+        img : np.ndarray
             The image to log it's predictions, labels and properties to
-        timestamp: Union[datetime, int]
+        timestamp : Union[datetime, int]
             If no timezone info is provided on the datetime assumes local timezone.
         prediction
             Prediction value or predicted probability if exists, according to the expected format for the task type.
@@ -225,14 +225,14 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         Parameters
         ----------
-        vision_data: VisionData
+        vision_data : VisionData
             The vision data that contains the reference data.
-        predictions: Dict[int, torch.Tensor / np.ndarray]] / List[torch.Tensor / np.ndarray]], default: None
+        predictions : Dict[int, torch.Tensor / np.ndarray]] / List[torch.Tensor / np.ndarray]], default: None
             The predictions for the reference data in format {<index>: <predictions>} or [<predictions>]. If the
             predictions are passed as a list, the order of the predictions must be the same as the order of the samples
             returned by the dataloader of the vision data. If the predictions are passed as a dictionary, the keys must
             be the indexes of the samples in the dataset from which the vision data dataloader was created.
-        samples_per_request: int, default: 5000
+        samples_per_request : int, default: 5000
             How many samples to send in each request. Decrease this number if having problems uploading the data.
         """
         if vision_data.num_samples > 100_000:
@@ -308,13 +308,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         Parameters
         ----------
-        sample_id: str
+        sample_id : str
             The sample ID
-        image: t.Optional[np.ndarray], default: None
+        image : t.Optional[np.ndarray], default: None
             image to be attached to the provided sample id. required if updating the label for a object detection task.
-        label: Any, default: None
+        label : Any, default: None
             updated label for the sample.
-        values:
+        values
             any additional values to update
         """
         # Create update schema, which contains only non-required columns and sample id
@@ -356,9 +356,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
     Parameters
     ----------
-    host: str
+    host : str
         The deepchecks monitoring API host.
-    model_id: int
+    model_id : int
         The id of the model.
     """
 
@@ -430,7 +430,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         Parameters
         ----------
-        model_version_id: int
+        model_version_id : int
         additional_image_properties : Optional[List[Dict[str, Any]]]
             The additional image properties to use for the reference.
 

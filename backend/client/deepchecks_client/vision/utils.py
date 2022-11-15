@@ -73,7 +73,7 @@ def calc_bbox_properties(
     """Calculate samples bboxes properties.
 
     Parameters
-    ==========
+    ----------
     images_batch : Sequence[np.ndarray]
         batch of images
     labels_batch : Sequence[np.ndarray]
@@ -82,8 +82,8 @@ def calc_bbox_properties(
         properties to calculate
 
     Returns
-    =======
-    List[Dict[str, List[float]]] :
+    -------
+    List[Dict[str, List[float]]]
         each sample bbox properties
     """
     # list[dict[property-name, list[bbox-image-property-value]]]

@@ -98,9 +98,9 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
 
     Parameters
     ----------
-    dataset: deepchecks.tabular.Dataset
+    dataset : deepchecks.tabular.Dataset
         the dataset to infer its schema
-    schema_output_file: , default: 'schema.yaml'
+    schema_output_file : str, default: 'schema.yaml'
         file like object or path in which the generated schema will be saved into
     """
     schema = _describe_dataset(dataset)
@@ -140,7 +140,7 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -
 
     Returns
     -------
-    DataSchema :
+    DataSchema
         typed dictionary with the next keys:
             - features: Dict[str, ColumnTypeValue]
             - non_features: Dict[str, ColumnTypeValue]

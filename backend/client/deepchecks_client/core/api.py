@@ -25,7 +25,7 @@ class HttpSession(requests.Session):
     ----------
     base_url : str
         Base URL.
-    token: str, optional
+    token : str, optional
         The API token from deepchecks.
     """
 
@@ -59,22 +59,39 @@ class API:
 
     Parameters
     ----------
-    session: requests.Session
+    session : requests.Session
         The HTTP session object
     """
 
-    session: requests.Session
-
     @classmethod
     def instantiate(cls: t.Type[TAPI], host: str, token: t.Optional[str] = None) -> TAPI:
-        """Create instance of API."""
+        """Create instance of API.
+
+        Parameters
+        ----------
+        host : str
+            The host URL.
+        token : str, optional
+            The API token from deepchecks.
+        """
         return cls(session=HttpSession(base_url=host + '/api/v1/', token=token))
 
     def __init__(self, session: requests.Session):
         self.session = session
 
     def say_hello(self, raise_on_status: bool = True) -> t.Optional[requests.Response]:
-        """Verify connectivity."""
+        """Verify connectivity.
+
+        Parameters
+        ----------
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(self.session.get('say-hello'), msg='Server not available.\n{error}')
         else:
@@ -85,6 +102,20 @@ class API:
         model_version_id: int,
         raise_on_status: bool = True,
     ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
+        """Fetch the model version.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        dict
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(f'model-versions/{model_version_id}'),
@@ -98,7 +129,20 @@ class API:
         model_version_id: int,
         raise_on_status: bool = True,
     ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
-        """Fetch model version schema."""
+        """Fetch model version schema.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        dict
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(f'model-versions/{model_version_id}/schema'),
@@ -113,7 +157,22 @@ class API:
         samples: t.List[t.Dict[str, t.Any]],
         raise_on_status: bool = True,
     ) -> t.Optional[requests.Response]:
-        """Upload production samples."""
+        """Upload production samples.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        samples : list
+            The list of samples to upload.
+        raise_on_status : bool
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+         requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.post(f'model-versions/{model_version_id}/data', json=samples),
@@ -128,7 +187,22 @@ class API:
         samples: t.List[t.Dict[str, t.Any]],
         raise_on_status: bool = True,
     ) -> t.Optional[requests.Response]:
-        """Update production samples."""
+        """Update production samples.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        samples : list
+            The list of samples to upload.
+        raise_on_status : bool
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+         requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.put(f'model-versions/{model_version_id}/data', json=samples),
@@ -143,7 +217,22 @@ class API:
         reference: t.AnyStr,
         raise_on_status: bool = True,
     ):
-        """Upload reference data."""
+        """Upload reference data.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        reference
+            The reference data.
+        raise_on_status : bool
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+         requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.post(
@@ -165,7 +254,24 @@ class API:
         end_time: str,
         raise_on_status: bool = True
     ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
-        """Fetch model version time window statistics."""
+        """Fetch model version time window statistics.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID
+        start_time : str
+            The start time of the window
+        end_time : str
+            The end time of the window
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(
@@ -185,7 +291,20 @@ class API:
         model: t.Dict[str, t.Any],
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Create model."""
+        """Create model.
+
+        Parameters
+        ----------
+        model : dict
+            The model to create.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.post('models', json=model),
@@ -199,7 +318,20 @@ class API:
         model_id: int,
         raise_on_status: bool = True
     ) -> t.Optional[requests.Response]:
-        """Delete model by its numerical identifier."""
+        """Delete model by its numerical identifier.
+
+        Parameters
+        ----------
+        model_id : int
+            The model id
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.delete(f'models/{model_id}'),
@@ -213,7 +345,20 @@ class API:
         model_name: str,
         raise_on_status: bool = True
     ) -> t.Optional[requests.Response]:
-        """Delete model by its name."""
+        """Delete model by its name.
+
+        Parameters
+        ----------
+        model_name : int
+            The model name.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.delete(f'models/{model_name}', params={'identifier_kind': 'name'}),
@@ -226,7 +371,18 @@ class API:
         self,
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.List[t.Dict[str, t.Any]]]:
-        """Fetch all available models."""
+        """Fetch all available models.
+
+        Parameters
+        ----------
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[requests.Response, list]
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get('models'),
@@ -240,7 +396,20 @@ class API:
         model_name: str,
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Fetch model record by its name."""
+        """Fetch model record by its name.
+
+        Parameters
+        ----------
+        model_name : str
+            The model name
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[requests.Response, list]
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'}),
@@ -254,7 +423,20 @@ class API:
         model_id: int,
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Fetch model record by its numerical identifier."""
+        """Fetch model record by its numerical identifier.
+
+        Parameters
+        ----------
+        model_id : int
+            The model id.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[requests.Response, list]
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(f'models/{model_id}'),
@@ -268,7 +450,20 @@ class API:
         model_id: int,
         raise_on_status: bool = True
     ) -> t.Union[t.List[t.Dict[str, t.Any]], requests.Response]:
-        """Fetch model versions."""
+        """Fetch model versions.
+
+        Parameters
+        ----------
+        model_id : int
+            The model id.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[list, requests.Response]
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(f'models/{model_id}/versions'),
@@ -283,7 +478,22 @@ class API:
         model_version: t.Dict[str, t.Any],
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Create model version."""
+        """Create model version.
+
+        Parameters
+        ----------
+        model_id : int
+            The model ID.
+        model_version : dict
+            The model version object.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[list, requests.Response]
+            The response object.
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.post(f'models/{model_id}/version', json=model_version),
@@ -298,7 +508,22 @@ class API:
         data: t.Dict[str, t.Any],
         raise_on_status: bool = True
     ) -> t.Optional[requests.Response]:
-        """Update model version."""
+        """Update model version.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        data : dict
+            The data of the model version to update.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.put(f'model-versions/{model_version_id}', json=data),
@@ -312,6 +537,20 @@ class API:
         model_version_id: int,
         raise_on_status: bool = True,
     ) -> t.Optional[requests.Response]:
+        """Delete a model by version ID.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        raise_on_status
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.delete(f'model-versions/{model_version_id}'),
@@ -326,6 +565,22 @@ class API:
         model_version_name: str,
         raise_on_status: bool = True,
     ) -> t.Optional[requests.Response]:
+        """Delete a model by version ID.
+
+        Parameters
+        ----------
+        model_name : str
+            The model name.
+        model_version_name : str
+            The model version name.
+        raise_on_status
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        requests.Response
+            The response object.
+        """
         params = {'identifier_kind': 'name'}
         path = f'models/{model_name}/model-versions/{model_version_name}'
         if raise_on_status:
@@ -341,6 +596,20 @@ class API:
         model_version_id: int,
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+        """Fetch the model version by its ID.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        raise_on_status : bool, optional
+            Raise exceptions if status code is not 200.
+
+        Returns
+        -------
+        Union[requests.Response, dict]
+            The response object.
+        """
         response = self.session.post(f'model-versions/{model_version_id}')
         if raise_on_status:
             return maybe_raise(
@@ -356,6 +625,22 @@ class API:
         model_version_name: str,
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+        """Fetch the model version by its name.
+
+        Parameters
+        ----------
+        model_name : str
+            The model name.
+        model_version_name : str
+            The model version name.
+        raise_on_status : bool, optional
+            Raise exceptions if status code is not 200.
+
+        Returns
+        -------
+        Union[requests.Response, dict]
+            The response object.
+        """
         response = self.session.post(f'models/{model_name}/model-versions/{model_version_name}')
         if raise_on_status:
             return maybe_raise(
@@ -371,7 +656,22 @@ class API:
         checks: t.List[t.Dict[str, t.Any]],
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.List[t.Dict[str, t.Any]]]:
-        """Create checks."""
+        """Create checks.
+
+        Parameters
+        ----------
+        model_id : int
+            The model ID
+        checks : list
+            Checks that will be created
+        raise_on_status : bool, default=true
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        Union[requests.Response, dict]
+            The response from the server
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.post(url=f'models/{model_id}/checks', json=checks),
@@ -385,7 +685,20 @@ class API:
         model_id: int,
         raise_on_status: bool = True
     ) -> t.Union[requests.Response, t.List[t.Dict[str, t.Any]]]:
-        """Fetch all model checks."""
+        """Fetch all model checks.
+
+        Parameters
+        ----------
+        model_id : int
+            The model ID.
+        raise_on_status : bool, optional
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        Union[requests.Response, list]
+            The response from the server
+        """
         if raise_on_status:
             return maybe_raise(
                 self.session.get(f'models/{model_id}/checks'),
@@ -399,7 +712,15 @@ class API:
         model_name: str,
         raise_on_status: bool = True
     ):
-        """Fetch all model checks."""
+        """Fetch all model checks.
+
+        Parameters
+        ----------
+        model_name : str
+            The model name
+        raise_on_status : bool, optional
+            Whether to raise error on bad status code or not
+        """
         # TODO: corresponding PR is not merged into main yet
         raise NotImplementedError()
 
@@ -413,11 +734,11 @@ class API:
 
         Parameters
         ----------
-        monitor_id: int
+        monitor_id : int
             The ID of the monitor
-        alert_rule: dict
+        alert_rule : dict
             The alert rule to create
-        raise_on_status: bool
+        raise_on_status : bool
             Whether to raise error on bad status code or not
 
         Returns
@@ -443,11 +764,11 @@ class API:
 
         Parameters
         ----------
-        check_id: int
+        check_id : int
             The ID of the check
-        monitor: dict
+        monitor : dict
             The monitor object
-        raise_on_status: bool
+        raise_on_status : bool
             Whether to raise error on bad status code or not
 
         Returns
@@ -467,7 +788,18 @@ class API:
     # it should be called fetch_dashboard(s) and should return a list of dashboards
     # but currently only one dashboard is allowed/exists
     def fetch_dashboard(self, raise_on_status: bool = True) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
-        """Fetch dashboard."""
+        """Fetch dashboard.
+
+        Parameters
+        ----------
+        raise_on_status : bool, optional
+            Raise exceptions if the status code is not 200.
+
+        Returns
+        -------
+        Union[requests.Response, dict]
+            The response object
+        """
         if raise_on_status:
             return self.session.get('dashboards/').json()
         else:
@@ -479,7 +811,17 @@ class API:
         check_names: t.Sequence[str],
         raise_on_status: bool = True
     ) -> t.Optional[requests.Response]:
-        """Delete model checks by their names."""
+        """Delete model checks by their names.
+
+        Parameters
+        ----------
+        model_id : int
+            The model ID.
+        check_names : Sequence[str]
+            A sequence of check names.
+        raise_on_status : bool, optional
+            Raise exception is status code is not 200.
+        """
         if raise_on_status:
             maybe_raise(
                 self.session.delete(f'models/{model_id}/checks', params={'names': check_names}),

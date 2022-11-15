@@ -113,7 +113,7 @@ def maybe_raise(
         http response instance
     expected : Union[int, Tuple[int, int]] , default (200, 299)
         HTTP status code that is expected to receive
-    msg: Optional[str] , default None
+    msg : Optional[str] , default None
         error message to show in case of unexpected status code,
         next template parameters available:
         - status (HTTP status code)
