@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, memo, useState, useEffect } from 'react';
+import React, { PropsWithChildren, memo, useState, useEffect, useCallback } from 'react';
 import { ChartData, LegendItem as ILegendItem } from 'chart.js';
 
 import { styled, Box, Stack, Typography } from '@mui/material';
@@ -24,6 +24,14 @@ function replacePreviousPeriodSubstring(legend: ILegendItem) {
   return legend.text.replace(PREVIOUS_PERIOD, '');
 }
 
+function legendTextWithPreviousPeriod(legend: ILegendItem) {
+  return legend.text + PREVIOUS_PERIOD;
+}
+
+function isEndsWithPreviousPeriod(legend: ILegendItem) {
+  return legend.text.endsWith(PREVIOUS_PERIOD);
+}
+
 const LegendsList = ({
   data,
   lineIndexMap,
@@ -33,43 +41,35 @@ const LegendsList = ({
   comparison,
   children
 }: PropsWithChildren<LegendsListProps>) => {
-  const [sortedLegends, setSortedLegends] = useState<ILegendItem[]>([]);
   const [delayedComparison, setDelayedComparison] = useState(comparison);
 
   useEffect(() => {
     setTimeout(() => setDelayedComparison(comparison), 0);
   }, [comparison]);
 
-  useEffect(() => {
-    if (comparison) {
-      const paired: ILegendItem[] = [];
-      const single: ILegendItem[] = [];
+  const handleCurrentPeriodLegendClick = useCallback(
+    (legendItem: ILegendItem) => {
+      hideLine(legendItem);
 
-      legends.forEach(legend => {
-        if (legend.text.endsWith(PREVIOUS_PERIOD)) {
-          legends.find(l => legend.text === l.text + PREVIOUS_PERIOD) ? paired.push(legend) : single.push(legend);
-        } else {
-          legends.find(l => l.text === legend.text + PREVIOUS_PERIOD) ? paired.push(legend) : single.push(legend);
-        }
-      });
+      const previousLegendItem = legends.find(
+        legendToFind => legendToFind.text === legendTextWithPreviousPeriod(legendItem)
+      );
+      if (previousLegendItem) hideLine(previousLegendItem);
+    },
+    [hideLine, legends]
+  );
 
-      setSortedLegends(paired.concat(single));
-    }
-  }, [comparison, legends, hideLine]);
+  const handlePreviousPeriodLegendClick = useCallback(
+    (legendItem: ILegendItem) => {
+      hideLine(legendItem);
 
-  const handleCurrentPeriodLegendClick = (legendItem: ILegendItem) => {
-    hideLine(legendItem);
-
-    const previousLegendItem = legends.find(legend => legend.text === legendItem.text + PREVIOUS_PERIOD);
-    if (previousLegendItem) hideLine(previousLegendItem);
-  };
-
-  const handlePreviousPeriodLegendClick = (legendItem: ILegendItem) => {
-    hideLine(legendItem);
-
-    const currentLegendItem = legends.find(legend => legend.text === replacePreviousPeriodSubstring(legendItem));
-    if (currentLegendItem) hideLine(currentLegendItem);
-  };
+      const currentLegendItem = legends.find(
+        legendToFind => legendToFind.text === replacePreviousPeriodSubstring(legendItem)
+      );
+      if (currentLegendItem) hideLine(currentLegendItem);
+    },
+    [hideLine, legends]
+  );
 
   return (
     <StyledLegendsList>
@@ -84,9 +84,9 @@ const LegendsList = ({
               <Stack justifyContent="space-between" height={ANALYSIS_LEGENDS_CONTAINER_HEIGHT}>
                 <StyledLegendsStack>
                   <StyledLegendsHeader>Current</StyledLegendsHeader>
-                  {sortedLegends.map(
+                  {legends.map(
                     (legendItem, index) =>
-                      !legendItem.text.endsWith(PREVIOUS_PERIOD) && (
+                      !isEndsWithPreviousPeriod(legendItem) && (
                         <LegendItem
                           key={index}
                           item={legendItem}
@@ -102,7 +102,7 @@ const LegendsList = ({
                   <StyledLegendsHeader>Previous</StyledLegendsHeader>
                   {legends.map(
                     (legendItem, index) =>
-                      legendItem.text.endsWith(PREVIOUS_PERIOD) && (
+                      isEndsWithPreviousPeriod(legendItem) && (
                         <LegendItem
                           key={index}
                           item={legendItem}
@@ -150,7 +150,7 @@ const StyledLegendsListContainer = styled(Stack)({
 const StyledLegendsHeader = styled(Typography)({
   fontWeight: '700',
   fontSize: '12px',
-  lineHeight: '140%',
+  lineHeight: '28px',
   letterSpacing: '0.17px',
   width: '75px'
 });

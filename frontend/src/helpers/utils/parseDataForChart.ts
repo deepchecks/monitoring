@@ -5,6 +5,7 @@ import { CheckResultSchema } from 'api/generated';
 import { setBarGraphOptions, setLineGraphOptions } from 'helpers/setGraphOptions';
 
 interface ChartOptions {
+  id: string;
   label?: string;
   borderColor?: string;
   pointBorderColor?: string;

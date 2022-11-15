@@ -256,26 +256,28 @@ function DiagramLine({
   }, [getNewData]);
 
   useEffect(() => {
-    if (comparison) {
-      legends.forEach((legend, index) => {
-        if (index !== 0 && index !== legends.findIndex(legend => legend.text === legends[0].text + PREVIOUS_PERIOD)) {
-          hideLine(legend);
-        }
-      });
+    if (isLoading) {
+      setLegends([]);
     }
-  }, [comparison, legends, hideLine]);
+  }, [isLoading]);
 
   useEffect(() => {
     if (chartRef.current && chartRef.current?.legend?.legendItems?.length) {
-      setLegends(chartRef.current.legend.legendItems);
+      const legendItems = chartRef.current.legend.legendItems;
+      const map: Record<number, boolean> = {};
 
-      chartRef.current.legend.legendItems.forEach(item => {
-        chartRef.current?.setDatasetVisibility(item.datasetIndex || 0, true);
+      legendItems.forEach(legendItem => {
+        const index = legendItem.datasetIndex || 0;
+        const hidden = legendItem.hidden || false;
+
+        map[index] = comparison ? hidden : false;
+        chartRef.current?.setDatasetVisibility(index, comparison ? !hidden : true);
       });
 
-      setLineIndexMap({});
+      setLineIndexMap(map);
+      setLegends(legendItems);
     }
-  }, [chartData]);
+  }, [chartData, comparison]);
 
   return isLoading ? (
     <Loader />

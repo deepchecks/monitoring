@@ -118,7 +118,33 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         const previousPeriodResponse = await runCheck(runCheckPreviousPeriodBody);
         const parsedPreviousPeriodChartData = parseDataForLineChart(previousPeriodResponse, true);
 
-        parsedChartData.datasets = parsedChartData.datasets.concat(parsedPreviousPeriodChartData.datasets);
+        const paired: typeof parsedChartData.datasets = [];
+        const single: typeof parsedChartData.datasets = [];
+
+        parsedChartData.datasets.forEach(i =>
+          parsedPreviousPeriodChartData.datasets.find(e => e.id === i.id) ? paired.push(i) : single.push(i)
+        );
+        parsedPreviousPeriodChartData.datasets.forEach(i =>
+          parsedChartData.datasets.find(e => e.id === i.id) ? paired.push(i) : single.push(i)
+        );
+
+        if (paired.length) {
+          const pairedHalfLength = paired.length / 2;
+
+          paired[0].hidden = false;
+          paired[pairedHalfLength].hidden = false;
+
+          paired.forEach((item, index) => {
+            if (index < pairedHalfLength) {
+              paired[pairedHalfLength + index].borderColor = item.borderColor;
+              paired[pairedHalfLength + index].pointBackgroundColor = item.pointBackgroundColor;
+            }
+          });
+        } else if (single.length) {
+          single.forEach((e, index) => (single[index].hidden = false));
+        }
+
+        parsedChartData.datasets = paired.concat(single);
       }
 
       setData(parsedChartData);
