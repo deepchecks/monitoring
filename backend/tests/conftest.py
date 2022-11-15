@@ -317,6 +317,18 @@ async def classification_model_check_id(classification_model_id: int, client: Te
         }
     ))
 
+@pytest_asyncio.fixture()
+async def classification_model_check_train_test_id(classification_model_id: int, client: TestClient) -> int:
+    return t.cast(int, add_check(
+        model_id=classification_model_id,
+        client=client,
+        name="check train test",
+        config={
+            "class_name": "TrainTestPerformance",
+            "params": {},
+            "module_name": "deepchecks.tabular.checks"
+        }
+    ))
 
 @pytest_asyncio.fixture()
 async def classification_model_feature_check_id(classification_model_id: int, client: TestClient) -> int:

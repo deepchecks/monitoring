@@ -23,6 +23,42 @@ def prettify(data) -> str:
     return json.dumps(data, indent=3)
 
 
+def assert_lookback_out(lookback_out):
+    for version, results in lookback_out.items():
+        assert isinstance(version, str)
+        for result in results:
+            if result is not None:
+                for key, val in result.items():
+                    assert isinstance(key, str)
+                    assert isinstance(val, float)
+
+
+def add_multiclass_reference_data(client, classification_version_model_id):
+    samples = [{
+        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+        "_dc_prediction": "2",
+        "_dc_label": "2",
+        "a": 16.1,
+        "b": "ppppp",
+    },
+        {
+        "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
+        "_dc_prediction": "1",
+        "_dc_label": "1",
+        "a": 16.1,
+        "b": "ppppp",
+    },
+        {
+        "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
+        "_dc_prediction": "0",
+        "_dc_label": "0",
+        "a": 16.1,
+        "b": "ppppp",
+    }]
+
+    return send_reference_request(client, classification_version_model_id, samples * 100)
+
+
 @pytest.mark.asyncio
 async def test_add_check(classification_model_id, client: TestClient):
     # Arrange
@@ -337,134 +373,128 @@ async def test_feature_check_info(classification_model_feature_check_id, classif
                                "res_conf": None}
 
 
-async def run_check(classification_model_id, classification_model_version_id, client: TestClient):
-    request = {
-        "name": "checky v2",
-        "config": {"class_name": "SingleDatasetPerformance",
-                   "params": {"reduce": "mean"},
-                   "module_name": "deepchecks.tabular.checks"
-                   },
-    }
-    # Act
-    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
-    assert response.status_code == 200
-    request = {
-        "name": "checky v3",
-        "config": {"class_name": "SingleDatasetPerformance",
-                   "params": {"scorers": ["accuracy"]},
-                   "module_name": "deepchecks.tabular.checks"
-                   },
-    }
-    # Act
-    response = client.post(f"/api/v1/models/{classification_model_id}/checks", json=request)
-    assert response.status_code == 200
-
-    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
-    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
-    for i in [1, 3, 7, 13]:
-        time = day_before_curr_time.add(hours=i).isoformat()
-        request = [{
-            "_dc_sample_id": str(i),
-            "_dc_time": time,
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-            "_dc_prediction": "2",
-            "_dc_label": "2",
-            "a": 10 + i,
-            "b": "ppppp",
-        },
-            {
-            "_dc_sample_id": str(i * 10),
-            "_dc_time": time,
-            "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
-            "_dc_prediction": "1",
-            "_dc_label": "1",
-            "a": 10 + i,
-            "b": "ppppp",
-        },
-            {
-            "_dc_sample_id": str(i * 100),
-            "_dc_time": time,
-            "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
-            "_dc_prediction": "0",
-            "_dc_label": "0",
-            "a": 10 + i,
-            "b": "ppppp",
-        }
-        ]
-        response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-        assert response.status_code == 200
-    samples = [{
-        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-        "_dc_prediction": "2",
-        "_dc_label": "2",
-        "a": 16.1,
-        "b": "ppppp",
-    },
-        {
-        "_dc_prediction_probabilities": [0.1, 0.6, 0.3],
-        "_dc_prediction": "1",
-        "_dc_label": "1",
-        "a": 16.1,
-        "b": "ppppp",
-    },
-        {
-        "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
-        "_dc_prediction": "0",
-        "_dc_label": "0",
-        "a": 16.1,
-        "b": "ppppp",
-    }]
-    # Act
-    response = send_reference_request(client, classification_model_version_id, samples * 100)
+async def run_lookback(classification_model_check_id, classification_model_version_id, client: TestClient):
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
     assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    assert add_multiclass_reference_data(client, classification_model_version_id).status_code == 200, response.json()
 
     # test no filter
-    response = client.post("/api/v1/checks/1/run/lookback", json={"start_time": day_before_curr_time.isoformat(),
-                                                                  "end_time": curr_time.isoformat()})
+    response = client.post("/api/v1/checks/1/run/lookback", json={"start_time": start_time, "end_time": end_time})
     assert response.status_code == 200, response.json()
     json_rsp = response.json()
-    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
+    assert len(json_rsp["output"]) == 1
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 5
+    assert_lookback_out(json_rsp["output"])
 
     # test with filter
-    response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
-                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14},
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/lookback",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
                                                         {"column": "b", "operator": "contains", "value": "ppppp"}]}})
     json_rsp = response.json()
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 2
+    assert_lookback_out(json_rsp["output"])
 
-    # test with filter no reference because of filter
-    response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
-                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 17}]}})
-    json_rsp = response.json()
-    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 1
-    # test with filter no reference because of filter 2
-    response = client.post("/api/v1/checks/1/run/lookback",
-                           json={"start_time": day_before_curr_time.isoformat(), "end_time": curr_time.isoformat(),
+
+@pytest.mark.asyncio
+async def test_run_lookback_empty_filters(classification_model_check_id,
+                                          classification_model_check_train_test_id,
+                                          classification_model_version_id, client: TestClient):
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    assert add_multiclass_reference_data(client, classification_model_version_id).status_code == 200, response.json()
+
+    # single dataset check
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/lookback",
+                           json={"start_time": start_time, "end_time": end_time,
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
                                                         {"column": "b", "operator": "equals", "value": "pppp"}]}})
     json_rsp = response.json()
     assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 0
 
-    # test with filter on window
-    response = client.post("/api/v1/checks/2/run/window",
-                           json={"start_time": day_before_curr_time.add(hours=7).isoformat(),
-                                 "end_time": day_before_curr_time.add(hours=9).isoformat(),
-                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 14}]},
+    # train test dataset check
+    response = client.post(f"/api/v1/checks/{classification_model_check_train_test_id}/run/lookback",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
+                                                        {"column": "b", "operator": "equals", "value": "pppp"}]}})
+    json_rsp = response.json()
+    assert json_rsp["output"]["v1"] is None
+
+
+async def run_window(classification_model_check_id,
+                     classification_model_version_id, client: TestClient):
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    # test without additional_kwargs on window
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12}]}})
+    json_rsp = response.json()
+    assert json_rsp == {"v1": {"Accuracy": 0.5, "Precision - Macro Average": 0.3333333333333333,
+                               "Recall - Macro Average": 0.16666666666666666}}
+
+    # test with additional_kwargs on window
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/run/window",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12}]},
                                  "additional_kwargs": {"check_conf": {"scorer": ["recall_macro"]}}})
     json_rsp = response.json()
-    assert json_rsp == {"v1": {"recall_macro": 1.0}}
+    assert json_rsp == {"v1": {"recall_macro": 0.16666666666666666}}
 
 
 @pytest.mark.asyncio
-async def test_run_check(classification_model_id, classification_model_version_id, client: TestClient):
-    await run_check(classification_model_id, classification_model_version_id, client)
+async def test_run_window(classification_model_check_id, classification_model_version_id, client: TestClient):
+    await run_window(classification_model_check_id, classification_model_version_id, client)
 
 
 @pytest.mark.asyncio
-async def test_run_check_no_fi(classification_model_id, classification_model_version_no_fi_id, client: TestClient):
-    await run_check(classification_model_id, classification_model_version_no_fi_id, client)
+async def test_run_window_no_fi(classification_model_check_id,
+                                classification_model_version_no_fi_id, client: TestClient):
+    await run_window(classification_model_check_id, classification_model_version_no_fi_id, client)
+
+
+@pytest.mark.asyncio
+async def test_run_lookback(classification_model_check_id, classification_model_version_id, client: TestClient):
+    await run_lookback(classification_model_check_id, classification_model_version_id, client)
+
+
+@pytest.mark.asyncio
+async def test_run_window_train_test(classification_model_check_train_test_id,
+                                     classification_model_version_id, client: TestClient):
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    assert add_multiclass_reference_data(client, classification_model_version_id).status_code == 200, response.json()
+
+    response = client.post(f"/api/v1/checks/{classification_model_check_train_test_id}/run/window",
+                           json={"start_time": start_time, "end_time": end_time})
+    json_rsp = response.json()
+    assert json_rsp == {"v1": {"F1": 0.1111111111111111,
+                        "Precision": 0.16666666666666666,
+                               "Recall": 0.08333333333333333}}
+
+
+@pytest.mark.asyncio
+async def test_run_lookback_train_test(classification_model_check_train_test_id,
+                                       classification_model_version_id, client: TestClient):
+    await run_lookback(classification_model_check_train_test_id, classification_model_version_id, client)
+
+
+@pytest.mark.asyncio
+async def test_run_lookback_no_fi(classification_model_check_id,
+                                  classification_model_version_no_fi_id, client: TestClient):
+    await run_lookback(classification_model_check_id, classification_model_version_no_fi_id, client)
 
 
 @pytest.mark.asyncio
