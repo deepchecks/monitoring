@@ -34,7 +34,7 @@ const HeaderLayout = ({ title, children }: PropsWithChildren<HeaderLayoutProps>)
         padding: ' 21px 0',
         width: '100%',
         height: 83,
-        borderBottom: `1px dotted ${theme.palette.grey[300]}`
+        borderBottom: `1px dashed ${theme.palette.grey[300]}`
       }}
     >
       <Typography variant="h4" sx={{ color: theme => theme.palette.text.disabled }}>

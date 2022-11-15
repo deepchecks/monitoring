@@ -106,7 +106,7 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
         <Typography variant="h5">{count}</Typography>
         <Typography
           sx={{
-            fontSize: 10,
+            fontSize: 12,
             lineHeight: '12px',
             letterSpacing: '0.4px'
           }}

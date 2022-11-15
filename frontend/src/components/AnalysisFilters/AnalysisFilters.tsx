@@ -167,7 +167,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
             variant="text"
             onClick={handleFiltersOpen}
             sx={{
-              padding: '10px 5px 10px 1px',
+              padding: '10px 5px 10px 10px',
               transform: 'translateX(-14px)',
 
               '& .MuiButton-startIcon': {
@@ -175,7 +175,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
               }
             }}
           >
-            Filter
+            Data Filter
           </Button>
         </Stack>
         <Box sx={{ ml: 'auto' }}>

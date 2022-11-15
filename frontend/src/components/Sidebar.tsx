@@ -107,9 +107,10 @@ export const Sidebar = () => {
                 sx={{
                   textTransform: 'none',
                   fontSize: 12,
-                  lineHeight: '140%',
+                  lineHeight: '42px',
                   letterSpacing: '0.1px',
-                  color: theme => theme.palette.common.white
+                  color: theme => theme.palette.common.white,
+                  height: '44px'
                 }}
               >
                 Invite to workspace

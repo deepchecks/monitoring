@@ -37,7 +37,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
           height: '100px',
           width: '100%',
           marginBottom: '35px',
-          borderBottom: theme => `1px dotted ${theme.palette.text.disabled}`
+          borderBottom: theme => `1px dashed ${theme.palette.text.disabled}`
         }}
       >
         <Box
@@ -71,7 +71,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
               sx={{
                 padding: '11px 8px',
                 color: colors.primary.violet[400],
-                fontSize: '12px',
+                fontSize: '14px',
                 lineHeight: '17px',
                 fontWeight: 400,
                 '& .MuiButton-startIcon': {
