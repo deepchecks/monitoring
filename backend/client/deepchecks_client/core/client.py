@@ -330,7 +330,7 @@ class DeepchecksModelClient:
 
         Parameters
         ----------
-        {add_alert_rule_params:2*indent}
+        {add_alert_rule_params:1*indent}
 
         Returns
         -------
@@ -373,7 +373,7 @@ class DeepchecksModelClient:
 
         Parameters
         ----------
-        {add_monitor_params:2*indent}
+        {add_monitor_params:1*indent}
 
         Returns
         -------
