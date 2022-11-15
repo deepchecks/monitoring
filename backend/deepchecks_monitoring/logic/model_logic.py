@@ -252,7 +252,9 @@ async def get_results_for_model_versions_per_window(
                     curr_result = finalize_reduced_results(reduced, additional_kwargs)
                 # In case of exception in the run putting none result
                 except DeepchecksBaseError as e:
-                    logging.getLogger('monitor_run_logger').exception(e.message)
+                    message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()} ' \
+                              f'monitor (id={monitor_id}) got exception: {e.message}'
+                    logging.getLogger('monitor_run_logger').error(message)
                     curr_result = None
 
             reduced_outs.append(curr_result)
