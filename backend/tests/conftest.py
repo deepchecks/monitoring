@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 import dotenv
 import fakeredis
+import httpx
 import numpy as np
 import pandas as pd
 import pendulum as pdl
@@ -29,7 +30,6 @@ from deepchecks.vision import ClassificationData, DetectionData
 from deepchecks_client import DeepchecksClient
 from deepchecks_client.core.api import API
 from fastapi.testclient import TestClient
-from requests import Response
 from sqlalchemy import MetaData, Table, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -397,7 +397,7 @@ def add_check(
         expected_status_code: int = 200,
         name: t.Optional[str] = None,
         config: t.Optional[t.Dict[str, t.Any]] = None
-) -> t.Union[int, Response]:
+) -> t.Union[int, httpx.Response]:
     payload = {}
     payload["name"] = name or randomname.get_name()
     payload["config"] = config or {
@@ -415,7 +415,7 @@ def add_check(
         assert response.status_code == expected_status_code, (response.status_code, response.json())
         return response
 
-    assert response.status_code == expected_status_code, (response.status_code, response.reason, response.json())
+    assert response.status_code == expected_status_code, (response.status_code, response.content, response.json())
 
     data = response.json()[0]
     assert isinstance(data, dict)
@@ -430,7 +430,7 @@ def add_model(
         name: t.Optional[str] = None,
         task_type: t.Optional[TaskType] = None,
         description: t.Optional[str] = None,
-) -> t.Union[Response, int]:
+) -> t.Union[httpx.Response, int]:
     payload = {}
     payload["name"] = name or randomname.get_name()
     payload["task_type"] = (task_type or random.choice(list(TaskType))).value
@@ -459,7 +459,7 @@ def add_model_version(
         non_features: t.Optional[t.Dict[str, str]] = None,
         feature_importance: t.Optional[t.Dict[str, float]] = None,
         classes: t.Optional[t.List[str]] = None
-) -> t.Union[int, Response]:
+) -> t.Union[int, httpx.Response]:
     payload = {}
     payload["name"] = name or randomname.get_name()
     payload["features"] = features if features is not None else {"a": "numeric", "b": "categorical"}
@@ -487,7 +487,7 @@ def add_alert_rule(
         client: TestClient,
         expected_status_code: int = 200,
         **kwargs
-) -> t.Union[int, Response]:
+) -> t.Union[int, httpx.Response]:
     request = {
         "alert_severity": AlertSeverity.LOW.value,
         "condition": {
@@ -587,7 +587,7 @@ def send_reference_request(client, model_version_id, dicts: list):
     data = df.to_json(orient="table", index=False)
     return client.post(
         f"/api/v1/model-versions/{model_version_id}/reference",
-        files={"batch": ("data.json", data)}
+        files={"batch": ("data.json", data.encode())}
     )
 
 

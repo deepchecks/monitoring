@@ -1,7 +1,7 @@
 numpy
 pandas
 deepchecks
-requests>=2.28.1
+httpx>=0.23.0
 pendulum==2.1.2
 jsonschema==4.7.2
 termcolor
@@ -9,4 +9,4 @@ PyYAML
 importlib_metadata; python_version < '3.8'
 pip-system-certs>=3.1
 typing_extensions==4.4.0
-rfc3339-validator==0.1.4
+rfc3339-validator==0.1.4 # Used to validate date-time format in jsonschema

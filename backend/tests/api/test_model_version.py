@@ -220,8 +220,8 @@ async def test_time_window_statistics(client: TestClient, classification_model_v
     add_classification_data(classification_model_version_id, client)
     add_classification_data(classification_model_version_id, client, is_labeled=False, id_prefix="unlabeled")
     # Act
-    response = client.get(f"/api/v1/model-versions/{classification_model_version_id}/time-window-statistics",
-                          json={"end_time": pdl.now().isoformat()})
+    response = client.request("get", f"/api/v1/model-versions/{classification_model_version_id}/time-window-statistics",
+                              json={"end_time": pdl.now().isoformat()})
     # Assert
     assert response.status_code == 200
     assert response.json() == {"num_samples": 10, "num_labeled_samples": 5}

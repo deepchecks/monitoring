@@ -13,15 +13,15 @@ import enum
 import json
 import typing as t
 from datetime import datetime
+from json import JSONDecodeError
 
+import httpx
 import numpy as np
 import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular.utils.task_type import TaskType as TabularTaskType
 from deepchecks.vision.task_type import TaskType as VisionTaskType
 from jsonschema import FormatChecker, validators
-from requests import HTTPError, Response
-from requests.exceptions import JSONDecodeError
 from termcolor import cprint
 
 if t.TYPE_CHECKING:
@@ -101,10 +101,10 @@ class DeepchecksColumns(enum.Enum):
 
 
 def maybe_raise(
-        response: Response,
+        response: httpx.Response,
         expected: t.Union[int, t.Tuple[int, int]] = (200, 299),
         msg: t.Optional[str] = None
-) -> Response:
+) -> httpx.Response:
     """Verify response status and raise an HTTPError if got unexpected status code.
 
     Parameters
@@ -128,7 +128,7 @@ def maybe_raise(
     """
     status = response.status_code
     url = response.url
-    reason = response.reason
+    reason = response.content
 
     error_template = 'Error: {status} {reason} url {url}.\nBody:\n{body}'
     client_error_template = '{status} Client Error: {reason} for url: {url}.\nBody:\n{body}'
@@ -151,7 +151,7 @@ def maybe_raise(
     if isinstance(expected, int) and status != expected:
         body = process_body()
         error = select_template(status).format(status=status, reason=reason, url=url, body=body)
-        raise HTTPError(
+        raise httpx.HTTPError(
             error
             if msg is None
             else msg.format(status=status, reason=reason, url=url, body=body, error=error)
@@ -160,7 +160,7 @@ def maybe_raise(
     if isinstance(expected, (tuple, list)) and not expected[0] <= status <= expected[1]:
         body = process_body()
         error = select_template(status).format(status=status, reason=reason, url=url, body=body)
-        raise HTTPError(
+        raise httpx.HTTPError(
             error
             if msg is None
             else msg.format(status=status, reason=reason, url=url, body=body, error=error)

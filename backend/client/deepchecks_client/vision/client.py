@@ -39,7 +39,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
     Parameters
     ----------
-    session : requests.Session
+    session : httpx.Client
         The deepchecks monitoring API session.
     model_version_id : int
         The id of the model version.

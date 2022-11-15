@@ -1,5 +1,4 @@
-fastapi==0.86.0
-starlette==0.20.4
+fastapi>=0.87.0
 sqlalchemy[asyncio]==1.4.39
 dynaconf>=3.1.8
 pydantic[dotenv]>=1.9.1
@@ -20,4 +19,4 @@ opentelemetry-instrumentation-fastapi===0.34b0
 redis[hiredis]>=4.3.4
 pandas>=1.1.5,<1.5.0
 deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main
-rfc3339-validator==0.1.4
+rfc3339-validator==0.1.4 # Used to validate date-time format in jsonschema

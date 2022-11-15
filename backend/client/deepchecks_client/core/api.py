@@ -12,13 +12,13 @@
 import typing as t
 from urllib.parse import urljoin
 
-import requests
+import httpx
 from deepchecks_client.core.utils import maybe_raise
 
 __all__ = ['API']
 
 
-class HttpSession(requests.Session):
+class HttpSession(httpx.Client):
     """Http session.
 
     Parameters
@@ -34,7 +34,7 @@ class HttpSession(requests.Session):
         self.base_url = base_url
         self.token = token
 
-    def request(self, method, url, *args, **kwargs) -> requests.Response:
+    def request(self, method, url, *args, **kwargs) -> httpx.Response:
         url = urljoin(self.base_url, url)
         headers = kwargs.get('headers', {})
         if self.token:
@@ -59,9 +59,11 @@ class API:
 
     Parameters
     ----------
-    session : requests.Session
+    session : httpx.Client
         The HTTP session object
     """
+
+    session: httpx.Client
 
     @classmethod
     def instantiate(cls: t.Type[TAPI], host: str, token: t.Optional[str] = None) -> TAPI:
@@ -76,10 +78,10 @@ class API:
         """
         return cls(session=HttpSession(base_url=host + '/api/v1/', token=token))
 
-    def __init__(self, session: requests.Session):
+    def __init__(self, session: httpx.Client):
         self.session = session
 
-    def say_hello(self, raise_on_status: bool = True) -> t.Optional[requests.Response]:
+    def say_hello(self, raise_on_status: bool = True) -> t.Optional[httpx.Response]:
         """Verify connectivity.
 
         Parameters
@@ -89,7 +91,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -101,7 +103,7 @@ class API:
         self,
         model_version_id: int,
         raise_on_status: bool = True,
-    ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
+    ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch the model version.
 
         Parameters
@@ -128,7 +130,7 @@ class API:
         self,
         model_version_id: int,
         raise_on_status: bool = True,
-    ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
+    ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch model version schema.
 
         Parameters
@@ -156,7 +158,7 @@ class API:
         model_version_id: int,
         samples: t.List[t.Dict[str, t.Any]],
         raise_on_status: bool = True,
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Upload production samples.
 
         Parameters
@@ -170,7 +172,7 @@ class API:
 
         Returns
         -------
-         requests.Response
+         httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -186,7 +188,7 @@ class API:
         model_version_id: int,
         samples: t.List[t.Dict[str, t.Any]],
         raise_on_status: bool = True,
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Update production samples.
 
         Parameters
@@ -200,7 +202,7 @@ class API:
 
         Returns
         -------
-         requests.Response
+         httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -230,21 +232,21 @@ class API:
 
         Returns
         -------
-         requests.Response
+         httpx.Response
             The response object.
         """
         if raise_on_status:
             maybe_raise(
                 self.session.post(
                     f'model-versions/{model_version_id}/reference',
-                    files={'batch': reference}
+                    files={'batch': reference.encode()}
                 ),
                 msg='Reference batch upload failure.\n{error}'
             )
         else:
             return self.session.post(
                 f'model-versions/{model_version_id}/reference',
-                files={'batch': reference}
+                files={'batch': reference.encode()}
             )
 
     def fetch_model_version_time_window_statistics(
@@ -253,7 +255,7 @@ class API:
         start_time: str,
         end_time: str,
         raise_on_status: bool = True
-    ) -> t.Union[t.Dict[str, t.Any], requests.Response]:
+    ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch model version time window statistics.
 
         Parameters
@@ -269,19 +271,21 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
             return maybe_raise(
-                self.session.get(
+                self.session.request(
+                    'get',
                     url=f'model-versions/{model_version_id}/time-window-statistics',
                     json={'start_time': start_time, 'end_time': end_time}
                 ),
                 msg='Failed to get statistics for samples within provided time window.\n{error}'
             ).json()
         else:
-            return self.session.get(
+            return self.session.request(
+                'get',
                 url=f'model-versions/{model_version_id}/time-window-statistics',
                 json={'start_time': start_time, 'end_time': end_time}
             )
@@ -290,7 +294,7 @@ class API:
         self,
         model: t.Dict[str, t.Any],
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create model.
 
         Parameters
@@ -302,7 +306,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -317,7 +321,7 @@ class API:
         self,
         model_id: int,
         raise_on_status: bool = True
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Delete model by its numerical identifier.
 
         Parameters
@@ -329,7 +333,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -344,7 +348,7 @@ class API:
         self,
         model_name: str,
         raise_on_status: bool = True
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Delete model by its name.
 
         Parameters
@@ -356,7 +360,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -370,7 +374,7 @@ class API:
     def fetch_models(
         self,
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.List[t.Dict[str, t.Any]]]:
+    ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
         """Fetch all available models.
 
         Parameters
@@ -380,7 +384,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, list]
+        Union[httpx.Response, list]
             The response object.
         """
         if raise_on_status:
@@ -395,7 +399,7 @@ class API:
         self,
         model_name: str,
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch model record by its name.
 
         Parameters
@@ -407,7 +411,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, list]
+        Union[httpx.Response, list]
             The response object.
         """
         if raise_on_status:
@@ -422,7 +426,7 @@ class API:
         self,
         model_id: int,
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch model record by its numerical identifier.
 
         Parameters
@@ -434,7 +438,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, list]
+        Union[httpx.Response, list]
             The response object.
         """
         if raise_on_status:
@@ -449,7 +453,7 @@ class API:
         self,
         model_id: int,
         raise_on_status: bool = True
-    ) -> t.Union[t.List[t.Dict[str, t.Any]], requests.Response]:
+    ) -> t.Union[t.List[t.Dict[str, t.Any]], httpx.Response]:
         """Fetch model versions.
 
         Parameters
@@ -461,7 +465,7 @@ class API:
 
         Returns
         -------
-        Union[list, requests.Response]
+        Union[list, httpx.Response]
             The response object.
         """
         if raise_on_status:
@@ -477,7 +481,7 @@ class API:
         model_id: int,
         model_version: t.Dict[str, t.Any],
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create model version.
 
         Parameters
@@ -491,7 +495,7 @@ class API:
 
         Returns
         -------
-        Union[list, requests.Response]
+        Union[list, httpx.Response]
             The response object.
         """
         if raise_on_status:
@@ -507,7 +511,7 @@ class API:
         model_version_id: int,
         data: t.Dict[str, t.Any],
         raise_on_status: bool = True
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Update model version.
 
         Parameters
@@ -521,7 +525,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -536,7 +540,7 @@ class API:
         self,
         model_version_id: int,
         raise_on_status: bool = True,
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Delete a model by version ID.
 
         Parameters
@@ -548,7 +552,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -564,7 +568,7 @@ class API:
         model_name: str,
         model_version_name: str,
         raise_on_status: bool = True,
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Delete a model by version ID.
 
         Parameters
@@ -578,7 +582,7 @@ class API:
 
         Returns
         -------
-        requests.Response
+        httpx.Response
             The response object.
         """
         params = {'identifier_kind': 'name'}
@@ -595,7 +599,7 @@ class API:
         self,
         model_version_id: int,
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch the model version by its ID.
 
         Parameters
@@ -607,7 +611,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, dict]
+        Union[httpx.Response, dict]
             The response object.
         """
         response = self.session.post(f'model-versions/{model_version_id}')
@@ -624,7 +628,7 @@ class API:
         model_name: str,
         model_version_name: str,
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch the model version by its name.
 
         Parameters
@@ -638,7 +642,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, dict]
+        Union[httpx.Response, dict]
             The response object.
         """
         response = self.session.post(f'models/{model_name}/model-versions/{model_version_name}')
@@ -655,7 +659,7 @@ class API:
         model_id: int,
         checks: t.List[t.Dict[str, t.Any]],
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.List[t.Dict[str, t.Any]]]:
+    ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
         """Create checks.
 
         Parameters
@@ -669,7 +673,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, dict]
+        Union[httpx.Response, dict]
             The response from the server
         """
         if raise_on_status:
@@ -684,7 +688,7 @@ class API:
         self,
         model_id: int,
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.List[t.Dict[str, t.Any]]]:
+    ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
         """Fetch all model checks.
 
         Parameters
@@ -696,7 +700,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, list]
+        Union[httpx.Response, list]
             The response from the server
         """
         if raise_on_status:
@@ -729,7 +733,7 @@ class API:
         monitor_id: int,
         alert_rule: t.Dict[str, t.Any],
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create alert rule.
 
         Parameters
@@ -743,7 +747,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, dict]
+        Union[httpx.Response, dict]
             The response from the server
         """
         if raise_on_status:
@@ -759,7 +763,7 @@ class API:
         check_id: int,
         monitor: t.Dict[str, t.Any],
         raise_on_status: bool = True
-    ) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create monitor.
 
         Parameters
@@ -773,7 +777,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, dict]
+        Union[httpx.Response, dict]
             The response from the server
         """
         if raise_on_status:
@@ -787,7 +791,7 @@ class API:
     # TODO:
     # it should be called fetch_dashboard(s) and should return a list of dashboards
     # but currently only one dashboard is allowed/exists
-    def fetch_dashboard(self, raise_on_status: bool = True) -> t.Union[requests.Response, t.Dict[str, t.Any]]:
+    def fetch_dashboard(self, raise_on_status: bool = True) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch dashboard.
 
         Parameters
@@ -797,7 +801,7 @@ class API:
 
         Returns
         -------
-        Union[requests.Response, dict]
+        Union[httpx.Response, dict]
             The response object
         """
         if raise_on_status:
@@ -810,7 +814,7 @@ class API:
         model_id: int,
         check_names: t.Sequence[str],
         raise_on_status: bool = True
-    ) -> t.Optional[requests.Response]:
+    ) -> t.Optional[httpx.Response]:
         """Delete model checks by their names.
 
         Parameters
