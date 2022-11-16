@@ -18,7 +18,7 @@ from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, ORJSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.responses import FileResponse
@@ -79,7 +79,9 @@ def create_application(
         openapi_url=openapi_url,
         root_path=root_path,
         dependencies=additional_dependencies,
-        openapi_tags=tags_metadata
+        openapi_tags=tags_metadata,
+        # Replace default json response, since it can't handle numeric nan/inf values
+        default_response_class=ORJSONResponse
     )
 
     app.state.settings = settings
