@@ -192,11 +192,11 @@ async def _retrieve_models_data_ingestion(
         models = t.cast(t.List[Model], result.scalars().all())
 
     # TODO: move query creation logic into Model type definition
-    tables = (
+    tables = [
         (getattr(model, model_identifier_name), version.get_monitor_table(session))
         for model in models
         for version in model.versions
-    )
+    ]
 
     if not tables:
         return {}

@@ -184,3 +184,12 @@ TableExists = sa.text(
         "LIMIT 1"
     ")"
 ).bindparams(sa.bindparam(key="name", type_=sa.String))
+
+
+@pytest.mark.asyncio
+async def test_get_models_statistics_no_models(client: TestClient):
+    # Act
+    response = client.get("/api/v1/models/data-ingestion")
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == {}
