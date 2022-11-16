@@ -8,6 +8,8 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+from collections import Counter
+from datetime import datetime
 import math
 import typing as t
 
@@ -32,6 +34,72 @@ class DeepchecksEncoder(CoreDeepcheckEncoder):
         return super().encode(obj)
 
 
+def rearrange_and_validate_batch(
+    images: t.Sequence[np.ndarray],
+    sample_id: t.Sequence[str] = None,
+    timestamps: t.Union[t.Sequence[int], t.Sequence[datetime]] = None,
+    predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+    labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+    is_ref_samples: bool = False,
+) -> t.List[t.Dict[str, t.Any]]:
+    """Rearrange all the properties for the samples to a single list and validate it.
+
+    Parameters
+    ----------
+    images : Sequence[numpy.ndarray]
+        Sequence of images
+    sample_id : Sequence[str] , default None
+        Sequence of keys that uniquely identify each sample
+    timestamps : Union[Sequence[datetime], Sequence[int]]
+        samples timestamps
+    predictions : Optional[Union[Sequence[str], Sequence[float]]] , default None
+        Sequence of predictions or predicted probabilities, according to the expected format for the task type.
+    labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
+        Sequence of labels, according to the expected format for the task type.
+    is_ref_samples : bool , default False
+        If it is used for reference data
+
+    Returns
+    -------
+    t.List[t.Dict[str, t.Any]]
+        the samples in a single list
+    """
+
+    if len(images) == 0:
+        raise ValueError('"images" cannot be empty')
+
+    n_of_sample = len(images)
+    error_template = 'number of rows/items in each given parameter must be the same yet{additional}'
+
+    data: t.Dict[str, t.Sequence[t.Any]] = {'img': images}
+
+    if not is_ref_samples:
+        if any(v != 1 for v in Counter(sample_id).values()):
+            raise ValueError('"sample_id" must contain unique values')
+        if n_of_sample != len(sample_id):
+            raise ValueError(error_template.format(additional=' len(sample_id) != len(images)'))
+        if n_of_sample != len(timestamps):
+            raise ValueError(error_template.format(additional=' len(timestamps) != len(images)'))
+        data['sample_id'] = sample_id
+        data['timestamp'] = timestamps
+
+    if predictions is not None:
+        if n_of_sample != len(predictions):
+            raise ValueError(error_template.format(additional=' len(predictions) != len(images)'))
+        else:
+            data['prediction'] = predictions
+
+    if labels is not None:
+        if n_of_sample != len(labels):
+            raise ValueError(error_template.format(additional=' len(labels) != len(images)'))
+        else:
+            data['label'] = labels
+
+    samples = zip(*data.values())
+    samples = [dict(zip(data.keys(), sample)) for sample in samples]
+    return samples
+
+
 def create_static_predictions(vision_data: VisionData, model, device):
     static_pred = {}
     for i, batch in enumerate(vision_data):
@@ -48,7 +116,7 @@ def calc_additional_and_default_vision_properties(images: t.Sequence[np.ndarray]
     if len(images) == 0:
         vision_properties = {}
         for prop in additional_image_properties or [] + default_image_properties:
-            vision_properties[prop["name"]] = []
+            vision_properties[prop['name']] = []
         return vision_properties
     vision_properties: t.Dict[str, list] = calc_default_image_properties(images)
     if additional_image_properties is not None:
@@ -109,10 +177,10 @@ def calc_bbox_properties(
 
 
 properties_schema = {
-    "type": "array",
-    "items": {"properties": {
-        "method": {"type": "callable"},
-        "name": {"type": "string"},
-        "output_type": {"type": "string"},
+    'type': 'array',
+    'items': {'properties': {
+        'method': {'type': 'callable'},
+        'name': {'type': 'string'},
+        'output_type': {'type': 'string'},
     }},
 }

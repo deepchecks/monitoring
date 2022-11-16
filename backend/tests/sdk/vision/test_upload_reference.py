@@ -58,3 +58,29 @@ async def test_detection_upload_reference(detection_vision_model_version_client:
         (1, [], [[0, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6000000000000001, 2]]),
         (1.3333333333000001, [1], [[2, 0, 0, 2, 2]], [[0, 0, 2, 2, 0.6000000000000001, 2]]),
     ]
+
+
+@pytest.mark.asyncio
+async def test_detection_upload_reference_raw(detection_vision_model_version_client: DeepchecksModelVersionClient,
+                                              vision_detection_and_prediction_raw,
+                                              async_session):
+    imgs, labels, predictions = vision_detection_and_prediction_raw
+    detection_vision_model_version_client.upload_reference_batch(images=imgs, labels=labels,
+                                                                 predictions=predictions.values())
+    detection_vision_model_version_client.upload_reference_batch(images=imgs, labels=labels,
+                                                                 predictions=predictions.values())
+
+    model_version = await async_session.get(
+        ModelVersion,
+        detection_vision_model_version_client.model_version_id
+    )
+
+    ref_table = model_version.get_reference_table(async_session)
+    ref_arr = [dict(row) for row in (await async_session.execute(select(ref_table))).all()]
+    ref_arr = [(row['images Aspect Ratio'], row['partial_images Aspect Ratio'], row['_dc_label'], row['_dc_prediction'])
+               for row in ref_arr]
+    assert ref_arr == [
+        (0.5, [], [[1, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6000000000000001, 2]]),
+        (1, [], [[0, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6000000000000001, 2]]),
+        (1.3333333333000001, [1], [[2, 0, 0, 2, 2]], [[0, 0, 2, 2, 0.6000000000000001, 2]]),
+    ] * 2

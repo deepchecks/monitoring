@@ -11,7 +11,7 @@
 """Module containing deepchecks monitoring client."""
 import typing as t
 import warnings
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime
 
 import numpy as np
@@ -29,7 +29,7 @@ from deepchecks_client.core import client as core_client
 from deepchecks_client.core.api import API
 from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp, pretty_print
 from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
-                                            calc_bbox_properties, properties_schema)
+                                            calc_bbox_properties, rearrange_and_validate_batch, properties_schema)
 
 ARRAY = t.TypeVar('ARRAY', np.ndarray, torch.Tensor)
 
@@ -50,6 +50,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     model_version_id: int
     schema: dict
     ref_schema: dict
+    _ref_samples_uploaded: int
 
     def __init__(
             self,
@@ -60,6 +61,74 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     ):
         super().__init__(model_version_id, model, api)
         self.additional_image_properties = additional_image_properties
+        self._ref_samples_uploaded = \
+            t.cast(t.Dict[str, int], self.api.get_samples_count(self.model_version_id))['reference_count']
+
+    def _reformat_sample(
+            self,
+            img: np.ndarray,
+            sample_id: str = None,
+            timestamp: t.Union[datetime, int, None] = None,
+            prediction=None,
+            label=None,
+            is_ref_sample=False,
+    ) -> dict:
+        """Reformat the user output to our columns types and encode it.
+
+        Parameters
+        ----------
+        sample_id : str
+            The sample ID
+        img : np.ndarray
+            The image to log it's predictions, labels and properties to
+        timestamp : Union[datetime, int]
+            If no timezone info is provided on the datetime assumes local timezone.
+        prediction
+            Prediction value or predicted probability if exists, according to the expected format for the task type.
+        label
+            labels value if exists, according to the expected format for the task type.
+        is_ref_sample : bool , default False
+            If it is used for reference data
+        Returns
+        -------
+        dict
+            {<column_type>: <value>}
+        """
+        task_type = self._get_vision_task_type()
+        additional_image_properties = self.additional_image_properties
+
+        images_batch = [img]
+        labels_batch = [label] if label is not None else None
+        properties_fields = {}
+
+        if calculated_properties := calc_additional_and_default_vision_properties(images_batch,
+                                                                                  additional_image_properties):
+            for name, values in calculated_properties.items():
+                properties_fields[image_property_field(name)] = values[0]  # we have only one image (only one value)
+
+        if task_type == VisionTaskType.OBJECT_DETECTION and labels_batch:
+            bbox_properties = calc_bbox_properties(images_batch, labels_batch, additional_image_properties)
+            # we have only one image (only one value with bbox properties)
+            for name, values in bbox_properties[0].items():
+                properties_fields[bbox_property_field(name)] = list(values)
+
+        sample = {**properties_fields}
+        if not is_ref_sample:
+            sample[DeepchecksColumns.SAMPLE_ID_COL.value] = str(sample_id)
+            sample[DeepchecksColumns.SAMPLE_TS_COL.value] = parse_timestamp(timestamp).to_iso8601_string()
+
+        if prediction is not None:
+            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = prediction
+        if label is not None:
+            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
+
+        sample = DeepchecksEncoder.encode(sample)
+        if is_ref_sample:
+            self.ref_schema_validator.validate(sample)
+        else:
+            self.schema_validator.validate(sample)
+
+        return sample
 
     def _get_vision_task_type(self):
         task_type = TaskType(self.model['task_type'])
@@ -68,6 +137,59 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             if task_type == TaskType.VISION_CLASSIFICATION
             else VisionTaskType.OBJECT_DETECTION
         )
+
+    def upload_reference_batch(
+            self,
+            images: t.Sequence[np.ndarray],
+            predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+            labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+            samples_per_request: int = 5000
+    ):
+        """Upload a batch of reference data - data should be shuffled (only a total of 100k samples can be uploaded).
+
+        The required format for the supplied images, predictions and labels can be found at
+        https://docs.deepchecks.com/stable/user-guide/vision/data-classes/index.html
+        Please look at the following entries:
+        - image format - https://docs.deepchecks.com/stable/user-guide/vision/data-classes/VisionData.html
+        - label & prediction format - look at documentation of the respective VisionData subclass according to your task
+          type
+
+        Parameters
+        ----------
+        images : Sequence[numpy.ndarray]
+            Sequence of images
+        predictions : Optional[Union[Sequence[str], Sequence[float]]] , default None
+            Sequence of predictions or predicted probabilities, according to the expected format for the task type.
+        labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
+            Sequence of labels, according to the expected format for the task type.
+        samples_per_request : int , default 5000
+            How many samples to send by one request
+        """
+        if samples_per_request < 1:
+            raise ValueError('"samples_per_request" must be more than 0')
+
+        if len(images) > core_client.MAX_REFERENCE_SAMPLES - self._ref_samples_uploaded:
+            if self._ref_samples_uploaded >= core_client.MAX_REFERENCE_SAMPLES:
+                warnings.warn(f'Already uploaded {self._ref_samples_uploaded} samples, cannot upload more samples.')
+                return
+            upload_size = core_client.MAX_REFERENCE_SAMPLES - self._ref_samples_uploaded
+            images = images[upload_size:]
+            if labels is not None:
+                labels = labels[upload_size:]
+            if predictions is not None:
+                predictions = predictions[upload_size:]
+            warnings.warn(f'Maximum size allowed for reference data is 100,000, will use first {upload_size} samples.')
+
+        samples = rearrange_and_validate_batch(images=images, predictions=predictions, labels=labels,
+                                               is_ref_samples=True)
+        data = {i: self._reformat_sample(is_ref_sample=True, **sample) for i, sample in enumerate(samples)}
+        self._upload_reference(
+            data=pd.DataFrame(data).T,
+            samples_per_request=samples_per_request
+        )
+        self._ref_samples_uploaded += len(data)
+        pretty_print('Batch uploaded, total number of reference samples in system is'
+                     f' {self.api.get_samples_count(self.model_version_id)["reference_count"]}.')
 
     def log_batch(
             self,
@@ -103,44 +225,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             How many samples to send by one request
         """
         if samples_per_send < 1:
-            raise ValueError('"samples_per_send" must be ">=" than 1')
+            raise ValueError('"samples_per_send" must be more than 0')
 
-        if any(v != 1 for v in Counter(sample_id).values()):
-            raise ValueError('"sample_id" must contain unique values')
+        samples = rearrange_and_validate_batch(images=images, sample_id=sample_id,
+                                               timestamps=timestamps, predictions=predictions, labels=labels)
 
-        if len(images) == 0:
-            raise ValueError('"images" cannot be empty')
-
-        n_of_sample = len(images)
-        error_template = 'number of rows/items in each given parameter must be the same yet{additional}'
-
-        if n_of_sample != len(sample_id):
-            raise ValueError(error_template.format(additional=' len(sample_id) != len(images)'))
-        if n_of_sample != len(timestamps):
-            raise ValueError(error_template.format(additional=' len(timestamps) != len(images)'))
-
-        data: t.Dict[str, t.Sequence[t.Any]] = {
-            'img': images,
-            'timestamp': timestamps,
-            'sample_id': sample_id
-        }
-
-        if predictions is not None:
-            if n_of_sample != len(predictions):
-                raise ValueError(error_template.format(additional=' len(predictions) != len(images)'))
-            else:
-                data['prediction'] = predictions
-
-        if labels is not None:
-            if n_of_sample != len(labels):
-                raise ValueError(error_template.format(additional=' len(labels) != len(images)'))
-            else:
-                data['label'] = labels
-
-        samples = zip(*data.values())
-        samples = [dict(zip(data.keys(), sample)) for sample in samples]
-
-        for i in range(0, len(data), samples_per_send):
+        for i in range(0, len(sample_id), samples_per_send):
             self._log_batch(samples[i:i + samples_per_send])
 
     def _log_batch(self, samples: t.Sequence[t.Dict[str, t.Any]]):
@@ -180,39 +270,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """
         if timestamp is None:
             warnings.warn('log_sample was called without timestamps, using current time instead')
-
-        task_type = self._get_vision_task_type()
-        additional_image_properties = self.additional_image_properties
-
         timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
-        images_batch = [img]
-        labels_batch = [label] if label is not None else None
-        properties_fields = {}
-
-        if calculated_properties := calc_additional_and_default_vision_properties(images_batch,
-                                                                                  additional_image_properties):
-            for name, values in calculated_properties.items():
-                properties_fields[image_property_field(name)] = values[0]  # we have only one image (only one value)
-
-        if task_type == VisionTaskType.OBJECT_DETECTION and labels_batch:
-            bbox_properties = calc_bbox_properties(images_batch, labels_batch, additional_image_properties)
-            # we have only one image (only one value with bbox properties)
-            for name, values in bbox_properties[0].items():
-                properties_fields[bbox_property_field(name)] = list(values)
-
-        sample = {
-            DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id),
-            DeepchecksColumns.SAMPLE_TS_COL.value: timestamp.to_iso8601_string(),
-            **properties_fields
-        }
-
-        if prediction is not None:
-            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = prediction
-        if label is not None:
-            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
-
-        sample = DeepchecksEncoder.encode(sample)
-        self.schema_validator.validate(sample)
+        sample = self._reformat_sample(img=img, sample_id=sample_id, timestamp=timestamp,
+                                       prediction=prediction, label=label)
         self._log_samples.append(sample)
 
     def upload_reference(
@@ -235,72 +295,44 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         samples_per_request : int, default: 5000
             How many samples to send in each request. Decrease this number if having problems uploading the data.
         """
-        if vision_data.num_samples > 100_000:
-            vision_data = vision_data.copy(shuffle=True, n_samples=100_000, random_state=42)
+        if vision_data.num_samples > core_client.MAX_REFERENCE_SAMPLES - self._ref_samples_uploaded:
+            if self._ref_samples_uploaded >= core_client.MAX_REFERENCE_SAMPLES:
+                warnings.warn(f'Already uploaded {self._ref_samples_uploaded} samples, cannot upload more samples.')
+                return
+            vision_data = vision_data.copy(shuffle=True,
+                                           n_samples=core_client.MAX_REFERENCE_SAMPLES - self._ref_samples_uploaded,
+                                           random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
+            if self._ref_samples_uploaded > 0:
+                warnings.warn(f'Already uploaded {self._ref_samples_uploaded} samples, '
+                              f'will use {core_client.MAX_REFERENCE_SAMPLES - self._ref_samples_uploaded} now.')
 
         data = defaultdict(dict)
-        task_type = self._get_vision_task_type()
         samples_indexes = list(vision_data.data_loader.batch_sampler)
-        prediction_field = DeepchecksColumns.SAMPLE_PRED_COL.value
-        label_field = DeepchecksColumns.SAMPLE_LABEL_COL.value
 
         running_sample_index = 0
         for i, batch in enumerate(vision_data):
             indexes = samples_indexes[i]
             images_batch = vision_data.batch_to_images(batch)
             labels_batch = vision_data.batch_to_labels(batch)
-            task_type = vision_data.task_type
             batch_length = len(images_batch)
 
-            # dict[property-name, list[image-1-value, ..., image-N-value]]
-            image_properties = calc_additional_and_default_vision_properties(images_batch,
-                                                                             self.additional_image_properties)
-
-            # list[dict[property-name, list[bbox-1-value, ..., bbox-N-value]]]
-            # bbox properties for each sample
-            bbox_properties = (
-                calc_bbox_properties(images_batch, labels_batch, self.additional_image_properties)
-                if task_type == VisionTaskType.OBJECT_DETECTION
-                else None
-            )
-
-            for sample_batch_index, sample_index in enumerate(indexes):
-                data[sample_index][label_field] = DeepchecksEncoder.encode(labels_batch[sample_batch_index])
-
-                if predictions:
-                    if isinstance(predictions, dict):
-                        data[sample_index][prediction_field] = DeepchecksEncoder.encode(predictions[sample_index])
-                    else:
-                        data[sample_index][prediction_field] = DeepchecksEncoder.encode(
-                            predictions[running_sample_index + sample_batch_index]
-                        )
-
-                for name, values in image_properties.items():
-                    data[sample_index][image_property_field(name)] = DeepchecksEncoder.encode(
-                        values[sample_batch_index])
-
-                if bbox_properties:
-                    for name, values in bbox_properties[sample_batch_index].items():
-                        data[sample_index][bbox_property_field(name)] = DeepchecksEncoder.encode(values)
+            for sample_index, img, label in zip(indexes, images_batch, labels_batch):
+                data[sample_index] = self._reformat_sample(img=img, label=label, prediction=predictions[sample_index],
+                                                           is_ref_sample=True)
 
             running_sample_index += batch_length
 
-        data = pd.DataFrame(data).T
-
-        for _, row in data.iterrows():
-            self.ref_schema_validator.validate(instance=row.to_dict())
-
         self._upload_reference(
-            data=data,
+            data=pd.DataFrame(data).T,
             samples_per_request=samples_per_request
         )
+        self._ref_samples_uploaded += len(data)
         pretty_print('Reference data uploaded.')
 
     def update_sample(
         self,
         sample_id: str,
-        image: t.Optional[np.ndarray] = None,
         label: t.Any = None,
         **values
     ):
@@ -310,8 +342,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         ----------
         sample_id : str
             The sample ID
-        image : t.Optional[np.ndarray], default: None
-            image to be attached to the provided sample id. required if updating the label for a object detection task.
         label : Any, default: None
             updated label for the sample.
         values
@@ -329,22 +359,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: sample_id, **values}
 
-        if image is not None:
-            img_properties = calc_additional_and_default_vision_properties([image], self.additional_image_properties)
-            for name, values in img_properties.items():
-                update[image_property_field(name)] = values[0]  # we have only one image (only one value)
-
         if label is not None:
             update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
-            task_type = self._get_vision_task_type()
-            # TODO: change to task_type not classification later
-            if task_type == VisionTaskType.OBJECT_DETECTION:
-                if image is None:
-                    raise ValueError(f'For {task_type.value} task, updating label require also passing an image')
-                bbox_properties = calc_bbox_properties([image], [label], self.additional_image_properties)
-                # we have only one image (only one value with bbox properties)
-                for name, values in bbox_properties[0].items():
-                    update[bbox_property_field(name)] = list(values)
 
         update = DeepchecksEncoder.encode(update)
         DeepchecksJsonValidator(schema=optional_columns_schema).validate(update)

@@ -317,6 +317,7 @@ async def classification_model_check_id(classification_model_id: int, client: Te
         }
     ))
 
+
 @pytest_asyncio.fixture()
 async def classification_model_check_train_test_id(classification_model_id: int, client: TestClient) -> int:
     return t.cast(int, add_check(
@@ -329,6 +330,7 @@ async def classification_model_check_train_test_id(classification_model_id: int,
             "module_name": "deepchecks.tabular.checks"
         }
     ))
+
 
 @pytest_asyncio.fixture()
 async def classification_model_feature_check_id(classification_model_id: int, client: TestClient) -> int:
@@ -654,7 +656,7 @@ def vision_classification_and_list_prediction():
 
 
 @pytest_asyncio.fixture()
-def vision_detection_and_prediction():
+def vision_detection_and_prediction_raw():
     imgs = [np.array([[[1, 2, 0], [3, 4, 0]]]),
             np.array([[[1, 3, 5]]]),
             np.array([[[7, 9, 0], [9, 6, 0], [9, 6, 0]],
@@ -663,5 +665,11 @@ def vision_detection_and_prediction():
                       [[7, 9, 0], [9, 6, 0], [9, 6, 0]]])]
     labels = [[[1, 0, 0, 1, 1]], [[0, 0, 0, 1, 1]], [[2, 0, 0, 2, 2]]]
     predictions = {0: [[0, 0, 1, 1, 0.6, 2]], 1: [[0, 0, 1, 1, 0.6, 2]], 2: [[0, 0, 2, 2, 0.6, 2]]}
+    return imgs, labels, predictions
+
+
+@pytest_asyncio.fixture()
+def vision_detection_and_prediction(vision_detection_and_prediction_raw):
+    imgs, labels, predictions = vision_detection_and_prediction_raw
     data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
     return _MyDetectionVisionData(data_loader), predictions

@@ -25,7 +25,9 @@ from .api import API
 if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
 
-__all__ = ['DeepchecksModelVersionClient', 'DeepchecksModelClient']
+__all__ = ['DeepchecksModelVersionClient', 'DeepchecksModelClient', 'MAX_REFERENCE_SAMPLES']
+
+MAX_REFERENCE_SAMPLES = 100_000
 
 
 class DeepchecksModelVersionClient:

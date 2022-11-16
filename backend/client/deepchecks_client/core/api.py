@@ -99,6 +99,33 @@ class API:
         else:
             return self.session.get('say-hello')
 
+    def get_samples_count(
+        self,
+        model_version_id: int,
+        raise_on_status: bool = True,
+    ) -> t.Union[t.Dict[str, int], httpx.Response]:
+        """Get the amount of samples uploaded.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version ID.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        dict
+            The response object - {"monitor_count": <count>, "reference_count": <count>}
+        """
+        if raise_on_status:
+            return maybe_raise(
+                self.session.get(f'model-versions/{model_version_id}/count-samples'),
+                msg=f'Failed to obtain ModelVersion(id:{model_version_id}).\n{{error}}'
+            ).json()
+        else:
+            return self.session.get(f'model-versions/{model_version_id}/count-samples')
+
     def fetch_model_version(
         self,
         model_version_id: int,

@@ -284,8 +284,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 if new_predictions:
                     raise ValueError(f'Got predictions not in model classes: {new_predictions}')
 
-        if len(dataset) > 100_000:
-            data = data.sample(100_000, random_state=42)
+        if len(dataset) > core_client.MAX_REFERENCE_SAMPLES:
+            data = data.sample(core_client.MAX_REFERENCE_SAMPLES, random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
 
         # Make sure that integer categorical columns are still sent as strings:
