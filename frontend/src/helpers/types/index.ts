@@ -17,3 +17,5 @@ export type GraphData = (number | null)[] | string[] | { x: string; y: number }[
 
 export type WindowTimeout = ReturnType<typeof setTimeout>;
 export type WindowInterval = ReturnType<typeof setInterval>;
+
+export type SetStateType<T> = React.Dispatch<React.SetStateAction<T>>;

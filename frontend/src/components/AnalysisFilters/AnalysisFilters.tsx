@@ -9,9 +9,10 @@ import {
 import { AnalysisContext, ColumnsFilters, ComparisonModeOptions } from 'context/analysis-context';
 
 import { ColumnType } from 'helpers/types/model';
-import { lookBackData, frequencyData, comparisonModeData } from './AnalysisFilters.helpers';
+import { frequencyData, comparisonModeData } from './AnalysisFilters.helpers';
+import { lookBackData } from 'context/analysis-context';
 
-import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box } from '@mui/material';
+import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box, Typography } from '@mui/material';
 
 import { ExpandableSelection } from 'components/ExpandableSelection';
 import { MarkedSelect } from 'components/MarkedSelect';
@@ -34,14 +35,16 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     comparisonMode,
     setComparisonMode,
     setPeriod,
+    lookback,
+    setLookback,
     frequency,
     setFrequency,
     setFilters,
+    setInitialFilters,
+    filtersLength,
     reset,
     resetAll
   } = useContext(AnalysisContext);
-
-  const [lookback, setLookback] = useState(lookBackData[0].value);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
 
@@ -83,8 +86,8 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
 
   useEffect(() => {
     const time = model.latest_time ? model.latest_time * 1000 : Date.now();
-    setPeriod([new Date(time - lookBackData[0].value), new Date(time)]);
-  }, [model, setPeriod]);
+    setPeriod([new Date(time - lookback), new Date(time)]);
+  }, [model, setPeriod, lookback]);
 
   useEffect(() => {
     if (model.id !== -1) {
@@ -118,8 +121,9 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
       });
 
       setFilters(currentFilters);
+      setInitialFilters(currentFilters);
     }
-  }, [columns, setFilters]);
+  }, [columns, setFilters, setInitialFilters]);
 
   return (
     <>
@@ -162,21 +166,17 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
             ))}
           </MarkedSelect>
           <StyledAnalysisFiltersDivider orientation="vertical" flexItem sx={{ ml: fixedHeader ? '27px' : '' }} />
-          <Button
+          <StyledFiltersButton
             startIcon={<FilterIcon />}
             variant="text"
             onClick={handleFiltersOpen}
             sx={{
-              padding: '10px 5px 10px 10px',
-              transform: 'translateX(-14px)',
-
-              '& .MuiButton-startIcon': {
-                marginRight: '4px'
-              }
+              padding: `10px ${filtersLength ? '40px' : '16px'} 10px 15px`
             }}
           >
-            Data Filter
-          </Button>
+            Filter
+            {!!filtersLength && <StyledFiltersCount>({filtersLength})</StyledFiltersCount>}
+          </StyledFiltersButton>
         </Stack>
         <Box sx={{ ml: 'auto' }}>
           {reset ? (
@@ -203,3 +203,17 @@ const StyledAnalysisFiltersDivider = styled(Divider)(({ theme }) => ({
   margin: '0 14px',
   borderColor: alpha(theme.palette.grey[200], 0.5)
 }));
+
+const StyledFiltersButton = styled(Button)({
+  position: 'relative',
+  transform: 'translateX(-15px)',
+
+  '& .MuiButton-startIcon': {
+    marginRight: '4px'
+  }
+});
+
+const StyledFiltersCount = styled(Typography)({
+  position: 'absolute',
+  left: '77px'
+});

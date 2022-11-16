@@ -1,4 +1,4 @@
-import React, { Dispatch, PropsWithChildren, SetStateAction } from 'react';
+import React, { PropsWithChildren } from 'react';
 
 import { MonitorCheckConfSchemaCheckConf } from 'api/generated';
 
@@ -9,16 +9,17 @@ import SingleSelect from './AnalysisItemSelect/SingleSelect';
 import MultiSelect from './AnalysisItemSelect/MultiSelect';
 
 import { AGGREGATION } from '../../AnalysisItem.variables';
+import { SetStateType } from 'helpers/types';
 
 interface AnalysisChartItemWithFiltersProps extends SelectProps {
   title: string;
   subtitle: string;
   filters: MonitorCheckConfSchemaCheckConf[];
   activeFilter: string | null;
-  setActiveFilter: Dispatch<SetStateAction<string | null>>;
-  setSingleSelectValue: Dispatch<SetStateAction<string>>;
+  setActiveFilter: SetStateType<string | null>;
+  setSingleSelectValue: SetStateType<string>;
   multipleSelectValue: string[];
-  setMultipleSelectValue: Dispatch<SetStateAction<string[]>>;
+  setMultipleSelectValue: SetStateType<string[]>;
 }
 
 export function AnalysisChartItemWithFilters({

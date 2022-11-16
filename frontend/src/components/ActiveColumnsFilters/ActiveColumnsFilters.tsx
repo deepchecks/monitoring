@@ -4,16 +4,16 @@ import { AnalysisContext, FilterValue } from 'context/analysis-context';
 
 import { Box, Popover, Stack, Tooltip } from '@mui/material';
 
-import { ColumnChip } from './components/ColumnChip';
+import { ColumnChip } from './ColumnChip';
 
-const maxCharacters = 100;
-const initCounterWidth = 50;
+const MAX_CHARACTERS = 60;
+const INIT_COUNTER_WIDTH = 50;
 
 export function ActiveColumnsFilters() {
   const { filters, setFilters } = useContext(AnalysisContext);
 
   const [menuFilterRange, setMenuFilterRange] = useState(0);
-  const [counterWidth, setCounterWidth] = useState(initCounterWidth);
+  const [counterWidth, setCounterWidth] = useState(INIT_COUNTER_WIDTH);
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -27,24 +27,28 @@ export function ActiveColumnsFilters() {
   };
 
   const deleteFilter = useCallback(
-    (column: string, value: FilterValue, category = '') =>
-      () => {
-        if (value) {
-          setFilters(prevFilters => {
-            if (Array.isArray(value)) {
-              return { ...prevFilters, [column]: null };
-            }
+    (column: string, value: FilterValue) => () => {
+      if (value) {
+        setFilters(prevFilters => {
+          if (Array.isArray(value)) {
+            return { ...prevFilters, [column]: null };
+          }
 
-            return { ...prevFilters, [column]: { ...prevFilters[column], [category]: false } };
-          });
-        }
-      },
+          const valueToRemove = Object.keys(value).reduce(
+            (acc: Record<string, boolean>, key) => ({ ...acc, [key]: acc[key] || false }),
+            {}
+          );
+
+          return { ...prevFilters, [column]: { ...prevFilters[column], ...valueToRemove } };
+        });
+      }
+    },
     [setFilters]
   );
 
   useEffect(() => {
     if (containerRef.current && containerRef.current.clientWidth !== containerRef.current.scrollWidth) {
-      let width = containerRef.current.clientWidth - initCounterWidth;
+      let width = containerRef.current.clientWidth - INIT_COUNTER_WIDTH;
       const margin = 10;
 
       let numberOfVisibleElements = 0;
@@ -68,7 +72,7 @@ export function ActiveColumnsFilters() {
       return;
     }
 
-    setCounterWidth(initCounterWidth);
+    setCounterWidth(INIT_COUNTER_WIDTH);
     setMenuFilterRange(0);
   }, [filters, containerRef?.current?.children, containerRef?.current?.children?.length]);
 
@@ -80,7 +84,7 @@ export function ActiveColumnsFilters() {
             return (
               <ColumnChip
                 key={`${key}${value[0]}${value[1]}`}
-                label={`${key}: ${Number.isInteger(value[0]) ? value[0] : value[0].toFixed(3)} <> ${
+                label={`${key}: ${Number.isInteger(value[0]) ? value[0] : value[0].toFixed(3)} - ${
                   Number.isInteger(value[1]) ? value[1] : value[1].toFixed(3)
                 }`}
                 onDelete={deleteFilter(key, value)}
@@ -91,26 +95,36 @@ export function ActiveColumnsFilters() {
           const values = Object.keys(value);
 
           if (!Array.isArray(value) && values.length) {
-            return values.map(label => {
+            const labels: string[] = [];
+
+            values.map(label => {
               if (value[label]) {
-                return label.length > maxCharacters ? (
-                  <Tooltip title={label} placement="top">
-                    <ColumnChip
-                      key={`${key}${label}`}
-                      label={`${key}: ${label.slice(0, maxCharacters)}...`}
-                      onDelete={deleteFilter(key, value, label)}
-                    />
-                  </Tooltip>
-                ) : (
-                  <ColumnChip
-                    key={`${key}${label}`}
-                    label={`${key}: ${label}`}
-                    onDelete={deleteFilter(key, value, label)}
-                  />
-                );
+                labels.push(label);
               }
-              return null;
             });
+
+            const labelsString = labels.join(', ');
+
+            return (
+              !!labels.length &&
+              (labelsString.length > MAX_CHARACTERS ? (
+                <Tooltip title={labelsString} placement="top">
+                  <Box sx={{ height: '28px' }}>
+                    <ColumnChip
+                      key={`${key}${labelsString}`}
+                      label={`${key}: ${labelsString.slice(0, MAX_CHARACTERS)}...`}
+                      onDelete={deleteFilter(key, value)}
+                    />
+                  </Box>
+                </Tooltip>
+              ) : (
+                <ColumnChip
+                  key={`${key}${labelsString}`}
+                  label={`${key}: ${labelsString}`}
+                  onDelete={deleteFilter(key, value)}
+                />
+              ))
+            );
           }
         }
       }),
@@ -118,48 +132,46 @@ export function ActiveColumnsFilters() {
   );
 
   return (
-    <>
-      <Stack
-        direction="row"
-        height="70px"
-        spacing="10px"
-        ref={containerRef}
-        sx={{ overflow: 'hidden', position: 'relative' }}
-      >
-        {Filters}
-        {!!menuFilterRange && (
-          <>
-            <Box
-              sx={{
-                position: 'absolute',
-                height: 1,
-                bottom: 0,
-                right: 0,
-                background: theme => theme.palette.common.white,
-                width: counterWidth,
-                display: 'flex',
-                justifyContent: 'end',
-                alignItems: 'center'
-              }}
-            >
-              <ColumnChip label={`+${menuFilterRange}`} onClick={handleMenuOpen} />
-            </Box>
-            <Popover
-              anchorEl={anchorEl}
-              open={!!anchorEl}
-              onClose={handleMenuClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right'
-              }}
-            >
-              <Stack sx={{ padding: '16px 16px 20px' }} spacing="20px">
-                {Filters.slice(-menuFilterRange)}
-              </Stack>
-            </Popover>
-          </>
-        )}
-      </Stack>
-    </>
+    <Stack
+      direction="row"
+      height="70px"
+      spacing="10px"
+      ref={containerRef}
+      sx={{ overflow: 'hidden', position: 'relative' }}
+    >
+      {Filters}
+      {!!menuFilterRange && (
+        <>
+          <Box
+            sx={{
+              position: 'absolute',
+              height: 1,
+              bottom: 0,
+              right: 0,
+              background: theme => theme.palette.common.white,
+              width: counterWidth,
+              display: 'flex',
+              justifyContent: 'end',
+              alignItems: 'center'
+            }}
+          >
+            <ColumnChip label={`+${menuFilterRange}`} onClick={handleMenuOpen} />
+          </Box>
+          <Popover
+            anchorEl={anchorEl}
+            open={!!anchorEl}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right'
+            }}
+          >
+            <Stack sx={{ padding: '16px 16px 20px' }} spacing="20px">
+              {Filters.slice(-menuFilterRange)}
+            </Stack>
+          </Popover>
+        </>
+      )}
+    </Stack>
   );
 }

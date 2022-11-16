@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ColumnType, GetModelColumnsApiV1ModelsModelIdColumnsGet200 } from 'api/generated';
 
 import { List, Popover, PopoverProps } from '@mui/material';
@@ -21,28 +21,32 @@ export function DropDownFilter({ columns, onClose, ...props }: DropDownFilterPro
 
   const searchTimer = useRef<WindowTimeout>();
 
-  const filterColumns = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
-    clearTimeout(searchTimer.current);
-    setSearchColumnName(value);
+  const filterColumns = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { value } = event.target;
 
-    if (!value.trim()) {
-      setCurrentColumns(columns);
-      return;
-    }
+      clearTimeout(searchTimer.current);
+      setSearchColumnName(value);
 
-    searchTimer.current = setTimeout(() => {
-      const filteredColumns: GetModelColumnsApiV1ModelsModelIdColumnsGet200 = {};
+      if (!value.trim()) {
+        setCurrentColumns(columns);
+        return;
+      }
 
-      Object.entries(columns).forEach(([column, columnValue]) => {
-        if (column.toLowerCase().includes(value.toLowerCase())) {
-          filteredColumns[column] = columnValue;
-        }
-      });
+      searchTimer.current = setTimeout(() => {
+        const filteredColumns: GetModelColumnsApiV1ModelsModelIdColumnsGet200 = {};
 
-      setCurrentColumns(filteredColumns);
-    }, 200);
-  };
+        Object.entries(columns).forEach(([column, columnValue]) => {
+          if (column.toLowerCase().includes(value.toLowerCase())) {
+            filteredColumns[column] = columnValue;
+          }
+        });
+
+        setCurrentColumns(filteredColumns);
+      }, 200);
+    },
+    [columns]
+  );
 
   const handleReset = () => {
     setSearchColumnName('');

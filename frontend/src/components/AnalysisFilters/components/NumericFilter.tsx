@@ -69,6 +69,7 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
         currentValues[index] = minValue;
         return currentValues;
       });
+
       return;
     }
 
@@ -149,13 +150,16 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
 
 const StyledNumericField = styled(TextField)(({ theme }) => ({
   width: 65,
+
   '.MuiInputBase-input': {
     padding: '8px',
+
     '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
       WebkitAppearance: 'none',
       margin: 0
     }
   },
+
   '.MuiOutlinedInput-notchedOutline': {
     borderColor: theme.palette.grey[200]
   }

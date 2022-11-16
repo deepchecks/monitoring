@@ -1,6 +1,6 @@
 import React, { useState, ChangeEvent, useEffect } from 'react';
 
-import { SelectChangeEvent, MenuItem, ListItemText, Button, MenuProps as IMenuProps } from '@mui/material';
+import { SelectChangeEvent, MenuItem, ListItemText, Button, MenuProps as IMenuProps, Tooltip } from '@mui/material';
 
 import InputLabel from './components/InputLabel';
 import ClearButton from './components/ClearButton';
@@ -17,6 +17,8 @@ import {
   StyledSearchField
 } from './AnalysisItemSelect.style';
 import { AnalysisItemSelectProps, MultiSelectValuesType } from './AnalysisItemSelect.types';
+
+const MAX_MENU_ITEM_TEXT_LENGTH = 21;
 
 const MenuProps: Partial<IMenuProps> = {
   MenuListProps: {
@@ -62,6 +64,7 @@ const MultiSelect = ({
         setMultiValue(savedMultiValue);
         clearSearchField();
       }, 200);
+
       return;
     }
 
@@ -76,7 +79,6 @@ const MultiSelect = ({
 
   const handleSelectValueChange = (event: SelectChangeEvent<typeof multiValue>) => {
     const { value } = event.target;
-
     const val = typeof value === 'string' ? value.split(',') : value;
 
     setMultiValue(val);
@@ -84,7 +86,6 @@ const MultiSelect = ({
 
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-
     const filtered = data.filter(item => item.name.toLowerCase().includes(value.toLowerCase().trim()));
 
     setSearchFieldValue(value);
@@ -143,7 +144,26 @@ const MultiSelect = ({
                 tabIndex={-1}
                 inputProps={{ 'aria-labelledby': name }}
               />
-              <ListItemText primary={name} />
+              {name.length > MAX_MENU_ITEM_TEXT_LENGTH ? (
+                <Tooltip
+                  title={name}
+                  placement="left-end"
+                  PopperProps={{
+                    modifiers: [
+                      {
+                        name: 'offset',
+                        options: {
+                          offset: [0, 18]
+                        }
+                      }
+                    ]
+                  }}
+                >
+                  <ListItemText primary={`${name.slice(0, MAX_MENU_ITEM_TEXT_LENGTH)}...`} />
+                </Tooltip>
+              ) : (
+                <ListItemText primary={name} />
+              )}
             </MenuItem>
           ))
         ) : (

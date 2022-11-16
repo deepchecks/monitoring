@@ -25,6 +25,7 @@ export const colors = {
       disabled: '#E1E4E5',
       50: alpha('#F3F5F8', 0.5),
       100: '#F3F5F8',
+      150: alpha('#D1D8DC', 0.5),
       200: '#D1D8DC',
       300: '#B3BEC4'
     },

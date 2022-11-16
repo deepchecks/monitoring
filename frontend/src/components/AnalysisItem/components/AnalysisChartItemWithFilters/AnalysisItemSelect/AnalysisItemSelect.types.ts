@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from 'react';
+import { SetStateType } from 'helpers/types';
 
 export interface FiltersValue {
   name: string;
@@ -13,8 +13,8 @@ export interface AnalysisItemSelectProps<T> {
   size?: SelectSize;
   type: string;
   activeFilter: string | null;
-  setActiveFilter: Dispatch<SetStateAction<string | null>>;
-  setSelectValue: Dispatch<SetStateAction<T>>;
+  setActiveFilter: SetStateType<string | null>;
+  setSelectValue: SetStateType<T>;
 }
 
 export type MultiSelectValuesType = string[];
