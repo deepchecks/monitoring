@@ -13,10 +13,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
-from httpx import HTTPError
-
 from deepchecks_client import DeepchecksClient
 from deepchecks_client.tabular.utils import _describe_dataset, create_schema, read_schema
+from httpx import HTTPError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.models import ModelVersion, TaskType

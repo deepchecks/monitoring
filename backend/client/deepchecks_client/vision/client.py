@@ -365,7 +365,6 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def version(
             self,
             name: str,
-            vision_data: t.Optional[VisionData] = None,
             additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
     ) -> DeepchecksModelVersionClient:
         """Create a new model version for vision data.
@@ -374,8 +373,6 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         ----------
         name : str
             The name of the new version.
-        vision_data : VisionData
-            The vision data to use as reference.
         additional_image_properties : List[Dict[str, Any]]
             The additional image properties to use for the reference.
             Should be in format:
@@ -392,33 +389,30 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         if existing_version_id is not None:
             return self._version_client(existing_version_id, additional_image_properties=additional_image_properties)
 
-        if vision_data is None:
-            raise ValueError('Model Version Name does not exists for this model and no vision data were provided.')
-        else:
-            # Start with validation
-            if additional_image_properties is not None:
-                DeepchecksJsonValidator(properties_schema).validate(additional_image_properties)
+        if additional_image_properties is not None:
+            DeepchecksJsonValidator(properties_schema).validate(additional_image_properties)
 
-            features = {}
-            all_image_props = additional_image_properties or [] + default_image_properties
-            for prop in all_image_props:
-                prop_name = prop['name']
-                features[PropertiesInputType.IMAGES.value + ' ' + prop_name] = ColumnType.NUMERIC.value
-                if vision_data.task_type == VisionTaskType.OBJECT_DETECTION:
-                    features[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = ColumnType.ARRAY_FLOAT.value
+        features = {}
+        all_image_props = additional_image_properties or default_image_properties
+        task_type = TaskType(self.model['task_type'])
 
-            # Send request
-            created_version = self.api.create_model_version(
-                model_id=self.model['id'],
-                model_version={
-                    'name': name,
-                    'features': features,
-                    'non_features': {},
-                }
-            )
-            created_version = t.cast(t.Dict[str, t.Any], created_version)
-            model_version_id = created_version['id']
+        for prop in all_image_props:
+            prop_name = prop['name']
+            features[PropertiesInputType.IMAGES.value + ' ' + prop_name] = ColumnType.NUMERIC.value
+            if task_type == TaskType.VISION_DETECTION:
+                features[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = ColumnType.ARRAY_FLOAT.value
 
+        created_version = self.api.create_model_version(
+            model_id=self.model['id'],
+            model_version={
+                'name': name,
+                'features': features,
+                'non_features': {},
+            }
+        )
+
+        created_version = t.cast(t.Dict[str, t.Any], created_version)
+        model_version_id = created_version['id']
         return self._version_client(model_version_id, additional_image_properties=additional_image_properties)
 
     def _version_client(

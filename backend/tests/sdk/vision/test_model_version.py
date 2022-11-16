@@ -26,12 +26,9 @@ async def test_get_model_version_client(classification_vision_model_id,
 
 @pytest.mark.asyncio
 async def test_add_model_version_client(classification_vision_model_id,
-                                        vision_classification_and_prediction,
                                         deepchecks_sdk_client: DeepchecksClient):
-    vision_data, _ = vision_classification_and_prediction
     model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
                                                              task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == classification_vision_model_id
-    model_version_client = model_client.version("v1",
-                                                vision_data=vision_data)
+    model_version_client = model_client.version("v1")
     assert model_version_client.model_version_id == 1

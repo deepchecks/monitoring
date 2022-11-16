@@ -267,7 +267,7 @@ class DeepchecksClient:
             )
 
         model_client = self.get_or_create_model(model_name, task_type, description)
-        version_client = model_client.version(version_name, reference_dataset, image_properties)
+        version_client = model_client.version(version_name, image_properties)
 
         version_client.upload_reference(
             vision_data=reference_dataset,
