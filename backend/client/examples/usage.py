@@ -20,7 +20,7 @@ dc_client = DeepchecksClient(host='http://127.0.0.1:5000')
 # OR if model already exists
 model_client = dc_client.model_client(model_id=6)
 # Create or get a version
-# version_client = model_client.create_version('v1', features={'a': 'numeric'}, non_features={'b': 'categorical'},
+# version_client = model_client.create_version('v1', features={'a': 'numeric'}, additional_data={'b': 'categorical'},
 #                                              feature_importance={'a': 0.9})
 # OR if version already exists
 version_client = model_client.version_client(model_version_id=1)

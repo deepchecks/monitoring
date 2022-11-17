@@ -799,7 +799,7 @@ async def test_property_check_w_properties(classification_vision_model_property_
 async def test_check_classification_without_classes(client: TestClient):
     model_id = add_model(client, task_type=TaskType.BINARY)
     version_id = add_model_version(model_id, client, name="v1", features={"a": "numeric", "b": "categorical"},
-                                   non_features={"c": "numeric"}, feature_importance={"a": 0.1, "b": 0.5})
+                                   additional_data={"c": "numeric"}, feature_importance={"a": 0.1, "b": 0.5})
     check_id = add_check(model_id, client)
     assert add_classification_data(version_id, client, with_proba=False)[0].status_code == 200
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)

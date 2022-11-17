@@ -25,7 +25,7 @@ async def test_add_model_version_binary_no_classes(client: TestClient):
         "features": {
             "x": "numeric",
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
         }
     }
@@ -46,7 +46,7 @@ async def test_add_model_version_binary_with_classes(client: TestClient):
         "features": {
             "x": "numeric",
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
         },
         "classes": ["1", "2"]
@@ -68,7 +68,7 @@ async def test_add_model_version_binary_with_too_many_classes(client: TestClient
         "features": {
             "x": "numeric",
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
         },
         "classes": ["1", "2", "3"]
@@ -91,7 +91,7 @@ async def test_add_model_version_classes_not_sorted(client: TestClient):
         "features": {
             "x": "numeric",
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
         },
         "classes": ["1", "2", "3", "0"]
@@ -114,7 +114,7 @@ async def test_add_model_version_classes_for_regression(client: TestClient):
         "features": {
             "x": "numeric",
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
         },
         "classes": ["1", "2", "3"]
@@ -139,7 +139,7 @@ async def test_add_model_version(classification_model_id, client: TestClient):
             "y": "categorical",
             "w": "boolean"
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
             "b": "text"
         }
@@ -162,7 +162,7 @@ async def test_add_another_model_version(classification_model_id, classification
             "y": "categorical",
             "w": "boolean"
         },
-        "non_features": {
+        "additional_data": {
             "a": "numeric",
             "b": "text"
         }
@@ -184,7 +184,7 @@ async def test_get_model_version_same_features(classification_model_id,
         "name": "v1",
         "features": {"a": "numeric", "b": "categorical"},
         "feature_importance": {"a": 0.1, "b": 0.5},
-        "non_features": {"c": "numeric"}
+        "additional_data": {"c": "numeric"}
     }
     # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
@@ -201,7 +201,7 @@ async def test_get_model_version_different_features(classification_model_id,
     request = {
         "name": "v1",
         "features": {"d": "numeric", "b": "categorical"},
-        "non_features": {"c": "numeric"}
+        "additional_data": {"c": "numeric"}
     }
     # Act
     response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
@@ -339,7 +339,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
             "a": "numeric",
             "b": "categorical"
         },
-        "non_features": {
+        "additional_data": {
             "c": "numeric"
         },
         "classes": ["0", "1", "2"]

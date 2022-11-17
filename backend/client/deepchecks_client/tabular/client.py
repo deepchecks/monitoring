@@ -39,8 +39,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     """
 
     def set_feature_importance(
-        self,
-        feature_importance: t.Union[t.Dict[str, float], 'pandas.Series[float]']
+            self,
+            feature_importance: t.Union[t.Dict[str, float], 'pandas.Series[float]']
     ):
         """Set model version feature importance.
 
@@ -92,7 +92,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         Parameters
         ----------
         data : pandas.DataFrame
-            set of features and optionally of non-features.
+            set of features and optionally of additional data.
             Expected that dataframe will contain a 'sample_id' column,
             a set of identifiers that uniquely identifies each logged sample,
             but if the 'sample_id' column is not provided then the dataframe
@@ -186,7 +186,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         label
             True label of sample
         values
-            All features of the sample and optional non_features
+            All features of the sample and optional additional_data
         """
         if timestamp is None:
             warnings.warn('log_sample was called without timestamp, using current time instead')
@@ -391,7 +391,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         label
             True label of sample.
         values
-            Features of the sample and optional non_features we wise to update.
+            Features of the sample and optional additional_data we wise to update.
         """
         update = {DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id), **values}
         task_type = TaskType(self.model['task_type'])
@@ -436,7 +436,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             self,
             name: str,
             features: t.Optional[t.Dict[str, str]] = None,
-            non_features: t.Optional[t.Dict[str, str]] = None,
+            additional_data: t.Optional[t.Dict[str, str]] = None,
             feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]', None] = None,
             model_classes: t.Optional[t.Sequence[str]] = None
     ) -> DeepchecksModelVersionClient:
@@ -448,7 +448,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             Name to display for new version
         features : Optional[Dict[str, str]], default: None
             A dictionary of feature names and values from ColumnType enum. Required for creation of a new version.
-        non_features : Optional[Dict[str, str]], default: None
+        additional_data : Optional[Dict[str, str]], default: None
             A dictionary of non feature names and values from ColumnType enum. Required for creation of a new version.
         feature_importance : Union[Dict[str, float], pandas.Series[float]], default: None
             A dictionary or pandas series of feature names and their feature importance value.
@@ -490,18 +490,19 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     'Accurate feature importance can be calculated via "deepchecks.tabular.feature_importance"'
                 )
 
-            if non_features is not None:
-                if not isinstance(non_features, dict):
-                    raise ValueError('non_features must be a dict')
-                intersection = set(non_features.keys()).intersection(features.keys())
+            if additional_data is not None:
+                if not isinstance(additional_data, dict):
+                    raise ValueError('additional_data must be a dict')
+                intersection = set(additional_data.keys()).intersection(features.keys())
                 if intersection:
-                    raise ValueError(f'features and non_features must contain different keys, found shared keys: '
+                    raise ValueError(f'features and additional_data must contain different keys, found shared keys: '
                                      f'{intersection}')
                 for key, value in features.items():
                     if not isinstance(key, str):
-                        raise ValueError(f'key of non_features must be of type str but got: {type(key)}')
+                        raise ValueError(f'key of additional_data must be of type str but got: {type(key)}')
                     if value not in ColumnType.values():
-                        raise ValueError(f'value of non_features must be one of {ColumnType.values()} but got {value}')
+                        raise ValueError(
+                            f'value of additional_data must be one of {ColumnType.values()} but got {value}')
 
             if model_classes:
                 if not isinstance(model_classes, t.Sequence):
@@ -517,7 +518,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 model_version={
                     'name': name,
                     'features': features,
-                    'non_features': non_features or {},
+                    'additional_data': additional_data or {},
                     'feature_importance': feature_importance,
                     'classes': model_classes
                 }

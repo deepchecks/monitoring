@@ -73,7 +73,7 @@ Cypress.Commands.add('createModelAndVersion', (modelName, taskType, modelVersion
         numeric_feature: "numeric",
         categorical_feature: "categorical"
     },
-    non_features: {
+    additional_data: {
         non_feat: "numeric"
     },
   };

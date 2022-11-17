@@ -29,7 +29,7 @@ from deepchecks_client.core import client as core_client
 from deepchecks_client.core.api import API
 from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp, pretty_print
 from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
-                                            calc_bbox_properties, rearrange_and_validate_batch, properties_schema)
+                                            calc_bbox_properties, properties_schema, rearrange_and_validate_batch)
 
 ARRAY = t.TypeVar('ARRAY', np.ndarray, torch.Tensor)
 
@@ -423,7 +423,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             model_version={
                 'name': name,
                 'features': features,
-                'non_features': {},
+                'additional_data': {},
             }
         )
 

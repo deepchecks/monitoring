@@ -8,10 +8,10 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-from collections import Counter
-from datetime import datetime
 import math
 import typing as t
+from collections import Counter
+from datetime import datetime
 
 import numpy as np
 import torch

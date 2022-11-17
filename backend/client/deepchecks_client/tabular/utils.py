@@ -53,11 +53,11 @@ class DataSchema(TypedDict):
     """Data schema description."""
 
     features: t.Dict[str, ColumnTypeName]
-    non_features: t.Dict[str, ColumnTypeName]
+    additional_data: t.Dict[str, ColumnTypeName]
 
 
 def _describe_dataset(dataset: Dataset) -> DataSchema:
-    non_features = {}
+    additional_data = {}
     features = {}
     for column in dataset.data.columns:
         col_series = dataset.data[column]
@@ -83,14 +83,14 @@ def _describe_dataset(dataset: Dataset) -> DataSchema:
                 if features[column] == ColumnType.CATEGORICAL.value:
                     features[column] = ColumnType.TEXT.value
         else:
-            non_features[column] = _get_series_column_type(col_series)
+            additional_data[column] = _get_series_column_type(col_series)
     # if any columns failed to auto infer print this warnings
     # moved to here to not annoy the user so much
-    if pd.Series(features.values()).hasnans or pd.Series(non_features.values()).hasnans:
+    if pd.Series(features.values()).hasnans or pd.Series(additional_data.values()).hasnans:
         warnings.warn('Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.\n'
                       'You can set the type manually in the schema file/dict.\n'
                       'DateTime format is supported using iso format only.')
-    return {'features': features, 'non_features': non_features}
+    return {'features': features, 'additional_data': additional_data}
 
 
 def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
@@ -143,7 +143,7 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -
     DataSchema
         typed dictionary with the next keys:
             - features: Dict[str, ColumnTypeValue]
-            - non_features: Dict[str, ColumnTypeValue]
+            - additional_data: Dict[str, ColumnTypeValue]
         where 'ColumnTypeValue' is one of:
             - 'numeric'
             - 'integer'
@@ -172,23 +172,23 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -
     else:
         raise TypeError(f'Unsupported type of "schema" parameter - {type(schema)}')
 
-    if set(schema.keys()) != {'features', 'non_features'}:
-        raise ValueError('Wrong schema format. Schema must contain 2 dictionaries for features and non_features.')
+    if set(schema.keys()) != {'features', 'additional_data'}:
+        raise ValueError('Wrong schema format. Schema must contain 2 dictionaries for features and additional_data.')
 
     allowed_column_types = set(ColumnType.values())
     features = schema['features']
-    non_features = schema['non_features']
+    additional_data = schema['additional_data']
 
     if not isinstance(features, dict):
         raise ValueError('Wrong schema format, "features" key expected to be a dictionary')
-    if not isinstance(non_features, dict):
-        raise ValueError('Wrong schema format, "non_features" key expected to be a dictionary')
+    if not isinstance(additional_data, dict):
+        raise ValueError('Wrong schema format, "additional_data" key expected to be a dictionary')
 
     for key, val in schema['features'].items():
         if val not in allowed_column_types:
             raise TypeError(f'Unsupported column type {val} for feature {key}')
 
-    for key, val in schema['non_features'].items():
+    for key, val in schema['additional_data'].items():
         if val not in allowed_column_types:
             raise TypeError(f'Unsupported column type {val} for non feature {key}')
 

@@ -80,7 +80,7 @@ schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]]
         features:
             foo: <feature-type>
             bar: <feature-type>
-        non_features:
+        additional_data:
             foo: <feature-type>
             bar: <feature-type>
     where 'feature-type' is one of:

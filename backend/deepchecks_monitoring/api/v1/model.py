@@ -122,9 +122,9 @@ async def get_create_model(
     description="Retrieve all models data ingestion statistics."
 )
 async def retrieve_all_models_data_ingestion(
-    time_filter: int = TimeUnit.HOUR * 24,
-    end_time: t.Optional[str] = None,
-    session: AsyncSession = AsyncSessionDep
+        time_filter: int = TimeUnit.HOUR * 24,
+        end_time: t.Optional[str] = None,
+        session: AsyncSession = AsyncSessionDep
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve all models data ingestion statistics."""
     return await _retrieve_models_data_ingestion(
@@ -141,10 +141,10 @@ async def retrieve_all_models_data_ingestion(
     description="Retrieve model data ingestion statistics."
 )
 async def retrieve_models_data_ingestion(
-    model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(),
-    time_filter: int = TimeUnit.HOUR * 24,
-    end_time: t.Optional[str] = None,
-    session: AsyncSession = AsyncSessionDep
+        model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(),
+        time_filter: int = TimeUnit.HOUR * 24,
+        end_time: t.Optional[str] = None,
+        session: AsyncSession = AsyncSessionDep
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve model data ingestion status."""
     return await _retrieve_models_data_ingestion(
@@ -156,13 +156,14 @@ async def retrieve_models_data_ingestion(
 
 
 async def _retrieve_models_data_ingestion(
-    *,
-    model_identifier: t.Optional[ModelIdentifier] = None,
-    time_filter: int = TimeUnit.HOUR * 24,
-    end_time: t.Optional[str] = None,
-    session: AsyncSession = AsyncSessionDep
+        *,
+        model_identifier: t.Optional[ModelIdentifier] = None,
+        time_filter: int = TimeUnit.HOUR * 24,
+        end_time: t.Optional[str] = None,
+        session: AsyncSession = AsyncSessionDep
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
+
     def is_within_dateframe(col, end_time):
         return col > text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
 
@@ -213,12 +214,10 @@ async def _retrieve_models_data_ingestion(
             literal(model_id).label("model_id"),
             sample_id(table.c).label("sample_id"),
             truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
-        )
-        .where(is_within_dateframe(
+        ).where(is_within_dateframe(
             sample_timestamp(table.c),
             end_time
-        ))
-        .distinct()
+        )).distinct()
         for model_id, table in tables
     ))
 
@@ -418,10 +417,10 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
     description="Delete model"
 )
 async def delete_model(
-    background_tasks: BackgroundTasks,
-    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-    session: AsyncSession = AsyncSessionDep,
-    resources_provider: ResourcesProvider = ResourcesProviderDep
+        background_tasks: BackgroundTasks,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep
 ):
     """Delete model instance."""
     model = await session.fetchone_or_404(
@@ -495,7 +494,8 @@ async def get_model_columns(
     latest_version = model.versions[0]
     column_dict: t.Dict[str, ColumnMetadata] = {}
 
-    return_columns = list(latest_version.features_columns.items()) + list(latest_version.non_features_columns.items())
+    return_columns = list(latest_version.features_columns.items()) + list(
+        latest_version.additional_data_columns.items())
     for (col_name, col_type) in return_columns:
         column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
     return column_dict

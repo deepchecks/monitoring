@@ -227,7 +227,7 @@ async def regression_model_version_id(regression_model_id: int, client):
         "name": "v1",
         "features": {"a": "numeric", "b": "categorical"},
         "feature_importance": {"a": 0.1, "b": 0.5},
-        "non_features": {"c": "numeric"}
+        "additional_data": {"c": "numeric"}
     }
     response = client.post(f"/api/v1/models/{regression_model_id}/version", json=request)
     return response.json()["id"]
@@ -239,7 +239,7 @@ async def classification_model_version_id(classification_model_id: int, client):
         "name": "v1",
         "features": {"a": "numeric", "b": "categorical"},
         "feature_importance": {"a": 0.1, "b": 0.5},
-        "non_features": {"c": "numeric"},
+        "additional_data": {"c": "numeric"},
         "classes": ["0", "1", "2"]
     }
     response = client.post(f"/api/v1/models/{classification_model_id}/version", json=request)
@@ -266,7 +266,7 @@ async def detection_vision_model_version_id(detection_vision_model_id: int, clie
             "partial_images Mean Blue Relative Intensity": "array_float",
             "partial_images Mean Green Relative Intensity": "array_float",
         },
-        "non_features": {}
+        "additional_data": {}
     }
     response = client.post(f"/api/v1/models/{detection_vision_model_id}/version", json=request)
     return response.json()["id"]
@@ -284,7 +284,7 @@ async def classification_vision_model_version_id(classification_vision_model_id:
                      "images Mean Blue Relative Intensity": "numeric",
                      "images Mean Green Relative Intensity": "numeric",
                      },
-        "non_features": {}
+        "additional_data": {}
     }
     response = client.post(f"/api/v1/models/{classification_vision_model_id}/version", json=request)
     return response.json()["id"]
@@ -297,7 +297,7 @@ async def classification_model_version_no_fi_id(classification_model_id: int, cl
         json={
             "name": "v1",
             "features": {"a": "numeric", "b": "categorical"},
-            "non_features": {"c": "numeric"},
+            "additional_data": {"c": "numeric"},
             "classes": ["0", "1", "2"]
         }
     )
@@ -458,14 +458,14 @@ def add_model_version(
         expected_status_code: int = 200,
         name: t.Optional[str] = None,
         features: t.Optional[t.Dict[str, str]] = None,
-        non_features: t.Optional[t.Dict[str, str]] = None,
+        additional_data: t.Optional[t.Dict[str, str]] = None,
         feature_importance: t.Optional[t.Dict[str, float]] = None,
         classes: t.Optional[t.List[str]] = None
 ) -> t.Union[int, httpx.Response]:
     payload = {}
     payload["name"] = name or randomname.get_name()
     payload["features"] = features if features is not None else {"a": "numeric", "b": "categorical"}
-    payload["non_features"] = non_features if non_features is not None else {"c": "numeric"}
+    payload["additional_data"] = additional_data if additional_data is not None else {"c": "numeric"}
     payload["feature_importance"] = feature_importance
     payload["classes"] = classes
 

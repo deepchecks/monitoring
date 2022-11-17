@@ -339,7 +339,7 @@ class DeepchecksClient:
             pass
 
         schema = read_schema(schema)
-        features_dict, non_features_dict = schema['features'], schema['non_features']
+        features_dict, additional_data_dict = schema['features'], schema['additional_data']
 
         if set(features_dict.keys()) != set(reference_dataset.features):
             raise DeepchecksValueError(
@@ -390,7 +390,7 @@ class DeepchecksClient:
         version_client = self.get_or_create_model(model_name, task_type, description).version(
             version_name,
             features=features_dict,
-            non_features=non_features_dict,
+            additional_data=additional_data_dict,
             feature_importance=feature_importance,
             model_classes=model_classes
         )

@@ -63,7 +63,7 @@ class ModelVersion(Base):
     # - name
     # - monitor_json_schema
     # - features_columns
-    # - non_features_columns
+    # - additional_data_columns
     # - model_columns
     # - meta_columns
 
@@ -74,7 +74,7 @@ class ModelVersion(Base):
     monitor_json_schema = Column(JSONB)
     reference_json_schema = Column(JSONB)
     features_columns = Column(JSONB)
-    non_features_columns = Column(JSONB)
+    additional_data_columns = Column(JSONB)
     model_columns = Column(JSONB)
     meta_columns = Column(JSONB)
     feature_importance = Column(JSONB, nullable=True)
@@ -116,7 +116,7 @@ class ModelVersion(Base):
     def get_monitor_table(self, connection) -> Table:
         """Get table object of the monitor table."""
         metadata = MetaData(bind=connection)
-        columns = {**self.features_columns, **self.non_features_columns, **self.model_columns, **self.meta_columns}
+        columns = {**self.features_columns, **self.additional_data_columns, **self.model_columns, **self.meta_columns}
         columns = {name: ColumnType(col_type) for name, col_type in columns.items()}
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_monitor_table_name(), metadata, *columns_sqlalchemy)
@@ -136,7 +136,7 @@ class ModelVersion(Base):
     def get_reference_table(self, connection) -> Table:
         """Get table object of the reference table."""
         metadata = MetaData(bind=connection)
-        columns_in_ref = {**self.features_columns, **self.non_features_columns, **self.model_columns}
+        columns_in_ref = {**self.features_columns, **self.additional_data_columns, **self.model_columns}
         columns = {name: ColumnType(col_type) for name, col_type in columns_in_ref.items()}
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)
@@ -183,7 +183,7 @@ class ModelVersion(Base):
     def is_filter_fit(self, data_filter: DataFilterList):
         """Check if columns defined on filter exists on the model version."""
         filter_columns = [f.column for f in data_filter.filters]
-        columns = (set(self.features_columns.keys()) | set(self.non_features_columns.keys()) |
+        columns = (set(self.features_columns.keys()) | set(self.additional_data_columns.keys()) |
                    set(self.model_columns.keys()))
         return columns.issuperset(filter_columns)
 

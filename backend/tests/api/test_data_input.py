@@ -186,7 +186,7 @@ async def test_send_reference_features_and_labels(client: TestClient, classifica
 
 
 @pytest.mark.asyncio
-async def test_send_reference_features_and_non_features(client: TestClient, classification_model_version_id: int):
+async def test_send_reference_features_and_additional_data(client: TestClient, classification_model_version_id: int):
     # Arrange
     sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction": "1", "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
     # Act

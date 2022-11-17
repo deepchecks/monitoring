@@ -69,7 +69,7 @@ class DeepchecksModelVersionClient:
 
         self.categorical_columns = [
             feat
-            for feat, value in {**schemas['features'], **schemas['non_features']}.items()
+            for feat, value in {**schemas['features'], **schemas['additional_data']}.items()
             if value == 'categorical'
         ]
 

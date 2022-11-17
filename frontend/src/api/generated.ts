@@ -326,7 +326,7 @@ export type ModelVersionSchemaMetaColumns = { [key: string]: any };
 
 export type ModelVersionSchemaModelColumns = { [key: string]: any };
 
-export type ModelVersionSchemaNonFeaturesColumns = { [key: string]: any };
+export type ModelVersionSchemaAdditionalDataColumns = { [key: string]: any };
 
 export type ModelVersionSchemaFeaturesColumns = { [key: string]: any };
 
@@ -340,7 +340,7 @@ export interface ModelVersionSchema {
   start_time: string;
   end_time: string;
   features_columns: ModelVersionSchemaFeaturesColumns;
-  non_features_columns: ModelVersionSchemaNonFeaturesColumns;
+  additional_data_columns: ModelVersionSchemaAdditionalDataColumns;
   model_columns: ModelVersionSchemaModelColumns;
   meta_columns: ModelVersionSchemaMetaColumns;
   feature_importance?: ModelVersionSchemaFeatureImportance;
@@ -369,7 +369,7 @@ export type ModelVersionCreationSchemaFeatures = { [key: string]: ColumnType };
 export interface ModelVersionCreationSchema {
   name: string;
   features: ModelVersionCreationSchemaFeatures;
-  non_features: ModelVersionCreationSchemaNonFeatures;
+  additional_data: ModelVersionCreationSchemaAdditionalData;
   feature_importance?: ModelVersionCreationSchemaFeatureImportance;
   classes?: string[];
 }
@@ -530,7 +530,7 @@ export const ColumnType = {
   datetime: 'datetime'
 } as const;
 
-export type ModelVersionCreationSchemaNonFeatures = { [key: string]: ColumnType };
+export type ModelVersionCreationSchemaAdditionalData = { [key: string]: ColumnType };
 
 /**
  * A typed object represents a numeric column statistic.

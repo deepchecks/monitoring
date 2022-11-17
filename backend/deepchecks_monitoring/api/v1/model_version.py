@@ -55,7 +55,7 @@ class ModelVersionCreationSchema(BaseModel):
 
     name: str = Field(max_length=field_length(ModelVersion.name))
     features: t.Dict[str, ColumnType]
-    non_features: t.Dict[str, ColumnType]
+    additional_data: t.Dict[str, ColumnType]
     feature_importance: t.Optional[t.Dict[str, float]] = None
     classes: t.Optional[t.List[str]] = None
 
@@ -104,8 +104,8 @@ async def get_or_create_version(
         if model_version.features_columns != {key: val.value for key, val in info.features.items()}:
             raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
                              'different features')
-        if info.non_features is not None and \
-                model_version.non_features_columns != {key: val.value for key, val in info.non_features.items()}:
+        if info.additional_data is not None and \
+                model_version.additional_data_columns != {key: val.value for key, val in info.additional_data.items()}:
             raise BadRequest(f'A model version with the name "{model_version.name}" already exists but with '
                              'different non features')
         if info.feature_importance is not None and \
@@ -123,10 +123,10 @@ async def get_or_create_version(
             raise BadRequest('feature_importance must contain exactly same features as specified in "features". '
                              f'Missing features: {mutual_exclusive_keys}')
 
-    # Validate features and non-features doesn't intersect
-    intersects_names = set(info.features.keys()).intersection(info.non_features.keys())
+    # Validate features and additional data doesn't intersect
+    intersects_names = set(info.features.keys()).intersection(info.additional_data.keys())
     if intersects_names:
-        raise BadRequest(f'Can\'t use same column name in both features and non_features: {intersects_names}')
+        raise BadRequest(f'Can\'t use same column name in both features and additional_data: {intersects_names}')
 
     # Validate classes parameter
     have_classes = info.classes is not None
@@ -151,12 +151,12 @@ async def get_or_create_version(
     model_related_cols, required_model_cols = get_model_columns_by_type(model.task_type, have_classes)
     # Validate no intersections between user columns and dc columns
     saved_keys = set(meta_columns.keys()) | set(model_related_cols.keys())
-    intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.non_features.keys()))
+    intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.additional_data.keys()))
     if intersects_columns:
         raise BadRequest(f'Can\'t use the following names for columns: {intersects_columns}')
 
-    monitor_table_columns = {**meta_columns, **model_related_cols, **info.non_features, **info.features}
-    ref_table_columns = {**model_related_cols, **info.non_features, **info.features}
+    monitor_table_columns = {**meta_columns, **model_related_cols, **info.additional_data, **info.features}
+    ref_table_columns = {**model_related_cols, **info.additional_data, **info.features}
 
     # Create json schema
     not_null_columns = list(meta_columns.keys()) + required_model_cols
@@ -192,7 +192,7 @@ async def get_or_create_version(
     model_version = ModelVersion(
         name=info.name, model_id=model.id, monitor_json_schema=monitor_table_schema,
         reference_json_schema=reference_table_schema, features_columns=info.features,
-        non_features_columns=info.non_features, meta_columns=meta_columns, model_columns=model_related_cols,
+        additional_data_columns=info.additional_data, meta_columns=meta_columns, model_columns=model_related_cols,
         feature_importance=info.feature_importance, statistics=empty_statistics, classes=info.classes,
     )
     session.add(model_version)
@@ -308,7 +308,7 @@ class ModelVersionSchema(BaseModel):
     start_time: datetime
     end_time: datetime
     features_columns: t.Dict[str, t.Any]
-    non_features_columns: t.Dict[str, t.Any]
+    additional_data_columns: t.Dict[str, t.Any]
     model_columns: t.Dict[str, t.Any]
     meta_columns: t.Dict[str, t.Any]
     feature_importance: t.Optional[t.Dict[str, t.Any]]
@@ -382,7 +382,7 @@ async def get_schema(
         'monitor_schema': model_version.monitor_json_schema,
         'reference_schema': model_version.reference_json_schema,
         'features': model_version.features_columns,
-        'non_features': model_version.non_features_columns,
+        'additional_data': model_version.additional_data_columns,
         'classes': model_version.classes
     }
     return result
