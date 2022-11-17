@@ -345,7 +345,7 @@ class DeepchecksClient:
         except ValueError:
             pass
 
-        schema = read_schema(schema)
+        schema = read_schema(schema, fail_on_invalid_column=True)
         features_dict = schema['features']
 
         if set(features_dict.keys()) != set(reference_dataset.features):

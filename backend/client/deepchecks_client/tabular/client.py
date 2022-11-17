@@ -145,7 +145,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             values: t.Dict[str, t.Any],
             sample_id: str,
             prediction: t.Union[str, float],
-            timestamp: t.Union[datetime, int, None] = None,
+            timestamp: t.Union[datetime, int, str, None] = None,
             prediction_proba: t.Optional[t.Sequence[float]] = None,
             label: t.Union[str, float, None] = None,
     ):
@@ -157,8 +157,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             All features of the sample and optional additional_data
         sample_id : str
             Universal id for the sample. Used to retrieve and update the sample.
-        timestamp : Union[datetime, int, None], default None
-            If no timezone info is provided on the datetime assumes local timezone.
+        timestamp : Union[datetime, int, str, None], default None
+            Can be one of:
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+                - None: will use current time
         prediction_proba : Optional[Sequence[float]] , default None
             Prediction value if exists
         prediction : Union[str, float]
@@ -272,7 +276,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         data : Optional[pandas.DataFrame] , default None
             set of features and optionaly of non features to update
         timestamps : Union[numpy.ndarray], default None
-            set of timestamps
+            set of timestamps. a timestamp can be one of:
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+                - None: will use current time
         predictions : Union[numpy.ndarray], default None
             set of predictions
         prediction_probas : Union[numpy.ndarray], default None
@@ -400,7 +408,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         elif schema is None:
             raise ValueError('schema must be provided when creating a new version')
 
-        schema = read_schema(schema)
+        schema = read_schema(schema, fail_on_invalid_column=True)
         features, additional_data = schema['features'], schema['additional_data']
 
         if features is None:
@@ -636,7 +644,7 @@ def _process_sample(
     sample_id: str,
     values: t.Optional[t.Dict[str, t.Any]] = None,
     prediction: t.Union[str, float, None] = None,
-    timestamp: t.Union[datetime, int, None] = None,
+    timestamp: t.Union[datetime, int, str, None] = None,
     prediction_proba: t.Optional[t.Sequence[float]] = None,
     model_classes: t.Optional[t.Sequence[str]] = None,
     label: t.Union[str, float, None] = None,

@@ -20,6 +20,7 @@ import httpx
 import numpy as np
 import pandas as pd
 import pendulum as pdl
+import rfc3339_validator
 from jsonschema import FormatChecker, validators
 from pendulum.datetime import DateTime as PendulumDateTime
 from termcolor import cprint
@@ -194,15 +195,20 @@ class DeepchecksEncoder:
         return obj
 
 
-def parse_timestamp(timestamp: t.Union[int, datetime]) -> 'PendulumDateTime':
+def parse_timestamp(timestamp: t.Union[int, datetime, str]) -> 'PendulumDateTime':
     """Parse timestamp to datetime object."""
     if isinstance(timestamp, int) or np.issubdtype(type(timestamp), np.integer):
         return pdl.from_timestamp(timestamp, pdl.local_timezone())
+    elif isinstance(timestamp, PendulumDateTime):
+        return timestamp
     elif isinstance(timestamp, datetime):
         # If no timezone in datetime, assumed to be UTC and converted to local timezone
         return pdl.instance(timestamp, pdl.local_timezone())
-    elif isinstance(timestamp, PendulumDateTime):
-        return timestamp
+    elif isinstance(timestamp, str):
+        if rfc3339_validator.validate_rfc3339(timestamp):
+            return pdl.parse(timestamp)
+        else:
+            raise ValueError(f'Not supported timestamp format for: {timestamp}')
     else:
         raise ValueError(f'Not supported timestamp type: {type(timestamp)}')
 

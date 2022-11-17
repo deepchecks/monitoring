@@ -131,7 +131,8 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
 
 
 @docstrings
-def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -> DataSchema:
+def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema],
+                fail_on_invalid_column=False) -> DataSchema:
     """Read and validate model schema.
 
     Parameters
@@ -153,6 +154,8 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -
             - 'array_float'
             - 'array_float_2d'
             - 'datetime'
+    fail_on_invalid_column: bool
+        Whether to raise exception on invalid column type or just warning
     """
     if isinstance(schema, str):
         schema = pathlib.Path(schema)
@@ -186,10 +189,18 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema]) -
 
     for key, val in schema['features'].items():
         if val not in allowed_column_types:
-            raise TypeError(f'Unsupported column type {val} for feature {key}')
+            message = f'Unsupported column type {val} for feature {key}'
+            if fail_on_invalid_column:
+                raise TypeError(message)
+            else:
+                warnings.warn(message)
 
     for key, val in schema['additional_data'].items():
         if val not in allowed_column_types:
-            raise TypeError(f'Unsupported column type {val} for non feature {key}')
+            message = f'Unsupported column type {val} for additional data key {key}'
+            if fail_on_invalid_column:
+                raise TypeError(message)
+            else:
+                warnings.warn(message)
 
     return schema

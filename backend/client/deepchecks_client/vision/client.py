@@ -68,7 +68,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             img: np.ndarray,
             sample_id: str = None,
-            timestamp: t.Union[datetime, int, None] = None,
+            timestamp: t.Union[datetime, int, str, None] = None,
             prediction=None,
             label=None,
             is_ref_sample=False,
@@ -81,8 +81,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             The sample ID
         img : np.ndarray
             The image to log it's predictions, labels and properties to
-        timestamp : Union[datetime, int]
-            If no timezone info is provided on the datetime assumes local timezone.
+        timestamp : Union[datetime, int, str, None]
+            Can be one of:
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+                - None: will use current time
         prediction
             Prediction value or predicted probability if exists, according to the expected format for the task type.
         label
@@ -195,7 +199,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             sample_id: t.Sequence[str],
             images: t.Sequence[np.ndarray],
-            timestamps: t.Union[t.Sequence[int], t.Sequence[datetime]],
+            timestamps: t.Union[t.Sequence[int], t.Sequence[datetime], t.Sequence[str]],
             predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             samples_per_send: int = 100_000
@@ -215,8 +219,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Sequence of keys that uniquely identify each sample
         images : Sequence[numpy.ndarray]
             Sequence of images
-        timestamps : Union[Sequence[datetime], Sequence[int]]
-            samples timestamps
+        timestamps : Union[Sequence[datetime], Sequence[int], Sequence[str]]
+            samples timestamps. a timestamp can be one of:
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+                - None: will use current time
         predictions : Optional[Union[Sequence[str], Sequence[float]]] , default None
             Sequence of predictions or predicted probabilities, according to the expected format for the task type.
         labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
@@ -242,7 +250,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             sample_id: str,
             img: np.ndarray,
-            timestamp: t.Union[datetime, int, None] = None,
+            timestamp: t.Union[datetime, int, str, None] = None,
             prediction=None,
             label=None
     ):
@@ -261,8 +269,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             The sample ID
         img : np.ndarray
             The image to log it's predictions, labels and properties to
-        timestamp : Union[datetime, int]
-            If no timezone info is provided on the datetime assumes local timezone.
+        timestamp : Union[datetime, int, str, None]
+            Can be one of:
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+                - None: will use current time
         prediction
             Prediction value or predicted probability if exists, according to the expected format for the task type.
         label
