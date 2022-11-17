@@ -10,42 +10,11 @@
 #
 """Backend API."""
 import typing as t
-from urllib.parse import urljoin
 
 import httpx
 from deepchecks_client.core.utils import maybe_raise
 
 __all__ = ['API']
-
-
-class HttpSession(httpx.Client):
-    """Http session.
-
-    Parameters
-    ----------
-    base_url : str
-        Base URL.
-    token : str, optional
-        The API token from deepchecks.
-    """
-
-    def __init__(self, base_url: str, token: t.Optional[str] = None):
-        super().__init__()
-        self.base_url = base_url
-        self.token = token
-
-    def request(self, method, url, *args, **kwargs) -> httpx.Response:
-        url = urljoin(self.base_url, url)
-        headers = kwargs.get('headers', {})
-        if self.token:
-            headers['Authorization'] = f'Basic {self.token}'
-        return super().request(
-            method,
-            url,
-            *args,
-            headers=headers,
-            **kwargs
-        )
 
 
 TAPI = t.TypeVar('TAPI', bound='API')
@@ -76,7 +45,8 @@ class API:
         token : str, optional
             The API token from deepchecks.
         """
-        return cls(session=HttpSession(base_url=host + '/api/v1/', token=token))
+        headers = {'Authorization': f'Basic {token}'} if token else None
+        return cls(session=httpx.Client(base_url=host, headers=headers))
 
     def __init__(self, session: httpx.Client):
         self.session = session
