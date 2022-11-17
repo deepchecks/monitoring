@@ -23,7 +23,7 @@ from tests.conftest import add_model, add_model_version
 
 @pytest.mark.asyncio
 async def test_classification_upload(multiclass_model_version_client: DeepchecksModelVersionClient, async_session):
-    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=3, b='4', c=2, label=0)])
     proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
     pred = [2, 1]
     multiclass_model_version_client.upload_reference(Dataset(df, features=['a', 'b'], label='label'),
@@ -37,8 +37,8 @@ async def test_classification_upload(multiclass_model_version_client: Deepchecks
     ref_table = model_version.get_reference_table(async_session)
     ref_dict = (await async_session.execute(select(ref_table))).all()
     assert ref_dict == [
-        (2.0, '2', None, '2', '2', [0.1, 0.30000000000000004, 0.6000000000000001]),
-        (2.0, '2', None, '0', '1', [0.1, 0.6000000000000001, 0.30000000000000004]),
+        (2.0, '2', 1, '2', '2', [0.1, 0.30000000000000004, 0.6000000000000001]),
+        (3.0, '4', 2, '0', '1', [0.1, 0.6000000000000001, 0.30000000000000004]),
     ]
 
 
@@ -47,7 +47,7 @@ async def test_classification_upload_without_classes(client, deepchecks_sdk_clie
     # Arrange
     model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
     version_id = add_model_version(model_id, client, name='v1')
-    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=3, b='4', c=2, label=0)])
     ds = Dataset(df, features=['a', 'b'], label='label')
     pred = [2, 1]
 
@@ -63,14 +63,14 @@ async def test_classification_upload_without_classes(client, deepchecks_sdk_clie
     ref_table = model_version.get_reference_table(async_session)
     ref_dict = (await async_session.execute(select(ref_table))).all()
     assert ref_dict == [
-        (2.0, '2', None, '2', '2'),
-        (2.0, '2', None, '0', '1')
+        (2.0, '2', 1, '2', '2'),
+        (3.0, '4', 2, '0', '1')
     ]
 
 
 @pytest.mark.asyncio
 async def test_regression_upload(regression_model_version_client: DeepchecksModelVersionClient, async_session):
-    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=3, b='4', c=2, label=0)])
     pred = [2, 1]
     regression_model_version_client.upload_reference(Dataset(df, features=['a', 'b'], label='label'),
                                                      predictions=pred)
@@ -82,8 +82,8 @@ async def test_regression_upload(regression_model_version_client: DeepchecksMode
     ref_table = model_version.get_reference_table(async_session)
     ref_dict = (await async_session.execute(select(ref_table))).all()
     assert ref_dict == [
-        (2.0, '2', None, 2, 2),
-        (2.0, '2', None, 0, 1),
+        (2.0, '2', 1, 2, 2),
+        (3.0, '4', 2, 0, 1),
     ]
 
 

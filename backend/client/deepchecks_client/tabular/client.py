@@ -202,7 +202,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         samples_per_request : int
             The samples per batch request.
         """
-        data = dataset.features_columns.copy()
+        columns_to_use = [col for col in dataset.data.columns if col not in
+                          [dataset.label_name if dataset.has_label() else None,
+                           dataset.index_name,
+                           dataset.datetime_name]]
+        data = dataset.data[columns_to_use].copy()
 
         if self.model['task_type'] == TaskType.REGRESSION.value:
             if dataset.has_label():
