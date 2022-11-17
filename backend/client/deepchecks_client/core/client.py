@@ -67,9 +67,13 @@ class DeepchecksModelVersionClient:
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
 
+        self.all_columns = {
+            **schemas['features'],
+            **schemas['additional_data']
+        }
         self.categorical_columns = [
             feat
-            for feat, value in {**schemas['features'], **schemas['additional_data']}.items()
+            for feat, value in self.all_columns.items()
             if value == 'categorical'
         ]
 

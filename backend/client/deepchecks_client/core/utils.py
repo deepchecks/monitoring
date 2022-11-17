@@ -21,10 +21,8 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 from jsonschema import FormatChecker, validators
+from pendulum.datetime import DateTime as PendulumDateTime
 from termcolor import cprint
-
-if t.TYPE_CHECKING:
-    from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
 
 __all__ = ['ColumnType', 'TaskType', 'DeepchecksColumns']
 
@@ -203,6 +201,8 @@ def parse_timestamp(timestamp: t.Union[int, datetime]) -> 'PendulumDateTime':
     elif isinstance(timestamp, datetime):
         # If no timezone in datetime, assumed to be UTC and converted to local timezone
         return pdl.instance(timestamp, pdl.local_timezone())
+    elif isinstance(timestamp, PendulumDateTime):
+        return timestamp
     else:
         raise ValueError(f'Not supported timestamp type: {type(timestamp)}')
 

@@ -89,11 +89,12 @@ def test_quick_start_flow(deepchecks_sdk_client: DeepchecksClient):
         feature_importance={'a': 0.1, 'b': 0.2, 'c': 0.7}
     )
     version.log_batch(
+        sample_ids=np.array([0, 1]),
         data=data.iloc[:, :3],
-        timestamps=timestamp,
-        predictions=pd.Series(pred),
-        prediction_probas=pd.Series(proba.tolist()),
-        labels=data['label']
+        timestamps=timestamp.to_numpy(),
+        predictions=np.array(pred),
+        prediction_probas=proba,
+        labels=data['label'].to_numpy()
     )
 
     # Assert

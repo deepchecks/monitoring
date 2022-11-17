@@ -7,17 +7,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import numpy as np
 import pandas as pd
 import pendulum as pdl
 import pytest
 from deepchecks_client import TaskType
 from hamcrest import assert_that, calling, raises
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
-from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL
 from deepchecks_monitoring.models.model_version import ModelVersion
 from tests.conftest import add_model, add_model_version
 
@@ -27,21 +26,35 @@ async def test_classification_log(
         multiclass_model_version_client: DeepchecksModelVersionClient,
         async_session: AsyncSession
 ):
-    multiclass_model_version_client.log_sample('1', prediction='2',
-                                               prediction_proba=[0.1, 0.3, 0.6], label=2,
-                                               a=2, b='2', c=1)
-    multiclass_model_version_client.log_sample('2', prediction='1',
-                                               prediction_proba=[0.1, 0.6, 0.1], label=2,
-                                               a=3, b='4', c=-1)
-    multiclass_model_version_client.log_sample('3', prediction='0',
-                                               prediction_proba=[0.1, 0.6, 0.1], label=1,
-                                               a=2, b='0', c=0)
+    multiclass_model_version_client.log_sample(
+        sample_id='1',
+        prediction='2',
+        prediction_proba=[0.1, 0.3, 0.6],
+        label=2,
+        values={'a':2, 'b':'2', 'c':1}
+    )
+    multiclass_model_version_client.log_sample(
+        sample_id='2',
+        prediction='1',
+        prediction_proba=[0.1, 0.6, 0.1],
+        label=2,
+        values={'a':3, 'b':'4', 'c':-1}
+    )
+    multiclass_model_version_client.log_sample(
+        sample_id='3',
+        prediction='0',
+        prediction_proba=[0.1, 0.6, 0.1],
+        label=1,
+        values={'a':2, 'b':'0', 'c':0}
+    )
+
     multiclass_model_version_client.send()
 
-    model_version_query = await async_session.execute(select(ModelVersion)
-                                                      .where(ModelVersion.id ==
-                                                             multiclass_model_version_client.model_version_id))
-    model_version: ModelVersion = model_version_query.scalars().first()
+    model_version = await async_session.get(
+        ModelVersion,
+        multiclass_model_version_client.model_version_id
+    )
+
     stats = model_version.statistics
     assert set(stats['_dc_label']['values']) == set(['1', '2'])
     assert set(stats['_dc_prediction']['values']) == set(['0', '1', '2'])
@@ -52,7 +65,9 @@ async def test_classification_log(
 
 @pytest.mark.asyncio
 async def test_classification_log_without_probas(
-        deepchecks_sdk_client, client: TestClient, async_session: AsyncSession
+    deepchecks_sdk_client,
+    client: TestClient,
+    async_session: AsyncSession
 ):
     # Arrange
     model_id = add_model(client, name='model', task_type=TaskType.MULTICLASS)
@@ -61,15 +76,28 @@ async def test_classification_log_without_probas(
         'v1')
 
     # Act
-    dc_client.log_sample('1', prediction='2', label=2, a=2, b='2', c=1)
-    dc_client.log_sample('2', prediction='1', label=2, a=3, b='4', c=-1)
-    dc_client.log_sample('3', prediction='0', label=1, a=2, b='0', c=0)
+    dc_client.log_sample(
+        sample_id='1',
+        prediction='2',
+        label=2,
+        values={'a':2, 'b':'2', 'c':1}
+    )
+    dc_client.log_sample(
+        sample_id='2',
+        prediction='1',
+        label=2,
+        values={'a':3, 'b':'4', 'c':-1}
+    )
+    dc_client.log_sample(
+        sample_id='3',
+        prediction='0',
+        label=1,
+        values={'a':2, 'b':'0', 'c':0}
+    )
     dc_client.send()
 
     # Assert
-    model_version_query = await async_session.execute(select(ModelVersion)
-                                                      .where(ModelVersion.id == version_id))
-    model_version: ModelVersion = model_version_query.scalars().first()
+    model_version = await async_session.get(ModelVersion, version_id)
     stats = model_version.statistics
     assert set(stats['_dc_label']['values']) == {'1', '2'}
     assert set(stats['_dc_prediction']['values']) == {'0', '1', '2'}
@@ -80,18 +108,31 @@ async def test_classification_log_without_probas(
 
 @pytest.mark.asyncio
 async def test_regression_log(regression_model_version_client: DeepchecksModelVersionClient, async_session):
-    regression_model_version_client.log_sample('1', prediction='2', label=2,
-                                               a=2, b='2', c=1)
-    regression_model_version_client.log_sample('2', prediction='1', label=2,
-                                               a=3, b='4', c=-1)
-    regression_model_version_client.log_sample('3', prediction='0', label=1,
-                                               a=2, b='0', c=0)
+    regression_model_version_client.log_sample(
+        sample_id='1',
+        prediction='2',
+        label=2,
+        values={'a':2, 'b':'2', 'c':1}
+    )
+    regression_model_version_client.log_sample(
+        sample_id='2',
+        prediction='1',
+        label=2,
+        values={'a':3, 'b':'4', 'c':-1}
+    )
+    regression_model_version_client.log_sample(
+        sample_id='3',
+        prediction='0',
+        label=1,
+        values={'a':2, 'b':'0', 'c':0}
+    )
     regression_model_version_client.send()
 
-    model_version_query = await async_session.execute(select(ModelVersion)
-                                                      .where(ModelVersion.id ==
-                                                             regression_model_version_client.model_version_id))
-    model_version: ModelVersion = model_version_query.scalars().first()
+    model_version = await async_session.get(
+        ModelVersion,
+        regression_model_version_client.model_version_id
+    )
+
     stats = model_version.statistics
     assert stats['_dc_label'] == {'max': 2.0, 'min': 1.0}
     assert stats['_dc_prediction'] == {'max': 2.0, 'min': 0.0}
@@ -106,19 +147,24 @@ async def test_classification_batch_log(
         async_session: AsyncSession
 ):
     multiclass_model_version_client.log_batch(
+        sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([
-            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+            {'a': 2, 'b': '2', 'c': 1},
+            {'a': 3, 'b': '4', 'c': -1},
+            {'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamps=pd.Series([
+        timestamps=np.array([
             pdl.now().int_timestamp,
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
-        ], index=['1', '2', '3']),
-        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
-        prediction_probas=pd.Series([[0.1, 0.3, 0.6], [0.1, 0.6, 0.1], [0.1, 0.6, 0.1]], index=['1', '2', '3']),
-        labels=pd.Series([2, 2, 1], index=['1', '2', '3'])
+        ]),
+        predictions=np.array(['2', '1', '0']),
+        prediction_probas=np.array([
+            [0.1, 0.3, 0.6],
+            [0.1, 0.6, 0.1],
+            [0.1, 0.6, 0.1]
+        ]),
+        labels=np.array([2, 2, 1])
     )
 
     model_version = await async_session.get(
@@ -140,18 +186,19 @@ async def test_regression_batch_log(
         async_session: AsyncSession
 ):
     regression_model_version_client.log_batch(
+        sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([
-            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+            {'a': 2, 'b': '2', 'c': 1},
+            {'a': 3, 'b': '4', 'c': -1},
+            {'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamps=pd.Series([
+        timestamps=np.array([
             pdl.now().int_timestamp,
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
-        ], index=['1', '2', '3']),
-        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
-        labels=pd.Series([2, 2, 1], index=['1', '2', '3'])
+        ]),
+        predictions=np.array(['2', '1', '0']),
+        labels=np.array([2, 2, 1])
     )
 
     model_version = await async_session.get(
@@ -168,23 +215,36 @@ async def test_regression_batch_log(
 
 
 @pytest.mark.asyncio
-async def test_regression_batch_update(regression_model_version_client: DeepchecksModelVersionClient,
-                                       async_session: AsyncSession):
+async def test_regression_batch_update(
+    regression_model_version_client: DeepchecksModelVersionClient,
+    async_session: AsyncSession
+):
     time = pdl.now().int_timestamp
+
     regression_model_version_client.log_batch(
+        sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([
-            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+            {'a': 2, 'b': '2', 'c': 1},
+            {'a': 3, 'b': '4', 'c': -1},
+            {'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
-        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+        timestamps=np.array([time, time, time]),
+        predictions=np.array(['2', '1', '0'])
+    )
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
-    data_to_update = pd.DataFrame([['1'], ['2'], ['3']], columns=['sample_id'])
-    regression_model_version_client.update_batch(data_to_update, labels=pd.Series([1, 2, 1], index=['1', '2', '3']))
+    regression_model_version_client.update_batch(
+        sample_ids=np.array(['1', '2', '3']),
+        labels=np.array([1, 2, 1]),
+        data=pd.DataFrame.from_records([
+            {'a': 4, 'b': '4', 'c': 1},
+            {'a': 6, 'b': '8', 'c': -1},
+            {'a': 4, 'b': '0', 'c': 0},
+        ])
+    )
+
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
@@ -201,19 +261,26 @@ async def test_regression_batch_update(regression_model_version_client: Deepchec
 @pytest.mark.asyncio
 async def test_regression_batch_update_only_label(regression_model_version_client: DeepchecksModelVersionClient):
     time = pdl.now().int_timestamp
+
     regression_model_version_client.log_batch(
+        sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([
-            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+            {'a': 2, 'b': '2', 'c': 1},
+            {'a': 3, 'b': '4', 'c': -1},
+            {'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
-        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+        timestamps=np.array([time, time, time]),
+        predictions=np.array(['2', '1', '0'])
+    )
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
-    regression_model_version_client.update_batch(['1', '2', '3'], labels=pd.Series([1, 2, 1], index=['1', '2', '3']))
+    regression_model_version_client.update_batch(
+        sample_ids=np.array(['1', '2', '3']),
+        labels=np.array([1, 2, 1])
+    )
+
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
@@ -221,14 +288,17 @@ async def test_regression_batch_update_only_label(regression_model_version_clien
 @pytest.mark.asyncio
 async def test_regression_single_update(regression_model_version_client: DeepchecksModelVersionClient):
     time = pdl.now().int_timestamp
+
     regression_model_version_client.log_batch(
+        sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([
-            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+            {'a': 2, 'b': '2', 'c': 1},
+            {'a': 3, 'b': '4', 'c': -1},
+            {'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
-        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']))
+        timestamps=np.array([time, time, time]),
+        predictions=np.array(['2', '1', '0'])
+    )
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
@@ -243,14 +313,16 @@ async def test_regression_single_update(regression_model_version_client: Deepche
 async def test_regression_single_update_none(regression_model_version_client: DeepchecksModelVersionClient):
     time = pdl.now().int_timestamp
     regression_model_version_client.log_batch(
+        sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([
-            {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-            {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-            {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+            {'a': 2, 'b': '2', 'c': 1},
+            {'a': 3, 'b': '4', 'c': -1},
+            {'a': 2, 'b': '0', 'c': 0},
         ]),
-        timestamps=pd.Series([time, time, time], index=['1', '2', '3']),
-        predictions=pd.Series(['2', '1', '0'], index=['1', '2', '3']),
-        labels=pd.Series(['2', None, '0'], index=['1', '2', '3']))
+        timestamps=np.array([time, time, time]),
+        predictions=np.array(['2', '1', '0']),
+        labels=np.array(['2', None, '0'])
+    )
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 2}
@@ -277,52 +349,20 @@ async def test_batch_log_with_parameters_of_different_length(
 ):
     with pytest.raises(ValueError):
         regression_model_version_client.log_batch(
+            sample_ids=np.array(['1', '2', '3']),
             data=pd.DataFrame.from_records([
-                {'sample_id': '1', 'a': 2, 'b': '2', 'c': 1},
-                {'sample_id': '2', 'a': 3, 'b': '4', 'c': -1},
-                {'sample_id': '3', 'a': 2, 'b': '0', 'c': 0},
+                {'a': 2, 'b': '2', 'c': 1},
+                {'a': 3, 'b': '4', 'c': -1},
+                {'a': 2, 'b': '0', 'c': 0},
             ]),
-            predictions=pd.Series(['2', '1', '0', '0'], index=['1', '2', '3']),
-            labels=pd.Series([2, 2, 1, 1], index=['1', '2', '3']),
-            timestamps=pd.Series([
+            predictions=np.array(['2', '1', '0', '0']),
+            labels=np.array([2, 2, 1, 1]),
+            timestamps=np.array([
                 pdl.now().int_timestamp,
                 pdl.now().int_timestamp,
                 pdl.now().int_timestamp
-            ], index=['1', '2', '3']),
+            ]),
         )
-
-
-@pytest.mark.asyncio
-async def test_batch_log_without_sample_id_column(
-        regression_model_version_client: DeepchecksModelVersionClient,
-        async_session: AsyncSession
-):
-    regression_model_version_client.log_batch(
-        data=pd.DataFrame.from_records([
-            {'a': 2, 'b': '2', 'c': 1},
-            {'a': 3, 'b': '4', 'c': -1},
-            {'a': 2, 'b': '0', 'c': 0},
-        ]),
-        predictions=pd.Series(['2', '1', '0']),
-        labels=pd.Series([2, 2, 1]),
-        timestamps=pd.Series([
-            pdl.now().int_timestamp,
-            pdl.now().int_timestamp,
-            pdl.now().int_timestamp
-        ]),
-    )
-
-    model_version = await async_session.get(
-        ModelVersion,
-        regression_model_version_client.model_version_id
-    )
-
-    assert model_version is not None
-
-    monitor_table = model_version.get_monitor_table(async_session)
-    ids = await async_session.scalars(select(monitor_table.c[SAMPLE_ID_COL]))
-
-    assert set(ids) == {'0', '1', '2'}
 
 
 @pytest.mark.asyncio
@@ -332,12 +372,25 @@ async def test_classification_log_pass_probas_without_classes(deepchecks_sdk_cli
     add_model_version(model_id, client, name='v1')
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
-        'v1')
-    assert_that(calling(dc_client.log_sample).with_args(
-        '1', prediction='2', prediction_proba=[0.1, 0.3, 0.6], label=2, a=2, b='2', c=1
-    ),
-        raises(ValueError, 'Can\'t pass prediction_proba if version was not configured with model classes'))
+    dc_client = (
+        deepchecks_sdk_client
+        .get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value)
+        .version('v1')
+    )
+
+    assert_that(
+        calling(dc_client.log_sample).with_args(
+            sample_id='1',
+            prediction='2',
+            prediction_proba=[0.1, 0.3, 0.6],
+            label=2,
+            values={'a':2, 'b':'2', 'c':1}
+        ),
+        raises(
+            ValueError,
+            'Can\'t pass prediction_proba if version was not configured with model classes'
+        )
+    )
 
 
 @pytest.mark.asyncio
@@ -347,12 +400,25 @@ async def test_classification_log_pass_probas_not_same_length_as_classes(deepche
     add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
-        'v1')
-    assert_that(calling(dc_client.log_sample).with_args(
-        '1', prediction='2', prediction_proba=[0.1, 0.3, 0.5, 0.1], label=2, a=2, b='2', c=1
-    ),
-        raises(ValueError, 'Number of classes in prediction_proba does not match number of classes in model classes.'))
+    dc_client = (
+        deepchecks_sdk_client
+        .get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value)
+        .version('v1')
+    )
+
+    assert_that(
+        calling(dc_client.log_sample).with_args(
+            sample_id='1',
+            prediction='2',
+            prediction_proba=[0.1, 0.3, 0.5, 0.1],
+            label=2,
+            values={'a':2, 'b':'2', 'c':1}
+        ),
+        raises(
+            ValueError,
+            'Number of classes in prediction_proba does not match number of classes in model classes.'
+        )
+    )
 
 
 @pytest.mark.asyncio
@@ -362,12 +428,25 @@ async def test_classification_log_pass_prediction_not_in_classes(deepchecks_sdk_
     add_model_version(model_id, client, name='v1', classes=['0', '1', '2'])
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value).version(
-        'v1')
-    assert_that(calling(dc_client.log_sample).with_args(
-        '1', prediction='10', prediction_proba=[0.1, 0.3, 0.6], label=2, a=2, b='2', c=1
-    ),
-        raises(ValueError, 'Provided prediction not in allowed model classes: 10'))
+    dc_client = (
+        deepchecks_sdk_client
+        .get_or_create_model(name='model', task_type=TaskType.MULTICLASS.value)
+        .version('v1')
+    )
+
+    assert_that(
+        calling(dc_client.log_sample).with_args(
+            sample_id='1',
+            prediction='10',
+            prediction_proba=[0.1, 0.3, 0.6],
+            label=2,
+            values={'a':2, 'b':'2', 'c':1}
+        ),
+        raises(
+            ValueError,
+            'Provided prediction not in allowed model classes: 10'
+        )
+    )
 
 
 @pytest.mark.asyncio
@@ -377,9 +456,21 @@ async def test_regression_log_sample_pass_proba(deepchecks_sdk_client, client: T
     add_model_version(model_id, client, name='v1')
 
     # Act & Assert
-    dc_client = deepchecks_sdk_client.get_or_create_model(name='model', task_type=TaskType.REGRESSION.value).version(
-        'v1')
-    assert_that(calling(dc_client.log_sample).with_args(
-        '1', prediction=10, prediction_proba=[0.1], label=2, a=2, b='2', c=1
-    ),
-        raises(ValueError, 'Can\'t pass prediction_proba for regression task.'))
+    dc_client = (
+        deepchecks_sdk_client
+        .get_or_create_model(name='model', task_type=TaskType.REGRESSION.value)
+        .version('v1')
+    )
+    assert_that(
+        calling(dc_client.log_sample).with_args(
+            sample_id='1',
+            prediction=10,
+            prediction_proba=[0.1],
+            label=2,
+            values={'a':2, 'b':'2', 'c':1}
+        ),
+        raises(
+            ValueError,
+            'Can\'t pass prediction_proba for regression task.'
+        )
+    )

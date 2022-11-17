@@ -134,12 +134,10 @@ async def update_data(
     session
     """
     json_schema = model_version.monitor_json_schema
-    required_columns = set(json_schema["required"])
-    # Create update schema, which contains only non-required columns and sample id
+
     optional_columns_schema = {
         "type": "object",
-        "properties": {k: v for k, v in json_schema["properties"].items()
-                       if k not in required_columns or k == SAMPLE_ID_COL},
+        "properties": json_schema["properties"],
         "required": [SAMPLE_ID_COL],
         "additionalProperties": False
     }
@@ -186,6 +184,7 @@ async def update_data(
 
     # Update statistics if needed
     updated_statistics = copy.deepcopy(model_version.statistics)
+
     for sample in logged_samples:
         update_statistics_from_sample(updated_statistics, sample)
     if model_version.statistics != updated_statistics:
