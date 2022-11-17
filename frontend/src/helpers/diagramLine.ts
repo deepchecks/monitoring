@@ -181,6 +181,12 @@ export const addSpace = (space: number) => {
 
 const outerRadius = 18;
 
+function getAlertIndex(alerts: AlertSchema[], alertIndex: number, chart: ChartOption) {
+  const failedValues = alerts[alertIndex].failed_values;
+  const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.keys(Object.values(failedValues)[0])[0]}|${Object.keys(failedValues)[0]}` === dataset.label))
+  return datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+}
+
 export const drawAlerts = (alerts: AlertSchema[]) => ({
   id: 'drawAlerts',
   beforeDatasetsDraw: () => 1,
@@ -204,9 +210,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() && alertIndex !== activeIndex) {
-            const failedValues = alerts[alertIndex].failed_values; 
-            const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.values(failedValues)[0]}|${Object.keys(failedValues)[0]}`===dataset.label))
-            const meta = datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+            const meta = getAlertIndex(alerts, alertIndex, chart);
             const xData = meta.data[index].x;
             const yData = meta.data[index].y;
             let xLineMin = xData - deviation < xCursor;
@@ -347,10 +351,8 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
     if (chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
-          if (+label === dayjs(end_time).valueOf() ) {
-            const failedValues = alerts[alertIndex].failed_values; 
-            const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.values(failedValues)[0]}|${Object.keys(failedValues)[0]}`===dataset.label))
-            const meta = datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+          if (+label === dayjs(end_time).valueOf()) {
+            const meta = getAlertIndex(alerts, alertIndex, chart);
             alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
           }
         });
@@ -418,10 +420,8 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
     if (chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
-          if (+label === dayjs(end_time).valueOf() ) {
-            const failedValues = alerts[alertIndex].failed_values; 
-            const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.values(failedValues)[0]}|${Object.keys(failedValues)[0]}`===dataset.label))
-            const meta = datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+          if (+label === dayjs(end_time).valueOf()) {
+            const meta = getAlertIndex(alerts, alertIndex, chart);
             alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
           }
         });
