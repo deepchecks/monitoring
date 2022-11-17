@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Module defining the tabular client functionality."""
+from deepchecks.tabular.utils.task_type import TaskType as DeepchecksTaskType
 from deepchecks_client.tabular.utils import create_schema, read_schema
 
 __all__ = ['create_schema', 'read_schema']

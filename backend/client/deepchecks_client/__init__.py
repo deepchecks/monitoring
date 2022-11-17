@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+# pylint: disable=import-outside-toplevel
 """Defines the entrance points for the client."""
 import io
 import pathlib
@@ -18,7 +19,6 @@ import numpy as np
 import pandas as pd
 from deepchecks.core.errors import DeepchecksValueError
 from deepchecks.tabular import Dataset
-from deepchecks.vision import VisionData
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.api import API
 from deepchecks_client.core.client import DeepchecksModelClient, DeepchecksModelVersionClient
@@ -27,8 +27,10 @@ from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
 from deepchecks_client.tabular.utils import DataSchema
-from deepchecks_client.vision.client import ARRAY
-from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
+
+if t.TYPE_CHECKING:
+    from deepchecks.vision import VisionData
+    from deepchecks_client.vision.client import ARRAY
 
 try:
     from importlib import metadata
@@ -156,11 +158,13 @@ class DeepchecksClient:
         if self._model_clients.get(model_id) is not None:
             pass
         elif task_type in TaskType.vision_types():
+            from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
             self._model_clients[model_id] = VisionModelClient(model_id=model_id, api=self.api)
         elif task_type in TaskType.tabular_types():
             self._model_clients[model_id] = TabularModelClient(model_id=model_id, api=self.api)
         else:
             raise ValueError(f'Unknown task type - {task_type}')
+
         return self._model_clients[model_id]
 
     def get_model_version(self, model_name: str, version_name: str) -> DeepchecksModelVersionClient:
@@ -202,10 +206,10 @@ class DeepchecksClient:
         self,
         *,
         model_name: str,
-        reference_dataset: VisionData,
+        reference_dataset: 'VisionData',
         version_name: str = 'v1',
         description: str = '',
-        reference_predictions: t.Optional[t.Union[t.Dict[int, ARRAY], t.List[ARRAY]]] = None,
+        reference_predictions: t.Optional[t.Union[t.Dict[int, 'ARRAY'], t.List['ARRAY']]] = None,
         task_type: t.Union[str, TaskType, None] = None,
         image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
         samples_per_request: int = 5000

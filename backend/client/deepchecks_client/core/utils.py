@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+# pylint: disable=import-outside-toplevel
 """Module containing deepchecks monitoring client."""
 import enum
 import json
@@ -19,14 +20,11 @@ import httpx
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-from deepchecks.tabular.utils.task_type import TaskType as TabularTaskType
-from deepchecks.vision.task_type import TaskType as VisionTaskType
 from jsonschema import FormatChecker, validators
 from termcolor import cprint
 
 if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
-
 
 __all__ = ['ColumnType', 'TaskType', 'DeepchecksColumns']
 
@@ -53,24 +51,35 @@ class TaskType(enum.Enum):
         return {cls.REGRESSION, cls.MULTICLASS, cls.BINARY}
 
     @classmethod
-    def convert(
-        cls,
-        task_type: t.Union[str, TabularTaskType, VisionTaskType, 'TaskType']
-    ) -> 'TaskType':
+    def convert(cls, task_type: t.Any) -> 'TaskType':
         if isinstance(task_type, cls):
             return task_type
         if isinstance(task_type, str):
             return cls(task_type)
-        elif isinstance(task_type, TabularTaskType):
+
+        from deepchecks_client.tabular import DeepchecksTaskType as TabularTaskType
+
+        if isinstance(task_type, TabularTaskType):
             return cls(task_type.value)
-        elif isinstance(task_type, VisionTaskType):
+
+        # NOTE:
+        # it is here to not cause import error if user
+        # plans to use only tabular functionality and have
+        # not installed all required vision dependencies
+        from deepchecks_client.vision import DeepchecksTaskType as VisionTaskType
+
+        if isinstance(task_type, VisionTaskType):
             if task_type in {VisionTaskType.SEMANTIC_SEGMENTATION, VisionTaskType.OTHER}:
                 raise ValueError(f'Not supported vision task type - {task_type}')
             if task_type is VisionTaskType.CLASSIFICATION:
                 return cls.VISION_CLASSIFICATION
             if task_type is VisionTaskType.OBJECT_DETECTION:
                 return cls.VISION_DETECTION
-        raise ValueError(f'Unknown task type - {task_type}')
+
+        raise ValueError(
+            f'Unknown value type - {type(task_type)}, '
+            'cannot convert it into TaskType'
+        )
 
 
 class ColumnType(enum.Enum):
