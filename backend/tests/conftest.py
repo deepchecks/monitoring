@@ -134,7 +134,7 @@ async def reset_database(async_engine):
 
 @pytest.fixture()
 def client(application) -> t.Iterator[TestClient]:
-    with TestClient(app=application, base_url="http://test/api/v1/") as client:
+    with TestClient(app=application, base_url="http://test/") as client:
         yield client
 
 

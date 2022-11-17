@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Backend API."""
+from copy import copy
 import typing as t
 
 import httpx
@@ -49,7 +50,8 @@ class API:
         return cls(session=httpx.Client(base_url=host, headers=headers))
 
     def __init__(self, session: httpx.Client):
-        self.session = session
+        self.session = copy(session)
+        self.session.base_url = self.session.base_url.join('/api/v1')
 
     def say_hello(self, raise_on_status: bool = True) -> t.Optional[httpx.Response]:
         """Verify connectivity.
