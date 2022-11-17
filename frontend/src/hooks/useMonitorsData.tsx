@@ -60,7 +60,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider) => {
 
   const fetchMonitor = useCallback(
     async (monitor: MonitorSchema, isForceRefetch = false) => {
-      if (!modelsMap || (!isForceRefetch && chartDataMap[monitor.id])) return;
+      if (!modelsMap || !(monitor.check.model_id in modelsMap) || (!isForceRefetch && chartDataMap[monitor.id])) return;
 
       const fetchedMonitor = await runMonitorLookbackApiV1MonitorsMonitorIdRunPost(monitor.id, {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
