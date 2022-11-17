@@ -42,6 +42,7 @@ class KafkaSettings(BaseDeepchecksSettings):
     kafka_username: t.Optional[str] = None
     kafka_password: t.Optional[str] = None
     kafka_replication_factor: int = 1
+    kafka_max_metadata_age: int = 60 * 1000
 
     @property
     def kafka_params(self):
@@ -52,7 +53,8 @@ class KafkaSettings(BaseDeepchecksSettings):
             'sasl_mechanism': self.kafka_sasl_mechanism,
             'sasl_plain_username': self.kafka_username,
             'sasl_plain_password': self.kafka_password,
-            'ssl_context': create_ssl_context()
+            'ssl_context': create_ssl_context(),
+            'metadata_max_age_ms': self.kafka_max_metadata_age
         }
 
 

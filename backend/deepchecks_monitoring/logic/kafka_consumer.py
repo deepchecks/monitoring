@@ -25,8 +25,7 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, handle_fails,
                 group_id="data_group",  # Consumer must be in a group to commit
                 enable_auto_commit=False,  # Will disable autocommit
                 auto_offset_reset="earliest",  # If committed offset not found, start from beginning,
-                max_poll_records=100,
-                metadata_max_age_ms=60 * 1000
+                max_poll_records=100
             )
             await consumer.start()
             consumer.subscribe(pattern=pattern)
