@@ -53,11 +53,12 @@ def test_get_model_version_with_features(
 ):
     model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
                                                              task_type=TaskType.MULTICLASS.value)
+    schema_dict = {"features": {"a": "numeric", "b": "categorical"},
+                   "additional_data": {"c": "numeric"}}
     assert model_client.model["id"] == classification_model_id
     model_version_client = model_client.version(
         "v1",
-        features={"a": "numeric", "b": "categorical"},
-        additional_data={"c": "numeric"}
+        schema_dict
     )
     assert model_version_client.model_version_id == classification_model_version_id
 
@@ -68,14 +69,14 @@ def test_add_model_version(
 ):
     model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
                                                              task_type=TaskType.MULTICLASS.value)
+    schema_dict = {"features": {"a": "numeric", "b": "categorical"},
+                   "additional_data": {"c": "numeric"}}
     assert model_client.model["id"] == classification_model_id
     model_version_client = model_client.version("v1",
-                                                features={"a": "numeric", "b": "categorical"},
-                                                additional_data={"c": "numeric"})
+                                                schema_dict)
     assert model_version_client.model_version_id == 1
     model_version_client = model_client.version("v2",
-                                                features={"a": "numeric", "b": "categorical"},
-                                                additional_data={"c": "numeric"})
+                                                schema_dict)
     assert model_version_client.model_version_id == 2
 
 
@@ -102,8 +103,7 @@ def test_create_read_schema_string_io(classification_model_id, deepchecks_sdk_cl
 
     model_version_client = model_client.version(
         "v1",
-        features=schema_dict["features"],
-        additional_data=schema_dict["additional_data"]
+        schema_dict
     )
 
     assert model_version_client.model_version_id == 1
@@ -120,8 +120,7 @@ def test_create_read_schema_file(classification_model_id, deepchecks_sdk_client:
     schema_dict = read_schema(file)
     model_version_client = model_client.version(
         "v1",
-        features=schema_dict["features"],
-        additional_data=schema_dict["additional_data"]
+        schema_dict
     )
     assert model_version_client.model_version_id == 1
 
@@ -141,8 +140,7 @@ async def test_model_version_feature_importance_update(
     )
     version_client = model_client.version(
         name="test-version",
-        features=dataset_schema["features"],
-        additional_data=dataset_schema["additional_data"],
+        schema=dataset_schema
     )
 
     feature_importance = {feature: 0.5 for feature in
@@ -166,8 +164,7 @@ def test_model_version_deletion(deepchecks_sdk_client: DeepchecksClient):
     )
     version_client = model_client.version(
         name="test-version",
-        features=dataset_schema["features"],
-        additional_data=dataset_schema["additional_data"],
+        schema=dataset_schema,
     )
 
     deepchecks_sdk_client.delete_model_version(

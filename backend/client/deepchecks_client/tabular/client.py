@@ -9,6 +9,8 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+import io
+import pathlib
 # flake8: noqa: F821
 import typing as t
 import warnings
@@ -22,6 +24,9 @@ from deepchecks.tabular.checks import (CategoryMismatchTrainTest, SingleDatasetP
                                        TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
+from deepchecks_client.tabular.utils import DataSchema, read_schema
+
+from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
                                           TaskType, parse_timestamp, pretty_print)
@@ -432,11 +437,11 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         The id of the model.
     """
 
+    @docstrings
     def version(
             self,
             name: str,
-            features: t.Optional[t.Dict[str, str]] = None,
-            additional_data: t.Optional[t.Dict[str, str]] = None,
+            schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema] = None,
             feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]', None] = None,
             model_classes: t.Optional[t.Sequence[str]] = None
     ) -> DeepchecksModelVersionClient:
@@ -446,10 +451,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         ----------
         name : str
             Name to display for new version
-        features : Optional[Dict[str, str]], default: None
-            A dictionary of feature names and values from ColumnType enum. Required for creation of a new version.
-        additional_data : Optional[Dict[str, str]], default: None
-            A dictionary of non feature names and values from ColumnType enum. Required for creation of a new version.
+        {schema_param_none:2*indent}
         feature_importance : Union[Dict[str, float], pandas.Series[float]], default: None
             A dictionary or pandas series of feature names and their feature importance value.
         model_classes : Optional[Sequence[str]], default: None
@@ -464,6 +466,11 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         existing_version_id = self._get_existing_version_id_or_none(version_name=name)
         if existing_version_id is not None:
             return self._version_client(existing_version_id)
+        elif schema is None:
+            raise ValueError('schema must be provided when creating a new version')
+
+        schema = read_schema(schema)
+        features, additional_data = schema['features'], schema['additional_data']
 
         if features is None:
             raise ValueError('Model Version name does not exists for this model and no features were provided.')

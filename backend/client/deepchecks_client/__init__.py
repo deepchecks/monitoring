@@ -75,7 +75,7 @@ class DeepchecksClient:
         name: str,
         task_type: t.Union[str, TaskType, None] = None,
         description: t.Optional[str] = None,
-        create_defaults: bool = True
+        create_model_defaults: bool = True
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -90,7 +90,7 @@ class DeepchecksClient:
             vision_detection. Required for creation of a new model.
         description: str, default: None
             Additional description for the model.
-        create_defaults: bool, default: True
+        create_model_defaults: bool, default: True
             Whether to add default check, monitors and alerts to the model.
 
         Returns
@@ -129,7 +129,7 @@ class DeepchecksClient:
         model_client = self._model_client_from_model_id(model_id=created_model['id'], task_type=task_type)
         msg = f'Model {name} was successfully created!.'
 
-        if create_defaults:
+        if create_model_defaults:
             model_client._add_defaults()  # pylint: disable=protected-access
             msg += ' Default checks, monitors and alerts added.'
 
@@ -293,7 +293,8 @@ class DeepchecksClient:
         feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]', None] = None,
         task_type: t.Union[str, TaskType, None] = None,
         description: str = '',
-        model_classes: t.Optional[t.Sequence[str]] = None
+        model_classes: t.Optional[t.Sequence[str]] = None,
+        create_model_defaults: bool = True
     ) -> TabularModelVersionClient:
         """
         Create a tabular model version and uploads the reference data if provided.
@@ -326,6 +327,8 @@ class DeepchecksClient:
         model_classes: Optional[Sequence[str]], default: None
             List of classes used by the model. If not defined and `reference_probas` is passed, then classes are
             inferred from predictions and label.
+        create_model_defaults: bool, default: True
+            Whether to add default check, monitors and alerts to the model. Has no effect if the model already exists.
 
         Returns
         -------
@@ -343,7 +346,7 @@ class DeepchecksClient:
             pass
 
         schema = read_schema(schema)
-        features_dict, additional_data_dict = schema['features'], schema['additional_data']
+        features_dict = schema['features']
 
         if set(features_dict.keys()) != set(reference_dataset.features):
             raise DeepchecksValueError(
@@ -391,10 +394,9 @@ class DeepchecksClient:
             warnings.warn('If predicted probabilities are not supplied, checks and metrics that rely on the predicted '
                           'probabilities (such as ROC Curve and the AUC metric) will not run.')
 
-        version_client = self.get_or_create_model(model_name, task_type, description).version(
+        version_client = self.get_or_create_model(model_name, task_type, description, create_model_defaults).version(
             version_name,
-            features=features_dict,
-            additional_data=additional_data_dict,
+            schema=schema,
             feature_importance=feature_importance,
             model_classes=model_classes
         )

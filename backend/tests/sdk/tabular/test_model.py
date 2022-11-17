@@ -66,7 +66,7 @@ async def test_add_monitor(deepchecks_sdk_client: DeepchecksClient):
 async def test_add_alert_on_existing_monitor(deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
                                                              task_type=TaskType.MULTICLASS.value,
-                                                             create_defaults=True)
+                                                             create_model_defaults=True)
     assert model_client.model["id"] == 1
 
     checks_name = list(model_client.get_checks().keys())[0]
@@ -80,7 +80,7 @@ async def test_add_alert_on_existing_monitor(deepchecks_sdk_client: DeepchecksCl
 async def test_add_alert_on_new_monitor(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
                                                              task_type=TaskType.MULTICLASS.value,
-                                                             create_defaults=False)
+                                                             create_model_defaults=False)
     assert model_client.model["id"] == classification_model_id
     model_client.add_checks({"check": SingleDatasetPerformance()})
 
@@ -94,7 +94,7 @@ async def test_add_alert_on_new_monitor(classification_model_id, deepchecks_sdk_
 async def test_add_defaults(deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
                                                              task_type=TaskType.MULTICLASS.value,
-                                                             create_defaults=True)
+                                                             create_model_defaults=True)
     assert model_client.model["id"] == 1
     assert len(model_client.get_checks()) == 6
 

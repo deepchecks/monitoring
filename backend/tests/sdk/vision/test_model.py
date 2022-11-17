@@ -67,7 +67,7 @@ async def test_add_monitor(deepchecks_sdk_client: DeepchecksClient):
 async def test_add_alert(classification_vision_model_id, deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
                                                              task_type=TaskType.VISION_CLASSIFICATION.value,
-                                                             create_defaults=False)
+                                                             create_model_defaults=False)
     assert model_client.model["id"] == classification_vision_model_id
     model_client.add_checks({"check": SingleDatasetPerformance()})
 
@@ -81,7 +81,7 @@ async def test_add_alert(classification_vision_model_id, deepchecks_sdk_client: 
 async def test_add_defaults(deepchecks_sdk_client: DeepchecksClient):
     model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
                                                              task_type=TaskType.VISION_CLASSIFICATION.value,
-                                                             create_defaults=True)
+                                                             create_model_defaults=True)
     assert model_client.model["id"] == 1
     assert len(model_client.get_checks()) == 4
 

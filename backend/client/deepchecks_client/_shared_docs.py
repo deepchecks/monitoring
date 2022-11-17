@@ -94,4 +94,26 @@ schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]]
             - 'datetime'
 """.strip('\n')
 
+_shared_docstrings['schema_param_none'] = """
+schema : Union[str, pathlib.Path, io.TextIOBase, Dict[str, Dict[str, Any]]], default: None
+    path to a schema file, file like object with schema,
+    or a dictionary representing a schema. Can be none if getting existing model version.
+    This method expects that provided file will be in the next yaml format:
+        features:
+            foo: <feature-type>
+            bar: <feature-type>
+        additional_data:
+            foo: <feature-type>
+            bar: <feature-type>
+    where 'feature-type' is one of:
+            - 'numeric'
+            - 'integer'
+            - 'categorical'
+            - 'boolean'
+            - 'text'
+            - 'array_float'
+            - 'array_float_2d'
+            - 'datetime'
+""".strip('\n')
+
 docstrings = Substitution(**_shared_docstrings)
