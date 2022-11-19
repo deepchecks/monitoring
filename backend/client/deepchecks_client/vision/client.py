@@ -327,13 +327,15 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             indexes = samples_indexes[i]
             images_batch = vision_data.batch_to_images(batch)
             labels_batch = vision_data.batch_to_labels(batch)
-            batch_length = len(images_batch)
 
             for sample_index, img, label in zip(indexes, images_batch, labels_batch):
-                data[sample_index] = self._reformat_sample(img=img, label=label, prediction=predictions[sample_index],
+                if isinstance(predictions, dict):
+                    prediction = predictions[sample_index]
+                else:
+                    prediction = predictions[running_sample_index]
+                data[sample_index] = self._reformat_sample(img=img, label=label, prediction=prediction,
                                                            is_ref_sample=True)
-
-            running_sample_index += batch_length
+                running_sample_index += 1
 
         self._upload_reference(
             data=pd.DataFrame(data).T,

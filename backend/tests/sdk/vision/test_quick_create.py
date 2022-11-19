@@ -7,6 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import copy
 import typing as t
 
 import pytest
@@ -16,6 +17,7 @@ from deepchecks_client import DeepchecksClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.models import Model, ModelVersion
+from tests.sdk.vision.test_upload_reference import get_classification_reference_table_as_array
 
 
 @pytest.mark.asyncio
@@ -94,3 +96,44 @@ async def test_version_creation_list_prediciton(
     )
 
     assert n_of_reference_records == dataset.num_samples
+
+@pytest.mark.asyncio
+async def test_version_creation_list_prediciton_same_as_regular(
+       deepchecks_sdk_client: DeepchecksClient,
+    async_session: AsyncSession,
+    vision_classification_and_prediction_big: t.Tuple[VisionData, t.Dict[int, t.List[float]]]
+):
+    dataset, predictions = vision_classification_and_prediction_big
+
+    # Get dict prediction table
+    kwargs = {
+        "model_name": "New Model",
+        "version_name": "Version#dict",
+        "description": "Super duper cool model",
+        "reference_dataset": copy.copy(dataset),
+        "reference_predictions": predictions
+    }
+
+    dict_version_client = deepchecks_sdk_client.create_vision_model_version(**kwargs)
+    dict_version = await async_session.get(ModelVersion, dict_version_client.model_version_id)
+
+    dict_reference_records = \
+        await get_classification_reference_table_as_array(dict_version, async_session)
+
+    # Get list prediction table
+    kwargs = {
+        "model_name": "New Model",
+        "version_name": "Version#list",
+        "description": "Super duper cool model",
+        "reference_dataset": dataset,
+        "reference_predictions": list(predictions.values())
+    }
+
+    list_version_client = deepchecks_sdk_client.create_vision_model_version(**kwargs)
+    list_version = await async_session.get(ModelVersion, list_version_client.model_version_id)
+
+    list_reference_records = await get_classification_reference_table_as_array(list_version, async_session)
+
+    # Assert
+    assert dict_version_client.model_version_id != list_version_client.model_version_id
+    assert dict_reference_records == list_reference_records

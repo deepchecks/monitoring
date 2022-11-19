@@ -14,6 +14,13 @@ from client.deepchecks_client.vision.client import DeepchecksModelVersionClient
 from deepchecks_monitoring.models.model_version import ModelVersion
 
 
+async def get_classification_reference_table_as_array(model_version, async_session):
+    ref_table = model_version.get_reference_table(async_session)
+    ref_arr = [dict(row) for row in (await async_session.execute(select(ref_table))).all()]
+    return [(row['images Aspect Ratio'], row['_dc_label'], row['_dc_prediction'])
+            for row in ref_arr]
+
+
 @pytest.mark.asyncio
 async def test_classification_upload_reference(vision_classification_model_version_client: DeepchecksModelVersionClient,
                                                vision_classification_and_prediction,
@@ -26,11 +33,7 @@ async def test_classification_upload_reference(vision_classification_model_versi
                vision_classification_model_version_client.model_version_id)
     )
     model_version: ModelVersion = model_version_query.scalars().first()
-
-    ref_table = model_version.get_reference_table(async_session)
-    ref_arr = [dict(row) for row in (await async_session.execute(select(ref_table))).all()]
-    ref_arr = [(row['images Aspect Ratio'], row['_dc_label'], row['_dc_prediction'])
-               for row in ref_arr]
+    ref_arr = await get_classification_reference_table_as_array(model_version, async_session)
     assert ref_arr == [
         (0.5, 2, [0.1, 0.30000000000000004, 0.6000000000000001]),
         (1.0, 0, [0.6000000000000001, 0.30000000000000004, 0.1]),

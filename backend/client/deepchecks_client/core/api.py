@@ -9,8 +9,8 @@
 # ----------------------------------------------------------------------------
 #
 """Backend API."""
-from copy import copy
 import typing as t
+from copy import copy
 
 import httpx
 from deepchecks_client.core.utils import maybe_raise
@@ -47,7 +47,7 @@ class API:
             The API token from deepchecks.
         """
         headers = {'Authorization': f'Basic {token}'} if token else None
-        return cls(session=httpx.Client(base_url=host, headers=headers))
+        return cls(session=httpx.Client(base_url=host, headers=headers, timeout=60))
 
     def __init__(self, session: httpx.Client):
         self.session = copy(session)

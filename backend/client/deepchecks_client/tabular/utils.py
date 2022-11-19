@@ -86,7 +86,7 @@ def _describe_dataset(dataset: Dataset) -> DataSchema:
             additional_data[column] = _get_series_column_type(col_series)
     # if any columns failed to auto infer print this warnings
     # moved to here to not annoy the user so much
-    if pd.Series(features.values()).hasnans or pd.Series(additional_data.values()).hasnans:
+    if any(x is None for x in list(features.values()) + list(additional_data.values())):
         warnings.warn('Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.\n'
                       'You can set the type manually in the schema file/dict.\n'
                       'DateTime format is supported using iso format only.')
