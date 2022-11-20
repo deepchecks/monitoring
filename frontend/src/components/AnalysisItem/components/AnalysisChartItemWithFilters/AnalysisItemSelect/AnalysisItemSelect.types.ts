@@ -1,3 +1,4 @@
+import { AnalysisItemFilterTypes } from 'components/AnalysisItem/AnalysisItem.types';
 import { SetStateType } from 'helpers/types';
 
 export interface FiltersValue {
@@ -11,10 +12,12 @@ export interface AnalysisItemSelectProps<T> {
   label: string;
   data: FiltersValue[];
   size?: SelectSize;
-  type: string;
-  activeFilter: string | null;
-  setActiveFilter: SetStateType<string | null>;
+  type: AnalysisItemFilterTypes;
+  activeFilter: AnalysisItemFilterTypes | null;
+  isMostWorstActive: boolean;
+  setActiveFilter: SetStateType<AnalysisItemFilterTypes | null>;
   setSelectValue: SetStateType<T>;
+  setIsMostWorstActive: SetStateType<boolean>;
 }
 
 export type MultiSelectValuesType = string[];

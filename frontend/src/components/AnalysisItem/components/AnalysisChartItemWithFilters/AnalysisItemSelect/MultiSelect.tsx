@@ -14,9 +14,12 @@ import {
   StyledStickyContainer,
   StyledApplyButton,
   StyledNoResults,
-  StyledSearchField
+  StyledSearchField,
+  StyledMostWorstButton
 } from './AnalysisItemSelect.style';
+
 import { AnalysisItemSelectProps, MultiSelectValuesType } from './AnalysisItemSelect.types';
+import { AnalysisItemFilterTypes } from 'components/AnalysisItem/AnalysisItem.types';
 
 const MAX_MENU_ITEM_TEXT_LENGTH = 21;
 
@@ -40,8 +43,10 @@ const MultiSelect = ({
   data,
   type,
   activeFilter,
+  isMostWorstActive,
   setActiveFilter,
-  setSelectValue
+  setSelectValue,
+  setIsMostWorstActive
 }: AnalysisItemSelectProps<MultiSelectValuesType>) => {
   const [filteredData, setFilteredData] = useState(data);
   const [open, setOpen] = useState(false);
@@ -71,6 +76,7 @@ const MultiSelect = ({
     setActiveFilter(type);
     setSelectValue(multiValue);
     setSavedMultiValue(multiValue);
+    setIsMostWorstActive(false);
   };
 
   const handleOpen = () => {
@@ -82,6 +88,11 @@ const MultiSelect = ({
     const val = typeof value === 'string' ? value.split(',') : value;
 
     setMultiValue(val);
+  };
+
+  const handleWorstPerformersClick = () => {
+    setIsMostWorstActive(!isMostWorstActive);
+    handleClearSelectedValue();
   };
 
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,75 +120,82 @@ const MultiSelect = ({
   };
 
   return (
-    <StyledRoundedSelectContainer fullWidth>
-      <InputLabel id={label} label={label} size={size} />
-      <StyledRoundedSelect
-        size={size}
-        label={label}
-        labelId={label}
-        multiple
-        value={multiValue}
-        onChange={handleSelectValueChange}
-        open={open}
-        onOpen={handleOpen}
-        onClose={() => handleClose(false)}
-        renderValue={selected => `Selected classes (${selected.length})`}
-        MenuProps={MenuProps}
-        endAdornment={<ClearButton inputCheck={multiValue.length} onClick={handleClearSelectedValue} />}
-      >
-        <StyledStickyContainer>
-          <StyledSearchField
-            value={searchFieldValue}
-            onChange={handleSearch}
-            onReset={clearSearchField}
-            onKeyDown={e => e.stopPropagation()}
-          />
-          <ResetSelectionButton isAnythingSelected={multiValue.length} onClick={handleResetSelection} />
-        </StyledStickyContainer>
+    <>
+      {type === AnalysisItemFilterTypes.SCORER && (
+        <StyledMostWorstButton active={isMostWorstActive} onClick={handleWorstPerformersClick}>
+          Worst performers
+        </StyledMostWorstButton>
+      )}
+      <StyledRoundedSelectContainer fullWidth>
+        <InputLabel id={label} label={label} size={size} />
+        <StyledRoundedSelect
+          size={size}
+          label={label}
+          labelId={label}
+          multiple
+          value={multiValue}
+          onChange={handleSelectValueChange}
+          open={open}
+          onOpen={handleOpen}
+          onClose={() => handleClose(false)}
+          renderValue={selected => `Selected classes (${selected.length})`}
+          MenuProps={MenuProps}
+          endAdornment={<ClearButton inputCheck={multiValue.length} onClick={handleClearSelectedValue} />}
+        >
+          <StyledStickyContainer>
+            <StyledSearchField
+              value={searchFieldValue}
+              onChange={handleSearch}
+              onReset={clearSearchField}
+              onKeyDown={e => e.stopPropagation()}
+            />
+            <ResetSelectionButton isAnythingSelected={multiValue.length} onClick={handleResetSelection} />
+          </StyledStickyContainer>
 
-        {/* <StyledMenuItemsList> */}
-        {filteredData.length ? (
-          filteredData.map(({ name }) => (
-            <MenuItem key={name} value={name} sx={{ p: '10px 15px' }}>
-              <StyledCheckbox
-                checked={multiValue.indexOf(name) > -1}
-                tabIndex={-1}
-                inputProps={{ 'aria-labelledby': name }}
-              />
-              {name.length > MAX_MENU_ITEM_TEXT_LENGTH ? (
-                <Tooltip
-                  title={name}
-                  placement="left-end"
-                  PopperProps={{
-                    modifiers: [
-                      {
-                        name: 'offset',
-                        options: {
-                          offset: [0, 18]
+          {/* <StyledMenuItemsList> */}
+          {filteredData.length ? (
+            filteredData.map(({ name }) => (
+              <MenuItem key={name} value={name} sx={{ p: '10px 15px' }}>
+                <StyledCheckbox
+                  checked={multiValue.indexOf(name) > -1}
+                  tabIndex={-1}
+                  inputProps={{ 'aria-labelledby': name }}
+                />
+                {name.length > MAX_MENU_ITEM_TEXT_LENGTH ? (
+                  <Tooltip
+                    title={name}
+                    placement="left-end"
+                    PopperProps={{
+                      modifiers: [
+                        {
+                          name: 'offset',
+                          options: {
+                            offset: [0, 18]
+                          }
                         }
-                      }
-                    ]
-                  }}
-                >
-                  <ListItemText primary={`${name.slice(0, MAX_MENU_ITEM_TEXT_LENGTH)}...`} />
-                </Tooltip>
-              ) : (
-                <ListItemText primary={name} />
-              )}
-            </MenuItem>
-          ))
-        ) : (
-          <StyledNoResults>0 Results, try a different combination</StyledNoResults>
-        )}
-        {/* </StyledMenuItemsList> */}
+                      ]
+                    }}
+                  >
+                    <ListItemText primary={`${name.slice(0, MAX_MENU_ITEM_TEXT_LENGTH)}...`} />
+                  </Tooltip>
+                ) : (
+                  <ListItemText primary={name} />
+                )}
+              </MenuItem>
+            ))
+          ) : (
+            <StyledNoResults>0 Results, try a different combination</StyledNoResults>
+          )}
+          {/* </StyledMenuItemsList> */}
 
-        <StyledApplyButton>
-          <Button onClick={() => handleClose(true)} variant="text">
-            Apply
-          </Button>
-        </StyledApplyButton>
-      </StyledRoundedSelect>
-    </StyledRoundedSelectContainer>
+          <StyledApplyButton>
+            <Button onClick={() => handleClose(true)} variant="text">
+              Apply
+            </Button>
+          </StyledApplyButton>
+        </StyledRoundedSelect>
+      </StyledRoundedSelectContainer>
+    </>
   );
 };
 

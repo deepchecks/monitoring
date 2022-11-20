@@ -18,7 +18,6 @@ import { Minimap } from '../Minimap';
 import { colors } from 'theme/colors';
 
 import { DiagramLineProps } from './DiagramLine.types';
-import { PREVIOUS_PERIOD } from 'helpers/setGraphOptions';
 
 Chart.register(...registerables, zoomPlugin);
 
@@ -165,7 +164,7 @@ function DiagramLine({
       },
       line: {
         borderWidth: 2,
-        tension: 0,
+        tension: 0.4,
         fill: true
       }
     },
@@ -270,8 +269,8 @@ function DiagramLine({
         const index = legendItem.datasetIndex || 0;
         const hidden = legendItem.hidden || false;
 
-        map[index] = comparison ? hidden : false;
-        chartRef.current?.setDatasetVisibility(index, comparison ? !hidden : true);
+        map[index] = hidden;
+        chartRef.current?.setDatasetVisibility(index, !hidden);
       });
 
       setLineIndexMap(map);

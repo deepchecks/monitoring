@@ -1,4 +1,4 @@
-import React, { memo, useContext, useEffect, useState } from 'react';
+import React, { memo, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
 
 import { CheckSchema, DataFilter, MonitorOptions, useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
@@ -13,8 +13,9 @@ import AnalysisItemDiagram from './components/AnalysisItemDiagram';
 
 import { OperatorsMap } from 'helpers/conditionOperator';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
+import { showDatasets } from './AnalysisItem.helpers';
 
-import { AGGREGATION } from './AnalysisItem.variables';
+import { AnalysisItemFilterTypes, IDataset } from './AnalysisItem.types';
 
 interface AnalysisItemProps {
   check: CheckSchema;
@@ -33,11 +34,20 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
   const [data, setData] = useState<typeof chartData>(chartData);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<AnalysisItemFilterTypes | null>(null);
   const [filtersSingleSelectValue, setFiltersSingleSelectValue] = useState('');
   const [filtersMultipleSelectValue, setFiltersMultipleSelectValue] = useState<string[]>([]);
+  const [isMostWorstActive, setIsMostWorstActive] = useState(false);
 
   const checkConf = checkInfo?.check_conf;
+
+  const isMost = useMemo(
+    () => checkConf && checkConf.find(e => e.type === AnalysisItemFilterTypes.AGGREGATION),
+    [checkConf]
+  );
+
+  const showOneDataset = useCallback((dataSets: IDataset[], isMost = true) => showDatasets(dataSets, 1, isMost), []);
+  const showThreeDatasets = useCallback((dataSets: IDataset[], isMost = true) => showDatasets(dataSets, 3, isMost), []);
 
   useEffect(() => {
     async function getData() {
@@ -91,7 +101,10 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         (filtersSingleSelectValue || filtersMultipleSelectValue.length) &&
         typeof activeFilter === 'string'
       ) {
-        const filter = activeFilter === AGGREGATION ? [filtersSingleSelectValue] : filtersMultipleSelectValue;
+        const filter =
+          activeFilter === AnalysisItemFilterTypes.AGGREGATION
+            ? [filtersSingleSelectValue]
+            : filtersMultipleSelectValue;
 
         runCheckBody.data.additional_kwargs = {
           check_conf: {
@@ -118,8 +131,8 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         const previousPeriodResponse = await runCheck(runCheckPreviousPeriodBody);
         const parsedPreviousPeriodChartData = parseDataForLineChart(previousPeriodResponse, true);
 
-        const paired: typeof parsedChartData.datasets = [];
-        const single: typeof parsedChartData.datasets = [];
+        const paired: IDataset[] = [];
+        const single: IDataset[] = [];
 
         parsedChartData.datasets.forEach(i =>
           parsedPreviousPeriodChartData.datasets.find(e => e.id === i.id) ? paired.push(i) : single.push(i)
@@ -131,20 +144,24 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         if (paired.length) {
           const pairedHalfLength = paired.length / 2;
 
-          paired[0].hidden = false;
-          paired[pairedHalfLength].hidden = false;
-
           paired.forEach((item, index) => {
             if (index < pairedHalfLength) {
               paired[pairedHalfLength + index].borderColor = item.borderColor;
               paired[pairedHalfLength + index].pointBackgroundColor = item.pointBackgroundColor;
             }
           });
-        } else if (single.length) {
-          single.forEach((e, index) => (single[index].hidden = false));
         }
 
-        parsedChartData.datasets = paired.concat(single);
+        const dataSets = paired.concat(single);
+        const result = isMostWorstActive ? showOneDataset(dataSets, !!isMost) : showOneDataset(dataSets);
+
+        parsedChartData.datasets = result;
+      } else {
+        const result = isMostWorstActive
+          ? showThreeDatasets(parsedChartData.datasets, !!isMost)
+          : parsedChartData.datasets;
+
+        parsedChartData.datasets = result;
       }
 
       setData(parsedChartData);
@@ -152,17 +169,21 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
 
     getData();
   }, [
-    isComparisonModeOn,
-    comparisonMode,
-    filters,
-    filtersSingleSelectValue,
-    filtersMultipleSelectValue,
-    period,
-    frequency,
     activeFilter,
     check.id,
-    checkConf,
-    runCheck
+    checkConf?.length,
+    comparisonMode,
+    filters,
+    filtersMultipleSelectValue,
+    filtersSingleSelectValue,
+    frequency,
+    isComparisonModeOn,
+    isMostWorstActive,
+    period,
+    runCheck,
+    showOneDataset,
+    showThreeDatasets,
+    isMost
   ]);
 
   return (
@@ -176,6 +197,8 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
           setSingleSelectValue={setFiltersSingleSelectValue}
           multipleSelectValue={filtersMultipleSelectValue}
           setMultipleSelectValue={setFiltersMultipleSelectValue}
+          isMostWorstActive={isMostWorstActive}
+          setIsMostWorstActive={setIsMostWorstActive}
           filters={checkConf}
         >
           <AnalysisItemDiagram isLoading={isLoading} data={data} comparison={isComparisonModeOn} />

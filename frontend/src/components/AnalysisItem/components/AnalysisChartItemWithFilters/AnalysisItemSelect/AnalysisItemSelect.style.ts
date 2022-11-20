@@ -117,3 +117,30 @@ export const StyledApplyButton = styled(Box)(({ theme }) => ({
   background: theme.palette.common.white,
   borderTop: `1px solid ${alpha(theme.palette.grey[200], 0.5)}`
 }));
+
+interface StyledMostWorstButtonOptions {
+  active: boolean;
+}
+
+export const StyledMostWorstButton = styled(Button, {
+  shouldForwardProp: prop => prop !== 'active'
+})<StyledMostWorstButtonOptions>(({ active, theme }) => ({
+  fontSize: 12,
+  letterSpacing: '0.17px',
+  fontWeight: active ? 700 : 400,
+  lineHeight: '16.8px',
+  minWidth: 120,
+  minHeight: 30,
+  padding: 0,
+  margin: 0,
+  color: theme.palette.primary.main,
+  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
+  border: `1px solid ${theme.palette.primary.main}`,
+  borderRadius: '1000px',
+  boxShadow: 'none',
+
+  '&:hover': {
+    color: theme.palette.common.white,
+    backgroundColor: theme.palette.primary.main
+  }
+}));

@@ -8,27 +8,31 @@ import { AnalysisChartItem } from '../AnalysisChartItem';
 import SingleSelect from './AnalysisItemSelect/SingleSelect';
 import MultiSelect from './AnalysisItemSelect/MultiSelect';
 
-import { AGGREGATION } from '../../AnalysisItem.variables';
+import { AnalysisItemFilterTypes } from '../../AnalysisItem.types';
 import { SetStateType } from 'helpers/types';
 
 interface AnalysisChartItemWithFiltersProps extends SelectProps {
   title: string;
   subtitle: string;
   filters: MonitorCheckConfSchemaCheckConf[];
-  activeFilter: string | null;
-  setActiveFilter: SetStateType<string | null>;
+  activeFilter: AnalysisItemFilterTypes | null;
+  isMostWorstActive: boolean;
+  setActiveFilter: SetStateType<AnalysisItemFilterTypes | null>;
   setSingleSelectValue: SetStateType<string>;
   multipleSelectValue: string[];
   setMultipleSelectValue: SetStateType<string[]>;
+  setIsMostWorstActive: SetStateType<boolean>;
 }
 
 export function AnalysisChartItemWithFilters({
   children,
   filters,
   activeFilter,
+  isMostWorstActive,
   setActiveFilter,
   setSingleSelectValue,
   setMultipleSelectValue,
+  setIsMostWorstActive,
   subtitle,
   title
 }: PropsWithChildren<AnalysisChartItemWithFiltersProps>) {
@@ -39,26 +43,34 @@ export function AnalysisChartItemWithFilters({
       headerChildren={
         <Stack direction="row" spacing="10px">
           {filters.map(({ type, values }, index) =>
-            type === AGGREGATION ? (
-              <SingleSelect
-                key={index}
-                label={type}
-                data={values}
-                type={type}
-                activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
-                setSelectValue={setSingleSelectValue}
-              />
+            type === AnalysisItemFilterTypes.AGGREGATION ? (
+              <>
+                <SingleSelect
+                  key={index}
+                  label={type}
+                  data={values}
+                  type={type}
+                  activeFilter={activeFilter}
+                  setActiveFilter={setActiveFilter}
+                  setSelectValue={setSingleSelectValue}
+                  isMostWorstActive={isMostWorstActive}
+                  setIsMostWorstActive={setIsMostWorstActive}
+                />
+              </>
             ) : (
-              <MultiSelect
-                key={index}
-                label={type}
-                data={values}
-                type={type}
-                activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
-                setSelectValue={setMultipleSelectValue}
-              />
+              <>
+                <MultiSelect
+                  key={index}
+                  label={type}
+                  data={values}
+                  type={type}
+                  activeFilter={activeFilter}
+                  setActiveFilter={setActiveFilter}
+                  setSelectValue={setMultipleSelectValue}
+                  isMostWorstActive={isMostWorstActive}
+                  setIsMostWorstActive={setIsMostWorstActive}
+                />
+              </>
             )
           )}
         </Stack>

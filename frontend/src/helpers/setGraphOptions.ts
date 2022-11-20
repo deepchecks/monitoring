@@ -37,7 +37,7 @@ export const setLineGraphOptions = (label: string, index: number, dashed = false
   pointBackgroundColor: graphColors[index],
   pointHoverBackgroundColor: '#fff',
   pointHoverBorderColor: pointColor.primary.violet[400],
-  hidden: true,
+  hidden: false,
   borderDash: dashed ? [10, 5] : []
 });
 
