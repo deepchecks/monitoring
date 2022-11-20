@@ -27,11 +27,14 @@ def _():
     collect_telemetry(AlertsScheduler)
 
 
-async def update_model_version_end(async_engine, classification_model_version_id):
+async def update_model_version_end(async_engine, classification_model_version_id, end_time=None):
+    if end_time is None:
+        end_time = datetime.now() + timedelta(days=1)
     async with async_engine.connect() as c:
         await c.execute(
             sa.update(ModelVersion)
             .where(ModelVersion.id == classification_model_version_id)
-            .values({ModelVersion.end_time: datetime.now() + timedelta(days=1)})
+            .values({ModelVersion.start_time: end_time - timedelta(days=1),
+                     ModelVersion.end_time: end_time})
         )
         await c.commit()

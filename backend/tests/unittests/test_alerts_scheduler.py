@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import typing as t
-from datetime import timedelta
+from datetime import datetime, timedelta
 from random import random
 
 import anyio
@@ -84,11 +84,6 @@ async def test_alert_rules_scheduler(
     client: TestClient,
     async_engine: AsyncEngine
 ):
-    # TODO:
-    # looks like this test was modified by someone in an improper way,
-    # it should use `AlertsScheduler` directly and not `EnqueueTasks` query to
-    # enqueue tasks
-
     # == Prepare
     await update_model_version_end(async_engine, classification_model_version_id)
 
@@ -129,6 +124,60 @@ async def test_alert_rules_scheduler(
 
     assert latest_schedule == tasks[-1].execute_after
 
+
+@ pytest.mark.asyncio
+async def test_alert_rules_scheduler_monitor_update(
+    classification_model_check_id: int,
+    classification_model_version_id: int,
+    client: TestClient,
+    async_engine: AsyncEngine
+):
+    # == Prepare
+    await update_model_version_end(async_engine, classification_model_version_id, end_time=datetime.now())
+
+    monitor_id = add_monitor(
+        classification_model_check_id, client,
+        lookback=3600 * 3,
+        name="Test alert",
+        frequency=3600,  # 1 hour
+    )
+
+    async with async_engine.connect() as c:
+        # == Act
+        scheduler = AlertsScheduler(engine=async_engine)
+        await scheduler.enqueue_tasks(c)
+
+        # == Assert
+        tasks_query = sa.select(Task.id, Task.name).order_by(Task.execute_after.asc())
+        tasks = dict((await c.execute(tasks_query)).all())
+    assert len(tasks) == 11
+
+   # update monitor
+    request = {
+        "data_filters": {"filters": [{
+            "operator": "contains",
+            "value": ["a", "ff"],
+            "column": "meta_col"
+        }]}
+    }
+    response = client.put(f"/api/v1/monitors/{monitor_id}", json=request)
+    assert response.status_code == 200
+
+    # test that 10 new alerts were scheduled
+    async with async_engine.connect() as c:
+        # == Act
+        scheduler = AlertsScheduler(engine=async_engine)
+        await scheduler.enqueue_tasks(c)
+
+        # == Assert
+        tasks_query = sa.select(Task.id, Task.name).order_by(Task.execute_after.asc())
+        updated_tasks = dict((await c.execute(tasks_query)).all())
+
+    assert len(updated_tasks) == 11 # should be the same as 10 were deleted
+
+    # assert that 10 new tasks were really created
+    updated_tasks.update(tasks)
+    assert len(updated_tasks) == 21
 
 @pytest.mark.asyncio
 async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(

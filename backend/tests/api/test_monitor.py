@@ -197,9 +197,15 @@ async def test_remove_monitor(classification_model_check_id, client: TestClient)
 
 
 @pytest.mark.asyncio
-async def test_update_monitor(classification_model_check_id, client: TestClient):
+async def test_update_monitor(classification_model_check_id, client: TestClient, async_session):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)
+    monitor: Monitor = await fetch_or_404(async_session, Monitor, id=monitor_id)
+    latest_schedule = monitor.scheduling_start
+    await Monitor.update(async_session, monitor_id, {"latest_schedule": monitor.scheduling_start})
+    await async_session.commit()
+    await async_session.refresh(monitor)
+
     request = {
         "data_filters": {"filters": [{
             "operator": "contains",
@@ -210,6 +216,9 @@ async def test_update_monitor(classification_model_check_id, client: TestClient)
     # Act
     response = client.put(f"/api/v1/monitors/{monitor_id}", json=request)
     assert response.status_code == 200
+    await async_session.refresh(monitor)
+    # assert latest_schedule after update is 10 windows earlier
+    assert latest_schedule - pdl.instance(monitor.latest_schedule) == pdl.duration(seconds=monitor.frequency * 10)
 
 
 @pytest.mark.asyncio
