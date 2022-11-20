@@ -89,13 +89,27 @@ class DeepchecksModelVersionClient:
         """
         raise NotImplementedError
 
+    def log_batch(self, *args, **kwargs):
+        """Log a batch of samples.
+
+        Parameters
+        ----------
+        *args
+            The args.
+        *kwargs
+            The kwargs.
+        """
+        raise NotImplementedError
+
     def send(self):
         """Send all the aggregated samples for upload or update."""
         if len(self._log_samples) > 0:
             self.api.upload_samples(self.model_version_id, self._log_samples)
+            pretty_print(f'{len(self._log_samples)} new samples were successfully logged.')
             self._log_samples.clear()
         if len(self._update_samples) > 0:
             self.api.update_samples(self.model_version_id, self._update_samples)
+            pretty_print(f'{len(self._log_samples)} samples were successfully updated.')
             self._update_samples.clear()
 
     def upload_reference(self, *args, **kwargs):
