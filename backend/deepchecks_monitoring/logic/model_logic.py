@@ -12,7 +12,6 @@
 import logging
 import typing as t
 from collections import defaultdict
-from numbers import Number
 
 import numpy as np
 import pandas as pd
@@ -22,7 +21,6 @@ from deepchecks.core import BaseCheck
 from deepchecks.core.errors import DeepchecksBaseError
 from deepchecks.tabular import Dataset
 from deepchecks.tabular import base_checks as tabular_base_checks
-from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision import VisionData
 from deepchecks.vision import base_checks as vision_base_checks
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
@@ -34,7 +32,7 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 from torch.utils.data import DataLoader
 
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions, CacheResult
+from deepchecks_monitoring.logic.cache_functions import CacheResult
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
@@ -182,25 +180,22 @@ async def get_results_for_model_versions_per_window(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
-        monitor_id: int = None,
-        cache_funcs: CacheFunctions = None,
-        cache_key_base: str = ''
-) -> t.Dict[str, t.Optional[t.Dict[str, Number]]]:
+) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
     task_type = model.task_type
     is_vision_check = isinstance(dp_check,
                                  (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
 
-    model_reduces = {}
+    model_results = {}
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
         # If reference is none then it wasn't queried (single dataset check) and if it's empty then it was queried
         # and data wasn't found, therefore skipping the run.
         if reference_table_dataframe is not None and reference_table_dataframe.empty:
-            model_reduces[model_version.name] = None
+            model_results[model_version] = None
             continue
 
-        reduced_outs = []
+        check_results = []
         if not is_vision_check:
             reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
                 reference_table_dataframe, model_version, top_feat)
@@ -213,7 +208,7 @@ async def get_results_for_model_versions_per_window(
             # If the data is cache result we are assuming it was indeed found in the cache and was validated before
             # passed here (meaning current_data.found must be true here)
             if isinstance(current_data, CacheResult):
-                curr_result = current_data.value
+                curr_result = current_data
             # If current_data is not cache result, then it must be a dataframe. If the dataframe is empty, skipping the
             # run and putting none result
             elif current_data.empty:
@@ -228,44 +223,40 @@ async def get_results_for_model_versions_per_window(
                                                                                          task_type)
                 try:
                     if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
-                        reduced = dp_check.run(test_ds, feature_importance=feat_imp,
-                                               y_pred_train=test_pred, y_proba_train=test_proba,
-                                               with_display=False, model_classes=model_version.classes).reduce_output()
+                        curr_result = dp_check.run(
+                            test_ds, feature_importance=feat_imp,
+                            y_pred_train=test_pred, y_proba_train=test_proba,
+                            with_display=False, model_classes=model_version.classes)
                     elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
-                        reduced = dp_check.run(reference_table_ds, test_ds, feature_importance=feat_imp,
-                                               y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
-                                               y_pred_test=test_pred, y_proba_test=test_proba,
-                                               with_display=False, model_classes=model_version.classes).reduce_output()
+                        curr_result = dp_check.run(
+                            reference_table_ds, test_ds, feature_importance=feat_imp,
+                            y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
+                            y_pred_test=test_pred, y_proba_test=test_proba,
+                            with_display=False, model_classes=model_version.classes)
                     elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
-                        reduced = dp_check.run(test_ds,
-                                               train_predictions=test_pred, train_properties=test_props,
-                                               with_display=False).reduce_output()
+                        curr_result = dp_check.run(
+                            test_ds, train_predictions=test_pred, train_properties=test_props, with_display=False)
                     elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
-                        reduced = dp_check.run(reference_table_ds, test_ds,
-                                               train_predictions=reference_table_pred,
-                                               train_properties=reference_table_props,
-                                               test_predictions=test_pred, test_properties=test_props,
-                                               with_display=False).reduce_output()
+                        curr_result = dp_check.run(
+                            reference_table_ds, test_ds, train_predictions=reference_table_pred,
+                            train_properties=reference_table_props, test_predictions=test_pred,
+                            test_properties=test_props, with_display=False)
                     else:
                         raise ValueError('incompatible check type')
 
-                    curr_result = finalize_reduced_results(reduced, additional_kwargs)
                 # In case of exception in the run putting none result
                 except DeepchecksBaseError as e:
-                    message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()} ' \
-                              f'monitor (id={monitor_id}) got exception: {e.message}'
+                    message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
+                              f'got exception: {e.message}'
                     logging.getLogger('monitor_run_logger').error(message)
                     curr_result = None
 
-            reduced_outs.append(curr_result)
-            # If result is not from cache, and cache available, save it
-            if not isinstance(current_data, CacheResult) and cache_funcs and monitor_id:
-                cache_funcs.set(cache_key_base, model_version.id, monitor_id, curr_test_info['start'],
-                                curr_test_info['end'], curr_result)
+            check_results.append({'result': curr_result, 'start': curr_test_info['start'],
+                                  'end': curr_test_info['end']})
 
-        model_reduces[model_version.name] = reduced_outs
+        model_results[model_version] = check_results
 
-    return model_reduces
+    return model_results
 
 
 async def get_results_for_model_versions_for_reference(
@@ -274,7 +265,7 @@ async def get_results_for_model_versions_for_reference(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
-) -> t.Dict[str, t.Optional[t.Dict[str, Number]]]:
+) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions for reference."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
     task_type = model.task_type
@@ -285,7 +276,7 @@ async def get_results_for_model_versions_for_reference(
     # there is not test_info objects as in the run check per window because test isn't used here
     for (reference_table_dataframe, _), model_version in zip(model_versions_dataframes, model_versions):
         if reference_table_dataframe.empty:
-            model_reduces[model_version.name] = None
+            model_reduces[model_version] = None
             continue
 
         reduced_outs = []
@@ -297,25 +288,23 @@ async def get_results_for_model_versions_for_reference(
                 reference_table_dataframe, task_type)
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
-                reduced = dp_check.run(reference_table_ds, feature_importance=feat_imp,
-                                       y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
-                                       with_display=False).reduce_output()
+                curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,
+                                           y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
+                                           with_display=False)
             elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
-                reduced = dp_check.run(reference_table_ds,
-                                       train_predictions=reference_table_pred, train_properties=reference_table_props,
-                                       with_display=False).reduce_output()
+                curr_result = dp_check.run(reference_table_ds, train_predictions=reference_table_pred,
+                                           train_properties=reference_table_props, with_display=False)
             else:
                 raise ValueError('incompatible check type')
 
-            curr_result = finalize_reduced_results(reduced, additional_kwargs)
         # In case of exception in the run putting none result
         except DeepchecksBaseError as e:
             logging.getLogger('monitor_run_logger').exception(e.message)
             curr_result = None
 
-        reduced_outs.append(curr_result)
+        reduced_outs.append({'result': curr_result})
 
-        model_reduces[model_version.name] = reduced_outs
+        model_reduces[model_version] = reduced_outs
 
     return model_reduces
 
@@ -334,29 +323,3 @@ def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
         return random_sample(select_time_filtered, mon_table, n_samples=n_samples)
     else:
         return None
-
-
-def finalize_reduced_results(results, additional_kwargs) -> t.Dict[str, Number]:
-    """Apply filtering on the check results (after reduce)."""
-    final_result = {}
-
-    def set_key_value(key, value):
-        # if the key is tuple we need to transform it to string
-        key = ' '.join(key) if isinstance(key, tuple) else key
-        final_result[key] = un_numpy(value)
-
-    # filter the keys if needed
-    if additional_kwargs and additional_kwargs.res_conf:
-        keys_to_keep = set(additional_kwargs.res_conf)
-    else:
-        keys_to_keep = None
-
-    for key, value in results.items():
-        if keys_to_keep:
-            # If we have key as tuple we check for filter on the last value in the tuple, else regular
-            if (isinstance(key, tuple) and key[-1] in keys_to_keep) or key in keys_to_keep:
-                set_key_value(key, value)
-        else:
-            set_key_value(key, value)
-
-    return final_result

@@ -578,7 +578,7 @@ def _process_batch(
         else:
             metadata['label'] = labels
 
-    batch = metadata.to_dict(orient='records')
+    batch: t.Iterable = metadata.to_dict(orient='records')
 
     if data is None:
         return [

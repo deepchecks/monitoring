@@ -10,21 +10,24 @@
 
 """Module defining utility functions for check running."""
 import typing as t
+from collections import defaultdict
+from numbers import Number
 
 import pandas as pd
 import pendulum as pdl
-from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
+from deepchecks import BaseCheck, CheckResult, SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReducePropertyMixin
 from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
                                                      regression_scorers_higher_is_better_dict,
                                                      regression_scorers_lower_is_better_dict)
+from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from pydantic import BaseModel, root_validator, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions, CacheResult
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
                                                      filter_monitor_table_by_window_and_data_filters,
                                                      filter_table_selection_by_data_filters,
@@ -54,13 +57,11 @@ class BasicMonitorOptions(BaseModel):
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
 
 
-class MonitorOptions(BasicMonitorOptions):
-    """Monitor run schema."""
+class SingleWindowMonitorOptions(BasicMonitorOptions):
+    """Adds to the monitor options start and end times, without any windows related options."""
 
     end_time: str
     start_time: str
-    frequency: t.Optional[int] = None
-    aggregation_window: t.Optional[int] = None
 
     def start_time_dt(self) -> pdl.DateTime:
         """Get start time as datetime object."""
@@ -80,6 +81,13 @@ class MonitorOptions(BasicMonitorOptions):
         if seconds_range < TimeUnit.HOUR:
             raise ValueError("end_time must be at least an hour after start_time")
         return values
+
+
+class MonitorOptions(SingleWindowMonitorOptions):
+    """Add to single window monitor options frequency and aggregation window to make it multi window."""
+
+    frequency: t.Optional[int] = None
+    aggregation_window: t.Optional[int] = None
 
     @classmethod
     @validator("frequency")
@@ -316,16 +324,36 @@ async def run_check_per_window_in_range(
     await session.commit()
 
     # get result from active sessions and run the check per each model version
-    model_reduces = await get_results_for_model_versions_per_window(model_version_dataframes,
+    check_results = await get_results_for_model_versions_per_window(model_version_dataframes,
                                                                     model_versions,
                                                                     model,
                                                                     dp_check,
-                                                                    additional_kwargs,
-                                                                    monitor_id,
-                                                                    cache_funcs,
-                                                                    cache_key_base)
+                                                                    additional_kwargs)
 
-    return {"output": model_reduces, "time_labels": [d.isoformat() for d in windows_end]}
+    # Reduce the check results
+    reduce_results = defaultdict(list)
+    for model_version, results in check_results.items():
+        # Model version might have no results at all. For example for train-test checks when there is no reference data
+        if results is None:
+            reduce_results[model_version.name] = None
+            continue
+        for result_dict in results:
+            result_value = result_dict["result"]
+            if result_value is None:
+                reduce_results[model_version.name].append(None)
+            elif isinstance(result_value, CacheResult):
+                reduce_results[model_version.name].append(result_value.value)
+            elif isinstance(result_value, CheckResult):
+                result_value = reduce_result_output(result_value, additional_kwargs)
+                reduce_results[model_version.name].append(result_value)
+                # If cache available and there is monitor id, save result to cache
+                if cache_funcs and monitor_id:
+                    cache_funcs.set(cache_key_base, model_version.id, monitor_id, result_dict["start"],
+                                    result_dict["end"], result_value)
+            else:
+                raise Exception(f"Got unknown result type {type(result_value)}, should never reach here")
+
+    return {"output": reduce_results, "time_labels": [d.isoformat() for d in windows_end]}
 
 
 async def run_check_window(
@@ -397,21 +425,31 @@ async def run_check_window(
 
     # get result from active sessions and run the check per each model version
     if not reference_only:
-        model_reduces_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
+        model_results_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
                                                                                    model_versions,
                                                                                    model,
                                                                                    dp_check,
                                                                                    monitor_options.additional_kwargs)
     else:
-        model_reduces_per_window = await get_results_for_model_versions_for_reference(model_version_dataframes,
+        model_results_per_window = await get_results_for_model_versions_for_reference(model_version_dataframes,
                                                                                       model_versions,
                                                                                       model,
                                                                                       dp_check,
                                                                                       monitor_options.additional_kwargs)
-    # the original function is more general and runs it per window, we have only 1 window here
+
     model_reduces = {}
-    for model_version_name, reduces_per_window in model_reduces_per_window.items():
-        model_reduces[model_version_name] = None if reduces_per_window is None else reduces_per_window[0]
+    for model_version, results_per_window in model_results_per_window.items():
+        if results_per_window is None:
+            model_reduces[model_version.name] = None
+        else:
+            # the original function is more general and runs it per window, we have only 1 window here
+            result_value = results_per_window[0]["result"]
+            if result_value is None:
+                model_reduces[model_version.name] = None
+            elif isinstance(result_value, CheckResult):
+                result_value = reduce_result_output(result_value, monitor_options.additional_kwargs)
+                model_reduces[model_version.name] = result_value
+
     return model_reduces
 
 
@@ -501,3 +539,30 @@ async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.
 
         model_version_dataframes.append((reference_table_data_dataframe, test_infos))
     return model_version_dataframes
+
+
+def reduce_result_output(result: CheckResult, additional_kwargs) -> t.Dict[str, Number]:
+    """Reduce check result and apply filtering on the check results (after reduce)."""
+    final_result = {}
+
+    def set_key_value(key, value):
+        # if the key is tuple we need to transform it to string
+        key = " ".join(key) if isinstance(key, tuple) else key
+        final_result[key] = un_numpy(value)
+
+    # filter the keys if needed
+    if additional_kwargs and additional_kwargs.res_conf:
+        keys_to_keep = set(additional_kwargs.res_conf)
+    else:
+        keys_to_keep = None
+
+    reduced_result = result.reduce_output()
+    for key, value in reduced_result.items():
+        if keys_to_keep:
+            # If we have key as tuple we check for filter on the last value in the tuple, else regular
+            if (isinstance(key, tuple) and key[-1] in keys_to_keep) or key in keys_to_keep:
+                set_key_value(key, value)
+        else:
+            set_key_value(key, value)
+
+    return final_result
