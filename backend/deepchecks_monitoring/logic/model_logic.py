@@ -180,6 +180,7 @@ async def get_results_for_model_versions_per_window(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
+        with_display: bool = False
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
@@ -226,21 +227,22 @@ async def get_results_for_model_versions_per_window(
                         curr_result = dp_check.run(
                             test_ds, feature_importance=feat_imp,
                             y_pred_train=test_pred, y_proba_train=test_proba,
-                            with_display=False, model_classes=model_version.classes)
+                            with_display=with_display, model_classes=model_version.classes)
                     elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
                         curr_result = dp_check.run(
                             reference_table_ds, test_ds, feature_importance=feat_imp,
                             y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                             y_pred_test=test_pred, y_proba_test=test_proba,
-                            with_display=False, model_classes=model_version.classes)
+                            with_display=with_display, model_classes=model_version.classes)
                     elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
                         curr_result = dp_check.run(
-                            test_ds, train_predictions=test_pred, train_properties=test_props, with_display=False)
+                            test_ds, train_predictions=test_pred, train_properties=test_props,
+                            with_display=with_display)
                     elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
                         curr_result = dp_check.run(
                             reference_table_ds, test_ds, train_predictions=reference_table_pred,
                             train_properties=reference_table_props, test_predictions=test_pred,
-                            test_properties=test_props, with_display=False)
+                            test_properties=test_props, with_display=with_display)
                     else:
                         raise ValueError('incompatible check type')
 

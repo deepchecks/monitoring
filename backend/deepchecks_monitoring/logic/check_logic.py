@@ -11,6 +11,7 @@
 """Module defining utility functions for check running."""
 import typing as t
 from collections import defaultdict
+from copy import deepcopy
 from numbers import Number
 
 import pandas as pd
@@ -55,6 +56,15 @@ class BasicMonitorOptions(BaseModel):
 
     filter: t.Optional[DataFilterList] = None
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
+
+    def add_filters(self, added_filters: DataFilterList):
+        """Return a copy of this options with the added given filters."""
+        copied = deepcopy(self)
+        if copied.filter is None:
+            copied.filter = added_filters
+        else:
+            copied.filter = DataFilterList(filters=added_filters.filters + copied.filter.filters)
+        return copied
 
 
 class SingleWindowMonitorOptions(BasicMonitorOptions):
@@ -344,7 +354,7 @@ async def run_check_per_window_in_range(
             elif isinstance(result_value, CacheResult):
                 reduce_results[model_version.name].append(result_value.value)
             elif isinstance(result_value, CheckResult):
-                result_value = reduce_result_output(result_value, additional_kwargs)
+                result_value = reduce_check_result(result_value, additional_kwargs)
                 reduce_results[model_version.name].append(result_value)
                 # If cache available and there is monitor id, save result to cache
                 if cache_funcs and monitor_id:
@@ -358,20 +368,21 @@ async def run_check_per_window_in_range(
 
 async def run_check_window(
         check: Check,
-        monitor_options: MonitorOptions,
+        monitor_options: SingleWindowMonitorOptions,
         session: AsyncSession,
         model: Model,
         model_versions: t.List[ModelVersion],
         reference_only: bool = False,
         n_samples: int = 10_000,
-) -> t.Dict[str, t.Any]:
+        with_display: bool = False
+) -> t.Dict[ModelVersion, t.Optional[t.Dict]]:
     """Run a check for each time window by lookback or for reference only.
 
     Parameters
     ----------
     check : Check
         The check to run.
-    monitor_options : MonitorOptions
+    monitor_options : SingleWindowMonitorOptions
         The monitor options to use.
     session : AsyncSession
         The database session to use.
@@ -383,6 +394,8 @@ async def run_check_window(
         Whether to run the check on reference data only.
     n_samples : int, optional
         The number of samples to use.
+    with_display : bool, optional
+        Whether to run the check with display or not.
 
     Returns
     -------
@@ -418,10 +431,8 @@ async def run_check_window(
 
         model_versions_sessions.append((ref_session, [info]))
 
-    # Complete queries and then commit the connection, to release back to the pool (since the check might take long time
-    # to run, and we don't want to unnecessarily hold the connection)
+    # Complete queries
     model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
-    await session.commit()
 
     # get result from active sessions and run the check per each model version
     if not reference_only:
@@ -429,7 +440,8 @@ async def run_check_window(
                                                                                    model_versions,
                                                                                    model,
                                                                                    dp_check,
-                                                                                   monitor_options.additional_kwargs)
+                                                                                   monitor_options.additional_kwargs,
+                                                                                   with_display)
     else:
         model_results_per_window = await get_results_for_model_versions_for_reference(model_version_dataframes,
                                                                                       model_versions,
@@ -437,27 +449,19 @@ async def run_check_window(
                                                                                       dp_check,
                                                                                       monitor_options.additional_kwargs)
 
-    model_reduces = {}
+    model_results = {}
     for model_version, results_per_window in model_results_per_window.items():
-        if results_per_window is None:
-            model_reduces[model_version.name] = None
-        else:
-            # the original function is more general and runs it per window, we have only 1 window here
-            result_value = results_per_window[0]["result"]
-            if result_value is None:
-                model_reduces[model_version.name] = None
-            elif isinstance(result_value, CheckResult):
-                result_value = reduce_result_output(result_value, monitor_options.additional_kwargs)
-                model_reduces[model_version.name] = result_value
+        # the original function is more general and runs it per window, we have only 1 window here
+        model_results[model_version] = None if results_per_window is None else results_per_window[0]
 
-    return model_reduces
+    return model_results
 
 
 def load_data_for_check(
         model_version: ModelVersion,
         session: AsyncSession,
         features: t.List[str],
-        options: MonitorOptions,
+        options: SingleWindowMonitorOptions,
         with_reference=True,
         with_test=True,
         n_samples=10_000,
@@ -541,7 +545,7 @@ async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.
     return model_version_dataframes
 
 
-def reduce_result_output(result: CheckResult, additional_kwargs) -> t.Dict[str, Number]:
+def reduce_check_result(result: CheckResult, additional_kwargs) -> t.Dict[str, Number]:
     """Reduce check result and apply filtering on the check results (after reduce)."""
     final_result = {}
 
@@ -566,3 +570,15 @@ def reduce_result_output(result: CheckResult, additional_kwargs) -> t.Dict[str, 
             set_key_value(key, value)
 
     return final_result
+
+
+def reduce_check_window(model_results, monitor_options):
+    """Reduce all the model versions results got from a check run on single window."""
+    reduced_results = {}
+    for model_version, result_dict in model_results.items():
+        if result_dict["result"] is None:
+            reduced_results[model_version.name] = None
+        else:
+            reduced_results[model_version.name] = reduce_check_result(result_dict["result"],
+                                                                      monitor_options.additional_kwargs)
+    return reduced_results

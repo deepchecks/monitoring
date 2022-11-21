@@ -43,3 +43,5 @@ dtype
 probas
 PGDataTableDropTrigger
 PGDataTableDropFunc
+quantile
+quantiles

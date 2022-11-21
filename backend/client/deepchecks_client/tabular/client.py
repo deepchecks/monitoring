@@ -578,7 +578,7 @@ def _process_batch(
         else:
             metadata['label'] = labels
 
-    batch: t.Iterable = metadata.to_dict(orient='records')
+    batch = metadata.to_dict(orient='records')
 
     if data is None:
         return [
@@ -589,7 +589,7 @@ def _process_batch(
                 model_classes=model_classes,
                 **record
             )
-            for record in batch
+            for record in batch  # pylint: disable=not-an-iterable
         ]
     else:
         # notify user about suspicious sample indexes

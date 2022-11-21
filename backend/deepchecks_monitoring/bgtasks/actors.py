@@ -26,7 +26,7 @@ from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import DatabaseSettings
-from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_window
+from deepchecks_monitoring.logic.check_logic import MonitorOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models.alert import Alert
 from deepchecks_monitoring.models.alert_rule import AlertRule, Condition
@@ -91,18 +91,21 @@ async def execute_monitor(
         logger.info("Model(id:%s) is empty (does not have versions)", check.model_id)
         return []
 
+    options = MonitorOptions(
+        additional_kwargs=monitor.additional_kwargs,
+        start_time=start_time.isoformat(),
+        end_time=end_time.isoformat(),
+        filter=t.cast(DataFilterList, monitor.data_filters)
+    )
     check_results = await run_check_window(
         check,
-        monitor_options=MonitorOptions(
-            additional_kwargs=monitor.additional_kwargs,
-            start_time=start_time.isoformat(),
-            end_time=end_time.isoformat(),
-            filter=t.cast(DataFilterList, monitor.data_filters)
-        ),
+        monitor_options=options,
         session=session,
         model=model_versions[0].model,
         model_versions=model_versions
     )
+
+    check_results = reduce_check_window(check_results, options)
 
     logger.debug("Check execution result: %s", check_results)
     check_results = {k: v for k, v in check_results.items() if v is not None}

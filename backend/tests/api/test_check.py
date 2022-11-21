@@ -13,6 +13,7 @@ import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
+from hamcrest import assert_that, contains_exactly, has_entries, has_length
 
 from deepchecks_monitoring.models import TaskType
 from tests.conftest import (add_check, add_classification_data, add_model, add_model_version,
@@ -374,7 +375,8 @@ async def test_feature_check_info(classification_model_feature_check_id, classif
 
 
 async def run_lookback(classification_model_check_id, classification_model_version_id, client: TestClient):
-    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=2)
     assert response.status_code == 200, response.json()
     start_time = start_time.isoformat()
     end_time = end_time.add(hours=1).isoformat()
@@ -429,7 +431,8 @@ async def test_run_lookback_empty_filters(classification_model_check_id,
 
 async def run_window(classification_model_check_id,
                      classification_model_version_id, client: TestClient):
-    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=2)
     assert response.status_code == 200, response.json()
     start_time = start_time.isoformat()
     end_time = end_time.add(hours=1).isoformat()
@@ -808,3 +811,70 @@ async def test_check_classification_without_classes(client: TestClient):
                            json={"start_time": day_before_curr_time.isoformat(),
                                  "end_time": curr_time.isoformat()})
     assert response.json() == {"v1":  {"accuracy": 0.2, "f1_macro": 0.16666666666666666}}
+
+
+@pytest.mark.asyncio
+async def test_check_group_by_categorical(client: TestClient, classification_model_version_id,
+                                          classification_model_check_id):
+    # Arrange
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    assert response.status_code == 200, response.json()
+
+    # Act
+    feature = "b"
+    url = f"/api/v1/checks/{classification_model_check_id}/group-by/{classification_model_version_id}/{feature}"
+    response = client.post(url, json={"start_time": start_time.isoformat(), "end_time": end_time.isoformat()})
+
+    # Assert
+    assert response.status_code == 200, response.json()
+    assert_that(response.json(), contains_exactly(has_entries({
+        "name": "ppppp", "value": has_length(3), "display": has_length(0), "count": 4
+    })))
+
+
+@pytest.mark.asyncio
+async def test_check_group_by_numeric_single_values_in_bin(
+        client: TestClient, classification_model_version_id, classification_model_check_id):
+    # Arrange
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 7]]
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=2, daterange=daterange)
+    assert response.status_code == 200, response.json()
+
+    # Act
+    feature = "a"
+    url = f"/api/v1/checks/{classification_model_check_id}/group-by/{classification_model_version_id}/{feature}"
+    response = client.post(url, json={"start_time": start_time.isoformat(),
+                                      "end_time": end_time.add(minutes=1).isoformat()})
+    # Assert
+    assert response.status_code == 200, response.json()
+    assert_that(response.json(), contains_exactly(
+        has_entries({"name": "10.0", "value": has_length(3), "display": has_length(0), "count": 4}),
+        has_entries({"name": "11.0", "value": has_length(3), "display": has_length(0), "count": 1}),
+        has_entries({"name": "12.0", "value": has_length(3), "display": has_length(0), "count": 1}),
+    ))
+
+
+@pytest.mark.asyncio
+async def test_check_group_by_numeric(client: TestClient, classification_model_version_id,
+                                      classification_model_check_id):
+    # Arrange
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=30)
+    assert response.status_code == 200, response.json()
+
+    # Act
+    feature = "a"
+    url = f"/api/v1/checks/{classification_model_check_id}/group-by/{classification_model_version_id}/{feature}"
+    response = client.post(url, json={"start_time": start_time.isoformat(),
+                                      "end_time": end_time.add(minutes=1).isoformat()})
+    # Assert
+    assert response.status_code == 200, response.json()
+    # Checking first and last bin
+    assert_that(response.json()[0], has_entries(
+        {"name": "[10.0, 16.0)", "value": has_length(3), "display": has_length(0), "count": 43}))
+    assert_that(response.json()[-1], has_entries(
+        {"name": "[85.0, 126.0]", "value": has_length(3), "display": has_length(0), "count": 16}))
+

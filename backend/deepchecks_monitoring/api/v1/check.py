@@ -14,6 +14,7 @@ import pendulum as pdl
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
+from plotly.basedatatypes import BaseFigure
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,15 +24,18 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
-from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, MonitorOptions, get_feature_property_info,
-                                                     get_metric_class_info, run_check_per_window_in_range,
-                                                     run_check_window)
+from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, MonitorOptions, SingleWindowMonitorOptions,
+                                                     get_feature_property_info, get_metric_class_info,
+                                                     reduce_check_result, reduce_check_window,
+                                                     run_check_per_window_in_range, run_check_window)
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
-from deepchecks_monitoring.models import Check, Model
+from deepchecks_monitoring.logic.statistics import bins_for_feature
+from deepchecks_monitoring.models import Check, ColumnType, Model
 from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.utils import (CheckIdentifier, ExtendedAsyncSession, ModelIdentifier, MonitorCheckConf,
-                                         NameIdResponse, exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
+                                         ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
+                                         exists_or_404, fetch_or_404, field_length)
 
 from .router import router
 
@@ -88,6 +92,15 @@ class CheckResultSchema(BaseModel):
 
     output: t.Dict
     time_labels: t.List[str]
+
+
+class CheckGroupBySchema(BaseModel):
+    """Schema for result of a check group by run."""
+
+    name: str
+    value: t.Dict
+    display: t.List
+    count: int
 
 
 @router.post(
@@ -267,7 +280,7 @@ async def run_standalone_check_per_window_in_range(
 @router.post('/checks/{check_id}/run/window', tags=[Tags.CHECKS])
 async def get_check_window(
         check_id: int,
-        monitor_options: MonitorOptions,
+        monitor_options: SingleWindowMonitorOptions,
         session: AsyncSession = AsyncSessionDep
 ):
     """Run a check for the time window.
@@ -290,7 +303,8 @@ async def get_check_window(
     start_time = monitor_options.start_time_dt()
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
-    return await run_check_window(check, monitor_options, session, model, model_versions)
+    model_results = await run_check_window(check, monitor_options, session, model, model_versions)
+    return reduce_check_window(model_results, monitor_options)
 
 
 @router.post('/checks/{check_id}/run/reference', tags=[Tags.CHECKS])
@@ -324,8 +338,10 @@ async def get_check_reference(
         model, model_versions = await fetch_or_404(session, Model, id=check.model_id), []
     else:
         model_versions: t.List[ModelVersion] = model.versions
-    return await run_check_window(check, monitor_options, session, model, model_versions,
-                                  reference_only=True, n_samples=100_000)
+
+    model_results = await run_check_window(check, monitor_options, session, model, model_versions, reference_only=True,
+                                           n_samples=100_000)
+    return reduce_check_window(model_results, monitor_options)
 
 
 @router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])
@@ -366,3 +382,87 @@ async def get_check_info(
     else:
         check_parameter_conf = {'check_conf': None, 'res_conf': None}
     return check_parameter_conf
+
+
+@router.post('/checks/{check_id}/group-by/{model_version_id}/{feature}',
+             response_model=t.List[CheckGroupBySchema], tags=[Tags.CHECKS])
+async def run_check_group_by_feature(
+        check_id: int,
+        model_version_id: int,
+        feature: str,
+        monitor_options: SingleWindowMonitorOptions,
+        session: AsyncSession = AsyncSessionDep
+):
+    """Run check window with a group by on given feature.
+
+    Parameters
+    ----------
+    check_id : int
+        ID of the check.
+    model_version_id : int
+    feature : str
+        Feature to group by
+    monitor_options : SingleWindowMonitorOptions
+       The monitor options.
+    session : AsyncSession
+        SQLAlchemy session.
+
+    Returns
+    -------
+    List[CheckGroupBySchema]
+    """
+    check: Check = await fetch_or_404(session, Check, id=check_id)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
+                                                     options=joinedload(ModelVersion.model))
+    # Validate feature
+    possible_columns = list(model_version.features_columns.keys()) + list(model_version.additional_data_columns.keys())
+    if feature not in possible_columns:
+        return BadRequest(f'Feature {feature} was not found in model version schema')
+
+    feature_type, bins = await bins_for_feature(model_version, feature, session,
+                                                monitor_options.start_time_dt(), monitor_options.end_time_dt())
+
+    filters = []
+    if feature_type == ColumnType.CATEGORICAL:
+        for curr_bin in bins:
+            filters.append({
+                'name': curr_bin['value'],
+                'filters': [DataFilter(column=feature, operator=OperatorsEnum.EQ, value=curr_bin['value'])],
+                'count': curr_bin['count']
+            })
+    else:
+        # If we have less unique values than number of bins, then each bin will have single value, then display
+        # them like categorical
+        all_bins_single_value = all(bin['min'] == bin['max'] for bin in bins)
+        for index, curr_bin in enumerate(bins):
+            if all_bins_single_value:
+                filters.append({
+                    'name': curr_bin['min'],
+                    'filters': [DataFilter(column=feature, operator=OperatorsEnum.EQ, value=curr_bin['min'])],
+                    'count': curr_bin['count']
+                })
+            else:
+                # The bins from bins_for_feature returns the min, max inclusive and non-overlapping
+                bin_start = curr_bin['min']
+                bin_end = curr_bin['max']
+                # In order to display the bins as overlapping, takes the next bin start as current bin end
+                bin_end_display = f'{bins[index + 1]["min"]})' if index + 1 < len(bins) else f'{bin_end}]'
+                filters.append({
+                    'name': f'[{bin_start}, {bin_end_display}',
+                    'filters': [DataFilter(column=feature, operator=OperatorsEnum.GE, value=bin_start),
+                                DataFilter(column=feature, operator=OperatorsEnum.LE, value=bin_end)],
+                    'count': curr_bin['count']
+                })
+
+    results = []
+    for f in filters:
+        options = monitor_options.add_filters(DataFilterList(filters=f['filters']))
+        window_result = await run_check_window(check, options, session, model_version.model, [model_version],
+                                               with_display=True)
+        for model_version, result in window_result.items():
+            check_result = result['result']
+            reduce_value = reduce_check_result(check_result, options.additional_kwargs)
+            display = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
+            results.append({'name': f['name'], 'value': reduce_value, 'display': display, 'count': f['count']})
+
+    return results

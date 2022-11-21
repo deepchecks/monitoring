@@ -533,6 +533,7 @@ def add_classification_data(
         id_prefix="",
         is_labeled=True,
         with_proba=True,
+        samples_per_date=1
 ):
     if daterange is None:
         curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
@@ -542,19 +543,20 @@ def add_classification_data(
     data = []
 
     for i, date in enumerate(daterange):
-        time = date.isoformat()
-        label = ("2" if i != 1 else "1") if is_labeled else None
-        sample = {
-            "_dc_sample_id": f"{id_prefix}{i}",
-            "_dc_time": time,
-            "_dc_prediction": "2" if i % 2 else "1",
-            "_dc_label": label,
-            "a": 10 + i,
-            "b": "ppppp",
-        }
-        if with_proba:
-            sample["_dc_prediction_probabilities"] = [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3]
-        data.append(sample)
+        for j in range(samples_per_date):
+            time = date.isoformat()
+            label = ("2" if i != 1 else "1") if is_labeled else None
+            sample = {
+                "_dc_sample_id": f"{id_prefix}{i}_{j}",
+                "_dc_time": time,
+                "_dc_prediction": "2" if i % 2 else "1",
+                "_dc_label": label,
+                "a": 10 + i * j,
+                "b": "ppppp",
+            }
+            if with_proba:
+                sample["_dc_prediction_probabilities"] = [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3]
+            data.append(sample)
 
     resp = client.post(f"/api/v1/model-versions/{model_version_id}/data", json=data)
     return resp, daterange[0], daterange[-1]
