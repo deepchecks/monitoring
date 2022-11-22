@@ -140,6 +140,7 @@ function DiagramLine({
 
   const options: ChartOptions<'line'> = {
     maintainAspectRatio: false,
+    animation: false,
     responsive: true,
     onResize: chart => {
       chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
@@ -164,7 +165,7 @@ function DiagramLine({
       },
       line: {
         borderWidth: 2,
-        tension: 0.4,
+        tension: 0,
         fill: true
       }
     },

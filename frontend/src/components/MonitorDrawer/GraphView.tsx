@@ -41,7 +41,7 @@ export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: Gr
         {isLoading ? (
           <Loader />
         ) : graphData?.datasets.length ? (
-          <DiagramLine data={graphData as ChartData<'line', GraphData>} />
+          <DiagramLine data={graphData as ChartData<'line', GraphData>} height={400}/>
         ) : (
           <>
             <NoDataToShow />
