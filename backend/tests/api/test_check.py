@@ -60,6 +60,37 @@ def add_multiclass_reference_data(client, classification_version_model_id):
     return send_reference_request(client, classification_version_model_id, samples * 100)
 
 
+def add_detection_data(client, detection_vision_model_version_id, day_before_curr_time):
+    for i in [1, 3, 7, 13]:
+        time = day_before_curr_time.add(hours=i).isoformat()
+        request = []
+        for j in range(10):
+            request.append({
+                "_dc_sample_id": f"{i} {j}",
+                "_dc_time": time,
+                "_dc_prediction":
+                    [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]]
+                    if i % 2 else [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
+                "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
+                "images Aspect Ratio": 0.677 / i,
+                "images Brightness": 0.5,
+                "images Area": 0.5,
+                "images RMS Contrast": 0.5,
+                "images Mean Red Relative Intensity": 0.5,
+                "images Mean Blue Relative Intensity": 0.5,
+                "images Mean Green Relative Intensity": 0.5,
+                "partial_images Aspect Ratio": [0.677 / i, 0.9 / i],
+                "partial_images Brightness": [0.5, 0.5],
+                "partial_images Area": [0.5, 0.5],
+                "partial_images RMS Contrast": [0.5, 0.5],
+                "partial_images Mean Red Relative Intensity": [0.5, 0.5],
+                "partial_images Mean Blue Relative Intensity": [0.5, 0.5],
+                "partial_images Mean Green Relative Intensity": [0.5, 0.5],
+            })
+        response = client.post(f"/api/v1/model-versions/{detection_vision_model_version_id}/data", json=request)
+        assert response.status_code == 200
+
+
 @pytest.mark.asyncio
 async def test_add_check(classification_model_id, client: TestClient):
     # Arrange
@@ -326,6 +357,52 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
         sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
 
 
+@pytest.mark.asyncio
+async def test_metric_check_info_w_vision_label_map(classification_vision_performance_check_id,
+                                                    classification_vision_model_version_w_label_map_id,
+                                                    client: TestClient):
+    add_vision_classification_data(classification_vision_model_version_w_label_map_id, client)
+
+    response = client.get(f"/api/v1/checks/{classification_vision_performance_check_id}/info")
+    assert response.status_code == 200
+
+    assert isinstance(response.json()["check_conf"], list)
+
+    res_conf_json = response.json()["res_conf"]
+    assert res_conf_json["type"] == "class"
+    assert res_conf_json["is_agg_shown"] is False
+    assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
+        sorted([{"is_agg": None, "name": "ahh"}, {"is_agg": None, "name": "ooh"}], key=lambda x: x["name"])
+
+
+@pytest.mark.asyncio
+async def test_metric_check_info_w_vision_detection(detection_vision_model_id,
+                                                    detection_vision_model_version_id,
+                                                    client: TestClient):
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+
+    add_detection_data(client, detection_vision_model_version_id, day_before_curr_time)
+
+    check_id = add_check(detection_vision_model_id, client=client,
+                         config={"class_name": "SingleDatasetPerformance",
+                                 "params": {},
+                                 "module_name": "deepchecks.vision.checks"
+                                 })
+    response = client.get(f"/api/v1/checks/{check_id}/info")
+    assert response.status_code == 200
+
+    assert isinstance(response.json()["check_conf"], list)
+
+    res_conf_json = response.json()["res_conf"]
+    assert res_conf_json["type"] == "class"
+    assert res_conf_json["is_agg_shown"] is False
+    assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
+        sorted([{"is_agg": None, "name": "42"}, {"is_agg": None, "name": "45"},
+                {"is_agg": None, "name": "50"}, {"is_agg": None, "name": "51"}],
+               key=lambda x: x["name"]), res_conf_json["values"]
+
+
 @ pytest.mark.asyncio
 async def test_property_check_info(classification_vision_model_property_check_id,
                                    classification_vision_model_version_id,
@@ -376,7 +453,7 @@ async def test_feature_check_info(classification_model_feature_check_id, classif
 
 async def run_lookback(classification_model_check_id, classification_model_version_id, client: TestClient):
     response, start_time, end_time = add_classification_data(classification_model_version_id, client,
-                                                             samples_per_date=2)
+                                                             samples_per_date=50)
     assert response.status_code == 200, response.json()
     start_time = start_time.isoformat()
     end_time = end_time.add(hours=1).isoformat()
@@ -397,7 +474,7 @@ async def run_lookback(classification_model_check_id, classification_model_versi
                                  "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
                                                         {"column": "b", "operator": "contains", "value": "ppppp"}]}})
     json_rsp = response.json()
-    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 2
+    assert len([out for out in json_rsp["output"]["v1"] if out is not None]) == 4
     assert_lookback_out(json_rsp["output"])
 
 
@@ -473,7 +550,8 @@ async def test_run_lookback(classification_model_check_id, classification_model_
 @pytest.mark.asyncio
 async def test_run_window_train_test(classification_model_check_train_test_id,
                                      classification_model_version_id, client: TestClient):
-    response, start_time, end_time = add_classification_data(classification_model_version_id, client)
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=5)
     assert response.status_code == 200, response.json()
     start_time = start_time.isoformat()
     end_time = end_time.add(hours=1).isoformat()
@@ -483,9 +561,7 @@ async def test_run_window_train_test(classification_model_check_train_test_id,
     response = client.post(f"/api/v1/checks/{classification_model_check_train_test_id}/run/window",
                            json={"start_time": start_time, "end_time": end_time})
     json_rsp = response.json()
-    assert json_rsp == {"v1": {"F1": 0.1111111111111111,
-                        "Precision": 0.16666666666666666,
-                               "Recall": 0.08333333333333333}}
+    assert json_rsp == {"v1": {"Label Drift Score": 0.25584714587462043}}
 
 
 @pytest.mark.asyncio
@@ -672,34 +748,9 @@ async def test_run_check_vision_detection(detection_vision_model_id,
     assert response.status_code == 200
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
-    for i in [1, 3, 7, 13]:
-        time = day_before_curr_time.add(hours=i).isoformat()
-        request = []
-        for j in range(10):
-            request.append({
-                "_dc_sample_id": f"{i} {j}",
-                "_dc_time": time,
-                "_dc_prediction":
-                    [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]]
-                    if i % 2 else [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
-                "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
-                "images Aspect Ratio": 0.677 / i,
-                "images Brightness": 0.5,
-                "images Area": 0.5,
-                "images RMS Contrast": 0.5,
-                "images Mean Red Relative Intensity": 0.5,
-                "images Mean Blue Relative Intensity": 0.5,
-                "images Mean Green Relative Intensity": 0.5,
-                "partial_images Aspect Ratio": [0.677 / i, 0.9 / i],
-                "partial_images Brightness": [0.5, 0.5],
-                "partial_images Area": [0.5, 0.5],
-                "partial_images RMS Contrast": [0.5, 0.5],
-                "partial_images Mean Red Relative Intensity": [0.5, 0.5],
-                "partial_images Mean Blue Relative Intensity": [0.5, 0.5],
-                "partial_images Mean Green Relative Intensity": [0.5, 0.5],
-            })
-        response = client.post(f"/api/v1/model-versions/{detection_vision_model_version_id}/data", json=request)
-        assert response.status_code == 200
+
+    add_detection_data(client, detection_vision_model_version_id, day_before_curr_time)
+
     sample = {
         "_dc_prediction": [[325.03, 1.78, 302.36, 237.5, 0.7, 45], [246.24, 222.74, 339.79, 255.17, 0.57, 50]],
         "_dc_label": [[42, 1.08, 187.69, 611.59, 285.84], [51, 249.6, 229.27, 316.24, 245.08]],
@@ -799,6 +850,24 @@ async def test_property_check_w_properties(classification_vision_model_property_
 
 
 @pytest.mark.asyncio
+async def test_vision_check_w_label_map(classification_vision_performance_check_id,
+                                        classification_vision_model_version_w_label_map_id,
+                                        client: TestClient):
+    response = add_vision_classification_data(classification_vision_model_version_w_label_map_id, client)[0]
+    assert response.status_code == 200
+
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
+    response = client.post(f"/api/v1/checks/{classification_vision_performance_check_id}/run/window",
+                           json={"start_time": day_before_curr_time.isoformat(),
+                                 "end_time": curr_time.isoformat(),
+                                 "additional_kwargs": {"check_conf": {"aggregation method": ["none"],
+                                                                      "property": ["images Brightness"]},
+                                                       "res_conf": None}})
+    assert response.json() == {"v1": {"Precision ahh": 0.0, "Precision ooh": 0.5, "Recall ahh": 0.0, "Recall ooh": 0.5}}
+
+
+@pytest.mark.asyncio
 async def test_check_classification_without_classes(client: TestClient):
     model_id = add_model(client, task_type=TaskType.BINARY)
     version_id = add_model_version(model_id, client, name="v1", features={"a": "numeric", "b": "categorical"},
@@ -877,4 +946,3 @@ async def test_check_group_by_numeric(client: TestClient, classification_model_v
         {"name": "[10.0, 16.0)", "value": has_length(3), "display": has_length(0), "count": 43}))
     assert_that(response.json()[-1], has_entries(
         {"name": "[85.0, 126.0]", "value": has_length(3), "display": has_length(0), "count": 16}))
-

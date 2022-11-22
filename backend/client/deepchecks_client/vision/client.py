@@ -29,7 +29,8 @@ from deepchecks_client.core import client as core_client
 from deepchecks_client.core.api import API
 from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp, pretty_print
 from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
-                                            calc_bbox_properties, properties_schema, rearrange_and_validate_batch)
+                                            calc_bbox_properties, properties_schema, rearrange_and_validate_batch,
+                                            validate_label_map)
 
 ARRAY = t.TypeVar('ARRAY', np.ndarray, torch.Tensor)
 
@@ -61,6 +62,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     ):
         super().__init__(model_version_id, model, api)
         self.additional_image_properties = additional_image_properties
+        # TODO: use label_map to validate if the prediction/label values is correct
+        self.label_map = \
+            t.cast(t.Dict[str, t.Any], self.api.fetch_model_version_schema(model_version_id))['label_map']
         self._ref_samples_uploaded = \
             t.cast(t.Dict[str, int], self.api.get_samples_count(self.model_version_id))['reference_count']
 
@@ -395,7 +399,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def version(
             self,
             name: str,
-            additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
+            additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
+            label_map: t.Optional[t.Dict[int, str]] = None,
     ) -> DeepchecksModelVersionClient:
         """Create a new model version for vision data.
 
@@ -408,6 +413,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             Should be in format:
                 [{'name': <str>, 'method': <callable>, 'output_type': <'continuous'/'discrete'/'class_id'>}]
             See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
+        label_map : Dict[int, str], optional
+            A dictionary mapping class ids to their names to be displayed in the different monitors.
 
         Returns
         -------
@@ -421,6 +428,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         if additional_image_properties is not None:
             DeepchecksJsonValidator(properties_schema).validate(additional_image_properties)
+
+        validate_label_map(label_map)
 
         features = {}
         all_image_props = additional_image_properties or default_image_properties
@@ -437,6 +446,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             model_version={
                 'name': name,
                 'features': features,
+                'label_map': label_map,
                 'additional_data': {},
             }
         )

@@ -34,9 +34,9 @@ from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_vi
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
-from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_PROBA_COL,
-                                                      SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
-                                                      get_model_columns_by_type)
+from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                      SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType,
+                                                      column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.models.model_version import ModelVersion
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -58,6 +58,7 @@ class ModelVersionCreationSchema(BaseModel):
     additional_data: t.Dict[str, ColumnType]
     feature_importance: t.Optional[t.Dict[str, float]] = None
     classes: t.Optional[t.List[str]] = None
+    label_map: t.Optional[t.Dict[int, str]] = None
 
     class Config:
         """Config for ModelVersion schema."""
@@ -131,9 +132,13 @@ async def get_or_create_version(
     # Validate classes parameter
     have_classes = info.classes is not None
     classes = info.classes
+    if info.label_map is not None and model.task_type not in \
+            [TaskType.VISION_CLASSIFICATION, TaskType.VISION_DETECTION]:
+        raise BadRequest('Label map parameter is valid only for vision models, bot model task is '
+                         f'{model.task_type.value}')
     if have_classes:
         if model.task_type not in [TaskType.MULTICLASS, TaskType.BINARY]:
-            raise BadRequest(f'Classes parameter is valid only for classification, bot model task is '
+            raise BadRequest('Classes parameter is valid only for classification, bot model task is '
                              f'{model.task_type.value}')
         if len(classes) < 2:
             raise BadRequest(f'Got {len(classes)} classes but minimal number of classes is 2')
@@ -161,7 +166,10 @@ async def get_or_create_version(
     # Create json schema
     not_null_columns = list(meta_columns.keys()) + required_model_cols
     # Define the length of the array for probabilities column
-    length_columns = {SAMPLE_PRED_PROBA_COL: len(classes) if have_classes else None}
+    if model.task_type == TaskType.VISION_CLASSIFICATION:
+        length_columns = {SAMPLE_PRED_COL: len(info.label_map) if info.label_map is not None else None}
+    else:
+        length_columns = {SAMPLE_PRED_PROBA_COL: len(classes) if have_classes else None}
     monitor_table_schema = {
         'type': 'object',
         'properties': {name: data_type.to_json_schema_type(
@@ -169,7 +177,7 @@ async def get_or_create_version(
             min_items=length_columns.get(name),
             max_items=length_columns.get(name),
         )
-           for name, data_type in monitor_table_columns.items()},
+            for name, data_type in monitor_table_columns.items()},
         'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols,
         'additionalProperties': False
     }
@@ -180,7 +188,7 @@ async def get_or_create_version(
             min_items=length_columns.get(name),
             max_items=length_columns.get(name),
         )
-           for name, data_type in ref_table_columns.items()},
+            for name, data_type in ref_table_columns.items()},
         'required': list(info.features.keys()) + required_model_cols,
         'additionalProperties': False
     }
@@ -188,12 +196,21 @@ async def get_or_create_version(
     # Create statistics info
     empty_statistics = {col: data_type.to_statistics_stub() for col, data_type in monitor_table_columns.items()
                         if data_type.to_statistics_stub() is not None}
+    if model.task_type in [TaskType.VISION_CLASSIFICATION, TaskType.VISION_DETECTION]:
+        empty_statistics[SAMPLE_LABEL_COL] = ColumnType.CATEGORICAL.to_statistics_stub()
+    if model.task_type == TaskType.VISION_DETECTION:
+        empty_statistics[SAMPLE_PRED_COL] = ColumnType.CATEGORICAL.to_statistics_stub()
+
+    # To save the label map we must use string keys
+    label_map = {str(key): val for key, val in info.label_map.items()} if info.label_map else None
+
     # Save version entity
     model_version = ModelVersion(
         name=info.name, model_id=model.id, monitor_json_schema=monitor_table_schema,
         reference_json_schema=reference_table_schema, features_columns=info.features,
         additional_data_columns=info.additional_data, meta_columns=meta_columns, model_columns=model_related_cols,
-        feature_importance=info.feature_importance, statistics=empty_statistics, classes=info.classes,
+        feature_importance=info.feature_importance, statistics=empty_statistics,
+        classes=info.classes, label_map=label_map,
     )
     session.add(model_version)
     # flushing to get an id for the model version, used to create the monitor + reference table names.
@@ -314,6 +331,7 @@ class ModelVersionSchema(BaseModel):
     feature_importance: t.Optional[t.Dict[str, t.Any]]
     statistics: t.Optional[t.Dict[str, t.Any]]
     classes: t.Optional[t.List[str]]
+    label_map: t.Optional[t.Dict[int, str]]
 
     class Config:
         """Schema config."""
@@ -383,7 +401,8 @@ async def get_schema(
         'reference_schema': model_version.reference_json_schema,
         'features': model_version.features_columns,
         'additional_data': model_version.additional_data_columns,
-        'classes': model_version.classes
+        'classes': model_version.classes,
+        'label_map': model_version.label_map,
     }
     return result
 

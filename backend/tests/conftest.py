@@ -291,6 +291,25 @@ async def classification_vision_model_version_id(classification_vision_model_id:
 
 
 @pytest_asyncio.fixture()
+async def classification_vision_model_version_w_label_map_id(classification_vision_model_id: int, client):
+    request = {
+        "name": "v1",
+        "label_map": {0: "ahh", 1: "ooh", 2: "wee"},
+        "features": {"images Aspect Ratio": "numeric",
+                     "images Area": "numeric",
+                     "images Brightness": "numeric",
+                     "images RMS Contrast": "numeric",
+                     "images Mean Red Relative Intensity": "numeric",
+                     "images Mean Blue Relative Intensity": "numeric",
+                     "images Mean Green Relative Intensity": "numeric",
+                     },
+        "additional_data": {}
+    }
+    response = client.post(f"/api/v1/models/{classification_vision_model_id}/version", json=request)
+    return response.json()["id"]
+
+
+@pytest_asyncio.fixture()
 async def classification_model_version_no_fi_id(classification_model_id: int, client: TestClient):
     response = client.post(
         f"/api/v1/models/{classification_model_id}/version",
@@ -325,7 +344,7 @@ async def classification_model_check_train_test_id(classification_model_id: int,
         client=client,
         name="check train test",
         config={
-            "class_name": "TrainTestPerformance",
+            "class_name": "TrainTestLabelDrift",
             "params": {},
             "module_name": "deepchecks.tabular.checks"
         }
@@ -357,6 +376,23 @@ async def classification_vision_model_property_check_id(
         name="check",
         config={
             "class_name": "ImagePropertyDrift",
+            "params": {},
+            "module_name": "deepchecks.vision.checks"
+        }
+    ))
+
+
+@pytest_asyncio.fixture()
+async def classification_vision_performance_check_id(
+        classification_vision_model_id: int,
+        client: TestClient
+) -> int:
+    return t.cast(int, add_check(
+        model_id=classification_vision_model_id,
+        client=client,
+        name="check",
+        config={
+            "class_name": "SingleDatasetPerformance",
             "params": {},
             "module_name": "deepchecks.vision.checks"
         }
@@ -530,10 +566,10 @@ def add_classification_data(
         model_version_id: int,
         client: TestClient,
         daterange: t.Optional[t.Sequence[pdl.DateTime]] = None,
-        id_prefix="",
-        is_labeled=True,
-        with_proba=True,
-        samples_per_date=1
+        id_prefix: str = "",
+        is_labeled: bool = True,
+        with_proba: bool = True,
+        samples_per_date: int = 1
 ):
     if daterange is None:
         curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
@@ -543,6 +579,8 @@ def add_classification_data(
     data = []
 
     for i, date in enumerate(daterange):
+        time = date.isoformat()
+        label = ("2" if i != 1 else "1") if is_labeled else None
         for j in range(samples_per_date):
             time = date.isoformat()
             label = ("2" if i != 1 else "1") if is_labeled else None
@@ -566,15 +604,15 @@ def add_vision_classification_data(model_version_id, client: TestClient):
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     day_before_curr_time: pdl.DateTime = curr_time - pdl.duration(days=1)
     data = []
-    for i in [1, 3, 7, 13]:
-        time = day_before_curr_time.add(hours=i).isoformat()
+    for i, hour in enumerate([1, 3, 7, 13]):
+        time = day_before_curr_time.add(hours=hour).isoformat()
         for j in range(10):
             data.append({
                 "_dc_sample_id": f"{i} {j}",
                 "_dc_time": time,
                 "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
-                "_dc_label": 2,
-                "images Aspect Ratio": 0.677 / i,
+                "_dc_label": j % 2,
+                "images Aspect Ratio": 0.677 / hour,
                 "images Area": 0.5,
                 "images Brightness": 0.5,
                 "images RMS Contrast": 0.5,

@@ -12,7 +12,7 @@
 import typing as t
 
 import torch
-from deepchecks.vision import ClassificationData, DetectionData
+from deepchecks.vision import ClassificationData, DetectionData, VisionData
 from torch.utils.data import Dataset as TorchDataset
 
 from deepchecks_monitoring.models import TaskType
@@ -35,7 +35,7 @@ class LabelVisionDataset(TorchDataset):
 
 class _MyClassificationVisionData(ClassificationData):
     def batch_to_labels(self, batch) -> torch.Tensor:
-        return torch.IntTensor(batch)
+        return torch.IntTensor(batch).type(torch.int64)
 
 
 class _MyDetectionVisionData(DetectionData):
@@ -43,5 +43,6 @@ class _MyDetectionVisionData(DetectionData):
         return batch
 
 
-TASK_TYPE_TO_VISION_DATA_CLASS = {TaskType.VISION_CLASSIFICATION: _MyClassificationVisionData,
-                                  TaskType.VISION_DETECTION: _MyDetectionVisionData}
+TASK_TYPE_TO_VISION_DATA_CLASS: t.Dict[TaskType, t.Type[VisionData]] = \
+    {TaskType.VISION_CLASSIFICATION: _MyClassificationVisionData,
+     TaskType.VISION_DETECTION: _MyDetectionVisionData}

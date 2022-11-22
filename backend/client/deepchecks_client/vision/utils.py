@@ -34,6 +34,17 @@ class DeepchecksEncoder(CoreDeepcheckEncoder):
         return super().encode(obj)
 
 
+def validate_label_map(label_map):
+    if label_map is not None:
+        if not isinstance(label_map, dict):
+            raise ValueError(f'label_map must be a dict but got type {type(label_map)}')
+        for key, val in label_map.items():
+            if not isinstance(key, int):
+                raise ValueError(f'Keys in label_map must be an int but got type {type(key)}')
+            if not isinstance(val, str):
+                raise ValueError(f'Values in label_map must be an int but got type {type(val)}')
+
+
 def rearrange_and_validate_batch(
     images: t.Sequence[np.ndarray],
     sample_id: t.Sequence[str] = None,

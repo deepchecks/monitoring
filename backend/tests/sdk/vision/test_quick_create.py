@@ -31,6 +31,7 @@ async def test_version_creation(
     kwargs = {
         "model_name": "New Model",
         "version_name": "Version#1",
+        "label_map": {0: "ah", 1: "ooh", 2: "weee"},
         "description": "Super duper cool model",
         "reference_dataset": dataset,
         "reference_predictions": predictions

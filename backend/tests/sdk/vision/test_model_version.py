@@ -30,5 +30,5 @@ async def test_add_model_version_client(classification_vision_model_id,
     model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
                                                              task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == classification_vision_model_id
-    model_version_client = model_client.version("v1")
+    model_version_client = model_client.version("v1", label_map={0: "ah", 1: "ooh", 2: "weee"})
     assert model_version_client.model_version_id == 1

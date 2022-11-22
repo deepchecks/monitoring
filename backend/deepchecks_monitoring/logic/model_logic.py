@@ -112,7 +112,9 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version
     return dataset, y_pred, y_proba
 
 
-def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_type: TaskType) \
+def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None],
+                                        task_type: TaskType,
+                                        model_version: ModelVersion) \
         -> t.Tuple[VisionData, t.Dict[int, torch.Tensor], t.Dict[int, t.Any]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None or len(df) == 0:
@@ -141,7 +143,12 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None], task_ty
                 else:
                     static_props[ind][prop_type][prop_name] = item
     data_loader = DataLoader(LabelVisionDataset(labels), batch_size=len(labels), collate_fn=list)
-    return TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader), preds, static_props
+
+    # We need to convert the label map to be {int: str} because in the db we must have the keys as strings
+    label_map = {int(key): val for key, val in model_version.label_map.items()} if model_version.label_map else None
+
+    return (TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader, label_map=label_map),
+            preds, static_props)
 
 
 def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select,
@@ -202,7 +209,7 @@ async def get_results_for_model_versions_per_window(
                 reference_table_dataframe, model_version, top_feat)
         else:
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_dataframe, task_type)
+                reference_table_dataframe, task_type, model_version)
 
         for curr_test_info in test_infos:
             current_data = curr_test_info['data']
@@ -221,7 +228,8 @@ async def get_results_for_model_versions_per_window(
                                                                                    top_feat)
                 else:
                     test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(current_data,
-                                                                                         task_type)
+                                                                                         task_type,
+                                                                                         model_version)
                 try:
                     if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                         curr_result = dp_check.run(
@@ -287,7 +295,7 @@ async def get_results_for_model_versions_for_reference(
                 reference_table_dataframe, model_version, top_feat)
         else:
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_dataframe, task_type)
+                reference_table_dataframe, task_type, model_version)
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,

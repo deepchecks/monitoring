@@ -342,5 +342,6 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
         "additional_data": {
             "c": "numeric"
         },
-        "classes": ["0", "1", "2"]
+        "classes": ["0", "1", "2"],
+        "label_map": None,
     }

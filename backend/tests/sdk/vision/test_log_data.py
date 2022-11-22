@@ -36,7 +36,7 @@ async def test_classification_log(vision_classification_model_version_client: De
     )
     model_version: ModelVersion = model_version_query.scalars().first()
     stats = model_version.statistics
-    assert stats['_dc_label'] == {'max': 2, 'min': 0}
+    assert stats['_dc_label'] == {'values': [0, 1, 2]}
     assert stats['images Aspect Ratio'] == {'max': 1, 'min': 0.5}
 
     mon_table = model_version.get_monitor_table(async_session)
@@ -128,7 +128,7 @@ async def test_classification_batch_log(
         for row in monitor_data
     ]
 
-    assert stats['_dc_label'] == {'max': 2, 'min': 0}
+    assert stats['_dc_label'] == {'values': [0, 1, 2]}
     assert stats['images Aspect Ratio'] == {'max': 1, 'min': 0.5}
 
     assert monitor_data == [

@@ -114,8 +114,10 @@ async def run_suite_for_model_version(
 
     elif task_type in [TaskType.VISION_DETECTION, TaskType.VISION_CLASSIFICATION]:
         suite = _create_vision_suite(suite_name, task_type, len(ref_df) > 0)
-        test_dataset, test_pred, test_proba = dataframe_to_vision_data_pred_props(test_df, task_type)
-        reference_dataset, reference_pred, reference_proba = dataframe_to_vision_data_pred_props(ref_df, task_type)
+        test_dataset, test_pred, test_proba = \
+            dataframe_to_vision_data_pred_props(test_df, task_type, model_version)
+        reference_dataset, reference_pred, reference_proba = \
+            dataframe_to_vision_data_pred_props(ref_df, task_type, model_version)
     else:
         raise Exception(f"Unsupported task type {task_type}")
 

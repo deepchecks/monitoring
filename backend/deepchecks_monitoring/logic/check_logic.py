@@ -38,7 +38,7 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      get_top_features_or_from_conf, random_sample)
 from deepchecks_monitoring.models import ModelVersion
 from deepchecks_monitoring.models.check import Check
-from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL
+from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL
 from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
                                          MonitorCheckConfSchema, TimeUnit, fetch_or_404)
@@ -165,9 +165,18 @@ def _metric_api_listify(metric_names: t.List[str], ignore_binary: bool = True):
     return metric_list
 
 
+def _get_observed_classes(model_version: ModelVersion) -> t.List[t.Union[int, str]]:
+    label_classes = model_version.statistics.get(SAMPLE_LABEL_COL, {}).get("values", [])
+    pred_classes = model_version.statistics.get(SAMPLE_PRED_COL, {}).get("values", [])
+    all_classes = sorted(set(label_classes + pred_classes))
+    if not model_version.label_map:
+        return all_classes
+    return [model_version.label_map.get(str(clazz), str(clazz)) for clazz in all_classes]
+
+
 def get_metric_class_info(latest_version: ModelVersion, model: Model) -> MonitorCheckConf:
     """Get check info for checks that are instance of ReduceMetricClassMixin."""
-    classes = None if latest_version is None else latest_version.statistics.get(SAMPLE_LABEL_COL, {}).get("values")
+    classes = None if latest_version is None else _get_observed_classes(latest_version)
     if classes is not None:
         classes = [{"name": class_name} for class_name in classes]
     # get the scorers by task type

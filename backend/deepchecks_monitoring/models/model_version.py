@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the ModelVersion ORM model."""
+import logging
 import typing as t
 from collections import defaultdict
 from datetime import datetime
@@ -24,7 +25,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.models.base import Base
-from deepchecks_monitoring.models.column_type import ColumnType, column_types_to_table_columns
+from deepchecks_monitoring.models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, ColumnType,
+                                                      column_types_to_table_columns)
+from deepchecks_monitoring.models.model import TaskType
 from deepchecks_monitoring.utils import DataFilterList
 
 if t.TYPE_CHECKING:
@@ -80,6 +83,7 @@ class ModelVersion(Base):
     feature_importance = Column(JSONB, nullable=True)
     statistics = Column(JSONB)
     classes = Column(ARRAY(String), nullable=True)
+    label_map = Column(JSONB, nullable=True)
 
     model_id = Column(
         Integer,
@@ -188,8 +192,14 @@ class ModelVersion(Base):
         return columns.issuperset(filter_columns)
 
 
-def update_statistics_from_sample(statistics: dict, sample: dict):
+def _add_col_value(stats_values, col_value):
+    if (col_value not in stats_values and len(stats_values) < CATEGORICAL_STATISTICS_VALUES_LIMIT):
+        stats_values.append(col_value)
+
+
+def update_statistics_from_sample(statistics: dict, sample: dict, task_type: TaskType):
     """Update statistics dict inplace, using the sample given."""
+    logger = logging.getLogger("data-ingestion")
     for col in statistics.keys():
         if sample.get(col) is None:
             continue
@@ -199,9 +209,26 @@ def update_statistics_from_sample(statistics: dict, sample: dict):
             stats_info["max"] = col_value if stats_info["max"] is None else max((stats_info["max"], col_value))
         if "min" in stats_info:
             stats_info["min"] = col_value if stats_info["min"] is None else min((stats_info["min"], col_value))
-        if ("values" in stats_info and col_value not in stats_info["values"] and
-                len(stats_info["values"]) < CATEGORICAL_STATISTICS_VALUES_LIMIT):
-            stats_info["values"].append(col_value)
+        if "values" in stats_info:
+            if not isinstance(col_value, list):
+                _add_col_value(stats_info["values"], col_value)
+            if task_type == TaskType.VISION_DETECTION:
+                if not len(col_value) > 0:
+                    continue
+                elif col == SAMPLE_LABEL_COL:
+                    for label in col_value:
+                        if isinstance(label, list) and len(label) == 5:
+                            _add_col_value(stats_info["values"], int(label[0]))
+                        else:
+                            logger.warning("Failed to save statistics for the label column in vsion "
+                                           "detection as a wrong label format was given: %s", label)
+                elif col == SAMPLE_PRED_COL:
+                    for pred in col_value:
+                        if isinstance(label, list) and len(pred) == 6:
+                            _add_col_value(stats_info["values"], int(pred[5]))
+                        else:
+                            logger.warning("Failed to save statistics for the prediction column in vsion "
+                                           "detection as a wrong prediction format was given: %s", label)
 
 
 def unify_statistics(original_statistics: dict, added_statistics: dict):
@@ -232,8 +259,8 @@ PGDataTableDropFunc = sa.DDL("""
 CREATE OR REPLACE FUNCTION drop_model_version_tables()
 RETURNS TRIGGER AS $$
 BEGIN
-    EXECUTE 'DROP TABLE IF EXISTS model_' || OLD.model_id || '_monitor_data_' || OLD.id;
-    EXECUTE 'DROP TABLE IF EXISTS model_' || OLD.model_id || '_ref_data_' || OLD.id;
+    EXECUTE "DROP TABLE IF EXISTS model_" || OLD.model_id || "_monitor_data_" || OLD.id;
+    EXECUTE "DROP TABLE IF EXISTS model_" || OLD.model_id || "_ref_data_" || OLD.id;
     RETURN null;
 END; $$ LANGUAGE PLPGSQL
 """)

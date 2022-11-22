@@ -211,8 +211,9 @@ class DeepchecksClient:
         description: str = '',
         reference_predictions: t.Optional[t.Union[t.Dict[int, 'ARRAY'], t.List['ARRAY']]] = None,
         task_type: t.Union[str, TaskType, None] = None,
-        image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
-        samples_per_request: int = 5000
+        additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
+        samples_per_request: int = 5000,
+        label_map: t.Optional[t.Dict[int, str]] = None,
     ):
         """
         Create a vision model version and upload the reference data if provided.
@@ -237,14 +238,16 @@ class DeepchecksClient:
             returned by the dataloader of the vision data. If the predictions are passed as a dictionary, the keys must
             be the indexes of the samples in the dataset from which the vision data dataloader was created.
             The model predictions for the reference data.
-        image_properties : List[Dict[str, Any]]
-            The image properties to use for the reference.
+        additional_image_properties : List[Dict[str, Any]]
+            The additional image properties to use for the reference.
             Should be in format:
                 [{'name': <str>, 'method': <callable>, 'output_type': <'continuous'/'discrete'/'class_id'>}]
             See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
         samples_per_request: int , default 5000
             data to the server is sent by batches,
             this parameter controls batch size
+        label_map : Dict[int, str], optional
+            A dictionary mapping class ids to their names to be displayed in the different monitors.
 
         Returns
         -------
@@ -271,7 +274,7 @@ class DeepchecksClient:
             )
 
         model_client = self.get_or_create_model(model_name, task_type, description)
-        version_client = model_client.version(version_name, image_properties)
+        version_client = model_client.version(version_name, additional_image_properties, label_map=label_map)
 
         version_client.upload_reference(
             vision_data=reference_dataset,

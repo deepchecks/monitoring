@@ -19,6 +19,7 @@ import asyncpg.exceptions
 import fastapi
 import jsonschema.exceptions
 import pendulum as pdl
+import sqlalchemy as sa
 import sqlalchemy.exc
 from jsonschema import FormatChecker
 from jsonschema.validators import validate
@@ -30,6 +31,7 @@ from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.models import ModelVersion
 from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.ingestion_errors import IngestionError
+from deepchecks_monitoring.models.model import Model
 from deepchecks_monitoring.models.model_version import update_statistics_from_sample
 from deepchecks_monitoring.utils import ExtendedAsyncSession
 
@@ -106,12 +108,15 @@ async def log_data(
         await session.execute(insert(IngestionError).values(errors))
 
     # Update statistics and timestamps, running only on samples which were logged successfully
+
     if len(logged_samples) == 0:
         return []
     all_timestamps = []
+
+    model: Model = (await session.execute(sa.select(Model).where(Model.id == ModelVersion.model_id))).scalars().first()
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
-        update_statistics_from_sample(updated_statistics, sample)
+        update_statistics_from_sample(updated_statistics, sample, model.task_type)
         all_timestamps.append(sample[SAMPLE_TS_COL])
 
     if model_version.statistics != updated_statistics:
@@ -183,10 +188,11 @@ async def update_data(
         return []
 
     # Update statistics if needed
+    model: Model = (await session.execute(sa.select(Model).where(Model.id == ModelVersion.model_id))).scalars().first()
     updated_statistics = copy.deepcopy(model_version.statistics)
 
     for sample in logged_samples:
-        update_statistics_from_sample(updated_statistics, sample)
+        update_statistics_from_sample(updated_statistics, sample, model.task_type)
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
 
