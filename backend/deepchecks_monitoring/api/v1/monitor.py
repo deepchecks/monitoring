@@ -25,7 +25,7 @@ from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.check_logic import run_check_per_window_in_range
+from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.models import Alert, AlertRule, Check
 from deepchecks_monitoring.models.monitor import Monitor
@@ -197,22 +197,23 @@ async def run_monitor_lookback(
     CheckSchema
         Created check.
     """
-    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)
     end_time = None if body.end_time is None else pdl.parse(body.end_time)
     start_time, end_time, frequency = get_time_ranges_for_monitor(
         lookback=monitor.lookback, frequency=monitor.frequency, end_time=end_time)
 
     cache_key_base = cache_funcs.get_key_base_by_request(request)
 
+    options = MonitorOptions(start_time=start_time.to_iso8601_string(),
+                             end_time=end_time.to_iso8601_string(),
+                             frequency=frequency.in_seconds(),
+                             aggregation_window=monitor.aggregation_window,
+                             filter=monitor.data_filters)
+
     return await run_check_per_window_in_range(
         monitor.check_id,
-        start_time,
-        end_time,
-        frequency,
-        pdl.duration(seconds=monitor.aggregation_window),
-        monitor.data_filters,
         session,
-        monitor.additional_kwargs,
+        options,
         monitor_id=monitor_id,
         cache_funcs=cache_funcs,
         cache_key_base=cache_key_base

@@ -25,23 +25,22 @@ from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from pydantic import BaseModel, root_validator, validator
+from sqlalchemy import Column, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions, CacheResult
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
-                                                     filter_monitor_table_by_window_and_data_filters,
-                                                     filter_table_selection_by_data_filters,
                                                      get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf, random_sample)
 from deepchecks_monitoring.models import ModelVersion
 from deepchecks_monitoring.models.check import Check
-from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL
+from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.models.model import Model, TaskType
 from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
-                                         MonitorCheckConfSchema, TimeUnit, fetch_or_404)
+                                         MonitorCheckConfSchema, TimeUnit, fetch_or_404, make_oparator_func)
 
 
 class AlertCheckOptions(BaseModel):
@@ -66,6 +65,16 @@ class BasicMonitorOptions(BaseModel):
             copied.filter = DataFilterList(filters=added_filters.filters + copied.filter.filters)
         return copied
 
+    def sql_columns_filter(self):
+        """Create sql filter clause on data columns from the defined filter."""
+        if self.filter:
+            # The True prevents error if filters is empty list
+            return and_(True, *[
+                make_oparator_func(data_filter.operator)(Column(data_filter.column), data_filter.value)
+                for data_filter in self.filter.filters
+            ])
+        return True
+
 
 class SingleWindowMonitorOptions(BasicMonitorOptions):
     """Adds to the monitor options start and end times, without any windows related options."""
@@ -80,6 +89,14 @@ class SingleWindowMonitorOptions(BasicMonitorOptions):
     def end_time_dt(self) -> pdl.DateTime:
         """Get end time as datetime object."""
         return pdl.parse(self.end_time)
+
+    def sql_time_filter(self):
+        """Create sql filter clause on the timestamp from the defined start and end times."""
+        return _times_to_sql_where(self.start_time_dt(), self.end_time_dt())
+
+    def sql_all_filters(self):
+        """Create sql filter clause on both timestamp and data columns."""
+        return and_(self.sql_time_filter(), self.sql_columns_filter())
 
     @classmethod
     @root_validator()
@@ -165,6 +182,11 @@ def _metric_api_listify(metric_names: t.List[str], ignore_binary: bool = True):
     return metric_list
 
 
+def _times_to_sql_where(start_time, end_time):
+    ts_column = Column(SAMPLE_TS_COL)
+    return and_(start_time <= ts_column, ts_column < end_time)
+
+
 def _get_observed_classes(model_version: ModelVersion) -> t.List[t.Union[int, str]]:
     label_classes = model_version.statistics.get(SAMPLE_LABEL_COL, {}).get("values", [])
     pred_classes = model_version.statistics.get(SAMPLE_PRED_COL, {}).get("values", [])
@@ -227,13 +249,8 @@ def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_che
 
 async def run_check_per_window_in_range(
         check_id: int,
-        start_time: pdl.DateTime,
-        end_time: pdl.DateTime,
-        frequency: pdl.Duration,
-        agg_window: pdl.Duration,
-        monitor_filter: t.Optional[DataFilterList],
         session: AsyncSession,
-        additional_kwargs: t.Optional[MonitorCheckConfSchema],
+        monitor_options: MonitorOptions,
         monitor_id: int = None,
         cache_funcs: CacheFunctions = None,
         cache_key_base: str = ""
@@ -250,20 +267,11 @@ async def run_check_per_window_in_range(
     ----------
     check_id : int
         The id of the check to run.
-    start_time : pdl.DateTime
-        The start time of the check.
-    end_time : pdl.DateTime
-        The end time of the check.
-    interval : pdl.DateTime
-        The time window to run the check on.
-    monitor_filter : t.Optional[DataFilterList]
-        The data filter to apply on the monitor table.
     session : AsyncSession
         The database session to use.
-    additional_kwargs
+    monitor_options: MonitorOptions
     monitor_id
     cache_funcs
-    window_size
     cache_key_base
 
     Returns
@@ -273,7 +281,10 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    dp_check = _init_check_by_kwargs(check, additional_kwargs)
+    dp_check = _init_check_by_kwargs(check, monitor_options.additional_kwargs)
+    start_time = monitor_options.start_time_dt()
+    end_time = monitor_options.end_time_dt()
+    frequency = monitor_options.frequency
 
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
@@ -283,22 +294,22 @@ async def run_check_per_window_in_range(
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
-    top_feat, _ = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
+    top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
 
     if end_time < start_time:
         raise ValueError("start_time must be before end_time")
 
     # The range calculates from start to end excluding the end, so add interval to have the windows at their end time
-    windows_end = [d + frequency for d in (end_time - start_time).range("seconds", frequency.in_seconds())
+    windows_end = [d.add(seconds=frequency) for d in (end_time - start_time).range("seconds", frequency)
                    # Don't include window which end time is in the future
-                   if d + frequency <= pdl.now()]
-    windows_start = [d - agg_window for d in windows_end]
+                   if d.add(seconds=frequency) <= pdl.now()]
+    windows_start = [d.subtract(seconds=monitor_options.aggregation_window) for d in windows_end]
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
     for model_version in model_versions:
         # If filter does not fit the model version, skip it
-        if monitor_filter and not model_version.is_filter_fit(monitor_filter):
+        if not model_version.is_filter_fit(monitor_options.filter):
             continue
 
         test_table = model_version.get_monitor_table(session)
@@ -314,13 +325,10 @@ async def run_check_per_window_in_range(
                 if cache_result.found:
                     curr_test_info["data"] = cache_result
                     continue
-            filtered_select_obj = filter_monitor_table_by_window_and_data_filters(model_version=model_version,
-                                                                                  table_selection=select_obj,
-                                                                                  mon_table=test_table,
-                                                                                  data_filter=monitor_filter,
-                                                                                  start_time=start,
-                                                                                  end_time=end)
-            if filtered_select_obj is not None:
+            if model_version.is_in_range(start, end):
+                filtered_select_obj = select_obj.filter(_times_to_sql_where(start, end))
+                filtered_select_obj = filtered_select_obj.filter(monitor_options.sql_columns_filter())
+                filtered_select_obj = random_sample(filtered_select_obj, test_table, n_samples=10_000)
                 curr_test_info["query"] = session.execute(filtered_select_obj)
             else:
                 curr_test_info["data"] = pd.DataFrame()
@@ -328,9 +336,7 @@ async def run_check_per_window_in_range(
         if isinstance(dp_check, TrainTestBaseCheck) and any(("query" in x for x in test_info)):
             reference_table = model_version.get_reference_table(session)
             reference_query = create_model_version_select_object(model_version, reference_table, top_feat)
-            reference_query = filter_table_selection_by_data_filters(reference_table,
-                                                                     reference_query,
-                                                                     monitor_filter)
+            reference_query = reference_query.filter(monitor_options.sql_columns_filter())
             reference_query = session.execute(random_sample(reference_query, reference_table))
         else:
             reference_query = None
@@ -347,7 +353,7 @@ async def run_check_per_window_in_range(
                                                                     model_versions,
                                                                     model,
                                                                     dp_check,
-                                                                    additional_kwargs)
+                                                                    monitor_options.additional_kwargs)
 
     # Reduce the check results
     reduce_results = defaultdict(list)
@@ -363,7 +369,7 @@ async def run_check_per_window_in_range(
             elif isinstance(result_value, CacheResult):
                 reduce_results[model_version.name].append(result_value.value)
             elif isinstance(result_value, CheckResult):
-                result_value = reduce_check_result(result_value, additional_kwargs)
+                result_value = reduce_check_result(result_value, monitor_options.additional_kwargs)
                 reduce_results[model_version.name].append(result_value)
                 # If cache available and there is monitor id, save result to cache
                 if cache_funcs and monitor_id:
@@ -495,34 +501,24 @@ def load_data_for_check(
     Tuple[t.Optional[Coroutine], t.Optional[Coroutine]]
         First routine is test session, Second routine is reference session
     """
-    if options.filter and not model_version.is_filter_fit(options.filter):
+    if not model_version.is_filter_fit(options.filter):
         return None, None
 
     if with_reference:
         reference_table = model_version.get_reference_table(session)
         reference_query = create_model_version_select_object(model_version, reference_table, features)
-        reference_query = filter_table_selection_by_data_filters(reference_table,
-                                                                 reference_query,
-                                                                 options.filter)
+        reference_query = reference_query.filter(options.sql_columns_filter())
         reference_query = session.execute(random_sample(reference_query, reference_table, n_samples=n_samples))
     else:
         reference_query = None
 
     if with_test:
-        test_table = model_version.get_monitor_table(session)
-        select_obj = create_model_version_select_object(model_version, test_table, features)
-        # create the session
-        filtered_select_obj = filter_monitor_table_by_window_and_data_filters(
-            model_version=model_version,
-            table_selection=select_obj,
-            mon_table=test_table,
-            start_time=options.start_time_dt(),
-            end_time=options.end_time_dt(),
-            data_filter=options.filter,
-            n_samples=n_samples
-        )
-        if filtered_select_obj is not None:
-            test_query = session.execute(filtered_select_obj)
+        if model_version.is_in_range(options.start_time_dt(), options.end_time_dt()):
+            test_table = model_version.get_monitor_table(session)
+            select_obj = create_model_version_select_object(model_version, test_table, features)
+            select_obj = select_obj.filter(options.sql_all_filters())
+            select_obj = random_sample(select_obj, test_table, n_samples=n_samples)
+            test_query = session.execute(select_obj)
         else:
             test_query = None
     else:

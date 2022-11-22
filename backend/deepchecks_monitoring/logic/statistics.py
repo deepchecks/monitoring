@@ -8,17 +8,18 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining functions for getting statistic info on the data."""
-from datetime import datetime
+from typing import Dict, List
 
 from sqlalchemy import Column, and_, case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.logic.check_logic import SingleWindowMonitorOptions
 from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.models.column_type import SAMPLE_TS_COL, ColumnType
+from deepchecks_monitoring.models.column_type import ColumnType
 
 
 async def bins_for_feature(model_version: ModelVersion, feature: str, session: AsyncSession,
-                           start_time: datetime, end_time: datetime, num_bins=10):
+                           monitor_options: SingleWindowMonitorOptions, num_bins=10) -> [ColumnType, List[Dict]]:
     """Query from the database given number of bins.
 
     Parameters
@@ -26,12 +27,12 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
     model_version: ModelVersion
     feature: str
     session: AsyncSession
-    start_time: datetime
-    end_time: datetime
+    monitor_options: SingleWindowMonitorOptions
     num_bins: int
 
     Returns
     -------
+    ColumnType, List[Dict]
     For numeric features return a list of bins with min-max as inclusive edges and non-overlapping between bins.
         [{'min': x, 'max': y, 'count': z, 'bucket': a}...]
     For categorical features return a list of top values with their count
@@ -40,7 +41,7 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
     feature_type = ColumnType(model_version.features_columns[feature])
     feature_column = Column(feature)
     table = model_version.get_monitor_table(session)
-    where_clause = and_(start_time <= Column(SAMPLE_TS_COL), Column(SAMPLE_TS_COL) < end_time)
+    where_clause = and_(monitor_options.sql_time_filter(), monitor_options.sql_columns_filter())
     if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER]:
         # Adds for each feature his quantile
         feature_quantiles_cte = select([feature_column,

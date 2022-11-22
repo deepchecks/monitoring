@@ -13,7 +13,7 @@ import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, contains_exactly, has_entries, has_length
+from hamcrest import assert_that, contains_exactly, has_entries, has_length, has_items
 
 from deepchecks_monitoring.models import TaskType
 from tests.conftest import (add_check, add_classification_data, add_model, add_model_version,
@@ -896,9 +896,10 @@ async def test_check_group_by_categorical(client: TestClient, classification_mod
 
     # Assert
     assert response.status_code == 200, response.json()
-    assert_that(response.json(), contains_exactly(has_entries({
-        "name": "ppppp", "value": has_length(3), "display": has_length(0), "count": 4
-    })))
+    assert_that(response.json(), contains_exactly(
+        has_entries({"name": "All Data", "value": has_length(3), "display": has_length(0), "count": 4}),
+        has_entries({"name": "ppppp", "value": has_length(3), "display": has_length(0), "count": 4})
+    ))
 
 
 @pytest.mark.asyncio
@@ -920,6 +921,7 @@ async def test_check_group_by_numeric_single_values_in_bin(
     # Assert
     assert response.status_code == 200, response.json()
     assert_that(response.json(), contains_exactly(
+        has_entries({"name": "All Data", "value": has_length(3), "display": has_length(0), "count": 6}),
         has_entries({"name": "10.0", "value": has_length(3), "display": has_length(0), "count": 4}),
         has_entries({"name": "11.0", "value": has_length(3), "display": has_length(0), "count": 1}),
         has_entries({"name": "12.0", "value": has_length(3), "display": has_length(0), "count": 1}),
@@ -941,8 +943,10 @@ async def test_check_group_by_numeric(client: TestClient, classification_model_v
                                       "end_time": end_time.add(minutes=1).isoformat()})
     # Assert
     assert response.status_code == 200, response.json()
-    # Checking first and last bin
-    assert_that(response.json()[0], has_entries(
-        {"name": "[10.0, 16.0)", "value": has_length(3), "display": has_length(0), "count": 43}))
-    assert_that(response.json()[-1], has_entries(
-        {"name": "[85.0, 126.0]", "value": has_length(3), "display": has_length(0), "count": 16}))
+    # Checking first and last bin and all data
+    assert_that(response.json(), has_items(
+        has_entries({"name": "All Data", "value": has_length(3), "display": has_length(0), "count": 150}),
+        has_entries({"name": "[10.0, 16.0)", "value": has_length(3), "display": has_length(0), "count": 43}),
+        has_entries({"name": "[85.0, 126.0]", "value": has_length(3), "display": has_length(0), "count": 16})
+    ))
+

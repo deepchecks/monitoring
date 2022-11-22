@@ -24,9 +24,9 @@ from pydantic import BaseModel
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.expression import ColumnOperators
 
-from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.telemetry import TelemetyLoggingHandler
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 
@@ -92,7 +92,7 @@ class CheckParameterTypeEnum(str, enum.Enum):
         return types_map[self]
 
 
-def make_oparator_func(oparator_enum: OperatorsEnum) -> t.Callable[[t.Any, t.Any], bool]:
+def make_oparator_func(oparator_enum: OperatorsEnum) -> t.Callable[[t.Any, t.Any], BinaryExpression]:
     """Return an operator function according to our oparator enum."""
     op_not_split = oparator_enum.name.split("not_")
     if len(op_not_split) > 1:

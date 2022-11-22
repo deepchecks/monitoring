@@ -16,7 +16,7 @@ from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClass
 from fastapi import Query
 from plotly.basedatatypes import BaseFigure
 from pydantic import BaseModel, Field, validator
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
@@ -260,20 +260,17 @@ async def run_standalone_check_per_window_in_range(
     start_time, end_time, frequency = get_time_ranges_for_monitor(
         lookback=lookback, frequency=monitor_options.frequency, end_time=end_time)
 
+    monitor_options.start_time = start_time.isoformat()
+    monitor_options.end_time = end_time.isoformat()
+    monitor_options.frequency = frequency.in_seconds()
+
     if monitor_options.aggregation_window is None:
-        aggregation_window = frequency
-    else:
-        aggregation_window = pdl.duration(seconds=monitor_options.aggregation_window)
+        monitor_options.aggregation_window = frequency.in_seconds()
 
     return await run_check_per_window_in_range(
         check_id,
-        start_time,
-        end_time,
-        frequency,
-        aggregation_window,
-        monitor_options.filter,
         session,
-        monitor_options.additional_kwargs
+        monitor_options
     )
 
 
@@ -419,10 +416,20 @@ async def run_check_group_by_feature(
     if feature not in possible_columns:
         return BadRequest(f'Feature {feature} was not found in model version schema')
 
-    feature_type, bins = await bins_for_feature(model_version, feature, session,
-                                                monitor_options.start_time_dt(), monitor_options.end_time_dt())
+    # Get all data count
+    count = (await session.execute(select(func.count()).where(monitor_options.sql_all_filters())
+                                   .select_from(model_version.get_monitor_table(session)))).scalar()
 
-    filters = []
+    # Start with all data filter
+    filters = [{
+                'name': 'All Data',
+                'filters': [],
+                'count': count
+    }]
+
+    # Get bins
+    feature_type, bins = await bins_for_feature(model_version, feature, session, monitor_options)
+
     if feature_type == ColumnType.CATEGORICAL:
         for curr_bin in bins:
             filters.append({

@@ -24,11 +24,9 @@ from deepchecks.tabular import base_checks as tabular_base_checks
 from deepchecks.vision import VisionData
 from deepchecks.vision import base_checks as vision_base_checks
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-from sqlalchemy import VARCHAR, Table
+from sqlalchemy import VARCHAR, Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 from torch.utils.data import DataLoader
 
@@ -36,9 +34,8 @@ from deepchecks_monitoring.logic.cache_functions import CacheResult
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                      SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
-from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConfSchema, fetch_or_404,
-                                         make_oparator_func)
+                                                      SAMPLE_PRED_PROBA_COL, ColumnType)
+from deepchecks_monitoring.utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -64,14 +61,6 @@ def create_model_version_select_object(model_version: ModelVersion, mon_table: T
     model_columns = [mon_table.c[col] for col in model_version.model_columns.keys()]
     select_obj: Select = select(*existing_feat_columns, *model_columns)
     return select_obj
-
-
-def filter_select_object_by_window(select_obj: Select, mon_table: Table,
-                                   start_time: pdl.DateTime, end_time: pdl.DateTime) -> Select:
-    """Filter select object by window."""
-    filtered_select_obj = select_obj
-    return filtered_select_obj.where(mon_table.c[SAMPLE_TS_COL] < end_time,
-                                     mon_table.c[SAMPLE_TS_COL] >= start_time)
 
 
 def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000) -> Select:
@@ -149,18 +138,6 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None],
 
     return (TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader, label_map=label_map),
             preds, static_props)
-
-
-def filter_table_selection_by_data_filters(data_table: Table, table_selection: Select,
-                                           data_filters: t.Optional[DataFilterList]):
-    """Filter table selection by data filter."""
-    if data_filters is None:
-        return table_selection
-    filtered_table_selection = table_selection
-    for data_filter in data_filters.filters:
-        filtered_table_selection = filtered_table_selection.where(make_oparator_func(data_filter.operator)(
-            getattr(data_table.c, data_filter.column), data_filter.value))
-    return filtered_table_selection
 
 
 def get_top_features_or_from_conf(model_version: ModelVersion,
@@ -317,19 +294,3 @@ async def get_results_for_model_versions_for_reference(
         model_reduces[model_version] = reduced_outs
 
     return model_reduces
-
-
-def filter_monitor_table_by_window_and_data_filters(model_version: ModelVersion,
-                                                    table_selection: Select,
-                                                    mon_table: Table,
-                                                    start_time: pdl.DateTime,
-                                                    end_time: pdl.DateTime,
-                                                    data_filter: t.Optional[DataFilterList] = None,
-                                                    n_samples=10_000):
-    """Filter monitor table by window and data filter."""
-    if start_time <= model_version.end_time and end_time >= model_version.start_time:
-        select_time_filtered = filter_select_object_by_window(table_selection, mon_table, start_time, end_time)
-        select_time_filtered = filter_table_selection_by_data_filters(mon_table, select_time_filtered, data_filter)
-        return random_sample(select_time_filtered, mon_table, n_samples=n_samples)
-    else:
-        return None

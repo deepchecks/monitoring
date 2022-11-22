@@ -257,7 +257,7 @@ class DataIngestionBackend:
             model_version: ModelVersion,
             data: t.List[t.Dict[str, t.Any]],
             session: AsyncSession,
-            request: fastapi.Request  # pylint: disable=unused-argument
+            request: fastapi.Request
     ):
         """Log new data.
 
