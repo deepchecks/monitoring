@@ -13,7 +13,7 @@ export interface ChartResponse {
   time_labels: string[];
 }
 
-export type GraphData = (number | null)[] | string[] | { x: string; y: number }[];
+export type GraphData = (number | null)[] | string[] | { x: string; y: number }[] | { x: number; y: number }[];
 
 export type WindowTimeout = ReturnType<typeof setTimeout>;
 export type WindowInterval = ReturnType<typeof setInterval>;

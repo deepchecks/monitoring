@@ -39,7 +39,7 @@ const useDataIngestion = (modelId: number | null = null) => {
         Object.entries(data).map(([key, item], index) => ({
           data: item
             .sort((a, b) => a.timestamp - b.timestamp)
-            .map(({ count }) => (count)),
+            .map(({ timestamp, count }) => ({x: dayjs(timestamp * 1000).valueOf(), y: count})),
           ...setLineGraphOptions(modelsMap ? modelsMap[key]?.name : key, index)
         })) ?? [],
       labels: Object.entries(data)
