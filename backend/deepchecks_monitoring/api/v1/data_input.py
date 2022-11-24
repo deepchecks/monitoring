@@ -17,7 +17,7 @@ import pandas as pd
 from fastapi import Body, Depends, Response, UploadFile, status
 from jsonschema import FormatChecker
 from jsonschema.exceptions import ValidationError
-from jsonschema.validators import validate
+from jsonschema.validators import validator_for
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
@@ -126,14 +126,12 @@ async def save_reference(
 
     items = []
 
+    validator_class = validator_for(model_version.reference_json_schema)
+    val_instance = validator_class(model_version.reference_json_schema, format_checker=FormatChecker())
     for _, row in reference_batch.iterrows():
         item = row.to_dict()
         try:
-            validate(
-                schema=model_version.reference_json_schema,
-                instance=item,
-                format_checker=FormatChecker()
-            )
+            val_instance.validate(item)
             items.append(item)
         except ValidationError as e:
             raise BadRequest(f"Invalid reference data: {e}") from e

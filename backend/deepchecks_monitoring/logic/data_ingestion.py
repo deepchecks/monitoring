@@ -22,7 +22,7 @@ import pendulum as pdl
 import sqlalchemy as sa
 import sqlalchemy.exc
 from jsonschema import FormatChecker
-from jsonschema.validators import validate
+from jsonschema.validators import validator_for
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,16 +55,15 @@ async def log_data(
     valid_data = {}
     errors = []
 
+    validator_class = validator_for(model_version.monitor_json_schema)
+    val_instance = validator_class(model_version.monitor_json_schema, format_checker=FormatChecker())
+
     for sample in data:
         # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
         # to make sure all samples have same set of fields.
         model_version.fill_optional_fields(sample)
         try:
-            validate(
-                schema=model_version.monitor_json_schema,
-                instance=sample,
-                format_checker=FormatChecker()
-            )
+            val_instance.validate(sample)
         except jsonschema.exceptions.ValidationError as e:
             errors.append({
                 "sample": str(sample),
@@ -152,13 +151,12 @@ async def update_data(
     results = []
     errors = []
     valid_data = {}
+    validator_class = validator_for(optional_columns_schema)
+    val_instance = validator_class(optional_columns_schema, format_checker=FormatChecker())
+
     for sample in data:
         try:
-            validate(
-                schema=optional_columns_schema,
-                instance=sample,
-                format_checker=FormatChecker()
-            )
+            val_instance.validate(sample)
         except jsonschema.exceptions.ValidationError as e:
             errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
                                model_version_id=model_version.id))
