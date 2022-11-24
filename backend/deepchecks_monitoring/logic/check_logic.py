@@ -98,9 +98,8 @@ class SingleWindowMonitorOptions(BasicMonitorOptions):
         """Create sql filter clause on both timestamp and data columns."""
         return and_(self.sql_time_filter(), self.sql_columns_filter())
 
-    @classmethod
-    @root_validator()
-    def check_dates_range(cls, values):
+    @root_validator
+    def check_dates_range(cls, values):  # pylint: disable=no-self-argument
         """Check end_time is after start_time by an hour plus."""
         seconds_range = (pdl.parse(values["end_time"]) - pdl.parse(values["start_time"])).in_seconds()
         if seconds_range < 0:
@@ -116,17 +115,15 @@ class MonitorOptions(SingleWindowMonitorOptions):
     frequency: t.Optional[int] = None
     aggregation_window: t.Optional[int] = None
 
-    @classmethod
     @validator("frequency")
-    def check_frequency_min(cls, v):
+    def check_frequency_min(cls, v):  # pylint: disable=no-self-argument
         """Check frequency is at least an hour."""
         if v and v < TimeUnit.HOUR:
             raise ValueError(f"frequency must be at least {TimeUnit.HOUR}")
         return v
 
-    @classmethod
     @validator("aggregation_window")
-    def check_aggregation_window(cls, v):
+    def check_aggregation_window(cls, v):  # pylint: disable=no-self-argument
         """Check aggergation_windwow is at least an hour."""
         if v and v < TimeUnit.HOUR:
             raise ValueError(f"aggregation_window must be at least {TimeUnit.HOUR}")

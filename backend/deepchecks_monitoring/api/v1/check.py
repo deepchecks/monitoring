@@ -98,7 +98,7 @@ class CheckGroupBySchema(BaseModel):
     """Schema for result of a check group by run."""
 
     name: str
-    value: t.Dict
+    value: t.Optional[t.Dict]
     display: t.List
     count: int
 
@@ -419,6 +419,8 @@ async def run_check_group_by_feature(
     # Get all data count
     count = (await session.execute(select(func.count()).where(monitor_options.sql_all_filters())
                                    .select_from(model_version.get_monitor_table(session)))).scalar()
+    if count == 0:
+        return NotFound('No data was found for given filters and dates')
 
     # Start with all data filter
     filters = [{
@@ -468,8 +470,12 @@ async def run_check_group_by_feature(
                                                with_display=True)
         for model_version, result in window_result.items():
             check_result = result['result']
-            reduce_value = reduce_check_result(check_result, options.additional_kwargs)
-            display = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
+            if check_result is not None:
+                reduce_value = reduce_check_result(check_result, options.additional_kwargs)
+                display = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
+            else:
+                reduce_value = None
+                display = []
             results.append({'name': f['name'], 'value': reduce_value, 'display': display, 'count': f['count']})
 
     return results
