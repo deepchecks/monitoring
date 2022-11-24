@@ -27,7 +27,8 @@ from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from deepchecks_client.core import ColumnType, TaskType
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.api import API
-from deepchecks_client.core.utils import DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp, pretty_print
+from deepchecks_client.core.utils import (ColumnTypeName, DeepchecksColumns, DeepchecksJsonValidator, parse_timestamp,
+                                          pretty_print, validate_additional_data_schema)
 from deepchecks_client.vision.utils import (DeepchecksEncoder, calc_additional_and_default_vision_properties,
                                             calc_bbox_properties, properties_schema, rearrange_and_validate_batch,
                                             validate_label_map)
@@ -75,6 +76,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             timestamp: t.Union[datetime, int, str, None] = None,
             prediction=None,
             label=None,
+            additional_data: t.Dict[str, t.Any] = None,
             is_ref_sample=False,
     ) -> dict:
         """Reformat the user output to our columns types and encode it.
@@ -95,6 +97,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Prediction value or predicted probability if exists, according to the expected format for the task type.
         label
             labels value if exists, according to the expected format for the task type.
+        additional_data: Dict[str, Any], default: None
+            Additional data to add.
         is_ref_sample : bool , default False
             If it is used for reference data
         Returns
@@ -130,6 +134,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if label is not None:
             sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
 
+        if additional_data is not None:
+            sample.update(additional_data)
+
         sample = DeepchecksEncoder.encode(sample)
         if is_ref_sample:
             self.ref_schema_validator.validate(sample)
@@ -151,6 +158,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             images: t.Sequence[np.ndarray],
             predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+            additional_data: t.Optional[t.Sequence[t.Dict[str, t.Any]]] = None,
             samples_per_request: int = 5000
     ):
         """Upload a batch of reference data - data should be shuffled (only a total of 100k samples can be uploaded).
@@ -170,6 +178,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Sequence of predictions or predicted probabilities, according to the expected format for the task type.
         labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
             Sequence of labels, according to the expected format for the task type.
+        additional_data : Optional[Sequence[Dict[str, Any]]] , default None
+            Sequence of additional data in format [{<name>: <value>}]
         samples_per_request : int , default 5000
             How many samples to send by one request
         """
@@ -189,6 +199,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             warnings.warn(f'Maximum size allowed for reference data is 100,000, will use first {upload_size} samples.')
 
         samples = rearrange_and_validate_batch(images=images, predictions=predictions, labels=labels,
+                                               additional_data=additional_data,
                                                is_ref_samples=True)
         data = {i: self._reformat_sample(is_ref_sample=True, **sample) for i, sample in enumerate(samples)}
         self._upload_reference(
@@ -206,6 +217,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             timestamps: t.Union[t.Sequence[int], t.Sequence[datetime], t.Sequence[str]],
             predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+            additional_data: t.Optional[t.Sequence[t.Dict[str, t.Any]]] = None,
             samples_per_send: int = 100_000
     ):
         """Log a batch of images.
@@ -233,6 +245,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Sequence of predictions or predicted probabilities, according to the expected format for the task type.
         labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
             Sequence of labels, according to the expected format for the task type.
+        additional_data : Optional[Sequence[Dict[str, Any]]] , default None
+            Sequence of additional data in format [{<name>: <value>}]
         samples_per_send : int , default 100_000
             How many samples to send by one request
         """
@@ -240,7 +254,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             raise ValueError('"samples_per_send" must be more than 0')
 
         samples = rearrange_and_validate_batch(images=images, sample_id=sample_id,
-                                               timestamps=timestamps, predictions=predictions, labels=labels)
+                                               timestamps=timestamps, predictions=predictions, labels=labels,
+                                               additional_data=additional_data)
 
         for i in range(0, len(sample_id), samples_per_send):
             self._log_batch(samples[i:i + samples_per_send])
@@ -256,7 +271,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             img: np.ndarray,
             timestamp: t.Union[datetime, int, str, None] = None,
             prediction=None,
-            label=None
+            label=None,
+            additional_data: t.Dict[str, t.Any] = None,
     ):
         """Add a data sample for the model version update queue. Requires a call to send() to upload.
 
@@ -283,18 +299,21 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Prediction value or predicted probability if exists, according to the expected format for the task type.
         label
             labels value if exists, according to the expected format for the task type.
+        additional_data : [Dict[str, Any] , default None
+            additional data in format {<name>: <value>}
         """
         if timestamp is None:
             warnings.warn('log_sample was called without timestamps, using current time instead')
         timestamp = parse_timestamp(timestamp) if timestamp is not None else pdl.now()
         sample = self._reformat_sample(img=img, sample_id=sample_id, timestamp=timestamp,
-                                       prediction=prediction, label=label)
+                                       prediction=prediction, label=label, additional_data=additional_data)
         self._log_samples.append(sample)
 
     def upload_reference(
             self,
             vision_data: VisionData,
             predictions: t.Optional[t.Union[t.Dict[int, ARRAY], t.List[ARRAY]]] = None,
+            additional_data: t.Optional[t.Dict[int, t.Dict[str, t.Any]]] = None,
             samples_per_request: int = 5000,
     ):
         """Upload reference data. Possible to upload only once for a given model version.
@@ -308,6 +327,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             predictions are passed as a list, the order of the predictions must be the same as the order of the samples
             returned by the dataloader of the vision data. If the predictions are passed as a dictionary, the keys must
             be the indexes of the samples in the dataset from which the vision data dataloader was created.
+        additional_data : Dict[int, Dict[str, Any]], default: None
+            The additional data in a format of {<index>: {<name>: <value>}}.
+            The keys must be the indexes of the samples in the dataset
+            from which the vision data dataloader was created.
         samples_per_request : int, default: 5000
             How many samples to send in each request. Decrease this number if having problems uploading the data.
         """
@@ -337,7 +360,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                     prediction = predictions[sample_index]
                 else:
                     prediction = predictions[running_sample_index]
+                additional_data_value = additional_data[sample_index] if additional_data is not None else None
                 data[sample_index] = self._reformat_sample(img=img, label=label, prediction=prediction,
+                                                           additional_data=additional_data_value,
                                                            is_ref_sample=True)
                 running_sample_index += 1
 
@@ -400,6 +425,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             self,
             name: str,
             additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
+            additional_data_schema: t.Optional[t.Dict[str, ColumnTypeName]] = None,
             label_map: t.Optional[t.Dict[int, str]] = None,
     ) -> DeepchecksModelVersionClient:
         """Create a new model version for vision data.
@@ -415,6 +441,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
         label_map : Dict[int, str], optional
             A dictionary mapping class ids to their names to be displayed in the different monitors.
+        additional_data_schema : Dict[str, ColumnTypeName], optional
+            Schema for the additional data to add - in a format of {<name>: <ColumnData.value>}.
+            Additional data is used for segmentation and filtering.
 
         Returns
         -------
@@ -441,13 +470,15 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             if task_type == TaskType.VISION_DETECTION:
                 features[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = ColumnType.ARRAY_FLOAT.value
 
+        validate_additional_data_schema(additional_data_schema, features)
+
         created_version = self.api.create_model_version(
             model_id=self.model['id'],
             model_version={
                 'name': name,
                 'features': features,
                 'label_map': label_map,
-                'additional_data': {},
+                'additional_data': additional_data_schema or {},
             }
         )
 

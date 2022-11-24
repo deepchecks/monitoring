@@ -33,6 +33,9 @@ async def test_version_creation(
         "version_name": "Version#1",
         "label_map": {0: "ah", 1: "ooh", 2: "weee"},
         "description": "Super duper cool model",
+        "additional_data": {0: {"is_good": True},
+                            1: {"is_good": True},
+                            2: {"is_good": False}},
         "reference_dataset": dataset,
         "reference_predictions": predictions
     }
@@ -72,6 +75,10 @@ async def test_version_creation_list_prediciton(
         "model_name": "New Model",
         "version_name": "Version#1",
         "description": "Super duper cool model",
+        "additional_data": {0: {"is_good": True},
+                            1: {"is_good": True},
+                            2: {"is_good": False}},
+        "additional_data_schema": {"is_good": "boolean"},
         "reference_dataset": dataset,
         "reference_predictions": predictions
     }
@@ -98,9 +105,10 @@ async def test_version_creation_list_prediciton(
 
     assert n_of_reference_records == dataset.num_samples
 
+
 @pytest.mark.asyncio
 async def test_version_creation_list_prediciton_same_as_regular(
-       deepchecks_sdk_client: DeepchecksClient,
+    deepchecks_sdk_client: DeepchecksClient,
     async_session: AsyncSession,
     vision_classification_and_prediction_big: t.Tuple[VisionData, t.Dict[int, t.List[float]]]
 ):

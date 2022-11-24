@@ -14,83 +14,12 @@ import pathlib
 import typing as t
 import warnings
 
-import pandas as pd
 import yaml
 from deepchecks.tabular import Dataset
-from deepchecks.tabular.utils.feature_inference import is_categorical
 from deepchecks_client._shared_docs import docstrings
-from deepchecks_client.core.utils import ColumnType, pretty_print
-from pandas.core.dtypes.common import is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype
-from typing_extensions import TypeAlias, TypedDict
+from deepchecks_client.core.utils import ColumnType, DataSchema, describe_dataset, pretty_print
 
 __all__ = ['create_schema', 'read_schema']
-
-
-def _get_series_column_type(series: pd.Series):
-    if series.dtype == 'object':
-        # object might still be only of one type, so we re-infer the dtype
-        series = pd.Series(series.to_list(), name=series.name)
-    if is_bool_dtype(series):
-        return ColumnType.BOOLEAN.value
-    if is_integer_dtype(series):
-        return ColumnType.INTEGER.value
-    if is_numeric_dtype(series):
-        return ColumnType.NUMERIC.value
-    if is_categorical_dtype(series):
-        return ColumnType.CATEGORICAL.value
-    if series.apply(type).eq(str).all():
-        if is_categorical(series):
-            return ColumnType.CATEGORICAL.value
-        return ColumnType.TEXT.value
-    warnings.warn(f'Column {series.name} is of unsupported dtype - {series.dtype}.')
-    return None
-
-
-ColumnTypeName: TypeAlias = str
-
-
-class DataSchema(TypedDict):
-    """Data schema description."""
-
-    features: t.Dict[str, ColumnTypeName]
-    additional_data: t.Dict[str, ColumnTypeName]
-
-
-def _describe_dataset(dataset: Dataset) -> DataSchema:
-    additional_data = {}
-    features = {}
-    for column in dataset.data.columns:
-        col_series = dataset.data[column]
-        if column in [dataset.index_name, dataset.datetime_name]:
-            continue
-        elif dataset.has_label() and column == dataset.label_name:
-            continue
-        elif column in dataset.features:
-            if column in dataset.cat_features:
-                features[column] = (
-                    ColumnType.BOOLEAN.value
-                    if is_bool_dtype(col_series)
-                    else ColumnType.CATEGORICAL.value
-                )
-            elif column in dataset.numerical_features:
-                features[column] = (
-                    ColumnType.INTEGER.value
-                    if is_integer_dtype(col_series)
-                    else ColumnType.NUMERIC.value
-                )
-            else:
-                features[column] = _get_series_column_type(col_series)
-                if features[column] == ColumnType.CATEGORICAL.value:
-                    features[column] = ColumnType.TEXT.value
-        else:
-            additional_data[column] = _get_series_column_type(col_series)
-    # if any columns failed to auto infer print this warnings
-    # moved to here to not annoy the user so much
-    if any(x is None for x in list(features.values()) + list(additional_data.values())):
-        warnings.warn('Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.\n'
-                      'You can set the type manually in the schema file/dict.\n'
-                      'DateTime format is supported using iso format only.')
-    return {'features': features, 'additional_data': additional_data}
 
 
 def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
@@ -103,7 +32,7 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     schema_output_file : str, default: 'schema.yaml'
         file like object or path in which the generated schema will be saved into
     """
-    schema = _describe_dataset(dataset)
+    schema = describe_dataset(dataset)
     yaml_schema = io.StringIO()
     yaml.dump(schema, yaml_schema)
     yaml_schema_val = yaml_schema.getvalue()

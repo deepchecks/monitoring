@@ -218,23 +218,22 @@ def update_statistics_from_sample(statistics: dict, sample: dict, task_type: Tas
         if "values" in stats_info:
             if not isinstance(col_value, list):
                 _add_col_value(stats_info["values"], col_value)
-            if task_type == TaskType.VISION_DETECTION:
-                if not len(col_value) > 0:
-                    continue
-                elif col == SAMPLE_LABEL_COL:
-                    for label in col_value:
-                        if isinstance(label, list) and len(label) == 5:
-                            _add_col_value(stats_info["values"], int(label[0]))
-                        else:
-                            logger.warning("Failed to save statistics for the label column in vsion "
-                                           "detection as a wrong label format was given: %s", label)
-                elif col == SAMPLE_PRED_COL:
-                    for pred in col_value:
-                        if isinstance(label, list) and len(pred) == 6:
-                            _add_col_value(stats_info["values"], int(pred[5]))
-                        else:
-                            logger.warning("Failed to save statistics for the prediction column in vsion "
-                                           "detection as a wrong prediction format was given: %s", label)
+            elif task_type == TaskType.VISION_DETECTION:
+                if len(col_value) > 0:
+                    if col == SAMPLE_LABEL_COL:
+                        for label in col_value:
+                            if isinstance(label, list) and len(label) == 5:
+                                _add_col_value(stats_info["values"], int(label[0]))
+                            else:
+                                logger.warning("Failed to save statistics for the label column in vsion "
+                                               "detection as a wrong label format was given: %s", label)
+                    elif col == SAMPLE_PRED_COL:
+                        for pred in col_value:
+                            if isinstance(label, list) and len(pred) == 6:
+                                _add_col_value(stats_info["values"], int(pred[5]))
+                            else:
+                                logger.warning("Failed to save statistics for the prediction column in vsion "
+                                               "detection as a wrong prediction format was given: %s", label)
 
 
 def unify_statistics(original_statistics: dict, added_statistics: dict):

@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import pytest
+from deepchecks_client.core.utils import ColumnType
 
 from client.deepchecks_client import DeepchecksClient
 from deepchecks_monitoring.models.model import TaskType
@@ -30,5 +31,6 @@ async def test_add_model_version_client(classification_vision_model_id,
     model_client = deepchecks_sdk_client.get_or_create_model(name="vision classification model",
                                                              task_type=TaskType.VISION_CLASSIFICATION.value)
     assert model_client.model["id"] == classification_vision_model_id
-    model_version_client = model_client.version("v1", label_map={0: "ah", 1: "ooh", 2: "weee"})
+    model_version_client = model_client.version("v1", label_map={0: "ah", 1: "ooh", 2: "weee"},
+                                                additional_data_schema={"is_good": ColumnType.BOOLEAN.value})
     assert model_version_client.model_version_id == 1

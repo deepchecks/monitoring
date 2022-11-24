@@ -266,7 +266,7 @@ async def detection_vision_model_version_id(detection_vision_model_id: int, clie
             "partial_images Mean Blue Relative Intensity": "array_float",
             "partial_images Mean Green Relative Intensity": "array_float",
         },
-        "additional_data": {}
+        "additional_data": {"is_good": "boolean"}
     }
     response = client.post(f"/api/v1/models/{detection_vision_model_id}/version", json=request)
     return response.json()["id"]
@@ -284,7 +284,7 @@ async def classification_vision_model_version_id(classification_vision_model_id:
                      "images Mean Blue Relative Intensity": "numeric",
                      "images Mean Green Relative Intensity": "numeric",
                      },
-        "additional_data": {}
+        "additional_data": {"is_good": "boolean"}
     }
     response = client.post(f"/api/v1/models/{classification_vision_model_id}/version", json=request)
     return response.json()["id"]

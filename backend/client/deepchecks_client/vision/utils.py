@@ -14,12 +14,16 @@ from collections import Counter
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 import torch
+from deepchecks.tabular import Dataset
 from deepchecks.vision.utils.image_functions import crop_image
 from deepchecks.vision.utils.image_properties import calc_default_image_properties, default_image_properties
 from deepchecks.vision.utils.vision_properties import calc_vision_properties
 from deepchecks.vision.vision_data import VisionData
+from deepchecks_client.core.utils import ColumnTypeName
 from deepchecks_client.core.utils import DeepchecksEncoder as CoreDeepcheckEncoder
+from deepchecks_client.core.utils import describe_dataset
 
 
 class DeepchecksEncoder(CoreDeepcheckEncoder):
@@ -51,6 +55,7 @@ def rearrange_and_validate_batch(
     timestamps: t.Union[t.Sequence[int], t.Sequence[datetime]] = None,
     predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
     labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
+    additional_data: t.Optional[t.Sequence[t.Dict[str, t.Any]]] = None,
     is_ref_samples: bool = False,
 ) -> t.List[t.Dict[str, t.Any]]:
     """Rearrange all the properties for the samples to a single list and validate it.
@@ -67,6 +72,8 @@ def rearrange_and_validate_batch(
         Sequence of predictions or predicted probabilities, according to the expected format for the task type.
     labels : Optional[Union[Sequence[str], Sequence[float]]] , default None
         Sequence of labels, according to the expected format for the task type.
+    additional_data : Optional[Sequence[Dict[str, Any]]] , default None
+            Sequence of additional data in format [{<name>: <value>}]
     is_ref_samples : bool , default False
         If it is used for reference data
 
@@ -105,6 +112,18 @@ def rearrange_and_validate_batch(
             raise ValueError(error_template.format(additional=' len(labels) != len(images)'))
         else:
             data['label'] = labels
+
+    if labels is not None:
+        if n_of_sample != len(labels):
+            raise ValueError(error_template.format(additional=' len(labels) != len(images)'))
+        else:
+            data['label'] = labels
+
+    if additional_data is not None:
+        if n_of_sample != len(additional_data):
+            raise ValueError(error_template.format(additional=' len(additional_data) != len(images)'))
+        else:
+            data['additional_data'] = additional_data
 
     samples = zip(*data.values())
     samples = [dict(zip(data.keys(), sample)) for sample in samples]
@@ -185,6 +204,14 @@ def calc_bbox_properties(
         bbox_properties.append(vision_properties)
 
     return bbox_properties
+
+
+def infer_additional_data_schema(additional_data: t.Union[pd.DataFrame, t.Dict[int, t.Dict[str, t.Any]]]) \
+        -> t.Dict[str, ColumnTypeName]:
+    """Infer schema for vision additional_data."""
+    if isinstance(additional_data, dict):
+        additional_data = pd.DataFrame(additional_data).T
+    return describe_dataset(Dataset(additional_data, features=[]))['additional_data']
 
 
 properties_schema = {

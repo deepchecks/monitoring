@@ -22,7 +22,7 @@ from deepchecks.tabular import Dataset
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.api import API
 from deepchecks_client.core.client import DeepchecksModelClient, DeepchecksModelVersionClient
-from deepchecks_client.core.utils import TaskType, pretty_print
+from deepchecks_client.core.utils import ColumnTypeName, TaskType, pretty_print
 from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
@@ -214,6 +214,8 @@ class DeepchecksClient:
         additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
         samples_per_request: int = 5000,
         label_map: t.Optional[t.Dict[int, str]] = None,
+        additional_data: t.Optional[t.Dict[int, t.Dict[str, t.Any]]] = None,
+        additional_data_schema: t.Optional[t.Dict[str, ColumnTypeName]] = None,
     ):
         """
         Create a vision model version and upload the reference data if provided.
@@ -248,11 +250,21 @@ class DeepchecksClient:
             this parameter controls batch size
         label_map : Dict[int, str], optional
             A dictionary mapping class ids to their names to be displayed in the different monitors.
+        additional_data: Dict[int, Dict[str, Any]], optional
+            The additional data in a format of {<index>: {<name>: <value>}}.
+            The keys must be the indexes of the samples in the dataset
+            from which the vision data dataloader was created.
+            Additional data is used for segmentation and filtering.
+        additional_data_schema: Dict[str, ColumnTypeName], optional
+            Schema for the additional data to add - in a format of {<name>: <ColumnData.value>}.
+            If not given it will be auto inferred if the additional_data is give.
 
         Returns
         -------
         deepchecks_client.vision.client.DeepchecksModelVersionClient
         """
+        from deepchecks_client.vision.client import DeepchecksModelClient as DeepchecksVisionModelClient
+        from deepchecks_client.vision.utils import infer_additional_data_schema
         try:
             self.get_model_version(model_name=model_name, version_name=version_name)
             raise DeepchecksValueError(
@@ -273,13 +285,18 @@ class DeepchecksClient:
                 'Allowed values for task_type argument are "vision_classification" and "vision_detection"'
             )
 
-        model_client = self.get_or_create_model(model_name, task_type, description)
-        version_client = model_client.version(version_name, additional_image_properties, label_map=label_map)
+        if additional_data_schema is None and additional_data is not None:
+            additional_data_schema = infer_additional_data_schema(additional_data)
+
+        model_client: DeepchecksVisionModelClient = self.get_or_create_model(model_name, task_type, description)
+        version_client = model_client.version(version_name, additional_image_properties,
+                                              label_map=label_map, additional_data_schema=additional_data_schema)
 
         version_client.upload_reference(
             vision_data=reference_dataset,
             predictions=reference_predictions,
-            samples_per_request=samples_per_request
+            samples_per_request=samples_per_request,
+            additional_data=additional_data
         )
 
         return version_client

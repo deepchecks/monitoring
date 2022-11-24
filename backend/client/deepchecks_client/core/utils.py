@@ -13,6 +13,7 @@
 import enum
 import json
 import typing as t
+import warnings
 from datetime import datetime
 from json import JSONDecodeError
 
@@ -21,11 +22,18 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 import rfc3339_validator
+from deepchecks.tabular import Dataset
+from deepchecks.tabular.utils.feature_inference import is_categorical
 from jsonschema import FormatChecker, validators
+from pandas.core.dtypes.common import is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype
 from pendulum.datetime import DateTime as PendulumDateTime
 from termcolor import cprint
+from typing_extensions import TypeAlias, TypedDict
 
-__all__ = ['ColumnType', 'TaskType', 'DeepchecksColumns']
+__all__ = ['ColumnType', 'ColumnTypeName', 'TaskType', 'DeepchecksColumns',
+           'validate_additional_data_schema', 'describe_dataset', 'DataSchema']
+
+ColumnTypeName: TypeAlias = str
 
 
 class TaskType(enum.Enum):
@@ -177,6 +185,23 @@ def maybe_raise(
     return response
 
 
+def validate_additional_data_schema(additional_data: t.Dict[str, ColumnTypeName],
+                                    features: t.Dict[str, ColumnTypeName]):
+    if additional_data is not None:
+        if not isinstance(additional_data, dict):
+            raise ValueError('additional_data_schema must be a dict')
+        intersection = set(additional_data.keys()).intersection(features.keys())
+        if intersection:
+            raise ValueError(f'features and additional_data must contain different keys, found shared keys: '
+                             f'{intersection}')
+        for key, value in features.items():
+            if not isinstance(key, str):
+                raise ValueError(f'key of additional_data_schema must be of type str but got: {type(key)}')
+            if value not in ColumnType.values():
+                raise ValueError(
+                    f'value of additional_data_schema must be one of {ColumnType.values()} but got {value}')
+
+
 class DeepchecksEncoder:
     """Deepchecks encoder."""
 
@@ -237,3 +262,70 @@ def pretty_print(msg: str):
 
     Used for information massages which are not errors or warnings."""
     cprint(msg, 'green', attrs=['bold'])
+
+
+def _get_series_column_type(series: pd.Series):
+    if series.dtype == 'object':
+        # object might still be only of one type, so we re-infer the dtype
+        series = pd.Series(series.to_list(), name=series.name)
+    if is_bool_dtype(series):
+        return ColumnType.BOOLEAN.value
+    if is_integer_dtype(series):
+        if is_categorical(series):
+            return ColumnType.CATEGORICAL.value
+        return ColumnType.INTEGER.value
+    if is_numeric_dtype(series):
+        return ColumnType.NUMERIC.value
+    if is_categorical_dtype(series):
+        return ColumnType.CATEGORICAL.value
+    if series.apply(type).eq(str).all():
+        if is_categorical(series):
+            return ColumnType.CATEGORICAL.value
+        return ColumnType.TEXT.value
+    warnings.warn(f'Column {series.name} is of unsupported dtype - {series.dtype}.')
+    return None
+
+
+class DataSchema(TypedDict):
+    """Data schema description."""
+
+    features: t.Dict[str, ColumnTypeName]
+    additional_data: t.Dict[str, ColumnTypeName]
+
+
+def describe_dataset(dataset: Dataset) -> DataSchema:
+    """Create a schema for a dataset"""
+    additional_data = {}
+    features = {}
+    for column in dataset.data.columns:
+        col_series = dataset.data[column]
+        if column in [dataset.index_name, dataset.datetime_name]:
+            continue
+        elif dataset.has_label() and column == dataset.label_name:
+            continue
+        elif column in dataset.features:
+            if column in dataset.cat_features:
+                features[column] = (
+                    ColumnType.BOOLEAN.value
+                    if is_bool_dtype(col_series)
+                    else ColumnType.CATEGORICAL.value
+                )
+            elif column in dataset.numerical_features:
+                features[column] = (
+                    ColumnType.INTEGER.value
+                    if is_integer_dtype(col_series)
+                    else ColumnType.NUMERIC.value
+                )
+            else:
+                features[column] = _get_series_column_type(col_series)
+                if features[column] == ColumnType.CATEGORICAL.value:
+                    features[column] = ColumnType.TEXT.value
+        else:
+            additional_data[column] = _get_series_column_type(col_series)
+    # if any columns failed to auto infer print this warnings
+    # moved to here to not annoy the user so much
+    if any(x is None for x in list(features.values()) + list(additional_data.values())):
+        warnings.warn('Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.\n'
+                      'You can set the type manually in the schema file/dict.\n'
+                      'DateTime format is supported using iso format only.')
+    return {'features': features, 'additional_data': additional_data}

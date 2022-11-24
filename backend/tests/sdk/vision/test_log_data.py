@@ -61,7 +61,8 @@ async def test_detection_log(detection_vision_model_version_client: DeepchecksMo
                                                                         [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
                                                                         [[7, 9, 0], [9, 6, 0], [9, 6, 0]],
                                                                         [[7, 9, 0], [9, 6, 0], [9, 6, 0]]]),
-                                                     prediction=[[0, 0, 2, 2, 0.6, 2]], label=[[2, 0, 0, 2, 2]])
+                                                     prediction=[[0, 0, 2, 2, 0.6, 2]], label=[[2, 0, 0, 2, 2]],
+                                                     additional_data={'is_good': False})
     detection_vision_model_version_client.send()
 
     model_version_query = await async_session.execute(
@@ -76,12 +77,12 @@ async def test_detection_log(detection_vision_model_version_client: DeepchecksMo
     mon_table = model_version.get_monitor_table(async_session)
     mon_arr = [dict(row) for row in (await async_session.execute(select(mon_table))).all()]
     mon_arr = [[row['images Aspect Ratio'], row['partial_images Aspect Ratio'], row['_dc_label'], row['_dc_prediction'],
-                row['_dc_sample_id']]
+                row['_dc_sample_id'], row['is_good']]
                for row in mon_arr]
     assert mon_arr == [
-        [0.5, [], [[1, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6, 2]], '1'],
-        [1, [], [[0, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6, 2]], '2'],
-        [1.3333333333333333, [1], [[2, 0, 0, 2, 2]], [[0, 0, 2, 2, 0.6, 2]], '3'],
+        [0.5, [], [[1, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6, 2]], '1', None],
+        [1, [], [[0, 0, 0, 1, 1]], [[0, 0, 1, 1, 0.6, 2]], '2', None],
+        [1.3333333333333333, [1], [[2, 0, 0, 2, 2]], [[0, 0, 2, 2, 0.6, 2]], '3', False],
     ]
 
 
@@ -107,7 +108,10 @@ async def test_classification_batch_log(
             [0.1, 0.3, 0.6],
             [0.1, 0.3, 0.6],
             [0.1, 0.3, 0.6]
-        ]
+        ],
+        additional_data=[{'is_good': True},
+                         {'is_good': True},
+                         {'is_good': False}],
     )
 
     model_version = await async_session.get(
@@ -123,7 +127,8 @@ async def test_classification_batch_log(
             row['images Aspect Ratio'],
             row['_dc_label'],
             row['_dc_prediction'],
-            row['_dc_sample_id']
+            row['_dc_sample_id'],
+            row['is_good'],
         ]
         for row in monitor_data
     ]
@@ -132,9 +137,9 @@ async def test_classification_batch_log(
     assert stats['images Aspect Ratio'] == {'max': 1, 'min': 0.5}
 
     assert monitor_data == [
-        [0.5, 2, [0.1, 0.3, 0.6], '1'],
-        [1.0, 0, [0.1, 0.3, 0.6], '2'],
-        [0.5, 1, [0.1, 0.3, 0.6], '3'],
+        [0.5, 2, [0.1, 0.3, 0.6], '1', True],
+        [1.0, 0, [0.1, 0.3, 0.6], '2', True],
+        [0.5, 1, [0.1, 0.3, 0.6], '3', False],
     ]
 
 

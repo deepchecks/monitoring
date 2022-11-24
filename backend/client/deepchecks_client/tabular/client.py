@@ -27,7 +27,7 @@ from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
-                                          TaskType, parse_timestamp, pretty_print)
+                                          TaskType, parse_timestamp, pretty_print, validate_additional_data_schema)
 from deepchecks_client.tabular.utils import DataSchema, read_schema
 
 
@@ -120,7 +120,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             warnings.warn('log_batch was called without timestamps, using current time instead')
             timestamps = np.array([pdl.now()] * len(sample_ids))
 
-        data_batch =_process_batch(
+        data_batch = _process_batch(
             schema_validator=self.schema_validator,
             data_columns=self.all_columns,
             task_type=TaskType(self.model['task_type']),
@@ -436,19 +436,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     'Accurate feature importance can be calculated via "deepchecks.tabular.feature_importance"'
                 )
 
-            if additional_data is not None:
-                if not isinstance(additional_data, dict):
-                    raise ValueError('additional_data must be a dict')
-                intersection = set(additional_data.keys()).intersection(features.keys())
-                if intersection:
-                    raise ValueError(f'features and additional_data must contain different keys, found shared keys: '
-                                     f'{intersection}')
-                for key, value in features.items():
-                    if not isinstance(key, str):
-                        raise ValueError(f'key of additional_data must be of type str but got: {type(key)}')
-                    if value not in ColumnType.values():
-                        raise ValueError(
-                            f'value of additional_data must be one of {ColumnType.values()} but got {value}')
+            validate_additional_data_schema(additional_data, features)
 
             if model_classes:
                 if not isinstance(model_classes, t.Sequence):

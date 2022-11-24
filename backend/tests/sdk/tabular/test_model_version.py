@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
 from deepchecks_client import DeepchecksClient
-from deepchecks_client.tabular.utils import _describe_dataset, create_schema, read_schema
+from deepchecks_client.tabular.utils import describe_dataset, create_schema, read_schema
 from httpx import HTTPError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -132,7 +132,7 @@ async def test_model_version_feature_importance_update(
 ):
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
-    dataset_schema = _describe_dataset(dataset)
+    dataset_schema = describe_dataset(dataset)
 
     model_client = deepchecks_sdk_client.get_or_create_model(
         name="classification model",
@@ -156,7 +156,7 @@ async def test_model_version_feature_importance_update(
 def test_model_version_deletion(deepchecks_sdk_client: DeepchecksClient):
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
-    dataset_schema = _describe_dataset(dataset)
+    dataset_schema = describe_dataset(dataset)
 
     model_client = deepchecks_sdk_client.get_or_create_model(
         name="classification model",
