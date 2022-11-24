@@ -27,7 +27,7 @@ export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: Gr
         backgroundColor: theme.palette.grey[50]
       })}
     >
-      <Stack direction="row" justifyContent="end">
+      <Stack direction="row" justifyContent="end" sx={{ position: 'sticky', top: 10 }}>
         <IconButton size="large" onClick={closeDrawer} sx={{ background: 'none', padding: '6px' }}>
           <CloseIcon width={24} height={24} />
         </IconButton>
@@ -45,13 +45,15 @@ export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: Gr
         ) : (
           <>
             <NoDataToShow />
-            <Typography
-              variant="body1"
-              sx={{ textAlign: 'center', color: theme => theme.palette.primary.main, cursor: 'pointer' }}
-              onClick={resetFilters}
-            >
-              Reset Changes
-            </Typography>
+            {graphData && (
+              <Typography
+                variant="body1"
+                sx={{ textAlign: 'center', color: theme => theme.palette.primary.main, cursor: 'pointer' }}
+                onClick={resetFilters}
+              >
+                Reset Changes
+              </Typography>
+            )}
           </>
         )}
       </Box>

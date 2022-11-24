@@ -15,10 +15,21 @@ import {
 
 import useGlobalState from 'context';
 import useModels from 'hooks/useModels';
-import useMonitorsData from '../../../hooks/useMonitorsData';
+import useMonitorsData from 'hooks/useMonitorsData';
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Modal, SelectChangeEvent, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  SelectChangeEvent,
+  TextField,
+  Typography
+} from '@mui/material';
 
 import { CheckInfo } from '../CheckInfo';
 import { Subcategory } from '../Subcategory';
@@ -35,7 +46,7 @@ import {
   StyledTypographyLabel
 } from './MonitorForm.style';
 
-import { ColumnsSchema, ColumnStatsCategorical, ColumnStatsNumeric, ColumnType } from '../../../helpers/types/model';
+import { ColumnsSchema, ColumnStatsCategorical, ColumnStatsNumeric, ColumnType } from 'helpers/types/model';
 import { timeWindow, checkInfoInitValue, formikInitValues, monitorSchemaData } from './MonitorForm.helpers';
 
 import { LookbackCheckProps } from '../MonitorDrawer.types';
@@ -70,15 +81,16 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
 
   useRunMonitorLookback(monitor?.id || null, modelId?.toString() ?? null);
 
+  const initValues = useMemo(() => formikInitValues(monitor), [monitor]);
+
   const { values, handleChange, handleBlur, getFieldProps, setFieldValue, ...formik } = useFormik({
-    initialValues: formikInitValues(monitor),
-    onSubmit: async values => {
-      
+    initialValues: initValues,
+    onSubmit: async () => {
       if (monitor) {
         // Check if this monitor has active alerts
         let hasActiveAlerts = false;
         for (const alertRule of monitor.alert_rules) {
-          const alerts = await getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule.id)
+          const alerts = await getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule.id);
           const nonResolved = alerts.filter(a => a.resolved === false);
           if (nonResolved && nonResolved.length > 0) {
             hasActiveAlerts = true;
@@ -86,13 +98,12 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
             break;
           }
         }
-        if (hasActiveAlerts ) {
-          return
+        if (hasActiveAlerts) {
+          return;
         }
-      } 
-      
-      await saveMonitor();
+      }
 
+      await saveMonitor();
     }
   });
 
@@ -121,11 +132,12 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       };
 
       await updateMonitor(monitorSchema);
-    }
-    else {
+    } else {
       const monitorSchema: MonitorCreationSchema = monitorSchemaData(values, monitor, globalState, operator, value);
 
-      await createMonitor({ checkId: parseInt(values.check), data: monitorSchema });
+      if (typeof values.check === 'number') {
+        await createMonitor({ checkId: values.check, data: monitorSchema });
+      }
     }
 
     refreshMonitors(monitor);
@@ -134,7 +146,6 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   };
 
   const handleActiveAlertResolve = async () => {
-    
     if (monitor) {
       await saveMonitor();
     }
@@ -172,8 +183,8 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     },
     [
       modelId,
-      monitorModelsMap,
       monitor,
+      monitorModelsMap,
       runCheckLookback,
       selectedModelId,
       values.additional_kwargs,
@@ -205,9 +216,9 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     [setFieldValue]
   );
 
-  const handleInputChange = useCallback(
+  const handleNumericInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFieldValue('numericValue', event.target.value ? +event.target.value : '');
+      setFieldValue('numericValue', event.target.value ? +event.target.value : 0);
     },
     [setFieldValue]
   );
@@ -223,20 +234,23 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     }
   }, [columns, setFieldValue, values.column, values.numericValue]);
 
-  const handleModelChange = (event: SelectChangeEvent<unknown>) => {
-    const value = event.target.value as string;
-    handleChange(event);
-    setSelectedModelId(+value);
+  const handleModelChange = useCallback(
+    (event: SelectChangeEvent<unknown>) => {
+      const value = event.target.value as string;
+      handleChange(event);
+      setSelectedModelId(+value);
 
-    setFieldValue('model', value);
-    setFieldValue('check', '');
-    setFieldValue('column', '');
-    setFieldValue('category', '');
-    setFieldValue('lookback', '');
-    setFieldValue('numericValue', '');
-    setFieldValue('additional_kwargs', checkInfoInitValue());
-    updateGraph();
-  };
+      setFieldValue('model', value);
+      setFieldValue('check', '');
+      setFieldValue('column', '');
+      setFieldValue('category', '');
+      setFieldValue('lookback', '');
+      setFieldValue('numericValue', '');
+      setFieldValue('additional_kwargs', checkInfoInitValue());
+      updateGraph();
+    },
+    [handleChange, setFieldValue, updateGraph]
+  );
 
   useMemo(() => {
     if (!values.column) {
@@ -247,6 +261,8 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       if (!column) return;
 
       if (column.type === ColumnType.categorical) {
+        setFieldValue('numericValue', 0);
+
         const stats = column.stats as ColumnStatsCategorical;
 
         setColumnComponent(
@@ -273,14 +289,17 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       }
 
       if (column.type === ColumnType.numeric) {
+        setFieldValue('category', '');
+
         const stats = column.stats as ColumnStatsNumeric;
+
         setColumnComponent(
           <Box mt="39px">
             <StyledTypographyLabel>Select Value</StyledTypographyLabel>
             <RangePicker
               onChange={handleSliderChange}
               handleInputBlur={handleInputBlur}
-              handleInputChange={handleInputChange}
+              handleInputChange={handleNumericInputChange}
               name="numericValue"
               value={+values.numericValue || 0}
               min={+(stats.min - 0.01).toFixed(2)}
@@ -301,8 +320,6 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       setFieldValue('category', column?.stats?.values?.[0] || '');
     }
   }, [values.column, columns, setFieldValue]);
-
-  const valuesCheck = !monitor && values.check;
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -340,19 +357,17 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       clearTimeout(timer.current);
     };
   }, [
-    valuesCheck,
     columns,
     monitor,
     setFieldValue,
     updateGraph,
+    values.aggregation_window,
+    values.category,
     values.check,
     values.column,
-    values.category,
-    values.numericValue,
-    values.lookback,
-    values.aggregation_window,
     values.frequency,
-    values.additional_kwargs
+    values.lookback,
+    values.numericValue
   ]);
 
   useEffect(() => {
@@ -365,7 +380,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   return (
     <form onSubmit={e => handleSubmit(e)}>
       <StyledStackContainer>
-        <Box>
+        <Box sx={{ pb: '20px' }}>
           <StyledTypography variant="h4">{`${monitor ? 'Edit' : 'New'} Monitor`}</StyledTypography>
           <StyledStackInputs spacing="50px">
             <TextField
@@ -494,6 +509,8 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 size="small"
                 clearValue={() => {
                   setFieldValue('column', '');
+                  setFieldValue('category', '');
+                  setFieldValue('numericValue', 0);
                 }}
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}
@@ -526,21 +543,19 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         </StyledButtonWrapper>
       </StyledStackContainer>
 
-      <Dialog
-        open={activeAlertsModalOpen}
-      >
+      <Dialog open={activeAlertsModalOpen}>
         <DialogTitle>Confirmation</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            This monitor has active alerts connected to it. In order to edit the monitor, all alerts must be resolved first. 
-            Are you sure you want to edit this monitor and resolve all alerts connected to it?
+            This monitor has active alerts connected to it. In order to edit the monitor, all alerts must be resolved
+            first. Are you sure you want to edit this monitor and resolve all alerts connected to it?
           </Typography>
         </DialogContent>
         <DialogActions>
-        <Button autoFocus onClick={() => setActiveAlertsModalOpen(false)}>
-          Cancel
-        </Button>
-        <Button onClick={handleActiveAlertResolve}>OK</Button>
+          <Button autoFocus onClick={() => setActiveAlertsModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleActiveAlertResolve}>OK</Button>
         </DialogActions>
       </Dialog>
     </form>

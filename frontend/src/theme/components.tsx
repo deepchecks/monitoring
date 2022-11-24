@@ -283,6 +283,9 @@ export const componentOptions: Components<Theme> = {
           opacity: 0.35
         },
         '& label': {
+          color: theme.palette.text.primary
+        },
+        '& .MuiInputLabel-shrink': {
           color: theme.palette.text.disabled
         }
       })

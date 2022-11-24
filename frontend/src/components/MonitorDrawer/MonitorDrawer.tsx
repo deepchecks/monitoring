@@ -1,53 +1,20 @@
-import { Drawer, DrawerProps } from '@mui/material';
-import {
-  MonitorCheckConfSchema,
-  MonitorSchema,
-  OperatorsEnum,
-  useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
-} from 'api/generated';
-import { ChartData } from 'chart.js';
 import React, { useMemo, useState, useCallback } from 'react';
-import { parseDataForLineChart } from '../../helpers/utils/parseDataForChart';
+import { ChartData } from 'chart.js';
+import mixpanel from 'mixpanel-browser';
+
+import { useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
+
+import { Drawer, Box } from '@mui/material';
+
 import CreateAlert from './AlertForm/CreateAlert';
 import { GraphView } from './GraphView';
 import MonitorForm from './MonitorForm/MonitorForm';
 // import { CreateMonitor } from './MonitorForm/CreateMonitor';
 // import EditMonitor from './MonitorForm/EditMonitor';
 
-import mixpanel from 'mixpanel-browser';
+import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { StyledStackWrapper } from './MonitorDrawer.style';
-
-export interface LookbackCheckProps {
-  checkId: number;
-  data: {
-    start_time: string;
-    end_time: string;
-    filter?: {
-      filters: {
-        column: string;
-        operator: OperatorsEnum;
-        value: string | number;
-      }[];
-    };
-    additional_kwargs: MonitorCheckConfSchema;
-    frequency: number;
-    aggregation_window: number;
-  };
-}
-
-export enum DrawerNamesMap {
-  CreateMonitor = 'new monitor',
-  CreateAlert = 'new alert',
-  EditMonitor = 'edit monitor'
-}
-
-export type DrawerNames = DrawerNamesMap.CreateMonitor | DrawerNamesMap.CreateAlert | DrawerNamesMap.EditMonitor;
-
-interface MonitorDrawerProps extends DrawerProps {
-  monitor?: MonitorSchema;
-  drawerName: DrawerNames;
-  onClose: () => void;
-}
+import { MonitorDrawerProps, LookbackCheckProps, DrawerNamesMap } from './MonitorDrawer.types';
 
 function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawerProps) {
   const [graphData, setGraphData] = useState<ChartData<'line'>>();
@@ -125,12 +92,14 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
     <Drawer {...props}>
       <StyledStackWrapper direction="row">
         {Content}
-        <GraphView
-          onClose={handleOnClose}
-          isLoading={isRunCheckLoading}
-          graphData={graphData}
-          setResetMonitor={setResetMonitor}
-        />
+        <Box sx={{ overflow: 'auto' }}>
+          <GraphView
+            onClose={handleOnClose}
+            isLoading={isRunCheckLoading}
+            graphData={graphData}
+            setResetMonitor={setResetMonitor}
+          />
+        </Box>
       </StyledStackWrapper>
     </Drawer>
   );

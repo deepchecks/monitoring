@@ -1,45 +1,13 @@
-import mixpanel from 'mixpanel-browser';
 import React, { memo, useState } from 'react';
 import { Link, LinkProps, useLocation } from 'react-router-dom';
-
-import { PathInfo } from '../helpers/helper';
+import mixpanel from 'mixpanel-browser';
 
 import { Box, styled, Typography } from '@mui/material';
-import { Arrow } from 'assets/icon/icon';
+
 import { colors } from '../theme/colors';
+import { PathInfo } from '../helpers/helper';
 
-interface StyledLinkWrapperProps {
-  active?: boolean;
-}
-
-const StyledLinkWrapper = styled(
-  (
-    { active, ...props }: LinkProps & StyledLinkWrapperProps // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => <Link {...props} />
-)<StyledLinkWrapperProps>(
-  ({ active }) => `
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-left: 14px;
-  border-radius: 20px 0px 0px 20px;
-  width: 100%;
-  margin: 28px 0;
-  padding: 6px 0 6px 16px;
-  text-decoration: none;
-  cursor: pointer;
-  ${active ? 'background-color: #fff;' : ''}
-
-  &:first-of-type {
-    margin-top: 0;
-  };
-
-  &:last-of-type {
-    margin-bottom: 0;
-  };
-`
-);
+import { Arrow } from 'assets/icon/icon';
 
 interface SidebarMenuItemProps {
   width: number;
@@ -48,13 +16,13 @@ interface SidebarMenuItemProps {
 }
 
 function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps) {
-  const [hover, setHover] = useState<boolean>(false);
-
   const location = useLocation();
+
+  const [hover, setHover] = useState(false);
+  const [isConfigurationOpen, setIsConfigurationOpen] = useState(false);
+
   const { ActiveIcon, Icon, IconHover, link } = info;
   const active = location?.pathname.startsWith(link);
-  const [isConfigurationOpen, setIsConfigurationOpen] = useState<boolean>(false);
-
   const activeHover = hover && !active;
 
   const openOrCloseConfiguration = () => {
@@ -90,7 +58,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
       case '/configuration/integrations':
         mixpanel.track('Click on the Integrations');
         break;
-      
+
       case '/configuration/api-key':
         mixpanel.track('Click on the API Key');
         break;
@@ -133,9 +101,9 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: activeHover ? theme.palette.primary.dark : theme.palette.primary.contrastText,
+            backgroundColor: activeHover ? colors.primary.violet[300] : theme.palette.primary.contrastText,
             '& svg': {
-              fill: activeHover ? colors.primary.violet[600] : theme.palette.common.black
+              fill: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black
             }
           })}
         >
@@ -145,38 +113,44 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
       {info.title === 'Configuration' && (
         <Box
           sx={theme => ({
-            width: 12,
-            height: 12,
+            width: 16,
+            height: 16,
             borderRadius: '50%',
             marginRight: '30px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
-            backgroundColor: theme.palette.primary.contrastText
+            backgroundColor: activeHover ? colors.primary.violet[300] : theme.palette.primary.contrastText
           })}
         >
           {isConfigurationOpen ? (
-            <Box sx={{ height: 2, width: 6, background: colors.primary.violet[600] }} />
+            <Box
+              sx={theme => ({
+                height: 2,
+                width: 7,
+                background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black
+              })}
+            />
           ) : (
             <Box
-              sx={{
+              sx={theme => ({
                 height: 2,
-                width: 6,
-                background: colors.primary.violet[600],
+                width: 7,
+                background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black,
                 position: 'relative',
                 ':after': {
                   content: "''",
                   display: 'block',
                   width: 2,
-                  height: 6,
+                  height: 7,
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
-                  background: colors.primary.violet[600],
+                  background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black,
                   transform: 'translate(-50%, -50%)'
                 }
-              }}
+              })}
             />
           )}
         </Box>
@@ -231,7 +205,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
             sx={{
               color: location.pathname === childInfo.link ? colors.primary.violet[600] : '#fff',
               ':hover': {
-                color: location.pathname !== childInfo.link ? colors.primary.violet[400] : colors.primary.violet[600]
+                color: location.pathname !== childInfo.link ? colors.primary.violet[300] : colors.primary.violet[600]
               },
               m: '21px 0'
             }}
@@ -262,5 +236,38 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
     </>
   );
 }
+
+interface StyledLinkWrapperProps {
+  active?: boolean;
+}
+
+const StyledLinkWrapper = styled(
+  (
+    { active, ...props }: LinkProps & StyledLinkWrapperProps // eslint-disable-line @typescript-eslint/no-unused-vars
+  ) => <Link {...props} />
+)<StyledLinkWrapperProps>(
+  ({ active }) => `
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 14px;
+  border-radius: 20px 0px 0px 20px;
+  width: 100%;
+  margin: 28px 0;
+  padding: 6px 0 6px 16px;
+  text-decoration: none;
+  cursor: pointer;
+  ${active ? 'background-color: #fff;' : ''}
+
+  &:first-of-type {
+    margin-top: 0;
+  };
+
+  &:last-of-type {
+    margin-bottom: 0;
+  };
+`
+);
 
 export const SidebarMenuItem = memo(SidebarMenuItemComponent);

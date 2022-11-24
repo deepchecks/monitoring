@@ -20,12 +20,16 @@ export const formikInitValues = (monitor: MonitorSchema | undefined) => ({
   name: monitor?.name || '',
   category: (monitor?.data_filters?.filters[0].value as string) || '',
   column: monitor?.data_filters?.filters[0].column || '',
-  numericValue: monitor ? (monitor.data_filters?.filters[0].value as number) || 0 : '',
+  numericValue: monitor
+    ? typeof monitor.data_filters?.filters[0].value === 'number'
+      ? monitor.data_filters?.filters[0].value
+      : 0
+    : '',
   lookback: monitor?.lookback || '',
   additional_kwargs: monitor?.additional_kwargs || checkInfoInitValue(),
   frequency: monitor?.frequency || '',
   aggregation_window: monitor?.aggregation_window || '',
-  check: '',
+  check: monitor?.check || '',
   model: ''
 });
 

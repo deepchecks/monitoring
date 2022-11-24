@@ -32,10 +32,12 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
     frequency: frequency,
     name
   } = alertRule;
+  const theme = useTheme();
+
+  const [headerColor, setHeaderColor] = useState(theme.palette.error.dark);
 
   const checkFrequencyFormatted = dayjs.duration(frequency, 'seconds').humanize();
 
-  const theme = useTheme();
   return (
     <Stack
       onMouseEnter={() => setIsHovered(true)}
@@ -54,12 +56,12 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
       }}
     >
       <Stack direction="row" height="83px">
-        {severity && <AlertCount severity={severity} />}
+        {severity && <AlertCount severity={severity} setColor={setHeaderColor} />}
         <Stack
           sx={{
             p: '11px 13px',
             flexGrow: 1,
-            backgroundColor: isHovered ? alpha(theme.palette.primary.contrastText, 0.4) : theme.palette.grey[50],
+            backgroundColor: isHovered ? alpha(theme.palette.primary.contrastText, 0.4) : alpha(headerColor, 0.1),
             color: isHovered ? theme.palette.primary.main : theme.palette.text.primary,
             transition: 'color .4s'
           }}

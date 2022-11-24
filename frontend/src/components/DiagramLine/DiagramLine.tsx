@@ -165,7 +165,7 @@ function DiagramLine({
       },
       line: {
         borderWidth: 2,
-        tension: 0,
+        tension: 0.4,
         fill: true
       }
     },

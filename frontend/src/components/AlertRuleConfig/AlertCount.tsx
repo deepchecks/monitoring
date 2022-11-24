@@ -1,4 +1,4 @@
-import React, { FC, memo, useMemo } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, memo, useMemo } from 'react';
 import { Box, Stack, Typography, useTheme } from '@mui/material';
 
 import { ReactComponent as LowSeverityIcon } from '../../assets/icon/severity/low.svg';
@@ -9,11 +9,10 @@ import { AlertSeverity } from 'api/generated';
 
 interface AlertCountComponentProps {
   severity: AlertSeverity;
+  setColor: Dispatch<SetStateAction<string>>;
 }
 
-const AlertCountComponent: FC<AlertCountComponentProps> = ({
-  severity = AlertSeverity.high
-}: AlertCountComponentProps) => {
+const AlertCountComponent = ({ severity = AlertSeverity.high, setColor }: AlertCountComponentProps) => {
   const theme = useTheme();
   const { color, Icon } = useMemo(() => {
     const { low, mid, high, critical } = AlertSeverity;
@@ -45,6 +44,10 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
     theme.palette.error.light,
     theme.palette.error.main
   ]);
+
+  useEffect(() => {
+    setColor && setColor(color);
+  }, [color, setColor]);
 
   return (
     <Stack

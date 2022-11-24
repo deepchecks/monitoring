@@ -1,9 +1,10 @@
 import { Box, Button, Stack, styled, Typography } from '@mui/material';
 
 export const StyledStackContainer = styled(Stack)({
-  padding: '32px 40px 37px',
+  padding: '32px 40px 0',
   height: '100%',
-  justifyContent: 'space-between'
+  justifyContent: 'space-between',
+  overflowY: 'auto'
 });
 
 export const StyledStackInputs = styled(Stack)({
@@ -17,8 +18,14 @@ export const StyledTypography = styled(Typography)({
 
 export const StyledButtonWrapper = styled(Box)({
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center'
+  alignItems: 'flex-start',
+  justifyContent: 'center',
+  position: 'sticky',
+  bottom: 0,
+  background: '#fff',
+  minHeight: 84,
+  paddingTop: 15,
+  zIndex: 999
 });
 
 export const StyledButton = styled(Button)({

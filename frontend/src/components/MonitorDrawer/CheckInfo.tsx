@@ -23,47 +23,52 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
     } else {
       setCheckInfoData({ check_conf: {} });
     }
-  }, [checkInfo]);
+  }, [checkInfo, initialCheckInfoValues]);
 
   useEffect(() => {
     setFieldValue('additional_kwargs', checkInfoData, false);
-  }, [checkInfoData]);
+  }, [checkInfoData, setFieldValue]);
 
-  const handleOnChange = (confType: string, dataType: string, item?: MonitorValueConf) => {
-    let objectToUpdate: any = { ...checkInfoData };
-    let didAggShowChange = false;
-    let changedItem;
+  const handleOnChange = React.useCallback(
+    (confType: string, dataType: string, item?: MonitorValueConf) => {
+      let objectToUpdate: any = JSON.parse(JSON.stringify(checkInfoData || {}));
+      let didAggShowChange = false;
+      let changedItem;
 
-    if (!item) {
-      changedItem = {
-        name: null,
-        is_agg: undefined
-      };
-    } else {
-      changedItem = item;
-    }
-
-    if (confType === 'res_conf') {
-      objectToUpdate[confType] = [changedItem.name];
-    } else {
-      if (!objectToUpdate[confType]) {
-        objectToUpdate[confType] = { [dataType]: [changedItem.name] };
+      if (!item) {
+        changedItem = {
+          name: null,
+          is_agg: undefined
+        };
       } else {
-        objectToUpdate[confType][dataType] = [changedItem.name];
+        changedItem = item;
       }
 
-      if (changedItem.is_agg !== null) {
-        didAggShowChange = true;
-        setIsAggShown(changedItem.is_agg);
+      if (confType === 'res_conf') {
+        objectToUpdate[confType] = changedItem.name ? [changedItem.name] : null;
+      } else {
+        if (!objectToUpdate[confType]) {
+          objectToUpdate[confType] = { [dataType]: [changedItem.name] };
+        } else {
+          changedItem.name
+            ? (objectToUpdate[confType][dataType] = [changedItem.name])
+            : delete objectToUpdate[confType][dataType];
+        }
+
+        if (changedItem.is_agg !== null) {
+          didAggShowChange = true;
+          setIsAggShown(changedItem.is_agg);
+        }
       }
-    }
 
-    if (didAggShowChange && changedItem.is_agg === true) {
-      objectToUpdate = { check_conf: { [dataType]: [changedItem.name] } };
-    }
+      if (didAggShowChange && changedItem.is_agg === true) {
+        objectToUpdate = { check_conf: { [dataType]: changedItem.name ? [changedItem.name ]: undefined } };
+      }
 
-    setCheckInfoData(objectToUpdate);
-  };
+      setCheckInfoData(objectToUpdate);
+    },
+    [checkInfoData]
+  );
 
   return (
     <Box
@@ -73,6 +78,7 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
     >
       {confsToRender.map(([key, val], index) => {
         if (!val && val !== 0) return;
+
         return Array.isArray(val) ? (
           val.map((checkItem: MonitorTypeConf, j: number) => (
             <Subcategory key={'check-info-item' + index + j}>
@@ -93,7 +99,13 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
               data={val}
               handleOnChange={handleOnChange}
               isAggShown={isAggShown}
-              initValue={shouldRenderInitValues ? initValuesToRender[index]?.[val.type] || '' : ''}
+              initValue={
+                shouldRenderInitValues
+                  ? initValuesToRender[index]?.[val.type]
+                    ? initValuesToRender[index]?.[val.type]
+                    : initValuesToRender[index]
+                  : ''
+              }
               setIsAggShown={setIsAggShown}
             />
           </Subcategory>
