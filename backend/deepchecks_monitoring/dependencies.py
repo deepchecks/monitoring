@@ -66,7 +66,7 @@ def get_cache_invalidator(request: fastapi.Request):
 
 def get_cache_functions(request: fastapi.Request):
     state = request.app.state
-    return state.cache_functions
+    return state.resources_provider.cache_functions
 
 
 def get_resources_provider(request: fastapi.Request) -> "ResourcesProvider":

@@ -18,8 +18,8 @@ import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
 from pydantic.main import BaseModel
-from sqlalchemy import (ARRAY, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, func,
-                        select)
+from sqlalchemy import (ARRAY, BigInteger, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
+                        UniqueConstraint, func, select)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
@@ -84,6 +84,14 @@ class ModelVersion(Base):
     statistics = Column(JSONB)
     classes = Column(ARRAY(String), nullable=True)
     label_map = Column(JSONB, nullable=True)
+    # Indicates the last time the data of this version was updated.
+    last_update_time = Column(DateTime(timezone=True), nullable=True)
+    # Indicates the last time the background worker processed this version.
+    last_process_time = Column(DateTime(timezone=True), nullable=True)
+    # Indicates the latest messages offset that was ingested
+    ingestion_offset = Column(BigInteger, nullable=True)
+    # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
+    topic_end_offset = Column(BigInteger, nullable=True)
 
     model_id = Column(
         Integer,

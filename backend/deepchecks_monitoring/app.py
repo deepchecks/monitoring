@@ -85,9 +85,8 @@ def create_application(
     )
 
     app.state.settings = settings
-    app.state.resources_provider = resources_provider or ResourcesProvider(settings)
-    app.state.cache_functions = cache_functions_class(app.state.resources_provider.redis_client)
-    app.state.cache_invalidator = CacheInvalidator(app.state.resources_provider, app.state.cache_functions)
+    app.state.resources_provider = resources_provider or ResourcesProvider(settings, cache_functions_class)
+    app.state.cache_invalidator = CacheInvalidator(app.state.resources_provider)
     app.state.data_ingestion_backend = data_ingestion_backend_class(app.state.resources_provider,
                                                                     app.state.cache_invalidator)
     app.add_middleware(

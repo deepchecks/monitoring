@@ -424,9 +424,9 @@ async def run_check_group_by_feature(
 
     # Start with all data filter
     filters = [{
-                'name': 'All Data',
-                'filters': [],
-                'count': count
+        'name': 'All Data',
+        'filters': [],
+        'count': count
     }]
 
     # Get bins

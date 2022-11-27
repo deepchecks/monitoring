@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining worker and functions for cache invalidation."""
+import asyncio
 import logging
 
 import pendulum as pdl
@@ -21,9 +22,9 @@ TOPIC_PREFIX = "invalidation"
 class CacheInvalidator:
     """Holds the logic for the cache invalidation. Can be overridden to alter the logic and sent in `create_app`."""
 
-    def __init__(self, resources_provider, cache_funcs: CacheFunctions, logger=None):
+    def __init__(self, resources_provider, logger=None):
         self.resources_provider = resources_provider
-        self.cache_funcs = cache_funcs
+        self.cache_funcs: CacheFunctions = resources_provider.cache_functions
         self.logger = logger or logging.getLogger("cache-invalidator")
 
     def generate_invalidation_topic_name(
@@ -41,37 +42,33 @@ class CacheInvalidator:
         topic_suffix = data_topic_name[data_topic_name.find("-"):]
         return f"{TOPIC_PREFIX}{topic_suffix}"
 
-    async def handle_invalidation_messages(self, tp, messages):
+    async def handle_invalidation_messages(self, tp, messages) -> bool:
         """Handle messages consumed from kafka."""
-        topic = tp.topic
+        topic_name = tp.topic
         timestamps = {pdl.parse(m.value.decode()) for m in messages}
-        for key in self.cache_funcs.scan_by_topic_name(topic):
-            start_time, end_time = self.cache_funcs.key_to_times(key)
+        self.clear_monitor_cache_by_topic_name(timestamps, topic_name)
+        return True
+
+    def clear_monitor_cache_by_topic_name(self, timestamps, topic_name):
+        """Clear monitor cache by topic name for given timestamps."""
+        for key in self.cache_funcs.scan_by_topic_name(topic_name):
+            start_time, end_time = self.cache_funcs.monitor_key_to_timestamps(key)
             if any((start_time <= ts < end_time for ts in timestamps)):
                 self.cache_funcs.delete_key(key)
-
-    async def handle_failed_invalidation_messages(self, *_):
-        """Handle failed invalidation messages."""
-        # Always commit also on fails
-        return True
 
     async def run_invalidation_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
         await consume_from_kafka(self.resources_provider.kafka_settings,
                                  self.handle_invalidation_messages,
-                                 self.handle_failed_invalidation_messages,
                                  rf"^{TOPIC_PREFIX}\-.*$",
                                  self.logger)
 
-    async def send_invalidation(self, timestamps, tp):
+    async def send_invalidation(self, timestamps, topic_name):
         """Send to kafka the timestamps which needs to invalidate the cache for the given topic."""
         rounded_ts_set = {ts.astimezone(pdl.UTC).set(minute=0, second=0, microsecond=0) for ts in timestamps}
 
-        topic_name = self.generate_invalidation_topic_name(tp.topic)
+        topic_name = self.generate_invalidation_topic_name(topic_name)
         producer = await self.resources_provider.kafka_producer
-        send_future = None
-        for ts in rounded_ts_set:
-            message = ts.isoformat().encode("utf-8")
-            send_future = await producer.send(topic_name, value=message)
-        # Waiting on the last future since the messages are sent in order anyway
-        await send_future
+        send_futures = [await producer.send(topic_name, value=ts.isoformat().encode("utf-8"))
+                        for ts in rounded_ts_set]
+        await asyncio.gather(*send_futures)

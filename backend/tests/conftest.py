@@ -39,6 +39,7 @@ from torch.utils.data import Dataset as TorchDataset
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.models import Alert, Model, TaskType
 from deepchecks_monitoring.models.alert_rule import AlertSeverity
 from deepchecks_monitoring.models.base import Base
@@ -68,7 +69,7 @@ def settings(postgres):
 @pytest.fixture(scope="function")
 def resources_provider(settings, redis):
     with patch.object(ResourcesProvider, "redis_client", redis):
-        yield ResourcesProvider(settings)
+        yield ResourcesProvider(settings, CacheFunctions)
 
 
 @pytest.fixture(scope="function")

@@ -23,7 +23,7 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 from jsonschema import FormatChecker
 from jsonschema.validators import validator_for
-from sqlalchemy import update
+from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -267,8 +267,9 @@ class DataIngestionBackend:
         request: fastapi.Request
             used to be able to get more info when overriding this function
         """
+        topic_name = self.generate_topic_name(model_version, request)
+        self.resources_provider.cache_functions.add_to_process_set_from_ingestion_topic(topic_name)
         if self.use_kafka:
-            topic_name = self.generate_topic_name(model_version, request)
             producer = await self.resources_provider.kafka_producer
             send_future = None
             for sample in data:
@@ -277,7 +278,8 @@ class DataIngestionBackend:
             # Waiting on the last future since the messages are sent in order anyway
             await send_future
         else:
-            await log_data(model_version, data, session)
+            timestamps = await log_data(model_version, data, session)
+            await self.after_data_update(model_version, timestamps, session, topic_name)
 
     async def update(
             self,
@@ -296,8 +298,9 @@ class DataIngestionBackend:
         request: fastapi.Request
             used to be able to get more info when overriding this function
         """
+        topic_name = self.generate_topic_name(model_version, request)
+        self.resources_provider.cache_functions.add_to_process_set_from_ingestion_topic(topic_name)
         if self.use_kafka:
-            topic_name = self.generate_topic_name(model_version, request)
             producer = await self.resources_provider.kafka_producer
             send_future = None
             for sample in data:
@@ -306,49 +309,57 @@ class DataIngestionBackend:
             # Waiting on the last future since the messages are sent in order anyway
             await send_future
         else:
-            await update_data(model_version, data, session)
+            timestamps = await update_data(model_version, data, session)
+            await self.after_data_update(model_version, timestamps, session, topic_name)
 
     async def run_data_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
         await consume_from_kafka(self.resources_provider.kafka_settings, self.handle_data_messages,
-                                 self.handle_failed_data_messages, r"^data\-.*$", self.logger)
+                                 r"^data\-.*$", self.logger)
 
-    async def handle_data_messages(self, tp, messages):
+    async def handle_data_messages(self, tp, messages) -> bool:
         """Handle messages consumed from kafka."""
-        topic = tp.topic
-        model_version_id = int(topic[topic.rfind("-") + 1:])
-        messages_data = [json.loads(m.value) for m in messages]
-        log_samples = [m["data"] for m in messages_data if m["type"] == "log"]
-        update_samples = [m["data"] for m in messages_data if m["type"] == "update"]
-        async with self.get_session(tp) as session:
-            if session is None:
-                return
-            model_version = await session.get(ModelVersion, model_version_id)
-            if model_version is None:
-                return
+        try:
+            topic_name = tp.topic
+            model_version_id = int(topic_name[topic_name.rfind("-") + 1:])
+            messages_data = [json.loads(m.value) for m in messages]
+            log_samples = [m["data"] for m in messages_data if m["type"] == "log"]
+            update_samples = [m["data"] for m in messages_data if m["type"] == "update"]
             timestamps = []
-            if log_samples:
-                timestamps += await log_data(model_version, log_samples, session)
-            if update_samples:
-                timestamps += await update_data(model_version, update_samples, session)
-        if timestamps:
-            await self.cache_invalidator.send_invalidation(timestamps, tp)
+            async with self.get_session(tp) as session:
+                # If session is none, it means the organization was removed, so no need to do anything
+                if session is None:
+                    return True
+                model_version = await session.get(ModelVersion, model_version_id)
+                # If model version is none it was deleted, so no need to do anything
+                if model_version is None:
+                    return True
+                model_version.ingestion_offset = messages[-1].offset
+                if log_samples:
+                    timestamps += await log_data(model_version, log_samples, session)
+                if update_samples:
+                    timestamps += await update_data(model_version, update_samples, session)
+                await self.after_data_update(model_version, timestamps, session, topic_name)
+            return True
+        except sqlalchemy.exc.SQLAlchemyError as exception:
+            self.logger.exception(exception)
+            # Sqlalchemy wraps the asyncpg exceptions in orig field
+            if hasattr(exception, "orig"):
+                exception = exception.orig
+            if isinstance(exception, asyncpg.exceptions.PostgresConnectionError):
+                # In case of connection error does not commit the kafka messages, in order to try
+                # again
+                return False
+            await self.save_failures(tp, messages, exception)
+            return True
+        except Exception as exception:  # pylint: disable=broad-except
+            self.logger.exception(exception)
+            # If it's not a db exception, we commit anyway to not get stuck
+            await self.save_failures(tp, messages, exception)
+            return True
 
-    async def handle_failed_data_messages(self, tp, messages, exception):
-        """Handle messages failed to be saved to the database. return True to commit message, false to not commit."""
-        # The only "valid" exceptions are disconnections from the db, any others are not expected therefore
-        # we raise them back.
-        if not isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
-            raise exception
-        # Sqlalchemy wraps the asyncpg exceptions in orig field
-        if hasattr(exception, "orig"):
-            exception = exception.orig
-
-        if isinstance(exception, asyncpg.exceptions.PostgresConnectionError):
-            # In case of connection error does not commit the kafka messages, in order to try
-            # again
-            return False
-
+    async def save_failures(self, tp, messages, exception):
+        """Save failed messages into ingestion errors table."""
         async with self.get_session(tp) as session:
             topic = tp.topic
             model_version_id = int(topic[topic.rfind("-") + 1:])
@@ -359,4 +370,21 @@ class DataIngestionBackend:
                        "model_version_id": model_version_id}
                       for sample in samples]
             await session.execute(insert(IngestionError).values(values))
-        return True
+
+    async def after_data_update(self, model_version, timestamps_updated, session, topic_name):
+        """Update model version update time, calling cache invalidation, and adding current model version to \
+        redis process set."""
+        if timestamps_updated:
+            # Only in case data was logged/updated we update model version last update time.
+            # Using database now function in order to not relay that time is synchronized between server and db.
+            await session.execute(update(ModelVersion).where(ModelVersion.id == model_version.id).values(
+                {ModelVersion.last_update_time: func.now()}))
+            if self.use_kafka:
+                await self.cache_invalidator.send_invalidation(timestamps_updated, topic_name)
+            else:
+                # In case we don't have a running kafka call the cache invalidation directly
+                self.cache_invalidator.clear_monitor_cache_by_topic_name(timestamps_updated, topic_name)
+
+        # Always add to process set since we use it to calculate the queue offset, so even if we didn't log any new
+        # data we still want to update the queue size.
+        self.resources_provider.cache_functions.add_to_process_set_from_ingestion_topic(topic_name)

@@ -61,8 +61,9 @@ class ResourcesProvider(BaseResourcesProvider):
 
     settings: BaseSettings
 
-    def __init__(self, settings: BaseSettings):
+    def __init__(self, settings: BaseSettings, cache_functions_class=None):
         self.settings = settings
+        self.cache_functions_class = cache_functions_class
         self._database_engine: t.Optional[Engine] = None
         self._session_factory: t.Optional[sessionmaker] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
@@ -231,3 +232,10 @@ class ResourcesProvider(BaseResourcesProvider):
             except RedisClusterException:
                 self._redis_client = Redis.from_url(self.redis_settings.redis_uri)
         return self._redis_client
+
+    @property
+    def cache_functions(self) -> t.Optional[CacheFunctions]:
+        """Return cache functions."""
+        if self._cache_funcs is None and self.cache_functions_class:
+            self._cache_funcs = self.cache_functions_class(self.redis_client)
+        return self._cache_funcs

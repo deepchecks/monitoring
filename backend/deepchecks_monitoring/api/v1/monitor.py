@@ -154,7 +154,7 @@ async def update_monitor(
                           .values({Alert.resolved: True}))
     await Monitor.update(session, monitor_id, update_dict)
     cache_key_base = cache_funcs.get_key_base_by_request(request)
-    cache_funcs.clear_monitor(cache_key_base, monitor_id)
+    cache_funcs.clear_monitor_cache(cache_key_base, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -169,7 +169,7 @@ async def delete_monitor(
     await exists_or_404(session, Monitor, id=monitor_id)
     await Monitor.delete(session, monitor_id)
     cache_key_base = cache_funcs.get_key_base_by_request(request)
-    cache_funcs.clear_monitor(cache_key_base, monitor_id)
+    cache_funcs.clear_monitor_cache(cache_key_base, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 

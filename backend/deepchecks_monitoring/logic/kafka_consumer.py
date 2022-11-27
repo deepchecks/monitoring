@@ -16,7 +16,7 @@ from kafka.errors import KafkaError
 from deepchecks_monitoring.config import KafkaSettings
 
 
-async def consume_from_kafka(settings: KafkaSettings, handle_func, handle_fails, pattern, logger):
+async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logger):
     """Create an endless-loop of consuming messages from kafka."""
     while True:
         try:
@@ -33,15 +33,9 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, handle_fails,
                 result = await consumer.getmany(timeout_ms=10 * 1000)
                 for tp, messages in result.items():
                     if messages:
-                        try:
-                            await handle_func(tp, messages)
-                            # Commit progress only for this partition
+                        to_commit = await handle_func(tp, messages)
+                        if to_commit:
                             await consumer.commit({tp: messages[-1].offset + 1})
-                        except Exception as e:  # pylint: disable=broad-except
-                            logger.exception(e)
-                            to_commit = await handle_fails(tp, messages, e)
-                            if to_commit:
-                                await consumer.commit({tp: messages[-1].offset + 1})
 
         except KafkaError as e:  # pylint: disable=broad-except
             logger.exception(e)
