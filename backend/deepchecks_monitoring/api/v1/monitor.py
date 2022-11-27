@@ -208,6 +208,7 @@ async def run_monitor_lookback(
                              end_time=end_time.to_iso8601_string(),
                              frequency=frequency.in_seconds(),
                              aggregation_window=monitor.aggregation_window,
+                             additional_kwargs=monitor.additional_kwargs,
                              filter=monitor.data_filters)
 
     return await run_check_per_window_in_range(
