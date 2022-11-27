@@ -155,7 +155,7 @@ def assert_check_results(
         if assert_value(value)
     )
 
-    failed_values = defaultdict(defaultdict)
+    failed_values = defaultdict(dict)
 
     for version_id, failed_value_name, failed_value_value in failures:
         failed_values[version_id][failed_value_name] = failed_value_value
@@ -163,7 +163,7 @@ def assert_check_results(
     if failed_values:
         return Alert(
             alert_rule_id=alert_rule.id,
-            failed_values=failed_values,
+            failed_values=dict(failed_values),
             resolved=False
         )
 
