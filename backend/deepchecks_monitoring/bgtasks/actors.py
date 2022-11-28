@@ -144,9 +144,7 @@ def assert_check_results(
 
     failures = (
         (
-            # JSON serialization fails with numerical keys,
-            # therefore we cast id to string
-            str(model_version),
+            model_version,
             value_name,
             value
         )

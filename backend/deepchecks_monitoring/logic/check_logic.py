@@ -533,12 +533,14 @@ async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.
                 # the test info query may be none if there was no data after the filtering
                 if curr_test_info["query"] is not None:
                     test_query = await curr_test_info["query"]
-                    curr_test_info["data"] = pd.DataFrame(test_query.all(), columns=test_query.keys())
+                    curr_test_info["data"] = pd.DataFrame(test_query.all(),
+                                                          columns=[str(key) for key in test_query.keys()])
                 else:
                     curr_test_info["data"] = pd.DataFrame()
         if reference_query is not None:
             reference_query = (await reference_query)
-            reference_table_data_dataframe = pd.DataFrame(reference_query.all(), columns=reference_query.keys())
+            reference_table_data_dataframe = pd.DataFrame(reference_query.all(),
+                                                          columns=[str(key) for key in reference_query.keys()])
         else:
             # We mark reference as "None" if it's not needed (a single dataset check)
             reference_table_data_dataframe = None
