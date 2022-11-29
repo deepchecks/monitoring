@@ -11,7 +11,6 @@
 import typing as t
 from io import StringIO
 
-import fastapi
 import numpy as np
 import pandas as pd
 from fastapi import Body, Depends, Response, UploadFile, status
@@ -27,7 +26,9 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, DataIngestionDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
+from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.utils.auth import CurrentActiveUser
 
 from .router import router
 
@@ -37,36 +38,36 @@ from .router import router
              description="This API logs asynchronously a batch of new samples of the inference data of an existing "
                          "model version, it requires the actual data and validates it matches the version schema.",)
 async def log_data_batch(
-    request: fastapi.Request,
     model_version_id: int,
     data: t.List[t.Dict[str, t.Any]] = Body(...),
     session: AsyncSession = AsyncSessionDep,
-    data_ingest: DataIngestionBackend = DataIngestionDep
+    data_ingest: DataIngestionBackend = DataIngestionDep,
+    user: User = Depends(CurrentActiveUser())
 ) -> Response:
     """Insert batch data samples.
 
     Parameters
     ----------
-    request
     model_version_id
     data
     session
     data_ingest
+    user
     """
     if len(data) == 0:
         return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Got empty list")
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    await data_ingest.log(model_version, data, session, request)
+    await data_ingest.log(model_version, data, session, user)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.put("/model-versions/{model_version_id}/data", tags=[Tags.DATA])
 async def update_data_batch(
-    request: fastapi.Request,
     model_version_id: int,
     data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
     session: AsyncSession = AsyncSessionDep,
-    data_ingest: DataIngestionBackend = DataIngestionDep
+    data_ingest: DataIngestionBackend = DataIngestionDep,
+    user: User = Depends(CurrentActiveUser())
 ):
     """Update data samples.
 
@@ -77,11 +78,12 @@ async def update_data_batch(
     data
     session
     data_ingest
+    user
     """
     if len(data) == 0:
         return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Got empty list")
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    await data_ingest.update(model_version, data, session, request)
+    await data_ingest.update(model_version, data, session, user)
     return Response(status_code=status.HTTP_200_OK)
 
 

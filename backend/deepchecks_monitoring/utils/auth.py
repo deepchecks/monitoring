@@ -14,9 +14,9 @@ from fastapi.security.utils import get_authorization_scheme_param
 from jwt import PyJWTError
 from pendulum.duration import Duration
 from pydantic import BaseModel, EmailStr, ValidationError
-from sqlalchemy import event, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import joinedload
 from starlette.status import HTTP_403_FORBIDDEN
 
 from deepchecks_monitoring import public_models as models
@@ -291,21 +291,11 @@ class CurrentActiveUser(CurrentUser):
         is_schema_changed: bool = getattr(request.state, "is_schema_changed", False)
 
         if self.change_schema is True and not is_schema_changed:
-            schema = t.cast(str, request.state.user.organization.schema_name)
-            schema = [schema, "public"]
-            pg_session_parameter = database.SessionParameter("search_path", local=True, value=schema)
-
-            await session.execute(pg_session_parameter)
-
-            @event.listens_for(session.sync_session, "after_begin")
-            def _(session: Session, *args, **kwargs):  # pylint: disable=unused-argument
-                """Change schema search path after a transaction start.
-
-                Note:
-                AsyncSession does not support event handlers yet, therefore
-                we need to use sync session
-                """
-                session.execute(pg_session_parameter)
+            organization_schema = t.cast(str, request.state.user.organization.schema_name)
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization_schema, "public"]
+            )
 
             request.state.is_schema_changed = True
 

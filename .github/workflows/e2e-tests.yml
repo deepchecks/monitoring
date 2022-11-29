@@ -201,6 +201,15 @@ jobs:
           echo "DEEPCHECKS_API_HOST=http://127.0.0.1:8000" >> $GITHUB_ENV
         env:
           DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
+#      - name: Debugging with ssh
+#        uses: lhotari/action-upterm@v1
+#        with:
+#          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+#          limit-access-to-actor: true
+#        env:
+#          DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
+#          DEEPCHECKS_API_TOKEN: ${{ env.DEEPCHECKS_API_TOKEN }}
+#          DEEPCHECKS_API_HOST: ${{ env.DEEPCHECKS_API_HOST }}
       - name: Build documentation
         env:
           DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
@@ -209,6 +218,9 @@ jobs:
         run: | 
           make env-setup
           make docs
+      - name: Print errors
+        if: always()
+        run: cat docs/docs.error.log
 
       - name: Checkout deepchecks.github.io
         if: github.event_name != 'pull_request'

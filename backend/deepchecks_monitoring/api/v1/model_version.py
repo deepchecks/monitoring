@@ -28,11 +28,9 @@ from sqlalchemy.sql.ddl import CreateIndex
 from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import (AsyncSessionDep, CacheInvalidatorDep, DataIngestionDep, KafkaAdminDep,
-                                                ResourcesProviderDep, SettingsDep)
+from deepchecks_monitoring.dependencies import AsyncSessionDep, KafkaAdminDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
-from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
-from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.logic.keys import get_data_topic_name, get_invalidation_topic_name
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
 from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, IdentifierKind, IdResponse, ModelIdentifier,
                                                     ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
@@ -76,9 +74,7 @@ async def get_or_create_version(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
         kafka_admin: KafkaAdminClient = KafkaAdminDep,
-        settings=SettingsDep,
-        data_ingest: DataIngestionBackend = DataIngestionDep,
-        cache_invalidator: CacheInvalidator = CacheInvalidatorDep
+        settings=SettingsDep
 ):
     """Create a new model version.
 
@@ -93,10 +89,8 @@ async def get_or_create_version(
         SQLAlchemy session.
     kafka_admin
     settings
-    data_ingest
-    cache_invalidator
     """
-    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    model: Model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
 
     model_version: ModelVersion = (await session.execute(
         select(ModelVersion)
@@ -238,13 +232,13 @@ async def get_or_create_version(
         await session.execute(CreateIndex(index))
 
     # Create kafka topic
-    if data_ingest.use_kafka:
+    if kafka_admin:
         # We want to digest the message in the order they are sent, so using single partition.
-        data_topic_name = data_ingest.generate_topic_name(model_version, request)
-        data_topic = NewTopic(name=data_topic_name,
+        data_topic = NewTopic(name=get_data_topic_name(request.state.user.organization_id, model_version.id),
                               num_partitions=1,
                               replication_factor=settings.kafka_replication_factor)
-        invalidation_topic = NewTopic(name=cache_invalidator.generate_invalidation_topic_name(data_topic_name),
+        invalidation_topic = NewTopic(name=get_invalidation_topic_name(request.state.user.organization_id,
+                                                                       model_version.id),
                                       num_partitions=1,
                                       replication_factor=settings.kafka_replication_factor)
         kafka_admin.create_topics([data_topic, invalidation_topic])

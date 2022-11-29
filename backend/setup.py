@@ -78,7 +78,7 @@ def read_requirements_file(path: pathlib.Path) -> t.Tuple[t.List[str], t.List[st
                     raise RuntimeError("Cannot provide github credentials")
                 else:
                     line = line.replace("${GITHUB_TOKEN}", github_token)
-            if "${DEEPCHECKS_CI_TOKEN}" in line:
+            if "${DEEPCHECKS_CI_TOKEN}" in line and not line.startswith('#'):
                 if not deepchecks_ci_token:
                     raise RuntimeError("Cannot provide DEEPCHECKS_CI_TOKEN")
                 else:

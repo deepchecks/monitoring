@@ -12,7 +12,7 @@ import typing as t
 
 import pendulum as pdl
 import sqlalchemy as sa
-from fastapi import Request, Response, status
+from fastapi import Depends, Response, status
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,8 +29,10 @@ from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_pe
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
                                                     fetch_or_404, field_length)
+from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
 from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.utils.auth import CurrentActiveUser
 
 from .router import router
 
@@ -126,15 +128,15 @@ async def get_monitor(
 
 @router.put("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def update_monitor(
-    request: Request,
     monitor_id: int,
     body: MonitorUpdateSchema,
     session: AsyncSession = AsyncSessionDep,
-    cache_funcs: CacheFunctions = CacheFunctionsDep
+    cache_funcs: CacheFunctions = CacheFunctionsDep,
+    user: User = Depends(CurrentActiveUser())
 ):
     """Update monitor by id."""
-    monitor = await fetch_or_404(session, Monitor, id=monitor_id,
-                                 options=selectinload(Monitor.alert_rules).load_only(AlertRule.id))
+    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id,
+                                          options=selectinload(Monitor.alert_rules).load_only(AlertRule.id))
     update_dict = body.dict(exclude_none=True)
     # if monitor is updated we should update latest_schedule in a way it'll run previous 10 windows
     if monitor.latest_schedule is not None:
@@ -153,33 +155,31 @@ async def update_monitor(
     await session.execute(sa.update(Alert).where(Alert.alert_rule_id.in_(alert_rule_ids))
                           .values({Alert.resolved: True}))
     await Monitor.update(session, monitor_id, update_dict)
-    cache_key_base = cache_funcs.get_key_base_by_request(request)
-    cache_funcs.clear_monitor_cache(cache_key_base, monitor_id)
+    cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
-    request: Request,
     monitor_id: int,
     session: AsyncSession = AsyncSessionDep,
-    cache_funcs: CacheFunctions = CacheFunctionsDep
+    cache_funcs: CacheFunctions = CacheFunctionsDep,
+    user: User = Depends(CurrentActiveUser())
 ):
     """Delete monitor by id."""
     await exists_or_404(session, Monitor, id=monitor_id)
     await Monitor.delete(session, monitor_id)
-    cache_key_base = cache_funcs.get_key_base_by_request(request)
-    cache_funcs.clear_monitor_cache(cache_key_base, monitor_id)
+    cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])
 async def run_monitor_lookback(
-    request: Request,
     monitor_id: int,
     body: MonitorRunSchema,
     session: AsyncSession = AsyncSessionDep,
-    cache_funcs: CacheFunctions = CacheFunctionsDep
+    cache_funcs: CacheFunctions = CacheFunctionsDep,
+    user: User = Depends(CurrentActiveUser())
 ):
     """Run a monitor for each time window by lookback.
 
@@ -191,6 +191,7 @@ async def run_monitor_lookback(
     session : AsyncSession, optional
         SQLAlchemy session.
     cache_funcs
+    user
 
     Returns
     -------
@@ -201,8 +202,6 @@ async def run_monitor_lookback(
     end_time = None if body.end_time is None else pdl.parse(body.end_time)
     start_time, end_time, frequency = get_time_ranges_for_monitor(
         lookback=monitor.lookback, frequency=monitor.frequency, end_time=end_time)
-
-    cache_key_base = cache_funcs.get_key_base_by_request(request)
 
     options = MonitorOptions(start_time=start_time.to_iso8601_string(),
                              end_time=end_time.to_iso8601_string(),
@@ -217,5 +216,5 @@ async def run_monitor_lookback(
         options,
         monitor_id=monitor_id,
         cache_funcs=cache_funcs,
-        cache_key_base=cache_key_base
+        organization_id=user.organization_id
     )

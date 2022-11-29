@@ -86,8 +86,8 @@ class ModelVersion(Base):
     label_map = Column(JSONB, nullable=True)
     # Indicates the last time the data of this version was updated.
     last_update_time = Column(DateTime(timezone=True), nullable=True)
-    # Indicates the last time the background worker processed this version.
-    last_process_time = Column(DateTime(timezone=True), nullable=True)
+    # Indicates the timestamp for which statistics was calculated for.
+    last_statistics_update = Column(DateTime(timezone=True), nullable=True)
     # Indicates the latest messages offset that was ingested
     ingestion_offset = Column(BigInteger, nullable=True)
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
@@ -204,6 +204,20 @@ class ModelVersion(Base):
     def is_in_range(self, start_date, end_date):
         """Check if given start and end dates are overlapping with the model version dates."""
         return start_date <= self.end_time and end_date >= self.start_time
+
+    def get_queue_lag(self, cache_functions, organization_id):
+        """Get the queue lag, and add model version to process set if needed."""
+        # If some fields haven't updated yet, return 0
+        if self.ingestion_offset is None or self.topic_end_offset is None:
+            return 0
+        lag = self.topic_end_offset - self.ingestion_offset
+        # If lag is not 0, adding the model version to process list. This prevents edge cases when redis might get
+        # reset so we lose the process set, so in this way we make sure it will get updated.
+        if lag != 0:
+            cache_functions.add_to_process_set(organization_id, self.id)
+        # ingestion_offset might have passed topic_end_offset (since it's updated in the background) so in that case
+        # we want to show 0 instead of negative number.
+        return max(lag, 0)
 
 
 def _add_col_value(stats_values, col_value):

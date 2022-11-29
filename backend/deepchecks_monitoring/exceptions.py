@@ -25,7 +25,8 @@ __all__ = [
     'is_unique_constraint_violation_error',
     'AccessForbidden',
     'RedirectException',
-    'InvalidConfigurationException'
+    'InvalidConfigurationException',
+    'Unauthorized'
 ]
 
 

@@ -198,7 +198,7 @@ def settings(async_engine, smtp_server):
 
 @pytest.fixture(scope="function")
 def redis():
-    return mock.Mock(wraps=fakeredis.FakeStrictRedis())
+    return mock.Mock(wraps=fakeredis.FakeRedis())
 
 
 @pytest.fixture(scope="function")

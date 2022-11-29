@@ -30,7 +30,6 @@ from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.middlewares import ProfilingMiddleware
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -88,9 +87,7 @@ def create_application(
 
     app.state.settings = settings
     app.state.resources_provider = resources_provider or ResourcesProvider(settings, CacheFunctions)
-    app.state.cache_invalidator = CacheInvalidator(app.state.resources_provider)
-    app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider,
-                                                            app.state.cache_invalidator)
+    app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider)
     app.state.feature_flags = {}
     app.add_middleware(
         CORSMiddleware,
@@ -136,7 +133,7 @@ def create_application(
     async def app_startup():
         if app.state.data_ingestion_backend.use_kafka:
             asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
-            asyncio.create_task(app.state.cache_invalidator.run_invalidation_consumer())
+            asyncio.create_task(app.state.data_ingestion_backend.cache_invalidator.run_invalidation_consumer())
 
         # Add telemetry
         if settings.instrument_telemetry:

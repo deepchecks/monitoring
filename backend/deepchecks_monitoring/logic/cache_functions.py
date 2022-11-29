@@ -15,13 +15,11 @@ import logging
 import typing as t
 from dataclasses import dataclass
 
-import fastapi
 import pendulum as pdl
 import redis.exceptions
 from redis.client import Redis
 
-from deepchecks_monitoring.public_models import User
-from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_SORTED_SET_KEY
 
 
 @dataclass
@@ -32,9 +30,6 @@ class CacheResult:
     value: t.Any
 
 
-MODEL_VERSIONS_UPDATE = "model_versions_update"
-
-
 class CacheFunctions:
     """Class which holds all the actions on the redis cache."""
 
@@ -43,22 +38,9 @@ class CacheFunctions:
         self.redis: Redis = redis_client
         self.logger = logging.Logger("cache-functions")
 
-    def get_key_base_by_request(self, request: fastapi.Request):
-        """Build the base of key to be used for this model version cache. We override this function when extending \
-        this class."""
-        user: User = request.state.user
-        return f"mon_cache:{user.organization_id}:"
-
-    def get_key_base_by_topic(self, topic_name):
-        """Build the base of key to be used for this model version cache. We override this function when extending \
-        this class."""
-        topic_parts = topic_name.split("-")
-        organization_id = int(topic_parts[1])
-        return f"mon_cache:{organization_id}:"
-
     def build_monitor_cache_key(
             self,
-            key_base,
+            organization_id: t.Union[str, int],
             model_version_id: t.Union[str, int],
             monitor_id: t.Union[str, int],
             start_time: t.Union[pdl.DateTime, str],
@@ -67,8 +49,8 @@ class CacheFunctions:
 
         Parameters
         ----------
-        key_base: str
-        model_version_id: int
+        organization_id: t.Union[str, int]
+        model_version_id: t.Union[str, int]
             Can be either a model version id or a regex for pattern
         monitor_id: t.Union[str, int]
             Can be either a monitor id or a regex for pattern
@@ -83,7 +65,7 @@ class CacheFunctions:
         """
         end_time = str(end_time.int_timestamp) if isinstance(end_time, pdl.DateTime) else end_time
         start_time = str(start_time.int_timestamp) if isinstance(start_time, pdl.DateTime) else start_time
-        return f"{key_base}{model_version_id}:{monitor_id}:{start_time}:{end_time}"
+        return f"mon_cache:{organization_id}:{model_version_id}:{monitor_id}:{start_time}:{end_time}"
 
     def monitor_key_to_timestamps(self, key: t.Union[str, bytes]):
         """Extract from a key the start and end date from it.
@@ -102,11 +84,11 @@ class CacheFunctions:
         end_time = pdl.from_timestamp(int(key_split[-1]))
         return start_time, end_time
 
-    def get_monitor_cache(self, key_base, model_version_id, monitor_id, start_time, end_time):
+    def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):
         """Get result from cache if exists. We can cache values which are "None" therefore to distinguish between the \
         situations we return CacheResult with 'found' property."""
         if self.use_cache:
-            key = self.build_monitor_cache_key(key_base, model_version_id, monitor_id, start_time, end_time)
+            key = self.build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
             try:
                 cache_value = self.redis.get(key)
                 # If cache value is none it means the key was not found
@@ -120,12 +102,12 @@ class CacheFunctions:
         # Return no cache result
         return CacheResult(found=False, value=None)
 
-    def set_monitor_cache(self, key_base, model_version_id, monitor_id, start_time, end_time, value):
+    def set_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time, value):
         """Set cache value for the properties given."""
         if not self.use_cache:
             return
         try:
-            key = self.build_monitor_cache_key(key_base, model_version_id, monitor_id, start_time, end_time)
+            key = self.build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
             cache_val = json.dumps(value)
             self.redis.set(key, cache_val)
             # Set expiry of a week
@@ -133,12 +115,12 @@ class CacheFunctions:
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
 
-    def clear_monitor_cache(self, key_base: str, monitor_id: int):
+    def clear_monitor_cache(self, organization_id: int, monitor_id: int):
         """Clear entries from the cache.
 
         Parameters
         ----------
-        key_base: str
+        organization_id: int
         monitor_id: int
             model version id to clear for.
         """
@@ -146,7 +128,7 @@ class CacheFunctions:
             return
         try:
             monitor_id = monitor_id or "*"
-            pattern = self.build_monitor_cache_key(key_base, "*", monitor_id, "*", "*")
+            pattern = self.build_monitor_cache_key(organization_id, "*", monitor_id, "*", "*")
             for key in self.redis.scan_iter(pattern):
                 self.redis.delete(key)
         except redis.exceptions.RedisError as e:
@@ -156,18 +138,14 @@ class CacheFunctions:
         """Remove a given key from the cache."""
         self.redis.delete(key)
 
-    def scan_by_topic_name(self, topic_name) -> t.Iterator:
+    def scan_by_ids(self, organization_id, model_version_id: int) -> t.Iterator:
         """Scan all cache keys of a given model version."""
-        # Expected topic name last part to be model version id
-        model_version_id = int(topic_name[topic_name.rfind("-") + 1:])
-        pattern = self.build_monitor_cache_key(self.get_key_base_by_topic(topic_name), model_version_id, "*", "*", "*")
+        pattern = self.build_monitor_cache_key(organization_id, model_version_id, "*", "*", "*")
         return self.redis.scan_iter(match=pattern)
 
-    def add_to_process_set_if_outdated(self, model_version: ModelVersion, request: fastapi.Request):
+    def add_to_process_set(self, organization_id: int, model_version_id: int):
         """Add model version to process set."""
-        self.redis.sadd(MODEL_VERSIONS_UPDATE, model_version.id)
-
-    def add_to_process_set_from_ingestion_topic(self, topic_name):
-        """Add model version to process set."""
-        model_version_id = topic_name.split("-")[-1]
-        self.redis.sadd(MODEL_VERSIONS_UPDATE, model_version_id)
+        if not self.use_cache:
+            return
+        set_key = f"{organization_id}-{model_version_id}"
+        self.redis.zadd(MODEL_VERSIONS_SORTED_SET_KEY, {set_key: pdl.now().int_timestamp}, nx=True)

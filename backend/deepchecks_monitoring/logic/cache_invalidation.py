@@ -15,8 +15,7 @@ import pendulum as pdl
 
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
-
-TOPIC_PREFIX = "invalidation"
+from deepchecks_monitoring.logic.keys import INVALIDATION_TOPIC_PREFIX, get_invalidation_topic_name, topic_name_to_ids
 
 
 class CacheInvalidator:
@@ -27,31 +26,16 @@ class CacheInvalidator:
         self.cache_funcs: CacheFunctions = resources_provider.cache_functions
         self.logger = logger or logging.getLogger("cache-invalidator")
 
-    def generate_invalidation_topic_name(
-            self,
-            data_topic_name,
-    ):
-        """Transform data topic name into invalidation topic name.
-
-        Returns
-        -------
-        str
-            Name of the data topic to be used for invalidation topic name.
-        """
-        # Removes the first part of the topic name up to "-"
-        topic_suffix = data_topic_name[data_topic_name.find("-"):]
-        return f"{TOPIC_PREFIX}{topic_suffix}"
-
     async def handle_invalidation_messages(self, tp, messages) -> bool:
         """Handle messages consumed from kafka."""
-        topic_name = tp.topic
         timestamps = {pdl.parse(m.value.decode()) for m in messages}
-        self.clear_monitor_cache_by_topic_name(timestamps, topic_name)
+        organization_id, model_version_id = topic_name_to_ids(tp.topic)
+        self.clear_monitor_cache_by_ids(organization_id, model_version_id, timestamps)
         return True
 
-    def clear_monitor_cache_by_topic_name(self, timestamps, topic_name):
+    def clear_monitor_cache_by_ids(self, organization_id, model_version_id, timestamps):
         """Clear monitor cache by topic name for given timestamps."""
-        for key in self.cache_funcs.scan_by_topic_name(topic_name):
+        for key in self.cache_funcs.scan_by_ids(organization_id, model_version_id):
             start_time, end_time = self.cache_funcs.monitor_key_to_timestamps(key)
             if any((start_time <= ts < end_time for ts in timestamps)):
                 self.cache_funcs.delete_key(key)
@@ -60,14 +44,14 @@ class CacheInvalidator:
         """Create an endless-loop of consuming messages from kafka."""
         await consume_from_kafka(self.resources_provider.kafka_settings,
                                  self.handle_invalidation_messages,
-                                 rf"^{TOPIC_PREFIX}\-.*$",
+                                 rf"^{INVALIDATION_TOPIC_PREFIX}\-.*$",
                                  self.logger)
 
-    async def send_invalidation(self, timestamps, topic_name):
+    async def send_invalidation(self, organization_id, model_version_id, timestamps):
         """Send to kafka the timestamps which needs to invalidate the cache for the given topic."""
         rounded_ts_set = {ts.astimezone(pdl.UTC).set(minute=0, second=0, microsecond=0) for ts in timestamps}
 
-        topic_name = self.generate_invalidation_topic_name(topic_name)
+        topic_name = get_invalidation_topic_name(organization_id, model_version_id)
         producer = await self.resources_provider.kafka_producer
         send_futures = [await producer.send(topic_name, value=ts.isoformat().encode("utf-8"))
                         for ts in rounded_ts_set]

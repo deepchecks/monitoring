@@ -23,6 +23,7 @@ from pydantic.env_settings import BaseSettings
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -33,6 +34,9 @@ from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
 
 __all__ = ["ResourcesProvider"]
+
+from deepchecks_monitoring.public_models import Organization
+from deepchecks_monitoring.utils import database
 
 
 class BaseResourcesProvider:
@@ -199,10 +203,24 @@ class ResourcesProvider(BaseResourcesProvider):
         return self._async_session_factory
 
     @asynccontextmanager
-    async def create_async_database_session(self) -> t.AsyncIterator[ExtendedAsyncSession]:
+    async def create_async_database_session(self, organization_id=None) -> t.AsyncIterator[ExtendedAsyncSession]:
         """Create async sqlalchemy database session."""
         async with self.async_session_factory() as session:  # pylint: disable=not-callable
             try:
+                if organization_id:
+                    organization_schema = (await session.execute(
+                        select(Organization.schema_name).where(Organization.id == organization_id)
+                    )).scalar_one_or_none()
+
+                    # If can't find organization return none
+                    if organization_schema is None:
+                        await session.close()
+                        yield
+                        return
+                    await database.attach_schema_switcher_listener(
+                        session=session,
+                        schema_search_path=[organization_schema, "public"]
+                    )
                 yield session
                 await session.commit()
             except Exception as error:
