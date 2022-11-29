@@ -14,7 +14,7 @@ from io import StringIO
 
 import fastapi
 import pendulum as pdl
-from fastapi import BackgroundTasks, Path
+from fastapi import BackgroundTasks, Depends, Path
 from fastapi import status as HttpStatus
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
@@ -34,14 +34,17 @@ from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_vi
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
-from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                      SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType,
-                                                      column_types_to_table_columns, get_model_columns_by_type)
-from deepchecks_monitoring.models.model import Model, TaskType
-from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, IdentifierKind, IdResponse, ModelIdentifier,
+                                                    ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.public_models.organization import Organization
+from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import (ExtendedAsyncSession, IdentifierKind, IdResponse, ModelIdentifier,
-                                         ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType,
+                                                             column_types_to_table_columns, get_model_columns_by_type)
+from deepchecks_monitoring.schema_models.model import Model, TaskType
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
+from deepchecks_monitoring.utils import auth
 
 from .check import MonitorOptions
 from .router import router
@@ -539,10 +542,12 @@ async def delete_model_version_by_name(
     model_name: str = Path(..., description='Model name'),
     version_name: str = Path(..., description='Model version name'),
     session: AsyncSession = AsyncSessionDep,
-    resources_provider: ResourcesProvider = ResourcesProviderDep
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
+    user: User = Depends(auth.AdminUser()),
 ):
     """Delete model version by name."""
     await _delete_model_version(
+        organization=user.organization,
         model_identifier=ModelIdentifier(model_name, kind=IdentifierKind.NAME),
         version_identifier=ModelVersionIdentifier(version_name, kind=IdentifierKind.NAME),
         session=session,
@@ -561,7 +566,8 @@ async def delete_model_version_by_id(
         background_tasks: BackgroundTasks,
         model_version_id: int = Path(..., description='Model version id'),
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        user: User = Depends(auth.AdminUser()),
 ):
     """Delete model version by id.
 
@@ -573,6 +579,7 @@ async def delete_model_version_by_id(
         SQLAlchemy session.
     """
     await _delete_model_version(
+        organization=user.organization,
         version_identifier=ModelVersionIdentifier.from_request_params(model_version_id),
         session=session,
         resources_provider=resources_provider,
@@ -582,6 +589,7 @@ async def delete_model_version_by_id(
 
 async def _delete_model_version(
     *,
+    organization: Organization,
     version_identifier: ModelVersionIdentifier,
     model_identifier: t.Optional[ModelIdentifier] = None,
     session: AsyncSession = AsyncSessionDep,
@@ -609,8 +617,8 @@ async def _delete_model_version(
         drop_tables,
         resources_provider=resources_provider,
         tables=[
-            model_version.get_monitor_table_name(),
-            model_version.get_reference_table_name()
+            f'"{organization.schema_name}"."{model_version.get_monitor_table_name()}"',
+            f'"{organization.schema_name}"."{model_version.get_reference_table_name()}"',
         ]
     )
 

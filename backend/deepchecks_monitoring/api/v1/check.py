@@ -31,11 +31,11 @@ from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, Monito
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.logic.statistics import bins_for_feature
-from deepchecks_monitoring.models import Check, ColumnType, Model
-from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
-                                         ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
-                                         exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
+                                                    ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
+                                                    exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.schema_models import Check, ColumnType, Model
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 from .router import router
 

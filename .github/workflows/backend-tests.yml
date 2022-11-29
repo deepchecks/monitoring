@@ -36,13 +36,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Set Up Env
       run: make env
-      working-directory: ./backend
     - name: pip freeze
       run: make freeze
-      working-directory: ./backend
     - name: Run Tests
       run: make test
-      working-directory: ./backend
 #  coverage:
 #    runs-on: ubuntu-latest
 #    name: coveralls

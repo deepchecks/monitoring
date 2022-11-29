@@ -15,7 +15,7 @@ from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from hamcrest import assert_that, contains_exactly, has_entries, has_items, has_length
 
-from deepchecks_monitoring.models import TaskType
+from deepchecks_monitoring.schema_models import TaskType
 from tests.conftest import (add_check, add_classification_data, add_model, add_model_version,
                             add_vision_classification_data, send_reference_request)
 

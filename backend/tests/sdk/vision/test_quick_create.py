@@ -16,7 +16,7 @@ from deepchecks.vision import VisionData
 from deepchecks_client import DeepchecksClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.models import Model, ModelVersion
+from deepchecks_monitoring.schema_models import Model, ModelVersion
 from tests.sdk.vision.test_upload_reference import get_classification_reference_table_as_array
 
 

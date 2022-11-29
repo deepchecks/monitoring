@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect
 
-from deepchecks_monitoring.models import ModelVersion, TaskType
+from deepchecks_monitoring.schema_models import ModelVersion, TaskType
 from tests.conftest import add_classification_data, add_model, send_reference_request
 
 

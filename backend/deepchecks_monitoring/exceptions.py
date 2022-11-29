@@ -22,7 +22,10 @@ __all__ = [
     'InternalError',
     'ContentLengthRequired',
     'RequestTooLarge',
-    'is_unique_constraint_violation_error'
+    'is_unique_constraint_violation_error',
+    'AccessForbidden',
+    'RedirectException',
+    'InvalidConfigurationException'
 ]
 
 
@@ -38,6 +41,32 @@ class BaseHTTPException(abc.ABC, HTTPException):
     ):
         super().__init__(self.status_code, message, headers)
         self.message = message
+
+
+class RedirectException(HTTPException):
+    """Exception which creates a redirection."""
+
+    def __init__(self, url):
+        super().__init__(status.HTTP_307_TEMPORARY_REDIRECT, headers={'Location': url})
+
+
+class InvalidConfigurationException(HTTPException):
+    """Exception which indicates user that is misconfigured."""
+
+    def __init__(self):
+        super().__init__(status.HTTP_403_FORBIDDEN, headers={'X-Substatus': '10'})
+
+
+class AccessForbidden(BaseHTTPException):
+    """Access Forbidden exception."""
+
+    status_code = status.HTTP_403_FORBIDDEN
+
+
+class Unauthorized(BaseHTTPException):
+    """Unauthorized exception."""
+
+    status_code = status.HTTP_401_UNAUTHORIZED
 
 
 class BadRequest(BaseHTTPException):

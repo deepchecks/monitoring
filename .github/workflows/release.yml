@@ -1,0 +1,82 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+#
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+env:
+  DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dawidd6/action-download-artifact@v2
+        with:
+          commit: ${{ github.sha }}
+          name: commImage
+          path: /tmp
+          workflow: e2e-tests.yml
+          workflow_conclusion: ""
+      - name: Load Docker image
+        run: |
+          echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
+          docker load --input /tmp/commImage.tar
+          docker tag ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build and push
+        run: |
+          docker push ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition mon-commercial-staging --query taskDefinition > task-definition.json
+      - name: Fill in the new image ID in the Amazon ECS task definition - app
+        id: render-app-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: app
+          image: ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+      - name:  Fill in the new image ID in the Amazon ECS task definition - alert-scheduler
+        id: render-alert-scheduler-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-app-container.outputs.task-definition }}
+          container-name: alert-scheduler
+          image: ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+      - name: Fill in the new image ID in the Amazon ECS task definition - worker
+        id: render-worker-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-alert-scheduler-container.outputs.task-definition }}
+          container-name: worker
+          image: ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-worker-container.outputs.task-definition }}
+          service: demo
+          cluster: DevMonitoring
+
+      - name: Logout from Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}

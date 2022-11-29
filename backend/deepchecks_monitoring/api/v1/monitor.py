@@ -27,10 +27,10 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDe
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
-from deepchecks_monitoring.models import Alert, AlertRule, Check
-from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
-                                         fetch_or_404, field_length)
+from deepchecks_monitoring.monitoring_utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
+                                                    fetch_or_404, field_length)
+from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
+from deepchecks_monitoring.schema_models.monitor import Monitor
 
 from .router import router
 

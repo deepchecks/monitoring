@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Alert execution logic."""
+import asyncio
 import logging
 import logging.handlers
 import typing as t
@@ -18,6 +19,7 @@ import anyio
 import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
+from furl import furl
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -26,20 +28,23 @@ from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import DatabaseSettings
+from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
-from deepchecks_monitoring.models.alert import Alert
-from deepchecks_monitoring.models.alert_rule import AlertRule, Condition
-from deepchecks_monitoring.models.model_version import ModelVersion
-from deepchecks_monitoring.models.monitor import Monitor
+from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
+from deepchecks_monitoring.public_models import Organization, SlackInstallation, User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import DataFilterList, configure_logger, make_oparator_func
+from deepchecks_monitoring.schema_models import Check, Model
+from deepchecks_monitoring.schema_models.alert import Alert
+from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
+from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.utils import slack
 
 __all__ = ["execute_monitor"]
 
 
-@actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
-async def execute_monitor(
+async def _execute_monitor(
         monitor_id: int,
         timestamp: str,
         session: AsyncSession,
@@ -129,6 +134,217 @@ async def execute_monitor(
 
     logger.info("No alerts were raised for Monitor(id:%s)", monitor.id)
     return []
+
+
+@actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
+async def execute_monitor(
+    organization_id: int,
+    organization_schema: str,
+    monitor_id: int,
+    timestamp: str,
+    session: AsyncSession,
+    resources_provider: ResourcesProvider,
+    logger: logging.Logger,
+    **kwargs  # pylint: disable=unused-argument
+) -> t.List[Alert]:
+    """Execute alert rule."""
+    alerts = await _execute_monitor(
+        session=session,
+        monitor_id=monitor_id,
+        timestamp=timestamp,
+        logger=logger,
+        organization_schema=organization_schema,
+        organization_id=organization_id,
+        resources_provider=resources_provider,
+        **kwargs
+    )
+    for alert in alerts:
+        # TODO:
+        await AlertNotificator(
+            alert_id=t.cast(int, alert.id),
+            organization_id=organization_id,
+            session=session,
+            resources_provider=resources_provider,
+            logger=logger.getChild("alert-notificator")
+        ).notify()
+
+    return alerts
+
+
+class AlertNotificator:
+    """Class to send notification about alerts."""
+
+    def __init__(
+        self,
+        organization_id: int,
+        alert_id: int,
+        session: AsyncSession,
+        resources_provider: ResourcesProvider,
+        logger: t.Optional[logging.Logger] = None
+    ):
+        self.organization_id = organization_id
+        self.alert_id = alert_id
+        self.session = session
+        self.resources_provider = resources_provider
+        self.logger = logger or logging.getLogger("alert-notificator")
+
+        self.organization_future = asyncio.create_task(session.get(
+            Organization,
+            organization_id
+        ))
+        self.alert_future = asyncio.create_task(session.scalar(
+            sa.select(Alert)
+            .where(Alert.id == alert_id)
+            .options(
+                joinedload(Alert.alert_rule)
+                .joinedload(AlertRule.monitor)
+                .joinedload(Monitor.check)
+                .joinedload(Check.model)
+            )
+        ))
+
+    async def fetch_organization(self) -> Organization:
+        if org := await self.organization_future:
+            return org
+        else:
+            raise RuntimeError(f"Not existing organization id:{self.organization_id}")
+
+    async def fetch_alert(self) -> Alert:
+        if alert := await self.alert_future:
+            return alert
+        else:
+            raise RuntimeError(f"Not existing alert id:{self.organization_id}")
+
+    async def send_emails(self) -> bool:
+        """Send notification emails."""
+        org = await self.fetch_organization()
+        alert = await self.fetch_alert()
+
+        alert_rule = t.cast(AlertRule, alert.alert_rule)
+        monitor = t.cast(Monitor, alert_rule.monitor)
+        check = t.cast(Check, monitor.check)
+        model = t.cast(Model, check.model)
+
+        if alert_rule.alert_severity not in org.email_notification_levels:
+            notification_levels = ",".join(t.cast(t.List[t.Any], org.email_notification_levels))
+            self.logger.info(
+                "AlertRule(id:%s) severity (%s) is not included in "
+                "Organization(id:%s) email notification levels config (%s)",
+                alert_rule.id,
+                alert_rule.alert_severity,
+                org.id,
+                notification_levels
+            )
+            return False
+
+        members_emails = (await self.session.scalars(
+            sa.select(User.email).where(User.organization_id == org.id)
+        )).all()
+
+        if not members_emails:
+            self.logger.error("Organization(id:%s) does not have members", org.id)
+            return False
+
+        settings = self.resources_provider.settings
+        alert_link = (furl(settings.host) / "alert-rules")
+        alert_link = alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
+
+        self.resources_provider.email_sender.send(EmailMessage(
+            subject=f"Alert. Model: {model.name}, Monitor: {monitor.name}",
+            sender=self.resources_provider.settings.deepchecks_email,
+            recipients=members_emails,
+            template_name="alert",
+            template_context={
+                "alert_link": str(alert_link),
+                "alert_title": f"New {alert_rule.alert_severity.value} alert: {monitor.name}",
+                "alert_check_value": "|".join([f"{key}: {value}" for key, value in alert.failed_values.items()]),
+                "alert_date": alert.created_at.strftime("%d/%m/%Y, %H:%M"),
+                "model": model.name,
+                "check": check.name,
+                "condition": str(alert_rule.condition),
+            }
+        ))
+
+        self.logger.info(
+            "Alert(id:%s) email notification was sent to Organization(id:%s) members %s",
+            alert.id,
+            org.id,
+            ", ".join(members_emails)
+        )
+
+        return True
+
+    async def send_slack_messages(self) -> bool:
+        """Send slack message."""
+        org = await self.fetch_organization()
+        alert = await self.fetch_alert()
+        alert_rule = t.cast(AlertRule, alert.alert_rule)
+
+        if alert_rule.alert_severity not in org.slack_notification_levels:
+            notification_levels = ",".join(t.cast(t.List[t.Any], org.slack_notification_levels))
+            self.logger.info(
+                "AlertRule(id:%s) severity (%s) is not included in "
+                "Organization(id:%s) slack notification levels config (%s)",
+                alert_rule.id,
+                alert_rule.alert_severity,
+                org.id,
+                notification_levels
+            )
+            return False
+
+        q = sa.select(SlackInstallation).where(SlackInstallation.organization_id == org.id)
+        slack_apps = (await self.session.scalars(q)).all()
+        slack_apps = t.cast(t.List[SlackInstallation], slack_apps)
+
+        if not slack_apps:
+            self.logger.info(
+                "Organization(id:%s) does not have connected slack bots",
+                org.id,
+            )
+            return False
+
+        deepchecks_host = self.resources_provider.settings.host
+        errors: t.List[t.Tuple[SlackInstallation, str]] = []
+        notification = slack.SlackAlertNotification(alert, deepchecks_host).blocks()
+
+        for app in slack_apps:
+            response = app.webhook_client().send(blocks=notification)
+            if response.status_code != 200:
+                errors.append((app, response.body))
+            else:
+                self.logger.info(
+                    "Alert(id:%s) slack notification was sent to Organization(id:%s) %s:%s:%s slack workspace",
+                    alert.id, org.id, app.app_id, app.team_name, app.team_id,
+                )
+
+        if errors:
+            msg = ";\n".join(
+                f"app:{app.id} - {message}"
+                for app, message in errors
+            )
+            self.logger.error(
+                "Failed to send Alert(id:%s) slack notification to the "
+                "next Organization(id:%s) slack workspaces.\n%s",
+                alert.id, org.id, msg
+            )
+
+        return len(errors) < len(slack_apps)
+
+    async def notify(self):
+        were_emails_send = await self.send_emails()
+        were_messages_send = await self.send_slack_messages()
+
+        if not were_emails_send:
+            self.logger.info(
+                "No emails were send for Alert(id:%s), Organization(id:%s)",
+                self.alert_id, self.organization_id
+            )
+
+        if not were_messages_send:
+            self.logger.info(
+                "No slack message were send for Alert(id:%s), Organization(id:%s)",
+                self.alert_id, self.organization_id
+            )
 
 
 def assert_check_results(

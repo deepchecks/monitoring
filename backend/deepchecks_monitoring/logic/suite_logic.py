@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, load_data_for_check
 from deepchecks_monitoring.logic.model_logic import dataframe_to_dataset_and_pred, dataframe_to_vision_data_pred_props
-from deepchecks_monitoring.models import ModelVersion, TaskType
+from deepchecks_monitoring.schema_models import ModelVersion, TaskType
 
 
 def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: bool) -> TabularSuite:

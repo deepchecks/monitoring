@@ -15,7 +15,7 @@ import torch
 from deepchecks.vision import ClassificationData, DetectionData, VisionData
 from torch.utils.data import Dataset as TorchDataset
 
-from deepchecks_monitoring.models import TaskType
+from deepchecks_monitoring.schema_models import TaskType
 
 
 class LabelVisionDataset(TorchDataset):

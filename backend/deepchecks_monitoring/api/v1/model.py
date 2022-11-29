@@ -13,7 +13,7 @@ from collections import defaultdict
 from datetime import datetime
 
 import pendulum as pdl
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import Integer as SQLInteger
 from sqlalchemy import delete, func, literal, select, text, union_all
@@ -25,14 +25,16 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, MonitorsCountPerModel,
                                                              get_alerts_per_model)
-from deepchecks_monitoring.models import Model
-from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
-from deepchecks_monitoring.models.model import TaskType
-from deepchecks_monitoring.models.model_version import ColumnMetadata, ModelVersion
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
+from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
+                                                    field_length)
+from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
-                                         field_length)
+from deepchecks_monitoring.schema_models import Model
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.model import TaskType
+from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
+from deepchecks_monitoring.utils import auth
 
 from .router import router
 
@@ -420,7 +422,8 @@ async def delete_model(
         background_tasks: BackgroundTasks,
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        user: User = Depends(auth.AdminUser()),
 ):
     """Delete model instance."""
     model = await session.fetchone_or_404(
@@ -431,9 +434,11 @@ async def delete_model(
     )
 
     tables = []
+    organization_schema = user.organization.schema_name
+
     for version in model.versions:
-        tables.append(version.get_monitor_table_name())
-        tables.append(version.get_reference_table_name())
+        tables.append(f'"{organization_schema}"."{version.get_monitor_table_name()}"')
+        tables.append(f'"{organization_schema}"."{version.get_reference_table_name()}"')
 
     background_tasks.add_task(
         drop_tables,
@@ -452,13 +457,16 @@ async def delete_model(
     await session.commit()
 
 
-async def drop_tables(resources_provider: ResourcesProvider, tables: t.List[str]):
+async def drop_tables(
+    resources_provider: ResourcesProvider,
+    tables: t.List[str]
+):
     """Drop specified tables."""
     if not tables:
         return
     async with resources_provider.async_database_engine.begin() as connection:
         for name in tables:
-            await connection.execute(text(f'DROP TABLE IF EXISTS "{name}"'))
+            await connection.execute(text(f"DROP TABLE IF EXISTS {name}"))
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])

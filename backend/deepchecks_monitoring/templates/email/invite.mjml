@@ -1,0 +1,50 @@
+<mjml>
+  <mj-body background-color="white">
+    <mj-section>
+      <mj-column>
+
+        <mj-image src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/logo_all.png"></mj-image>
+
+        <mj-divider border-color="#D1D8DC" border-width="1px"></mj-divider>
+
+        <mj-text font-family='Arial' font-style='normal' font-weight=700 font-size='34px' line-height='140%' color='#3A474E'>
+          <p>Hello!
+          <mj-spacer>
+          <p>{{from_user}} sent you an invitation to use deepchecks in {{organization_name}} workspace
+
+        </mj-text>
+        <mj-text font-family="Arial" font-style="normal" font-weight="400" font-size="16px" line-height="150%" letter-spacing="0.2px" color="#3A474E">
+          <p>We are excited to welcome you to deepchecks. Join now to start monitoring your machine learning models!</p>
+        </mj-text>
+
+        <mj-button width="219px" height="56px" background-color="#9D60FB" href="{{host}}">
+          <span style="color: white;
+                     font-family:Roboto; 
+                     font-style:normal; 
+                     font-weight: 500;
+                     font-size: 14px;
+                     line-height:160%;
+                     ">CLICK HERE TO SIGN UP</span>
+        </mj-button>
+
+        <mj-image width="443px" height="225px" src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/invite_img.png"></mj-image>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="rgba(209, 216, 220, 0.5);">
+      <mj-column width="70%">
+        <mj-text>
+          <span style="vertical-align:middle;">
+            <a href='https://www.deepchecks.com' target="_blank">Deepchecks Website</a> | © 2022 Deepchecks
+          </span>
+        </mj-text>
+      </mj-column>
+      <mj-column width="90px">
+        <mj-image src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/Slack.png" href="https://deepchecks.com/slack"></mj-image>
+      </mj-column>
+      <mj-column width="90px">
+        <mj-image src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/github.png" href="https://github.com/deepchecks"></mj-image>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -18,9 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.models.alert import Alert
-from deepchecks_monitoring.models.alert_rule import AlertRule, AlertSeverity
-from deepchecks_monitoring.utils import exists_or_404, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
+from deepchecks_monitoring.schema_models.alert import Alert
+from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
 
 from .router import router
 

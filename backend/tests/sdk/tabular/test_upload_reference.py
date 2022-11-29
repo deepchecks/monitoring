@@ -17,7 +17,7 @@ from sqlalchemy import select
 from starlette.testclient import TestClient
 
 from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
-from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from tests.conftest import add_model, add_model_version
 
 

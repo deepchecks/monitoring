@@ -17,8 +17,8 @@ from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
-from deepchecks_monitoring.models.alert_rule import AlertSeverity
+from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
+from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
 from tests.conftest import add_alert, add_alert_rule, add_check, add_model, add_model_version, add_monitor
 
 

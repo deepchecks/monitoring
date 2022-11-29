@@ -20,7 +20,7 @@ from hamcrest import assert_that, calling, contains_exactly, has_property, is_, 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
 @pytest.mark.asyncio

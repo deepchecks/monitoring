@@ -12,9 +12,14 @@
 import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
+import ldclient
+import requests
 from aiokafka import AIOKafkaProducer
+from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
-from pydantic import BaseSettings
+from ldclient.client import LDClient
+from ldclient.config import Config as LDConfig
+from pydantic.env_settings import BaseSettings
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -22,9 +27,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
+from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings, Settings
+from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
 
 __all__ = ["ResourcesProvider"]
 
@@ -72,6 +78,9 @@ class ResourcesProvider(BaseResourcesProvider):
         self._kafka_admin: t.Optional[KafkaAdminClient] = None
         self._redis_client: t.Optional[Redis] = None
         self._cache_funcs: t.Optional[CacheFunctions] = None
+        self._lauchdarkly_client: t.Optional[LDClient] = None
+        self._email_sender: t.Optional[EmailSender] = None
+        self._oauth_client: t.Optional[OAuth] = None
 
     @property
     def database_settings(self) -> DatabaseSettings:
@@ -239,3 +248,62 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._cache_funcs is None and self.cache_functions_class:
             self._cache_funcs = self.cache_functions_class(self.redis_client)
         return self._cache_funcs
+
+    @property
+    def lauchdarkly_client(self) -> LDClient:
+        """Launchdarkly client."""
+        if not isinstance(self.settings, Settings):
+            raise AssertionError(
+                "In order to be able to instantiate launch darkly resources "
+                "you need to provide instance of 'Settings' "
+                "to the 'ResourcesProvider' constructor"
+            )
+        if self._lauchdarkly_client:
+            return self._lauchdarkly_client
+
+        ldclient.set_config(LDConfig(self.settings.lauchdarkly_sdk_key))
+        self._lauchdarkly_client = ldclient.get()
+        return self._lauchdarkly_client
+
+    def launchdarkly_variation(self, flag, user, default=False) -> bool:
+        """Return variation of a flag."""
+        ld_user = {"email": user.email, "key": user.email}
+        return self.lauchdarkly_client.variation(flag, ld_user, default)
+
+    @property
+    def oauth_client(self):
+        """Oauth client."""
+        if not isinstance(self.settings, Settings):
+            raise AssertionError(
+                "In order to be able to instantiate OAuth resources "
+                "you need to provide instance of 'Settings' "
+                "to the 'ResourcesProvider' constructor"
+            )
+
+        if self._oauth_client is None:
+            try:
+                url = f"https://{self.settings.oauth_domain}/.well-known/openid-configuration"
+                openid_configuration = requests.get(url).json()
+                self._oauth_client = OAuth()
+                self._oauth_client.register(
+                    name="auth0",
+                    client_id=self.settings.oauth_client_id,
+                    client_secret=self.settings.oauth_client_secret,
+                    access_token_url=openid_configuration["token_endpoint"],
+                    access_token_params=None,
+                    authorize_url=openid_configuration["authorization_endpoint"],
+                    authorize_params={"prompt": "login"},
+                    jwks_uri=f"https://{self.settings.oauth_domain}/.well-known/jwks.json",
+                    client_kwargs={"scope": "openid profile email"},
+                )
+            except Exception as e:
+                raise Exception("There was an error while trying to get the OpenID configuration from the server.") \
+                    from e
+        return self._oauth_client
+
+    @property
+    def email_sender(self) -> EmailSender:
+        """Email sender."""
+        if self._email_sender is None:
+            self._email_sender = EmailSender(self.settings)
+        return self._email_sender

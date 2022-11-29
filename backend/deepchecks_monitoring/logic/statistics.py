@@ -14,8 +14,8 @@ from sqlalchemy import Column, and_, case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.check_logic import SingleWindowMonitorOptions
-from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.models.column_type import ColumnType
+from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models.column_type import ColumnType
 
 
 async def bins_for_feature(model_version: ModelVersion, feature: str, session: AsyncSession,

@@ -35,12 +35,12 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf, random_sample)
-from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.models.check import Check
-from deepchecks_monitoring.models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_TS_COL
-from deepchecks_monitoring.models.model import Model, TaskType
-from deepchecks_monitoring.utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
-                                         MonitorCheckConfSchema, TimeUnit, fetch_or_404, make_oparator_func)
+from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
+                                                    MonitorCheckConfSchema, TimeUnit, fetch_or_404, make_oparator_func)
+from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models.check import Check
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.model import Model, TaskType
 
 
 class AlertCheckOptions(BaseModel):

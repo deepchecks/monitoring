@@ -20,9 +20,9 @@ from starlette import status
 from deepchecks_monitoring.api.v1.monitor import MonitorSchema
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.models.dashboard import Dashboard
-from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import exists_or_404, field_length
+from deepchecks_monitoring.monitoring_utils import exists_or_404, field_length
+from deepchecks_monitoring.schema_models.dashboard import Dashboard
+from deepchecks_monitoring.schema_models.monitor import Monitor
 
 from .router import router
 

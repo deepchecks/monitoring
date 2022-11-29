@@ -26,8 +26,8 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, DataIngestionDep, limit_request_size
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.utils import fetch_or_404
+from deepchecks_monitoring.monitoring_utils import fetch_or_404
+from deepchecks_monitoring.schema_models import ModelVersion
 
 from .router import router
 

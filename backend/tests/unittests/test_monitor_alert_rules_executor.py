@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 # pylint: disable=protected-access
+import logging
 import typing as t
 from collections import defaultdict
 
@@ -21,8 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from deepchecks_monitoring.bgtasks.actors import execute_monitor
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.models import Alert, Monitor
-from deepchecks_monitoring.utils import TimeUnit
+from deepchecks_monitoring.monitoring_utils import TimeUnit
+from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
+from deepchecks_monitoring.schema_models import Alert, Monitor
+from deepchecks_monitoring.utils import database
 from tests.conftest import add_alert_rule, add_check, add_classification_data, add_model_version, add_monitor
 from tests.unittests.conftest import update_model_version_end
 from tests.unittests.test_alerts_scheduler import UpdateMonitor
@@ -33,6 +37,8 @@ async def test_monitor_executor(
     async_session: AsyncSession,
     client: TestClient,
     classification_model_id: int,
+    user: User,
+    resources_provider
 ):
     check_id = t.cast(int, add_check(
         classification_model_id,
@@ -71,7 +77,15 @@ async def test_monitor_executor(
 
     now = pdl.now()
 
-    result: t.List[Alert] = await execute_monitor(monitor_id=monitor_id, timestamp=str(now), session=async_session)
+    result: t.List[Alert] = await execute_monitor(
+        monitor_id=monitor_id,
+        timestamp=str(now),
+        session=async_session,
+        organization_id=user.organization.id,
+        organization_schema=user.organization.schema_name,
+        resources_provider=resources_provider,
+        logger=logging.Logger("test")
+    )
 
     assert len(result) == 1, result
     alert = result[0]
@@ -89,10 +103,18 @@ async def test_alert_scheduling(
     client: TestClient,
     classification_model_id: int,
     classification_model_version_id: int,
+    user: User,
+    resources_provider: ResourcesProvider
 ):
     # TODO: add description to the test
     # == Prepare
-    await update_model_version_end(async_engine, classification_model_version_id)
+    schema_translate_map = {None: user.organization.schema_name}
+
+    await update_model_version_end(
+        async_engine,
+        classification_model_version_id,
+        organization=user.organization
+    )
 
     check_id = t.cast(int, add_check(
         classification_model_id,
@@ -144,7 +166,9 @@ async def test_alert_scheduling(
     for monitor_id in monitors:
         async with async_engine.begin() as c:
             (await c.execute(
-                UpdateMonitor,
+                UpdateMonitor.execution_options(
+                    schema_translate_map=schema_translate_map
+                ),
                 parameters={
                     "monitor_id": monitor_id,
                     "start": pdl.now() - pdl.duration(hours=1)
@@ -152,22 +176,42 @@ async def test_alert_scheduling(
             )).first()
 
     # == Act
-    worker = Worker.create(engine=async_engine, actors=[execute_monitor])
+    worker = Worker.create(
+        engine=async_engine,
+        actors=[execute_monitor],
+        additional_params={"resources_provider": resources_provider}
+    )
     scheduler = AlertsScheduler(engine=None)
 
     async with async_engine.connect() as c:
         await scheduler.enqueue_tasks(c)
 
-    async with worker.create_database_session() as s:
-        async for task in worker.tasks_broker._next_task(s):
-            await worker.execute_task(s, task)
+    async with worker.create_database_session() as session:
+        async for task in worker.tasks_broker._next_task(
+            session=session,
+            execution_options={"schema_translate_map": schema_translate_map}
+        ):
+            async with database.attach_schema_switcher(
+                session=session,
+                schema_search_path=[user.organization.schema_name, "public"]
+            ):
+                await worker.execute_task(session=session, task=task)
 
     # == Assert
-    alerts = (await async_session.scalars(sa.select(Alert))).all()
-    tasks = (await async_session.scalars(sa.select(Task))).all()
+    alerts = (await async_session.scalars(
+        sa.select(Alert)
+        .execution_options(schema_translate_map=schema_translate_map)
+    )).all()
+
+    tasks = (await async_session.scalars(
+        sa.select(Task)
+        .execution_options(schema_translate_map=schema_translate_map)
+    )).all()
 
     monitors = (await async_session.scalars(
-        sa.select(Monitor).where(Monitor.id.in_(monitors))
+        sa.select(Monitor)
+        .where(Monitor.id.in_(monitors))
+        .execution_options(schema_translate_map=schema_translate_map)
     )).all()
 
     alert_per_rule = defaultdict(list)
@@ -196,6 +240,8 @@ async def test_monitor_executor_with_unactive_alert_rules(
     async_session: AsyncSession,
     client: TestClient,
     classification_model_id: int,
+    user: User,
+    resources_provider
 ):
     check_id = t.cast(int, add_check(
         classification_model_id,
@@ -219,5 +265,14 @@ async def test_monitor_executor_with_unactive_alert_rules(
 
     now = pdl.now()
 
-    result = await execute_monitor(monitor_id=monitor_id, timestamp=str(now), session=async_session)
+    logger = logging.Logger("test")
+    result: t.List[Alert] = await execute_monitor(
+        monitor_id=monitor_id,
+        timestamp=str(now),
+        session=async_session,
+        organization_id=user.organization.id,
+        organization_schema=user.organization.schema_name,
+        resources_provider=resources_provider,
+        logger=logger
+    )
     assert not result

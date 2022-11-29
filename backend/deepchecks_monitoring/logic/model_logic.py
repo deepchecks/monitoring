@@ -32,10 +32,10 @@ from torch.utils.data import DataLoader
 
 from deepchecks_monitoring.logic.cache_functions import CacheResult
 from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
-from deepchecks_monitoring.models import Check, Model, ModelVersion, TaskType
-from deepchecks_monitoring.models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                      SAMPLE_PRED_PROBA_COL, ColumnType)
-from deepchecks_monitoring.utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
+from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, TaskType
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                             SAMPLE_PRED_PROBA_COL, ColumnType)
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,

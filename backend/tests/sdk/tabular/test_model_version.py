@@ -14,11 +14,11 @@ import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
 from deepchecks_client import DeepchecksClient
-from deepchecks_client.tabular.utils import describe_dataset, create_schema, read_schema
+from deepchecks_client.tabular.utils import create_schema, describe_dataset, read_schema
 from httpx import HTTPError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.models import ModelVersion, TaskType
+from deepchecks_monitoring.schema_models import ModelVersion, TaskType
 
 
 def _get_wierd_df():

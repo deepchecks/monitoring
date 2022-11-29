@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from deepchecks_monitoring.models.dashboard import Dashboard
+from deepchecks_monitoring.schema_models.dashboard import Dashboard
 from tests.api.test_monitor import add_monitor
 
 

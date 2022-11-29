@@ -1,7 +1,8 @@
+launchdarkly-server-sdk
 fastapi>=0.87.0
 sqlalchemy[asyncio]==1.4.39
 dynaconf>=3.1.8
-pydantic[dotenv]>=1.9.1
+pydantic[dotenv,email]>=1.9.1
 pendulum==2.1.2
 jsonschema==4.7.2
 asyncpg==0.25.0
@@ -20,3 +21,17 @@ redis[hiredis]>=4.3.4
 pandas>=1.1.5,<1.5.0
 deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main
 rfc3339-validator==0.1.4 # Used to validate date-time format in jsonschema
+launchdarkly-server-sdk
+pyjwt[crypto]==2.4.0
+Authlib~=1.0.1
+httpx~=0.23.0
+itsdangerous~=2.1.2
+randomname~=0.1.5
+furl==2.1.3
+python-slugify==6.1.2
+slack-sdk==3.18.1
+uptrace
+faker
+bcrypt==4.0.1
+pyinstrument
+aiosmtpd

@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from random import random
 
 import anyio
@@ -19,18 +19,22 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus
-from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, EnqueueTasks
-from deepchecks_monitoring.models.monitor import Monitor
+from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, create_task_enqueueing_query
+from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.schema_models.monitor import Monitor
 from tests.conftest import add_monitor
 from tests.unittests.conftest import update_model_version_end
 
 
-async def schedule_tasks(async_engine) -> t.List[Task]:
+async def schedule_tasks(async_engine, organization) -> t.List[Task]:
+    query = create_task_enqueueing_query(organization.id, organization.schema_name)
+
     async with async_engine.begin() as c:
-        await c.execute(EnqueueTasks)
+        await c.execute(query)
 
     async with async_engine.connect() as c:
         tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
+        tasks_query = tasks_query.execution_options(schema_translate_map={None: organization.schema_name})
         return t.cast(t.List[Task], (await c.execute(tasks_query)).all())
 
 
@@ -47,10 +51,15 @@ async def test_alert_rules_scheduler_query(
     classification_model_check_id,
     classification_model_version_id,
     client: TestClient,
-    async_engine: AsyncEngine
+    async_engine: AsyncEngine,
+    user: User
 ):
     # == Prepare
-    await update_model_version_end(async_engine, classification_model_version_id)
+    await update_model_version_end(
+        async_engine,
+        classification_model_version_id,
+        user.organization,
+    )
 
     monitor_id = add_monitor(
         classification_model_check_id,
@@ -61,16 +70,14 @@ async def test_alert_rules_scheduler_query(
     )
 
     async with async_engine.begin() as c:
+        schema_translate_map = {None: user.organization.schema_name}
         monitor = (await c.execute(
-            UpdateMonitor,
-            parameters={
-                "monitor_id": monitor_id,
-                "start": pdl.now() - pdl.duration(hours=1)
-            }
+            UpdateMonitor.execution_options(schema_translate_map=schema_translate_map),
+            parameters={"monitor_id": monitor_id, "start": pdl.now() - pdl.duration(hours=1)}
         )).first()
 
     # == Act
-    tasks = await schedule_tasks(async_engine)
+    tasks = await schedule_tasks(async_engine, user.organization)
 
     # == Assert
     assert len(tasks) == 7
@@ -82,10 +89,17 @@ async def test_alert_rules_scheduler(
     classification_model_check_id: int,
     classification_model_version_id: int,
     client: TestClient,
-    async_engine: AsyncEngine
+    async_engine: AsyncEngine,
+    user: User
 ):
     # == Prepare
-    await update_model_version_end(async_engine, classification_model_version_id)
+    schema_translate_map = {None: user.organization.schema_name}
+
+    await update_model_version_end(
+        async_engine,
+        classification_model_version_id,
+        user.organization
+    )
 
     monitor_id = add_monitor(
         classification_model_check_id, client,
@@ -96,23 +110,26 @@ async def test_alert_rules_scheduler(
 
     async with async_engine.begin() as c:
         monitor = (await c.execute(
-            UpdateMonitor,
-            parameters={
-                "monitor_id": monitor_id,
-                "start": pdl.now() - pdl.duration(hours=1)
-            }
+            UpdateMonitor.execution_options(schema_translate_map=schema_translate_map),
+            parameters={"monitor_id": monitor_id, "start": pdl.now() - pdl.duration(hours=1)}
         )).first()
 
     async with async_engine.connect() as c:
         # == Act
-        scheduler = AlertsScheduler(engine=async_engine)
-        await scheduler.enqueue_tasks(c)
+        await AlertsScheduler(engine=None).enqueue_tasks(c)
 
         # == Assert
-        tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
-        tasks = t.cast(t.List[Task], (await c.execute(tasks_query)).all())
-        latest_schedule_query = sa.select(Monitor.latest_schedule).where(Monitor.id == monitor_id)
-        latest_schedule = (await c.execute(latest_schedule_query)).scalar_one()
+        tasks = t.cast(t.List[Task], (await c.execute(
+            sa.select(Task)
+            .order_by(Task.execute_after.asc())
+            .execution_options(schema_translate_map=schema_translate_map)
+        )).all())
+
+        latest_schedule = (await c.execute(
+            sa.select(Monitor.latest_schedule)
+            .where(Monitor.id == monitor_id)
+            .execution_options(schema_translate_map=schema_translate_map)
+        )).scalar_one()
 
     assert len(tasks) == 7
 
@@ -130,10 +147,18 @@ async def test_alert_rules_scheduler_monitor_update(
     classification_model_check_id: int,
     classification_model_version_id: int,
     client: TestClient,
-    async_engine: AsyncEngine
+    async_engine: AsyncEngine,
+    user: User
 ):
     # == Prepare
-    await update_model_version_end(async_engine, classification_model_version_id, end_time=datetime.now())
+    schema_translate_map = {None: user.organization.schema_name}
+
+    await update_model_version_end(
+        async_engine,
+        classification_model_version_id,
+        user.organization,
+        end_time=datetime.now(timezone.utc)
+    )
 
     monitor_id = add_monitor(
         classification_model_check_id, client,
@@ -144,12 +169,15 @@ async def test_alert_rules_scheduler_monitor_update(
 
     async with async_engine.connect() as c:
         # == Act
-        scheduler = AlertsScheduler(engine=async_engine)
-        await scheduler.enqueue_tasks(c)
+        await AlertsScheduler(engine=async_engine).enqueue_tasks(c)
 
         # == Assert
-        tasks_query = sa.select(Task.id, Task.name).order_by(Task.execute_after.asc())
-        tasks = dict((await c.execute(tasks_query)).all())
+        tasks = dict((await c.execute(
+            sa.select(Task.id, Task.name)
+            .order_by(Task.execute_after.asc())
+            .execution_options(schema_translate_map=schema_translate_map)
+        )).all())
+
     assert len(tasks) == 11
 
    # update monitor
@@ -166,12 +194,14 @@ async def test_alert_rules_scheduler_monitor_update(
     # test that 10 new alerts were scheduled
     async with async_engine.connect() as c:
         # == Act
-        scheduler = AlertsScheduler(engine=async_engine)
-        await scheduler.enqueue_tasks(c)
+        await AlertsScheduler(engine=None).enqueue_tasks(c)
 
         # == Assert
-        tasks_query = sa.select(Task.id, Task.name).order_by(Task.execute_after.asc())
-        updated_tasks = dict((await c.execute(tasks_query)).all())
+        updated_tasks = dict((await c.execute(
+            sa.select(Task.id, Task.name)
+            .order_by(Task.execute_after.asc())
+            .execution_options(schema_translate_map=schema_translate_map)
+        )).all())
 
     assert len(updated_tasks) == 11 # should be the same as 10 were deleted
 
@@ -179,15 +209,23 @@ async def test_alert_rules_scheduler_monitor_update(
     updated_tasks.update(tasks)
     assert len(updated_tasks) == 21
 
+
 @pytest.mark.asyncio
 async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
     classification_model_check_id: int,
     classification_model_version_id: int,
     client: TestClient,
-    async_engine: AsyncEngine
+    async_engine: AsyncEngine,
+    user: User
 ):
     # == Prepare
-    await update_model_version_end(async_engine, classification_model_version_id)
+    schema_translate_map = {None: user.organization.schema_name}
+
+    await update_model_version_end(
+        async_engine,
+        classification_model_version_id,
+        user.organization
+    )
 
     monitor_id = add_monitor(
         classification_model_check_id,
@@ -197,10 +235,11 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
         frequency=1,  # secs
     )
 
-    async with async_engine.connect() as c:
+    async with async_engine.begin() as c:
         monitor = (await c.execute(
             sa.select(Monitor)
             .where(Monitor.id == monitor_id)
+            .execution_options(schema_translate_map=schema_translate_map)
         )).first()
 
     async with anyio.create_task_group() as g:
@@ -212,8 +251,11 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
 
     # == Assert
     async with async_engine.connect() as c:
-        tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
-        tasks = t.cast(t.List[Task], (await c.execute(tasks_query)).all())
+        tasks = t.cast(t.List[Task], (await c.execute(
+            sa.select(Task)
+            .order_by(Task.execute_after.asc())
+            .execution_options(schema_translate_map=schema_translate_map)
+        )).all())
 
         # The number will vary from run to run depending on number of
         # occurred serialization errors
@@ -223,6 +265,7 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
         latest_schedule = (await c.execute(
             sa.select(Monitor.latest_schedule)
             .where(Monitor.id == monitor_id)
+            .execution_options(schema_translate_map=schema_translate_map)
         )).scalar_one()
 
         assert latest_schedule == tasks[-1].execute_after
@@ -233,6 +276,7 @@ def assert_tasks(tasks: t.Sequence[Task], monitor: Monitor, expected_status: Tas
     prev_date = None
 
     for task in tasks:
+        task = t.cast(Task, task)
         assert task.status == expected_status
         assert task.reference == reference
         assert task.name.startswith(reference)

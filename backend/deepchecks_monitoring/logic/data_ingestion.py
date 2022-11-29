@@ -23,17 +23,19 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 from jsonschema import FormatChecker
 from jsonschema.validators import validator_for
-from sqlalchemy import func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
-from deepchecks_monitoring.models import ModelVersion
-from deepchecks_monitoring.models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
-from deepchecks_monitoring.models.ingestion_errors import IngestionError
-from deepchecks_monitoring.models.model import Model
-from deepchecks_monitoring.models.model_version import update_statistics_from_sample
-from deepchecks_monitoring.utils import ExtendedAsyncSession
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
+from deepchecks_monitoring.public_models import Organization, User
+from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
+from deepchecks_monitoring.utils import database
 
 __all__ = ["DataIngestionBackend", "log_data", "update_data"]
 
@@ -214,7 +216,7 @@ class DataIngestionBackend:
     def generate_topic_name(
             self,
             model_version: ModelVersion,
-            request: fastapi.Request  # pylint: disable=unused-argument
+            request: fastapi.Request
     ):
         """Get name of kafka topic.
 
@@ -229,26 +231,39 @@ class DataIngestionBackend:
         str
             Name of kafka topic to be used for given model version entity.
         """
-        return f"data-{model_version.id}"
+        user: User = request.state.user
+        return f"data-{user.organization_id}-{model_version.id}"
 
     @asynccontextmanager
-    async def get_session(
-            self,
-            topic  # pylint: disable=unused-argument
-    ) -> t.AsyncIterator[ExtendedAsyncSession]:
+    async def get_session(self, topic) -> t.AsyncIterator[ExtendedAsyncSession]:
         """Get session object based on the given topic.
 
         Parameters
         ----------
         topic
-            used to be able to get more info when overriding this function
 
         Returns
         -------
         AsyncSession
         """
-        async with self.resources_provider.create_async_database_session() as s:
-            yield s
+        topic_parts = topic.topic.split("-")
+        organization_id = int(topic_parts[1])
+
+        async with self.resources_provider.create_async_database_session() as session:
+            organization_schema = (await session.execute(
+                select(Organization.schema_name).where(Organization.id == organization_id)
+            )).scalar_one_or_none()
+
+            # Skip messages if organization not exists
+            if organization_schema is None:
+                yield
+            else:
+                await database.attach_schema_switcher_listener(
+                    session=session,
+                    schema_search_path=[organization_schema, "public"]
+                )
+
+                yield session
 
     async def log(
             self,

@@ -164,3 +164,10 @@ frontend/yarn.lock
 frontend/package-lock.json
 
 .DS_Store
+
+#docs/source/api/_autosummary
+docs/build
+cypress/videos
+cypress/screenshots
+
+docs/source/api/generated

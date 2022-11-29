@@ -27,8 +27,9 @@ from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import DatabaseSettings
+from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger
+from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import TimeUnit, configure_logger
 
 __all__ = ["AlertsScheduler"]
 
@@ -69,8 +70,26 @@ class AlertsScheduler:
             raise
 
     async def enqueue_tasks(self, connection: AsyncConnection):
-        """Enqueue alert-rules execution tasks."""
-        await self.try_enqueue_tasks(connection=connection, statement=EnqueueTasks)
+        """Enqueue tasks for execution."""
+        async with connection.begin():
+            organizations = (await connection.execute(
+                sa.select(Organization.id, Organization.schema_name)
+            )).all()
+
+        if not organizations:
+            self.logger.info("No organizations")
+            return
+
+        for record in organizations:
+            await self.try_enqueue_tasks(
+                connection=connection,
+                max_attempts=2,  # TODO: provide parameter for this
+                delay=1,  # TODO: provide parameter for this
+                statement=create_task_enqueueing_query(
+                    org_id=record.id,
+                    org_schema=record.schema_name
+                )
+            )
 
     async def try_enqueue_tasks(
         self,
@@ -127,67 +146,91 @@ def is_serialization_error(error: DBAPIError):
 # without this two points query below will corrupt 'monitors' table
 # logical state and will create task duplicates
 #
-EnqueueTasks = sa.text(dedent("""
-    WITH
-        monitors_info AS (
-            SELECT
-                m.id AS monitor_id,
-                (m.frequency || ' seconds')::INTERVAL AS frequency,
-                MAX(mv.end_time) AS end_time,
-                CASE
-                    WHEN m.latest_schedule IS NULL THEN m.scheduling_start
-                    ELSE m.latest_schedule
-                END AS last_scheduling
-            FROM monitors AS m
-            JOIN checks AS c ON c.id = m.check_id
-            JOIN model_versions AS mv ON mv.model_id = c.model_id
-            GROUP BY m.id
-        ),
-        scheduling_series AS (
-            SELECT
-                monitor_id AS monitor_id,
-                GENERATE_SERIES(last_scheduling, series_limit, frequency) AS timestamp
-            FROM monitors_info,
-            LATERAL LEAST(NOW(), end_time) AS series_limit
-            WHERE (last_scheduling + frequency) <= series_limit
-        ),
-        latest_schedule AS (
-            SELECT
-                monitor_id,
-                MAX(timestamp) AS timestamp
-            FROM scheduling_series
-            GROUP BY monitor_id
-        ),
-        updated_monitors AS (
-            UPDATE monitors
-            SET latest_schedule = latest_schedule.timestamp
-            FROM latest_schedule
-            WHERE latest_schedule.monitor_id = monitors.id
-        ),
-        enqueued_tasks AS (
-            INSERT INTO tasks(name, executor, queue, params, priority, description, reference, execute_after)
+def create_task_enqueueing_query(org_id: int, org_schema: str):
+    """Create task enqueueing query.
+
+    FOr more info take a look at the 'deepchecks_monitoring.bgtasks.scheduler.EnqueueTasks'
+    """
+    # TODO: make query (query parts) more reusable
+    return sa.text(dedent(f"""
+        WITH
+            monitors_info AS (
                 SELECT
-                    'Monitor:' || monitor_id || ':ts:' || (select extract(epoch from timestamp)::int),
-                    'execute_monitor',
-                    'monitors',
-                    JSONB_BUILD_OBJECT('monitor_id', monitor_id, 'timestamp', timestamp),
-                    1,
-                    'Monitor alert rules execution task',
-                    'Monitor:' || monitor_id,
-                    timestamp
+                    m.id AS monitor_id,
+                    (m.frequency || ' seconds')::INTERVAL AS frequency,
+                    MAX(mv.end_time) AS end_time,
+                    CASE
+                        WHEN m.latest_schedule IS NULL THEN m.scheduling_start
+                        ELSE m.latest_schedule
+                    END AS last_scheduling
+                FROM "{org_schema}".monitors       AS m
+                JOIN "{org_schema}".checks         AS c ON c.id = m.check_id
+                JOIN "{org_schema}".model_versions AS mv ON mv.model_id = c.model_id
+                GROUP BY m.id
+            ),
+            scheduling_series AS (
+                SELECT
+                    monitor_id AS monitor_id,
+                    GENERATE_SERIES(last_scheduling, series_limit, frequency) AS timestamp
+                FROM monitors_info,
+                LATERAL LEAST(NOW(), end_time) AS series_limit
+                WHERE (last_scheduling + frequency) <= series_limit
+            ),
+            latest_schedule AS (
+                SELECT
+                    monitor_id,
+                    MAX(timestamp) AS timestamp
                 FROM scheduling_series
-            ON CONFLICT ON CONSTRAINT name_uniqueness DO NOTHING
-            RETURNING tasks.id, tasks.name, tasks.queue, tasks.executor, tasks.reference, tasks.priority
-        )
-    SELECT id, name, queue, reference, priority
-    FROM enqueued_tasks
-""")).columns(
-    sa.Column("id", sa.Integer),
-    sa.Column("name", sa.String),
-    sa.Column("queue", sa.String),
-    sa.Column("reference", sa.String),
-    sa.Column("priority", sa.Integer)
-)
+                GROUP BY monitor_id
+            ),
+            updated_monitors AS (
+                UPDATE "{org_schema}".monitors
+                SET latest_schedule = latest_schedule.timestamp
+                FROM latest_schedule
+                WHERE latest_schedule.monitor_id = "{org_schema}".monitors.id
+            ),
+            enqueued_tasks AS (
+                INSERT INTO "{org_schema}".tasks(name, executor, queue, params, priority, description, reference,
+                execute_after)
+                    SELECT
+                        'Monitor:' || monitor_id || ':ts:' || info.epoch,
+                        'execute_monitor',
+                        'monitors',
+                        JSONB_BUILD_OBJECT(
+                            'monitor_id', s.monitor_id,
+                            'timestamp', info.stringified_timestamp,
+                            'organization_id', :org_id,
+                            'organization_schema', :org_schema
+                        ),
+                        1,
+                        'Monitor alert rules execution task',
+                        'Monitor:' || s.monitor_id,
+                        s.timestamp
+                    FROM
+                        scheduling_series as s,
+                        LATERAL (
+                            SELECT
+                                s.timestamp::varchar,
+                                extract(epoch from s.timestamp)::int
+                        ) as info(stringified_timestamp, epoch)
+                ON CONFLICT ON CONSTRAINT name_uniqueness DO NOTHING
+                RETURNING
+                    "{org_schema}".tasks.id,
+                    "{org_schema}".tasks.name,
+                    "{org_schema}".tasks.queue,
+                    "{org_schema}".tasks.executor,
+                    "{org_schema}".tasks.reference,
+                    "{org_schema}".tasks.priority
+            )
+        SELECT id, name, queue, reference, priority
+        FROM enqueued_tasks
+    """)).bindparams(org_id=org_id, org_schema=org_schema).columns(
+        sa.Column("id", sa.Integer),
+        sa.Column("name", sa.String),
+        sa.Column("queue", sa.String),
+        sa.Column("reference", sa.String),
+        sa.Column("priority", sa.Integer)
+    )
 
 
 class SchedulerSettings(DatabaseSettings):

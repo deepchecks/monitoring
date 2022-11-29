@@ -13,7 +13,7 @@ from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
-from deepchecks_monitoring.models import IngestionError, ModelVersion
+from deepchecks_monitoring.schema_models import IngestionError, ModelVersion
 from tests.conftest import send_reference_request
 
 

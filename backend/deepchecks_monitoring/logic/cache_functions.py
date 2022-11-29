@@ -20,7 +20,8 @@ import pendulum as pdl
 import redis.exceptions
 from redis.client import Redis
 
-from deepchecks_monitoring.models import ModelVersion
+from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.schema_models import ModelVersion
 
 
 @dataclass
@@ -45,12 +46,15 @@ class CacheFunctions:
     def get_key_base_by_request(self, request: fastapi.Request):
         """Build the base of key to be used for this model version cache. We override this function when extending \
         this class."""
-        return "mon_cache:"
+        user: User = request.state.user
+        return f"mon_cache:{user.organization_id}:"
 
     def get_key_base_by_topic(self, topic_name):
         """Build the base of key to be used for this model version cache. We override this function when extending \
         this class."""
-        return "mon_cache:"
+        topic_parts = topic_name.split("-")
+        organization_id = int(topic_parts[1])
+        return f"mon_cache:{organization_id}:"
 
     def build_monitor_cache_key(
             self,

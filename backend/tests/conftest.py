@@ -9,13 +9,14 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=redefined-outer-name
 import asyncio
+import os
 import random
 import string
 import typing as t
 from unittest import mock
 from unittest.mock import patch
 
-import dotenv
+import faker
 import fakeredis
 import httpx
 import numpy as np
@@ -29,52 +30,31 @@ import torch
 from deepchecks.vision import ClassificationData, DetectionData
 from deepchecks_client import DeepchecksClient
 from deepchecks_client.core.api import API
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import MetaData, Table, inspect
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.engine.url import URL, make_url
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy.future import Engine, create_engine
 from sqlalchemy.orm import sessionmaker
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 
 from deepchecks_monitoring.app import create_application
-from deepchecks_monitoring.bgtasks.core import Base as TasksBase
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.models import Alert, Model, TaskType
-from deepchecks_monitoring.models.alert_rule import AlertSeverity
-from deepchecks_monitoring.models.base import Base
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
+from deepchecks_monitoring.public_models.base import Base as PublicModelsBase
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import ExtendedAsyncSession, json_dumps
-
-dotenv.load_dotenv()
-
-
-@pytest.fixture(scope="function")
-def redis():
-    yield mock.Mock(wraps=fakeredis.FakeStrictRedis())
+from deepchecks_monitoring.schema_models import Alert, Model, TaskType
+from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
+from tests.common import generate_user
+from tests.utils import TestDatabaseGenerator, create_dummy_smtp_server
 
 
 @pytest.fixture(scope="session")
 def postgres():
     with testing.postgresql.Postgresql(port=7654) as postgres:
         yield postgres
-
-
-@pytest.fixture(scope="function")
-def settings(postgres):
-    database_uri = postgres.url()
-    yield Settings(database_uri=database_uri)
-
-
-@pytest.fixture(scope="function")
-def resources_provider(settings, redis):
-    with patch.object(ResourcesProvider, "redis_client", redis):
-        yield ResourcesProvider(settings, CacheFunctions)
-
-
-@pytest.fixture(scope="function")
-def application(resources_provider, settings):
-    yield create_application(resources_provider=resources_provider, settings=settings)
 
 
 @pytest.fixture(scope="session")
@@ -87,12 +67,89 @@ def event_loop():
     loop.close()
 
 
+@pytest.fixture(scope="session")
+def system_database_engine(postgres: t.Union[str, testing.postgresql.Postgresql]) -> t.Iterator[Engine]:
+    """Create tests template database and system level engine.
+
+    NOTE:
+    This fixture is not intended to be used by tests.
+    """
+    url = postgres if isinstance(postgres, str) else postgres.url()
+    url = t.cast(URL, make_url(url))
+
+    engine = create_engine(
+        url.set(
+            drivername="postgresql",
+            database="postgres"
+        ),
+        echo=False,
+        execution_options={"isolation_level": "AUTOCOMMIT"}
+    )
+
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def database_generator(system_database_engine: Engine) -> t.Iterator[TestDatabaseGenerator]:
+    """Return tests databases generator.
+
+    NOTE:
+    This fixture is not intended to be used by tests.
+    """
+    with TestDatabaseGenerator(
+        engine=system_database_engine,
+        template_metadata=PublicModelsBase.metadata,
+        keep_copy="KEEP_TEST_DATABASES" in os.environ,
+        keep_template="KEEP_TEMPlATE_DATABASE" in os.environ,
+    ) as g:
+        yield g
+
+
 @pytest_asyncio.fixture(scope="function")
-async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
-    url = postgres.url().replace("postgresql", "postgresql+asyncpg")
-    engine = create_async_engine(url, echo=False, json_serializer=json_dumps)
-    yield engine
-    await engine.dispose()
+async def async_engine(database_generator: TestDatabaseGenerator) -> t.AsyncIterator[AsyncEngine]:
+    """Create copy of a template database for test function and return async engine for it."""
+    # TODO:
+    # check whether it is possible to obtain a name of a
+    # test function that executed this fixture
+    test_database_name = f"test_{random_string()}"
+    async with database_generator.copy_template(test_database_name) as test_database_engine:
+        yield test_database_engine
+
+
+# @pytest_asyncio.fixture(scope="function")
+# async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
+#     url = postgres.url().replace("postgresql", "postgresql+asyncpg")
+#     engine = create_async_engine(url, echo=False, json_serializer=json_dumps)
+#     yield engine
+#     await engine.dispose()
+
+
+# @pytest_asyncio.fixture(scope="function", autouse=True)
+# async def reset_database(async_engine):
+#     async with async_engine.begin() as conn:
+#         def clean_schemas(c):
+#             inspector = inspect(c)
+#             for schema in inspector.get_schema_names():
+#                 if schema in ['public', 'information_schema']:
+#                     continue
+#                 DropSchema(schema, cascade=True).execute(c)
+
+#         def clean_enums(c):
+#             inspector = inspect(c)
+#             for enum in inspector.get_enums():
+#                 c.execute(text(f'drop type {enum["name"]} cascade'))
+
+#         await conn.run_sync(clean_schemas)
+#         await conn.run_sync(clean_enums)
+#         await conn.run_sync(PublicModelsBase.metadata.drop_all)
+#         # await conn.run_sync(TasksBase.metadata.drop_all)
+
+#         await conn.run_sync(PublicModelsBase.metadata.create_all)
+#         # await conn.run_sync(TasksBase.metadata.create_all)
+#         await conn.commit()
 
 
 @pytest_asyncio.fixture()
@@ -114,36 +171,90 @@ async def async_session(async_engine: AsyncEngine):
             await session.close()
 
 
+@pytest.fixture(scope="function")
+def smtp_server():
+    with create_dummy_smtp_server() as server:
+        yield server
+
+
+@pytest.fixture(scope="function")
+def settings(async_engine, smtp_server):
+    return Settings(
+        database_uri=str(async_engine.url.set(drivername="postgresql")),
+        email_smtp_host=smtp_server.hostname,
+        email_smtp_port=smtp_server.port,
+        slack_client_id="",
+        slack_client_secret="",
+        slack_scopes="chat:write,incoming-webhook",
+        host="http://localhost",
+        email_smtp_username="",
+        email_smtp_password="",
+        oauth_domain="",
+        oauth_client_id="",
+        oauth_client_secret="",
+        auth_jwt_secret="secret"
+    )  # type: ignore
+
+
+@pytest.fixture(scope="function")
+def redis():
+    return mock.Mock(wraps=fakeredis.FakeStrictRedis())
+
+
+@pytest.fixture(scope="function")
+def resources_provider(settings, redis):
+    patch.object(ResourcesProvider, "redis_client", redis).start()
+    patch.object(ResourcesProvider, "launchdarkly_variation", return_value=True).start()
+    yield ResourcesProvider(settings, CacheFunctions)
+
+
+@pytest_asyncio.fixture(scope="function")
+async def application(
+    resources_provider: ResourcesProvider,
+    settings: Settings
+) -> FastAPI:
+    """Create application instance."""
+    return create_application(
+        resources_provider=resources_provider,
+        settings=settings
+    )
+
+
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def reset_database(async_engine):
-    async with async_engine.begin() as conn:
-        # First remove ORM tables
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(TasksBase.metadata.drop_all)
-
-        # Second, remove generated tables (leftovers)
-        def drop_all_tables(c):
-            inspector = inspect(c)
-            for table in inspector.get_table_names():
-                Table(table, MetaData()).drop(c)
-
-        await conn.run_sync(drop_all_tables)
-        await conn.run_sync(Base.metadata.create_all)
-        await conn.run_sync(TasksBase.metadata.create_all)
-        await conn.commit()
+async def user(async_session: AsyncSession, settings):
+    return await generate_user(
+        async_session,
+        with_org=True,
+        switch_schema=True,
+        auth_jwt_secret=settings.auth_jwt_secret
+    )
 
 
-@pytest.fixture()
-def client(application) -> t.Iterator[TestClient]:
-    with TestClient(app=application, base_url="http://test/") as client:
+@pytest_asyncio.fixture(scope="function")
+async def client(application: FastAPI, user) -> t.AsyncIterator[TestClient]:
+    """Create 'TestClient' instance."""
+    with TestClient(app=application, base_url="http://test.com",) as client:
+        client.headers["Authorization"] = f"Bearer {user.access_token}"
         yield client
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture(scope="function")
+async def unauthorized_client(application: FastAPI) -> t.AsyncIterator[TestClient]:
+    """Create 'TestClient' instance."""
+    with TestClient(app=application, base_url="http://test.com") as client:
+        yield client
+
+
+@pytest.fixture(scope="session")
+def faker_instance() -> faker.Faker:
+    return faker.Faker()
+
+
+@pytest.fixture(scope="function")
 def deepchecks_sdk_client(client: TestClient):
-    # pylint: disable=super-init-not-called
     api = API(session=client)
     return DeepchecksClient(api=api)
+
 
 
 @pytest.fixture()
@@ -726,3 +837,4 @@ def vision_detection_and_prediction(vision_detection_and_prediction_raw):
     imgs, labels, predictions = vision_detection_and_prediction_raw
     data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
     return _MyDetectionVisionData(data_loader), predictions
+

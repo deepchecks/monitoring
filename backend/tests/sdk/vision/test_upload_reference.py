@@ -11,7 +11,7 @@ import pytest
 from sqlalchemy import select
 
 from client.deepchecks_client.vision.client import DeepchecksModelVersionClient
-from deepchecks_monitoring.models.model_version import ModelVersion
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
 async def get_classification_reference_table_as_array(model_version, async_session):

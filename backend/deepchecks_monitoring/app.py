@@ -11,20 +11,24 @@
 import asyncio
 import logging
 import typing as t
+from dataclasses import asdict
 
 import deepchecks
 import jsonschema.exceptions
-from fastapi import APIRouter, FastAPI, Request, status
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse, ORJSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import FileResponse
 
+from deepchecks_monitoring.api.v1 import global_router as v1_global_router
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
+from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
@@ -33,18 +37,15 @@ from deepchecks_monitoring.resources import ResourcesProvider
 
 __all__ = ["create_application"]
 
+from deepchecks_monitoring.utils import auth
+
 
 def create_application(
     title: str = "Deepchecks Monitoring",
     openapi_url: str = "/api/v1/openapi.json",
     root_path: str = "",
     settings: t.Optional[Settings] = None,
-    additional_routers: t.Optional[t.Sequence[APIRouter]] = None,
-    additional_dependencies: t.Optional[t.Sequence[Depends]] = None,
-    routers_dependencies: t.Optional[t.Dict[str, t.Sequence[Depends]]] = None,
     resources_provider: t.Optional[ResourcesProvider] = None,
-    data_ingestion_backend_class=DataIngestionBackend,
-    cache_functions_class=CacheFunctions,
 ) -> FastAPI:
     """Create the application.
 
@@ -58,37 +59,39 @@ def create_application(
         url root path
     settings : Optional[Settings], default None
         settings for the application
-    additional_routers : Optional[Sequence[APIRouter]] , default None
-        list of additional routers to include
-    additional_dependencies : Optional[Sequence[Depends]] , default None
-        list of additional dependencies
-    routers_dependencies
-    resources_provider
-    data_ingestion_backend_class
-    cache_functions_class
-
+    resources_provider : Optional[ResourcesProvider], default None
+        The resources provider object
     Returns
     -------
     FastAPI
         application instance
     """
-    settings = settings or Settings()  # type: ignore
+    settings = settings or Settings()
+
+    # Configure telemetry with uptrace
+    if settings.instrument_telemetry:
+        import uptrace  # pylint: disable=import-outside-toplevel
+        uptrace.configure_opentelemetry(
+            service_name="monitoring-commercial",
+            service_version="0.0.1",
+            dsn=settings.uptrace_dsn
+        )
 
     app = FastAPI(
         title=title,
         openapi_url=openapi_url,
         root_path=root_path,
-        dependencies=additional_dependencies,
         openapi_tags=tags_metadata,
         # Replace default json response, since it can't handle numeric nan/inf values
         default_response_class=ORJSONResponse
     )
 
     app.state.settings = settings
-    app.state.resources_provider = resources_provider or ResourcesProvider(settings, cache_functions_class)
+    app.state.resources_provider = resources_provider or ResourcesProvider(settings, CacheFunctions)
     app.state.cache_invalidator = CacheInvalidator(app.state.resources_provider)
-    app.state.data_ingestion_backend = data_ingestion_backend_class(app.state.resources_provider,
-                                                                    app.state.cache_invalidator)
+    app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider,
+                                                            app.state.cache_invalidator)
+    app.state.feature_flags = {}
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "https://localhost:3000"],
@@ -98,12 +101,8 @@ def create_application(
         expose_headers=["x-substatus"],
     )
 
-    routers_dependencies = routers_dependencies or {}
-    app.include_router(v1_router, dependencies=routers_dependencies.get("v1") or [])
-
-    if additional_routers is not None:
-        for r in additional_routers:
-            app.include_router(r)
+    app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())] or [])
+    app.include_router(v1_global_router, dependencies=[])
 
     if settings.debug_mode:
         app.add_middleware(ProfilingMiddleware)
@@ -145,5 +144,15 @@ def create_application(
 
     # Set deepchecks testing library logging verbosity to error to not spam the logs
     deepchecks.set_verbosity(logging.ERROR)
+
+    @app.get("/feature-flags")
+    def retrieve_feature_flags(_: Request) -> t.Dict[str, t.Union[bool, Variation[t.Any]]]:
+        return {
+            flag.name: asdict(flag) if isinstance(flag, Variation) else flag
+            for flag in app.state.feature_flags.values()
+            if flag.is_public is True
+        }
+
+    app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
 
     return app

@@ -11,7 +11,7 @@ import pytest
 from deepchecks_client.core.utils import ColumnType
 
 from client.deepchecks_client import DeepchecksClient
-from deepchecks_monitoring.models.model import TaskType
+from deepchecks_monitoring.schema_models.model import TaskType
 
 
 @pytest.mark.asyncio

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.bgtasks.core import (Actor, ExecutionStrategy, Notification, NotificationsListener, Task,
                                                 TasksBroker, TaskStatus, Worker)
+from deepchecks_monitoring.public_models import User
 
 
 def generate_actor(*, fn=None, bind=None, execution_strategy=ExecutionStrategy.ATOMIC):
@@ -79,12 +80,23 @@ async def fetch_tasks(
 class TestTasksEnqueueing:
 
     @pytest.mark.asyncio
-    async def test_with_engine(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
-        actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
+    async def test_with_engine(
+        self,
+        async_engine: AsyncEngine,
+        execution_strategy: ExecutionStrategy,
+        user: User
+    ):
+        engine = async_engine.execution_options(
+            schema_translate_map={None: user.organization.schema_name}
+        )
+        actor = generate_actor(
+            bind=engine,
+            execution_strategy=execution_strategy
+        )
         args = {"foo": 1, "bar": 2}
         task_id = await actor.enqueue(**args)
         assert isinstance(task_id, int)
-        assert len(await fetch_tasks(async_engine, [task_id], actor=actor, params=args)) > 0
+        assert len(await fetch_tasks(engine, [task_id], actor=actor, params=args)) > 0
 
     @pytest.mark.asyncio
     async def test_with_orm_session(self, async_session: AsyncSession, execution_strategy: ExecutionStrategy):
@@ -96,8 +108,14 @@ class TestTasksEnqueueing:
         assert len(await fetch_tasks(async_session, [task_id], actor=actor, params=args)) > 0
 
     @pytest.mark.asyncio
-    async def test_with_connection(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
+    async def test_with_connection(
+        self,
+        async_engine: AsyncEngine,
+        execution_strategy: ExecutionStrategy,
+        user: User
+    ):
         async with async_engine.connect() as c:
+            await c.execution_options(schema_translate_map={None: user.organization.schema_name})
             actor = generate_actor(bind=c, execution_strategy=execution_strategy)
             args = {"foo": 1, "bar": 2}
             task_id = await actor.enqueue(**args)
@@ -118,27 +136,41 @@ class TestTasksEnqueueing:
 class TestWorker:
 
     @pytest.mark.asyncio
-    async def test_tasks_execution(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
-        actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+    async def test_tasks_execution(
+        self,
+        async_engine: AsyncEngine,
+        execution_strategy: ExecutionStrategy,
+        user: User
+    ):
+        organization_engine = async_engine.execution_options(schema_translate_map={None: user.organization.schema_name})
+
+        actor = generate_actor(bind=organization_engine, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]
+        worker = Worker.create(engine=organization_engine, actors=[actor], notification_wait_timeout=1)
 
         async with worker.create_database_session() as session:
             for task in (await fetch_tasks(session, tasks_ids, actor=actor)):
                 await worker.execute_task(session, task)
 
-        for task in await fetch_tasks(async_engine, tasks_ids):
+        for task in await fetch_tasks(organization_engine, tasks_ids):
             assert task is not None
             assert task.status == TaskStatus.COMPLETED
 
     @pytest.mark.asyncio
-    async def test_with_failing_actor(self, async_engine: AsyncEngine, execution_strategy: ExecutionStrategy):
+    async def test_with_failing_actor(
+        self,
+        async_engine: AsyncEngine,
+        execution_strategy: ExecutionStrategy,
+        user: User
+    ):
         async def fn(**kwargs):
             raise RuntimeError("Hello world")
 
-        actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
+        organization_engine = async_engine.execution_options(schema_translate_map={None: user.organization.schema_name})
+
+        actor = generate_actor(bind=organization_engine, fn=fn, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        worker = Worker.create(engine=organization_engine, actors=[actor], notification_wait_timeout=1)
 
         async with worker.create_database_session() as session:
             # TODO:
@@ -148,7 +180,7 @@ class TestWorker:
                 task, *_ = await fetch_tasks(session, [task_id], actor=actor)
                 await worker.execute_task(session, task)
 
-        for task in (await fetch_tasks(async_engine, tasks_ids)):
+        for task in (await fetch_tasks(organization_engine, tasks_ids)):
             assert task is not None
             assert task.status == TaskStatus.FAILED
             assert task.error is not None
@@ -158,10 +190,12 @@ class TestWorker:
     async def test__execute_after__parameter(
         self,
         async_engine: AsyncEngine,
-        execution_strategy: ExecutionStrategy
+        execution_strategy: ExecutionStrategy,
+        user: User
     ):
-        actor = generate_actor(bind=async_engine, execution_strategy=execution_strategy)
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=1)
+        organization_engine = async_engine.execution_options(schema_translate_map={None: user.organization.schema_name})
+        actor = generate_actor(bind=organization_engine, execution_strategy=execution_strategy)
+        worker = Worker.create(engine=organization_engine, actors=[actor], notification_wait_timeout=1)
 
         tasks_ids = [
             await actor.enqueue(execute_after=datetime.utcnow() + timedelta(days=2))
@@ -176,7 +210,7 @@ class TestWorker:
                 task, *_ = await fetch_tasks(session, [task_id], actor=actor)
                 await worker.execute_task(session, task)
 
-        for task in await fetch_tasks(async_engine, tasks_ids):
+        for task in await fetch_tasks(organization_engine, tasks_ids):
             assert task is not None
             assert task.status == TaskStatus.SCHEDULED
 
@@ -184,7 +218,8 @@ class TestWorker:
     async def test_that_additional_and_meta_parameters_are_passed_to_actor_function(
         self,
         async_engine: AsyncEngine,
-        execution_strategy: ExecutionStrategy
+        execution_strategy: ExecutionStrategy,
+        user: User
     ):
         async def fn(**kwargs):
             assert kwargs.get("foo") == 1
@@ -194,11 +229,12 @@ class TestWorker:
             assert isinstance(kwargs.get("engine"), AsyncEngine)
             assert "logger" in kwargs
 
-        actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
+        organization_engine = async_engine.execution_options(schema_translate_map={None: user.organization.schema_name})
+        actor = generate_actor(bind=organization_engine, fn=fn, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]
 
         worker = Worker.create(
-            engine=async_engine,
+            engine=organization_engine,
             actors=[actor],
             notification_wait_timeout=1,
             additional_params={"foo": 1}
@@ -208,7 +244,7 @@ class TestWorker:
             for task in await fetch_tasks(session, tasks_ids, actor=actor):
                 await worker.execute_task(session, task)
 
-        for task in await fetch_tasks(async_engine, tasks_ids):
+        for task in await fetch_tasks(organization_engine, tasks_ids):
             assert task is not None
             assert task.status == TaskStatus.COMPLETED
 
@@ -216,21 +252,23 @@ class TestWorker:
     async def test_worker_cancellation_with_running_task(
         self,
         async_engine: AsyncEngine,
-        execution_strategy: ExecutionStrategy
+        execution_strategy: ExecutionStrategy,
+        user: User
     ):
         async def fn(**kwargs):
             await anyio.sleep(600)
 
-        actor = generate_actor(bind=async_engine, fn=fn, execution_strategy=execution_strategy)
+        organization_engine = async_engine.execution_options(schema_translate_map={None: user.organization.schema_name})
+        actor = generate_actor(bind=organization_engine, fn=fn, execution_strategy=execution_strategy)
         task_id = await actor.enqueue()
-        worker = Worker.create(engine=async_engine, actors=[actor], notification_wait_timeout=2)
+        worker = Worker.create(engine=organization_engine, actors=[actor], notification_wait_timeout=2)
 
         async with worker.create_database_session() as session:
             task, *_ = await fetch_tasks(session, [task_id], actor=actor)
             with anyio.move_on_after(delay=1):
                 await worker.execute_task(session, task)
 
-        task, *_ = await fetch_tasks(async_engine, [task_id], actor=actor)
+        task, *_ = await fetch_tasks(organization_engine, [task_id], actor=actor)
 
         assert task is not None
 
@@ -291,12 +329,15 @@ class TestNotificationListener:
         assert isinstance(queue.get_nowait(), Exception)
 
     @pytest.mark.asyncio
-    async def test_enqueued_task_notification_receival(self, async_engine: AsyncEngine):
+    async def test_enqueued_task_notification_receival(
+        self,
+        async_engine: AsyncEngine,
+        user: User
+    ):
         dsn = str(async_engine.url.set(drivername="postgres"))
         connection_factory = lambda: asyncpg.connect(dsn=dsn)
         queue = asyncio.Queue()
-
-        actor = generate_actor(bind=async_engine)
+        actor = generate_actor()
 
         listener = NotificationsListener(
             connection_factory=connection_factory,
@@ -311,7 +352,10 @@ class TestNotificationListener:
             await anyio.sleep(2)  # give time to starttup
             assert queue.empty() is True
 
-            await actor.enqueue()
+            async with async_engine.begin() as c:
+                await c.execution_options(schema_translate_map={None: user.organization.schema_name})
+                await actor.enqueue(bind=c)
+
             await anyio.sleep(2)
             g.cancel_scope.cancel()
 
@@ -324,7 +368,10 @@ class TestNotificationListener:
 class TestTasksBroker:
 
     @pytest.mark.asyncio
-    async def test_tasks_broker(self, async_session: AsyncSession):
+    async def test_tasks_broker(
+        self,
+        async_session: AsyncSession
+    ):
         n_of_tasks = 3
         actor = generate_actor(bind=async_session)
         tasks_ids = [await actor.enqueue() for _ in range(n_of_tasks)]
@@ -377,9 +424,13 @@ class TestTasksBroker:
             )
 
     @pytest.mark.asyncio
-    async def test_task_broker_wakup_on_task_enqueue(self, async_engine: AsyncEngine):
+    async def test_task_broker_wakup_on_task_enqueue(
+        self,
+        async_engine: AsyncEngine,
+        user: User
+    ):
         queue = asyncio.Queue()
-        actor = generate_actor(bind=async_engine)
+        actor = generate_actor()
 
         broker = TasksBroker(
             database_url=async_engine.url,
@@ -404,13 +455,15 @@ class TestTasksBroker:
 
                 assert task is None
 
-                task_id = await actor.enqueue()
+                async with async_engine.begin() as c:
+                    await c.execution_options(schema_translate_map={None: user.organization.schema_name})
+                    task_id = await actor.enqueue(bind=c)
 
                 with anyio.fail_after(delay=3):
                     task = await queue.get()
 
-                g.cancel_scope.cancel()
+                assert isinstance(task, Task)
+                assert task.id == task_id
+                assert task.status == TaskStatus.RUNNING
 
-        assert isinstance(task, Task)
-        assert task.id == task_id
-        assert task.status == TaskStatus.RUNNING
+                g.cancel_scope.cancel()

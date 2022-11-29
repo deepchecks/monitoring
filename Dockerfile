@@ -19,8 +19,6 @@ WORKDIR /code/frontend
 RUN yarn config set network-timeout 300000 && \
     yarn install --frozen-lockfile
 
-COPY ./bin/ /code/bin/
-
 RUN yarn build
 
 
@@ -51,8 +49,7 @@ COPY backend/requirements.txt ./
 ARG DEEPCHECKS_CI_TOKEN
 
 RUN pip install -U pip \
-    && pip install pyinstrument \
-    && DEEPCHECKS_CI_TOKEN=$DEEPCHECKS_CI_TOKEN pip install -q -r requirements.txt --compile --no-cache-dir
+    && pip install -q -r requirements.txt --compile --no-cache-dir
     # && apk del .build-deps
 
 RUN pip install uvicorn pyinstrument
@@ -90,4 +87,6 @@ USER deepchecks
 
 # Expose container port and run entry point script
 EXPOSE 8000
-CMD ["./bin/start"]
+
+ENV PATH="${PATH}:/code/bin"
+ENTRYPOINT ["/bin/bash"]

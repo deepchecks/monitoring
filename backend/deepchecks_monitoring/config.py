@@ -17,6 +17,9 @@ from pydantic import BaseSettings, PostgresDsn, RedisDsn
 
 __all__ = ['Settings', 'tags_metadata', 'Tags', 'DatabaseSettings', 'RedisSettings', 'KafkaSettings']
 
+from pydantic.networks import AnyHttpUrl
+
+from deepchecks_monitoring.utils.slack import SlackSettings
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
@@ -79,12 +82,29 @@ class RedisSettings(BaseDeepchecksSettings):
     redis_uri: t.Optional[RedisDsn] = None
 
 
-class Settings(DatabaseSettings, KafkaSettings, RedisSettings):
+class EmailSettings(BaseDeepchecksSettings):
+    """Settings for mail service."""
+
+    host: AnyHttpUrl
+    deepchecks_email: str = 'app@deepchecks.com'
+    email_smtp_host: str
+    email_smtp_port: int = 25
+    email_smtp_username: str
+    email_smtp_password: str
+
+
+class Settings(DatabaseSettings, KafkaSettings, RedisSettings, EmailSettings, SlackSettings):
     """Settings for the deepchecks_monitoring package."""
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     debug_mode: bool = False
     instrument_telemetry: bool = False
+    lauchdarkly_sdk_key: str = ''
+    oauth_domain: str
+    oauth_client_id: str
+    oauth_client_secret: str
+    uptrace_dsn: str = ''
+    auth_jwt_secret: str
 
 
 class Tags(Enum):

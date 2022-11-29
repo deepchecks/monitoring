@@ -13,8 +13,8 @@ import pendulum as pdl
 import pytest
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.models.monitor import Monitor
-from deepchecks_monitoring.utils import fetch_or_404
+from deepchecks_monitoring.monitoring_utils import fetch_or_404
+from deepchecks_monitoring.schema_models.monitor import Monitor
 from tests.conftest import add_alert_rule, add_classification_data
 
 

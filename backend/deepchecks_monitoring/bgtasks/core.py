@@ -34,8 +34,10 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
 # from sqlalchemy.orm import declarative_base
 from typing_extensions import Awaitable, ParamSpec, Self, TypeAlias
 
-from deepchecks_monitoring.models.base import Base
-from deepchecks_monitoring.utils import TimeUnit
+import deepchecks_monitoring.public_models as models
+from deepchecks_monitoring.monitoring_utils import TimeUnit
+from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.utils import database
 
 __all__ = ["Task", "Worker", "actor"]
 
@@ -98,11 +100,10 @@ class Task(Base):
 
 
 PGTaskNotificationFunc = sa.DDL("""
-CREATE OR REPLACE FUNCTION new_task_notification()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION new_task_notification() RETURNS TRIGGER AS $$
 BEGIN
-PERFORM pg_notify(NEW.queue || '.' || NEW.executor, '');
-RETURN NEW;
+    PERFORM pg_notify(NEW.queue || '.' || NEW.executor, TG_TABLE_SCHEMA);
+    RETURN NEW;
 END; $$ LANGUAGE PLPGSQL
 """)
 
@@ -114,13 +115,14 @@ FOR EACH ROW EXECUTE PROCEDURE new_task_notification();
 
 
 event.listen(
-    Base.metadata,
+    Task.__table__,
     "after_create",
     PGTaskNotificationFunc.execute_if(dialect="postgresql")
 )
 
+
 event.listen(
-    Base.metadata,
+    Task.__table__,
     "after_create",
     PGTaskNotificationTrigger.execute_if(dialect="postgresql")
 )
@@ -391,22 +393,51 @@ class TasksBroker:
             g.start_soon(self.listen_for_notifications)
             queues_names: t.Optional[t.Sequence["QueueName"]] = None
             actors_names: t.Optional[t.Sequence["ExecutorName"]] = None
+            organizations_schemas: t.Optional[t.Sequence[str]] = None
 
             while True:
-                async for it in self._next_task(
-                    session=session,
-                    queue_names=queues_names,
-                    actor_names=actors_names,
-                ):
-                    yield it
+                if not organizations_schemas:
+                    q = sa.select(models.Organization.schema_name).order_by(sa.func.random())
+                    organizations_schemas = (await session.scalars(q)).all()
+
+                if not organizations_schemas:
+                    self.logger.warning("No organizations to schedule tasks")
+                else:
+                    for schema in organizations_schemas:
+                        async for it in self._next_task(
+                            session=session,
+                            queue_names=queues_names,
+                            actor_names=actors_names,
+                            execution_options={"schema_translate_map": {None: schema}}
+                        ):
+                            async with database.attach_schema_switcher(
+                                session,
+                                schema_search_path=[schema, "public"]
+                            ):
+                                yield it
 
                 await session.rollback()  # closing any active transaction
 
                 if notifications := await self.wait_for_notifications():
-                    queues_names, actors_names = self._process_notifications(notifications)
+                    queues_names, actors_names, organizations_schemas = self._process_notifications(notifications)
                 else:
                     queues_names = None
                     actors_names = None
+                    organizations_schemas = None
+
+    def _process_notifications(self, notifications):
+        queues = set()
+        actors = set()
+        schemas = set()
+        for n in notifications:
+            p = n.payload
+            q, a = unfold_channel_name(n.channel)
+            queues.add(q)
+            if a:
+                actors.add(a)
+            if p:
+                schemas.add(p)
+        return list(queues), list(actors), list(schemas)
 
     async def _next_task(
         self,
@@ -426,17 +457,6 @@ class TasksBroker:
                 yield task
             else:
                 return
-
-    def _process_notifications(self, notifications: t.Sequence["Notification"]):
-        """Process notifications sequence."""
-        queues = set()
-        actors = set()
-        for n in notifications:
-            q, a = unfold_channel_name(n.channel)
-            queues.add(q)
-            if a:
-                actors.add(a)
-        return list(queues), list(actors)
 
     async def pop_task(
         self,
@@ -491,10 +511,9 @@ class TasksBroker:
 
         if task:
             self.logger.info("Retrieved a task: %s", repr(task))
-        else:
-            self.logger.info("No tasks")
+            return task
 
-        return task
+        self.logger.info("No tasks")
 
     async def wait_for_notifications(self) -> t.List["Notification"]:
         """Wait for a task enqueueing notification(s)."""

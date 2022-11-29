@@ -14,7 +14,7 @@ from typing import Tuple
 import pendulum as pdl
 from sqlalchemy import func, select
 
-from deepchecks_monitoring.models import Alert, AlertRule, Check, Monitor
+from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Monitor
 
 ORIGIN_START_TIME = pdl.from_timestamp(0)
 

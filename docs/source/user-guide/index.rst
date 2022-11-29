@@ -1,0 +1,35 @@
+.. _user_guide:
+
+==========
+User Guide
+==========
+
+Here you can find the key concepts, structure, recommended flow, and dive in to many of the functionalities of
+deepchecks monitoring.
+
+General
+-------
+
+.. toctree::
+    :maxdepth: 2
+    :caption: General
+
+    general/concepts
+
+Tabular
+-------
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Tabular
+
+    tabular/auto_quickstarts/index
+
+Vision
+------
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Vision
+
+    vision/auto_quickstarts/index

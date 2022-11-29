@@ -20,4 +20,6 @@ supervisor==4.2.4
 testing.postgresql==1.3.0
 tox==3.25.1
 uvicorn==0.17.6
-deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
+#deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
+faker
+pyOpenSSL
