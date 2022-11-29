@@ -27,7 +27,7 @@ from deepchecks_monitoring import __version__
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
-from deepchecks_monitoring.config import DatabaseSettings
+from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
@@ -382,7 +382,7 @@ def assert_check_results(
         )
 
 
-class WorkerSettings(DatabaseSettings):
+class WorkerSettings(Settings):
     """Set of worker settings."""
 
     worker_logfile: t.Optional[str] = None
