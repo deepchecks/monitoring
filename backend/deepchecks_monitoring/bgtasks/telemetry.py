@@ -237,7 +237,7 @@ class WorkerInstrumentor:
                 start_time = timer()
 
                 try:
-                    return await original_fn(
+                    result = await original_fn(
                         self=worker,
                         session=session,
                         actor=actor,
@@ -252,6 +252,16 @@ class WorkerInstrumentor:
                         span.set_status(Status(StatusCode.ERROR))
                         span.record_exception(error)
                     raise
+                else:
+                    from .core import TaskStatus  # pylint: disable=redefined-outer-name
+                    span.set_attribute("operation.task.status", task.status.value)
+                    span.set_attribute("operation.task.finished_at", str(task.finished_at))
+                    span.set_attribute("operation.task.error", task.error)
+                    span.set_attribute("operation.task.traceback", task.traceback)
+                    if task.status == TaskStatus.FAILED:
+                        span.set_status(Status(StatusCode.ERROR, description="Task execution failure"))
+                    return result
+
         return execute_task
 
 
