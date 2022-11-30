@@ -21,7 +21,7 @@ from deepchecks_monitoring.public_models import AlertSeverity, Base
 from deepchecks_monitoring.utils.database import SchemaBuilder
 
 if t.TYPE_CHECKING:
-    from . import Invitation, SlackInstallation, User  # pylint: disable=unused-import
+    from . import Invitation, User  # pylint: disable=unused-import
 
 __all__ = ["Organization"]
 
@@ -44,14 +44,6 @@ class Organization(Base):
         sa.ARRAY(sa.Enum(AlertSeverity)),
         default=[],
         nullable=False
-    )
-
-    slack_installations: t.List[Mapped["SlackInstallation"]] = relationship(
-        "SlackInstallation",
-        back_populates="organization",
-        cascade="save-update, merge, delete",
-        passive_deletes=True,
-        passive_updates=True,
     )
 
     invitations: t.List[Mapped["Invitation"]] = relationship(

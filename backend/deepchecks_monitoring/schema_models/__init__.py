@@ -17,6 +17,20 @@ from .ingestion_errors import IngestionError
 from .model import Model, TaskType
 from .model_version import ModelVersion
 from .monitor import Monitor
+from .slack import SlackInstallation, SlackInstallationState
 
-__all__ = ['Model', 'ModelVersion', 'TaskType', 'Check', 'AlertRule', 'Monitor', 'Dashboard', 'Alert', 'ColumnType',
-           'IngestionError', 'AlertSeverity']
+__all__ = [
+    'Model',
+    'ModelVersion',
+    'TaskType',
+    'Check',
+    'AlertRule',
+    'Monitor',
+    'Dashboard',
+    'Alert',
+    'ColumnType',
+    'IngestionError',
+    'AlertSeverity',
+    'SlackInstallation',
+    'SlackInstallationState'
+]

@@ -11,8 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
 from deepchecks_monitoring.monitoring_utils import exists_or_404
-from deepchecks_monitoring.public_models.slack import SlackInstallation, SlackInstallationState
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models.slack import SlackInstallation, SlackInstallationState
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.slack import SlackInstallationError, SlackInstallationUtils
 
@@ -60,7 +60,7 @@ async def installation_callback(
     error: t.Optional[str] = Query(default=None),
     state: t.Optional[str] = Query(default=None),
     settings: Settings = SettingsDep,
-    user: User = Depends(auth.AdminUser()),  # NOTE: we also store access token as cookie
+    user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
     session: AsyncSession = AsyncSessionDep,
 ):
     """Finish slack installation.
@@ -142,7 +142,6 @@ async def installation_callback(
         )
 
     await session.execute(pginsert(SlackInstallation).values(
-        organization_id=user.organization_id,
         app_id=installation.app_id,
         client_id=settings.slack_client_id,
         scope=installation.scope,
@@ -157,7 +156,7 @@ async def installation_callback(
         incoming_webhook_url=installation.incoming_webhook.url,
         incoming_webhook_configuration_url=installation.incoming_webhook.configuration_url,
     ).on_conflict_do_update(
-        constraint='slackapp_per_organization_workspace',
+        constraint='slackapp_per_workspace',
         set_=dict(
             scope=installation.scope,
             token_type=installation.token_type,
@@ -197,10 +196,10 @@ class SlackBotSchema(BaseModel):
 @router.get('/slack/apps', tags=['slack'])
 async def retrieve_instalations(
     session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.AdminUser())
+    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ):
     """Return list of slack installations."""
-    q = select(SlackInstallation).where(SlackInstallation.organization_id == user.organization_id)
+    q = select(SlackInstallation)
     installations = (await session.scalars(q)).all()
     return [SlackBotSchema.from_orm(it).dict() for it in installations]
 
@@ -209,12 +208,11 @@ async def retrieve_instalations(
 async def remove_installation(
     app_id: int,
     session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.AdminUser())
+    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ):
     """Remove slack installation."""
-    await exists_or_404(session, SlackInstallation, id=app_id, organization_id=user.organization_id)
+    await exists_or_404(session, SlackInstallation, id=app_id)
     await session.execute(
         delete(SlackInstallation)
         .where(SlackInstallation.id == app_id)
-        .where(SlackInstallation.organization_id == user.organization_id)
     )

@@ -32,13 +32,14 @@ from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
-from deepchecks_monitoring.public_models import Organization, SlackInstallation, User
+from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, Model
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.schema_models.slack import SlackInstallation
 from deepchecks_monitoring.utils import slack
 
 __all__ = ["execute_monitor"]
@@ -292,7 +293,7 @@ class AlertNotificator:
             )
             return False
 
-        q = sa.select(SlackInstallation).where(SlackInstallation.organization_id == org.id)
+        q = sa.select(SlackInstallation)
         slack_apps = (await self.session.scalars(q)).all()
         slack_apps = t.cast(t.List[SlackInstallation], slack_apps)
 

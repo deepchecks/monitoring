@@ -10,9 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.bgtasks.actors import AlertNotificator
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.public_models import Organization, SlackInstallation, User
+from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity
+from deepchecks_monitoring.schema_models.slack import SlackInstallation
 from tests.common import create_alert_rule, create_check, create_model, create_monitor, generate_user
 
 
@@ -216,7 +217,6 @@ async def test_alert_slack_notification(
     ).returning(Alert.id))
 
     await async_session.execute(sa.insert(SlackInstallation).values(
-        organization_id=user.organization_id,
         app_id="qwert",
         client_id="qwert",
         scope="chat:write,incoming-webhook",

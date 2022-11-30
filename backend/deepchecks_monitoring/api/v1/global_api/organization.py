@@ -23,9 +23,10 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep, get
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.integrations.email import EmailMessage, EmailSender
 from deepchecks_monitoring.monitoring_utils import exists_or_404, not_exists_or_400
-from deepchecks_monitoring.public_models import AlertSeverity, Organization, SlackInstallation
+from deepchecks_monitoring.public_models import AlertSeverity, Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models import SlackInstallation
 from deepchecks_monitoring.utils import auth
 
 from .global_router import router
@@ -118,7 +119,6 @@ async def retrive_organization(
         is_slack_connected=(await session.scalar(
             sa.select(
                 sa.select(SlackInstallation.id)
-                .where(SlackInstallation.organization_id == user.organization_id)
                 .limit(1)
                 .exists()
             )

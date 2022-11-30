@@ -7,12 +7,8 @@ from uuid import uuid4
 import sqlalchemy as sa
 from slack_sdk.webhook import WebhookClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, relationship
 
-from deepchecks_monitoring.public_models import Base
-
-if t.TYPE_CHECKING:
-    from . import Organization  # pylint: disable=unused-import
+from deepchecks_monitoring.schema_models.base import Base
 
 __all__ = ["SlackInstallation", "SlackInstallationState"]
 
@@ -23,8 +19,8 @@ class SlackInstallation(Base):
     __tablename__ = "slack_installations"
     __table_args__ = (
         sa.UniqueConstraint(
-            "organization_id", "app_id", "team_id",
-            name="slackapp_per_organization_workspace"
+            "app_id", "team_id",
+            name="slackapp_per_workspace"
         ),
     )
 
@@ -42,16 +38,6 @@ class SlackInstallation(Base):
     incoming_webhook_channel = sa.Column(sa.String, nullable=False)
     incoming_webhook_url = sa.Column(sa.String, nullable=False)
     incoming_webhook_configuration_url = sa.Column(sa.String, nullable=False)
-
-    organization_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey("organizations.id", ondelete="CASCADE", onupdate="RESTRICT"),
-        nullable=False
-    )
-    organization: Mapped["Organization"] = relationship(
-        "Organization",
-        back_populates="slack_installations"
-    )
 
     def webhook_client(self, **kwargs) -> WebhookClient:
         """Create a webhook client for this installation."""

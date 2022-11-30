@@ -16,6 +16,7 @@ import typing as t
 from unittest import mock
 from unittest.mock import patch
 
+import dotenv
 import faker
 import fakeredis
 import httpx
@@ -49,6 +50,8 @@ from deepchecks_monitoring.schema_models import Alert, Model, TaskType
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
 from tests.common import generate_user
 from tests.utils import TestDatabaseGenerator, create_dummy_smtp_server
+
+dotenv.load_dotenv()
 
 
 @pytest.fixture(scope="session")

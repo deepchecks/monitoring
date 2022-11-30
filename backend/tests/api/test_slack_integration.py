@@ -11,8 +11,6 @@ from fastapi.testclient import TestClient
 from deepchecks_monitoring.utils.slack import (AuthedUserSchema, SlackIncomingWebhookSchema, SlackInstallationSchema,
                                                SlackInstallationUtils, SlackTeamSchema)
 
-# TODO: add more tests
-
 
 @pytest.mark.asyncio
 async def test_slack_authorization_redirect_without_access_token(unauthorized_client: TestClient):
