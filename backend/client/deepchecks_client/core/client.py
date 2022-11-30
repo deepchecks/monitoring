@@ -109,7 +109,7 @@ class DeepchecksModelVersionClient:
             self._log_samples.clear()
         if len(self._update_samples) > 0:
             self.api.update_samples(self.model_version_id, self._update_samples)
-            pretty_print(f'{len(self._log_samples)} samples were successfully updated.')
+            pretty_print(f'{len(self._update_samples)} samples were successfully updated.')
             self._update_samples.clear()
 
     def upload_reference(self, *args, **kwargs):
