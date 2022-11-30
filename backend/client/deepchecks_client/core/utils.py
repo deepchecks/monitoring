@@ -167,19 +167,32 @@ def maybe_raise(
     if isinstance(expected, int) and status != expected:
         body = process_body()
         error = select_template(status).format(status=status, reason=reason, url=url, body=body)
-        raise httpx.HTTPError(
-            error
-            if msg is None
-            else msg.format(status=status, reason=reason, url=url, body=body, error=error)
+        raise httpx.HTTPStatusError(
+            error if msg is None else msg.format(
+                status=status,
+                reason=reason,
+                url=url,
+                body=body,
+                error=error
+            ),
+            request=response.request,
+            response=response
         )
 
     if isinstance(expected, (tuple, list)) and not expected[0] <= status <= expected[1]:
         body = process_body()
         error = select_template(status).format(status=status, reason=reason, url=url, body=body)
-        raise httpx.HTTPError(
-            error
-            if msg is None
-            else msg.format(status=status, reason=reason, url=url, body=body, error=error)
+        raise httpx.HTTPStatusError(
+            error if msg is None else msg.format(
+                status=status,
+                reason=reason,
+                url=url,
+                body=body,
+                error=error
+            ),
+            request=response.request,
+            response=response
+
         )
 
     return response

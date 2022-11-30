@@ -15,6 +15,7 @@ import pathlib
 import typing as t
 import warnings
 
+import httpx
 import numpy as np
 import pandas as pd
 from deepchecks.core.errors import DeepchecksValueError
@@ -99,73 +100,87 @@ class DeepchecksClient:
             Client to interact with the model.
         """
         task_type = TaskType(task_type) if task_type is not None else None
-        available_models = self.api.fetch_models()
-        available_models = t.cast(t.List[t.Dict[str, t.Any]], available_models)
-        existing_model: t.Optional[t.Dict[str, t.Any]] = None
+        response = t.cast(httpx.Response, self.api.fetch_model_by_name(name, raise_on_status=False))
 
-        for model in available_models:
-            if name == model['name']:
-                existing_model = model
-                break
-
-        if existing_model is not None:
+        if 200 <= response.status_code <= 299:
+            existing_model = response.json()
             existing_model_type = TaskType(existing_model['task_type'])
+
             if task_type is not None and task_type != existing_model_type:
-                raise ValueError(f'Model with name {name} already exists, but has different task type.')
+                raise ValueError(
+                    f'Model with name {name} already exists, '
+                    'but has different task type.'
+                )
             if description is not None and description != existing_model['description']:
-                raise ValueError(f'Model with name {name} already exists, but has different description.')
-            return self._model_client_from_model_id(model_id=existing_model['id'], task_type=existing_model_type)
+                raise ValueError(
+                    f'Model with name {name} already exists, '
+                    'but has different description.'
+                )
 
-        if task_type is None:
-            raise ValueError('task_type must be provided for creation of a new model')
+            return self._get_model_client(existing_model_type, existing_model)
 
-        created_model = self.api.create_model({
-            'name': name,
-            'task_type': task_type.value,
-            'description': description
-        })
+        if response.status_code == 404:
+            if task_type is None:
+                raise ValueError(  # pylint: disable=raise-missing-from
+                    'task_type must be provided for creation of a new model'
+                )
 
-        created_model = t.cast(t.Dict[str, t.Any], created_model)
-        model_client = self._model_client_from_model_id(model_id=created_model['id'], task_type=task_type)
-        msg = f'Model {name} was successfully created!.'
+            # returns dictionary instance  contains only 'id' key
+            self.api.create_model({
+                'name': name,
+                'task_type': task_type.value,
+                'description': description
+            })
 
-        if create_model_defaults:
-            model_client._add_defaults()  # pylint: disable=protected-access
-            msg += ' Default checks, monitors and alerts added.'
+            model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_name(name))
+            model_client = self._get_model_client(task_type, model)
+            msg = f'Model {name} was successfully created!.'
 
-        pretty_print(msg)
-        return model_client
+            if create_model_defaults:
+                model_client._add_defaults()  # pylint: disable=protected-access
+                msg += ' Default checks, monitors and alerts added.'
 
-    def _model_client_from_model_id(
+            pretty_print(msg)
+            return model_client
+
+        raise RuntimeError(
+            f'Server returned unexpected response status - {response.status_code}'
+        )
+
+    def _select_model_client_type(self, task_type):
+        model_type = TaskType(task_type)
+        if model_type in TaskType.vision_types():
+            from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
+            return VisionModelClient
+        if model_type in TaskType.tabular_types():
+            return TabularModelClient
+        raise ValueError(f'Unknown task type - {task_type}')
+
+    def _get_model_client(
         self,
-        model_id: int,
-        task_type: TaskType
-    ) -> DeepchecksModelClient:
-        """Get client to interact with a specific model from internal cache (based on id).
+        model_type: TaskType,
+        model: t.Dict[str, t.Any]
+    ):
+        """Construct model client.
 
         Parameters
-        ----------
-        model_id: int
-            Model id to get client for.
-        task_type: TaskType
-            Task type of the model. Used to determine the correct client type.
-
-        Returns
-        -------
-        DeepchecksModelClient
-            Client to interact with the model.
+        ==========
+        model_type : TaskType
+            type of a model instance
+        model : Dict[str, Any]
+            a dictionary with model attributes
         """
-        if self._model_clients.get(model_id) is not None:
-            pass
-        elif task_type in TaskType.vision_types():
-            from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
-            self._model_clients[model_id] = VisionModelClient(model_id=model_id, api=self.api)
-        elif task_type in TaskType.tabular_types():
-            self._model_clients[model_id] = TabularModelClient(model_id=model_id, api=self.api)
-        else:
-            raise ValueError(f'Unknown task type - {task_type}')
+        factory = self._select_model_client_type(model_type)
 
-        return self._model_clients[model_id]
+        if model['name'] in self._model_clients:
+            c = self._model_clients[model['name']]
+            c.model = model
+            if not isinstance(c, factory):
+                raise ValueError('Client is cached but its type is incorrect')
+        else:
+            c = self._model_clients[model['name']] = factory(model=model, api=self.api)
+
+        return c
 
     def get_model_version(self, model_name: str, version_name: str) -> DeepchecksModelVersionClient:
         """Get client to interact with a specific model version.

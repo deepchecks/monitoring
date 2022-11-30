@@ -411,15 +411,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
 
 
 class DeepchecksModelClient(core_client.DeepchecksModelClient):
-    """Client to interact with a model in monitoring. Created via the DeepchecksClient's get_or_create_model function.
-
-    Parameters
-    ----------
-    host : str
-        The deepchecks monitoring API host.
-    model_id : int
-        The id of the model.
-    """
+    """Client to interact with a vision model in monitoring."""
 
     def version(
             self,

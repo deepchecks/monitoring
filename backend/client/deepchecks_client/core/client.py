@@ -181,15 +181,35 @@ class DeepchecksModelClient:
 
     Parameters
     ----------
-    model_id : int
-        The id or name of the model.
-    api : core.API
+    model : Dict[str, Any]
+        Name of the model.
+    api : deepchecks_client.core.api.API
         The instance of the API object
     """
 
-    def __init__(self, model_id: int, api: API):
+    @classmethod
+    def create_from_name(cls, model_name: str, api: API):
+        """Request model instance by name and and create a model client from it."""
+        return cls(
+            model=t.cast(t.Dict[str, t.Any], api.fetch_model_by_name(model_name)),
+            api=api,
+        )
+
+    @classmethod
+    def create_from_id(cls, model_id: int, api: API):
+        """Request model instance by ID and and create a model client from it."""
+        return cls(
+            model=t.cast(t.Dict[str, t.Any], api.fetch_model_by_id(model_id)),
+            api=api,
+        )
+
+    def __init__(
+        self,
+        model: t.Dict[str, t.Any],
+        api: API
+    ):
         self.api = api
-        self.model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_id(model_id))
+        self.model = model
         self._model_version_clients = {}
 
     def version(self, *args, **kwargs) -> DeepchecksModelVersionClient:
