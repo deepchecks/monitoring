@@ -946,7 +946,7 @@ async def test_check_group_by_numeric(client: TestClient, classification_model_v
     # Checking first and last bin and all data
     assert_that(response.json(), has_items(
         has_entries({"name": "All Data", "value": has_length(3), "display": has_length(0), "count": 150}),
-        has_entries({"name": "[10.0, 16.0)", "value": has_length(3), "display": has_length(0), "count": 43}),
-        has_entries({"name": "[85.0, 126.0]", "value": has_length(3), "display": has_length(0), "count": 16})
+        has_entries({"name": "[10.0, 11.0)", "value": has_length(3), "display": has_length(0), "count": 34}),
+        has_entries({"name": "[106.0, 126.0]", "value": has_length(3), "display": has_length(0), "count": 6})
     ))
 

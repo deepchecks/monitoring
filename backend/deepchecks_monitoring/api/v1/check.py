@@ -455,7 +455,7 @@ async def run_check_group_by_feature(
         window_result = await run_check_window(check, options, session, model_version.model, [model_version],
                                                with_display=True)
         for model_version, result in window_result.items():
-            if result is not None:
+            if result is not None and result['result'] is not None:
                 check_result = result['result']
                 reduce_value = reduce_check_result(check_result, options.additional_kwargs)
                 display = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
