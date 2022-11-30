@@ -103,8 +103,8 @@ export const frequencyData = [
 ];
 
 const INITIAL_FREQUENCY_LABEL = frequencyData[1].label;
-const INITIAL_DATE: [Date, Date] = [new Date(Date.now() - timeMap.week), new Date()];
-const INITIAL_LOOKBACK = lookBackData[0].value;
+const INITIAL_DATE: [Date, Date] = [new Date(Date.now() - timeMap.month), new Date()];
+const INITIAL_LOOKBACK = lookBackData[1].value;
 
 export const AnalysisContext = createContext<AnalysisContextValues>({
   isComparisonModeOn: true,
