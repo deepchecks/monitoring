@@ -440,28 +440,14 @@ async def run_check_group_by_feature(
                 'count': curr_bin['count']
             })
     else:
-        # If we have less unique values than number of bins, then each bin will have single value, then display
-        # them like categorical
-        all_bins_single_value = all(bin['min'] == bin['max'] for bin in bins)
-        for index, curr_bin in enumerate(bins):
-            if all_bins_single_value:
-                filters.append({
-                    'name': curr_bin['min'],
-                    'filters': [DataFilter(column=feature, operator=OperatorsEnum.EQ, value=curr_bin['min'])],
-                    'count': curr_bin['count']
-                })
-            else:
-                # The bins from bins_for_feature returns the min, max inclusive and non-overlapping
-                bin_start = curr_bin['min']
-                bin_end = curr_bin['max']
-                # In order to display the bins as overlapping, takes the next bin start as current bin end
-                bin_end_display = f'{bins[index + 1]["min"]})' if index + 1 < len(bins) else f'{bin_end}]'
-                filters.append({
-                    'name': f'[{bin_start}, {bin_end_display}',
-                    'filters': [DataFilter(column=feature, operator=OperatorsEnum.GE, value=bin_start),
-                                DataFilter(column=feature, operator=OperatorsEnum.LE, value=bin_end)],
-                    'count': curr_bin['count']
-                })
+        for curr_bin in bins:
+            # The bins from bins_for_feature returns the min, max inclusive and non-overlapping
+            filters.append({
+                'name': curr_bin['name'],
+                'filters': [DataFilter(column=feature, operator=OperatorsEnum.GE, value=curr_bin['min']),
+                            DataFilter(column=feature, operator=OperatorsEnum.LE, value=curr_bin['max'])],
+                'count': curr_bin['count']
+            })
 
     results = []
     for f in filters:
