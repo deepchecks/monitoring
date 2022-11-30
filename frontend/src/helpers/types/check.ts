@@ -18,3 +18,10 @@ export interface RunCheckRequest {
     filters: Filter[];
   };
 }
+
+export enum CheckTypeOptions {
+  Feature = 'Feature',
+  Class = 'Class'
+}
+
+export type CheckType = CheckTypeOptions.Feature | CheckTypeOptions.Class | null;

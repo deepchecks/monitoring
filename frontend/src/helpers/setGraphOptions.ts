@@ -29,23 +29,26 @@ export const graphColors = [
   '#7ABFFF'
 ];
 
+const setLabel = (dashed: boolean, label: string) => (dashed ? label + PREVIOUS_PERIOD : label);
+const setBorderDash = (dashed: boolean) => (dashed ? [10, 5] : []);
+
 export const setLineGraphOptions = (label: string, index: number, dashed = false) => ({
   id: label,
-  label: dashed ? label + PREVIOUS_PERIOD : label,
+  label: setLabel(dashed, label),
   borderColor: graphColors[index % graphColors.length],
   pointBorderColor: '#fff',
   pointBackgroundColor: graphColors[index],
   pointHoverBackgroundColor: '#fff',
   pointHoverBorderColor: pointColor.primary.violet[400],
   hidden: false,
-  borderDash: dashed ? [10, 5] : []
+  borderDash: setBorderDash(dashed)
 });
 
 export const setBarGraphOptions = (label: string, index: number, dashed = false) => ({
   id: label,
-  label: dashed ? label + PREVIOUS_PERIOD : label,
+  label: setLabel(dashed, label),
   backgroundColor: alpha(graphColors[index], 0.5),
   borderColor: graphColors[index],
   barPercentage: 0.3,
-  borderDash: dashed ? [10, 5] : []
+  borderDash: setBorderDash(dashed)
 });

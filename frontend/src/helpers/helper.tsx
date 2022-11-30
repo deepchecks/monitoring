@@ -1,4 +1,7 @@
-import { FC } from 'react';
+import React, { FC } from 'react';
+
+import { AnalysisProvider } from 'context/analysis-context';
+import { MonitorsDataProvider } from 'hooks/useMonitorsData';
 
 import { AlertRules } from 'pages/AlertRules';
 import { AlertsPage } from 'pages/AlertsPage';
@@ -7,6 +10,7 @@ import { IntegrationsPage } from 'pages/IntegrationsPage';
 import { AnalysisPage } from 'pages/AnalysisPage';
 import { NotificationsPage } from 'pages/NotificationsPage';
 import { ModelsPage } from 'pages/ModelsPage';
+import { APIKeyPage } from 'pages/APIKeyPage';
 
 import {
   Alarm,
@@ -22,8 +26,6 @@ import {
   DashboardActive,
   DashboardHover
 } from '../assets/icon/icon';
-import { APIKeyPage } from 'pages/APIKeyPage';
-import { MonitorsDataProvider } from 'hooks/useMonitorsData';
 
 export interface PathInfo {
   title: string;
@@ -39,7 +41,11 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Dashboard',
     link: '/dashboard',
-    element: () => (<MonitorsDataProvider><DashboardPage /></MonitorsDataProvider>),
+    element: () => (
+      <MonitorsDataProvider>
+        <DashboardPage />
+      </MonitorsDataProvider>
+    ),
     Icon: Dashboard,
     IconHover: DashboardHover,
     ActiveIcon: DashboardActive
@@ -55,7 +61,11 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Analysis',
     link: '/analysis',
-    element: AnalysisPage,
+    element: () => (
+      <AnalysisProvider>
+        <AnalysisPage />
+      </AnalysisProvider>
+    ),
     Icon: Analysis,
     IconHover: AnalysisHover,
     ActiveIcon: AnalysisActive

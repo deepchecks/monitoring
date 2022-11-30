@@ -44,33 +44,29 @@ export function AnalysisChartItemWithFilters({
         <Stack direction="row" spacing="10px">
           {filters.map(({ type, values }, index) =>
             type === AnalysisItemFilterTypes.AGGREGATION ? (
-              <>
-                <SingleSelect
-                  key={index}
-                  label={type}
-                  data={values}
-                  type={type}
-                  activeFilter={activeFilter}
-                  setActiveFilter={setActiveFilter}
-                  setSelectValue={setSingleSelectValue}
-                  isMostWorstActive={isMostWorstActive}
-                  setIsMostWorstActive={setIsMostWorstActive}
-                />
-              </>
+              <SingleSelect
+                key={index + type}
+                label={type}
+                data={values}
+                type={type}
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                setSelectValue={setSingleSelectValue}
+                isMostWorstActive={isMostWorstActive}
+                setIsMostWorstActive={setIsMostWorstActive}
+              />
             ) : (
-              <>
-                <MultiSelect
-                  key={index}
-                  label={type}
-                  data={values}
-                  type={type}
-                  activeFilter={activeFilter}
-                  setActiveFilter={setActiveFilter}
-                  setSelectValue={setMultipleSelectValue}
-                  isMostWorstActive={isMostWorstActive}
-                  setIsMostWorstActive={setIsMostWorstActive}
-                />
-              </>
+              <MultiSelect
+                key={index + type}
+                label={type}
+                data={values}
+                type={type}
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                setSelectValue={setMultipleSelectValue}
+                isMostWorstActive={isMostWorstActive}
+                setIsMostWorstActive={setIsMostWorstActive}
+              />
             )
           )}
         </Stack>

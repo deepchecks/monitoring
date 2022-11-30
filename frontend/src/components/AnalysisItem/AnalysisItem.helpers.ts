@@ -5,7 +5,7 @@ interface IScore {
   score: number;
 }
 
-export function showDatasets(dataSets: IDataset[], dataSetsToShow: number, isMost = true) {
+export function showDatasets(dataSets: IDataset[], dataSetsToShow: number, ascending = true) {
   const scores: IScore[] = [];
 
   dataSets.forEach(dataSet => {
@@ -17,7 +17,7 @@ export function showDatasets(dataSets: IDataset[], dataSetsToShow: number, isMos
     scores.push({ id: dataSet.id, score });
   });
 
-  const sortedDatasets = isMost
+  const sortedDatasets = ascending
     ? [...scores].sort((a, b) => b.score - a.score)
     : [...scores].sort((a, b) => a.score - b.score);
 

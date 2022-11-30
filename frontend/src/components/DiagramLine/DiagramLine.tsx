@@ -31,7 +31,8 @@ function DiagramLine({
   minimap = initMinimap,
   tooltipCallbacks = defaultTooltipCallbacks,
   analysis,
-  comparison
+  comparison,
+  handlePointCLick
 }: PropsWithChildren<DiagramLineProps>) {
   const [chartData, setChartData] = useState(data);
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
@@ -142,6 +143,19 @@ function DiagramLine({
     maintainAspectRatio: false,
     animation: false,
     responsive: true,
+    onClick: (event, elements) => {
+      if (elements.length && handlePointCLick) {
+        const { index, datasetIndex } = elements[0];
+
+        const dataset = chartData.datasets[datasetIndex];
+        const [datasetName, versionName] = dataset.label?.split('|') || [null, null];
+        const timeLabel = chartData.labels?.[index] as number;
+
+        if (datasetName && versionName && timeLabel) {
+          handlePointCLick(datasetName, versionName, timeLabel);
+        }
+      }
+    },
     onResize: chart => {
       chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
     },

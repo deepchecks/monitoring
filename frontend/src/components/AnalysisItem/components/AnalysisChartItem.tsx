@@ -34,18 +34,18 @@ export function AnalysisChartItem({
   );
 }
 
-const StyledAnalysisChartItem = styled(Box)(({ theme }) => ({
-  minHeight: '527px',
+const StyledAnalysisChartItem = styled(Box)({
+  minHeight: '528px',
   padding: '16px 40px 0px 40px',
-  backgroundColor: theme.palette.common.white,
   borderRadius: '10px',
+  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
 
   '& .legend_icon': {
     width: 22,
     height: 22,
     marginRight: '10px'
   }
-}));
+});
 
 const StyledTitle = styled(Typography)({
   fontSize: 18,

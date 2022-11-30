@@ -74,9 +74,10 @@ jobs:
         node-version: 16
     - run: npm install --production=false
       working-directory: ./frontend
-    - run: ./node_modules/license-checker/bin/license-checker --production --onlyAllow "MIT;ISC;BSD;Apache-2.0;Python-2.0;CC0-1.0;Unlicense" --excludePackages "axe-core@4.4.3;caniuse-lite@1.0.30001400;lz-string@1.4.4" --summary --excludePrivatePackages
+    - run: ./node_modules/license-checker/bin/license-checker --production --onlyAllow "MIT;ISC;BSD;Apache-2.0;Python-2.0;CC0-1.0;Unlicense" --excludePackages "axe-core@4.4.3;caniuse-lite@1.0.30001400;lz-string@1.4.4;@mapbox/jsonlint-lines-primitives@2.0.2;gl-mat4@1.2.0" --summary --excludePrivatePackages
       working-directory: ./frontend
       # axe-core is MPL-2.0 https://www.npmjs.com/package/axe-core
       # caniuse-lite is CC-BY-4.0 https://github.com/browserslist/caniuse-lite/blob/main/LICENSE
       # lz-string is WTFPL (MIT) https://github.com/pieroxy/lz-string/blob/master/LICENSE
-    
+      # @mapbox/jsonlint-lines-primitives is MIT https://github.com/tmcw/jsonlint
+      # gl-mat is zlib license

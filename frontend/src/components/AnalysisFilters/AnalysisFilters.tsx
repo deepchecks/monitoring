@@ -6,11 +6,13 @@ import {
   useGetModelColumnsApiV1ModelsModelIdColumnsGet
 } from 'api/generated';
 
-import { AnalysisContext, ColumnsFilters, ComparisonModeOptions } from 'context/analysis-context';
-
-import { ColumnType } from 'helpers/types/model';
-import { frequencyData, comparisonModeData } from './AnalysisFilters.helpers';
-import { lookBackData } from 'context/analysis-context';
+import {
+  AnalysisContext,
+  ColumnsFilters,
+  ComparisonModeOptions,
+  frequencyData,
+  lookBackData
+} from 'context/analysis-context';
 
 import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box, Typography } from '@mui/material';
 
@@ -20,6 +22,9 @@ import { SwitchButton } from 'components/SwitchButton';
 import { DropDownFilter } from './components/DropDownFilter';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
+
+import { ColumnType } from 'helpers/types/model';
+import { comparisonModeData } from './AnalysisFilters.helpers';
 
 import { FilterIcon } from 'assets/icon/icon';
 
@@ -73,6 +78,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
 
   const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as number;
+    console.log(event.target);
     setFrequency(value);
   };
 

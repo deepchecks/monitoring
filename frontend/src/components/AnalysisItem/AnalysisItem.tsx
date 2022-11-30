@@ -1,25 +1,33 @@
 import React, { memo, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
 
-import { CheckSchema, DataFilter, MonitorOptions, useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
+import {
+  CheckSchema,
+  MonitorCheckConfSchema,
+  MonitorOptions,
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet
+} from 'api/generated';
 import { AnalysisContext, ComparisonModeOptions } from 'context/analysis-context';
 import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
-
-import { styled, Box } from '@mui/material';
 
 import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters/AnalysisChartItemWithFilters';
 import { AnalysisChartItem } from './components/AnalysisChartItem';
 import AnalysisItemDiagram from './components/AnalysisItemDiagram';
 
-import { OperatorsMap } from 'helpers/conditionOperator';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { showDatasets } from './AnalysisItem.helpers';
 
+import { SetStateType } from 'helpers/types';
 import { AnalysisItemFilterTypes, IDataset } from './AnalysisItem.types';
+import { CheckType, CheckTypeOptions } from 'helpers/types/check';
 
 interface AnalysisItemProps {
   check: CheckSchema;
   lastUpdate: Date;
+  handlePointCLick: (datasetName: string, versionName: string, timeLabel: number) => void;
+  setCurrentCheck: SetStateType<CheckSchema | null>;
+  setCurrentAdditionalKwargs: SetStateType<MonitorCheckConfSchema | null>;
+  setCurrentType: SetStateType<CheckType>;
 }
 
 interface IRunCheckBody {
@@ -27,8 +35,15 @@ interface IRunCheckBody {
   data: MonitorOptions;
 }
 
-function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
-  const { isComparisonModeOn, comparisonMode, filters, period, frequency } = useContext(AnalysisContext);
+function AnalysisItemComponent({
+  check,
+  lastUpdate,
+  handlePointCLick,
+  setCurrentCheck,
+  setCurrentAdditionalKwargs,
+  setCurrentType
+}: AnalysisItemProps) {
+  const { isComparisonModeOn, comparisonMode, period, frequency, activeFilters } = useContext(AnalysisContext);
 
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(check.id);
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
@@ -41,13 +56,39 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
 
   const checkConf = checkInfo?.check_conf;
 
-  const isMost = useMemo(
+  const ascending = useMemo(
     () => checkConf && checkConf.find(e => e.type === AnalysisItemFilterTypes.AGGREGATION),
     [checkConf]
   );
 
-  const showOneDataset = useCallback((dataSets: IDataset[], isMost = true) => showDatasets(dataSets, 1, isMost), []);
-  const showThreeDatasets = useCallback((dataSets: IDataset[], isMost = true) => showDatasets(dataSets, 3, isMost), []);
+  const showOneDataset = useCallback(
+    (dataSets: IDataset[], ascending = true) => showDatasets(dataSets, 1, ascending),
+    []
+  );
+  const showThreeDatasets = useCallback(
+    (dataSets: IDataset[], ascending = true) => showDatasets(dataSets, 3, ascending),
+    []
+  );
+
+  const additionalKwargs = useMemo(() => {
+    if (
+      checkConf?.length &&
+      (filtersSingleSelectValue.length || filtersMultipleSelectValue.length) &&
+      typeof activeFilter === 'string'
+    ) {
+      const filter =
+        activeFilter === AnalysisItemFilterTypes.AGGREGATION ? [filtersSingleSelectValue] : filtersMultipleSelectValue;
+
+      const additionalKwargs = {
+        check_conf: {
+          [activeFilter]: filter
+        },
+        res_conf: []
+      };
+
+      return additionalKwargs;
+    }
+  }, [activeFilter, checkConf?.length, filtersMultipleSelectValue, filtersSingleSelectValue]);
 
   useEffect(() => {
     async function getData() {
@@ -60,59 +101,11 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         }
       };
 
-      const activeFilters: DataFilter[] = [];
-
-      Object.entries(filters).forEach(([column, value]) => {
-        if (value) {
-          if (typeof value[0] === 'number' && typeof value[1] === 'number') {
-            activeFilters.push({
-              column,
-              operator: OperatorsMap.greater_than,
-              value: value[0]
-            });
-            activeFilters.push({
-              column,
-              operator: OperatorsMap.less_than,
-              value: value[1]
-            });
-            return;
-          }
-
-          if (typeof value === 'object') {
-            Object.entries(value).forEach(([category, active]) => {
-              if (active) {
-                activeFilters.push({
-                  column,
-                  operator: OperatorsMap.contains,
-                  value: category
-                });
-              }
-            });
-          }
-        }
-      });
-
       if (activeFilters.length) {
         runCheckBody.data.filter = { filters: activeFilters };
       }
 
-      if (
-        checkConf?.length &&
-        (filtersSingleSelectValue || filtersMultipleSelectValue.length) &&
-        typeof activeFilter === 'string'
-      ) {
-        const filter =
-          activeFilter === AnalysisItemFilterTypes.AGGREGATION
-            ? [filtersSingleSelectValue]
-            : filtersMultipleSelectValue;
-
-        runCheckBody.data.additional_kwargs = {
-          check_conf: {
-            [activeFilter]: filter
-          },
-          res_conf: []
-        };
-      }
+      runCheckBody.data.additional_kwargs = additionalKwargs;
 
       const response = await runCheck(runCheckBody);
       const parsedChartData = parseDataForLineChart(response);
@@ -153,12 +146,12 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
         }
 
         const dataSets = paired.concat(single);
-        const result = isMostWorstActive ? showOneDataset(dataSets, !!isMost) : showOneDataset(dataSets);
+        const result = isMostWorstActive ? showOneDataset(dataSets, !!ascending) : showOneDataset(dataSets);
 
         parsedChartData.datasets = result;
       } else {
         const result = isMostWorstActive
-          ? showThreeDatasets(parsedChartData.datasets, !!isMost)
+          ? showThreeDatasets(parsedChartData.datasets, !!ascending)
           : parsedChartData.datasets;
 
         parsedChartData.datasets = result;
@@ -169,25 +162,45 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
 
     getData();
   }, [
-    activeFilter,
+    activeFilters,
+    additionalKwargs,
+    ascending,
     check.id,
-    checkConf?.length,
     comparisonMode,
-    filters,
-    filtersMultipleSelectValue,
-    filtersSingleSelectValue,
     frequency,
     isComparisonModeOn,
     isMostWorstActive,
     period,
     runCheck,
     showOneDataset,
-    showThreeDatasets,
-    isMost
+    showThreeDatasets
   ]);
 
+  const handleDrawerOpen = useCallback(
+    (datasetName: string, versionName: string, timeLabel: number) => {
+      if (additionalKwargs) {
+        const type = checkInfo?.res_conf ? CheckTypeOptions.Class : CheckTypeOptions.Feature;
+
+        setCurrentType(type);
+        setCurrentAdditionalKwargs(additionalKwargs);
+      }
+
+      setCurrentCheck(check);
+      handlePointCLick(datasetName, versionName, timeLabel);
+    },
+    [
+      additionalKwargs,
+      check,
+      checkInfo?.res_conf,
+      handlePointCLick,
+      setCurrentAdditionalKwargs,
+      setCurrentCheck,
+      setCurrentType
+    ]
+  );
+
   return (
-    <StyledAnalysisItem>
+    <>
       {checkConf && checkConf.length ? (
         <AnalysisChartItemWithFilters
           title={check?.name || '-'}
@@ -201,24 +214,28 @@ function AnalysisItemComponent({ check, lastUpdate }: AnalysisItemProps) {
           setIsMostWorstActive={setIsMostWorstActive}
           filters={checkConf}
         >
-          <AnalysisItemDiagram isLoading={isLoading} data={data} comparison={isComparisonModeOn} />
+          <AnalysisItemDiagram
+            isLoading={isLoading}
+            data={data}
+            comparison={isComparisonModeOn}
+            handlePointCLick={handleDrawerOpen}
+          />
         </AnalysisChartItemWithFilters>
       ) : (
         <AnalysisChartItem
           subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
           title={check?.name || '-'}
         >
-          <AnalysisItemDiagram isLoading={isLoading} data={data} comparison={isComparisonModeOn} />
+          <AnalysisItemDiagram
+            isLoading={isLoading}
+            data={data}
+            comparison={isComparisonModeOn}
+            handlePointCLick={handleDrawerOpen}
+          />
         </AnalysisChartItem>
       )}
-    </StyledAnalysisItem>
+    </>
   );
 }
-
-const StyledAnalysisItem = styled(Box)({
-  minHeight: '528px',
-  borderRadius: '10px',
-  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)'
-});
 
 export const AnalysisItem = memo(AnalysisItemComponent);
