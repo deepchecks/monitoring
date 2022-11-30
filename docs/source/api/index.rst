@@ -18,3 +18,9 @@ Here you can see the api reference.
     core
     tabular
     vision
+
+.. autosummary::
+    :caption: Classes
+    :toctree: generated
+
+    DeepchecksClient

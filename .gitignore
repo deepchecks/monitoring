@@ -171,3 +171,8 @@ cypress/videos
 cypress/screenshots
 
 docs/source/api/generated
+
+backend/tests/*.pem
+node_modules/
+package-lock.json
+docs/source/**/auto_quickstarts/
