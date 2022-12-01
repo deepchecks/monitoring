@@ -21,9 +21,6 @@ from deepchecks_monitoring.schema_models.column_type import ColumnType
 __all__ = ['bins_for_feature']
 
 
-__all__ = ['bins_for_feature']
-
-
 async def bins_for_feature(model_version: ModelVersion, feature: str, session: AsyncSession,
                            monitor_options: SingleWindowMonitorOptions, num_bins=30) -> [ColumnType, List[Dict]]:
     """Query from the database given number of bins.

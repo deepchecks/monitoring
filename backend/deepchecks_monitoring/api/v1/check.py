@@ -101,6 +101,7 @@ class CheckGroupBySchema(BaseModel):
     value: t.Optional[t.Dict]
     display: t.List
     count: int
+    filters: DataFilterList
 
 
 @router.post(
@@ -438,7 +439,7 @@ async def run_check_group_by_feature(
     # Start with all data filter
     filters = [{
         'name': 'All Data',
-        'filters': [],
+        'filters': DataFilterList(filters=[]),
         'count': count
     }]
 
@@ -449,7 +450,9 @@ async def run_check_group_by_feature(
         for curr_bin in bins:
             filters.append({
                 'name': curr_bin['value'],
-                'filters': [DataFilter(column=feature, operator=OperatorsEnum.EQ, value=curr_bin['value'])],
+                'filters': DataFilterList(filters=[
+                    DataFilter(column=feature, operator=OperatorsEnum.EQ, value=curr_bin['value'])
+                ]),
                 'count': curr_bin['count']
             })
     else:
@@ -457,24 +460,24 @@ async def run_check_group_by_feature(
             # The bins from bins_for_feature returns the min, max inclusive and non-overlapping
             filters.append({
                 'name': curr_bin['name'],
-                'filters': [DataFilter(column=feature, operator=OperatorsEnum.GE, value=curr_bin['min']),
-                            DataFilter(column=feature, operator=OperatorsEnum.LE, value=curr_bin['max'])],
+                'filters': DataFilterList(filters=[
+                    DataFilter(column=feature, operator=OperatorsEnum.GE, value=curr_bin['min']),
+                    DataFilter(column=feature, operator=OperatorsEnum.LE, value=curr_bin['max'])
+                ]),
                 'count': curr_bin['count']
             })
 
-    results = []
     for f in filters:
-        options = monitor_options.add_filters(DataFilterList(filters=f['filters']))
+        options = monitor_options.add_filters(f['filters'])
         window_result = await run_check_window(check, options, session, model_version.model, [model_version], s3_bucket,
                                                with_display=True)
         for model_version, result in window_result.items():
             if result is not None and result['result'] is not None:
                 check_result = result['result']
-                reduce_value = reduce_check_result(check_result, options.additional_kwargs)
-                display = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
+                f['value'] = reduce_check_result(check_result, options.additional_kwargs)
+                f['display'] = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
             else:
-                reduce_value = None
-                display = []
-            results.append({'name': f['name'], 'value': reduce_value, 'display': display, 'count': f['count']})
+                f['value'] = None
+                f['display'] = []
 
-    return results
+    return filters
