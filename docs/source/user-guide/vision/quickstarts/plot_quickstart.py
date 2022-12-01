@@ -87,7 +87,8 @@ dc_client = DeepchecksClient(host=host, token=os.getenv('DEEPCHECKS_API_TOKEN'))
 model_version = dc_client.create_vision_model_version(model_name=model_name, version_name='v1',
                                                       reference_dataset=ref_dataset,
                                                       reference_predictions=ref_predictions,
-                                                      task_type='vision_detection')
+                                                      task_type='vision_detection',
+                                                      send_images=False)
 
 #%%
 # Uploading Production Data

@@ -8,14 +8,17 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the configuration for the deepchecks_monitoring package."""
+import logging
 import pathlib
 import typing as t
 from enum import Enum
 
+import boto3
 from aiokafka.helpers import create_ssl_context
+from botocore.exceptions import BotoCoreError
 from pydantic import BaseSettings, PostgresDsn, RedisDsn
 
-__all__ = ['Settings', 'tags_metadata', 'Tags', 'DatabaseSettings', 'RedisSettings', 'KafkaSettings']
+__all__ = ['Settings', 'tags_metadata', 'Tags', 'DatabaseSettings', 'RedisSettings', 'KafkaSettings', 'S3Settings']
 
 from pydantic.networks import AnyHttpUrl
 
@@ -82,6 +85,21 @@ class RedisSettings(BaseDeepchecksSettings):
     redis_uri: t.Optional[RedisDsn] = None
 
 
+class S3Settings(BaseDeepchecksSettings):
+    """S3 settings."""
+
+    deepchecks_bucket: t.Optional[str] = None
+
+    def get_deepchecks_bucket(self):
+        """Return the bucket name if aws/s3 credentials are available."""
+        try:
+            self.deepchecks_bucket is None or boto3.resource('s3').Bucket(self.deepchecks_bucket)
+        except BotoCoreError:
+            logging.Logger('s3').exception('Failed to initialize a boto3 client.')
+            self.deepchecks_bucket = None
+        return self.deepchecks_bucket
+
+
 class EmailSettings(BaseDeepchecksSettings):
     """Settings for mail service."""
 
@@ -93,7 +111,7 @@ class EmailSettings(BaseDeepchecksSettings):
     email_smtp_password: str
 
 
-class Settings(DatabaseSettings, KafkaSettings, RedisSettings, EmailSettings, SlackSettings):
+class Settings(DatabaseSettings, KafkaSettings, RedisSettings, EmailSettings, SlackSettings, S3Settings):
     """Settings for the deepchecks_monitoring package."""
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'

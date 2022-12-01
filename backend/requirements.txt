@@ -1,4 +1,4 @@
-launchdarkly-server-sdk
+boto3==1.26.4
 fastapi>=0.87.0
 sqlalchemy[asyncio]==1.4.39
 dynaconf>=3.1.8

@@ -45,6 +45,7 @@ PGDataTableDropTrigger
 PGDataTableDropFunc
 quantile
 quantiles
+BGR
 deepchecks
 sqlalchemy
 SQLALCHEMY

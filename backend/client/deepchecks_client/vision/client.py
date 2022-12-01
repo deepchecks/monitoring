@@ -9,11 +9,13 @@
 # ----------------------------------------------------------------------------
 #
 """Module containing deepchecks monitoring client."""
+import base64
 import typing as t
 import warnings
 from collections import defaultdict
 from datetime import datetime
 
+import cv2
 import numpy as np
 import pandas as pd
 import pendulum as pdl
@@ -47,12 +49,15 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         The id of the model version.
     additional_image_properties : Optional[List[Dict[str, Any]]]
         The additional image properties to use for the reference.
+    send_images : bool , default True
+        If to send images to the server
     """
 
     model_version_id: int
     schema: dict
     ref_schema: dict
     _ref_samples_uploaded: int
+    send_images: bool
 
     def __init__(
             self,
@@ -60,9 +65,11 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             model: dict,
             api: API,
             additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]],
+            send_images: bool = True,
     ):
         super().__init__(model_version_id, model, api)
         self.additional_image_properties = additional_image_properties
+        self.send_images = send_images
         # TODO: use label_map to validate if the prediction/label values is correct
         self.label_map = \
             t.cast(t.Dict[str, t.Any], self.api.fetch_model_version_schema(model_version_id))['label_map']
@@ -77,7 +84,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             prediction=None,
             label=None,
             additional_data: t.Dict[str, t.Any] = None,
-            is_ref_sample=False,
+            is_ref_sample: bool = False,
     ) -> dict:
         """Reformat the user output to our columns types and encode it.
 
@@ -143,6 +150,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         else:
             self.schema_validator.validate(sample)
 
+        if self.send_images:
+            img = cv2.imencode('.jpeg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 60])[1]
+            sample[DeepchecksColumns.SAMPLE_S3_IMAGE_COL.value] = base64.b64encode(img.tostring()).decode('utf-8')
+
         return sample
 
     def _get_vision_task_type(self):
@@ -159,7 +170,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             additional_data: t.Optional[t.Sequence[t.Dict[str, t.Any]]] = None,
-            samples_per_request: int = 5000
+            samples_per_request: int = 32
     ):
         """Upload a batch of reference data - data should be shuffled (only a total of 100k samples can be uploaded).
 
@@ -180,7 +191,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Sequence of labels, according to the expected format for the task type.
         additional_data : Optional[Sequence[Dict[str, Any]]] , default None
             Sequence of additional data in format [{<name>: <value>}]
-        samples_per_request : int , default 5000
+        samples_per_request : int , default 32
             How many samples to send by one request
         """
         if samples_per_request < 1:
@@ -218,7 +229,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             predictions: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             labels: t.Union[t.Sequence[t.Any], t.Sequence[t.Any], None] = None,
             additional_data: t.Optional[t.Sequence[t.Dict[str, t.Any]]] = None,
-            samples_per_send: int = 100_000
+            samples_per_send: int = 32
     ):
         """Log a batch of images.
 
@@ -247,7 +258,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Sequence of labels, according to the expected format for the task type.
         additional_data : Optional[Sequence[Dict[str, Any]]] , default None
             Sequence of additional data in format [{<name>: <value>}]
-        samples_per_send : int , default 100_000
+        samples_per_send : int , default 32
             How many samples to send by one request
         """
         if samples_per_send < 1:
@@ -314,7 +325,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             vision_data: VisionData,
             predictions: t.Optional[t.Union[t.Dict[int, ARRAY], t.List[ARRAY]]] = None,
             additional_data: t.Optional[t.Dict[int, t.Dict[str, t.Any]]] = None,
-            samples_per_request: int = 5000,
+            samples_per_request: int = 32,
     ):
         """Upload reference data. Possible to upload only once for a given model version.
 
@@ -331,7 +342,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             The additional data in a format of {<index>: {<name>: <value>}}.
             The keys must be the indexes of the samples in the dataset
             from which the vision data dataloader was created.
-        samples_per_request : int, default: 5000
+        samples_per_request : int, default: 32
             How many samples to send in each request. Decrease this number if having problems uploading the data.
         """
         if vision_data.num_samples > core_client.MAX_REFERENCE_SAMPLES - self._ref_samples_uploaded:
@@ -419,6 +430,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
             additional_data_schema: t.Optional[t.Dict[str, ColumnTypeName]] = None,
             label_map: t.Optional[t.Dict[int, str]] = None,
+            send_images: bool = True,
     ) -> DeepchecksModelVersionClient:
         """Create a new model version for vision data.
 
@@ -436,6 +448,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         additional_data_schema : Dict[str, ColumnTypeName], optional
             Schema for the additional data to add - in a format of {<name>: <ColumnData.value>}.
             Additional data is used for segmentation and filtering.
+        send_images : bool , default True
+            If to send images to the server
 
         Returns
         -------
@@ -445,7 +459,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         existing_version_id = self._get_existing_version_id_or_none(version_name=name)
 
         if existing_version_id is not None:
-            return self._version_client(existing_version_id, additional_image_properties=additional_image_properties)
+            return self._version_client(existing_version_id, additional_image_properties=additional_image_properties,
+                                        send_images=send_images)
 
         if additional_image_properties is not None:
             DeepchecksJsonValidator(properties_schema).validate(additional_image_properties)
@@ -481,7 +496,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def _version_client(
         self,
         model_version_id: int,
-        additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None
+        additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
+        send_images: bool = True,
     ) -> DeepchecksModelVersionClient:
         """Get client to interact with a given version of the model.
 
@@ -490,6 +506,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         model_version_id : int
         additional_image_properties : Optional[List[Dict[str, Any]]]
             The additional image properties to use for the reference.
+        send_images : bool , default True
+            If to send images to the server
 
         Returns
         -------
@@ -500,7 +518,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 model_version_id,
                 self.model,
                 api=self.api,
-                additional_image_properties=additional_image_properties
+                additional_image_properties=additional_image_properties,
+                send_images=send_images
             )
         return self._model_version_clients[model_version_id]
 

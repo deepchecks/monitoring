@@ -49,7 +49,7 @@ def consume_data():
     async def consume():
         settings = Settings()  # type: ignore
         resources_provider = ResourcesProvider(settings)
-        backend = DataIngestionBackend(settings, resources_provider)
+        backend = DataIngestionBackend(settings, resources_provider, settings.get_deepchecks_bucket())
         await backend.run_data_consumer()
 
     anyio.run(consume)

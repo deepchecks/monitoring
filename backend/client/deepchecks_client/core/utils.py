@@ -112,6 +112,7 @@ class DeepchecksColumns(enum.Enum):
     SAMPLE_ID_COL = '_dc_sample_id'
     SAMPLE_TS_COL = '_dc_time'
     SAMPLE_LABEL_COL = '_dc_label'
+    SAMPLE_S3_IMAGE_COL = '_dc_s3_image'
     SAMPLE_PRED_PROBA_COL = '_dc_prediction_probabilities'
     SAMPLE_PRED_COL = '_dc_prediction'
 

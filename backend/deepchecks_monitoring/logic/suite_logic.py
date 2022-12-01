@@ -17,7 +17,7 @@ from deepchecks.vision.suite import Suite as VisionSuite
 from pandas import DataFrame
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, S3BucketDep
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, load_data_for_check
 from deepchecks_monitoring.logic.model_logic import dataframe_to_dataset_and_pred, dataframe_to_vision_data_pred_props
 from deepchecks_monitoring.schema_models import ModelVersion, TaskType
@@ -76,7 +76,8 @@ def _create_vision_suite(suite_name: str, task_type: TaskType, has_reference: bo
 async def run_suite_for_model_version(
         model_version: ModelVersion,
         window_options: MonitorOptions,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        s3_bucket: str = S3BucketDep,
 ):
     """Run a relevant suite for a given window.
 
@@ -87,6 +88,8 @@ async def run_suite_for_model_version(
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
+    s3_bucket: str
+        The bucket that is used for s3 images
     """
     top_feat, feat_imp = model_version.get_top_features()
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options)
@@ -115,9 +118,9 @@ async def run_suite_for_model_version(
     elif task_type in [TaskType.VISION_DETECTION, TaskType.VISION_CLASSIFICATION]:
         suite = _create_vision_suite(suite_name, task_type, len(ref_df) > 0)
         test_dataset, test_pred, test_proba = \
-            dataframe_to_vision_data_pred_props(test_df, task_type, model_version)
+            dataframe_to_vision_data_pred_props(test_df, task_type, model_version, s3_bucket, use_images=True)
         reference_dataset, reference_pred, reference_proba = \
-            dataframe_to_vision_data_pred_props(ref_df, task_type, model_version)
+            dataframe_to_vision_data_pred_props(ref_df, task_type, model_version, s3_bucket, use_images=True)
     else:
         raise Exception(f"Unsupported task type {task_type}")
 

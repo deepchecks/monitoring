@@ -15,6 +15,7 @@ import logging
 import typing as t
 
 import asyncpg.exceptions
+import boto3
 import jsonschema.exceptions
 import pendulum as pdl
 import sqlalchemy as sa
@@ -28,9 +29,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import get_data_topic_name, topic_name_to_ids
+from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_S3_IMAGE_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
@@ -41,7 +43,9 @@ __all__ = ["DataIngestionBackend", "log_data", "update_data"]
 async def log_data(
         model_version: ModelVersion,
         data: t.List[t.Dict[t.Any, t.Any]],
-        session: AsyncSession
+        s3_bucket: str,
+        org_id: int,
+        session: AsyncSession,
 ):
     """Insert batch data samples.
 
@@ -58,6 +62,8 @@ async def log_data(
     validator_class = validator_for(model_version.monitor_json_schema)
     val_instance = validator_class(model_version.monitor_json_schema, format_checker=FormatChecker())
 
+    s3_client = boto3.client("s3") if s3_bucket and SAMPLE_S3_IMAGE_COL in model_version.model_columns else None
+
     for sample in data:
         # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
         # to make sure all samples have same set of fields.
@@ -72,6 +78,16 @@ async def log_data(
                 "model_version_id": model_version.id
             })
         else:
+            if sample.get(SAMPLE_S3_IMAGE_COL):
+                if s3_bucket:
+                    sample[SAMPLE_S3_IMAGE_COL] = base64_image_data_to_s3(sample[SAMPLE_S3_IMAGE_COL],
+                                                                          sample[SAMPLE_ID_COL],
+                                                                          model_version,
+                                                                          org_id,
+                                                                          s3_bucket,
+                                                                          s3_client)
+                else:
+                    sample[SAMPLE_S3_IMAGE_COL] = None
             # Timestamp is passed as string, convert it to datetime
             sample_timestamp = pdl.parse(sample[SAMPLE_TS_COL])
             if sample_timestamp <= now:
@@ -203,10 +219,12 @@ class DataIngestionBackend:
     def __init__(
             self,
             resources_provider,
+            s3_bucket: str,
             logger=None
     ):
         self.resources_provider = resources_provider
         self.cache_invalidator = CacheInvalidator(resources_provider)
+        self.s3_bucket = s3_bucket
         self.logger = logger or logging.getLogger("data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
 
@@ -237,7 +255,7 @@ class DataIngestionBackend:
             # Waiting on the last future since the messages are sent in order anyway
             await send_future
         else:
-            timestamps = await log_data(model_version, data, session)
+            timestamps = await log_data(model_version, data, self.s3_bucket, user.organization_id, session)
             await self.after_data_update(user.organization_id, model_version.id, timestamps, session)
 
     async def update(
@@ -293,7 +311,7 @@ class DataIngestionBackend:
                     return True
                 model_version.ingestion_offset = messages[-1].offset
                 if log_samples:
-                    timestamps += await log_data(model_version, log_samples, session)
+                    timestamps += await log_data(model_version, log_samples, self.s3_bucket, organization_id, session)
                 if update_samples:
                     timestamps += await update_data(model_version, update_samples, session)
                 await self.after_data_update(organization_id, model_version_id, timestamps, session)

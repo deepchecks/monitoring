@@ -248,6 +248,7 @@ async def run_check_per_window_in_range(
         check_id: int,
         session: AsyncSession,
         monitor_options: MonitorOptions,
+        s3_bucket: str,
         monitor_id: int = None,
         cache_funcs: CacheFunctions = None,
         organization_id: int = None
@@ -267,6 +268,8 @@ async def run_check_per_window_in_range(
     session : AsyncSession
         The database session to use.
     monitor_options: MonitorOptions
+    s3_bucket: str
+        The bucket that is used for s3 images
     monitor_id
     cache_funcs
     organization_id
@@ -350,7 +353,8 @@ async def run_check_per_window_in_range(
                                                                     model_versions,
                                                                     model,
                                                                     dp_check,
-                                                                    monitor_options.additional_kwargs)
+                                                                    monitor_options.additional_kwargs,
+                                                                    s3_bucket)
 
     # Reduce the check results
     reduce_results = defaultdict(list)
@@ -384,9 +388,10 @@ async def run_check_window(
         session: AsyncSession,
         model: Model,
         model_versions: t.List[ModelVersion],
+        s3_bucket: t.Optional[str] = None,
         reference_only: bool = False,
         n_samples: int = 10_000,
-        with_display: bool = False
+        with_display: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.Dict]]:
     """Run a check for each time window by lookback or for reference only.
 
@@ -402,6 +407,8 @@ async def run_check_window(
         The model to run the check on.
     model_versions : List[ModelVersion]
         The model versions to run the check on.
+    s3_bucket: str, optional
+        The bucket that is used for s3 images
     reference_only : bool, optional
         Whether to run the check on reference data only.
     n_samples : int, optional
@@ -453,13 +460,16 @@ async def run_check_window(
                                                                                    model,
                                                                                    dp_check,
                                                                                    monitor_options.additional_kwargs,
+                                                                                   s3_bucket,
                                                                                    with_display)
     else:
         model_results_per_window = await get_results_for_model_versions_for_reference(model_version_dataframes,
                                                                                       model_versions,
                                                                                       model,
                                                                                       dp_check,
-                                                                                      monitor_options.additional_kwargs)
+                                                                                      monitor_options.additional_kwargs,
+                                                                                      s3_bucket,
+                                                                                      with_display)
 
     model_results = {}
     for model_version, results_per_window in model_results_per_window.items():

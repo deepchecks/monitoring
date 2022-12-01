@@ -16,7 +16,7 @@ from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, Text
 from deepchecks_monitoring.schema_models.model import TaskType
 
 __all__ = ["SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_PROBA_COL", "SAMPLE_PRED_COL",
-           "ColumnType", "get_model_columns_by_type", "column_types_to_table_columns"]
+           "SAMPLE_S3_IMAGE_COL", "ColumnType", "get_model_columns_by_type", "column_types_to_table_columns"]
 
 
 SAMPLE_ID_COL = "_dc_sample_id"
@@ -24,6 +24,7 @@ SAMPLE_TS_COL = "_dc_time"
 SAMPLE_LABEL_COL = "_dc_label"
 SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
 SAMPLE_PRED_COL = "_dc_prediction"
+SAMPLE_S3_IMAGE_COL = "_dc_s3_image"
 
 
 class ColumnType(str, enum.Enum):
@@ -109,24 +110,26 @@ def get_model_columns_by_type(task_type: TaskType, have_classes: bool) -> t.Tupl
     elif task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
         if have_classes:
             return {
-               SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
-               SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
-               SAMPLE_PRED_PROBA_COL: ColumnType.ARRAY_FLOAT
+                SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
+                SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
+                SAMPLE_PRED_PROBA_COL: ColumnType.ARRAY_FLOAT
             }, [SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL]
         else:
             return {
-               SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
-               SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
+                SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
+                SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
             }, [SAMPLE_PRED_COL]
     elif task_type == TaskType.VISION_CLASSIFICATION:
         return {
             SAMPLE_LABEL_COL: ColumnType.INTEGER,
-            SAMPLE_PRED_COL: ColumnType.ARRAY_FLOAT
+            SAMPLE_PRED_COL: ColumnType.ARRAY_FLOAT,
+            SAMPLE_S3_IMAGE_COL: ColumnType.TEXT,
         }, [SAMPLE_PRED_COL]
     elif task_type == TaskType.VISION_DETECTION:
         return {
             SAMPLE_LABEL_COL: ColumnType.ARRAY_FLOAT_2D,
-            SAMPLE_PRED_COL: ColumnType.ARRAY_FLOAT_2D
+            SAMPLE_PRED_COL: ColumnType.ARRAY_FLOAT_2D,
+            SAMPLE_S3_IMAGE_COL: ColumnType.TEXT,
         }, [SAMPLE_PRED_COL]
     else:
         raise Exception(f"Not supported task type {task_type}")

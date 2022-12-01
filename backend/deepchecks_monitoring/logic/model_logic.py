@@ -35,7 +35,7 @@ from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_PRED_PROBA_COL, ColumnType)
+                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_S3_IMAGE_COL, ColumnType)
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -101,9 +101,16 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version
     return dataset, y_pred, y_proba
 
 
+def _batch_collate(batch):
+    imgs, labels = zip(*batch)
+    return list(imgs), list(labels)
+
+
 def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None],
                                         task_type: TaskType,
-                                        model_version: ModelVersion) \
+                                        model_version: ModelVersion,
+                                        s3_bucket: str,
+                                        use_images: bool = False) \
         -> t.Tuple[VisionData, t.Dict[int, torch.Tensor], t.Dict[int, t.Any]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None or len(df) == 0:
@@ -119,6 +126,12 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None],
     preds = df[SAMPLE_PRED_COL].apply(torch.Tensor).to_dict()
     df.drop(SAMPLE_PRED_COL, inplace=True, axis=1)
 
+    s3_images = None
+    if SAMPLE_S3_IMAGE_COL in df.columns:
+        if use_images and not df[SAMPLE_S3_IMAGE_COL].isna().any():
+            s3_images = df[SAMPLE_S3_IMAGE_COL].to_list()
+        df.drop(SAMPLE_S3_IMAGE_COL, inplace=True, axis=1)
+
     if df.empty:
         static_props = None
     else:
@@ -131,12 +144,12 @@ def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None],
                     static_props[ind][prop_type] = {prop_name: item}
                 else:
                     static_props[ind][prop_type][prop_name] = item
-    data_loader = DataLoader(LabelVisionDataset(labels), batch_size=len(labels), collate_fn=list)
+    data_loader = DataLoader(LabelVisionDataset(labels, s3_images), batch_size=30, collate_fn=_batch_collate)
 
     # We need to convert the label map to be {int: str} because in the db we must have the keys as strings
     label_map = {int(key): val for key, val in model_version.label_map.items()} if model_version.label_map else None
 
-    return (TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader, label_map=label_map),
+    return (TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader, s3_bucket=s3_bucket, label_map=label_map),
             preds, static_props)
 
 
@@ -164,7 +177,9 @@ async def get_results_for_model_versions_per_window(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
-        with_display: bool = False
+        s3_bucket: str,
+        with_display: bool = False,
+        use_images: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
@@ -186,7 +201,7 @@ async def get_results_for_model_versions_per_window(
                 reference_table_dataframe, model_version, top_feat)
         else:
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_dataframe, task_type, model_version)
+                reference_table_dataframe, task_type, model_version, s3_bucket, use_images=use_images)
 
         for curr_test_info in test_infos:
             current_data = curr_test_info['data']
@@ -206,7 +221,9 @@ async def get_results_for_model_versions_per_window(
                 else:
                     test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(current_data,
                                                                                          task_type,
-                                                                                         model_version)
+                                                                                         model_version,
+                                                                                         s3_bucket,
+                                                                                         use_images=use_images)
                 try:
                     if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                         curr_result = dp_check.run(
@@ -252,6 +269,8 @@ async def get_results_for_model_versions_for_reference(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
+        s3_bucket: str,
+        use_images: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions for reference."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
@@ -272,7 +291,7 @@ async def get_results_for_model_versions_for_reference(
                 reference_table_dataframe, model_version, top_feat)
         else:
             reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_dataframe, task_type, model_version)
+                reference_table_dataframe, task_type, model_version, s3_bucket, use_images=use_images)
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,

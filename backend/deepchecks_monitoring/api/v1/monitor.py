@@ -23,7 +23,7 @@ from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, S3BucketDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
@@ -179,6 +179,7 @@ async def run_monitor_lookback(
     body: MonitorRunSchema,
     session: AsyncSession = AsyncSessionDep,
     cache_funcs: CacheFunctions = CacheFunctionsDep,
+    s3_bucket: str = S3BucketDep,
     user: User = Depends(CurrentActiveUser())
 ):
     """Run a monitor for each time window by lookback.
@@ -191,6 +192,8 @@ async def run_monitor_lookback(
     session : AsyncSession, optional
         SQLAlchemy session.
     cache_funcs
+    s3_bucket: str
+        The bucket that is used for s3 images
     user
 
     Returns
@@ -214,6 +217,7 @@ async def run_monitor_lookback(
         monitor.check_id,
         session,
         options,
+        s3_bucket,
         monitor_id=monitor_id,
         cache_funcs=cache_funcs,
         organization_id=user.organization_id

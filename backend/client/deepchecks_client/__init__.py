@@ -227,10 +227,11 @@ class DeepchecksClient:
         reference_predictions: t.Optional[t.Union[t.Dict[int, 'ARRAY'], t.List['ARRAY']]] = None,
         task_type: t.Union[str, TaskType, None] = None,
         additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
-        samples_per_request: int = 5000,
+        samples_per_request: int = 32,
         label_map: t.Optional[t.Dict[int, str]] = None,
         additional_data: t.Optional[t.Dict[int, t.Dict[str, t.Any]]] = None,
         additional_data_schema: t.Optional[t.Dict[str, ColumnTypeName]] = None,
+        send_images: bool = True,
     ):
         """
         Create a vision model version and upload the reference data if provided.
@@ -260,7 +261,7 @@ class DeepchecksClient:
             Should be in format:
                 [{'name': <str>, 'method': <callable>, 'output_type': <'continuous'/'discrete'/'class_id'>}]
             See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
-        samples_per_request: int , default 5000
+        samples_per_request: int , default 32
             data to the server is sent by batches,
             this parameter controls batch size
         label_map : Dict[int, str], optional
@@ -273,6 +274,8 @@ class DeepchecksClient:
         additional_data_schema: Dict[str, ColumnTypeName], optional
             Schema for the additional data to add - in a format of {<name>: <ColumnData.value>}.
             If not given it will be auto inferred if the additional_data is give.
+        send_images : bool , default True
+            If to send images to the server
 
         Returns
         -------
@@ -305,7 +308,8 @@ class DeepchecksClient:
 
         model_client: DeepchecksVisionModelClient = self.get_or_create_model(model_name, task_type, description)
         version_client = model_client.version(version_name, additional_image_properties,
-                                              label_map=label_map, additional_data_schema=additional_data_schema)
+                                              label_map=label_map, additional_data_schema=additional_data_schema,
+                                              send_images=send_images)
 
         version_client.upload_reference(
             vision_data=reference_dataset,

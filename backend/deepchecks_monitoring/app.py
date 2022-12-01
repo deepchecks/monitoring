@@ -87,7 +87,8 @@ def create_application(
 
     app.state.settings = settings
     app.state.resources_provider = resources_provider or ResourcesProvider(settings, CacheFunctions)
-    app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider)
+    app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider,
+                                                            settings.get_deepchecks_bucket())
     app.state.feature_flags = {}
     app.add_middleware(
         CORSMiddleware,
