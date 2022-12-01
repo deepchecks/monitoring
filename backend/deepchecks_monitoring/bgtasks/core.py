@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=redefined-outer-name
+#  pylint: disable=redefined-outer-name,consider-using-f-string
 """Contains Task ORM model and the 'Worker' implementation."""
 import asyncio
 import contextlib
@@ -54,6 +54,15 @@ class TaskStatus(enum.Enum):
     FAILED = "failed"
     EXPIRED = "expired"
     CANCELED = "canceled"
+
+    @classmethod
+    def finished_status_types(cls):
+        return [
+            cls.FAILED,
+            cls.COMPLETED,
+            cls.CANCELED,
+            cls.EXPIRED
+        ]
 
 
 class Task(Base):
@@ -114,6 +123,30 @@ FOR EACH ROW EXECUTE PROCEDURE new_task_notification();
 """)
 
 
+PGOldTasksDeletionFunc = sa.DDL("""
+CREATE OR REPLACE FUNCTION delete_old_tasks() RETURNS TRIGGER AS $$
+BEGIN
+    EXECUTE
+        'DELETE FROM ' || quote_ident(TG_TABLE_SCHEMA) || '.tasks '
+        || 'WHERE finished_at < ($2) '
+        || 'AND status = ANY($1::' || quote_ident(TG_TABLE_SCHEMA) || '.taskstatus[])'
+    USING array[{finished_statuses}], NOW() - INTERVAL '2 weeks';
+    RETURN NULL;
+END; $$ LANGUAGE PLPGSQL
+""".format(
+    finished_statuses=",".join(
+        f"'{it.value}'"
+        for it in TaskStatus.finished_status_types()
+    )
+))
+
+
+PGOldTasksDeletionTrigger = sa.DDL("""
+CREATE OR REPLACE TRIGGER old_tasks_deletion AFTER INSERT ON tasks
+FOR EACH STATEMENT EXECUTE PROCEDURE delete_old_tasks();
+""")
+
+
 event.listen(
     Task.__table__,
     "after_create",
@@ -125,6 +158,20 @@ event.listen(
     Task.__table__,
     "after_create",
     PGTaskNotificationTrigger.execute_if(dialect="postgresql")
+)
+
+
+event.listen(
+    Task.__table__,
+    "after_create",
+    PGOldTasksDeletionFunc.execute_if(dialect="postgresql")
+)
+
+
+event.listen(
+    Task.__table__,
+    "after_create",
+    PGOldTasksDeletionTrigger.execute_if(dialect="postgresql")
 )
 
 
