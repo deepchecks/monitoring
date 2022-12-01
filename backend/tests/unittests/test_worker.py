@@ -25,7 +25,7 @@ from deepchecks_monitoring.bgtasks.core import (Actor, ExecutionStrategy, Notifi
 from deepchecks_monitoring.public_models import User
 
 
-def generate_actor(*, fn=None, bind=None, execution_strategy=ExecutionStrategy.ATOMIC):
+def generate_actor(*, fn=None, bind=None, execution_strategy=ExecutionStrategy.NOT_ATOMIC):
     async def default_fn(**kwargs):
         print("Hello world")
     a = Actor(
@@ -73,12 +73,9 @@ async def fetch_tasks(
     return tasks
 
 
-@pytest.mark.parametrize(
-    "execution_strategy",
-    [ExecutionStrategy.ATOMIC, ExecutionStrategy.NOT_ATOMIC]
-)
 class TestTasksEnqueueing:
 
+    @pytest.mark.parametrize("execution_strategy", [ExecutionStrategy.ATOMIC, ExecutionStrategy.NOT_ATOMIC])
     @pytest.mark.asyncio
     async def test_with_engine(
         self,
@@ -98,6 +95,7 @@ class TestTasksEnqueueing:
         assert isinstance(task_id, int)
         assert len(await fetch_tasks(engine, [task_id], actor=actor, params=args)) > 0
 
+    @pytest.mark.parametrize("execution_strategy", [ExecutionStrategy.ATOMIC, ExecutionStrategy.NOT_ATOMIC])
     @pytest.mark.asyncio
     async def test_with_orm_session(self, async_session: AsyncSession, execution_strategy: ExecutionStrategy):
         actor = generate_actor(bind=async_session, execution_strategy=execution_strategy)
@@ -107,6 +105,7 @@ class TestTasksEnqueueing:
         assert isinstance(task_id, int)
         assert len(await fetch_tasks(async_session, [task_id], actor=actor, params=args)) > 0
 
+    @pytest.mark.parametrize("execution_strategy", [ExecutionStrategy.ATOMIC, ExecutionStrategy.NOT_ATOMIC])
     @pytest.mark.asyncio
     async def test_with_connection(
         self,
@@ -122,6 +121,45 @@ class TestTasksEnqueueing:
             await c.commit()
             assert isinstance(task_id, int)
             assert len(await fetch_tasks(c, [task_id], actor=actor, params=args))
+
+    @pytest.mark.asyncio
+    async def test_that_system_parameters_are_not_requiered_during_task_enqueue(
+        self,
+        async_engine: AsyncEngine,
+        user: User
+    ):
+        async def fn(session: AsyncSession, engine: AsyncEngine, **kwargs):
+            raise RuntimeError("Hello world")
+        async with async_engine.connect() as c:
+            await c.execution_options(schema_translate_map={None: user.organization.schema_name})
+            actor = generate_actor(bind=c, execution_strategy=ExecutionStrategy.NOT_ATOMIC, fn=fn)
+            args = {"foo": 1, "bar": 2}
+            task_id = await actor.enqueue(**args)
+            assert isinstance(task_id, int)
+
+    @pytest.mark.asyncio
+    async def test_that_presence_of_actor_parameters_is_checked_during_enqueue(
+        self,
+        async_engine: AsyncEngine,
+        user: User
+    ):
+        async def fn(
+            foo: int,
+            bar: float,
+            session: AsyncSession,
+            engine: AsyncEngine,
+            **kwargs
+        ):
+            raise RuntimeError("Hello world")
+
+        actor = generate_actor(execution_strategy=ExecutionStrategy.NOT_ATOMIC, fn=fn)
+        args = {"foo": 1}
+
+        with pytest.raises(
+            TypeError,
+            match=r"missing a required argument: 'bar'"
+        ):
+            await actor.enqueue(**args)
 
 
 @pytest.mark.parametrize(
@@ -167,6 +205,44 @@ class TestWorker:
             raise RuntimeError("Hello world")
 
         organization_engine = async_engine.execution_options(schema_translate_map={None: user.organization.schema_name})
+
+        actor = generate_actor(bind=organization_engine, fn=fn, execution_strategy=execution_strategy)
+        tasks_ids = [await actor.enqueue() for _ in range(3)]
+        worker = Worker.create(engine=organization_engine, actors=[actor], notification_wait_timeout=1)
+
+        async with worker.create_database_session() as session:
+            # TODO:
+            # do not fetch all tasks at once
+            # explain why
+            for task_id in tasks_ids:
+                task, *_ = await fetch_tasks(session, [task_id], actor=actor)
+                await worker.execute_task(session, task)
+
+        for task in (await fetch_tasks(organization_engine, tasks_ids)):
+            assert task is not None
+            assert task.status == TaskStatus.FAILED
+            assert task.error is not None
+            assert task.traceback is not None
+
+    @pytest.mark.asyncio
+    async def test_with_actor_that_invailidates_database_session(
+        self,
+        async_engine: AsyncEngine,
+        execution_strategy: ExecutionStrategy,
+        user: User
+    ):
+        """
+        Verify that an actor that causes database session invalidation
+        by issueing an incorrect SQL statement does not cause worker failure.
+
+        See related issue:
+        - https://github.com/deepchecks/mon/issues/808
+        """
+        async def fn(session: AsyncSession, **kwargs):
+            await session.execute(sa.text("SELECT 2/0"))
+
+        schema_translate_map = {None: user.organization.schema_name}
+        organization_engine = async_engine.execution_options(schema_translate_map=schema_translate_map)
 
         actor = generate_actor(bind=organization_engine, fn=fn, execution_strategy=execution_strategy)
         tasks_ids = [await actor.enqueue() for _ in range(3)]

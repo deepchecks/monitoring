@@ -197,12 +197,15 @@ class Actor(t.Generic[P, R]):
         self._fn_signature: inspect.Signature = inspect.signature(self.fn)
 
         has_kwargs = False
+        actor_params = []
 
-        for parameter in self._fn_signature.parameters.values():
+        for parameter_name, parameter in self._fn_signature.parameters.items():
             if parameter.kind in {inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.VAR_POSITIONAL}:
                 raise TypeError("Positional-only and variadic-positional parameters are not allowed")
             if parameter.kind == inspect.Parameter.VAR_KEYWORD:
                 has_kwargs = True
+            if parameter_name not in _TaskParams.SYSTEM_PARAMETERS_NAMES:
+                actor_params.append(parameter)
 
         if not has_kwargs:
             raise TypeError(
@@ -211,6 +214,8 @@ class Actor(t.Generic[P, R]):
                 "and in order to prevent 'TypeError' because of 'unknown' parameters "
                 "actors functions must include '**kwargs'"
             )
+
+        self._actor_signature = inspect.Signature(parameters=actor_params)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:
         """Execute 'fn' localy."""
@@ -242,7 +247,7 @@ class Actor(t.Generic[P, R]):
         """
         # verifying whether user passed all required parameters
         # will raise a TypeError if not
-        self._fn_signature.bind(**params)
+        self._actor_signature.bind(**params)
 
         stm = (
             sa.insert(Task).values(
@@ -762,7 +767,8 @@ class Worker:
             task instance that was pulled out from the 'queue'
             for processing
         """
-        self.logger.info(f"Executing task: {repr(task)}")
+        task_info = repr(task)
+        self.logger.info(f"Executing task: {task_info}")
 
         await session.commit()
         await session.refresh(task)
@@ -771,7 +777,7 @@ class Worker:
         try:
             await actor(**args)
         except anyio.get_cancelled_exc_class() as error:
-            self.logger.exception(f"Task execution canceled: {repr(task)}")
+            self.logger.exception(f"Task execution canceled: {task_info}")
             with anyio.CancelScope(shield=True):
                 await session.rollback()
                 await session.refresh(task)
@@ -784,10 +790,10 @@ class Worker:
             raise
         except (PostgresConnectionError, DisconnectionError, AlchemyTimeoutError):
             # TODO: try re-establish connection in order to update task
-            self.logger.exception(f"Task failed because of database connection error: {repr(task)}")
+            self.logger.exception(f"Task failed because of database connection error: {task_info}")
             raise
         except Exception as error:  # pylint: disable=broad-except
-            self.logger.exception(f"Task failed: {repr(task)}")
+            self.logger.exception(f"Task failed: {task_info}")
             with anyio.CancelScope(shield=True):
                 await session.rollback()
                 await session.refresh(task)
@@ -798,7 +804,7 @@ class Worker:
                 await session.flush()
                 await session.commit()
         except BaseException as error:  # pylint: disable=broad-except
-            self.logger.exception(f"Task interupted: {repr(task)}")
+            self.logger.exception(f"Task interupted: {task_info}")
             with anyio.CancelScope(shield=True):
                 await session.rollback()
                 await session.refresh(task)
@@ -810,7 +816,7 @@ class Worker:
                 await session.commit()
             raise
         else:
-            self.logger.info(f"Task successed: {repr(task)}")
+            self.logger.info(f"Task successed: {task_info}")
             with anyio.CancelScope(shield=True):
                 if sa.inspect(task).expired is True:
                     await session.refresh(task)
@@ -865,19 +871,20 @@ class Worker:
             task instance that was pulled out from the 'queue'
             for processing
         """
-        self.logger.info(f"Executing task: {repr(task)}")
+        task_info = repr(task)
+        self.logger.info(f"Executing task: {task_info}")
         args = self.prepare_task_params(session, actor, task)
         try:
             async with session.begin_nested():
                 await actor(**args)
         except anyio.get_cancelled_exc_class():
-            self.logger.exception(f"Task canceled: {repr(task)}")
+            self.logger.exception(f"Task canceled: {task_info}")
             raise
         except (PostgresConnectionError, DisconnectionError, AlchemyTimeoutError):
-            self.logger.exception(f"Task failed because of database connection error: {repr(task)}")
+            self.logger.exception(f"Task failed because of database connection error: {task_info}")
             raise
         except Exception as error:  # pylint: disable=broad-except
-            self.logger.exception(f"Task failed: {repr(task)}")
+            self.logger.exception(f"Task failed: {task_info}")
             task.status = TaskStatus.FAILED
             task.finished_at = datetime.now(timezone.utc)
             task.error = str(error)
@@ -885,7 +892,7 @@ class Worker:
             await session.flush()
             await session.commit()
         else:
-            self.logger.info(f"Task successed: {repr(task)}")
+            self.logger.info(f"Task successed: {task_info}")
             task.status = TaskStatus.COMPLETED
             task.finished_at = datetime.now(timezone.utc)
             await session.flush()
@@ -906,15 +913,42 @@ class Worker:
             )
             task_params = {}
 
-        return {
-            "task": task,
-            "session": session,
-            "actor": actor,
-            "engine": self.engine,
-            "logger": self.logger.getChild(f"{actor.queue_name}/{actor.name}"),
+        return _TaskParams(
+            task=task,
+            session=session,
+            actor=actor,
+            engine=self.engine,
+            logger=self.logger.getChild(f"{actor.queue_name}/{actor.name}"),
             **self.additional_params,
             **task_params
-        }
+        )
+
+
+class _TaskParams(dict):
+    """Utility class."""
+
+    def __init__(
+        self,
+        task: "Task",
+        session: "AsyncSession",
+        actor: "Actor",
+        engine: "AsyncEngine",
+        logger: "logging.Logger",
+        **other
+    ):
+        super().__init__()
+        self["task"] = task
+        self["session"] = session
+        self["actor"] = actor
+        self["engine"] = engine
+        self["logger"] = logger
+        self.update(other)
+
+    SYSTEM_PARAMETERS_NAMES = tuple(
+        k
+        for k in inspect.signature(__init__).parameters.keys()
+        if k not in {"self", "other", "args", "kwargs"}
+    )
 
 
 def read_traceback() -> str:
