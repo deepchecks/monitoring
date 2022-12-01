@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
+from hamcrest import assert_that, calling, raises
+
 from deepchecks_client import DeepchecksClient
 from deepchecks_client.tabular.utils import create_schema, describe_dataset, read_schema
 from httpx import HTTPError
@@ -61,6 +63,20 @@ def test_get_model_version_with_features(
         schema_dict
     )
     assert model_version_client.model_version_id == classification_model_version_id
+
+
+def test_get_model_version_with_wrong_features(
+        classification_model_id,
+        classification_model_version_id,  # pylint: disable=unused-argument
+        deepchecks_sdk_client: DeepchecksClient
+):
+    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
+                                                             task_type=TaskType.MULTICLASS.value)
+    schema_dict = {"features": {"a": "numeric", "not-exist": "categorical"},
+                   "additional_data": {"c": "numeric"}}
+    assert model_client.model["id"] == classification_model_id
+    assert_that(calling(model_client.version).with_args("v1", schema_dict),
+                raises(ValueError))
 
 
 def test_add_model_version(

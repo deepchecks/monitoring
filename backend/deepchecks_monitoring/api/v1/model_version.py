@@ -400,6 +400,7 @@ async def get_schema(
         'additional_data': model_version.additional_data_columns,
         'classes': model_version.classes,
         'label_map': model_version.label_map,
+        'feature_importance': model_version.feature_importance
     }
     return result
 

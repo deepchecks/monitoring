@@ -393,10 +393,14 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
-
         existing_version_id = self._get_existing_version_id_or_none(version_name=name)
         if existing_version_id is not None:
-            return self._version_client(existing_version_id)
+            version_client = self._version_client(existing_version_id)
+            features = schema['features'] if schema else None
+            additional_data = schema['additional_data'] if schema else None
+            version_client.validate(features=features, additional_data=additional_data,
+                                    feature_importance=feature_importance, model_classes=model_classes)
+            return version_client
         elif schema is None:
             raise ValueError('schema must be provided when creating a new version')
 

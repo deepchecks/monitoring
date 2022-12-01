@@ -344,4 +344,5 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
         },
         "classes": ["0", "1", "2"],
         "label_map": None,
+        "feature_importance": {"a": 0.1, "b": 0.5}
     }

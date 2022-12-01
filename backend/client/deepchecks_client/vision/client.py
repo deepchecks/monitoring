@@ -456,12 +456,6 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
-        existing_version_id = self._get_existing_version_id_or_none(version_name=name)
-
-        if existing_version_id is not None:
-            return self._version_client(existing_version_id, additional_image_properties=additional_image_properties,
-                                        send_images=send_images)
-
         if additional_image_properties is not None:
             DeepchecksJsonValidator(properties_schema).validate(additional_image_properties)
 
@@ -478,6 +472,14 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                 features[PropertiesInputType.PARTIAL_IMAGES.value + ' ' + prop_name] = ColumnType.ARRAY_FLOAT.value
 
         validate_additional_data_schema(additional_data_schema, features)
+
+        existing_version_id = self._get_existing_version_id_or_none(version_name=name)
+        if existing_version_id is not None:
+            version_client = self._version_client(existing_version_id,
+                                                  additional_image_properties=additional_image_properties,
+                                                  send_images=send_images)
+            version_client.validate(features=features, label_map=label_map, additional_data=additional_data_schema)
+            return version_client
 
         created_version = self.api.create_model_version(
             model_id=self.model['id'],

@@ -283,15 +283,6 @@ class DeepchecksClient:
         """
         from deepchecks_client.vision.client import DeepchecksModelClient as DeepchecksVisionModelClient
         from deepchecks_client.vision.utils import infer_additional_data_schema
-        try:
-            self.get_model_version(model_name=model_name, version_name=version_name)
-            raise DeepchecksValueError(
-                f'Model {model_name} already has a version named {version_name}. '
-                'Use get_model_version to retrieve it or create a new version '
-                'with a different name.'
-            )
-        except ValueError:
-            pass
 
         if task_type is not None:
             task_type = TaskType.convert(task_type)
@@ -374,16 +365,6 @@ class DeepchecksClient:
         deepchecks_client.tabular.client.DeepchecksModelVersionClient
             Return the created model version client.
         """
-        try:
-            self.get_model_version(model_name=model_name, version_name=version_name)
-            raise DeepchecksValueError(
-                f'Model {model_name} already has a version named {version_name}. '
-                'Use get_model_version to retrieve it or create a new version '
-                'with a different name.'
-            )
-        except ValueError:
-            pass
-
         schema = read_schema(schema, fail_on_invalid_column=True)
         features_dict = schema['features']
 

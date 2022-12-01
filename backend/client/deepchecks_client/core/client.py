@@ -63,14 +63,15 @@ class DeepchecksModelVersionClient:
         self.schema = schemas['monitor_schema']
         self.ref_schema = schemas['reference_schema']
         self.model_classes = schemas['classes']
+        self.features = schemas['features']
+        self.additional_data = schemas['additional_data']
+        self.feature_importance = schemas['feature_importance']
+        self.label_map = schemas['label_map']
+        self.all_columns = {**self.features, **self.additional_data}
 
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
 
-        self.all_columns = {
-            **schemas['features'],
-            **schemas['additional_data']
-        }
         self.categorical_columns = [
             feat
             for feat, value in self.all_columns.items()
@@ -174,6 +175,25 @@ class DeepchecksModelVersionClient:
                 end_time.isoformat()
             )
         )
+
+    def validate(self, features=None, additional_data=None, feature_importance=None, model_classes=None,
+                 label_map=None):
+        """Used in create version when the version already exists to verify it's matching the user passed properties."""
+        if features:
+            if self.features != features:
+                raise ValueError('Existing model version does not match received features columns')
+        if additional_data:
+            if self.additional_data != additional_data:
+                raise ValueError('Existing model version does not match received additional data columns')
+        if feature_importance:
+            if self.feature_importance != feature_importance:
+                raise ValueError('Existing model version does not match received feature importance')
+        if model_classes:
+            if self.model_classes != model_classes:
+                raise ValueError('Existing model version does not match received model classes')
+        if label_map:
+            if self.label_map != label_map:
+                raise ValueError('Existing model version does not match received label_map')
 
 
 class DeepchecksModelClient:
