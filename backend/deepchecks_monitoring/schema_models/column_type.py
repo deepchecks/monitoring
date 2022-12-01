@@ -113,7 +113,7 @@ def get_model_columns_by_type(task_type: TaskType, have_classes: bool) -> t.Tupl
                 SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
                 SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
                 SAMPLE_PRED_PROBA_COL: ColumnType.ARRAY_FLOAT
-            }, [SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL]
+            }, [SAMPLE_PRED_COL]
         else:
             return {
                 SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,

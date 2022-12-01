@@ -270,7 +270,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
     assert response.json() == {
         "monitor_schema": {
             "type": "object",
-            "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction", "_dc_prediction_probabilities"],
+            "required": ["a", "b", "_dc_sample_id", "_dc_time", "_dc_prediction"],
             "properties": {
                 "a": {
                     "type": ["number", "null"]
@@ -295,7 +295,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
                     "type": "string"
                 },
                 "_dc_prediction_probabilities": {
-                    "type": "array",
+                    "type": ["array", "null"],
                     "items": {
                         "type": "number"
                     },
@@ -307,7 +307,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
         },
         "reference_schema": {
             "type": "object",
-            "required": ["a", "b", "_dc_prediction", "_dc_prediction_probabilities"],
+            "required": ["a", "b", "_dc_prediction"],
             "properties": {
                 "a": {
                     "type": ["number", "null"]
@@ -325,7 +325,7 @@ async def test_get_schema(client: TestClient, classification_model_version_id: i
                     "type": "string"
                 },
                 "_dc_prediction_probabilities": {
-                    "type": "array",
+                    "type": ["array", "null"],
                     "items": {
                         "type": "number"
                     },
