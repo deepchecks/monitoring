@@ -17,14 +17,16 @@ async def generate_user(
     session: AsyncSession,
     auth_jwt_secret: str = "qwert",
     with_org: bool = True,
-    switch_schema: bool = False
+    switch_schema: bool = False,
+    eula: bool = True
 ) -> User:
     f = faker.Faker()
 
     u = await User.from_oauth_info(
         info=UserOAuthDTO(email=f.email(), name=f.name()),
         session=session,
-        auth_jwt_secret=auth_jwt_secret
+        auth_jwt_secret=auth_jwt_secret,
+        eula=eula
     )
 
     session.add(u)

@@ -57,6 +57,13 @@ class User(Base):
     last_login = sa.Column(sa.DateTime(timezone=True), nullable=True, onupdate=sa.func.now())
     created_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
 
+    eula = sa.Column(  # End-User License Agreement
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.text("FALSE")
+    )
+
     # TODO:
     # user should have a ability to open multiple sessions
     # the access token must not be stored here
@@ -78,7 +85,8 @@ class User(Base):
         cls: t.Type[Self],
         info: UserOAuthDTO,
         session: AsyncSession,
-        auth_jwt_secret: str
+        auth_jwt_secret: str,
+        eula: bool = True,
     ) -> Self:
         """Create or get user instance from ouath info."""
         token_data = auth.UserAccessToken(email=info.email, is_admin=True)
@@ -92,6 +100,7 @@ class User(Base):
             full_name=info.name,
             picture_url=info.picture,
             access_token=access_token,
+            eula=eula,
         ).on_conflict_do_update(constraint="email_uniqueness", set_={
             "access_token": access_token,
             "last_login": datetime.now()

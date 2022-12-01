@@ -16,6 +16,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 __all__ = [
+    'UnacceptedEULA',
     'BaseHTTPException',
     'BadRequest',
     'NotFound',
@@ -28,6 +29,14 @@ __all__ = [
     'InvalidConfigurationException',
     'Unauthorized'
 ]
+
+
+class UnacceptedEULA(Exception):
+    """Exception which indicates that user did not accept EULA."""
+
+    def __init__(self, message: str = 'User did not accept EULA'):
+        super().__init__(message)
+        self.message = message
 
 
 class BaseHTTPException(abc.ABC, HTTPException):

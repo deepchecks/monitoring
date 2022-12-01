@@ -21,7 +21,8 @@ from starlette.status import HTTP_403_FORBIDDEN
 
 from deepchecks_monitoring import public_models as models
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest, InvalidConfigurationException, Unauthorized
+from deepchecks_monitoring.exceptions import (AccessForbidden, BadRequest, InvalidConfigurationException,
+                                              UnacceptedEULA, Unauthorized)
 from deepchecks_monitoring.utils import database
 
 __all__ = ["CurrentUser", "CurrentActiveUser", "AdminUser"]
@@ -43,40 +44,46 @@ class APIAccessToken(BaseModel):
 AccessToken = t.Type[t.Union[UserAccessToken, APIAccessToken]]
 
 
-async def get_user(request: Request,
-                   token: AccessToken,
-                   session: AsyncSession):
-    if not hasattr(request.state, "user"):
-        if token is None:
-            return
-        if isinstance(token, UserAccessToken):
-            # If we have token query the user.
-            return (await session.scalar(
-                select(models.User)
-                .where(models.User.email == token.email)
-                .options(joinedload(models.User.organization))
-            ))
-        elif isinstance(token, APIAccessToken):
-            # If we have api token query the user and validate the secret
-            if len(token.api_token.split(".")) != 2:
-                raise Unauthorized("Received incorrect/old secret")
-            base64email, api_secret = token.api_token.split(".")
-            try:
-                user_email = base64.b64decode(base64email).decode()
-                user = (await session.scalar(
-                    select(models.User)
-                    .where(models.User.email == user_email)
-                    .options(joinedload(models.User.organization))
-                ))
-            # to catch incorrect base64 errors
-            except (binascii.Error, UnicodeDecodeError) as exc:
-                raise Unauthorized("Received invalid secret - incorrect base64 email") from exc
-            # Validate user password
-            if not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode()):
-                raise Unauthorized("Received invalid secret")
-            return user
-    else:
+async def get_user(
+    request: Request,
+    token: AccessToken,
+    session: AsyncSession
+):
+    if hasattr(request.state, "user"):
         return request.state.user
+    if token is None:
+        return
+
+    if isinstance(token, UserAccessToken):
+        return (await session.scalar(
+            select(models.User)
+            .where(models.User.email == token.email)
+            .options(joinedload(models.User.organization))
+        ))
+
+    if isinstance(token, APIAccessToken):
+        # If we have api token query the user and validate the secret
+        if len(token.api_token.split(".")) != 2:
+            raise Unauthorized("Received incorrect/old secret")
+
+        base64email, api_secret = token.api_token.split(".")
+
+        try:
+            user_email = base64.b64decode(base64email).decode()
+        except (binascii.Error, UnicodeDecodeError) as exc:
+            raise Unauthorized("Received invalid secret - incorrect base64 email") from exc
+
+        user = (await session.scalar(
+            select(models.User)
+            .where(models.User.email == user_email)
+            .options(joinedload(models.User.organization))
+        ))
+
+        # Validate user password
+        if not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode()):
+            raise Unauthorized("Received invalid secret")
+
+        return user
 
 
 def create_access_token(
@@ -231,10 +238,7 @@ class CurrentUser:
         >> ):
     """
 
-    def __init__(
-        self,
-        enforce: bool = True,
-    ):
+    def __init__(self, enforce: bool = True):
         self.enforce = enforce
 
     async def __call__(
@@ -254,14 +258,18 @@ class CurrentUser:
         session : AsyncSession
             SQLAlchemy session.
         """
-        request.state.user = await get_user(request, token, session)
-        if request.state.user is None:
+        user = request.state.user = t.cast(
+            "models.User",
+            await get_user(request, token, session)
+        )
+        if user is None:
             if self.enforce:
                 raise Unauthorized("expired or invalid access token")
-            else:
-                return
-
-        return request.state.user
+            return
+        else:
+            if request.url != request.url_for("eula-acceptance") and user.eula is False:
+                raise UnacceptedEULA()
+            return request.state.user
 
 
 class CurrentActiveUser(CurrentUser):

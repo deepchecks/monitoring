@@ -28,6 +28,7 @@ from starlette.responses import FileResponse
 from deepchecks_monitoring.api.v1 import global_router as v1_global_router
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
+from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
@@ -99,8 +100,8 @@ def create_application(
         expose_headers=["x-substatus"],
     )
 
-    app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())] or [])
-    app.include_router(v1_global_router, dependencies=[])
+    app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
+    app.include_router(v1_global_router)
 
     if settings.debug_mode:
         app.add_middleware(ProfilingMiddleware)
@@ -110,6 +111,16 @@ def create_application(
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": exc.message},
+        )
+
+    @app.exception_handler(UnacceptedEULA)
+    async def eula_exception_handler(*args, **kwargs):  # pylint: disable=unused-argument
+        return JSONResponse(
+            status_code=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
+            content={
+                "message": "User must accept Deeppchecks End-User License Agreement to continue",
+                "kind": "unaccepted-eula"
+            }
         )
 
     @app.exception_handler(RequestValidationError)

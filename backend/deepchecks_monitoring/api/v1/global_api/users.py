@@ -178,11 +178,28 @@ async def retrieve_user_info(user: User = Depends(auth.CurrentUser())) -> UserSc
     tags=["users"],
     description="Regenerate user token"
 )
-async def regenerate_api_token(user: User = Depends(auth.CurrentUser()),
-                               session: AsyncSession = AsyncSessionDep) -> UserSchema:
+async def regenerate_api_token(
+    user: User = Depends(auth.CurrentUser()),  # TODO: why not CurrentActiveUser?
+    session: AsyncSession = AsyncSessionDep
+) -> UserSchema:
     """Regenerate user token."""
     hash_password, user_token = create_api_token(user.email)
     user.api_secret_hash = hash_password
     session.add(user)
     await session.commit()
     return user_token
+
+
+@router.get(
+    "/users/accept-eula",
+    name="eula-acceptance",
+    tags=["users"],
+    description="Accept End-User License Aggrement"
+)
+async def accept_eula(
+    user: User = Depends(auth.CurrentActiveUser()),
+    session: AsyncSession = AsyncSessionDep
+):
+    """Accept End-User License Aggrement."""
+    user.eula = True
+    await session.commit()
