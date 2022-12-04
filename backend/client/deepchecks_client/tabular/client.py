@@ -28,7 +28,7 @@ from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
                                           TaskType, parse_timestamp, pretty_print, validate_additional_data_schema)
-from deepchecks_client.tabular.utils import DataSchema, read_schema
+from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_predictions
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -86,7 +86,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             sample_ids: np.ndarray,
             data: 'pd.DataFrame',
-            predictions: np.ndarray,
+            predictions: t.Union[pd.Series, np.ndarray, t.List],
             prediction_probas: t.Optional[np.ndarray] = None,
             labels: t.Optional[np.ndarray] = None,
             timestamps: t.Optional[np.ndarray] = None,
@@ -100,7 +100,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             set of sample ids
         data : pandas.DataFrame
             set of features and optionally of non-features.
-        predictions : numpy.ndarray
+        predictions : Union[pd.Series, np.ndarray, t.List]
             set of predictions
         prediction_probas : Optional[numpy.ndarray] , default None
             set of predictions probabilities
@@ -189,7 +189,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     def upload_reference(
             self,
             dataset: Dataset,
-            predictions: np.ndarray,
+            predictions: t.Union[pd.Series, np.ndarray, t.List],
             prediction_probas: t.Optional[np.ndarray] = None,
             samples_per_request: int = 5000
     ):
@@ -199,9 +199,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         ----------
         dataset : deepchecks.tabular.Dataset
             The reference dataset.
-        prediction_probas : np.ndarray
+        prediction_probas : Optional[np.ndarray]
             The prediction probabilities.
-        predictions : np.ndarray
+        predictions : Union[pd.Series, np.ndarray, t.List]
             The prediction labels.
         samples_per_request : int
             The samples per batch request.
@@ -211,6 +211,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                            dataset.index_name,
                            dataset.datetime_name]]
         data = dataset.data[columns_to_use].copy()
+
+        predictions = standardize_predictions(predictions)
+        if len(predictions) != len(dataset):
+            raise ValueError('predictions and dataset must contain the same number of items')
 
         if self.model['task_type'] == TaskType.REGRESSION.value:
             if dataset.has_label():
@@ -263,7 +267,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             data: t.Optional[pd.DataFrame] = None,
             labels: t.Optional[np.ndarray] = None,
             timestamps: t.Optional[np.ndarray] = None,
-            predictions: t.Optional[np.ndarray] = None,
+            predictions: t.Optional[t.Union[pd.Series, np.ndarray, t.List]] = None,
             prediction_probas: t.Optional[np.ndarray] = None,
             samples_per_send: int = 10_000
     ):
@@ -281,7 +285,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 - str: timestamp in ISO8601 format
                 - datetime: If no timezone info is provided on the datetime assumes local timezone.
                 - None: will use current time
-        predictions : Union[numpy.ndarray], default None
+        predictions : Optional[Union[pd.Series, np.ndarray, t.List]], default None
             set of predictions
         prediction_probas : Union[numpy.ndarray], default None
             set of predictions probabilities
@@ -516,7 +520,7 @@ def _process_batch(
     data: t.Optional[pd.DataFrame] = None,
     labels: t.Optional[np.ndarray] = None,
     timestamps: t.Optional[np.ndarray] = None,
-    predictions: t.Optional[np.ndarray] = None,
+    predictions: t.Optional[t.Union[pd.Series, np.ndarray, t.List]] = None,
     model_classes: t.Optional[t.Sequence[str]] = None,
     prediction_probas: t.Optional[np.ndarray] = None,
 ) -> t.List[t.Dict[str, t.Any]]:
@@ -541,6 +545,7 @@ def _process_batch(
 
     # Validate 'predictions' array
     if predictions is not None:
+        predictions = standardize_predictions(predictions)
         if len(predictions) != len(sample_ids):
             raise ValueError(error_template.format('predictions'))
         else:

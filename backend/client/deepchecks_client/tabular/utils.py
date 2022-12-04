@@ -14,12 +14,14 @@ import pathlib
 import typing as t
 import warnings
 
+import numpy as np
+import pandas as pd
 import yaml
 from deepchecks.tabular import Dataset
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import ColumnType, DataSchema, describe_dataset, pretty_print
 
-__all__ = ['create_schema', 'read_schema']
+__all__ = ['create_schema', 'read_schema', 'standardize_predictions']
 
 
 def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
@@ -133,3 +135,21 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema],
                 warnings.warn(message)
 
     return schema
+
+
+def standardize_predictions(ys: t.Union[pd.Series, np.ndarray, t.List]) -> np.ndarray:
+    """Convert predictions input into a 1d numpy array."""
+    if isinstance(ys, pd.Series):
+        ys = ys.to_numpy()
+    elif isinstance(ys, t.List):
+        ys = np.asarray(ys)
+    elif not isinstance(ys, np.ndarray):
+        raise ValueError('Got unexpected type for predictions, should be one of list/padnas series/numpy array')
+
+    if ys.ndim > 1:
+        squeezed = ys.squeeze()
+        if squeezed.ndim != 1:
+            raise ValueError(f'Got unworkable shape for predictions: {ys.shape}. Shape should be able to be reduced '
+                             f'to a single dimension.')
+        return squeezed
+    return ys
