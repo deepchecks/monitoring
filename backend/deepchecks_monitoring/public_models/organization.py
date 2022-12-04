@@ -8,17 +8,18 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Organiztaion entity model."""
+import time
 import typing as t
 from random import choice
 from string import ascii_lowercase
 
 import sqlalchemy as sa
-from slugify import slugify
 from sqlalchemy.orm import Mapped, relationship
 from typing_extensions import Self
 
 from deepchecks_monitoring.public_models import AlertSeverity, Base
 from deepchecks_monitoring.utils.database import SchemaBuilder
+from deepchecks_monitoring.utils.text import slugify
 
 if t.TYPE_CHECKING:
     from . import Invitation, User  # pylint: disable=unused-import
@@ -71,10 +72,10 @@ class Organization(Base):
 
     @classmethod
     def generate_schema_name(cls, org_name: str) -> str:
-        """Generate a random schema name."""
-        slug = slugify(org_name, separator="_")
-        postfix = "".join(choice(ascii_lowercase) for _ in range(5))
-        return f"org_{slug}_{postfix}"
+        """Generate a schema name for organization."""
+        value = slugify(org_name, separator="_")
+        value = value if value else "".join(choice(ascii_lowercase) for _ in range(10))
+        return f"org_{value}_ts_{int(time.time_ns())}"
 
     # Instance Properties
     # ===================
