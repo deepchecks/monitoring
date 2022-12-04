@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 
 """Module defining the dynamic tables metadata for the monitoring package."""
+import asyncio
 import copy
 import json
 import logging
@@ -213,8 +214,8 @@ async def update_data(
     return logged_timestsamps
 
 
-class DataIngestionBackend:
-    """Holds the logic for the data ingestion. Can be override to alter the logic and sent in `create_app`."""
+class DataIngestionBackend(object):
+    """Holds the logic for the data ingestion."""
 
     def __init__(
             self,
@@ -227,6 +228,7 @@ class DataIngestionBackend:
         self.s3_bucket = s3_bucket
         self.logger = logger or logging.getLogger("data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
+        self._producer = None
 
     async def log(
             self,
@@ -246,14 +248,21 @@ class DataIngestionBackend:
         """
         self.resources_provider.cache_functions.add_to_process_set(user.organization_id, model_version.id)
         if self.use_kafka:
-            producer = await self.resources_provider.kafka_producer
             topic_name = get_data_topic_name(user.organization_id, model_version.id)
-            send_future = None
+            topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
+            # If topic was created, resetting the offsets
+            if not topic_existed:
+                model_version.ingestion_offset = 0
+                model_version.topic_end_offset = 0
+
+            if self._producer is None:
+                self._producer = await self.resources_provider.kafka_producer
+
+            send_futures = []
             for sample in data:
                 message = json.dumps({"type": "log", "data": sample}).encode("utf-8")
-                send_future = await producer.send(topic_name, value=message)
-            # Waiting on the last future since the messages are sent in order anyway
-            await send_future
+                send_futures.append(await self._producer.send(topic_name, value=message))
+            await asyncio.gather(*send_futures)
         else:
             timestamps = await log_data(model_version, data, self.s3_bucket, user.organization_id, session)
             await self.after_data_update(user.organization_id, model_version.id, timestamps, session)
@@ -277,13 +286,21 @@ class DataIngestionBackend:
         self.resources_provider.cache_functions.add_to_process_set(user.organization_id, model_version.id)
         if self.use_kafka:
             topic_name = get_data_topic_name(user.organization_id, model_version.id)
-            producer = await self.resources_provider.kafka_producer
-            send_future = None
+            topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
+            # If topic was created, resetting the offsets
+            if not topic_existed:
+                model_version.ingestion_offset = 0
+                model_version.topic_end_offset = 0
+
+            if self._producer is None:
+                self._producer = await self.resources_provider.kafka_producer
+
+            send_futures = []
             for sample in data:
                 message = json.dumps({"type": "update", "data": sample}).encode("utf-8")
-                send_future = await producer.send(topic_name, value=message)
+                send_futures.append(await self._producer.send(topic_name, value=message))
             # Waiting on the last future since the messages are sent in order anyway
-            await send_future
+            await asyncio.gather(*send_futures)
         else:
             timestamps = await update_data(model_version, data, session)
             await self.after_data_update(user.organization_id, model_version.id, timestamps, session)

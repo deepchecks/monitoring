@@ -13,10 +13,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
-from hamcrest import assert_that, calling, raises
-
 from deepchecks_client import DeepchecksClient
 from deepchecks_client.tabular.utils import create_schema, describe_dataset, read_schema
+from hamcrest import assert_that, calling, raises
 from httpx import HTTPError
 from sqlalchemy.ext.asyncio import AsyncSession
 

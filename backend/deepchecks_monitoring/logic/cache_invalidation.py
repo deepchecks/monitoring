@@ -25,6 +25,7 @@ class CacheInvalidator:
         self.resources_provider = resources_provider
         self.cache_funcs: CacheFunctions = resources_provider.cache_functions
         self.logger = logger or logging.getLogger("cache-invalidator")
+        self._producer = None
 
     async def handle_invalidation_messages(self, tp, messages) -> bool:
         """Handle messages consumed from kafka."""
@@ -52,7 +53,11 @@ class CacheInvalidator:
         rounded_ts_set = {ts.astimezone(pdl.UTC).set(minute=0, second=0, microsecond=0) for ts in timestamps}
 
         topic_name = get_invalidation_topic_name(organization_id, model_version_id)
-        producer = await self.resources_provider.kafka_producer
-        send_futures = [await producer.send(topic_name, value=ts.isoformat().encode("utf-8"))
+        self.resources_provider.ensure_kafka_topic(topic_name)
+
+        if self._producer is None:
+            self._producer = await self.resources_provider.kafka_producer
+
+        send_futures = [await self._producer.send(topic_name, value=ts.isoformat().encode("utf-8"))
                         for ts in rounded_ts_set]
         await asyncio.gather(*send_futures)

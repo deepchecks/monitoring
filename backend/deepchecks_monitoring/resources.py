@@ -17,6 +17,8 @@ import requests
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
+from kafka.admin import NewTopic
+from kafka.errors import TopicAlreadyExistsError
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 from pydantic.env_settings import BaseSettings
@@ -85,6 +87,7 @@ class ResourcesProvider(BaseResourcesProvider):
         self._lauchdarkly_client: t.Optional[LDClient] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
+        self._topics = set()
 
     @property
     def database_settings(self) -> DatabaseSettings:
@@ -325,3 +328,31 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._email_sender is None:
             self._email_sender = EmailSender(self.settings)
         return self._email_sender
+
+    def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
+        """Ensure that kafka topic exist. If not, creating it.
+
+        Returns
+        -------
+        bool
+            True if topic existed, False if was created
+        """
+        if topic_name in self._topics:
+            return True
+        # Refresh the topics list from the server
+        kafka_admin: KafkaAdminClient = self.kafka_admin
+        self._topics = set(kafka_admin.list_topics())
+        if topic_name in self._topics:
+            return True
+
+        # If still doesn't exist try to create
+        try:
+            kafka_admin.create_topics([
+                NewTopic(name=topic_name, num_partitions=num_partitions,
+                         replication_factor=self.kafka_settings.kafka_replication_factor)
+            ])
+            self._topics.add(topic_name)
+            return False
+        # 2 workers might try to create topic at the same time so ignoring if already exists
+        except TopicAlreadyExistsError:
+            return True

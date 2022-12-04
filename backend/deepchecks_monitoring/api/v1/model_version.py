@@ -12,12 +12,9 @@ import typing as t
 from datetime import datetime
 from io import StringIO
 
-import fastapi
 import pendulum as pdl
 from fastapi import BackgroundTasks, Depends, Path
 from fastapi import status as HttpStatus
-from kafka import KafkaAdminClient
-from kafka.admin import NewTopic
 from pydantic import BaseModel, Field, root_validator
 from sqlalchemy import Index, MetaData, Table, and_, func, select, text, update
 from sqlalchemy.exc import IntegrityError
@@ -28,9 +25,8 @@ from sqlalchemy.sql.ddl import CreateIndex
 from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, KafkaAdminDep, ResourcesProviderDep, SettingsDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
-from deepchecks_monitoring.logic.keys import get_data_topic_name, get_invalidation_topic_name
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
 from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, IdentifierKind, IdResponse, ModelIdentifier,
                                                     ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
@@ -69,12 +65,9 @@ class ModelVersionCreationSchema(BaseModel):
 
 @router.post('/models/{model_id}/version', response_model=IdResponse, tags=[Tags.MODELS])
 async def get_or_create_version(
-        request: fastapi.Request,
         info: ModelVersionCreationSchema,
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
-        kafka_admin: KafkaAdminClient = KafkaAdminDep,
-        settings=SettingsDep
 ):
     """Create a new model version.
 
@@ -230,18 +223,6 @@ async def get_or_create_version(
     # Create indices
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))
-
-    # Create kafka topic
-    if kafka_admin:
-        # We want to digest the message in the order they are sent, so using single partition.
-        data_topic = NewTopic(name=get_data_topic_name(request.state.user.organization_id, model_version.id),
-                              num_partitions=1,
-                              replication_factor=settings.kafka_replication_factor)
-        invalidation_topic = NewTopic(name=get_invalidation_topic_name(request.state.user.organization_id,
-                                                                       model_version.id),
-                                      num_partitions=1,
-                                      replication_factor=settings.kafka_replication_factor)
-        kafka_admin.create_topics([data_topic, invalidation_topic])
 
     return {'id': model_version.id}
 
