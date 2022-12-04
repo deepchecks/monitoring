@@ -1,6 +1,6 @@
 import React, { memo, Dispatch, SetStateAction } from 'react';
 
-import { SelectChangeEvent, MenuItem } from '@mui/material';
+import { SelectChangeEvent, MenuItem, styled } from '@mui/material';
 
 import { MarkedSelect } from 'components/MarkedSelect';
 
@@ -24,12 +24,11 @@ export const AnalysisGroupByFeaturesSelectComponent = ({
 
   return (
     features && (
-      <MarkedSelect
+      <StyledMarkedSelect
         label="Select feature"
         size="small"
         value={feature}
         onChange={handleFeatureChange}
-        sx={{ width: '276px', marginBottom: '39px' }}
         disabled={disabled}
       >
         {features.map((value, index) => (
@@ -37,9 +36,14 @@ export const AnalysisGroupByFeaturesSelectComponent = ({
             {value}
           </MenuItem>
         ))}
-      </MarkedSelect>
+      </StyledMarkedSelect>
     )
   );
 };
+
+const StyledMarkedSelect = styled(MarkedSelect)({
+  width: '276px',
+  marginBottom: '14px'
+});
 
 export const AnalysisGroupByFeaturesSelect = memo(AnalysisGroupByFeaturesSelectComponent);

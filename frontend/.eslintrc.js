@@ -28,7 +28,7 @@ module.exports = {
     'react/forbid-prop-types': ['error', { forbid: ['any'] }],
     'spaced-comment': ['warn', 'always', { markers: ['/'] }],
     'arrow-parens': ['error', 'as-needed'],
-    'arrow-body-style': ['error', 'as-needed'],
+    'arrow-body-style': ['warn', 'as-needed'],
     'implicit-arrow-linebreak': 0,
     'no-nested-ternary': 0,
     'multiline-ternary': 0,

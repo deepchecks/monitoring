@@ -6,7 +6,7 @@ export const TITLE = 'Check per segment';
 export const ACTIVE_BAR_COLOR = alpha('#00CCFF', 1);
 export const BAR_COLOR = alpha(ACTIVE_BAR_COLOR, 0.3);
 
-export const filledBarColorsArray = (length: number) => Array(length).fill(BAR_COLOR);
+export const barsColorArray = (length: number): string[] => Array(length).fill(BAR_COLOR);
 
 export const chartOptions = (data: number[]): ChartOptions<'bar'> => {
   const max = Math.max(...data);
@@ -51,7 +51,7 @@ export const chartData = (labels: string[], data: number[]): ChartData<'bar'> =>
       label: TITLE,
       data,
       borderColor: 'transparent',
-      backgroundColor: filledBarColorsArray(data.length),
+      backgroundColor: barsColorArray(data.length),
       hoverBackgroundColor: ACTIVE_BAR_COLOR,
       barPercentage: 0.5
     }

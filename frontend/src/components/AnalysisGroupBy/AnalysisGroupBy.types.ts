@@ -18,6 +18,8 @@ export interface AnalysisGroupByProps extends DrawerProps {
   type: CheckType;
 }
 
+export type Features = Record<string, 'numeric' | 'categorical'>;
+
 export interface FeaturesResponse {
-  features: Record<string, string>;
+  features: Features;
 }

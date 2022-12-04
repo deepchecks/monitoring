@@ -8,7 +8,7 @@ import {
 } from 'api/generated';
 import { AnalysisContext } from 'context/analysis-context';
 
-import { Drawer, styled } from '@mui/material';
+import { Drawer, styled, Box } from '@mui/material';
 
 import { AnalysisGroupByInfo } from './components/AnalysisGroupByInfo';
 import { AnalysisGroupByHeader } from './components/AnalysisGroupByHeader';
@@ -38,8 +38,10 @@ const AnalysisGroupByComponent = ({
   const [classOrFeature, setClassOrFeature] = useState<ClassOrFeature | null>(null);
   const [singleWindowMonitorOptions, setSingleWindowMonitorOptions] = useState<SingleWindowMonitorOptions | null>(null);
   const [featuresArray, setFeaturesArray] = useState<string[]>([]);
-  const [feature, setFeature] = useState<string>();
+  const [selectedFeature, setSelectedFeature] = useState<string>();
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
+
+  const propValuesAreNotNull = !!(datasetName && check && modelVersionId && timeLabel);
 
   const runCheckGroupByFeature = useCallback(
     async (selectedFeature: string, singleWindowMonitorOptions: SingleWindowMonitorOptions) => {
@@ -53,8 +55,9 @@ const AnalysisGroupByComponent = ({
           singleWindowMonitorOptions
         );
 
-        setGroupBySchema(resp);
+        setGroupBySchema(resp ? resp : []);
         setLoading(false);
+        setGlobalLoading(false);
       }
     },
     [check, modelVersionId]
@@ -62,20 +65,20 @@ const AnalysisGroupByComponent = ({
 
   useEffect(() => {
     async function getData() {
-      setGlobalLoading(true);
-      setLoading(true);
+      if (propValuesAreNotNull) {
+        setGlobalLoading(true);
 
-      if (timeLabel && modelVersionId && check && datasetName) {
-        const response = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(modelVersionId)) as FeaturesResponse;
-        const features = Object.keys(response.features);
-
-        setFeaturesArray(features);
-        setFeature(features[0]);
+        const { features } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
+          modelVersionId
+        )) as FeaturesResponse;
+        const featuresNames = Object.keys(features);
+        setFeaturesArray(featuresNames);
+        setSelectedFeature(featuresNames[0]);
 
         const singleWindowMonitorOptions: SingleWindowMonitorOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
           end_time: new Date(timeLabel).toISOString(),
-          ...(activeFilters.length && { filter: { filters: activeFilters } }),
+          filter: { filters: activeFilters.length ? activeFilters : [] },
           ...(additionalKwargs && { additional_kwargs: additionalKwargs })
         };
 
@@ -90,8 +93,6 @@ const AnalysisGroupByComponent = ({
           value && setClassOrFeature({ type, value });
         }
       }
-
-      setGlobalLoading(false);
     }
 
     getData();
@@ -101,56 +102,53 @@ const AnalysisGroupByComponent = ({
       setClassOrFeature(null);
       setGroupBySchema([]);
       setFeaturesArray([]);
-      setFeature('');
+      setSelectedFeature('');
     };
-  }, [
-    activeFilters,
-    additionalKwargs,
-    check,
-    datasetName,
-    runCheckGroupByFeature,
-    frequency,
-    modelVersionId,
-    timeLabel,
-    type
-  ]);
+  }, [activeFilters, additionalKwargs, datasetName, frequency, modelVersionId, propValuesAreNotNull, timeLabel, type]);
 
   useEffect(() => {
-    if (feature && singleWindowMonitorOptions) {
-      runCheckGroupByFeature(feature, singleWindowMonitorOptions);
+    if (selectedFeature && singleWindowMonitorOptions) {
+      runCheckGroupByFeature(selectedFeature, singleWindowMonitorOptions);
     }
-  }, [feature, runCheckGroupByFeature, singleWindowMonitorOptions]);
+  }, [selectedFeature, runCheckGroupByFeature, singleWindowMonitorOptions]);
 
   return (
     <StyledDrawer anchor="right" {...props}>
-      {check &&
+      {propValuesAreNotNull &&
         singleWindowMonitorOptions &&
         (globalLoading ? (
           <Loader />
         ) : (
           <>
-            <AnalysisGroupByHeader title={check.name || 'none'} onClick={onCloseIconClick} />
-            <AnalysisGroupByInfo
-              startTime={singleWindowMonitorOptions.start_time}
-              endTime={singleWindowMonitorOptions.end_time}
-              frequency={frequencyLabel}
-              checkName={check.name || 'none'}
-              modelName={modelName}
-              classOrFeature={classOrFeature}
-            />
-            <AnalysisGroupByFeaturesSelect
-              features={featuresArray}
-              feature={feature}
-              setFeature={setFeature}
-              disabled={loading}
-            />
-            {datasetName &&
-              check.name &&
-              (loading ? (
-                <Loader />
-              ) : (
-                <DataGraphs checkName={check.name} datasetName={datasetName} data={groupBySchema} />
-              ))}
+            <StyledHeaderContainer>
+              <AnalysisGroupByHeader title={check.name || 'none'} onClick={onCloseIconClick} />
+              <AnalysisGroupByInfo
+                startTime={singleWindowMonitorOptions.start_time}
+                endTime={singleWindowMonitorOptions.end_time}
+                frequency={frequencyLabel}
+                checkName={check.name || 'none'}
+                modelName={modelName}
+                classOrFeature={classOrFeature}
+              />
+              <AnalysisGroupByFeaturesSelect
+                features={featuresArray}
+                feature={selectedFeature}
+                setFeature={setSelectedFeature}
+                disabled={loading}
+              />
+            </StyledHeaderContainer>
+            {loading ? (
+              <Loader />
+            ) : (
+              <DataGraphs
+                checkName={check.name}
+                datasetName={datasetName}
+                data={groupBySchema}
+                selectedFeature={selectedFeature}
+                modelVersionId={modelVersionId}
+                singleWindowMonitorOptions={singleWindowMonitorOptions}
+              />
+            )}
           </>
         ))}
     </StyledDrawer>
@@ -161,7 +159,10 @@ export const AnalysisGroupBy = memo(AnalysisGroupByComponent);
 
 const StyledDrawer = styled(Drawer)({
   '& .MuiPaper-root': {
-    width: '1090px',
-    padding: '40px'
+    width: '1090px'
   }
+});
+
+const StyledHeaderContainer = styled(Box)({
+  padding: '40px 40px 0'
 });

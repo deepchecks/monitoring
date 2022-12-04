@@ -6,7 +6,7 @@ import {
   createInviteApiV1OrganizationInvitePut,
   InvitationCreationSchema,
   useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete,
-  useRetriveOrganizationMembersApiV1OrganizationMembersGet
+  useRetrieveOrganizationMembersApiV1OrganizationMembersGet
 } from 'api/generated';
 
 import {
@@ -49,7 +49,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
     data: organizationMembers = [],
     isLoading: isOrganizationMembersLoading,
     refetch
-  } = useRetriveOrganizationMembersApiV1OrganizationMembersGet();
+  } = useRetrieveOrganizationMembersApiV1OrganizationMembersGet();
 
   const { mutate: deleteMember, isLoading: isDeleteMemberLoading } =
     useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete({
