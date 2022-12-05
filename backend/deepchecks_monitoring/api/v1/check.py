@@ -292,7 +292,8 @@ async def get_check_window(
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
     model_results = await run_check_window(check, monitor_options, session, model, model_versions, s3_bucket)
-    return reduce_check_window(model_results, monitor_options)
+    result_per_version = reduce_check_window(model_results, monitor_options)
+    return {version.name: val for version, val in result_per_version.items()}
 
 
 @router.post('/checks/{check_id}/run/reference', tags=[Tags.CHECKS])
@@ -332,7 +333,8 @@ async def get_check_reference(
 
     model_results = await run_check_window(check, monitor_options, session, model, model_versions, s3_bucket,
                                            reference_only=True, n_samples=100_000)
-    return reduce_check_window(model_results, monitor_options)
+    result_per_version = reduce_check_window(model_results, monitor_options)
+    return {version.name: val for version, val in result_per_version.items()}
 
 
 @router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])

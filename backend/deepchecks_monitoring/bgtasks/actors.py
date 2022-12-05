@@ -49,8 +49,9 @@ async def _execute_monitor(
         monitor_id: int,
         timestamp: str,
         session: AsyncSession,
+        resources_provider: ResourcesProvider,
+        organization_id,
         logger: t.Optional[logging.Logger] = None,
-        **kwargs  # pylint: disable=unused-argument
 ) -> t.List[Alert]:
     """Execute monitor alert rules."""
     logger = logger or logging.getLogger("monitor-executor")
@@ -90,23 +91,46 @@ async def _execute_monitor(
         logger.info("Model(id:%s) is empty (does not have versions)", check.model_id)
         return []
 
-    options = MonitorOptions(
-        additional_kwargs=monitor.additional_kwargs,
-        start_time=start_time.isoformat(),
-        end_time=end_time.isoformat(),
-        filter=t.cast(DataFilterList, monitor.data_filters)
-    )
-    check_results = await run_check_window(
-        check,
-        monitor_options=options,
-        session=session,
-        model=model_versions[0].model,
-        model_versions=model_versions
-    )
+    # First looking for results in cache if already calculated
+    cache_results = {}
+    model_versions_without_cache = []
+    for model_version in model_versions:
+        cache_result = resources_provider.cache_functions.get_monitor_cache(
+            organization_id, model_version.id, monitor_id, start_time, end_time)
+        if cache_result.found:
+            cache_results[model_version.name] = cache_result.value
+        else:
+            model_versions_without_cache.append(model_version)
+        logger.debug("Cache result: %s", cache_results)
 
-    check_results = reduce_check_window(check_results, options)
+    # For model versions without result in cache running calculation
+    if model_versions_without_cache:
+        options = MonitorOptions(
+            additional_kwargs=monitor.additional_kwargs,
+            start_time=start_time.isoformat(),
+            end_time=end_time.isoformat(),
+            filter=t.cast(DataFilterList, monitor.data_filters)
+        )
+        result_per_version = await run_check_window(
+            check,
+            monitor_options=options,
+            session=session,
+            model=model_versions_without_cache[0].model,
+            model_versions=model_versions_without_cache
+        )
 
-    logger.debug("Check execution result: %s", check_results)
+        result_per_version = reduce_check_window(result_per_version, options)
+        # Save to cache
+        for version, result in result_per_version.items():
+            resources_provider.cache_functions.set_monitor_cache(
+                organization_id, version.id, monitor_id, start_time, end_time, result)
+
+        run_check_results = {version.name: val for version, val in result_per_version.items()}
+        logger.debug("Check execution result: %s", run_check_results)
+    else:
+        run_check_results = {}
+
+    check_results = {**cache_results, **run_check_results}
     check_results = {k: v for k, v in check_results.items() if v is not None}
     alerts = []
 
@@ -133,7 +157,7 @@ async def _execute_monitor(
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
 async def execute_monitor(
     organization_id: int,
-    organization_schema: str,
+    organization_schema: str,  # pylint: disable=unused-argument
     monitor_id: int,
     timestamp: str,
     session: AsyncSession,
@@ -144,13 +168,11 @@ async def execute_monitor(
     """Execute alert rule."""
     alerts = await _execute_monitor(
         session=session,
+        resources_provider=resources_provider,
         monitor_id=monitor_id,
         timestamp=timestamp,
         logger=logger,
-        organization_schema=organization_schema,
         organization_id=organization_id,
-        resources_provider=resources_provider,
-        **kwargs
     )
     for alert in alerts:
         # TODO:

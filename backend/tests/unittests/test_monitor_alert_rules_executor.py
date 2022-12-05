@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from deepchecks_monitoring.bgtasks.actors import execute_monitor
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -94,6 +95,15 @@ async def test_monitor_executor(
     assert alert.alert_rule_id == rule_that_should_raise_id
     assert isinstance(alert.failed_values, dict), alert.failed_values
     assert alert.failed_values == {"v1": {"accuracy": 0.2}, "v2": {"accuracy": 0.2}}, alert.failed_values
+
+    # Assert cache was saved
+    window_end = floor_window_for_time(now, TimeUnit.SECOND * 2)
+    window_start = window_end.subtract(seconds=TimeUnit.DAY * 2)
+    cache_value = resources_provider.cache_functions.get_monitor_cache(user.organization.id, versions[0], monitor_id,
+                                                                       window_start, window_end)
+
+    assert cache_value.found is True
+    assert cache_value.value == {"accuracy": 0.2}
 
 
 @pytest.mark.asyncio
@@ -276,3 +286,65 @@ async def test_monitor_executor_with_unactive_alert_rules(
         logger=logger
     )
     assert not result
+
+
+@pytest.mark.asyncio
+async def test_monitor_executor_is_using_cache(
+    async_session: AsyncSession,
+    client: TestClient,
+    classification_model_id: int,
+    user: User,
+    resources_provider
+):
+    # Arrange
+    check_id = t.cast(int, add_check(
+        classification_model_id,
+        client=client
+    ))
+
+    frequency = TimeUnit.DAY
+    aggregation_window = TimeUnit.DAY * 3
+    monitor_id = add_monitor(
+        check_id,
+        client,
+        lookback=TimeUnit.DAY * 7,
+        frequency=frequency,
+        aggregation_window=aggregation_window
+    )
+    rule_that_should_raise_id = t.cast(int, add_alert_rule(
+        monitor_id,
+        client,
+        condition={"operator": "greater_than", "value": 0.7}
+    ))
+    model_version_id = t.cast(int,
+                              add_model_version(classification_model_id, client, name="v1", classes=["0", "1", "2"]))
+
+    add_classification_data(model_version_id, client)
+
+    now = pdl.now()
+    organization_id = user.organization.id
+
+    # Act - Set monitor cache
+    window_end = floor_window_for_time(now, frequency)
+    window_start = window_end.subtract(seconds=aggregation_window)
+    cache_value = {"my special key": 1}
+    resources_provider.cache_functions.set_monitor_cache(organization_id, model_version_id, monitor_id,
+                                                         window_start, window_end, cache_value)
+
+    result: t.List[Alert] = await execute_monitor(
+        monitor_id=monitor_id,
+        timestamp=str(now),
+        session=async_session,
+        organization_id=organization_id,
+        organization_schema=user.organization.schema_name,
+        resources_provider=resources_provider,
+        logger=logging.Logger("test")
+    )
+
+    assert len(result) == 1, result
+    alert = result[0]
+
+    assert isinstance(alert, Alert), alert
+    assert alert.alert_rule_id == rule_that_should_raise_id
+    assert isinstance(alert.failed_values, dict), alert.failed_values
+    assert alert.failed_values == {"v1": {"my special key": 1}}, alert.failed_values
