@@ -26,7 +26,7 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, S3BucketDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range
-from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
                                                     fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
@@ -142,10 +142,9 @@ async def update_monitor(
     if monitor.latest_schedule is not None:
         frequency = monitor.frequency if body.frequency is None else body.frequency
         # make latest_schedule to be 10 windows earlier
-        update_dict["latest_schedule"], _, _ = \
-            get_time_ranges_for_monitor(frequency,
-                                        frequency,
-                                        pdl.instance(monitor.latest_schedule - 9 * pdl.duration(seconds=frequency)))
+        ten_windows_earlier = pdl.instance(monitor.latest_schedule - 10 * pdl.duration(seconds=frequency))
+        update_dict["latest_schedule"] = floor_window_for_time(ten_windows_earlier, frequency)
+
         await session.execute(sa.delete(Task).where(
             sa.cast(Task.params["timestamp"].astext, TIMESTAMP(True)) > update_dict["latest_schedule"]),
             execution_options=immutabledict({"synchronize_session": "fetch"}))
@@ -202,13 +201,12 @@ async def run_monitor_lookback(
         Created check.
     """
     monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)
-    end_time = None if body.end_time is None else pdl.parse(body.end_time)
-    start_time, end_time, frequency = get_time_ranges_for_monitor(
-        lookback=monitor.lookback, frequency=monitor.frequency, end_time=end_time)
+    end_time = pdl.parse(body.end_time) if body.end_time else pdl.now()
+    start_time = end_time.subtract(seconds=monitor.lookback)
 
     options = MonitorOptions(start_time=start_time.to_iso8601_string(),
                              end_time=end_time.to_iso8601_string(),
-                             frequency=frequency.in_seconds(),
+                             frequency=monitor.frequency,
                              aggregation_window=monitor.aggregation_window,
                              additional_kwargs=monitor.additional_kwargs,
                              filter=monitor.data_filters)

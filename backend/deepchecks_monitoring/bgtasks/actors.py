@@ -30,7 +30,7 @@ from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, reduce_check_window, run_check_window
-from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -75,14 +75,7 @@ async def _execute_monitor(
         logger.info("Monitor(id:%s) does not have alert rules", monitor_id)
         return []
 
-    # round end/start times to monitor intervals
-    start_time, _, frequency = get_time_ranges_for_monitor(
-        lookback=monitor.frequency,
-        frequency=monitor.frequency,
-        end_time=pdl.parser.parse(timestamp)
-    )
-
-    end_time = start_time + frequency
+    end_time = floor_window_for_time(pdl.parse(timestamp), monitor.frequency)
     start_time = end_time - pdl.duration(seconds=monitor.aggregation_window)
 
     model_versions = t.cast(t.List[ModelVersion], (await session.scalars(

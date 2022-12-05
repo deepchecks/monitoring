@@ -203,7 +203,7 @@ async def test_alert_rules_scheduler_monitor_update(
             .execution_options(schema_translate_map=schema_translate_map)
         )).all())
 
-    assert len(updated_tasks) == 11 # should be the same as 10 were deleted
+    assert len(updated_tasks) == 11  # should be the same as 10 were deleted
 
     # assert that 10 new tasks were really created
     updated_tasks.update(tasks)

@@ -10,7 +10,6 @@
 """V1 API of the check."""
 import typing as t
 
-import pendulum as pdl
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
@@ -29,7 +28,6 @@ from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, Monito
                                                      reduce_check_result, reduce_check_window,
                                                      run_check_per_window_in_range, run_check_window)
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
-from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
 from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
@@ -256,21 +254,6 @@ async def run_standalone_check_per_window_in_range(
     CheckSchema
         Created check.
     """
-    # get the time window size
-    start_time: pdl.DateTime = pdl.parse(monitor_options.start_time)
-    end_time: pdl.DateTime = pdl.parse(monitor_options.end_time)
-    lookback = (end_time - start_time).in_seconds()
-
-    start_time, end_time, frequency = get_time_ranges_for_monitor(
-        lookback=lookback, frequency=monitor_options.frequency, end_time=end_time)
-
-    monitor_options.start_time = start_time.isoformat()
-    monitor_options.end_time = end_time.isoformat()
-    monitor_options.frequency = frequency.in_seconds()
-
-    if monitor_options.aggregation_window is None:
-        monitor_options.aggregation_window = frequency.in_seconds()
-
     return await run_check_per_window_in_range(
         check_id,
         session,

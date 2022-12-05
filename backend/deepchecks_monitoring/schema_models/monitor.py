@@ -31,7 +31,7 @@ __all__ = ["Monitor"]
 
 def _get_start_schedule_time(context: DefaultExecutionContext):
     # pylint: disable=import-outside-toplevel, redefined-outer-name
-    from deepchecks_monitoring.logic.monitor_alert_logic import get_time_ranges_for_monitor
+    from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
@@ -54,11 +54,7 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
 
     time_to_round = context.connection.execute(select_obj).scalar()
 
-    return get_time_ranges_for_monitor(
-        frequency,
-        frequency,
-        pdl.instance(time_to_round + pdl.duration(seconds=frequency))
-    )[0]
+    return floor_window_for_time(pdl.instance(time_to_round), frequency)
 
 
 class Monitor(Base):

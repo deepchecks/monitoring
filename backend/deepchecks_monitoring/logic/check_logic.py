@@ -35,6 +35,7 @@ from deepchecks_monitoring.logic.model_logic import (create_model_version_select
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf, random_sample)
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
                                                     MonitorCheckConfSchema, TimeUnit, fetch_or_404, make_oparator_func)
 from deepchecks_monitoring.schema_models import ModelVersion
@@ -128,6 +129,16 @@ class MonitorOptions(SingleWindowMonitorOptions):
         if v and v < TimeUnit.HOUR:
             raise ValueError(f"aggregation_window must be at least {TimeUnit.HOUR}")
         return v
+
+    @root_validator()
+    def set_missing_frequency(cls, values: dict) -> dict:  # pylint: disable=no-self-argument
+        """Set missing frequency based on start and end times."""
+        if values.get("frequency") is None:
+            start_time = pdl.parse(values["start_time"])
+            end_time = pdl.parse(values["end_time"])
+            values["frequency"] = (end_time - start_time).in_seconds() // 12
+
+        return values
 
 
 class FilterWindowOptions(MonitorOptions):
@@ -282,28 +293,26 @@ async def run_check_per_window_in_range(
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
     dp_check = _init_check_by_kwargs(check, monitor_options.additional_kwargs)
-    start_time = monitor_options.start_time_dt()
-    end_time = monitor_options.end_time_dt()
-    frequency = monitor_options.frequency
 
+    if monitor_options.end_time_dt() < monitor_options.start_time_dt():
+        raise ValueError("start_time must be before end_time")
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
 
-    model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
+    lookback = monitor_options.end_time_dt().int_timestamp - monitor_options.start_time_dt().int_timestamp
+    aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
+    last_window_end = floor_window_for_time(monitor_options.end_time_dt(), monitor_options.frequency)
+    num_windows_in_range = lookback // monitor_options.frequency
+    first_window_end = last_window_end.subtract(seconds=(num_windows_in_range - 1) * monitor_options.frequency)
+    all_windows = list((last_window_end - first_window_end).range("seconds", monitor_options.frequency))
+
+    model, model_versions = await get_model_versions_for_time_range(
+        session, check, first_window_end.subtract(seconds=aggregation_window), last_window_end)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
-
-    if end_time < start_time:
-        raise ValueError("start_time must be before end_time")
-
-    # The range calculates from start to end excluding the end, so add interval to have the windows at their end time
-    windows_end = [d.add(seconds=frequency) for d in (end_time - start_time).range("seconds", frequency)
-                   # Don't include window which end time is in the future
-                   if d.add(seconds=frequency) <= pdl.now()]
-    windows_start = [d.subtract(seconds=monitor_options.aggregation_window) for d in windows_end]
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
@@ -316,17 +325,19 @@ async def run_check_per_window_in_range(
         select_obj = create_model_version_select_object(model_version, test_table, top_feat)
         test_info: t.List[t.Dict] = []
         # create the session per time window
-        for start, end in zip(windows_start, windows_end):
-            curr_test_info = {"start": start, "end": end}
+        for window_end in all_windows:
+            window_start = window_end.subtract(seconds=aggregation_window)
+            curr_test_info = {"start": window_start, "end": window_end}
             test_info.append(curr_test_info)
             if monitor_id and cache_funcs:
-                cache_result = cache_funcs.get_monitor_cache(organization_id, model_version.id, monitor_id, start, end)
+                cache_result = cache_funcs.get_monitor_cache(
+                    organization_id, model_version.id, monitor_id, window_start, window_end)
                 # If found the result in cache, skip querying
                 if cache_result.found:
                     curr_test_info["data"] = cache_result
                     continue
-            if model_version.is_in_range(start, end):
-                filtered_select_obj = select_obj.filter(_times_to_sql_where(start, end))
+            if model_version.is_in_range(window_start, window_end):
+                filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
                 filtered_select_obj = filtered_select_obj.filter(monitor_options.sql_columns_filter())
                 filtered_select_obj = random_sample(filtered_select_obj, test_table, n_samples=10_000)
                 curr_test_info["query"] = session.execute(filtered_select_obj)
@@ -379,7 +390,7 @@ async def run_check_per_window_in_range(
             else:
                 raise Exception(f"Got unknown result type {type(result_value)}, should never reach here")
 
-    return {"output": reduce_results, "time_labels": [d.isoformat() for d in windows_end]}
+    return {"output": reduce_results, "time_labels": [d.isoformat() for d in all_windows]}
 
 
 async def run_check_window(
