@@ -19,6 +19,7 @@ import { CompleteDetails } from './pages/CompleteDetails';
 import { Sidebar } from './components/Sidebar';
 
 import 'overlayscrollbars/overlayscrollbars.css';
+import { LicenseAgreementPage } from 'pages/LicenseAgreement';
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -83,6 +84,7 @@ const App = () => {
                   ))}
                 </Route>
                 <Route path="/complete-details" element={<CompleteDetails />} />
+                <Route path="/license-agreement" element={<LicenseAgreementPage />} />
               </Routes>
             </StatsTimeProvider>
           </UserProvider>

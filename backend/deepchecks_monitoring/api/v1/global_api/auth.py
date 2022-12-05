@@ -51,7 +51,10 @@ async def auth0_callback(
     except ValidationError as e:
         raise InternalError('There was an error while trying to get the user info from the server.') from e
 
-    user = await User.from_oauth_info(info, session=session, auth_jwt_secret=request.app.state.settings.auth_jwt_secret)
+    user = await User.from_oauth_info(info,
+                                      session=session,
+                                      auth_jwt_secret=request.app.state.settings.auth_jwt_secret,
+                                      eula=False)
     await session.flush()
     if settings.debug_mode:
         return_uri = request.query_params.get('state')

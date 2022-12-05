@@ -267,8 +267,6 @@ class CurrentUser:
                 raise Unauthorized("expired or invalid access token")
             return
         else:
-            if request.url != request.url_for("eula-acceptance") and user.eula is False:
-                raise UnacceptedEULA()
             return request.state.user
 
 
@@ -295,6 +293,9 @@ class CurrentActiveUser(CurrentUser):
             raise InvalidConfigurationException()
         if user.disabled:
             raise BadRequest("User is disabled")
+
+        if request.url != request.url_for("eula-acceptance") and user.eula is False:
+            raise UnacceptedEULA()
 
         is_schema_changed: bool = getattr(request.state, "is_schema_changed", False)
 

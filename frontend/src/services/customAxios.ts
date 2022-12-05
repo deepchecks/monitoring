@@ -20,7 +20,10 @@ AXIOS_INSTANCE.interceptors.response.use(
     } else if (response.status === 403 && response.headers['x-substatus'] === '10') {
       // Complete details...
       window.location.href = '/complete-details';
+    } else if (response.status === 451 && window.location.pathname !== '/license-agreement') {
+      window.location.href = '/license-agreement';
     }
+
     return;
   }
 );

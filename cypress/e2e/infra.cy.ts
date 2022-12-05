@@ -32,7 +32,11 @@ describe('load main page', () => {
 
     // Accept invite
     cy.contains('button', 'Submit').click()
+    cy.wait(2000)
+    cy.get('input[type="checkbox"]').click()
+    cy.get('button[type="button"]').click()
     cy.wait(5000)
+
     cy.url().should('eq', Cypress.config().baseUrl + '/')
   })
 })

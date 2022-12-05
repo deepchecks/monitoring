@@ -133,6 +133,16 @@ async def leave_organization(
     return Response()
 
 
+@router.delete("/users", tags=["users"])
+async def delete_user(
+        user: User = Depends(auth.CurrentUser()),
+        session: AsyncSession = AsyncSessionDep,
+):
+    """Delete the user."""
+    await session.delete(user)
+    return Response()
+
+
 class OrganizationSchema(BaseModel):
     """Schema for organization."""
 

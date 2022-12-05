@@ -324,6 +324,7 @@ docker:
 
 external-services-setup:
 	@docker-compose up -d
+	@sleep 2
 
 env-setup: external-services-setup
 	@docker run -d --env-file .development.env --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
