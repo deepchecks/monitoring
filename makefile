@@ -344,9 +344,12 @@ doc-requirements: $(ENV)
 	@echo "####  installing documentation dependencies, it could take some time, please wait! #### "
 	@$(PIP) install -q -r ./docs/requirements.txt
 
+# ANSI_COLORS_DISABLED disables pretty_print in mon cli and makes doctest work with those prints
 docs: requirements doc-requirements $(DOCS_SRC)
+	@export ANSI_COLORS_DISABLED=True
 	$(PIP) install backend/client; \
-	cd $(DOCS) && make html SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) 2> docs.error.log
+	cd $(DOCS) && make doctest SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) && \
+	make html SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) 2> docs.error.log
 	@echo ""
 	@echo "++++++++++++++++++++++++"
 	@echo "++++ Build Finished ++++"

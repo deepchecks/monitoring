@@ -11,6 +11,6 @@ Welcome to Deepchecks Monitoring's documentation!
    :caption: Contents:
 
 
-   api/index
-
    user-guide/index
+
+   api/index

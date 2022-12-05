@@ -24,6 +24,7 @@ Tabular
     :caption: Tabular
 
     tabular/auto_quickstarts/index
+    tabular/tabular_setup.rst
 
 Vision
 ------

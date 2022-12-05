@@ -556,7 +556,7 @@ def _process_batch(
         if len(prediction_probas) != len(sample_ids):
             raise ValueError(error_template.format('prediction_probas'))
         elif prediction_probas.ndim != 2:
-            raise ValueError('"prediction_probas" must be a two-demensional array')
+            raise ValueError('"prediction_probas" must be a two-dimensional array')
         else:
             metadata['prediction_proba'] = list(prediction_probas)
 

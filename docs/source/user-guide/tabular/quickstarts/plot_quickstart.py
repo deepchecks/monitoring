@@ -22,9 +22,10 @@ the rent of the Airbnb unit is predicted from a set of features describing the r
 Creating a New Model Version
 ============================
 
-Our first step is to create a new model version in the system. A model in Deepchecks Monitoring
-represents an ML pipeline performing a single task in production through time,
-where the model's versions and the structure of the data may change over time.
+Our first step is to create a new model version in the system. In Deepchecks, a model represents an ML pipeline
+performing a single task in production, e.g. new multiple retrained version. The model groups together all the model
+versions that are performing the same task, where the model's versions and the structure of the data may change over
+time.
 Our terminology to refer to a specific version within a model is "model version".
 
 In order to create a version we must specify the feature schema of the version, including the names and

@@ -34,6 +34,7 @@ extensions = [
     'numpydoc',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
     'sphinx_gallery.gen_gallery',
     'sphinx_copybutton',
     'sphinx.ext.intersphinx',
