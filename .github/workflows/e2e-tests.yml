@@ -222,6 +222,9 @@ jobs:
       - name: Print errors
         if: always()
         run: cat docs/docs.error.log
+      - name: Print server logs
+        if: always()
+        run: docker logs `docker ps | grep :8000 | awk '{print $1}'`
       - name: Checkout deepchecks.github.io
         if: github.event_name != 'pull_request'
         uses: actions/checkout@v2

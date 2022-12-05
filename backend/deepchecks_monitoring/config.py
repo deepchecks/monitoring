@@ -68,7 +68,7 @@ class DatabaseSettings(BaseDeepchecksSettings):
     """Database settings."""
 
     database_uri: PostgresDsn
-    echo_sql: bool = True
+    echo_sql: bool = False
 
     @property
     def async_database_uri(self) -> PostgresDsn:
