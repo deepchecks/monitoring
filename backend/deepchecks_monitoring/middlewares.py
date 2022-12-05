@@ -8,6 +8,10 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Middlewares to be used in the application."""
+import logging
+import time
+
+import watchtower
 from pyinstrument import Profiler
 from starlette.datastructures import MutableHeaders
 from starlette.requests import Request
@@ -54,3 +58,89 @@ class ProfilingMiddleware:
 
         profiler.start()
         return await self.app(scope, receive, wrapped_send)
+
+
+class SecurityAuditMiddleware:
+    """Access audit middleware."""
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        log_group_name: str = "deepchecks-access-audit",
+        log_stream_name: str = "deepchecks-access-audit",
+    ):
+        h = watchtower.CloudWatchLogHandler(
+            log_group_name=log_group_name,
+            log_stream_name=log_stream_name,
+        )
+        h.setLevel(logging.INFO)
+        self.logger = logging.getLogger("access-audit")
+        self.logger.addHandler(h)
+        self.app = app
+
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send
+    ):
+        """Execute middleware."""
+        from deepchecks_monitoring.utils import auth  # pylint: disable=import-outside-toplevel
+
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        response_status_code = None
+
+        async def wrapped_send(message: Message):
+            nonlocal response_status_code
+            if message["type"] == "http.response.start":
+                response_status_code = message["status"]
+            await send(message)
+
+        start = time.time()
+        await self.app(scope, receive, wrapped_send)
+        end = time.time()
+
+        info = {
+            "duration": end - start,
+            "client": scope["client"],
+            "scheme": scope["scheme"],
+            "http_version": scope["http_version"],
+            "method": scope["method"],
+            "path": scope["path"],
+            "query_string": scope["query_string"],
+            "status": response_status_code,
+            "headers": {},
+            "user": None,
+            "access_token": None
+        }
+
+        for k, v in scope["headers"]:
+            name = k.decode() if isinstance(k, bytes) else k
+            value = v.decode() if isinstance(v, bytes) else v
+
+            if name == "authorization":
+                value = "bearer *****"
+
+            info["headers"][name] = value
+
+        state = scope.get("state")
+
+        if state and isinstance(access_token := state.get("access_token"), auth.UserAccessToken):
+            info["access_token"] = {
+                "email": access_token.email,
+                "is_admin": access_token.is_admin,
+                "exp": access_token.exp,
+            }
+
+        if state and (user := state.get("user")):
+            info["user"] = {
+                "id": user.id,
+                "full_name": user.full_name,
+                "email": user.email,
+                "is_admin": user.is_admin,
+                "organization_id": user.organization_id,
+            }
+
+        self.logger.exception(info)

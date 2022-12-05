@@ -1,5 +1,4 @@
 """Represent global utility functions."""
-import faker
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
@@ -9,10 +8,19 @@ __all__ = ['generate_random_user', 'generate_test_user']
 
 async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with_org: bool = True):
     """Generate a random user."""
-    f = faker.Faker()
+    try:
+        import faker  # pylint: disable=import-outside-toplevel
+        f = faker.Faker()
+        name = f.name()
+        email = f.email()
+    except ImportError:
+        import uuid  # pylint: disable=import-outside-toplevel
+        uid = uuid.uuid4().hex
+        name = f'test-{uid}'
+        email = f'test-{uid}@deepchecks.com'
 
     u = await User.from_oauth_info(
-        info=UserOAuthDTO(email=f.email(), name=f.name()),
+        info=UserOAuthDTO(email=email, name=name),
         session=session,
         auth_jwt_secret=auth_jwt_secret
     )

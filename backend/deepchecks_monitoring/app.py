@@ -14,6 +14,7 @@ import typing as t
 from dataclasses import asdict
 
 import deepchecks
+import dotenv
 import jsonschema.exceptions
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -32,12 +33,11 @@ from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.middlewares import ProfilingMiddleware
+from deepchecks_monitoring.middlewares import ProfilingMiddleware, SecurityAuditMiddleware
 from deepchecks_monitoring.resources import ResourcesProvider
+from deepchecks_monitoring.utils import auth
 
 __all__ = ["create_application"]
-
-from deepchecks_monitoring.utils import auth
 
 
 def create_application(
@@ -66,6 +66,9 @@ def create_application(
     FastAPI
         application instance
     """
+    if path := dotenv.find_dotenv(usecwd=True):
+        dotenv.load_dotenv(dotenv_path=path)
+
     settings = settings or Settings()
 
     # Configure telemetry with uptrace
@@ -161,6 +164,9 @@ def create_application(
             for flag in app.state.feature_flags.values()
             if flag.is_public is True
         }
+
+    if settings.access_audit:
+        app.add_middleware(SecurityAuditMiddleware)
 
     app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
 

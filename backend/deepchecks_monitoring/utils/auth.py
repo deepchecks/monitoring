@@ -46,7 +46,7 @@ AccessToken = t.Type[t.Union[UserAccessToken, APIAccessToken]]
 
 async def get_user(
     request: Request,
-    token: AccessToken,
+    token: t.Optional[AccessToken],
     session: AsyncSession
 ):
     if hasattr(request.state, "user"):

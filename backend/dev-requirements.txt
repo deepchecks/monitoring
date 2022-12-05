@@ -23,3 +23,4 @@ uvicorn==0.17.6
 #deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
 faker
 pyOpenSSL
+aiosmtpd

@@ -17,12 +17,20 @@ import boto3
 from aiokafka.helpers import create_ssl_context
 from botocore.exceptions import BotoCoreError
 from pydantic import BaseSettings, PostgresDsn, RedisDsn
-
-__all__ = ['Settings', 'tags_metadata', 'Tags', 'DatabaseSettings', 'RedisSettings', 'KafkaSettings', 'S3Settings']
-
 from pydantic.networks import AnyHttpUrl
 
 from deepchecks_monitoring.utils.slack import SlackSettings
+
+__all__ = [
+    'Settings',
+    'tags_metadata',
+    'Tags',
+    'DatabaseSettings',
+    'RedisSettings',
+    'KafkaSettings',
+    'S3Settings'
+]
+
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
@@ -123,6 +131,7 @@ class Settings(DatabaseSettings, KafkaSettings, RedisSettings, EmailSettings, Sl
     oauth_client_secret: str
     uptrace_dsn: str = ''
     auth_jwt_secret: str
+    access_audit: bool = False
 
 
 class Tags(Enum):
