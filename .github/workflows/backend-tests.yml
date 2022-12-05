@@ -45,8 +45,11 @@ jobs:
       run: make env
     - name: pip freeze
       run: make freeze
+    - name: Verify migrations linearity
+      run: make check-migrations-liniarity
     - name: Run Tests
       run: make test
+
 #  coverage:
 #    runs-on: ubuntu-latest
 #    name: coveralls

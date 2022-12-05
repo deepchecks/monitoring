@@ -45,6 +45,7 @@ TOX := $(BIN)/tox
 SPHINX_BUILD := $(BIN)/sphinx-build
 TWINE := $(BIN)/twine
 UVICORN := $(BIN)/uvicorn
+ALEMBIC := $(BIN)/alembic
 
 # Project Settings
 PKGDIR := $(or $(PACKAGE), ./)
@@ -219,6 +220,11 @@ tox:
 
 freeze:
 	@$(PIP) freeze
+
+
+check-migrations-liniarity:
+	@test $$($(ALEMBIC) -c ./backend/alembic.ini --name public heads | wc -l) -eq 1
+	@test $$($(ALEMBIC) -c ./backend/alembic.ini --name org heads | wc -l) -eq 1
 
 
 ### Cleanup ######################################################

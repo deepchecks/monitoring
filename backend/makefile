@@ -44,6 +44,7 @@ PYTEST := $(BIN)/pytest
 TOX := $(BIN)/tox
 TWINE := $(BIN)/twine
 UVICORN := $(BIN)/uvicorn
+ALEMBIC := $(BIN)/alembic
 
 # Project Settings
 PKGDIR := $(or $(PACKAGE), ./)
@@ -219,6 +220,11 @@ tox: requirements dev-requirements
 
 freeze: requirements dev-requirements
 	@$(PIP) freeze
+
+
+check-migrations-liniarity:
+	@test $$($(ALEMBIC) --name public heads | wc -l) -eq 1
+	@test $$($(ALEMBIC) --name org heads | wc -l) -eq 1
 
 
 ### Cleanup ######################################################

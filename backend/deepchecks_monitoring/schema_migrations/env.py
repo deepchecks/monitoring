@@ -31,15 +31,22 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+if config.attributes.get("connection") is None:
+    if config.get_main_option("sqlalchemy.url"):
+        pass
+    elif os.environ.get("DATABASE_URI"):
+        config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URI"])
+    else:
+        raise ValueError("Database connection string was not provided")
+
+
 target_metadata = MonitoringBase.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
-if os.environ.get("DATABASE_URI"):
-    config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URI"])
 
 
 def run_migrations_offline() -> None:
@@ -91,17 +98,28 @@ def database_connection():
     else:
         schema = context.get_x_argument(as_dictionary=True).get("schema")
         schema = schema or os.environ.get("SCHEMA")
+
+        if not schema:
+            raise ValueError(
+                "Neither the 'schema' x argument nor the 'SHEMA' env variable was provided. "
+                "Organization migrations lineage requires a user to provide a database schema "
+                "name explicitly, it can be done in next ways:\n"
+                ">> alembic -x schema=<name> --name org <cmd>\n"
+                "or\n"
+                ">> SCHEMA=<name> alembic --name org <cmd>\n"
+            )
+
         connectable = engine_from_config(
             config.get_section(config.config_ini_section),
             prefix="sqlalchemy.",
             poolclass=pool.NullPool,
         )
+
         try:
             with connectable.connect() as c:
-                if schema:
-                    verify_schema_existence(c, schema)
-                    c.execute(f"SET search_path TO {schema}")
-                    c.dialect.default_schema_name = schema
+                verify_schema_existence(c, schema)
+                c.execute(f"SET search_path TO {schema}")
+                c.dialect.default_schema_name = schema
                 yield c
         finally:
             connectable.dispose()
