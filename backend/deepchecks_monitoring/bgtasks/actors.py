@@ -30,7 +30,6 @@ from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBr
 from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.integrations.email import EmailMessage
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
@@ -475,7 +474,7 @@ class WorkerBootstrap:
             uptrace_dsn=settings.uptrace_dsn,
         )
 
-        async with self.resources_provider_type(settings, CacheFunctions) as rp:
+        async with self.resources_provider_type(settings) as rp:
             async with anyio.create_task_group() as g:
                 g.start_soon(Worker.create(
                     engine=rp.async_database_engine,

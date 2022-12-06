@@ -31,7 +31,6 @@ from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.feature_flags import Variation
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.middlewares import ProfilingMiddleware, SecurityAuditMiddleware
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -90,7 +89,7 @@ def create_application(
     )
 
     app.state.settings = settings
-    app.state.resources_provider = resources_provider or ResourcesProvider(settings, CacheFunctions)
+    app.state.resources_provider = resources_provider or ResourcesProvider(settings)
     app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider,
                                                             settings.get_deepchecks_bucket())
     app.state.feature_flags = {}

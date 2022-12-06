@@ -42,7 +42,6 @@ from torch.utils.data import Dataset as TorchDataset
 
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
 from deepchecks_monitoring.public_models.base import Base as PublicModelsBase
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -211,7 +210,7 @@ def redis():
 def resources_provider(settings, redis):
     patch.object(ResourcesProvider, "redis_client", redis).start()
     patch.object(ResourcesProvider, "launchdarkly_variation", return_value=True).start()
-    yield ResourcesProvider(settings, CacheFunctions)
+    yield ResourcesProvider(settings)
 
 
 @pytest_asyncio.fixture(scope="function")
