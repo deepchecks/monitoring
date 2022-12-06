@@ -180,7 +180,7 @@ function DiagramLine({
       },
       line: {
         borderWidth: 2,
-        tension: 0.4,
+        tension: 0,
         fill: true
       }
     },

@@ -86,6 +86,9 @@ function AnalysisItemComponent({
         res_conf: []
       };
 
+      if (activeFilter !== AnalysisItemFilterTypes.AGGREGATION) 
+        additionalKwargs.check_conf[AnalysisItemFilterTypes.AGGREGATION] = ['none'];
+
       return additionalKwargs;
     }
   }, [activeFilter, checkConf?.length, filtersMultipleSelectValue, filtersSingleSelectValue]);
