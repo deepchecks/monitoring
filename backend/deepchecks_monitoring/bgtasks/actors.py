@@ -16,6 +16,7 @@ import typing as t
 from collections import defaultdict
 
 import anyio
+import httpx
 import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
@@ -37,6 +38,7 @@ from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, Model
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
+from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
@@ -176,65 +178,76 @@ async def execute_monitor(
     )
     for alert in alerts:
         # TODO:
-        await AlertNotificator(
+        notificator = await AlertNotificator.instantiate(
             alert_id=t.cast(int, alert.id),
             organization_id=organization_id,
             session=session,
             resources_provider=resources_provider,
             logger=logger.getChild("alert-notificator")
-        ).notify()
+        )
+        await notificator.notify()
 
     return alerts
 
 
+# TODO: consider splitting into three classes/functions
+# - AlertEmailNotificator
+# - AlertSlackNotificator
+# - AlertWebhooksExecutor
 class AlertNotificator:
     """Class to send notification about alerts."""
 
-    def __init__(
-        self,
+    @classmethod
+    async def instantiate(
+        cls: t.Type["AlertNotificator"],
         organization_id: int,
         alert_id: int,
         session: AsyncSession,
         resources_provider: ResourcesProvider,
         logger: t.Optional[logging.Logger] = None
-    ):
-        self.organization_id = organization_id
-        self.alert_id = alert_id
-        self.session = session
-        self.resources_provider = resources_provider
-        self.logger = logger or logging.getLogger("alert-notificator")
+    ) -> "AlertNotificator":
+        if (org := await session.scalar(
+            sa.select(Organization)
+            .where(Organization.id == organization_id)
+        )) is None:
+            raise RuntimeError(f"Not existing organization id:{organization_id}")
 
-        self.organization_future = asyncio.create_task(session.get(
-            Organization,
-            organization_id
-        ))
-        self.alert_future = asyncio.create_task(session.scalar(
-            sa.select(Alert)
-            .where(Alert.id == alert_id)
-            .options(
+        if (alert := await session.scalar(
+            sa.select(Alert).where(Alert.id == alert_id).options(
                 joinedload(Alert.alert_rule)
                 .joinedload(AlertRule.monitor)
                 .joinedload(Monitor.check)
                 .joinedload(Check.model)
             )
-        ))
+        )) is None:
+            raise RuntimeError(f"Not existing alert id:{alert_id}")
 
-    async def fetch_organization(self) -> Organization:
-        if org := await self.organization_future:
-            return org
-        else:
-            raise RuntimeError(f"Not existing organization id:{self.organization_id}")
+        return cls(
+            organization=org,
+            alert=alert,
+            session=session,
+            resources_provider=resources_provider,
+            logger=logger
+        )
 
-    async def fetch_alert(self) -> Alert:
-        if alert := await self.alert_future:
-            return alert
-        else:
-            raise RuntimeError(f"Not existing alert id:{self.organization_id}")
+    def __init__(
+        self,
+        organization: Organization,
+        alert: Alert,
+        session: AsyncSession,
+        resources_provider: ResourcesProvider,
+        logger: t.Optional[logging.Logger] = None
+    ):
+        self.organization = organization
+        self.alert = alert
+        self.session = session
+        self.resources_provider = resources_provider
+        self.logger = logger or logging.getLogger("alert-notificator")
 
     async def send_emails(self) -> bool:
         """Send notification emails."""
-        org = await self.fetch_organization()
-        alert = await self.fetch_alert()
+        org = self.organization
+        alert = self.alert
 
         alert_rule = t.cast(AlertRule, alert.alert_rule)
         monitor = t.cast(Monitor, alert_rule.monitor)
@@ -292,8 +305,8 @@ class AlertNotificator:
 
     async def send_slack_messages(self) -> bool:
         """Send slack message."""
-        org = await self.fetch_organization()
-        alert = await self.fetch_alert()
+        org = self.organization
+        alert = self.alert
         alert_rule = t.cast(AlertRule, alert.alert_rule)
 
         if alert_rule.alert_severity not in org.slack_notification_levels:
@@ -346,21 +359,45 @@ class AlertNotificator:
 
         return len(errors) < len(slack_apps)
 
+    async def execute_webhooks(self) -> bool:
+        org = self.organization
+        alert = self.alert
+        webhooks = await self.session.scalars(sa.select(AlertWebhook))
+
+        if not webhooks:
+            return False
+
+        webhooks = t.cast(t.Sequence[AlertWebhook], webhooks)
+
+        async with httpx.AsyncClient() as client:
+            results = await asyncio.gather(
+                *(
+                    w.execute(
+                        alert=alert,
+                        client=client,
+                        settings=self.resources_provider.settings,
+                        logger=self.logger
+                    )
+                    for w in webhooks
+                ),
+                return_exceptions=True
+            )
+
+            if any(isinstance(it, Exception) or it is False for it in results):
+                self.logger.warning(
+                    f"Execution of not all Organization(id:{org.id}) "
+                    "webhooks were successful"
+                )
+                return False
+
+            await self.session.flush()
+            await self.session.commit()
+            return True
+
     async def notify(self):
-        were_emails_send = await self.send_emails()
-        were_messages_send = await self.send_slack_messages()
-
-        if not were_emails_send:
-            self.logger.info(
-                "No emails were send for Alert(id:%s), Organization(id:%s)",
-                self.alert_id, self.organization_id
-            )
-
-        if not were_messages_send:
-            self.logger.info(
-                "No slack message were send for Alert(id:%s), Organization(id:%s)",
-                self.alert_id, self.organization_id
-            )
+        await self.send_emails()
+        await self.send_slack_messages()
+        await self.execute_webhooks()
 
 
 def assert_check_results(

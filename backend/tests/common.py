@@ -175,3 +175,106 @@ def create_alert_rule(
     assert isinstance(data, dict)
     assert "id" in data
     return data["id"]
+
+
+def create_alert_webhook(
+    client: TestClient,
+    expected_status: int = 201,
+    payload: t.Optional[t.Dict[t.Any, t.Any]] = None
+) -> t.Union[httpx.Response, int]:
+    f = faker.Faker()
+
+    default_payload = {
+        "kind": "STANDART",
+        "name": f.name(),
+        "description": f.text(),
+        "http_url": "https://httpbin.org",
+        "http_method": "GET",
+        "http_headers": {},
+        "notification_levels": [random.choice(list(AlertSeverity)).value],
+    }
+    payload = (
+        default_payload
+        if not payload else
+        {**default_payload, **payload}
+    )
+
+    response = client.post("/api/v1/alert-webhooks", json=payload)
+
+    if not 200 <= expected_status <= 299:
+        assert response.status_code == expected_status
+        return response
+
+    assert response.status_code == expected_status, (response.content, response.status_code)
+
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "id" in data
+    return data["id"]
+
+
+def delete_alert_webhook(
+    webhook_id: int,
+    client: TestClient,
+    expected_status: int = 200,
+) -> httpx.Response:
+    response = client.delete(f"/api/v1/alert-webhooks/{webhook_id}")
+    assert response.status_code == expected_status
+
+    if not 200 <= expected_status <= 299:
+        return response
+
+    retrieve_alert_webhook(client=client, webhook_id=webhook_id, expected_status=404)
+    return response
+
+
+def retrieve_alert_webhook(
+    webhook_id: int,
+    client: TestClient,
+    expected_status: int = 200,
+) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
+
+    response = client.get(f"/api/v1/alert-webhooks/{webhook_id}")
+
+    if not 200 <= expected_status <= 299:
+        assert response.status_code == expected_status
+        return response
+
+    assert response.status_code == expected_status
+    data = response.json()
+    assert_alert_webhook(data)
+
+    return data
+
+
+def retrieve_all_alert_webhooks(
+    client: TestClient,
+    expected_status: int = 200,
+) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
+
+    response = client.get("/api/v1/alert-webhooks")
+
+    if not 200 <= expected_status <= 299:
+        assert response.status_code == expected_status
+        return response
+
+    assert response.status_code == expected_status
+    data = response.json()
+    assert isinstance(data, list)
+
+    for it in data:
+        assert_alert_webhook(it)
+
+    return data
+
+
+def assert_alert_webhook(data: t.Dict[str, t.Any]):
+    assert isinstance(data, dict)
+    assert "id" in data and isinstance(data["id"], int)
+    assert "name" in data and isinstance(data["name"], str)
+    assert "description" in data and isinstance(data["description"], str)
+    assert "kind" in data and data["kind"] in {"STANDART", "PAGER_DUTY"}
+    assert "http_url" in data and isinstance(data["http_url"], str)
+    assert "http_method" in data and data["http_method"] in {"GET", "POST"}
+    assert "notification_levels" in data and isinstance(data["notification_levels"], list)
+    assert "additional_arguments" in data and isinstance(data["additional_arguments"], dict)

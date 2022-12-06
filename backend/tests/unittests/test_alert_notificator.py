@@ -39,12 +39,14 @@ async def test_alert_email_notification(
         alert_rule_id=alert_rule_id
     ).returning(Alert.id))
 
-    were_emails_send = await AlertNotificator(
+    notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, user.organization_id),
         alert_id=alert_id,
         session=async_session,
         resources_provider=resources_provider
-    ).send_emails()
+    )
+
+    were_emails_send = await notificator.send_emails()
 
     assert were_emails_send
     assert len(smtp_server.handler.mailbox) == 1
@@ -107,12 +109,14 @@ async def test_that_email_notification_levels_config_is_respected(
         ).returning(Alert.id))
     ]
 
-    were_emails_send = await AlertNotificator(
+    notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, user.organization_id),
         alert_id=alerts[0],
         session=async_session,
         resources_provider=resources_provider
-    ).send_emails()
+    )
+
+    were_emails_send = await notificator.send_emails()
 
     assert were_emails_send
     assert len(smtp_server.handler.mailbox) == 1
@@ -126,13 +130,14 @@ async def test_that_email_notification_levels_config_is_respected(
 
     # verify that emails will not be send for alert with severity
     # that is not within org notification levels config
-    were_emails_send = await AlertNotificator(
+    notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, user.organization_id),
         alert_id=alerts[1],
         session=async_session,
         resources_provider=resources_provider
-    ).send_emails()
+    )
 
+    were_emails_send = await notificator.send_emails()
     assert not were_emails_send
     assert len(smtp_server.handler.mailbox) == 0
 
@@ -175,13 +180,14 @@ async def test_that_emails_are_send_to_all_members_of_organization(
         alert_rule_id=alert_rule_id
     ).returning(Alert.id))
 
-    were_emails_send = await AlertNotificator(
+    notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, users[0].organization_id),
         alert_id=alert_id,
         session=async_session,
         resources_provider=resources_provider
-    ).send_emails()
+    )
 
+    were_emails_send = await notificator.send_emails()
     assert were_emails_send
     assert len(smtp_server.handler.mailbox) == len(users)
 
@@ -236,11 +242,12 @@ async def test_alert_slack_notification(
     settings = Settings()  # type: ignore
 
     async with ResourcesProvider(settings) as rp:
-        were_messages_send = await AlertNotificator(
+        notificator = await AlertNotificator.instantiate(
             organization_id=t.cast(int, user.organization_id),
             alert_id=alert_id,
             session=async_session,
             resources_provider=rp
-        ).send_slack_messages()
+        )
+        were_messages_send = await notificator.send_slack_messages()
 
     assert were_messages_send

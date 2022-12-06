@@ -56,8 +56,11 @@ dotenv.load_dotenv()
 
 @pytest.fixture(scope="session")
 def postgres():
-    with testing.postgresql.Postgresql(port=7654) as postgres:
-        yield postgres
+    if (uri := os.environ.get("TESTS_DATABASE_URI")) is not None:
+        yield uri
+    else:
+        with testing.postgresql.Postgresql(port=7654) as postgres:
+            yield postgres
 
 
 @pytest.fixture(scope="session")
@@ -840,4 +843,3 @@ def vision_detection_and_prediction(vision_detection_and_prediction_raw):
     imgs, labels, predictions = vision_detection_and_prediction_raw
     data_loader = DataLoader(_VisionDataset(imgs, labels), batch_size=len(labels), collate_fn=_batch_collate)
     return _MyDetectionVisionData(data_loader), predictions
-
