@@ -23,7 +23,7 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, S3BucketDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
-from deepchecks_monitoring.logic.check_logic import (BasicMonitorOptions, MonitorOptions, SingleWindowMonitorOptions,
+from deepchecks_monitoring.logic.check_logic import (CheckRunOptions, MonitorOptions, SingleCheckRunOptions,
                                                      get_feature_property_info, get_metric_class_info,
                                                      reduce_check_result, reduce_check_window,
                                                      run_check_per_window_in_range, run_check_window)
@@ -265,7 +265,7 @@ async def run_standalone_check_per_window_in_range(
 @router.post('/checks/{check_id}/run/window', tags=[Tags.CHECKS])
 async def get_check_window(
         check_id: int,
-        monitor_options: SingleWindowMonitorOptions,
+        monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
         s3_bucket: str = S3BucketDep,
 ):
@@ -299,7 +299,7 @@ async def get_check_window(
 @router.post('/checks/{check_id}/run/reference', tags=[Tags.CHECKS])
 async def get_check_reference(
         check_id: int,
-        monitor_options: BasicMonitorOptions,
+        monitor_options: CheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
         s3_bucket: str = S3BucketDep,
 ):
@@ -309,7 +309,7 @@ async def get_check_reference(
     ----------
     check_id : int
         ID of the check.
-    monitor_options : BasicMonitorOptions
+    monitor_options : CheckRunOptions
         The monitor options.
     session : AsyncSession, optional
         SQLAlchemy session.
@@ -383,7 +383,7 @@ async def run_check_group_by_feature(
         check_id: int,
         model_version_id: int,
         feature: str,
-        monitor_options: SingleWindowMonitorOptions,
+        monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
         s3_bucket: str = S3BucketDep,
 ):
@@ -396,7 +396,7 @@ async def run_check_group_by_feature(
     model_version_id : int
     feature : str
         Feature to group by
-    monitor_options : SingleWindowMonitorOptions
+    monitor_options : SingleCheckRunOptions
        The monitor options.
     session : AsyncSession
         SQLAlchemy session.

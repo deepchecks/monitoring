@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
 
-import { CheckGroupBySchema, SingleWindowMonitorOptions } from 'api/generated';
+import { CheckGroupBySchema, SingleCheckRunOptions } from 'api/generated';
 
 import { styled, Box } from '@mui/material';
 
@@ -16,7 +16,7 @@ interface DataGraphsProps {
   data: CheckGroupBySchema[];
   selectedFeature: string | undefined;
   modelVersionId: number | null;
-  singleWindowMonitorOptions: SingleWindowMonitorOptions | null;
+  singleWindowMonitorOptions: SingleCheckRunOptions | null;
 }
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);

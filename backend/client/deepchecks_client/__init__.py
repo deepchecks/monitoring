@@ -23,7 +23,7 @@ from deepchecks.tabular import Dataset
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.api import API
 from deepchecks_client.core.client import DeepchecksModelClient, DeepchecksModelVersionClient
-from deepchecks_client.core.utils import ColumnTypeName, TaskType, pretty_print
+from deepchecks_client.core.utils import ColumnTypeName, DataFilter, OperatorsEnum, TaskType, pretty_print
 from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
@@ -39,7 +39,7 @@ except ImportError:  # for Python<3.8
     import importlib_metadata as metadata
 
 __version__ = metadata.version('deepchecks_client')
-__all__ = ['DeepchecksClient', 'TaskType', 'create_schema', 'read_schema']
+__all__ = ['DeepchecksClient', 'TaskType', 'create_schema', 'read_schema', 'DataFilter', 'OperatorsEnum']
 
 
 class DeepchecksClient:

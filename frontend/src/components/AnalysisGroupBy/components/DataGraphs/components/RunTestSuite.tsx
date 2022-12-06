@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 
 import {
   useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost,
-  SingleWindowMonitorOptions,
+  SingleCheckRunOptions,
   DataFilter
 } from 'api/generated';
 
@@ -13,7 +13,7 @@ import { TestTube } from 'assets/icon/icon';
 
 interface RunTestSuiteProps {
   modelVersionId: number;
-  singleWindowMonitorOptions: SingleWindowMonitorOptions;
+  singleWindowMonitorOptions: SingleCheckRunOptions;
   activeBarFilters: DataFilter[];
 }
 
@@ -22,7 +22,7 @@ export const RunTestSuite = ({ modelVersionId, activeBarFilters, singleWindowMon
     useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
 
   const handleRunTestSuite = useCallback(async () => {
-    const dataToSend: SingleWindowMonitorOptions = JSON.parse(JSON.stringify(singleWindowMonitorOptions));
+    const dataToSend: SingleCheckRunOptions = JSON.parse(JSON.stringify(singleWindowMonitorOptions));
 
     if (dataToSend.filter) {
       dataToSend.filter.filters.push(...activeBarFilters);

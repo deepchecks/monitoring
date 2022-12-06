@@ -12,13 +12,14 @@
 """Module containing deepchecks monitoring client."""
 import typing as t
 import warnings
+from datetime import datetime
 
 import pandas as pd
 import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
-from deepchecks_client.core.utils import DeepchecksJsonValidator, parse_timestamp, pretty_print
+from deepchecks_client.core.utils import DataFilter, DeepchecksJsonValidator, parse_timestamp, pretty_print
 
 from .api import API
 
@@ -63,8 +64,8 @@ class DeepchecksModelVersionClient:
         self.schema = schemas['monitor_schema']
         self.ref_schema = schemas['reference_schema']
         self.model_classes = schemas['classes']
-        self.features = schemas['features']
-        self.additional_data = schemas['additional_data']
+        self.features: t.Dict[str, str] = schemas['features']
+        self.additional_data: t.Dict[str, str] = schemas['additional_data']
         self.feature_importance = schemas['feature_importance']
         self.label_map = schemas['label_map']
         self.all_columns = {**self.features, **self.additional_data}
@@ -72,6 +73,12 @@ class DeepchecksModelVersionClient:
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
 
+        self.features = schemas['features']
+        self.additional_data = schemas['additional_data']
+        self.all_columns = {
+            **self.features,
+            **self.additional_data
+        }
         self.categorical_columns = [
             feat
             for feat, value in self.all_columns.items()
@@ -194,6 +201,72 @@ class DeepchecksModelVersionClient:
         if label_map:
             if self.label_map != label_map:
                 raise ValueError('Existing model version does not match received label_map')
+
+    def get_reference_data(
+        self,
+        rows_count: int = 10_000,
+        filters: t.List[DataFilter] = None,
+    ) -> pd.DataFrame:
+        """Get the reference data.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version id.
+        rows_count : int, optional
+            The number of rows to return (random sampling will be used).
+        filters : t.List[DataFilter], optional
+            Data filters to apply. Used in order to received a segment of the data based on selected properties.
+            Required format for filters and possible operators are detailed under the respected objects
+            which can be found at:
+            `from deepchecks_client import DataFilter, OperatorsEnum`
+
+        Returns
+        -------
+        'pandas'.DataFrame
+            The reference data.
+        """
+        return self.api.get_model_version_reference_data(self.model_version_id, rows_count, filters)
+
+    def get_production_data(
+        self,
+        start_time: t.Union[datetime, str, int],
+        end_time: t.Union[datetime, str, int],
+        rows_count: int = 10_000,
+        filters: t.List[DataFilter] = None,
+    ) -> pd.DataFrame:
+        """Get the production data on a specific window.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version id.
+        start_time : t.Union[datetime, str, int]
+            The start time timestamp.
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        end_time : t.Union[datetime, str, int]
+            The end time timestamp.
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        rows_count : int, optional
+            The number of rows to return (random sampling will be used).
+        filters : t.List[DataFilter], optional
+            Data filters to apply. Used in order to received a segment of the data based on selected properties.
+            Required format for filters and possible operators are detailed under the respected objects
+            which can be found at:
+            `from deepchecks_client import DataFilter, OperatorsEnum`
+
+        Returns
+        -------
+        'pandas'.DataFrame
+            The production data.
+        """
+        return self.api.get_model_version_production_data(self.model_version_id,
+                                                          start_time, end_time,
+                                                          rows_count, filters)
 
 
 class DeepchecksModelClient:

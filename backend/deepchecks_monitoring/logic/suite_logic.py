@@ -18,7 +18,7 @@ from pandas import DataFrame
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, S3BucketDep
-from deepchecks_monitoring.logic.check_logic import MonitorOptions, load_data_for_check
+from deepchecks_monitoring.logic.check_logic import TimeWindowOption, load_data_for_check
 from deepchecks_monitoring.logic.model_logic import dataframe_to_dataset_and_pred, dataframe_to_vision_data_pred_props
 from deepchecks_monitoring.schema_models import ModelVersion, TaskType
 
@@ -75,7 +75,7 @@ def _create_vision_suite(suite_name: str, task_type: TaskType, has_reference: bo
 
 async def run_suite_for_model_version(
         model_version: ModelVersion,
-        window_options: MonitorOptions,
+        window_options: TimeWindowOption,
         session: AsyncSession = AsyncSessionDep,
         s3_bucket: str = S3BucketDep,
 ):
@@ -84,7 +84,7 @@ async def run_suite_for_model_version(
     Parameters
     ----------
     model_version : ModelVersion
-    window_options : MonitorOptions
+    window_options : TimeWindowOption
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.

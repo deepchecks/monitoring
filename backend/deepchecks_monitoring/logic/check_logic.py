@@ -24,8 +24,8 @@ from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multic
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
 from deepchecks.vision.utils.vision_properties import PropertiesInputType
-from pydantic import BaseModel, root_validator, validator
-from sqlalchemy import Column, and_
+from pydantic import BaseModel, Field, root_validator, validator
+from sqlalchemy import Column, Table, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
@@ -51,11 +51,10 @@ class AlertCheckOptions(BaseModel):
     grace_period: t.Optional[bool] = True
 
 
-class BasicMonitorOptions(BaseModel):
-    """Basic monitor schema without any time related fields."""
+class TableFiltersSchema(BaseModel):
+    """Basic table filter schema containing functions for filtering."""
 
     filter: t.Optional[DataFilterList] = None
-    additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
 
     def add_filters(self, added_filters: DataFilterList):
         """Return a copy of this options with the added given filters."""
@@ -76,9 +75,19 @@ class BasicMonitorOptions(BaseModel):
             ])
         return True
 
+    def sql_all_filters(self):
+        """Create sql filter clause on data columns (used for overloading)."""
+        return self.sql_columns_filter()
 
-class SingleWindowMonitorOptions(BasicMonitorOptions):
-    """Adds to the monitor options start and end times, without any windows related options."""
+
+class CheckRunOptions(TableFiltersSchema):
+    """Basic schema for running a check."""
+
+    additional_kwargs: t.Optional[MonitorCheckConfSchema] = None
+
+
+class TimeWindowOption(TableFiltersSchema):
+    """Adds to the table schema start and end times."""
 
     end_time: str
     start_time: str
@@ -110,7 +119,21 @@ class SingleWindowMonitorOptions(BasicMonitorOptions):
         return values
 
 
-class MonitorOptions(SingleWindowMonitorOptions):
+class SingleCheckRunOptions(CheckRunOptions, TimeWindowOption):
+    """Options for running check on a specific window."""
+
+
+class TableDataSchema(TableFiltersSchema):
+    """Class for selecting a specific amount of rows on a table data."""
+
+    rows_count: int = Field(default=100, le=100_000)
+
+
+class WindowDataSchema(TableDataSchema, TimeWindowOption):
+    """Schema for getting rows in a specific window."""
+
+
+class MonitorOptions(SingleCheckRunOptions):
     """Add to single window monitor options frequency and aggregation window to make it multi window."""
 
     frequency: t.Optional[int] = None
@@ -395,7 +418,7 @@ async def run_check_per_window_in_range(
 
 async def run_check_window(
         check: Check,
-        monitor_options: SingleWindowMonitorOptions,
+        monitor_options: SingleCheckRunOptions,
         session: AsyncSession,
         model: Model,
         model_versions: t.List[ModelVersion],
@@ -410,7 +433,7 @@ async def run_check_window(
     ----------
     check : Check
         The check to run.
-    monitor_options : SingleWindowMonitorOptions
+    monitor_options : SingleCheckRunOptions
         The monitor options to use.
     session : AsyncSession
         The database session to use.
@@ -490,14 +513,56 @@ async def run_check_window(
     return model_results
 
 
+def create_execution_data_query(
+        data_table: Table,
+        model_version: ModelVersion,
+        session: AsyncSession,
+        options: TableFiltersSchema,
+        features: t.List[str] = None,
+        n_samples: int = 10_000,
+        all_columns: bool = False,
+) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
+    """Return sessions of the data load for the given model version.
+
+    Parameters
+    ----------
+    data_table: Table
+    model_version
+    session
+    features
+    options
+    with_reference: bool
+        Whether to load reference
+    with_test: bool
+        Whether to load test
+    n_sample: int, default: 10,000
+        The number of samples to collect
+    all_columns: bool, default False
+        Whether to load all the columns instead of just the top features
+
+    Returns
+    -------
+    Coroutine
+        Routine is the data session.
+    """
+    if all_columns:
+        data_query = select(data_table)
+    else:
+        data_query = create_model_version_select_object(model_version, data_table, features)
+    data_query = data_query.filter(options.sql_all_filters()
+                                   if SAMPLE_TS_COL in data_table.c else options.sql_columns_filter())
+    return session.execute(random_sample(data_query, data_table, n_samples=n_samples))
+
+
 def load_data_for_check(
         model_version: ModelVersion,
         session: AsyncSession,
         features: t.List[str],
-        options: SingleWindowMonitorOptions,
-        with_reference=True,
-        with_test=True,
-        n_samples=10_000,
+        options: TimeWindowOption,
+        with_reference: bool = True,
+        with_test: bool = True,
+        n_samples: int = 10_000,
+        all_columns: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
 
@@ -513,6 +578,8 @@ def load_data_for_check(
         Whether to load test
     n_sample: int, default: 10,000
         The number of samples to collect
+    all_columns: bool, default False
+        Whether to load all the columns instead of just the top features
 
     Returns
     -------
@@ -524,19 +591,26 @@ def load_data_for_check(
 
     if with_reference:
         reference_table = model_version.get_reference_table(session)
-        reference_query = create_model_version_select_object(model_version, reference_table, features)
-        reference_query = reference_query.filter(options.sql_columns_filter())
-        reference_query = session.execute(random_sample(reference_query, reference_table, n_samples=n_samples))
+        reference_query = create_execution_data_query(reference_table,
+                                                      model_version=model_version,
+                                                      session=session,
+                                                      features=features,
+                                                      options=options,
+                                                      n_samples=n_samples,
+                                                      all_columns=all_columns)
     else:
         reference_query = None
 
     if with_test:
         if model_version.is_in_range(options.start_time_dt(), options.end_time_dt()):
             test_table = model_version.get_monitor_table(session)
-            select_obj = create_model_version_select_object(model_version, test_table, features)
-            select_obj = select_obj.filter(options.sql_all_filters())
-            select_obj = random_sample(select_obj, test_table, n_samples=n_samples)
-            test_query = session.execute(select_obj)
+            test_query = create_execution_data_query(test_table,
+                                                     model_version=model_version,
+                                                     session=session,
+                                                     features=features,
+                                                     options=options,
+                                                     n_samples=n_samples,
+                                                     all_columns=all_columns)
         else:
             test_query = None
     else:

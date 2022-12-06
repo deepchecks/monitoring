@@ -26,8 +26,9 @@ from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
-from deepchecks_client.core.utils import (ColumnType, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
-                                          TaskType, parse_timestamp, pretty_print, validate_additional_data_schema)
+from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder,
+                                          DeepchecksJsonValidator, TaskType, parse_timestamp, pretty_print,
+                                          validate_additional_data_schema)
 from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_predictions
 
 
@@ -41,6 +42,108 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
     model_version_id : int
         The id of the model version.
     """
+
+    def _dataframe_to_dataset_and_pred(self, df:  pd.DataFrame) \
+            -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+        """Convert a dataframe to deepcheck dataset and predictions array."""
+        if df is None or len(df) == 0:
+            return None, None, None
+
+        y_pred = None
+        y_proba = None
+
+        if DeepchecksColumns.SAMPLE_PRED_COL in df.columns:
+            if not df[DeepchecksColumns.SAMPLE_PRED_COL].isna().all():
+                y_pred = np.array(df[DeepchecksColumns.SAMPLE_PRED_COL].to_list())
+            df.drop(DeepchecksColumns.SAMPLE_PRED_COL, inplace=True, axis=1)
+        if DeepchecksColumns.SAMPLE_PRED_PROBA_COL in df.columns:
+            if not df[DeepchecksColumns.SAMPLE_PRED_PROBA_COL].isna().all():
+                y_proba = np.array(df[DeepchecksColumns.SAMPLE_PRED_PROBA_COL].to_list())
+            df.drop(DeepchecksColumns.SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
+
+        cat_features = [feat_name for feat_name, feat_type in self.features.items() if feat_type
+                        in [ColumnType.CATEGORICAL, ColumnType.BOOLEAN]]
+        dataset_params = {'features': list(self.features.keys()),
+                          'cat_features': cat_features, 'label_type': self.model['task_type']}
+
+        if df[DeepchecksColumns.SAMPLE_LABEL_COL].isna().all():
+            df.drop(DeepchecksColumns.SAMPLE_LABEL_COL, inplace=True, axis=1)
+        else:
+            dataset_params['label'] = DeepchecksColumns.SAMPLE_LABEL_COL.value
+
+        if DeepchecksColumns.SAMPLE_TS_COL in df.columns:
+            dataset_params['datetime_name'] = DeepchecksColumns.SAMPLE_TS_COL
+
+        dataset = Dataset(df, **dataset_params)
+        return dataset, y_pred, y_proba
+
+    def get_deepchecks_reference_dataset(
+        self,
+        rows_count: int = 10_000,
+        filters: t.List[DataFilter] = None,
+    ) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+        """Get a deepchecks dataset and predictions for a model version reference data.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version id.
+        rows_count : int, optional
+            The number of rows to return (random sampling will be used).
+        filters : t.List[DataFilter], optional
+            Data filters to apply. Used in order to received a segment of the data based on selected properties.
+            Required format for filters and possible operators are detailed under the respected objects
+            which can be found at:
+            `from deepchecks_client import DataFilter, OperatorsEnum`
+
+        Returns
+        -------
+        t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]
+            a tuple of: (deepchecks dataset, predictions array, prediction probabilities array).
+        """
+        df = self.api.get_model_version_reference_data(self.model_version_id, rows_count, filters)
+        return self._dataframe_to_dataset_and_pred(df)
+
+    def get_deepchecks_production_dataset(
+        self,
+        start_time: t.Union[datetime, str, int],
+        end_time: t.Union[datetime, str, int],
+        rows_count: int = 10_000,
+        filters: t.List[DataFilter] = None,
+    ) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+        """Get a deepchecks dataset and predictions for a model version production data on a specific window.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version id.
+        start_time : t.Union[datetime, str, int]
+            The start time timestamp.
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        end_time : t.Union[datetime, str, int]
+            The end time timestamp.
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        rows_count : int, optional
+            The number of rows to return (random sampling will be used).
+        filters : t.List[DataFilter], optional
+            Data filters to apply. Used in order to received a segment of the data based on selected properties.
+            Required format for filters and possible operators are detailed under the respected objects
+            which can be found at:
+            `from deepchecks_client import DataFilter, OperatorsEnum`
+
+        Returns
+        -------
+        t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]
+            a tuple of: (deepchecks dataset, predictions array, prediction probabilities array).
+        """
+        df = self.api.get_model_version_production_data(self.model_version_id,
+                                                        start_time, end_time,
+                                                        rows_count, filters)
+        return self._dataframe_to_dataset_and_pred(df)
 
     def set_feature_importance(
             self,

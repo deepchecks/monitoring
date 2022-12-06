@@ -9,11 +9,14 @@
 # ----------------------------------------------------------------------------
 #
 """Backend API."""
+import json
 import typing as t
 from copy import copy
+from datetime import datetime
 
 import httpx
-from deepchecks_client.core.utils import maybe_raise
+import pandas as pd
+from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
 
 __all__ = ['API']
 
@@ -562,6 +565,103 @@ class API:
         else:
             return self.session.delete(f'model-versions/{model_version_id}')
 
+    def get_model_version_reference_data(
+        self,
+        model_version_id: int,
+        rows_count: int = 10_000,
+        filters: t.List[DataFilter] = None,
+        raise_on_status: bool = True,
+    ) -> t.Union[pd.DataFrame, httpx.Response]:
+        """Get reference data for a model version.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version id.
+        rows_count : int, optional
+            The number of rows to return (random sampling will be used).
+        filters : t.List[DataFilter], optional
+            Data filters to apply. Used in order to received a segment of the data based on selected properties.
+            Required format for filters and possible operators are detailed under the respected objects
+            which can be found at:
+            `from deepchecks_client import DataFilter, OperatorsEnum`
+        raise_on_status : bool, optional
+            Whether to raise an exception if the status is not 200.
+
+        Returns
+        -------
+        t.Union['pandas'.DataFrame, httpx.Response]
+            The reference data or a plain response if raise_on_status is False.
+        """
+        data = {'rows_count': rows_count}
+        if filters is not None and len(filters) > 0:
+            data['filter'] = {'filters': filters}
+        resp = self.session.post(f'model-versions/{model_version_id}/get-ref-data', json=data)
+        if raise_on_status:
+            maybe_raise(
+                resp,
+                msg=f'Failed to get reference data for ModelVersion(id:{model_version_id})\n{{error}}'
+            )
+            json_data = json.loads(resp.json())
+            return pd.DataFrame.from_dict(json_data)
+        return resp
+
+    def get_model_version_production_data(
+        self,
+        model_version_id: int,
+        start_time: t.Union[datetime, str, int],
+        end_time: t.Union[datetime, str, int],
+        rows_count: int = 10_000,
+        filters: t.List[DataFilter] = None,
+        raise_on_status: bool = True,
+    ) -> t.Union[pd.DataFrame, httpx.Response]:
+        """Get production data for a model version on a specific window.
+
+        Parameters
+        ----------
+        model_version_id : int
+            The model version id.
+        start_time : t.Union[datetime, str, int]
+            The start time timestamp.
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        end_time : t.Union[datetime, str, int]
+            The end time timestamp.
+                - int: Unix timestamp
+                - str: timestamp in ISO8601 format
+                - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        rows_count : int, optional
+            The number of rows to return (random sampling will be used).
+        filters : t.List[DataFilter], optional
+            Data filters to apply. Used in order to received a segment of the data based on selected properties.
+            Required format for filters and possible operators are detailed under the respected objects
+            which can be found at:
+            `from deepchecks_client import DataFilter, OperatorsEnum`
+        raise_on_status : bool, optional
+            Whether to raise an exception if the status is not 200.
+
+        Returns
+        -------
+        t.Union['pandas'.DataFrame, httpx.Response]
+            The production data or a plain response if raise_on_status is False.
+        """
+        start_time = parse_timestamp(start_time).isoformat()
+        end_time = parse_timestamp(end_time).isoformat()
+        data = {'start_time': start_time, 'end_time': end_time,
+                'rows_count': rows_count}
+        if filters is not None and len(filters) > 0:
+            data['filter'] = {'filters': filters}
+        resp = self.session.post(f'model-versions/{model_version_id}/get-prod-data', json=data)
+        if raise_on_status:
+            maybe_raise(
+                resp,
+                msg=f'Failed to get production data for ModelVersion(id:{model_version_id})\n{{error}}'
+            )
+            json_data = json.loads(resp.json())
+            return pd.DataFrame.from_dict(json_data)
+        return resp
+
     def delete_model_version_by_name(
         self,
         model_name: str,
@@ -587,7 +687,7 @@ class API:
         params = {'identifier_kind': 'name'}
         path = f'models/{model_name}/model-versions/{model_version_name}'
         if raise_on_status:
-            maybe_raise(
+            return maybe_raise(
                 self.session.delete(path, params=params),
                 msg=f'Failed to delete ModelVersion(name:{model_version_name}, model:{model_name})\n{{error}}'
             )

@@ -35,7 +35,8 @@ from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, TaskType
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_S3_IMAGE_COL, ColumnType)
+                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_S3_IMAGE_COL, SAMPLE_TS_COL,
+                                                             ColumnType)
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -89,13 +90,19 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version
             y_proba = np.array(df[SAMPLE_PRED_PROBA_COL].to_list())
         df.drop(SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
 
-    cat_features = [feat[0] for feat in model_version.features_columns.items() if feat[0] in top_feat and feat[1]
-                    in [ColumnType.CATEGORICAL.value, ColumnType.BOOLEAN.value]]
-    dataset_params = {'cat_features': cat_features, 'label_type': model_version.model.task_type.value}
+    available_features = [feat_name for feat_name in model_version.features_columns.keys() if feat_name in top_feat]
+    cat_features = [feat_name for feat_name, feat_type in model_version.features_columns.items()
+                    if feat_name in top_feat and feat_type in [ColumnType.CATEGORICAL, ColumnType.BOOLEAN]]
+    dataset_params = {'features': available_features,
+                      'cat_features': cat_features, 'label_type': model_version.model.task_type.value}
+
     if df[SAMPLE_LABEL_COL].isna().all():
         df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
     else:
         dataset_params['label'] = SAMPLE_LABEL_COL
+
+    if SAMPLE_TS_COL in df.columns:
+        dataset_params['datetime_name'] = SAMPLE_TS_COL
 
     dataset = Dataset(df, **dataset_params)
     return dataset, y_pred, y_proba

@@ -12,9 +12,11 @@ import typing as t
 from datetime import datetime
 from io import StringIO
 
+import pandas as pd
 import pendulum as pdl
 from fastapi import BackgroundTasks, Depends, Path
 from fastapi import status as HttpStatus
+from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field, root_validator
 from sqlalchemy import Index, MetaData, Table, and_, func, select, text, update
 from sqlalchemy.exc import IntegrityError
@@ -27,6 +29,8 @@ from starlette.responses import HTMLResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
+from deepchecks_monitoring.logic.check_logic import (SingleCheckRunOptions, TableDataSchema, WindowDataSchema,
+                                                     create_execution_data_query)
 from deepchecks_monitoring.logic.suite_logic import run_suite_for_model_version
 from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, IdentifierKind, IdResponse, ModelIdentifier,
                                                     ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
@@ -40,7 +44,6 @@ from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
 
-from .check import MonitorOptions
 from .router import router
 
 if t.TYPE_CHECKING:
@@ -389,7 +392,7 @@ async def get_schema(
 @router.post('/model-versions/{model_version_id}/suite-run', tags=[Tags.CHECKS], response_class=HTMLResponse)
 async def run_suite_on_model_version(
         model_version_id: int,
-        monitor_options: MonitorOptions,
+        monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep
 ):
     """Run suite (all checks defined) on given model version.
@@ -415,6 +418,97 @@ async def run_suite_on_model_version(
     html = buffer.getvalue()
 
     return HTMLResponse(content=html, status_code=200)
+
+
+async def _get_data(model_version_id: int,
+                    monitor_options: t.Union[TableDataSchema, WindowDataSchema],
+                    session: AsyncSession,
+                    is_ref):
+    """Get data for a model version.
+
+    Parameters
+    ----------
+    model_version_id : int
+        The model version id.
+    monitor_options : t.Union[TableDataSchema, WindowDataSchema]
+        The monitor options.
+    session : AsyncSession
+        The database session.
+    is_ref : bool
+        Whether to get reference data (otherwise get production data).
+
+    Returns
+    -------
+    ORJSONResponse
+        The data in a json format.
+    """
+    options = joinedload(ModelVersion.model).joinedload(Model.checks)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=options, id=model_version_id)
+
+    prod_table = model_version.get_reference_table(session) if is_ref else model_version.get_monitor_table(session)
+    data_query = create_execution_data_query(prod_table,
+                                             model_version=model_version,
+                                             session=session,
+                                             options=monitor_options,
+                                             n_samples=monitor_options.rows_count,
+                                             all_columns=True)
+    data_query = await data_query
+    df = pd.DataFrame(data_query.all(), columns=[str(key) for key in data_query.keys()])
+
+    if SAMPLE_TS_COL in df.columns:
+        df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: x.isoformat())
+
+    return ORJSONResponse(df.to_json(orient='records'))
+
+
+@router.post('/model-versions/{model_version_id}/get-ref-data', tags=[Tags.MODELS], response_class=ORJSONResponse)
+async def get_model_version_ref_data(
+        model_version_id: int,
+        monitor_options: TableDataSchema,
+        session: AsyncSession = AsyncSessionDep
+):
+    """Get reference data for a model version.
+
+    Parameters
+    ----------
+    model_version_id : int
+        The id of the model version.
+    monitor_options : TableDataSchema
+        The options for the monitor data.
+    session : AsyncSession
+        The database session.
+
+    Returns
+    -------
+    ORJSONResponse
+        The reference data in a json format.
+    """
+    return await _get_data(model_version_id, monitor_options, session, True)
+
+
+@router.post('/model-versions/{model_version_id}/get-prod-data', tags=[Tags.MODELS], response_class=ORJSONResponse)
+async def get_model_version_prod_data(
+        model_version_id: int,
+        monitor_options: WindowDataSchema,
+        session: AsyncSession = AsyncSessionDep
+):
+    """Get reference data for a model version.
+
+    Parameters
+    ----------
+    model_version_id : int
+        The id of the model version.
+    monitor_options : WindowDataSchema
+        The options for the monitor data.
+    session : AsyncSession
+        The database session.
+
+    Returns
+    -------
+    ORJSONResponse
+        The production data in a json format.
+    """
+    return await _get_data(model_version_id, monitor_options, session, False)
 
 
 class TimeWindowSchema(BaseModel):

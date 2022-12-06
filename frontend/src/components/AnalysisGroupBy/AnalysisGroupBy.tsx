@@ -4,7 +4,7 @@ import {
   CheckGroupBySchema,
   getSchemaApiV1ModelVersionsModelVersionIdSchemaGet,
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
-  SingleWindowMonitorOptions
+  SingleCheckRunOptions
 } from 'api/generated';
 import { AnalysisContext } from 'context/analysis-context';
 
@@ -36,7 +36,7 @@ const AnalysisGroupByComponent = ({
   const [loading, setLoading] = useState(false);
 
   const [classOrFeature, setClassOrFeature] = useState<ClassOrFeature | null>(null);
-  const [singleWindowMonitorOptions, setSingleWindowMonitorOptions] = useState<SingleWindowMonitorOptions | null>(null);
+  const [singleWindowMonitorOptions, setSingleCheckRunOptions] = useState<SingleCheckRunOptions | null>(null);
   const [featuresArray, setFeaturesArray] = useState<string[]>([]);
   const [selectedFeature, setSelectedFeature] = useState<string>();
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
@@ -44,7 +44,7 @@ const AnalysisGroupByComponent = ({
   const propValuesAreNotNull = !!(datasetName && check && modelVersionId && timeLabel);
 
   const runCheckGroupByFeature = useCallback(
-    async (selectedFeature: string, singleWindowMonitorOptions: SingleWindowMonitorOptions) => {
+    async (selectedFeature: string, singleWindowMonitorOptions: SingleCheckRunOptions) => {
       if (check && modelVersionId) {
         setLoading(true);
 
@@ -75,14 +75,14 @@ const AnalysisGroupByComponent = ({
         setFeaturesArray(featuresNames);
         setSelectedFeature(featuresNames[0]);
 
-        const singleWindowMonitorOptions: SingleWindowMonitorOptions = {
+        const singleWindowMonitorOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
           end_time: new Date(timeLabel).toISOString(),
           filter: { filters: activeFilters.length ? activeFilters : [] },
           ...(additionalKwargs && { additional_kwargs: additionalKwargs })
         };
 
-        setSingleWindowMonitorOptions(singleWindowMonitorOptions);
+        setSingleCheckRunOptions(singleWindowMonitorOptions);
 
         if (additionalKwargs && type) {
           const value =
@@ -98,7 +98,7 @@ const AnalysisGroupByComponent = ({
     getData();
 
     return () => {
-      setSingleWindowMonitorOptions(null);
+      setSingleCheckRunOptions(null);
       setClassOrFeature(null);
       setGroupBySchema([]);
       setFeaturesArray([]);

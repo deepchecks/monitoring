@@ -31,7 +31,8 @@ from termcolor import cprint
 from typing_extensions import TypeAlias, TypedDict
 
 __all__ = ['ColumnType', 'ColumnTypeName', 'TaskType', 'DeepchecksColumns',
-           'validate_additional_data_schema', 'describe_dataset', 'DataSchema']
+           'validate_additional_data_schema', 'describe_dataset', 'DataSchema',
+           'DataFilter', 'OperatorsEnum']
 
 ColumnTypeName: TypeAlias = str
 
@@ -89,7 +90,7 @@ class TaskType(enum.Enum):
         )
 
 
-class ColumnType(enum.Enum):
+class ColumnType(str, enum.Enum):
     """Enum containing possible types of data."""
 
     NUMERIC = 'numeric'
@@ -106,7 +107,7 @@ class ColumnType(enum.Enum):
         return [it.value for it in cls]
 
 
-class DeepchecksColumns(enum.Enum):
+class DeepchecksColumns(str, enum.Enum):
     """Enum of saved deepchecks columns."""
 
     SAMPLE_ID_COL = '_dc_sample_id'
@@ -115,6 +116,43 @@ class DeepchecksColumns(enum.Enum):
     SAMPLE_S3_IMAGE_COL = '_dc_s3_image'
     SAMPLE_PRED_PROBA_COL = '_dc_prediction_probabilities'
     SAMPLE_PRED_COL = '_dc_prediction'
+
+
+class OperatorsEnum(str, enum.Enum):
+    """Operators for numeric and categorical filters."""
+
+    GE = 'greater_than_equals'
+    GT = 'greater_than'
+    LE = 'less_than_equals'
+    LT = 'less_than'
+    CONTAINS = 'contains'
+    EQ = 'equals'
+    NOT_EQ = 'not_equals'
+
+
+class DataFilter(TypedDict):
+    """A dictionary that defines a filter for a dataframe.
+
+    Parameters
+    ----------
+    column : str
+        The name of the column to filter on, column can be a feature or an additional-data column.
+    operator : OperatorsEnum
+        The operator to use for the filter by the value.
+    value : t.Any
+        The value to use as reference.
+
+    Examples
+    --------
+    Data filter to filter out values smaller or equal to 5 on the column 'feature1'
+
+    >>> from deepchecks_client import DataFilter, OperatorsEnum
+    >>> filter = DataFilter('feature1', OperatorsEnum.GE, 5)
+
+    """
+    column: str
+    operator: OperatorsEnum
+    value: t.Union[int, str]
 
 
 def maybe_raise(

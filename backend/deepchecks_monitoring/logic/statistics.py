@@ -9,12 +9,12 @@
 # ----------------------------------------------------------------------------
 """Module defining functions for getting statistic info on the data."""
 import math
-from typing import Dict, List
+import typing as t
 
 from sqlalchemy import Column, and_, case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.logic.check_logic import SingleWindowMonitorOptions
+from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.column_type import ColumnType
 
@@ -22,7 +22,8 @@ __all__ = ['bins_for_feature']
 
 
 async def bins_for_feature(model_version: ModelVersion, feature: str, session: AsyncSession,
-                           monitor_options: SingleWindowMonitorOptions, num_bins=30) -> [ColumnType, List[Dict]]:
+                           monitor_options: SingleCheckRunOptions, num_bins=30) \
+        -> t.Union[ColumnType, t.List[t.Dict]]:
     """Query from the database given number of bins.
 
     Parameters
@@ -30,7 +31,7 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
     model_version: ModelVersion
     feature: str
     session: AsyncSession
-    monitor_options: SingleWindowMonitorOptions
+    monitor_options: SingleCheckRunOptions
     num_bins: int
 
     Returns
