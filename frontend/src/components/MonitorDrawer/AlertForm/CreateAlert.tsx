@@ -5,6 +5,7 @@ import {
   OperatorsEnum,
   useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost
 } from 'api/generated';
+import { SelectCondition } from 'components/SelectCondition';
 import dayjs from 'dayjs';
 import { useFormik } from 'formik';
 import processFrequency from 'helpers/utils/processFrequency';
@@ -65,16 +66,6 @@ function CreateAlert({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
     }
   });
 
-  const handleSliderChange = (event: Event, newValue: number | number[]) => {
-    if (!Array.isArray(newValue)) {
-      setFieldValue('numericValue', newValue);
-    }
-  };
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFieldValue('numericValue', event.target.value ? +event.target.value : '');
-  };
-
   const checkInfoInitValue = () => ({
     check_conf: {}
   });
@@ -108,45 +99,6 @@ function CreateAlert({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
     runCheckLookback(lookbackCheckData);
   };
 
-  const handleInputBlur = () => {
-    if (+values.numericValue < -minMax) {
-      setFieldValue('numericValue', -minMax);
-    } else if (+values.numericValue > minMax) {
-      setFieldValue('numericValue', minMax);
-    }
-  };
-
-  useMemo(() => {
-    if (!values.operator) {
-      return setColumnComponent(null);
-    }
-
-    setColumnComponent(
-      <Box mt="39px">
-        <Typography
-          sx={{
-            fontSize: 12,
-            lineHeight: 1.57,
-            letterSpacing: '0.1px',
-            marginBottom: '10px',
-            color: theme => theme.palette.text.disabled
-          }}
-        >
-          Select Value
-        </Typography>
-        <RangePicker
-          onChange={handleSliderChange}
-          handleInputBlur={handleInputBlur}
-          handleInputChange={handleInputChange}
-          name="numericValue"
-          value={+values.numericValue}
-          min={-minMax}
-          max={minMax}
-          valueLabelDisplay="auto"
-        />
-      </Box>
-    );
-  }, [values.operator, values.numericValue]);
 
   const monitorInfo = useMemo(
     () => [
@@ -216,23 +168,11 @@ function CreateAlert({ monitor, onClose, runCheckLookback }: EditMonitorProps) {
             Raise alert when check value is:
           </Typography>
           <Box width={1} mt="25px">
-            <MarkedSelect
-              label="Operator"
-              size="small"
-              clearValue={() => {
-                setFieldValue('operator', '');
-              }}
-              disabled={!Object.keys(OperatorsEnum).length}
-              {...getFieldProps('operator')}
-              fullWidth
-            >
-              {Object.keys(OperatorsEnum).map(key => (
-                <MenuItem key={key} value={key}>
-                  {key}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-            {ColumnComponent}
+            <SelectCondition
+              operatorProps={getFieldProps('operator')}
+              valueProps={getFieldProps('numericValue')}
+              setFieldValue={setFieldValue}
+            />
           </Box>
         </Box>
 
