@@ -72,7 +72,7 @@ export const MonitorsDataProvider = ({ children }: MonitorsDataProvider) => {
 
       setChartDataMap(prevState => ({ ...prevState, [monitor.id]: parsedDataForChart }));
     },
-    [modelsMap, chartDataMap]
+    [modelsMap]
   );
 
   useEffect(() => {
