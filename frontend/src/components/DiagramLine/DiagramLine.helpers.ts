@@ -1,6 +1,7 @@
 import { ChartArea, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
 import { _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
+import dayjs from 'dayjs';
 
 import { IMinimap } from './DiagramLine.types';
 
@@ -11,16 +12,24 @@ export function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, c
   return gradient;
 }
 
-export const defaultTooltipCallbacks: _DeepPartialObject<
+function getTime(timeLabel: string, monitorFreq: number) {
+  if (monitorFreq < 86400) return dayjs(timeLabel).format('MMM. DD YYYY hha');
+  return dayjs(timeLabel).format('MMM. DD YYYY');
+}
+
+export const defaultTooltipCallbacks: (frequency: number) => _DeepPartialObject<
   TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>
-> = {
+> = frequency => ({
   labelColor: (context: TooltipItem<'line'>) => ({
     backgroundColor: context.dataset?.borderColor as string,
     borderColor: context.dataset?.borderColor as string
   }),
   title: (context: TooltipItem<'line'>[]) => context[0].formattedValue,
-  label: (context: TooltipItem<'line'>) => `${context.label}`
-};
+  label: (context: TooltipItem<'line'>) => {
+    const textArray = context?.dataset?.label?.split('|');
+    return `${getTime(context.label, frequency)} | ${(textArray && textArray[1]) || ''} | ${(textArray && textArray[0]) || ''}`;
+  }
+});
 
 export const initMinimap: IMinimap = {
   alertSeverity: 'low',

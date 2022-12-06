@@ -11,7 +11,7 @@ import { ChartData } from 'chart.js';
 import { GraphData } from 'helpers/types';
 import { GraphViewProps } from './MonitorDrawer.types';
 
-export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: GraphViewProps) => {
+export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor, timeFreq }: GraphViewProps) => {
   const closeDrawer = () => {
     onClose();
   };
@@ -41,7 +41,7 @@ export const GraphView = ({ onClose, graphData, isLoading, setResetMonitor }: Gr
         {isLoading ? (
           <Loader />
         ) : graphData?.datasets.length ? (
-          <DiagramLine data={graphData as ChartData<'line', GraphData>} height={400}/>
+          <DiagramLine data={graphData as ChartData<'line', GraphData>} height={400} timeFreq={timeFreq}/>
         ) : (
           <>
             <NoDataToShow />

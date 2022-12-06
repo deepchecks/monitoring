@@ -219,6 +219,7 @@ function AnalysisItemComponent({
             data={data}
             comparison={isComparisonModeOn}
             handlePointCLick={handleDrawerOpen}
+            timeFreq={frequency}
           />
         </AnalysisChartItemWithFilters>
       ) : (

@@ -10,9 +10,10 @@ interface AnalysisItemDiagramProps {
   data: ChartData<'line', GraphData, unknown>;
   comparison: boolean;
   handlePointCLick: (datasetName: string, versionName: string, timeLabel: number) => void;
+  timeFreq?: number;
 }
 
-const AnalysisItemDiagram = ({ isLoading, data, comparison, handlePointCLick }: AnalysisItemDiagramProps) => (
+const AnalysisItemDiagram = ({ isLoading, data, comparison, handlePointCLick, timeFreq }: AnalysisItemDiagramProps) => (
   <DiagramLine
     data={data}
     height={420}
@@ -20,6 +21,7 @@ const AnalysisItemDiagram = ({ isLoading, data, comparison, handlePointCLick }: 
     analysis
     comparison={comparison}
     handlePointCLick={handlePointCLick}
+    timeFreq={timeFreq}
   />
 );
 

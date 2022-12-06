@@ -67,6 +67,7 @@ export interface GraphViewProps {
   graphData?: ChartData<'line'>;
   isLoading: boolean;
   setResetMonitor: Dispatch<SetStateAction<boolean>>;
+  timeFreq?: number;
 }
 
 export interface SubcategoryProps {

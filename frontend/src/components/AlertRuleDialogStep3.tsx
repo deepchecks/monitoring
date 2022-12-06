@@ -66,7 +66,7 @@ export const AlertRuleDialogStep3: FC<AlertRuleDialogStep3> = ({ monitor, ...pro
   const renderGraph = () => {
     if (isLoading) return <Loader />;
     if (!graphData) return <NoDataToShow />;
-    return <DiagramLine data={graphData} height={300}/>;
+    return <DiagramLine data={graphData} height={300} timeFreq={monitor.frequency}/>;
   };
 
   return (

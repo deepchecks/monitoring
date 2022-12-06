@@ -27,9 +27,10 @@ function DiagramLine({
   height,
   alert_rules = [],
   minTimeUnit = 'day',
+  timeFreq = 86400,
   isLoading,
   minimap = initMinimap,
-  tooltipCallbacks = defaultTooltipCallbacks,
+  tooltipCallbacks = defaultTooltipCallbacks(timeFreq),
   analysis,
   comparison,
   handlePointCLick
@@ -39,7 +40,7 @@ function DiagramLine({
   const [legends, setLegends] = useState<LegendItem[]>([]);
 
   const { alerts, alertIndex, alertSeverity, changeAlertIndex } = minimap;
-  const _tCallbacks = { ...defaultTooltipCallbacks, ...tooltipCallbacks };
+  const _tCallbacks = { ...defaultTooltipCallbacks(timeFreq), ...tooltipCallbacks };
 
   const chartRef = useRef<Chart<'line', number[], string>>();
   const minimapRef = useRef<HTMLDivElement[]>([]);

@@ -27,12 +27,14 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
   const { graphData, isLoading } = useDataIngestion(modelId);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
   const [minTimeUnit, setMinTimeUnit ] = useState<TimeUnit>('day');
+  const [timeValue, setTimeValue] = useState<number>(86400);
 
   const handleTime = (newTimeValue: unknown) => {
     if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
 
     const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
-
+    setTimeValue(+newTimeValue);
+    
     if (+newTimeValue <= 3600) {
       setMinTimeUnit('minute');
     }
@@ -64,7 +66,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
         </Box> : 
         <StyledDiagramWrapper> 
           <DiagramTutorialTooltip>
-            <DiagramLine data={graphData} height={392} minTimeUnit={minTimeUnit}>
+            <DiagramLine data={graphData} height={392} minTimeUnit={minTimeUnit} timeFreq={timeValue}>
               <StyledSelect
                 value={currentTime.value.toString()}
                 onChange={ev => handleTime(ev.target.value)}

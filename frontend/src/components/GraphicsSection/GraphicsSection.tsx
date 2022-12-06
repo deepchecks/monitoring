@@ -98,17 +98,6 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
     setAnchorElRootMenu(null);
   };
 
-  function getTime(timeLabel: string) {
-    if (monitor.frequency < 86400) return dayjs(timeLabel).format('MMM. DD YYYY hha');
-    return dayjs(timeLabel).format('MMM. DD YYYY');
-  }
-
-  const tooltipCallbacks: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = {
-    label: (context: TooltipItem<'line'>) => {
-      const textArray = context?.dataset?.label?.split('|');
-      return `${getTime(context.label)} | ${(textArray && textArray[1]) || ''} | ${(textArray && textArray[0]) || ''}`;
-    }
-  };
 
   const monitorInfo = useMemo(() => {
     const currentMonitorInfo: MonitorInfo[] = [
@@ -205,10 +194,10 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
         <StyledDiagramWrapper>
           <DiagramLine
             data={data}
-            tooltipCallbacks={tooltipCallbacks}
             alert_rules={monitor.alert_rules}
             height={320}
             minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'}
+            timeFreq={monitor.frequency}
           />
         </StyledDiagramWrapper>
       </StyledFlexContent>

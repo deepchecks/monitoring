@@ -98,6 +98,7 @@ function MonitorDrawer({ monitor, drawerName, onClose, ...props }: MonitorDrawer
             isLoading={isRunCheckLoading}
             graphData={graphData}
             setResetMonitor={setResetMonitor}
+            timeFreq={monitor?.frequency}
           />
         </Box>
       </StyledStackWrapper>

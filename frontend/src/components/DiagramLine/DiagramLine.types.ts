@@ -47,6 +47,7 @@ export interface DiagramLineProps {
   data: ChartData<'line', GraphData>;
   height?: number;
   minTimeUnit?: TimeUnit;
+  timeFreq?: number;
   isLoading?: boolean;
   minimap?: IMinimap;
   tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>>;
