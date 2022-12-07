@@ -188,6 +188,44 @@ async def test_get_monitor(classification_model_check_id, client: TestClient):
 
 
 @pytest.mark.asyncio
+async def test_monitor_reset_filter(classification_model_check_id, client: TestClient):
+    # Arrange
+    # create dashboard
+    response = client.get("/api/v1/dashboards/")
+    assert response.status_code == 200
+
+    monitor_id = add_monitor(classification_model_check_id, client, dashboard_id=1)
+
+    # just change name and make sure filter is there
+    response = client.put(f"/api/v1/monitors/{monitor_id}", json={"name": "moni"})
+    response = client.get(f"/api/v1/monitors/{monitor_id}")
+    assert response.json() == {"id": 1, "name": "moni", "dashboard_id": 1,
+                               "lookback": 86400 * 7, "aggregation_window": 86400 * 30,
+                               "data_filters": {"filters": [{"column": "c", "operator": "greater_than", "value": 10}]},
+                               "check": {"config": {"class_name": "SingleDatasetPerformance",
+                                                    "module_name": "deepchecks.tabular.checks",
+                                                    "params": {}},
+                                         "id": 1, "model_id": 1, "name": "check"},
+                               "description": "", "additional_kwargs": None,
+                               "frequency": 86400,
+                               "alert_rules": []}
+
+    # now reset the filter
+    response = client.put(f"/api/v1/monitors/{monitor_id}", json={"data_filters": None})
+    response = client.get(f"/api/v1/monitors/{monitor_id}")
+    assert response.json() == {"id": 1, "name": "moni", "dashboard_id": 1,
+                               "lookback": 86400 * 7, "aggregation_window": 86400 * 30,
+                               "data_filters": None,
+                               "check": {"config": {"class_name": "SingleDatasetPerformance",
+                                                    "module_name": "deepchecks.tabular.checks",
+                                                    "params": {}},
+                                         "id": 1, "model_id": 1, "name": "check"},
+                               "description": "", "additional_kwargs": None,
+                               "frequency": 86400,
+                               "alert_rules": []}
+
+
+@pytest.mark.asyncio
 async def test_remove_monitor(classification_model_check_id, client: TestClient):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)

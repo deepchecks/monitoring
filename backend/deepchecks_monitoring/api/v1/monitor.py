@@ -137,7 +137,7 @@ async def update_monitor(
     """Update monitor by id."""
     monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id,
                                           options=selectinload(Monitor.alert_rules).load_only(AlertRule.id))
-    update_dict = body.dict(exclude_none=True)
+    update_dict = body.dict(exclude_unset=True)
     # if monitor is updated we should update latest_schedule in a way it'll run previous 10 windows
     if monitor.latest_schedule is not None:
         frequency = monitor.frequency if body.frequency is None else body.frequency
