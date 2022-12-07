@@ -26,6 +26,11 @@ if (mixpanelId) {
 (async () => {
   const LDProvider = await asyncWithLDProvider({
     clientSideID: process.env.REACT_APP_LD_CLIENT_SIDE_ID ? process.env.REACT_APP_LD_CLIENT_SIDE_ID : '',
+    user: {
+      key: "noauthkey",
+      name: "Unauthorized User",
+      email: "unauthorized@unauth.com"
+    },
     options: { /* ... */ }
   }); 
 
