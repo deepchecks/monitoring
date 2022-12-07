@@ -65,3 +65,17 @@ async def auth0_callback(
         resp.set_cookie('Authorization', f'Bearer {user.access_token}', httponly=True, secure=True)
 
     return resp
+
+
+@router.get('/auth/logout', tags=['security'])
+async def logout(
+    settings=SettingsDep
+):
+    """Logout the user."""
+    resp = RedirectResponse(url=DEFAULT_RETURN_URI)
+    if settings.debug_mode:
+        resp.delete_cookie('Authorization', httponly=True, secure=True, samesite='none')
+    else:
+        resp.delete_cookie('Authorization', httponly=True, secure=True)
+
+    return resp

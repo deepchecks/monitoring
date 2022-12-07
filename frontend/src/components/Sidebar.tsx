@@ -101,7 +101,7 @@ export const Sidebar = () => {
             </Box>
           </Box>
 
-          <Box sx={{ padding: '50px 30px 90px' }}>
+          <Box sx={{ padding: '50px 30px 50px' }}>
             <StyledButton onClick={handleInviteToOrgClick} startIcon={<UserInvite />}>
               <Typography
                 sx={{

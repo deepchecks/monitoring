@@ -28,15 +28,21 @@ AXIOS_INSTANCE.interceptors.response.use(
   }
 );
 
+let cancelTokenSource = Axios.CancelToken.source();
+
+export const cancelPendingRequests = () => {
+  cancelTokenSource.cancel()
+  cancelTokenSource = Axios.CancelToken.source();
+};
+
 export const customInstance = <T>(config: AxiosRequestConfig): Promise<T> => {
-  const source = Axios.CancelToken.source();
-  const promise = AXIOS_INSTANCE({ ...config, cancelToken: source.token })
+  const promise = AXIOS_INSTANCE({ ...config, cancelToken: cancelTokenSource.token })
     .then(({ data }) => data)
     .catch(e => console.log('Error occurred in Axios -', e));
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   promise.cancel = () => {
-    source.cancel('Query was cancelled by React Query');
+    cancelTokenSource.cancel('Query was cancelled by React Query');
   };
 
   return promise;
