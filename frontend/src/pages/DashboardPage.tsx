@@ -125,6 +125,7 @@ export const DashboardPage = () => {
             drawerName={drawerName}
             open={isDrawerOpen}
             onClose={handleCloseMonitor}
+            ModalProps={{ onClose: handleCloseMonitor}}
           />
         </Grid>
       )}
