@@ -302,7 +302,6 @@ function DiagramLine({
         <Box
           height={height ? height - 61 : 'auto'}
           sx={{ position: 'relative' }}
-          onMouseLeave={() => chartRef.current?.resetZoom()}
         >
           <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={1} />
         </Box>
