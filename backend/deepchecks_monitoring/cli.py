@@ -8,6 +8,9 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the CLI of the monitoring package."""
+import os
+
+import alembic.config
 import anyio
 import click
 import sqlalchemy as sa
@@ -23,7 +26,6 @@ from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
 from deepchecks_monitoring.public_models import Organization
-from deepchecks_monitoring.public_models.base import Base
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
 
@@ -38,9 +40,13 @@ def cli():
 def initdb():
     """Initialize the database."""
     settings = Settings()  # type: ignore
-    engine = create_engine(str(settings.database_uri), echo=True)
-    Base.metadata.create_all(engine)
-    engine.dispose()
+    os.environ["DATABASE_URI"] = settings.database_uri
+    alembicArgs = [  # pylint: disable=invalid-name
+        "--name", "public",
+        "--raiseerr",
+        "upgrade", "head",
+    ]
+    alembic.config.main(argv=alembicArgs)
 
 
 @cli.command()
@@ -98,21 +104,23 @@ def upgrade_organizations_schemas(orgid: str):
 
     async def fn():
         settings = Settings(echo_sql=False)  # type: ignore
+        os.environ["DATABASE_URI"] = settings.database_uri
+
         async with ResourcesProvider(settings) as rp:
-            engine = rp.async_database_engine
             async with rp.create_async_database_session() as s:
-                if orgid == "all":
-                    q = sa.select(Organization)
-                    organizations = (await s.scalars(q)).all()
-                    for org in organizations:
-                        await org.schema_builder.upgrade(engine)
-                else:
-                    q = sa.select(Organization).where(Organization.id == int(orgid))
-                    org = await s.scalar(q)
-                    if org is not None:
-                        await org.schema_builder.upgrade(engine)
-                    else:
-                        raise RuntimeError("Did not find an organization with given name")
+                where = Organization.id == int(orgid) if orgid != "all" else True
+                q = sa.select(Organization.schema_name).where(where)
+                organizations_schema = (await s.scalars(q)).all()
+                if orgid != "all" and not organizations_schema:
+                    raise RuntimeError("Did not find an organization with given id")
+                for schema in organizations_schema:
+                    alembicArgs = [  # pylint: disable=invalid-name
+                        "--name", "org",
+                        "-x", f"schema={schema}",
+                        "--raiseerr",
+                        "upgrade", "head",
+                    ]
+                    alembic.config.main(argv=alembicArgs)
 
     anyio.run(fn)
 

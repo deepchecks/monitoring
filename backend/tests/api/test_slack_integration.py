@@ -24,7 +24,7 @@ async def test_slack_authorization_redirect(client: TestClient):
 
     response = client.get(
         "/api/v1/slack.authorize",
-        allow_redirects=False
+        follow_redirects=False
     )
 
     assert response.status_code == 307
@@ -170,7 +170,7 @@ def generate_slack_installation():
 def fetch_installation_state(client: TestClient) -> str:
     response = client.get(
         "/api/v1/slack.authorize",
-        allow_redirects=False
+        follow_redirects=False
     )
 
     assert response.status_code == 307

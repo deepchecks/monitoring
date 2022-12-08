@@ -210,7 +210,7 @@ jobs:
         run: | 
           make env-setup
           make docs
-      #      - name: Debugging with ssh
+#      - name: Debugging with ssh
 #        uses: lhotari/action-upterm@v1
 #        with:
 #          ## limits ssh access and adds the ssh public key for the user which triggered the workflow

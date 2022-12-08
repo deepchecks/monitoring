@@ -52,6 +52,8 @@ from tests.utils import TestDatabaseGenerator, create_dummy_smtp_server
 
 dotenv.load_dotenv()
 
+ROWS_PER_MINUTE_LIMIT = 1000
+
 
 @pytest.fixture(scope="session")
 def postgres():
@@ -206,10 +208,21 @@ def redis():
     return mock.Mock(wraps=fakeredis.FakeRedis())
 
 
+@pytest.fixture(scope="session")
+def launchdarkly_mock():
+    def replacement_func(flag, *args, **kwargs):  # pylint: disable=unused-argument
+        if flag == "rows-per-minute":
+            return ROWS_PER_MINUTE_LIMIT
+        if flag == "signUpEnabled":
+            return True
+        return None
+    return mock.Mock(side_effect=replacement_func)
+
+
 @pytest.fixture(scope="function")
-def resources_provider(settings, redis):
+def resources_provider(settings, redis, launchdarkly_mock):
     patch.object(ResourcesProvider, "redis_client", redis).start()
-    patch.object(ResourcesProvider, "launchdarkly_variation", return_value=True).start()
+    patch.object(ResourcesProvider, "launchdarkly_variation", launchdarkly_mock).start()
     yield ResourcesProvider(settings)
 
 

@@ -19,13 +19,13 @@ import asyncpg.exceptions
 import boto3
 import jsonschema.exceptions
 import pendulum as pdl
-import sqlalchemy as sa
 import sqlalchemy.exc
 from jsonschema import FormatChecker
 from jsonschema.validators import validator_for
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
@@ -129,10 +129,9 @@ async def log_data(
         return []
     all_timestamps = []
 
-    model: Model = (await session.execute(sa.select(Model).where(Model.id == ModelVersion.model_id))).scalars().first()
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
-        update_statistics_from_sample(updated_statistics, sample, model.task_type)
+        update_statistics_from_sample(updated_statistics, sample, model_version.model.task_type)
         all_timestamps.append(sample[SAMPLE_TS_COL])
 
     if model_version.statistics != updated_statistics:
@@ -203,11 +202,10 @@ async def update_data(
         return []
 
     # Update statistics if needed
-    model: Model = (await session.execute(sa.select(Model).where(Model.id == ModelVersion.model_id))).scalars().first()
     updated_statistics = copy.deepcopy(model_version.statistics)
 
     for sample in logged_samples:
-        update_statistics_from_sample(updated_statistics, sample, model.task_type)
+        update_statistics_from_sample(updated_statistics, sample, model_version.model.task_type)
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
 
@@ -322,7 +320,10 @@ class DataIngestionBackend(object):
                 # If session is none, it means the organization was removed, so no need to do anything
                 if session is None:
                     return True
-                model_version = await session.get(ModelVersion, model_version_id)
+                model_version = await session.execute(
+                    select(ModelVersion)
+                    .options(joinedload(ModelVersion.model).load_only(Model.task_type))
+                    .where(ModelVersion.id == model_version_id))
                 # If model version is none it was deleted, so no need to do anything
                 if model_version is None:
                     return True

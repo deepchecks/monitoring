@@ -14,22 +14,26 @@ from io import StringIO
 import boto3
 import numpy as np
 import pandas as pd
+import pendulum as pdl
 from fastapi import Body, Depends, Response, UploadFile, status
+from fastapi.responses import ORJSONResponse
 from jsonschema import FormatChecker
 from jsonschema.exceptions import ValidationError
 from jsonschema.validators import validator_for
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, DataIngestionDep, S3BucketDep, limit_request_size
+from deepchecks_monitoring.dependencies import (AsyncSessionDep, DataIngestionDep, ResourcesProviderDep, S3BucketDep,
+                                                limit_request_size)
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
-from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_S3_IMAGE_COL
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 
@@ -45,22 +49,30 @@ async def log_data_batch(
     data: t.List[t.Dict[str, t.Any]] = Body(...),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
-    user: User = Depends(CurrentActiveUser())
+    user: User = Depends(CurrentActiveUser()),
+    resources_provider=ResourcesProviderDep
 ) -> Response:
-    """Insert batch data samples.
-
-    Parameters
-    ----------
-    model_version_id
-    data
-    session
-    data_ingest
-    user
-    """
+    """Insert batch data samples."""
     if len(data) == 0:
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Got empty list")
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    await data_ingest.log(model_version, data, session, user)
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
+                                                     options=joinedload(ModelVersion.model).load_only(Model.task_type))
+    time = pdl.now()
+    minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
+    # Atomically getting the count and increasing in order to avoid race conditions
+    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
+    remains = minute_rate - curr_count
+    # Remains can be negative because we don't check the limit before incrementing
+    if remains <= 0:
+        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute"}
+        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+    await data_ingest.log(model_version, data[:remains], session, user)
+    if remains < len(data):
+        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
+                             f"{remains} first rows were received",
+                   "num_saved": remains}
+        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -70,23 +82,30 @@ async def update_data_batch(
     data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
-    user: User = Depends(CurrentActiveUser())
+    user: User = Depends(CurrentActiveUser()),
+    resources_provider=ResourcesProviderDep
 ):
-    """Update data samples.
-
-    Parameters
-    ----------
-    request
-    model_version_id
-    data
-    session
-    data_ingest
-    user
-    """
+    """Update data samples."""
     if len(data) == 0:
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, content="Got empty list")
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
-    await data_ingest.update(model_version, data, session, user)
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
+                                                     options=joinedload(ModelVersion.model).load_only(Model.task_type))
+    time = pdl.now()
+    minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
+    # Atomically getting the count and increasing in order to avoid race conditions
+    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
+    remains = minute_rate - curr_count
+    # Remains can be negative because we don't check the limit before incrementing
+    if remains <= 0:
+        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute"}
+        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+    await data_ingest.update(model_version, data[:remains], session, user)
+    if remains < len(data):
+        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
+                             f"{remains} first rows were received",
+                   "num_saved": remains}
+        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+
     return Response(status_code=status.HTTP_200_OK)
 
 

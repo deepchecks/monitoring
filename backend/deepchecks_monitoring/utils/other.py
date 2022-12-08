@@ -13,11 +13,13 @@ async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with
         f = faker.Faker()
         name = f.name()
         email = f.email()
+        org = f.name()
     except ImportError:
         import uuid  # pylint: disable=import-outside-toplevel
         uid = uuid.uuid4().hex
         name = f'test-{uid}'
         email = f'test-{uid}@deepchecks.com'
+        org = f'org-{uid}'
 
     u = await User.from_oauth_info(
         info=UserOAuthDTO(email=email, name=name),
@@ -28,7 +30,7 @@ async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with
     session.add(u)
 
     if with_org:
-        org = await Organization.create_for_user(owner=u, name=f.name(),)
+        org = await Organization.create_for_user(owner=u, name=org)
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
         session.add(org)
 

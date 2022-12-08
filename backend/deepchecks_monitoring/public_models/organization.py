@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Organiztaion entity model."""
+import enum
 import time
 import typing as t
 from random import choice
@@ -27,6 +28,14 @@ if t.TYPE_CHECKING:
 __all__ = ["Organization"]
 
 
+class OrgTier(str, enum.Enum):
+    """Organization tier."""
+
+    FREE = "FREE"
+    PRO = "PRO"
+    PREMIUM = "PREMIUM"
+
+
 class Organization(Base):
     """Organization model."""
 
@@ -35,6 +44,7 @@ class Organization(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(100), unique=False, nullable=False)
     schema_name = sa.Column(sa.String(100), unique=True, nullable=False)
+    tier = sa.Column(sa.Enum(OrgTier), nullable=False, default=OrgTier.FREE)
 
     slack_notification_levels = sa.Column(
         sa.ARRAY(sa.Enum(AlertSeverity)),

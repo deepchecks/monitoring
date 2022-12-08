@@ -149,3 +149,13 @@ class CacheFunctions:
             return
         set_key = f"{organization_id}-{model_version_id}"
         self.redis.zadd(MODEL_VERSIONS_SORTED_SET_KEY, {set_key: pdl.now().int_timestamp}, nx=True)
+
+    def get_and_incr_user_rate_count(self, user, time, count_added):
+        """Get the user's organization samples count for the given minute, and increase by the given amount."""
+        key = f"rate-limit:{user.organization.id}:{time.minute}"
+        p = self.redis.pipeline()
+        p.incr(key, count_added)
+        p.expire(key, 60)
+        count_after_increase = p.execute()[0]
+        # Return the count before incrementing
+        return count_after_increase - count_added

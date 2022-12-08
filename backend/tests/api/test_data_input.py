@@ -11,10 +11,11 @@ import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
 from deepchecks_monitoring.schema_models import IngestionError, ModelVersion
-from tests.conftest import send_reference_request
+from tests.common import generate_user
+from tests.conftest import ROWS_PER_MINUTE_LIMIT, send_reference_request
 
 
 async def assert_ingestion_errors_count(num, session):
@@ -288,3 +289,42 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         "_dc_prediction": {"values": ["2"]}
     }, ignore_order=True)
     assert not diff
+
+
+@pytest.mark.asyncio
+async def test_log_data_exceeding_rate(client: TestClient, classification_model_version_id: int, async_session,
+                                       user, settings, classification_vision_model_version_id):
+    # Arrange
+    samples = [{
+        "_dc_sample_id": str(i),
+        "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+        "_dc_prediction": "2",
+        "a": 11.1,
+        "b": "ppppp",
+    } for i in range(ROWS_PER_MINUTE_LIMIT + 1)]
+
+    # Act
+    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=samples)
+
+    # Assert
+    assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute. "
+                                         "1000 first rows were received", "num_saved": ROWS_PER_MINUTE_LIMIT}
+    assert response.status_code == 413
+    model_version = (await async_session.execute(select(ModelVersion)
+                                                 .where(ModelVersion.id == classification_model_version_id))).scalar()
+    monitor_table_name = model_version.get_monitor_table_name()
+    count = (await async_session.execute(select(func.count()).select_from(text(monitor_table_name)))).scalar()
+    assert count == ROWS_PER_MINUTE_LIMIT
+
+    # Test a second user in same organization is affected by it, on different model
+    # Arrange
+    user = await generate_user(async_session, organization_id=user.organization_id,
+                               auth_jwt_secret=settings.auth_jwt_secret)
+    client.headers["Authorization"] = f"Bearer {user.access_token}"
+    any_data = [{"_dc_sample_id": "1"}]
+
+    # Act
+    response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/data", json=any_data)
+    # Assert response is exceeded
+    assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute"}
+    assert response.status_code == 413

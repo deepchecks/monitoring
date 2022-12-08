@@ -14,7 +14,7 @@ async def test_user_details_retrieval(unauthorized_client: TestClient, async_ses
     response = unauthorized_client.get(
         "/api/v1/users/me",
         headers={"Authorization": f"bearer {user.access_token}"},
-        allow_redirects=True
+        follow_redirects=True
     )
 
     assert response.status_code == 200
@@ -41,7 +41,7 @@ async def test_user_auth_completion(unauthorized_client: TestClient, async_sessi
         "/api/v1/users/complete-details",
         headers={"Authorization": f"bearer {user.access_token}"},
         json=payload,
-        allow_redirects=False
+        follow_redirects=False
     )
 
     assert response.status_code == 302

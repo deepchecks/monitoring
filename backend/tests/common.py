@@ -18,7 +18,8 @@ async def generate_user(
     auth_jwt_secret: str = "qwert",
     with_org: bool = True,
     switch_schema: bool = False,
-    eula: bool = True
+    eula: bool = True,
+    organization_id=None
 ) -> User:
     f = faker.Faker()
 
@@ -33,14 +34,19 @@ async def generate_user(
     org = None
 
     if with_org:
-        org = await Organization.create_for_user(owner=u, name=f.name(),)
-        await org.schema_builder.create(AsyncEngine(session.get_bind()))
-        org.email_notification_levels = list(AlertSeverity)
-        org.slack_notification_levels = list(AlertSeverity)
-        session.add(org)
-        await session.commit()
-        await session.refresh(u)
-        await session.refresh(org)
+        if organization_id:
+            u.organization_id = organization_id
+            await session.commit()
+            await session.refresh(u)
+        else:
+            org = await Organization.create_for_user(owner=u, name=f.name(),)
+            await org.schema_builder.create(AsyncEngine(session.get_bind()))
+            org.email_notification_levels = list(AlertSeverity)
+            org.slack_notification_levels = list(AlertSeverity)
+            session.add(org)
+            await session.commit()
+            await session.refresh(u)
+            await session.refresh(org)
     else:
         await session.commit()
         await session.refresh(u)
