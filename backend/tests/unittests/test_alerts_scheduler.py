@@ -243,10 +243,10 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
         )).first()
 
     async with anyio.create_task_group() as g:
-        for _ in range(12):
+        for _ in range(8):
             await anyio.sleep(random())
             g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=1).run)
-        await anyio.sleep(10)
+        await anyio.sleep(15)
         g.cancel_scope.cancel()
 
     # == Assert

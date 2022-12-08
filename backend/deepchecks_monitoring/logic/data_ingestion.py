@@ -369,11 +369,14 @@ class DataIngestionBackend(object):
             # Only in case data was logged/updated we update model version last update time.
             await session.execute(update(ModelVersion).where(ModelVersion.id == model_version_id).values(
                 {ModelVersion.last_update_time: pdl.now()}))
+            int_timestamps = {ts.set(minute=0, second=0, microsecond=0).int_timestamp for ts in timestamps_updated}
             if self.use_kafka:
-                await self.cache_invalidator.send_invalidation(organization_id, model_version_id, timestamps_updated)
+                await self.cache_invalidator.send_invalidation(organization_id, model_version_id, int_timestamps)
             else:
                 # In case we don't have a running kafka call the cache invalidation directly
-                self.cache_invalidator.clear_monitor_cache_by_ids(organization_id, model_version_id, timestamps_updated)
+                self.resources_provider.cache_functions.delete_monitor_cache_by_timestamp(organization_id,
+                                                                                          model_version_id,
+                                                                                          int_timestamps)
 
         # Always add to process set since we use it to calculate the queue offset, so even if we didn't log any new
         # data we still want to update the queue size.

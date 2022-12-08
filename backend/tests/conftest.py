@@ -12,13 +12,13 @@ import asyncio
 import os
 import random
 import string
+import subprocess
 import typing as t
 from unittest import mock
 from unittest.mock import patch
 
 import dotenv
 import faker
-import fakeredis
 import httpx
 import numpy as np
 import pandas as pd
@@ -33,6 +33,7 @@ from deepchecks_client import DeepchecksClient
 from deepchecks_client.core.api import API
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from redis.client import Redis
 from sqlalchemy.engine.url import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.future import Engine, create_engine
@@ -203,9 +204,16 @@ def settings(async_engine, smtp_server):
     )  # type: ignore
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def redis():
-    return mock.Mock(wraps=fakeredis.FakeRedis())
+    with subprocess.Popen(["redis-server", "--port", "6380"]) as p:
+        yield Redis(port=6380)
+        p.kill()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def redis_clean(redis):
+    redis.flushdb()
 
 
 @pytest.fixture(scope="session")

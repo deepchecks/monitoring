@@ -1,6 +1,5 @@
 coveralls==3.3.1
 deepdiff==5.8.1
-fakeredis==1.9.1
 flake8==4.0.1
 flake8-eradicate==1.2.1
 flake8-rst==0.8.0

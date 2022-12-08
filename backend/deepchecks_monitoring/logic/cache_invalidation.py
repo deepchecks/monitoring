@@ -11,8 +11,6 @@
 import asyncio
 import logging
 
-import pendulum as pdl
-
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import INVALIDATION_TOPIC_PREFIX, get_invalidation_topic_name, topic_name_to_ids
@@ -29,17 +27,10 @@ class CacheInvalidator:
 
     async def handle_invalidation_messages(self, tp, messages) -> bool:
         """Handle messages consumed from kafka."""
-        timestamps = {pdl.parse(m.value.decode()) for m in messages}
+        timestamps = {int(m.value.decode()) for m in messages}
         organization_id, model_version_id = topic_name_to_ids(tp.topic)
-        self.clear_monitor_cache_by_ids(organization_id, model_version_id, timestamps)
+        self.cache_funcs.delete_monitor_cache_by_timestamp(organization_id, model_version_id, timestamps)
         return True
-
-    def clear_monitor_cache_by_ids(self, organization_id, model_version_id, timestamps):
-        """Clear monitor cache by topic name for given timestamps."""
-        for key in self.cache_funcs.scan_by_ids(organization_id, model_version_id):
-            start_time, end_time = self.cache_funcs.monitor_key_to_timestamps(key)
-            if any((start_time <= ts < end_time for ts in timestamps)):
-                self.cache_funcs.delete_key(key)
 
     async def run_invalidation_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
@@ -48,16 +39,14 @@ class CacheInvalidator:
                                  rf"^{INVALIDATION_TOPIC_PREFIX}\-.*$",
                                  self.logger)
 
-    async def send_invalidation(self, organization_id, model_version_id, timestamps):
+    async def send_invalidation(self, organization_id, model_version_id, int_timestamps):
         """Send to kafka the timestamps which needs to invalidate the cache for the given topic."""
-        rounded_ts_set = {ts.astimezone(pdl.UTC).set(minute=0, second=0, microsecond=0) for ts in timestamps}
-
         topic_name = get_invalidation_topic_name(organization_id, model_version_id)
         self.resources_provider.ensure_kafka_topic(topic_name)
 
         if self._producer is None:
             self._producer = await self.resources_provider.kafka_producer
 
-        send_futures = [await self._producer.send(topic_name, value=ts.isoformat().encode("utf-8"))
-                        for ts in rounded_ts_set]
+        send_futures = [await self._producer.send(topic_name, value=str(ts).encode("utf-8"))
+                        for ts in int_timestamps]
         await asyncio.gather(*send_futures)

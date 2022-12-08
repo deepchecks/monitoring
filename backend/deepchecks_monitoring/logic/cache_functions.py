@@ -21,6 +21,8 @@ from redis.client import Redis
 
 from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_SORTED_SET_KEY
 
+MONITOR_CACHE_EXPIRY_TIME = 60 * 60 * 24 * 7  # 7 days
+
 
 @dataclass
 class CacheResult:
@@ -37,52 +39,37 @@ class CacheFunctions:
         self.use_cache = redis_client is not None
         self.redis: Redis = redis_client
         self.logger = logging.Logger("cache-functions")
+        if self.redis:
+            self.delete_keys_by_pattern = self.redis.register_script(delete_keys_by_pattern_script)
+            self.delete_monitor_by_timestamp = self.redis.register_script(delete_monitor_by_timestamp_script)
 
     def build_monitor_cache_key(
             self,
-            organization_id: t.Union[str, int],
-            model_version_id: t.Union[str, int],
-            monitor_id: t.Union[str, int],
-            start_time: t.Union[pdl.DateTime, str],
-            end_time: t.Union[pdl.DateTime, str]) -> str:
+            organization_id: t.Optional[int],
+            model_version_id: t.Optional[int],
+            monitor_id: t.Optional[int],
+            start_time: t.Optional[pdl.DateTime],
+            end_time: t.Optional[pdl.DateTime]) -> str:
         """Build key for the cache using the given parameters.
 
         Parameters
         ----------
-        organization_id: t.Union[str, int]
-        model_version_id: t.Union[str, int]
-            Can be either a model version id or a regex for pattern
-        monitor_id: t.Union[str, int]
-            Can be either a monitor id or a regex for pattern
-        start_time: t.Union[pdl.DateTime, str]
-            Can either be datetime or a regex for pattern
-        end_time: t.Union[pdl.DateTime, str]
-            Can either be datetime or a regex for pattern
+        organization_id: t.Optional[int]
+        model_version_id: t.Optional[int]
+        monitor_id: t.Optional[int]
+        start_time: t.Optional[pdl.DateTime]
+        end_time: t.Optional[pdl.DateTime]
 
         Returns
         -------
         str
         """
-        end_time = str(end_time.int_timestamp) if isinstance(end_time, pdl.DateTime) else end_time
-        start_time = str(start_time.int_timestamp) if isinstance(start_time, pdl.DateTime) else start_time
+        end_time = str(end_time.int_timestamp) if isinstance(end_time, pdl.DateTime) else "*"
+        start_time = str(start_time.int_timestamp) if isinstance(start_time, pdl.DateTime) else "*"
+        organization_id = organization_id if isinstance(organization_id, int) else "*"
+        model_version_id = model_version_id if isinstance(model_version_id, int) else "*"
+        monitor_id = monitor_id if isinstance(monitor_id, int) else "*"
         return f"mon_cache:{organization_id}:{model_version_id}:{monitor_id}:{start_time}:{end_time}"
-
-    def monitor_key_to_timestamps(self, key: t.Union[str, bytes]):
-        """Extract from a key the start and end date from it.
-
-        Parameters
-        ----------
-        key
-
-        Returns
-        -------
-        Tuple[datetime, datetime]
-        """
-        key = key.decode() if isinstance(key, bytes) else key
-        key_split = key.split(":")
-        start_time = pdl.from_timestamp(int(key_split[-2]))
-        end_time = pdl.from_timestamp(int(key_split[-1]))
-        return start_time, end_time
 
     def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):
         """Get result from cache if exists. We can cache values which are "None" therefore to distinguish between the \
@@ -90,11 +77,12 @@ class CacheFunctions:
         if self.use_cache:
             key = self.build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
             try:
-                cache_value = self.redis.get(key)
+                p = self.redis.pipeline()
+                p.get(key)
+                p.expire(key, MONITOR_CACHE_EXPIRY_TIME)
+                cache_value = p.execute()[0]
                 # If cache value is none it means the key was not found
                 if cache_value is not None:
-                    # Set the expiry longer for this key
-                    self.redis.expire(key, pdl.duration(days=7).in_seconds())
                     return CacheResult(found=True, value=json.loads(cache_value))
             except redis.exceptions.RedisError as e:
                 self.logger.exception(e)
@@ -109,9 +97,10 @@ class CacheFunctions:
         try:
             key = self.build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
             cache_val = json.dumps(value)
-            self.redis.set(key, cache_val)
-            # Set expiry of a week
-            self.redis.expire(key, pdl.duration(days=7).in_seconds())
+            p = self.redis.pipeline()
+            p.set(key, cache_val)
+            p.expire(key, MONITOR_CACHE_EXPIRY_TIME)
+            p.execute()
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
 
@@ -127,21 +116,14 @@ class CacheFunctions:
         if not self.use_cache:
             return
         try:
-            monitor_id = monitor_id or "*"
-            pattern = self.build_monitor_cache_key(organization_id, "*", monitor_id, "*", "*")
-            for key in self.redis.scan_iter(pattern):
-                self.redis.delete(key)
+            pattern = self.build_monitor_cache_key(organization_id, None, monitor_id, None, None)
+            self.delete_keys_by_pattern(args=[pattern])
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
 
     def delete_key(self, key):
         """Remove a given key from the cache."""
         self.redis.delete(key)
-
-    def scan_by_ids(self, organization_id, model_version_id: int) -> t.Iterator:
-        """Scan all cache keys of a given model version."""
-        pattern = self.build_monitor_cache_key(organization_id, model_version_id, "*", "*", "*")
-        return self.redis.scan_iter(match=pattern)
 
     def add_to_process_set(self, organization_id: int, model_version_id: int):
         """Add model version to process set."""
@@ -159,3 +141,46 @@ class CacheFunctions:
         count_after_increase = p.execute()[0]
         # Return the count before incrementing
         return count_after_increase - count_added
+
+    def delete_monitor_cache_by_timestamp(self, organization_id: int, model_version_id: int, timestamps: t.List[int]):
+        """Delete monitor cache entries by timestamp."""
+        if not self.use_cache:
+            return
+        try:
+            pattern = self.build_monitor_cache_key(organization_id, model_version_id, None, None, None)
+            self.delete_monitor_by_timestamp(args=[pattern, *timestamps])
+        except redis.exceptions.RedisError as e:
+            self.logger.exception(e)
+
+
+delete_keys_by_pattern_script = """
+    local cursor = 0
+    repeat
+        local result = redis.call('SCAN', cursor, 'MATCH', ARGV[1])
+        for _,key in ipairs(result[2]) do
+            redis.call('DEL', key)
+        end
+        cursor = tonumber(result[1])
+    until cursor == 0
+"""
+
+
+delete_monitor_by_timestamp_script = """
+    local cursor = 0
+    local pattern = table.remove(ARGV, 1)
+    local timestamps = ARGV
+    repeat
+        local result = redis.call('SCAN', cursor, 'MATCH', pattern)
+        for _,key in ipairs(result[2]) do
+            local split = {key:match'(.+):(.+):(.+):(.+):(.+):(.+)'}
+            local start_time, end_time = split[5], split[6]
+            for _, ts in ipairs(timestamps) do
+                if start_time <= ts and ts < end_time then
+                    redis.call('DEL', key)
+                    break
+                end
+            end
+        end
+        cursor = tonumber(result[1])
+    until cursor == 0
+"""
