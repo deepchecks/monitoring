@@ -127,27 +127,13 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-
-
-requirements: $(ENV)
 	@$(PIP) install -U pip
-	@if [ -x "$$(command -v nvidia-smi)" ]; \
-	then \
-		$(PIP) install -q\
-		 	"torch==1.11.0+cu111" "torchvision==0.12.0+cu111" "torchaudio==0.11.0" \
-		 	 -f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
-	elif [ $(OS) = "Linux" ]; \
-	then \
-		$(PIP) install -q\
-			"torch==1.11.0+cpu" "torchvision==0.12.0+cpu" "torchaudio==0.11.0+cpu" \
-			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
-	else \
-		$(PIP) install -q torch "torchvision==0.12.0" torchaudio; \
-	fi;
+
+
+requirements: $(ENV) torch
 	@echo "####  installing main dependencies, it could take some time, please wait! #### "
 	@$(PIP) install -q -r ./backend/requirements.txt
 	@$(PIP) install -q uvicorn
-	@$(PIP) install backend/
 	@$(PIP) install backend/client
 
 
@@ -155,6 +141,22 @@ dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
 	@$(PIP) install -q -r ./backend/dev-requirements.txt
 
+
+torch: $(ENV)
+	@echo "####  installing torch, it could take some time, please wait! ####"
+	@if [ -x "$$(command -v nvidia-smi)" ]; \
+	then \
+		$(PIP) install \
+		 	"torch==1.11.0+cu111" "torchvision==0.12.0+cu111" "torchaudio==0.11.0" \
+		 	 -f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
+	elif [ $(OS) = "Linux" ]; \
+	then \
+		$(PIP) install \
+			"torch==1.11.0+cpu" "torchvision==0.12.0+cpu" "torchaudio==0.11.0+cpu" \
+			-f https://s3.amazonaws.com/pytorch/whl/torch_stable.html; \
+	else \
+		$(PIP) install torch "torchvision==0.12.0" torchaudio; \
+	fi;
 
 ### Static Analysis ######################################################
 
@@ -346,7 +348,7 @@ doc-requirements: $(ENV)
 	@$(PIP) install -q -r ./docs/requirements.txt
 
 # ANSI_COLORS_DISABLED disables pretty_print in mon cli and makes doctest work with those prints
-docs: requirements doc-requirements $(DOCS_SRC)
+docs: torch doc-requirements $(DOCS_SRC)
 	@export ANSI_COLORS_DISABLED=True
 	$(PIP) install backend/client; \
 	cd $(DOCS) && make doctest SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) && \
