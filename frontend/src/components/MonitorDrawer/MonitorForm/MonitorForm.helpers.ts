@@ -1,4 +1,4 @@
-import { MonitorSchema, OperatorsEnum } from 'api/generated';
+import { MonitorSchema, OperatorsEnum, DataFilter } from 'api/generated';
 
 import { IContext } from 'context';
 
@@ -16,34 +16,42 @@ export const checkInfoInitValue = () => ({
   check_conf: {}
 });
 
-export const formikInitValues = (monitor: MonitorSchema | undefined) => ({
-  name: monitor?.name || '',
-  category: (monitor?.data_filters?.filters[0].value as string) || '',
-  column: monitor?.data_filters?.filters[0].column || '',
-  numericValue: monitor
-    ? typeof monitor.data_filters?.filters[0].value === 'number'
-      ? monitor.data_filters?.filters[0].value
-      : 0
-    : '',
-  lookback: monitor?.lookback || '',
-  additional_kwargs: monitor?.additional_kwargs || checkInfoInitValue(),
-  frequency: monitor?.frequency || '',
-  aggregation_window: monitor?.aggregation_window || '',
-  check: monitor?.check || '',
-  model: ''
-});
+export const formikInitValues = (monitor: MonitorSchema | undefined) => {
+  const filters = (
+    monitor?.data_filters?.filters?.length
+      ? monitor.data_filters.filters.length > 1
+        ? [monitor.data_filters.filters[0].value, monitor.data_filters.filters[1].value]
+        : monitor.data_filters.filters[0].value
+      : ''
+  ) as string | number[];
+
+  return {
+    name: monitor?.name || '',
+    category: (monitor?.data_filters?.filters[0].value as string) || '',
+    column: monitor?.data_filters?.filters[0].column || '',
+    numericValue: filters,
+    lookback: monitor?.lookback || '',
+    additional_kwargs: monitor?.additional_kwargs || checkInfoInitValue(),
+    frequency: monitor?.frequency || '',
+    aggregation_window: monitor?.aggregation_window || '',
+    check: monitor?.check || '',
+    model: ''
+  };
+};
 
 type formikInitValuesReturnType = ReturnType<typeof formikInitValues>;
 type monitorSchemaDataMonitor = MonitorSchema | undefined;
-type monitorSchemaDataOperator = 'greater_than' | 'contains' | undefined;
-type monitorSchemaDataOperatorValue = string | number | undefined;
+type monitorSchemaDataOperator = 'contains' | 'greater_than' | undefined;
+type monitorSchemaDataOperatorValue = string | number[] | undefined;
+type monitorSchemaDataFilters = DataFilter[];
 
 export const monitorSchemaData = (
   values: formikInitValuesReturnType,
   monitor: monitorSchemaDataMonitor,
   globalState: IContext,
   operator: monitorSchemaDataOperator,
-  value: monitorSchemaDataOperatorValue
+  value: monitorSchemaDataOperatorValue,
+  filter?: monitorSchemaDataFilters
 ) => ({
   name: values.name,
   lookback: +values.lookback,
@@ -51,16 +59,17 @@ export const monitorSchemaData = (
   frequency: +values.frequency,
   dashboard_id: monitor ? monitor.dashboard_id : globalState.dashboard_id,
   additional_kwargs: values.additional_kwargs,
-  data_filters:
-    values.column && operator && value
-      ? {
-          filters: [
-            {
-              column: values.column,
-              operator: operator || OperatorsEnum.contains,
-              value: value || values.category
-            }
-          ]
-        }
-      : undefined
+  data_filters: values.column
+    ? {
+        filters: filter?.length
+          ? filter
+          : [
+              {
+                column: values.column,
+                operator: operator || OperatorsEnum.contains,
+                value: value || values.category
+              }
+            ]
+      }
+    : undefined
 });

@@ -42,6 +42,7 @@ interface MonitorInfo {
 const filterMap: { [key: string]: string } = {
   greater_than_equals: '>',
   greater_than: '>',
+  less_than: '<',
   equals: '=',
   contains: 'contains'
 };
@@ -98,7 +99,6 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
     setAnchorElRootMenu(null);
   };
 
-
   const monitorInfo = useMemo(() => {
     const currentMonitorInfo: MonitorInfo[] = [
       { label: 'Model', text: modelName },
@@ -106,11 +106,15 @@ function GraphicsSectionComponent({ data, monitor, onOpen, models, onDelete }: G
     ];
 
     if (monitor.data_filters) {
+      const filters = monitor.data_filters.filters;
+      const text =
+        filters.length > 1
+          ? `${filters[0].value} < ${filters[0].column} < ${filters[1].value}`
+          : `${filters[0].column} ${filterMap[filters[0].operator]} ${filters[0].value}`;
+
       currentMonitorInfo.push({
         label: 'Filter',
-        text: `${monitor.data_filters.filters[0].column} ${filterMap[monitor.data_filters.filters[0].operator]} ${
-          monitor.data_filters.filters[0].value
-        }`
+        text
       });
     }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import mixpanel from 'mixpanel-browser';
 
 import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete } from '../api/generated';
@@ -38,10 +38,10 @@ export const DashboardPage = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleCloseMonitor = () => {
+  const handleCloseMonitor = useCallback(() => {
     setCurrMonitor(undefined);
     setIsDrawerOpen(false);
-  };
+  }, []);
 
   const { mutateAsync: DeleteMonitorById, isLoading: isDeleteMonitorLoading } =
     useDeleteMonitorApiV1MonitorsMonitorIdDelete();

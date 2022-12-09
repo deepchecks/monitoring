@@ -107,17 +107,18 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     }
   });
 
-  const saveMonitor = async () => {
+  const column = useMemo(() => columns[values.column], [columns, values.column]);
+
+  const saveMonitor = useCallback(async () => {
     let operator;
     let value;
+    const filter = [];
 
     if (monitor) {
-      const column = columns[values.column];
-
       if (column) {
-        if (column.type === ColumnType.numeric) {
-          operator = OperatorsEnum.greater_than;
-          value = values.numericValue;
+        if (column.type === ColumnType.numeric || column.type === ColumnType.integer) {
+          filter.push({ column: values.column, operator: OperatorsEnum.greater_than, value: values.numericValue[0] });
+          filter.push({ column: values.column, operator: OperatorsEnum.less_than, value: values.numericValue[1] });
         }
 
         if (column.type === ColumnType.categorical) {
@@ -128,7 +129,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
 
       const monitorSchema = {
         monitorId: monitor.id,
-        data: monitorSchemaData(values, monitor, globalState, operator, value)
+        data: monitorSchemaData(values, monitor, globalState, operator, value, filter)
       };
 
       await updateMonitor(monitorSchema);
@@ -143,7 +144,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     refreshMonitors(monitor);
     formik.resetForm();
     onClose();
-  };
+  }, [column, createMonitor, formik, globalState, monitor, onClose, refreshMonitors, updateMonitor, values]);
 
   const handleActiveAlertResolve = async () => {
     if (monitor) {
@@ -154,7 +155,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
   };
 
   const updateGraph = useCallback(
-    (operator?: OperatorsEnum | undefined, value: string | number = '') => {
+    async (operator?: OperatorsEnum | null, value: string | number[] = '') => {
       const checkId = monitor ? +monitor.check.id : +values.check;
       const map = monitor ? (modelId ? monitorModelsMap[modelId] : false) : monitorModelsMap[selectedModelId];
 
@@ -172,13 +173,21 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
           }
         };
 
-        if (operator) {
+        if (operator && typeof value === 'string') {
           lookbackCheckData.data.filter = {
             filters: [{ column: values.column, operator, value }]
           };
         }
+        if (!operator && value.length) {
+          lookbackCheckData.data.filter = {
+            filters: [
+              { column: values.column, operator: OperatorsEnum.greater_than, value: value[0] },
+              { column: values.column, operator: OperatorsEnum.less_than, value: value[1] }
+            ]
+          };
+        }
 
-        runCheckLookback(lookbackCheckData);
+        await runCheckLookback(lookbackCheckData);
       }
     },
     [
@@ -209,30 +218,17 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
 
   const handleSliderChange = useCallback(
     (event: Event, newValue: number | number[]) => {
-      if (!Array.isArray(newValue)) {
-        setFieldValue('numericValue', newValue);
-      }
+      setFieldValue('numericValue', newValue);
     },
     [setFieldValue]
   );
 
   const handleNumericInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFieldValue('numericValue', event.target.value ? +event.target.value : 0);
+    (values: number[]) => {
+      setFieldValue('numericValue', values);
     },
     [setFieldValue]
   );
-
-  const handleInputBlur = useCallback(() => {
-    const column = columns[values.column];
-    const stats = column.stats as ColumnStatsNumeric;
-
-    if (+values.numericValue < stats.min) {
-      setFieldValue('numericValue', stats.min);
-    } else if (+values.numericValue > stats.max) {
-      setFieldValue('numericValue', stats.max);
-    }
-  }, [columns, setFieldValue, values.column, values.numericValue]);
 
   const handleModelChange = useCallback(
     (event: SelectChangeEvent<unknown>) => {
@@ -256,12 +252,10 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     if (!values.column) {
       return setColumnComponent(null);
     } else {
-      const column = columns[values.column];
-
       if (!column) return;
 
       if (column.type === ColumnType.categorical) {
-        setFieldValue('numericValue', 0);
+        setFieldValue('numericValue', '');
 
         const stats = column.stats as ColumnStatsCategorical;
 
@@ -288,22 +282,25 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         return;
       }
 
-      if (column.type === ColumnType.numeric) {
+      if (column.type === ColumnType.numeric || column.type === ColumnType.integer) {
         setFieldValue('category', '');
 
         const stats = column.stats as ColumnStatsNumeric;
+
+        const min = +stats.min.toFixed(2) || 0;
+        const max = +stats.max.toFixed(2) || 0;
+        const value = (values.numericValue.length ? values.numericValue : [min, max]) as number[];
 
         setColumnComponent(
           <Box mt="39px">
             <StyledTypographyLabel>Select Value</StyledTypographyLabel>
             <RangePicker
               onChange={handleSliderChange}
-              handleInputBlur={handleInputBlur}
-              handleInputChange={handleNumericInputChange}
+              handleValueChange={handleNumericInputChange}
               name="numericValue"
-              value={+values.numericValue || 0}
-              min={+(stats.min - 0.01).toFixed(2)}
-              max={+(stats.max + 0.01).toFixed(2)}
+              value={value}
+              min={min}
+              max={max}
               valueLabelDisplay="auto"
             />
           </Box>
@@ -311,19 +308,26 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
         return;
       }
     }
-  }, [values.column, values.category, values.numericValue]);
+  }, [
+    values.column,
+    column,
+    values.numericValue,
+    getFieldProps,
+    handleNumericInputChange,
+    handleSliderChange,
+    setFieldValue
+  ]);
 
   useEffect(() => {
-    const column = columns[values.column];
-
     if (column?.type === ColumnType.categorical) {
-      setFieldValue('category', column?.stats?.values?.[0] || '');
+      const val = column?.stats?.values;
+      const category = val?.find(c => c === values.category);
+      setFieldValue('category', val?.length ? (category ? category : val[0]) : '');
     }
-  }, [values.column, columns, setFieldValue]);
+  }, [values.category, column, setFieldValue]);
 
   useEffect(() => {
     clearTimeout(timer.current);
-    const column = columns[values.column];
 
     if (values.frequency && !values.aggregation_window) {
       setFieldValue('aggregation_window', values.frequency);
@@ -338,11 +342,11 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
     }
 
     if (column) {
-      if (column.type === ColumnType.numeric) {
+      if (column.type === ColumnType.numeric || column.type === ColumnType.integer) {
         if (checks && values.column && values.numericValue) {
           timer.current = setTimeout(() => {
-            updateGraph('greater_than', values.numericValue);
-          }, 500);
+            updateGraph(null, values.numericValue);
+          }, 700);
         }
       }
 
@@ -357,7 +361,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
       clearTimeout(timer.current);
     };
   }, [
-    columns,
+    column,
     monitor,
     setFieldValue,
     updateGraph,
@@ -442,7 +446,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
               ? checkInfo && (
                   <CheckInfo
                     checkInfo={checkInfo}
-                    initialCheckInfoValues={values.additional_kwargs || monitor.additional_kwargs}
+                    initialCheckInfoValues={monitor?.additional_kwargs || checkInfoInitValue()}
                     setFieldValue={setFieldValue}
                   />
                 )
@@ -510,7 +514,7 @@ function MonitorForm({ monitor, onClose, resetMonitor, runCheckLookback, setRese
                 clearValue={() => {
                   setFieldValue('column', '');
                   setFieldValue('category', '');
-                  setFieldValue('numericValue', 0);
+                  setFieldValue('numericValue', '');
                 }}
                 disabled={!Object.keys(columns).length}
                 {...getFieldProps('column')}

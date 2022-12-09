@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
 import {
   ColumnMetadata,
@@ -12,9 +12,9 @@ import { StyledTypographyLabel } from './MonitorDrawer/MonitorForm/MonitorForm.s
 import { RangePicker } from './RangePicker';
 import { Box } from '@mui/material';
 import { Subcategory } from './MonitorDrawer/Subcategory';
-import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
+import { SelectChangeEvent } from '@mui/material/Select';
 
-interface BaseSelectProps extends Omit<SelectPrimaryProps, 'children' | 'label'> {
+interface BaseSelectProps extends Omit<SelectPrimaryProps, 'children' | 'label' | 'onBlur'> {
   label?: SelectPrimaryProps['label'];
 }
 
@@ -23,11 +23,6 @@ interface SelectModelColumnProps extends BaseSelectProps {
   valueProps: BaseSelectProps;
   setFieldValue: (fieldName: string, value: any, shouldValidate?: boolean | undefined) => any;
 }
-
-// const DEFAULT_VALUE_BY_COLUMN_TYPE = {
-//   [ColumnType.categorical]: '',
-//   [ColumnType.numeric]: 0
-// } as const;
 
 const OPERATOR_BY_COLUMN_TYPE = {
   [ColumnType.categorical]: OperatorsEnum.contains,
@@ -44,15 +39,19 @@ export const SelectModelColumn = ({
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(modelId);
 
   const columns = useMemo(() => Object.entries(columnsMap).map(([key, value]) => ({ key, value })), [columnsMap]);
-
   const column = props.value as string;
   const columnMetadata = column ? columnsMap[column] : undefined;
 
   useEffect(() => {
     if (!columnMetadata) return;
     setFieldValue('operator', OPERATOR_BY_COLUMN_TYPE[columnMetadata.type as keyof typeof OPERATOR_BY_COLUMN_TYPE]);
-    !valueProps.value && setFieldValue('value', ColumnType.numeric ? 0 : '');
-  }, [column]);
+
+    !valueProps.value &&
+      setFieldValue(
+        'value',
+        ColumnType.numeric || ColumnType.integer ? [columnMetadata.stats.min, columnMetadata.stats.max] : ''
+      );
+  }, [columnMetadata, setFieldValue, valueProps.value]);
 
   return (
     <>
@@ -63,16 +62,20 @@ export const SelectModelColumn = ({
           </SelectPrimaryItem>
         ))}
       </SelectPrimary>
-      <SelectModelColumnSub columnMetadata={columnMetadata} {...valueProps} />
+      <SelectModelColumnSub columnMetadata={columnMetadata} setFieldValue={setFieldValue} {...valueProps} />
     </>
   );
 };
 
 interface SelectModelColumnSub extends BaseSelectProps {
   columnMetadata?: ColumnMetadata;
+  setFieldValue: (fieldName: string, value: any, shouldValidate?: boolean | undefined) => any;
 }
 
-const SelectModelColumnSub = ({ columnMetadata, ...props }: SelectModelColumnSub) => {
+const SelectModelColumnSub = ({ columnMetadata, setFieldValue, ...props }: SelectModelColumnSub) => {
+  const handleInputChange = useCallback((val: number[]) => setFieldValue('value', val), [setFieldValue]);
+  const handleSliderChange = (event: Event) => props.onChange!(event as SelectChangeEvent, null);
+
   if (!columnMetadata) return null;
 
   const { type, stats } = columnMetadata;
@@ -80,6 +83,7 @@ const SelectModelColumnSub = ({ columnMetadata, ...props }: SelectModelColumnSub
   switch (type) {
     case ColumnType.categorical: {
       const { values } = stats as ColumnStatsCategorical;
+
       return (
         <Subcategory>
           <SelectPrimary label="Select category" {...props} disabled={!values.length}>
@@ -93,28 +97,26 @@ const SelectModelColumnSub = ({ columnMetadata, ...props }: SelectModelColumnSub
       );
     }
 
-    case ColumnType.numeric: {
-      const { min, max } = stats as ColumnStatsNumeric;
+    case ColumnType.numeric || ColumnType.integer: {
       const { name, value, label = 'Select Value' } = props;
-      const handleSliderChange = (event: Event) => props.onChange!(event as SelectChangeEvent, null);
-      const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => props.onChange!(event, null);
+      const { min, max } = stats as ColumnStatsNumeric;
 
       return (
         <Box mt="39px">
           <StyledTypographyLabel>{label}</StyledTypographyLabel>
           <RangePicker
             name={name}
-            value={Number(value || 0)}
+            value={(value as number[]) || [min, max]}
             onChange={handleSliderChange}
-            handleInputChange={handleInputChange}
+            handleValueChange={handleInputChange}
             min={min}
             max={max}
-            step={0.01}
             valueLabelDisplay="auto"
           />
         </Box>
       );
     }
+
     default:
       return null;
   }

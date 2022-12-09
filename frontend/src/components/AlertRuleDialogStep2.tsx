@@ -1,11 +1,6 @@
 import React, { FC, useState } from 'react';
 import * as yup from 'yup';
-import {
-  ModelsInfoSchema,
-  useGetChecksApiV1ModelsModelIdChecksGet,
-  CheckSchema,
-  DataFilter
-} from '../api/generated';
+import { ModelsInfoSchema, useGetChecksApiV1ModelsModelIdChecksGet, CheckSchema, DataFilter } from '../api/generated';
 import { AlertRuleDialogStep, AlertRuleDialogStepBase, AlertRuleDialogStepRenderArgs } from './AlertRuleDialogStep';
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
 import { CircularProgress } from '@mui/material';
@@ -36,8 +31,7 @@ export const AlertRuleDialogStep2: FC<AlertRuleDialogStep2> = ({ models, ...prop
   const { data: checks = [], isLoading: isChecksLoading } = useGetChecksApiV1ModelsModelIdChecksGet(modelId);
 
   const onModelIdBuilder =
-    (setFieldValue: AlertRuleDialogStepRenderArgs<AlertRuleDialogStep2Values>['setFieldValue']) =>
-    (modelId: any) => {
+    (setFieldValue: AlertRuleDialogStepRenderArgs<AlertRuleDialogStep2Values>['setFieldValue']) => (modelId: any) => {
       setModelId(modelId || 0);
       setFieldValue('check_id', 0);
       setFieldValue('data_filters', null);
@@ -76,7 +70,8 @@ export const AlertRuleDialogStep2: FC<AlertRuleDialogStep2> = ({ models, ...prop
           <SelectFrequency
             frequency={getFieldProps('frequency').value as number}
             aggregation_window={getFieldProps('aggregation_window').value as number}
-            setFieldValue={setFieldValue}/>
+            setFieldValue={setFieldValue}
+          />
 
           <SelectModelColumn
             modelId={modelId}

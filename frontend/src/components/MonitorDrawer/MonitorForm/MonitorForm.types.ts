@@ -7,7 +7,7 @@ export interface MonitorFormProps {
   monitor?: MonitorSchema;
   onClose: () => void | undefined;
   resetMonitor: boolean;
-  runCheckLookback: (props: LookbackCheckProps) => void;
+  runCheckLookback: (graphData: LookbackCheckProps) => Promise<void>;
   setResetMonitor: Dispatch<SetStateAction<boolean>>;
 }
 

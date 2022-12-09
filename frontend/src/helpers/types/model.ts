@@ -11,7 +11,8 @@ export interface Model {
 
 export enum ColumnType {
   categorical = 'categorical',
-  numeric = 'numeric'
+  numeric = 'numeric',
+  integer = 'integer'
 }
 
 export interface ColumnStatsCategorical {

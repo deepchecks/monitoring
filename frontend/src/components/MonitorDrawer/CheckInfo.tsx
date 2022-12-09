@@ -62,7 +62,7 @@ export const CheckInfo = ({ checkInfo, setFieldValue, initialCheckInfoValues }: 
       }
 
       if (didAggShowChange && changedItem.is_agg === true) {
-        objectToUpdate = { check_conf: { [dataType]: changedItem.name ? [changedItem.name ]: undefined } };
+        objectToUpdate = { check_conf: { [dataType]: changedItem.name ? [changedItem.name] : undefined } };
       }
 
       setCheckInfoData(objectToUpdate);

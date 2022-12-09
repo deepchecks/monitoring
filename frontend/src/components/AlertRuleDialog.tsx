@@ -206,16 +206,32 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
             onSubmit={onStepComplete<AlertRuleDialogStep2Values>(2, values => {
               setEditMonitor(prevMonitor => {
                 const isModelIdChanged = prevMonitor.check.model_id !== values.model_id;
+
                 return deepmerge<MonitorSchema, DeepPartial<MonitorSchema>>(prevMonitor, {
                   check: {
                     id: values.check_id,
                     model_id: values.model_id
                   },
                   data_filters:
-                    isModelIdChanged || !values.data_filter || (values.data_filter.column == "" && values.data_filter.value == "")
+                    isModelIdChanged ||
+                    !values.data_filter ||
+                    (values.data_filter.column == '' && values.data_filter.value == '')
                       ? undefined
                       : {
-                          filters: [values.data_filter]
+                          filters: Array.isArray(values.data_filter.value)
+                            ? [
+                                {
+                                  column: values.data_filter.column,
+                                  operator: 'greater_than',
+                                  value: values.data_filter.value[0]
+                                },
+                                {
+                                  column: values.data_filter.column,
+                                  operator: 'less_than',
+                                  value: values.data_filter.value[1]
+                                }
+                              ]
+                            : [values.data_filter]
                         },
                   frequency: values.frequency,
                   aggregation_window: values.aggregation_window,
