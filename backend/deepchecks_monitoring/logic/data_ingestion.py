@@ -320,10 +320,11 @@ class DataIngestionBackend(object):
                 # If session is none, it means the organization was removed, so no need to do anything
                 if session is None:
                     return True
-                model_version = await session.execute(
+                model_version: ModelVersion = (await session.execute(
                     select(ModelVersion)
                     .options(joinedload(ModelVersion.model).load_only(Model.task_type))
                     .where(ModelVersion.id == model_version_id))
+                ).scalars().first()
                 # If model version is none it was deleted, so no need to do anything
                 if model_version is None:
                     return True
