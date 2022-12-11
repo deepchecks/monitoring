@@ -8,7 +8,8 @@ import {
   AlertRuleInfoSchema,
   AlertSchema,
   MonitorSchema,
-  useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost
+  useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost,
+  useGetNotebookApiV1MonitorsMonitorIdGetNotebookPost
 } from '../api/generated';
 
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -29,7 +30,7 @@ import {
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
 import processFrequency from '../helpers/utils/processFrequency';
 
-import { Checkmark, CloseIcon, TestTube } from '../assets/icon/icon';
+import { Checkmark, CloseIcon, TestTube, Notebook } from '../assets/icon/icon';
 import { ChartSvg } from 'assets/icon/chart';
 
 interface AlertsDrawerHeaderProps {
@@ -55,8 +56,11 @@ export const AlertsDrawerHeader = ({
 }: AlertsDrawerHeaderProps) => {
   const { alert_severity, condition } = alertRule;
 
-  const { mutateAsync: mutateRunSuit, isLoading } =
+  const { mutateAsync: mutateRunSuit, isLoading: isSuiteLoading } =
     useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
+
+  const { mutateAsync: mutateDownloadNotebook, isLoading: isNotebookLoading } =
+    useGetNotebookApiV1MonitorsMonitorIdGetNotebookPost();
 
   const theme = useTheme();
   const { modelsMap } = useModels();
@@ -117,6 +121,36 @@ export const AlertsDrawerHeader = ({
     }
   };
 
+  const downloadNotebook = async (modelVersionName: string) => {
+    const versionId = modelsMap[alertRule.model_id].versions.find(v => v.name == modelVersionName)?.id;
+
+    if (versionId && monitor != null) {
+      const result = await mutateDownloadNotebook({
+        monitorId: monitor.id,
+        data: {
+          start_time: alert?.start_time,
+          end_time: alert?.end_time,
+          model_version_id: versionId
+        }
+      });
+      const url = window.URL.createObjectURL(new Blob([JSON.stringify(result)]));
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', monitor.name.replaceAll(' ', '_') + '.ipynb');
+
+      // Append to html link element page
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up and remove the link
+      link.parentNode?.removeChild(link);
+    }
+    else {
+      console.log("ERROR");
+    }
+  };
+
   const handleModelVersionIdChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as string;
     runTest(value);
@@ -127,6 +161,12 @@ export const AlertsDrawerHeader = ({
     mixpanel.track('Run test suite click');
     const [modelVersionId] = Object.keys(alert.failed_values);
     runTest(modelVersionId);
+  };
+
+  const handledownloadNotebook = () => {
+    mixpanel.track('Download notebook click');
+    const [modelVersionId] = Object.keys(alert.failed_values);
+    downloadNotebook(modelVersionId);
   };
 
   const closeDrawer = () => {
@@ -247,7 +287,18 @@ export const AlertsDrawerHeader = ({
             <StyledButtonTest
               size="small"
               color="secondary"
-              loading={isLoading}
+              loading={isNotebookLoading}
+              loadingPosition="start"
+              variant="contained"
+              onClick={handledownloadNotebook}
+              startIcon={<Notebook />}
+            >
+              Get Notebook
+            </StyledButtonTest>
+            <StyledButtonTest
+              size="small"
+              color="secondary"
+              loading={isSuiteLoading}
               loadingPosition="start"
               variant="contained"
               onClick={handleRunSuite}

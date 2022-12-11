@@ -142,6 +142,7 @@ const AnalysisGroupByComponent = ({
             ) : (
               <DataGraphs
                 checkName={check.name}
+                checkId={check.id}
                 datasetName={datasetName}
                 data={groupBySchema}
                 selectedFeature={selectedFeature}

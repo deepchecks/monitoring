@@ -15,7 +15,7 @@ import typing as t
 
 import nbformat
 from deepchecks.tabular import base_checks as tabular_base_checks
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse
 from nbformat.v4.nbbase import new_code_cell, new_notebook
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -105,9 +105,7 @@ async def get_check_notebook(
 
     if notebook_options.as_script:
         template = template.replace('# cell end', '')
-        response = StreamingResponse(io.StringIO(template))
-        response.headers['Content-Disposition'] = \
-            f'attachment; filename={str(check.name).replace(" ", "_")}_script.py'
+        response = PlainTextResponse(template)
     else:
         cells = []
         for cell in template.split('\n# cell end'):
@@ -120,8 +118,6 @@ async def get_check_notebook(
         nbformat.write(notebook, notebook_stream)
         notebook_stream.seek(0)
 
-        response = StreamingResponse(notebook_stream)
-        response.headers['Content-Disposition'] = \
-            f'attachment; filename={str(check.name).replace(" ", "_")}_notebook.ipynb'
+        response = PlainTextResponse(notebook_stream.getvalue())
 
     return response

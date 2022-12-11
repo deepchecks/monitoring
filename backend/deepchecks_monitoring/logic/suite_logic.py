@@ -95,18 +95,18 @@ async def run_suite_for_model_version(
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options)
     if test_session:
         test_session = await test_session
-        test_df = DataFrame(test_session.all(), columns=test_session.keys())
+        test_df = DataFrame(test_session.all(), columns=[str(key) for key in test_session.keys()])
     else:
         test_df = DataFrame()
     if ref_session:
         ref_session = await ref_session
-        ref_df = DataFrame(ref_session.all(), columns=ref_session.keys())
+        ref_df = DataFrame(ref_session.all(), columns=[str(key) for key in ref_session.keys()])
     else:
         ref_df = DataFrame()
     # The suite takes a long time to run, therefore commit the db connection to not hold it open unnecessarily
     await session.commit()
 
-    suite_name = f"Test Suite - Model {model_version.name} - Window {window_options.start_time_dt().date()}"
+    suite_name = f"Test Suite - Model {model_version.name} - Window {window_options.end_time_dt().date()}"
     task_type = model_version.model.task_type
     if task_type in [TaskType.MULTICLASS, TaskType.BINARY, TaskType.REGRESSION]:
         suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)

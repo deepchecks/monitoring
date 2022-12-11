@@ -13,7 +13,7 @@ import typing as t
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import delete, func, select
@@ -339,7 +339,7 @@ async def get_check_reference(
     return {version.name: val for version, val in result_per_version.items()}
 
 
-@router.post('/checks/{check_id}/get-notebook', tags=[Tags.CHECKS], response_class=StreamingResponse)
+@router.post('/checks/{check_id}/get-notebook', tags=[Tags.CHECKS], response_class=PlainTextResponse)
 async def get_notebook(
         check_id: int,
         notebook_options: CheckNotebookSchema,
@@ -361,7 +361,7 @@ async def get_notebook(
 
     Returns
     -------
-    StreamingResponse
+    PlainTextResponse
         A response containing the Jupyter notebook.
     """
     return await get_check_notebook(check_id, notebook_options, session, host)

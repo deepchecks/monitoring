@@ -52,6 +52,7 @@ import { ReactComponent as Undo } from './undo.svg';
 import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as VisualModel } from './visualModel.svg';
 import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
+import { ReactComponent as Notebook } from './notebook.svg';
 
 export {
   Alarm,
@@ -107,5 +108,6 @@ export {
   TableChart,
   TestTube,
   VisualModel,
-  Undo
+  Undo,
+  Notebook
 };

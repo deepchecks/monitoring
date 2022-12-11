@@ -13,7 +13,7 @@ import typing as t
 import pendulum as pdl
 import sqlalchemy as sa
 from fastapi import Depends, Response, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -183,7 +183,7 @@ async def delete_monitor(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.post("/monitors/{monitor_id}/get-notebook", tags=[Tags.MONITORS], response_class=StreamingResponse)
+@router.post("/monitors/{monitor_id}/get-notebook", tags=[Tags.MONITORS], response_class=PlainTextResponse)
 async def get_notebook(
         monitor_id: int,
         notebook_options: MonitorNotebookSchema,
@@ -205,7 +205,7 @@ async def get_notebook(
 
     Returns
     -------
-    StreamingResponse
+    PlainTextResponse
         A response containing the Jupyter notebook.
     """
     monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)

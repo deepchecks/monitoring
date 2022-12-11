@@ -8,10 +8,11 @@ import { styled, Box } from '@mui/material';
 import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
-import { RunTestSuite } from './components/RunTestSuite';
+import { RunDownloadSuite } from './components/RunDownloadSuite';
 
 interface DataGraphsProps {
   checkName: string | undefined;
+  checkId: number;
   datasetName: string;
   data: CheckGroupBySchema[];
   selectedFeature: string | undefined;
@@ -25,6 +26,7 @@ export const DataGraphs = ({
   data,
   datasetName,
   checkName,
+  checkId,
   selectedFeature,
   modelVersionId,
   singleWindowMonitorOptions
@@ -56,9 +58,11 @@ export const DataGraphs = ({
         <SegmentTests activeBarName={activeBarName} checkName={checkName} plots={plots.map(plot => JSON.parse(plot))} />
       </StyledContainer>
       {testSuitePropsAreNotNull && (
-        <RunTestSuite
+        <RunDownloadSuite
           activeBarFilters={activeBarFilters}
           modelVersionId={modelVersionId}
+          checkName={checkName}
+          checkId={checkId}
           singleWindowMonitorOptions={singleWindowMonitorOptions}
         />
       )}

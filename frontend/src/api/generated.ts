@@ -2210,7 +2210,7 @@ host : str, default: HostDep
 
 Returns
 -------
-StreamingResponse
+PlainTextResponse
     A response containing the Jupyter notebook.
  * @summary Get Notebook
  */
@@ -2218,7 +2218,7 @@ export const getNotebookApiV1ChecksCheckIdGetNotebookPost = (
   checkId: number,
   checkNotebookSchema: CheckNotebookSchema
 ) =>
-  customInstance<void>({
+  customInstance<string>({
     url: `/api/v1/checks/${checkId}/get-notebook`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -2650,7 +2650,7 @@ host : str, default: HostDep
 
 Returns
 -------
-StreamingResponse
+PlainTextResponse
     A response containing the Jupyter notebook.
  * @summary Get Notebook
  */
@@ -2658,7 +2658,7 @@ export const getNotebookApiV1MonitorsMonitorIdGetNotebookPost = (
   monitorId: number,
   monitorNotebookSchema: MonitorNotebookSchema
 ) =>
-  customInstance<void>({
+  customInstance<string>({
     url: `/api/v1/monitors/${monitorId}/get-notebook`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
