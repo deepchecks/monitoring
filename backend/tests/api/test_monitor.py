@@ -235,6 +235,30 @@ async def test_remove_monitor(classification_model_check_id, client: TestClient)
 
 
 @pytest.mark.asyncio
+async def test_get_notebook(classification_model_check_id, classification_model_version_id,
+                            client: TestClient):
+    # Arrange
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=50)
+    assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    monitor_id = add_monitor(classification_model_check_id, client)
+    # Act
+    response = client.post(f"/api/v1/monitors/{monitor_id}/get-notebook",
+                           json={"start_time": start_time, "end_time": end_time})
+    assert response.status_code == 200, response.content
+    assert response.content.decode("utf-8").startswith('{\n "cells": [\n')
+
+    response = client.post(f"/api/v1/monitors/{monitor_id}/get-notebook",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "as_script": True, "model_version_id": 1})
+    assert response.status_code == 200
+    assert response.content.decode("utf-8").startswith("import")
+
+
+@pytest.mark.asyncio
 async def test_update_monitor(classification_model_check_id, client: TestClient, async_session):
     # Arrange
     monitor_id = add_monitor(classification_model_check_id, client)

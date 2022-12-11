@@ -48,14 +48,14 @@ def add_multiclass_reference_data(client, classification_version_model_id):
             "_dc_label": "1",
             "a": 16.1,
             "b": "ppppp",
-        },
+    },
         {
             "_dc_prediction_probabilities": [0.6, 0.1, 0.3],
             "_dc_prediction": "0",
             "_dc_label": "0",
             "a": 16.1,
             "b": "ppppp",
-        }]
+    }]
 
     return send_reference_request(client, classification_version_model_id, samples * 100)
 
@@ -354,7 +354,7 @@ async def test_metric_check_info_w_model_version(classification_model_check_id, 
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False
     assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
-           sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
+        sorted([{"is_agg": None, "name": "1"}, {"is_agg": None, "name": "2"}], key=lambda x: x["name"])
 
 
 @pytest.mark.asyncio
@@ -372,7 +372,7 @@ async def test_metric_check_info_w_vision_label_map(classification_vision_perfor
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False
     assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
-           sorted([{"is_agg": None, "name": "ahh"}, {"is_agg": None, "name": "ooh"}], key=lambda x: x["name"])
+        sorted([{"is_agg": None, "name": "ahh"}, {"is_agg": None, "name": "ooh"}], key=lambda x: x["name"])
 
 
 @pytest.mark.asyncio
@@ -398,9 +398,9 @@ async def test_metric_check_info_w_vision_detection(detection_vision_model_id,
     assert res_conf_json["type"] == "class"
     assert res_conf_json["is_agg_shown"] is False
     assert sorted(res_conf_json["values"], key=lambda x: x["name"]) == \
-           sorted([{"is_agg": None, "name": "42"}, {"is_agg": None, "name": "45"},
-                   {"is_agg": None, "name": "50"}, {"is_agg": None, "name": "51"}],
-                  key=lambda x: x["name"]), res_conf_json["values"]
+        sorted([{"is_agg": None, "name": "42"}, {"is_agg": None, "name": "45"},
+                {"is_agg": None, "name": "50"}, {"is_agg": None, "name": "51"}],
+               key=lambda x: x["name"]), res_conf_json["values"]
 
 
 @pytest.mark.asyncio
@@ -412,12 +412,12 @@ async def test_property_check_info(classification_vision_model_property_check_id
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                                   [{"is_agg_shown": None, "type": "aggregation method",
-                                     "values": [{"name": "mean", "is_agg": True},
-                                                {"name": "max", "is_agg": True},
-                                                {"name": "none", "is_agg": False}]},
-                                    {"type": "property",
-                                     "values": [
+                               [{"is_agg_shown": None, "type": "aggregation method",
+                                 "values": [{"name": "mean", "is_agg": True},
+                                            {"name": "max", "is_agg": True},
+                                            {"name": "none", "is_agg": False}]},
+                                {"type": "property",
+                                 "values": [
                                          {"is_agg": None, "name": "Area"},
                                          {"is_agg": None, "name": "Brightness"},
                                          {"is_agg": None, "name": "Aspect Ratio"},
@@ -425,8 +425,8 @@ async def test_property_check_info(classification_vision_model_property_check_id
                                          {"is_agg": None, "name": "Mean Red Relative Intensity"},
                                          {"is_agg": None, "name": "Mean Blue Relative Intensity"},
                                          {"is_agg": None, "name": "Mean Green Relative Intensity"},
-                                     ],
-                                     "is_agg_shown": False}],
+                                 ],
+                                 "is_agg_shown": False}],
                                "res_conf": None}
 
 
@@ -438,16 +438,16 @@ async def test_feature_check_info(classification_model_feature_check_id, classif
 
     assert response.status_code == 200
     assert response.json() == {"check_conf":
-                                   [{"is_agg_shown": None, "type": "aggregation method",
-                                     "values": [{"name": "mean", "is_agg": True},
-                                                {"name": "max", "is_agg": True},
-                                                {"name": "none", "is_agg": False},
-                                                {"name": "weighted", "is_agg": True},
-                                                {"name": "l2_weighted", "is_agg": True}]},
-                                    {"type": "feature",
-                                     "values": [{"is_agg": None, "name": "a"},
-                                                {"is_agg": None, "name": "b"}],
-                                     "is_agg_shown": False}],
+                               [{"is_agg_shown": None, "type": "aggregation method",
+                                 "values": [{"name": "mean", "is_agg": True},
+                                            {"name": "max", "is_agg": True},
+                                            {"name": "none", "is_agg": False},
+                                            {"name": "weighted", "is_agg": True},
+                                            {"name": "l2_weighted", "is_agg": True}]},
+                                {"type": "feature",
+                                 "values": [{"is_agg": None, "name": "a"},
+                                            {"is_agg": None, "name": "b"}],
+                                 "is_agg_shown": False}],
                                "res_conf": None}
 
 
@@ -970,3 +970,32 @@ async def test_check_group_by_numeric(client: TestClient, classification_model_v
             "filters": has_entries({"filters": has_length(2)})
         })
     ))
+
+
+@pytest.mark.asyncio
+async def test_get_notebook(classification_model_check_id, classification_model_version_id,
+                            client: TestClient):
+    # Arrange
+    response, start_time, end_time = add_classification_data(classification_model_version_id, client,
+                                                             samples_per_date=50)
+    assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    # Act
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/get-notebook",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"],
+                                                                      "feature": ["a"]}, "res_conf": ["1"]}})
+    assert response.status_code == 200
+    assert response.content.decode("utf-8").startswith('{\n "cells": [\n')
+
+    response = client.post(f"/api/v1/checks/{classification_model_check_id}/get-notebook",
+                           json={"start_time": start_time, "end_time": end_time,
+                                 "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"],
+                                                                      "feature": ["a"]}, "res_conf": ["1"]},
+                                 "filter": {"filters": [{"column": "a", "operator": "greater_than", "value": 12},
+                                                        {"column": "b", "operator": "contains", "value": "ppppp"}]},
+                                 "as_script": True, "model_version_id": 1})
+    assert response.status_code == 200
+    assert response.content.decode("utf-8").startswith("import")

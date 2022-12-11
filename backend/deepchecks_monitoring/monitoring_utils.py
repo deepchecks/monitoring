@@ -70,6 +70,14 @@ class OperatorsEnum(str, enum.Enum):
     EQ = "equals"
     NOT_EQ = "not_equals"
 
+    def __str__(self) -> str:
+        """Return string representation."""
+        return f"{self.__class__.__name__}.{self.name}"
+
+    def __repr__(self) -> str:
+        """Return string representation."""
+        return self.__str__()
+
 
 class CheckParameterTypeEnum(str, enum.Enum):
     """Supported customizable parameter types in checks."""

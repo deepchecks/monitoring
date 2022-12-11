@@ -164,13 +164,35 @@ class MonitorOptions(SingleCheckRunOptions):
         return values
 
 
+class SpecificVersionCheckRun(SingleCheckRunOptions):
+    """Schema to run check using a specific version."""
+
+    model_version_id: t.Optional[int] = None
+
+
+class CheckNotebookSchema(SpecificVersionCheckRun):
+    """Schema to get a check script/notebook."""
+
+    as_script: t.Optional[bool] = False
+
+
 class FilterWindowOptions(MonitorOptions):
     """Window with filter run schema."""
 
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
-def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
+def check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
+    """Filter the check_conf dictionary to only include the parameters that are relevant to the check type.
+
+    Parameters
+    ----------
+    check_conf : dict
+        The dictionary containing the check configuration.
+    model_config : MonitorCheckConfSchema
+        The model configuration.
+
+    """
     for kwarg_type, kwarg_val in model_config.check_conf.items():
         kwarg_type = CheckParameterTypeEnum(kwarg_type)
         kwarg_name = kwarg_type.to_kwarg_name()
@@ -180,11 +202,25 @@ def _check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
             check_conf["params"][kwarg_name] = kwarg_val
 
 
-def _init_check_by_kwargs(check: Check, additional_kwargs: MonitorCheckConfSchema):
+def init_check_by_kwargs(check: Check, additional_kwargs: MonitorCheckConfSchema) -> BaseCheck:
+    """Initialize a check with additional kwargs.
+
+    Parameters
+    ----------
+    check : Check
+        The check to initialize.
+    additional_kwargs : MonitorCheckConfSchema
+        Additional kwargs to pass to the check.
+
+    Returns
+    -------
+    dp_check : BaseCheck
+        The initialized check.
+    """
     dp_check = check.initialize_check()
     if additional_kwargs is not None:
         check_conf = dp_check.config()
-        _check_kwarg_filter(check_conf, additional_kwargs)
+        check_kwarg_filter(check_conf, additional_kwargs)
         dp_check = BaseCheck.from_config(check_conf)
     return dp_check
 
@@ -315,7 +351,7 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    dp_check = _init_check_by_kwargs(check, monitor_options.additional_kwargs)
+    dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
 
     if monitor_options.end_time_dt() < monitor_options.start_time_dt():
         raise ValueError("start_time must be before end_time")
@@ -456,7 +492,7 @@ async def run_check_window(
         The results of the check.
     """
     # get the relevant objects from the db
-    dp_check = _init_check_by_kwargs(check, monitor_options.additional_kwargs)
+    dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")

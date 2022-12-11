@@ -13,6 +13,7 @@ import typing as t
 import pendulum as pdl
 import sqlalchemy as sa
 from fastapi import Depends, Response, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,9 +24,9 @@ from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, S3BucketDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, HostDep, S3BucketDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.check_logic import MonitorOptions, run_check_per_window_in_range
+from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
                                                     fetch_or_404, field_length)
@@ -33,6 +34,7 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
 from deepchecks_monitoring.schema_models.monitor import Monitor
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
+from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
 from .router import router
 
@@ -95,6 +97,15 @@ class MonitorRunSchema(BaseModel):
         if v is not None:
             pdl.parse(v)
         return v
+
+
+class MonitorNotebookSchema(BaseModel):
+    """Schema to get a monitor script/notebook."""
+
+    end_time: str
+    start_time: str
+    model_version_id: t.Optional[int] = None
+    as_script: t.Optional[bool] = False
 
 
 @router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],
@@ -170,6 +181,41 @@ async def delete_monitor(
     await Monitor.delete(session, monitor_id)
     cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
+
+
+@router.post("/monitors/{monitor_id}/get-notebook", tags=[Tags.MONITORS], response_class=StreamingResponse)
+async def get_notebook(
+        monitor_id: int,
+        notebook_options: MonitorNotebookSchema,
+        session: AsyncSession = AsyncSessionDep,
+        host: str = HostDep,
+):
+    """Run a check on a specified model version and returns a Jupyter notebook with the code to run the check.
+
+    Parameters
+    ----------
+    monitor_id : int
+        The id of the monitor to create a notebook to.
+    notebook_options : MonitorNotebookSchema
+        The options for the notebook.
+    session : AsyncSession, default: AsyncSessionDep
+        The database session to use.
+    host : str, default: HostDep
+        The host of the DeepChecks server.
+
+    Returns
+    -------
+    StreamingResponse
+        A response containing the Jupyter notebook.
+    """
+    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+    check_notebook_options = CheckNotebookSchema(filter=monitor.data_filters,
+                                                 end_time=notebook_options.end_time,
+                                                 start_time=notebook_options.start_time,
+                                                 additional_kwargs=monitor.additional_kwargs,
+                                                 model_version_id=notebook_options.model_version_id,
+                                                 as_script=notebook_options.as_script)
+    return await get_check_notebook(monitor.check_id, check_notebook_options, session, host)
 
 
 @router.post("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])

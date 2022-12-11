@@ -72,7 +72,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             dataset_params['label'] = DeepchecksColumns.SAMPLE_LABEL_COL.value
 
         if DeepchecksColumns.SAMPLE_TS_COL in df.columns:
-            dataset_params['datetime_name'] = DeepchecksColumns.SAMPLE_TS_COL
+            df.drop(DeepchecksColumns.SAMPLE_TS_COL, inplace=True, axis=1)
 
         dataset = Dataset(df, **dataset_params)
         return dataset, y_pred, y_proba

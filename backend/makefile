@@ -167,12 +167,12 @@ validate: pylint docstring
 
 pylint: dev-requirements
 	$(ANALIZE) $(SOURCES) $(TEST_CODE) $(CLIENT_CODE)
-	$(FLAKE8) $(SOURCES) $(CLIENT_CODE)
+	$(FLAKE8) $(SOURCES) $(CLIENT_CODE) --per-file-ignores="deepchecks_monitoring/utils/notebook_resources/*:E999 "
 # 	$(FLAKE8_RST) $(SOURCES)
 
 
 docstring: dev-requirements
-	$(PYTHON) -m pydocstyle --convention=pep257 --add-ignore=D107 $(SOURCES)
+	$(PYTHON) -m pydocstyle --convention=pep257 --add-ignore=D107 $(SOURCES) --match-dir="^deepchecks_monitoring/utils/notebook_resources/"
 
 
 ### Testing ######################################################

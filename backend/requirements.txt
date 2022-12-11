@@ -14,6 +14,7 @@ python-multipart==0.0.5
 jinja2==3.1.2
 aiokafka==0.7.2
 uvloop==0.16.0
+nbformat>=5.4.0,<6
 deepchecks[vision]@git+https://github.com/deepchecks/deepchecks.git@main
 opentelemetry-instrumentation-asyncpg==0.34b0
 opentelemetry-instrumentation-fastapi==0.34b0

@@ -13,6 +13,7 @@ import typing as t
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
 from fastapi import Query
+from fastapi.responses import StreamingResponse
 from plotly.basedatatypes import BaseFigure
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import delete, func, select
@@ -21,11 +22,11 @@ from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, S3BucketDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, HostDep, S3BucketDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
-from deepchecks_monitoring.logic.check_logic import (CheckRunOptions, MonitorOptions, SingleCheckRunOptions,
-                                                     get_feature_property_info, get_metric_class_info,
-                                                     reduce_check_result, reduce_check_window,
+from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
+                                                     SingleCheckRunOptions, get_feature_property_info,
+                                                     get_metric_class_info, reduce_check_result, reduce_check_window,
                                                      run_check_per_window_in_range, run_check_window)
 from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
 from deepchecks_monitoring.logic.statistics import bins_for_feature
@@ -34,6 +35,7 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
+from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
 from .router import router
 
@@ -335,6 +337,34 @@ async def get_check_reference(
                                            reference_only=True, n_samples=100_000)
     result_per_version = reduce_check_window(model_results, monitor_options)
     return {version.name: val for version, val in result_per_version.items()}
+
+
+@router.post('/checks/{check_id}/get-notebook', tags=[Tags.CHECKS], response_class=StreamingResponse)
+async def get_notebook(
+        check_id: int,
+        notebook_options: CheckNotebookSchema,
+        session: AsyncSession = AsyncSessionDep,
+        host: str = HostDep,
+):
+    """Run a check on a specified model version and returns a Jupyter notebook with the code to run the check.
+
+    Parameters
+    ----------
+    check_id : int
+        The id of the check to create a notebook to.
+    notebook_options : CheckNotebookSchema
+        The options for the check notebook.
+    session : AsyncSession, default: AsyncSessionDep
+        The database session to use.
+    host : str, default: HostDep
+        The host of the DeepChecks server.
+
+    Returns
+    -------
+    StreamingResponse
+        A response containing the Jupyter notebook.
+    """
+    return await get_check_notebook(check_id, notebook_options, session, host)
 
 
 @router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])
