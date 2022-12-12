@@ -61,34 +61,6 @@ async def generate_user(
 
 # TODO: use deepchecks client for this
 
-def create_model(
-    client: TestClient,
-    expected_status: int = 200,
-    payload: t.Optional[t.Dict[t.Any, t.Any]] = None
-) -> t.Union[httpx.Response, int]:
-    if not payload:
-        f = faker.Faker()
-        payload = {
-            "name": f.name(),
-            "task_type": "binary",
-            "description": f.text()
-        }
-
-    response = client.post("/api/v1/models", json=payload)
-
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
-        return response
-
-    assert response.status_code == expected_status, (response.reason, response.status_code)
-
-    data = response.json()
-    assert isinstance(data, dict)
-    assert "id" in data and isinstance(data["id"], int), data
-
-    return data["id"]
-
-
 def create_check(
     client: TestClient,
     model_id: int,

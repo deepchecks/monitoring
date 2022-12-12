@@ -325,7 +325,8 @@ def detection_vision_model_version_client(detection_vision_model_id,
 
 @pytest_asyncio.fixture()
 async def classification_model_id(async_session: AsyncSession):
-    model = Model(name="classification model", description="test", task_type=TaskType.MULTICLASS)
+    model = Model(name="classification model", description="test", task_type=TaskType.MULTICLASS,
+                  alerts_delay_labels_ratio=0, alerts_delay_seconds=0)
     async_session.add(model)
     await async_session.commit()
     await async_session.refresh(model)
@@ -334,7 +335,8 @@ async def classification_model_id(async_session: AsyncSession):
 
 @pytest_asyncio.fixture()
 async def classification_vision_model_id(async_session: AsyncSession):
-    model = Model(name="vision classification model", description="test", task_type=TaskType.VISION_CLASSIFICATION)
+    model = Model(name="vision classification model", description="test", task_type=TaskType.VISION_CLASSIFICATION,
+                  alerts_delay_labels_ratio=0, alerts_delay_seconds=0)
     async_session.add(model)
     await async_session.commit()
     await async_session.refresh(model)
@@ -343,7 +345,8 @@ async def classification_vision_model_id(async_session: AsyncSession):
 
 @pytest_asyncio.fixture()
 async def detection_vision_model_id(async_session: AsyncSession):
-    model = Model(name="vision detection model", description="test", task_type=TaskType.VISION_DETECTION)
+    model = Model(name="vision detection model", description="test", task_type=TaskType.VISION_DETECTION,
+                  alerts_delay_labels_ratio=0, alerts_delay_seconds=0)
     async_session.add(model)
     await async_session.commit()
     await async_session.refresh(model)
@@ -352,7 +355,8 @@ async def detection_vision_model_id(async_session: AsyncSession):
 
 @pytest_asyncio.fixture()
 async def regression_model_id(async_session: AsyncSession):
-    model = Model(name="regression model", description="test", task_type=TaskType.REGRESSION)
+    model = Model(name="regression model", description="test", task_type=TaskType.REGRESSION,
+                  alerts_delay_labels_ratio=0, alerts_delay_seconds=0)
     async_session.add(model)
     await async_session.commit()
     await async_session.refresh(model)
@@ -606,11 +610,16 @@ def add_model(
         name: t.Optional[str] = None,
         task_type: t.Optional[TaskType] = None,
         description: t.Optional[str] = None,
+        alerts_delay_labels_ratio=0,
+        alerts_delay_seconds=0
 ) -> t.Union[httpx.Response, int]:
-    payload = {}
-    payload["name"] = name or randomname.get_name()
-    payload["task_type"] = (task_type or random.choice(list(TaskType))).value
-    payload["description"] = description or ""
+    payload = {
+        "name": name or randomname.get_name(),
+        "task_type": (task_type or random.choice(list(TaskType))).value,
+        "description": description or "",
+        "alerts_delay_labels_ratio": alerts_delay_labels_ratio,
+        "alerts_delay_seconds": alerts_delay_seconds
+    }
 
     response = client.post("/api/v1/models", json=payload)
 
@@ -717,8 +726,6 @@ def add_classification_data(
     data = []
 
     for i, date in enumerate(daterange):
-        time = date.isoformat()
-        label = ("2" if i != 1 else "1") if is_labeled else None
         for j in range(samples_per_date):
             time = date.isoformat()
             label = ("2" if i != 1 else "1") if is_labeled else None

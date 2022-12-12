@@ -27,8 +27,8 @@ from tests.conftest import add_classification_data
 @pytest.mark.asyncio
 async def test_classification_get_prod_data_equals(
     classification_model_version_id, client,
-        multiclass_model_version_client: DeepchecksModelVersionClient,
-        async_session: AsyncSession
+    multiclass_model_version_client: DeepchecksModelVersionClient,
+    async_session: AsyncSession
 ):
     resp, start_time, end_time = add_classification_data(classification_model_version_id, client)
     assert resp.status_code == 200

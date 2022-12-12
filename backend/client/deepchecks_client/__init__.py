@@ -76,7 +76,9 @@ class DeepchecksClient:
         name: str,
         task_type: t.Union[str, TaskType, None] = None,
         description: t.Optional[str] = None,
-        create_model_defaults: bool = True
+        create_model_defaults: bool = True,
+        alerts_delay_labels_ratio: float = 1.0,
+        alerts_delay_seconds: int = 3600 * 72  # 3 days
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -93,6 +95,12 @@ class DeepchecksClient:
             Additional description for the model.
         create_model_defaults: bool, default: True
             Whether to add default check, monitors and alerts to the model.
+        alerts_delay_labels_ratio: float, default: 1.0
+            For alerts which needs labels, set the minimum ratio required to trigger the alert calculation, together
+            with `alerts_delay_seconds`, trigger occurs on the earliest of the two.
+        alerts_delay_seconds: int, default: 3 days
+            For alerts which needs labels, set the minimum time since the data was sent, in order to trigger the
+            alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
 
         Returns
         -------
@@ -124,12 +132,18 @@ class DeepchecksClient:
                 raise ValueError(  # pylint: disable=raise-missing-from
                     'task_type must be provided for creation of a new model'
                 )
+            if alerts_delay_labels_ratio < 0 or alerts_delay_labels_ratio > 1:
+                raise ValueError('alerts_delay_labels_ratio must be between 0 and 1')
+            if alerts_delay_seconds < 0:
+                raise ValueError('alerts_delay_seconds must be positive')
 
             # returns dictionary instance  contains only 'id' key
             self.api.create_model({
                 'name': name,
                 'task_type': task_type.value,
-                'description': description
+                'description': description,
+                'alerts_delay_labels_ratio': alerts_delay_labels_ratio,
+                'alerts_delay_seconds': alerts_delay_seconds
             })
 
             model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_name(name))
@@ -232,6 +246,8 @@ class DeepchecksClient:
         additional_data: t.Optional[t.Dict[int, t.Dict[str, t.Any]]] = None,
         additional_data_schema: t.Optional[t.Dict[str, ColumnTypeName]] = None,
         send_images: bool = True,
+        alerts_delay_labels_ratio: float = 1.0,
+        alerts_delay_seconds: int = 3600 * 72  # 3 days
     ):
         """
         Create a vision model version and upload the reference data if provided.
@@ -276,6 +292,12 @@ class DeepchecksClient:
             If not given it will be auto inferred if the additional_data is give.
         send_images : bool , default True
             If to send images to the server
+        alerts_delay_labels_ratio: float, default: 1.0
+            For alerts which needs labels, set the minimum ratio required to trigger the alert calculation, together
+            with `alerts_delay_seconds`, trigger occurs on the earliest of the two.
+        alerts_delay_seconds: int, default: 3 days
+            For alerts which needs labels, set the minimum time since the data was sent, in order to trigger the
+            alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
 
         Returns
         -------
@@ -297,7 +319,10 @@ class DeepchecksClient:
         if additional_data_schema is None and additional_data is not None:
             additional_data_schema = infer_additional_data_schema(additional_data)
 
-        model_client: DeepchecksVisionModelClient = self.get_or_create_model(model_name, task_type, description)
+        model_client: DeepchecksVisionModelClient = self.get_or_create_model(
+            model_name, task_type, description, alerts_delay_labels_ratio=alerts_delay_labels_ratio,
+            alerts_delay_seconds=alerts_delay_seconds
+        )
         version_client = model_client.version(version_name, additional_image_properties,
                                               label_map=label_map, additional_data_schema=additional_data_schema,
                                               send_images=send_images)
@@ -324,7 +349,9 @@ class DeepchecksClient:
         task_type: t.Union[str, TaskType, None] = None,
         description: str = '',
         model_classes: t.Optional[t.Sequence[str]] = None,
-        create_model_defaults: bool = True
+        create_model_defaults: bool = True,
+        alerts_delay_labels_ratio: float = 1.0,
+        alerts_delay_seconds: int = 3600 * 72  # 3 days
     ) -> TabularModelVersionClient:
         """
         Create a tabular model version and uploads the reference data if provided.
@@ -359,6 +386,12 @@ class DeepchecksClient:
             inferred from predictions and label.
         create_model_defaults: bool, default: True
             Whether to add default check, monitors and alerts to the model. Has no effect if the model already exists.
+        alerts_delay_labels_ratio: float, default: 1.0
+            For alerts which needs labels, set the minimum ratio required to trigger the alert calculation, together
+            with `alerts_delay_seconds`, trigger occurs on the earliest of the two.
+        alerts_delay_seconds: int, default: 3 days
+            For alerts which needs labels, set the minimum time since the data was sent, in order to trigger the
+            alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
 
         Returns
         -------
@@ -414,7 +447,10 @@ class DeepchecksClient:
             warnings.warn('If predicted probabilities are not supplied, checks and metrics that rely on the predicted '
                           'probabilities (such as ROC Curve and the AUC metric) will not run.')
 
-        version_client = self.get_or_create_model(model_name, task_type, description, create_model_defaults).version(
+        version_client = self.get_or_create_model(
+            model_name, task_type, description, create_model_defaults,
+            alerts_delay_labels_ratio=alerts_delay_labels_ratio, alerts_delay_seconds=alerts_delay_seconds
+        ).version(
             version_name,
             schema=schema,
             feature_importance=feature_importance,

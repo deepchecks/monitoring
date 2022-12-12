@@ -10,8 +10,10 @@
 """V1 API of the check."""
 import typing as t
 
+from deepchecks import SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core import BaseCheck
-from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReduceMetricClassMixin, ReducePropertyMixin
+from deepchecks.core.reduce_classes import (ReduceFeatureMixin, ReduceLabelMixin, ReduceMetricClassMixin,
+                                            ReducePropertyMixin)
 from fastapi import Query
 from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
@@ -148,7 +150,11 @@ async def add_checks(
         is_vision_check = str(check_creation_schema.config['module_name']).startswith('deepchecks.vision')
         if is_vision_model != is_vision_check:
             raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
-        check_object = Check(model_id=model.id, **check_creation_schema.dict(exclude_none=True))
+        dp_check = BaseCheck.from_config(check_creation_schema.config)
+        if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
+            raise ValueError('incompatible check type')
+        check_object = Check(model_id=model.id, is_label_required=isinstance(dp_check, ReduceLabelMixin),
+                             **check_creation_schema.dict(exclude_none=True))
         check_entities.append(check_object)
         session.add(check_object)
 

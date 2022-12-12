@@ -46,6 +46,8 @@ class ModelSchema(BaseModel):
     name: str = Field(max_length=field_length(Model.name))
     description: t.Optional[str] = Field(default=None, max_length=field_length(Model.description))
     task_type: t.Optional[TaskType]
+    alerts_delay_labels_ratio: float
+    alerts_delay_seconds: int
 
     class Config:
         """Config for Model schema."""
@@ -59,6 +61,8 @@ class ModelCreationSchema(BaseModel):
     name: str = Field(max_length=field_length(Model.name))
     description: t.Optional[str] = Field(default=None, max_length=field_length(Model.description))
     task_type: TaskType
+    alerts_delay_labels_ratio: float
+    alerts_delay_seconds: int
 
     class Config:
         """Config for Model schema."""

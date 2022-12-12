@@ -307,9 +307,9 @@ async def test_log_data_exceeding_rate(client: TestClient, classification_model_
     response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=samples)
 
     # Assert
+    assert response.status_code == 413
     assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute. "
                                          "1000 first rows were received", "num_saved": ROWS_PER_MINUTE_LIMIT}
-    assert response.status_code == 413
     model_version = (await async_session.execute(select(ModelVersion)
                                                  .where(ModelVersion.id == classification_model_version_id))).scalar()
     monitor_table_name = model_version.get_monitor_table_name()
@@ -326,5 +326,6 @@ async def test_log_data_exceeding_rate(client: TestClient, classification_model_
     # Act
     response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/data", json=any_data)
     # Assert response is exceeded
-    assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute"}
     assert response.status_code == 413
+    assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute",
+                               "num_saved": 0}

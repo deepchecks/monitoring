@@ -12,9 +12,10 @@ from deepchecks_monitoring.bgtasks.actors import AlertNotificator
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import Alert, AlertSeverity
+from deepchecks_monitoring.schema_models import Alert, AlertSeverity, TaskType
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
-from tests.common import create_alert_rule, create_check, create_model, create_monitor, generate_user
+from tests.common import create_alert_rule, create_check, create_monitor, generate_user
+from tests.conftest import add_model
 
 
 @pytest.mark.asyncio
@@ -26,7 +27,7 @@ async def test_alert_email_notification(
     settings: Settings,
     smtp_server: Controller
 ):
-    model_id = t.cast(int, create_model(client))
+    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
     check_id = t.cast(int, create_check(client, model_id))
     monitor_id = t.cast(int, create_monitor(client, check_id))
     alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
@@ -74,7 +75,7 @@ async def test_that_email_notification_levels_config_is_respected(
         .values(email_notification_levels = [AlertSeverity.MID])
     )
 
-    model_id = t.cast(int, create_model(client))
+    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
     check_id = t.cast(int, create_check(client, model_id))
     monitor_id = t.cast(int, create_monitor(client, check_id))
 
@@ -168,7 +169,7 @@ async def test_that_emails_are_send_to_all_members_of_organization(
 
     unauthorized_client.headers["Authorization"] = f"bearer {users[0].access_token}"
 
-    model_id = t.cast(int, create_model(unauthorized_client))
+    model_id = t.cast(int, add_model(unauthorized_client, task_type=TaskType.BINARY))
     check_id = t.cast(int, create_check(unauthorized_client, model_id))
     monitor_id = t.cast(int, create_monitor(unauthorized_client, check_id))
     alert_rule_id = t.cast(int, create_alert_rule(unauthorized_client, monitor_id))
@@ -209,14 +210,14 @@ async def test_alert_slack_notification(
     client: TestClient,
     user: User
 ):
-    model_id = t.cast(int, create_model(client))
+    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
     check_id = t.cast(int, create_check(client, model_id))
     monitor_id = t.cast(int, create_monitor(client, check_id))
     alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
     now = datetime.now(timezone.utc)
 
     alert_id = await async_session.scalar(sa.insert(Alert).values(
-        failed_values={"1":["accuracy"], "2":["accuracy"]},
+        failed_values={"1": ["accuracy"], "2": ["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
         alert_rule_id=alert_rule_id

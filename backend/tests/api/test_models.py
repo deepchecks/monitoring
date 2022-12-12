@@ -24,7 +24,9 @@ from tests.conftest import add_alert, add_alert_rule, add_check, add_model, add_
 
 @pytest.mark.asyncio
 async def test_add_model(client: TestClient):
-    response = client.post("/api/v1/models", json={"name": "44", "task_type": "multiclass"})
+    response = client.post("/api/v1/models",
+                           json={"name": "44", "task_type": "multiclass", "alerts_delay_labels_ratio": 0.5,
+                                 "alerts_delay_seconds": 60})
     assert response.status_code == 200
     assert response.json() == {"id": 1}
 
@@ -32,7 +34,8 @@ async def test_add_model(client: TestClient):
     assert response.status_code == 200
     resp_json = response.json()
     assert resp_json[0] == {"id": 1, "name": "44", "task_type": "multiclass", "description": None,
-                            "alerts_count": 0, "latest_time": None}
+                            "alerts_count": 0, "latest_time": None, "alerts_delay_labels_ratio": 0.5,
+                            "alerts_delay_seconds": 60}
 
 
 @pytest.mark.asyncio
@@ -114,9 +117,9 @@ async def test_get_models(classification_model_check_id, regression_model_check_
     assert response.status_code == 200
     assert response.json() == [
         {"id": 1, "name": "classification model", "description": "test", "task_type": "multiclass",
-         "alerts_count": 1, "latest_time": None},
+         "alerts_count": 1, "latest_time": None, "alerts_delay_labels_ratio": 0.0, "alerts_delay_seconds": 0},
         {"id": 2, "name": "regression model", "description": "test", "task_type": "regression",
-         "alerts_count": 3, "latest_time": None}
+         "alerts_count": 3, "latest_time": None, "alerts_delay_labels_ratio": 0.0, "alerts_delay_seconds": 0}
     ]
 
 
@@ -124,7 +127,7 @@ async def test_get_models(classification_model_check_id, regression_model_check_
 async def test_get_models_latest_time(classification_model_id, client: TestClient, async_session):
     # Arrange
     time = pdl.now()
-    async_session.add(ModelVersion(name="a", end_time=time.subtract(days=1), model_id=classification_model_id))
+    async_session.add(ModelVersion(name="a", end_time=time.subtract(days=1), model_id=classification_model_id,))
     async_session.add(ModelVersion(name="b", end_time=time, model_id=classification_model_id))
     async_session.add(ModelVersion(name="c", end_time=time.subtract(days=2), model_id=classification_model_id))
     await async_session.commit()
@@ -134,7 +137,8 @@ async def test_get_models_latest_time(classification_model_id, client: TestClien
     assert response.status_code == 200
     assert response.json() == [
         {"id": 1, "name": "classification model", "description": "test", "task_type": "multiclass",
-         "alerts_count": 0, "latest_time": time.int_timestamp},
+         "alerts_count": 0, "latest_time": time.int_timestamp, "alerts_delay_labels_ratio": 0.0,
+         "alerts_delay_seconds": 0},
     ]
 
 

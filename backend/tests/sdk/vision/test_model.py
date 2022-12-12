@@ -48,7 +48,9 @@ async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
         "task_type": "vision_classification",
         "description": None,
         "alerts_count": 0,
-        "latest_time": None
+        "latest_time": None,
+        "alerts_delay_labels_ratio": 1.0,
+        "alerts_delay_seconds": 259200
     }
 
 

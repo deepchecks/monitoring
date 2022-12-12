@@ -37,9 +37,10 @@ from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, Identi
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType,
-                                                             column_types_to_table_columns, get_model_columns_by_type)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
+                                                             SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL,
+                                                             ColumnType, column_types_to_table_columns,
+                                                             get_model_columns_by_type)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
@@ -76,15 +77,12 @@ async def get_or_create_version(
 
     Parameters
     ----------
-    request
     model_identifier : ModelIdentifier
         ID or name of the model.
     info : VersionInfo
         Information about the model version.
     session : AsyncSession, optional
         SQLAlchemy session.
-    kafka_admin
-    settings
     """
     model: Model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
 
@@ -197,20 +195,25 @@ async def get_or_create_version(
     # To save the label map we must use string keys
     label_map = {str(key): val for key, val in info.label_map.items()} if info.label_map else None
 
+    # Private columns are handled by us and are not exposed to the user
+    private_columns = {
+        SAMPLE_LOGGED_TIME_COL: ColumnType.DATETIME,
+    }
+
     # Save version entity
     model_version = ModelVersion(
         name=info.name, model_id=model.id, monitor_json_schema=monitor_table_schema,
         reference_json_schema=reference_table_schema, features_columns=info.features,
         additional_data_columns=info.additional_data, meta_columns=meta_columns, model_columns=model_related_cols,
         feature_importance=info.feature_importance, statistics=empty_statistics,
-        classes=info.classes, label_map=label_map,
+        classes=info.classes, label_map=label_map, private_columns=private_columns
     )
     session.add(model_version)
     # flushing to get an id for the model version, used to create the monitor + reference table names.
     await session.flush()
 
     # Monitor data table
-    monitor_table_columns_sqlalchemy = column_types_to_table_columns(monitor_table_columns)
+    monitor_table_columns_sqlalchemy = column_types_to_table_columns({**monitor_table_columns, **private_columns})
     # using md5 hash index in queries to get random order of samples, so adding index for it
     monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns_sqlalchemy,
                           Index(f'_{model_version.get_monitor_table_name()}_md5_index', text(f'md5({SAMPLE_ID_COL})')))
@@ -446,12 +449,14 @@ async def _get_data(model_version_id: int,
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=options, id=model_version_id)
 
     prod_table = model_version.get_reference_table(session) if is_ref else model_version.get_monitor_table(session)
+    columns = {**model_version.features_columns, **model_version.additional_data_columns, **model_version.meta_columns,
+               **model_version.model_columns}
     data_query = create_execution_data_query(prod_table,
-                                             model_version=model_version,
+                                             columns=list(columns.keys()),
                                              session=session,
                                              options=monitor_options,
                                              n_samples=monitor_options.rows_count,
-                                             all_columns=True)
+                                             all_columns=False)
     data_query = await data_query
     df = pd.DataFrame(data_query.all(), columns=[str(key) for key in data_query.keys()])
 

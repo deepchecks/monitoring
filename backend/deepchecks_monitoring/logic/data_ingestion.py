@@ -33,7 +33,8 @@ from deepchecks_monitoring.logic.keys import get_data_topic_name, topic_name_to_
 from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_S3_IMAGE_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_S3_IMAGE_COL,
+                                                             SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
@@ -47,6 +48,7 @@ async def log_data(
         s3_bucket: str,
         org_id: int,
         session: AsyncSession,
+        log_times: t.List[pdl.DateTime]
 ):
     """Insert batch data samples.
 
@@ -55,6 +57,7 @@ async def log_data(
     model_version
     data
     session
+    log_times
     """
     now = pdl.now()
     valid_data = {}
@@ -65,7 +68,7 @@ async def log_data(
 
     s3_client = boto3.client("s3") if s3_bucket and SAMPLE_S3_IMAGE_COL in model_version.model_columns else None
 
-    for sample in data:
+    for index, sample in enumerate(data):
         # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
         # to make sure all samples have same set of fields.
         model_version.fill_optional_fields(sample)
@@ -79,6 +82,7 @@ async def log_data(
                 "model_version_id": model_version.id
             })
         else:
+            sample[SAMPLE_LOGGED_TIME_COL] = log_times[index]
             if sample.get(SAMPLE_S3_IMAGE_COL):
                 if s3_bucket:
                     sample[SAMPLE_S3_IMAGE_COL] = base64_image_data_to_s3(sample[SAMPLE_S3_IMAGE_COL],
@@ -228,12 +232,14 @@ class DataIngestionBackend(object):
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
         self._producer = None
 
-    async def log(
+    async def log_or_update(
             self,
             model_version: ModelVersion,
             data: t.List[t.Dict[str, t.Any]],
             session: AsyncSession,
-            user: User
+            user: User,
+            action: t.Literal["log", "update"],
+            log_time: pdl.DateTime,
     ):
         """Log new data.
 
@@ -243,8 +249,13 @@ class DataIngestionBackend(object):
         data: t.List[t.Dict[str, t.Any]
         session: AsyncSession
         user: User
+        action
+        log_time
         """
+        if action not in ("log", "update"):
+            raise Exception(f"Unknown action: {action}")
         self.resources_provider.cache_functions.add_to_process_set(user.organization_id, model_version.id)
+
         if self.use_kafka:
             topic_name = get_data_topic_name(user.organization_id, model_version.id)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
@@ -258,49 +269,18 @@ class DataIngestionBackend(object):
 
             send_futures = []
             for sample in data:
-                message = json.dumps({"type": "log", "data": sample}).encode("utf-8")
-                send_futures.append(await self._producer.send(topic_name, value=message))
+                key = sample.get(SAMPLE_ID_COL, "").encode()
+                message = json.dumps({"type": action, "data": sample, "log_time": log_time.to_iso8601_string()})\
+                    .encode("utf-8")
+                send_futures.append(await self._producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
         else:
-            timestamps = await log_data(model_version, data, self.s3_bucket, user.organization_id, session)
-            await self.after_data_update(user.organization_id, model_version.id, timestamps, session)
+            if action == "log":
+                timestamps = await log_data(model_version, data, self.s3_bucket, user.organization_id, session,
+                                            [log_time] * len(data))
+            else:
+                timestamps = await update_data(model_version, data, session)
 
-    async def update(
-            self,
-            model_version: ModelVersion,
-            data: t.List[t.Dict[str, t.Any]],
-            session: AsyncSession,
-            user: User
-    ):
-        """Update existing data.
-
-        Parameters
-        ----------
-        model_version: ModelVersion
-        data: t.List[t.Dict[str, t.Any]
-        session: AsyncSession
-        user: User
-        """
-        self.resources_provider.cache_functions.add_to_process_set(user.organization_id, model_version.id)
-        if self.use_kafka:
-            topic_name = get_data_topic_name(user.organization_id, model_version.id)
-            topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
-            # If topic was created, resetting the offsets
-            if not topic_existed:
-                model_version.ingestion_offset = 0
-                model_version.topic_end_offset = 0
-
-            if self._producer is None:
-                self._producer = await self.resources_provider.kafka_producer
-
-            send_futures = []
-            for sample in data:
-                message = json.dumps({"type": "update", "data": sample}).encode("utf-8")
-                send_futures.append(await self._producer.send(topic_name, value=message))
-            # Waiting on the last future since the messages are sent in order anyway
-            await asyncio.gather(*send_futures)
-        else:
-            timestamps = await update_data(model_version, data, session)
             await self.after_data_update(user.organization_id, model_version.id, timestamps, session)
 
     async def run_data_consumer(self):
@@ -313,8 +293,8 @@ class DataIngestionBackend(object):
         organization_id, model_version_id = topic_name_to_ids(tp.topic)
         try:
             messages_data = [json.loads(m.value) for m in messages]
-            log_samples = [m["data"] for m in messages_data if m["type"] == "log"]
-            update_samples = [m["data"] for m in messages_data if m["type"] == "update"]
+            log_samples = [m for m in messages_data if m["type"] == "log"]
+            update_samples = [m for m in messages_data if m["type"] == "update"]
             timestamps = []
             async with self.resources_provider.create_async_database_session(organization_id) as session:
                 # If session is none, it means the organization was removed, so no need to do anything
@@ -330,9 +310,13 @@ class DataIngestionBackend(object):
                     return True
                 model_version.ingestion_offset = messages[-1].offset
                 if log_samples:
-                    timestamps += await log_data(model_version, log_samples, self.s3_bucket, organization_id, session)
+                    samples = [m["data"] for m in log_samples]
+                    log_times = [pdl.parse(m["log_time"]) for m in log_samples]
+                    timestamps += await log_data(model_version, samples, self.s3_bucket, organization_id, session,
+                                                 log_times)
                 if update_samples:
-                    timestamps += await update_data(model_version, update_samples, session)
+                    samples = [m["data"] for m in update_samples]
+                    timestamps += await update_data(model_version, samples, session)
                 await self.after_data_update(organization_id, model_version_id, timestamps, session)
             return True
         except sqlalchemy.exc.SQLAlchemyError as exception:

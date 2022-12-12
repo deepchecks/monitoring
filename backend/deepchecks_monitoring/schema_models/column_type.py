@@ -16,7 +16,8 @@ from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, Text
 from deepchecks_monitoring.schema_models.model import TaskType
 
 __all__ = ["SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_PROBA_COL", "SAMPLE_PRED_COL",
-           "SAMPLE_S3_IMAGE_COL", "ColumnType", "get_model_columns_by_type", "column_types_to_table_columns"]
+           "SAMPLE_S3_IMAGE_COL", "SAMPLE_LOGGED_TIME_COL", "ColumnType", "get_model_columns_by_type",
+           "column_types_to_table_columns"]
 
 
 SAMPLE_ID_COL = "_dc_sample_id"
@@ -25,6 +26,7 @@ SAMPLE_LABEL_COL = "_dc_label"
 SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"
 SAMPLE_PRED_COL = "_dc_prediction"
 SAMPLE_S3_IMAGE_COL = "_dc_s3_image"
+SAMPLE_LOGGED_TIME_COL = "_dc_logged_time"
 
 
 class ColumnType(str, enum.Enum):

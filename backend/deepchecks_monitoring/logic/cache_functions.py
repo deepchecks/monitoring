@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Cache helper functions."""
-# pylint: disable=unused-argument
 import json
 import logging
 import typing as t

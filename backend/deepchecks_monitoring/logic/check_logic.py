@@ -372,6 +372,7 @@ async def run_check_per_window_in_range(
         raise NotFound("No relevant model versions found")
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
+    model_columns = list(model_versions[0].model_columns.keys())
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
@@ -381,7 +382,7 @@ async def run_check_per_window_in_range(
             continue
 
         test_table = model_version.get_monitor_table(session)
-        select_obj = create_model_version_select_object(model_version, test_table, top_feat)
+        select_obj = create_model_version_select_object(test_table, top_feat + model_columns)
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
@@ -405,7 +406,7 @@ async def run_check_per_window_in_range(
         # Query reference if the check use it, and there are results not from cache
         if isinstance(dp_check, TrainTestBaseCheck) and any(("query" in x for x in test_info)):
             reference_table = model_version.get_reference_table(session)
-            reference_query = create_model_version_select_object(model_version, reference_table, top_feat)
+            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns)
             reference_query = reference_query.filter(monitor_options.sql_columns_filter())
             reference_query = session.execute(random_sample(reference_query, reference_table))
         else:
@@ -551,10 +552,9 @@ async def run_check_window(
 
 def create_execution_data_query(
         data_table: Table,
-        model_version: ModelVersion,
         session: AsyncSession,
         options: TableFiltersSchema,
-        features: t.List[str] = None,
+        columns: t.List[str] = None,
         n_samples: int = 10_000,
         all_columns: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
@@ -563,15 +563,10 @@ def create_execution_data_query(
     Parameters
     ----------
     data_table: Table
-    model_version
     session
-    features
+    columns
     options
-    with_reference: bool
-        Whether to load reference
-    with_test: bool
-        Whether to load test
-    n_sample: int, default: 10,000
+    n_samples: int, default: 10,000
         The number of samples to collect
     all_columns: bool, default False
         Whether to load all the columns instead of just the top features
@@ -584,7 +579,7 @@ def create_execution_data_query(
     if all_columns:
         data_query = select(data_table)
     else:
-        data_query = create_model_version_select_object(model_version, data_table, features)
+        data_query = create_model_version_select_object(data_table, columns)
     data_query = data_query.filter(options.sql_all_filters()
                                    if SAMPLE_TS_COL in data_table.c else options.sql_columns_filter())
     return session.execute(random_sample(data_query, data_table, n_samples=n_samples))
@@ -612,7 +607,7 @@ def load_data_for_check(
         Whether to load reference
     with_test: bool
         Whether to load test
-    n_sample: int, default: 10,000
+    n_samples: int, default: 10,000
         The number of samples to collect
     all_columns: bool, default False
         Whether to load all the columns instead of just the top features
@@ -625,12 +620,13 @@ def load_data_for_check(
     if not model_version.is_filter_fit(options.filter):
         return None, None
 
+    columns = features + list(model_version.model_columns.keys())
+
     if with_reference:
         reference_table = model_version.get_reference_table(session)
         reference_query = create_execution_data_query(reference_table,
-                                                      model_version=model_version,
                                                       session=session,
-                                                      features=features,
+                                                      columns=columns,
                                                       options=options,
                                                       n_samples=n_samples,
                                                       all_columns=all_columns)
@@ -641,9 +637,8 @@ def load_data_for_check(
         if model_version.is_in_range(options.start_time_dt(), options.end_time_dt()):
             test_table = model_version.get_monitor_table(session)
             test_query = create_execution_data_query(test_table,
-                                                     model_version=model_version,
                                                      session=session,
-                                                     features=features,
+                                                     columns=columns,
                                                      options=options,
                                                      n_samples=n_samples,
                                                      all_columns=all_columns)

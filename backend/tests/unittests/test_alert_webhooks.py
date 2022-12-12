@@ -14,9 +14,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor
+from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookHttpMethod, WebhookKind
-from tests.common import create_alert_rule, create_check, create_model, create_monitor
+from tests.common import create_alert_rule, create_check, create_monitor
+from tests.conftest import add_model
 
 
 @pytest.mark.asyncio
@@ -26,7 +27,7 @@ async def test_standart_webhook_execution(
     application: FastAPI  # app that were used to init "client:TestClient"
 ):
     # TODO: prepopulate template database instead of creating entities here
-    model_id = t.cast(int, create_model(client))
+    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
     check_id = t.cast(int, create_check(client, model_id))
     monitor_id = t.cast(int, create_monitor(client, check_id))
     alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
@@ -111,7 +112,7 @@ async def test_pager_duty_webhook_execution(
     event_routing_key = os.environ["PAGER_DUTY_EVENT_ROUTING_KEY"]
 
     # TODO: prepopulate template database instead of creating entities here
-    model_id = t.cast(int, create_model(client))
+    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
     check_id = t.cast(int, create_check(client, model_id))
     monitor_id = t.cast(int, create_monitor(client, check_id))
     alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))

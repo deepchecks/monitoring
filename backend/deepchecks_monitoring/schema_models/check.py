@@ -11,8 +11,8 @@
 """Module defining the check ORM model."""
 import typing as t
 
-from deepchecks import BaseCheck, SingleDatasetBaseCheck, TrainTestBaseCheck
-from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
+from deepchecks import BaseCheck
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, relationship
 
@@ -33,6 +33,7 @@ class Check(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
     config = Column(JSONB)
+    is_label_required = Column(Boolean, nullable=False)
 
     model_id = Column(
         Integer,
@@ -59,7 +60,4 @@ class Check(Base):
         -------
         Deepchecks' check.
         """
-        dp_check = BaseCheck.from_config(self.config)
-        if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
-            raise ValueError("incompatible check type")
-        return dp_check
+        return BaseCheck.from_config(self.config)

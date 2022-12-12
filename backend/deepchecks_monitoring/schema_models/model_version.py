@@ -80,6 +80,7 @@ class ModelVersion(Base):
     additional_data_columns = Column(JSONB)
     model_columns = Column(JSONB)
     meta_columns = Column(JSONB)
+    private_columns = Column(JSONB, nullable=False, default={})
     feature_importance = Column(JSONB, nullable=True)
     statistics = Column(JSONB)
     classes = Column(ARRAY(String), nullable=True)
@@ -128,7 +129,8 @@ class ModelVersion(Base):
     def get_monitor_table(self, connection) -> Table:
         """Get table object of the monitor table."""
         metadata = MetaData(bind=connection)
-        columns = {**self.features_columns, **self.additional_data_columns, **self.model_columns, **self.meta_columns}
+        columns = {**self.features_columns, **self.additional_data_columns, **self.model_columns, **self.meta_columns,
+                   **self.private_columns}
         columns = {name: ColumnType(col_type) for name, col_type in columns.items()}
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_monitor_table_name(), metadata, *columns_sqlalchemy)

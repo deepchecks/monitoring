@@ -40,6 +40,31 @@ from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from .router import router
 
 
+async def _log_or_update(model_version_id, data, session, data_ingest, user, resources_provider, action):
+    if len(data) == 0:
+        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
+                                                     options=joinedload(ModelVersion.model).load_only(Model.task_type))
+    time = pdl.now()
+    minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
+    # Atomically getting the count and increasing in order to avoid race conditions
+    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
+    remains = minute_rate - curr_count
+    # Remains can be negative because we don't check the limit before incrementing
+    if remains <= 0:
+        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
+                   "num_saved": 0}
+        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+    await data_ingest.log_or_update(model_version, data[:remains], session, user, action, time)
+    if remains < len(data):
+        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
+                             f"{remains} first rows were received",
+                   "num_saved": remains}
+        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+
+    return Response(status_code=status.HTTP_200_OK)
+
+
 @router.post("/model-versions/{model_version_id}/data", tags=[Tags.DATA],
              summary="Log inference data per model version.",
              description="This API logs asynchronously a batch of new samples of the inference data of an existing "
@@ -53,27 +78,7 @@ async def log_data_batch(
     resources_provider=ResourcesProviderDep
 ) -> Response:
     """Insert batch data samples."""
-    if len(data) == 0:
-        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
-                                                     options=joinedload(ModelVersion.model).load_only(Model.task_type))
-    time = pdl.now()
-    minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
-    # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
-    remains = minute_rate - curr_count
-    # Remains can be negative because we don't check the limit before incrementing
-    if remains <= 0:
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute"}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
-    await data_ingest.log(model_version, data[:remains], session, user)
-    if remains < len(data):
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
-                             f"{remains} first rows were received",
-                   "num_saved": remains}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
-
-    return Response(status_code=status.HTTP_200_OK)
+    return await _log_or_update(model_version_id, data, session, data_ingest, user, resources_provider, "log")
 
 
 @router.put("/model-versions/{model_version_id}/data", tags=[Tags.DATA])
@@ -86,27 +91,7 @@ async def update_data_batch(
     resources_provider=ResourcesProviderDep
 ):
     """Update data samples."""
-    if len(data) == 0:
-        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
-                                                     options=joinedload(ModelVersion.model).load_only(Model.task_type))
-    time = pdl.now()
-    minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
-    # Atomically getting the count and increasing in order to avoid race conditions
-    curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
-    remains = minute_rate - curr_count
-    # Remains can be negative because we don't check the limit before incrementing
-    if remains <= 0:
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute"}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
-    await data_ingest.update(model_version, data[:remains], session, user)
-    if remains < len(data):
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
-                             f"{remains} first rows were received",
-                   "num_saved": remains}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
-
-    return Response(status_code=status.HTTP_200_OK)
+    return await _log_or_update(model_version_id, data, session, data_ingest, user, resources_provider, "update")
 
 
 @router.post(

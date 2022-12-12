@@ -38,11 +38,23 @@ class Model(Base):
     """ORM model for the model."""
 
     __tablename__ = "models"
+    __table_args__ = (
+        sa.CheckConstraint(
+            "alerts_delay_labels_ratio >= 0 AND alerts_delay_labels_ratio <= 1",
+            name="labels_ratio_is_0_to_1"
+        ),
+        sa.CheckConstraint(
+            "alerts_delay_seconds >= 0",
+            name="alerts_delay_seconds_is_positive"
+        ),
+    )
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(50), unique=True)
     description = sa.Column(sa.String(200))
     task_type = sa.Column(sa.Enum(TaskType))
+    alerts_delay_labels_ratio = sa.Column(sa.Float, nullable=False)
+    alerts_delay_seconds = sa.Column(sa.Integer, nullable=False)
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
