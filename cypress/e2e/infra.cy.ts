@@ -25,6 +25,7 @@ describe('load main page', () => {
     cy.visit('/')
     // Login with the second user
     cy.login(Cypress.env('second_username'), Cypress.env('second_password'))
+    cy.url().should('eq', Cypress.config().baseUrl + '/complete-details')
     // Make sure we have invite
     cy.contains('p', Cypress.env('user_full_name')).should('exist')
     cy.contains('div', 'invited you to').should('exist')

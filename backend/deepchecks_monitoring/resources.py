@@ -287,8 +287,9 @@ class ResourcesProvider(BaseResourcesProvider):
 
     def launchdarkly_variation(self, flag, user, default=False):
         """Return variation of a flag."""
-        ld_user = {"email": user.email, "key": user.email,
-                   "custom": {"tier": user.organization.tier, "organization_id": user.organization.id}}
+        ld_user = {"email": user.email, "key": user.email}
+        if user.organization:
+            ld_user["custom"] = {"tier": user.organization.tier, "organization_id": user.organization.id}
         return self.lauchdarkly_client.variation(flag, ld_user, default)
 
     @property

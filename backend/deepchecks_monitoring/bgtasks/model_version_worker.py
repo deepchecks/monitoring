@@ -16,12 +16,11 @@ import typing as t
 import anyio
 import pendulum as pdl
 import uvloop
-from kafka import KafkaConsumer, TopicPartition
+from kafka import KafkaConsumer
 from sqlalchemy import select
 
 from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
-from deepchecks_monitoring.logic.keys import (MODEL_VERSIONS_QUEUE_KEY, MODEL_VERSIONS_SORTED_SET_KEY,
-                                              get_data_topic_name)
+from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_QUEUE_KEY, MODEL_VERSIONS_SORTED_SET_KEY
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import ModelVersion
@@ -117,7 +116,8 @@ class ModelVersionWorker:
                 return
 
             # Get kafka topic offset
-            model_version.topic_end_offset = self.get_topic_offset(organization_id, model_version_id)
+            if self.consumer:
+                model_version.set_topic_offset(organization_id, self.consumer)
 
             # It's possible only messages where pushed to the queue, but no data was updated yet. In that case  does
             # not update statistics.
@@ -131,27 +131,6 @@ class ModelVersionWorker:
                 # can't guarantee that.
                 model_version.last_statistics_update = model_version.last_update_time
                 pass
-
-    def get_topic_offset(self, organization_id, model_version_id) -> int:
-        """Calculate topic offset in kafka for given model version id.
-
-        Note: We assume we have a single partition per topic, If this ever change, we need to change this code.
-
-        Parameters
-        ----------
-        organization_id
-        model_version_id
-
-        Returns
-        -------
-        int
-            Topic offset in kafka.
-        """
-        if self.consumer:
-            topic_partition = TopicPartition(get_data_topic_name(organization_id, model_version_id), 0)
-            # The end_offset returned is the next offset (end + 1)
-            return self.consumer.end_offsets([topic_partition])[topic_partition] - 1
-        return 0
 
 
 class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):

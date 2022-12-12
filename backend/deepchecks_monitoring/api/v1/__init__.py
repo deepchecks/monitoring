@@ -10,10 +10,10 @@
 
 """Module defining the v1 API of the app."""
 
-from . import (alert, alert_rule, alert_webhooks, check, configuration, dashboard, data_input, model, model_version,
-               monitor, slack)
+from . import (alert, alert_rule, alert_webhooks, check, configuration, dashboard, data_input, e2e_support_api, model,
+               model_version, monitor, slack)
 from .global_api import auth, global_router, helathcheck, organization, users
 from .router import router
 
 __all__ = ['router', 'model', 'model_version', 'data_input', 'check', 'alert', 'monitor', 'dashboard', 'alert_rule',
-           'configuration', 'auth', 'helathcheck', 'organization', 'slack', 'users', 'global_router']
+           'configuration', 'auth', 'helathcheck', 'organization', 'slack', 'users', 'global_router', 'e2e_support_api']

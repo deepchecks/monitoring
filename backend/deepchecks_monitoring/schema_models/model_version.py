@@ -17,6 +17,7 @@ from itertools import chain
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
+from kafka import TopicPartition
 from pydantic.main import BaseModel
 from sqlalchemy import (ARRAY, BigInteger, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
                         UniqueConstraint, func, select)
@@ -24,6 +25,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
+from deepchecks_monitoring.logic.keys import get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import DataFilterList
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, ColumnType,
@@ -220,6 +222,25 @@ class ModelVersion(Base):
         # ingestion_offset might have passed topic_end_offset (since it's updated in the background) so in that case
         # we want to show 0 instead of negative number.
         return max(lag, 0)
+
+    def set_topic_offset(self, organization_id, consumer):
+        """Calculate topic offset in kafka for given model version id.
+
+        Note: We assume we have a single partition per topic, If this ever change, we need to change this code.
+
+        Parameters
+        ----------
+        organization_id
+        consumer
+
+        Returns
+        -------
+        int
+            Topic offset in kafka.
+        """
+        topic_partition = TopicPartition(get_data_topic_name(organization_id, self.id), 0)
+        # The end_offset returned is the next offset (end + 1)
+        self.topic_end_offset = consumer.end_offsets([topic_partition])[topic_partition] - 1
 
 
 def _add_col_value(stats_values, col_value):

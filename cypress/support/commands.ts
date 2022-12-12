@@ -42,7 +42,7 @@ Cypress.Commands.add('login', (username: string, password: string) => {
     cy.get('#username').type(username)
     cy.get('#password').type(password)
     cy.get('button[name="action"]').click()
-    cy.url().should('eq', Cypress.config().baseUrl + '/')
+    cy.url().should('not.contain', '.auth0.com')
 })
 
 
@@ -61,19 +61,23 @@ Cypress.Commands.add('resetState', () => {
         cy.get('#full_name').focus().clear()
         cy.get('#full_name').focus().type(Cypress.env('user_full_name'))
         cy.get('#organization').type(Cypress.env('organization_name'))
-        cy.get('button[type="submit"]').click()
 
+        cy.intercept('POST', '/api/v1/users/complete-details').as('complete-details')
+        cy.get('button[type="submit"]').click()
+        // Wait for complete details to return
+        cy.wait('@complete-details').its('response.statusCode').should('eq', 302)
+        cy.url().should('eq', Cypress.config().baseUrl + '/')
+        // Accept EULA
         cy.get('input[type="checkbox"]').click()
         cy.get('button[type="button"]').click()
-
-        cy.url().should('eq', Cypress.config().baseUrl + '/')
     })
 })
 
 
 Cypress.Commands.add('createModelAndVersion', (modelName, taskType, modelVersionName) => {
   // Creating a model
-  const modelRequest = { name: modelName, task_type: taskType, description: "Model created from Cypress!" }
+  const modelRequest = { name: modelName, task_type: taskType, description: "Model created from Cypress!",
+                          alerts_delay_labels_ratio: 1, alerts_delay_seconds: 60 }
   const modelVersionRequest = {
     name: modelVersionName,
     features: {
@@ -127,7 +131,9 @@ Cypress.Commands.add('addDataToVersion', (modelInfo: object, samplesPerHour=20, 
         data.push(sample);
     }
 
-    return cy.request('POST', '/api/v1/model-versions/' + modelInfo['version_id'] + '/data', data);
+    return cy.request('POST', '/api/v1/model-versions/' + modelInfo['version_id'] + '/data', data).then(() => {
+        return cy.request('GET', '/api/v1/wait-for-queue/' + modelInfo['version_id'])
+    })
 });
 
 
@@ -154,7 +160,8 @@ Cypress.Commands.add('addMonitor', (checkInfo: object, frequency = 3600, lookbac
 
     return cy.request('GET', '/api/v1/dashboards/').then(response => {
         monitorData['dashboard_id'] = response.body.id
-        return cy.request('POST', `/api/v1/checks/${checkInfo['id']}/monitors`, monitorData).then(() => response.body)
+        return cy.request('POST', `/api/v1/checks/${checkInfo['id']}/monitors`, monitorData)
+        .then(response => response.body)
     });
 });
 
@@ -168,5 +175,6 @@ Cypress.Commands.add('addAlertRule', (monitorInfo: object, operator = "less_than
         "alert_severity": alert_severity
     }
 
-    cy.request('POST', `api/v1/monitors/${monitorInfo['id']}/alert-rules`, data);
+    return cy.request('POST', `api/v1/monitors/${monitorInfo['id']}/alert-rules`, data)
+      .then(response => response.body);
 });

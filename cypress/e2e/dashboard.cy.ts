@@ -60,7 +60,9 @@ describe('test dashboard', () => {
     cy.get('#menu-aggregation_window').contains('li', '1 day').click()
     cy.contains('div[role="presentation"]', 'New Monitor').contains('div', 'Time Range').click()
     cy.get('#menu-lookback').contains('li', '1 week').click()
+    cy.intercept('POST', '/api/v1/checks/*/monitors').as('addMonitor')
     cy.contains('button', 'Save').click()
+    cy.wait('@addMonitor')
     cy.contains('p', 'manual monitor').parent().parent().contains('h6', 'Mae').should('exist')
 
   })
