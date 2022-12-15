@@ -12,9 +12,10 @@ export const timeWindow = [
   { label: '3 months', value: timeValues.threeMouths }
 ];
 
-export const checkInfoInitValue = () => ({
+const initialValue = {
   check_conf: {}
-});
+}
+export const checkInfoInitValue = () => (initialValue);
 
 export const formikInitValues = (monitor: MonitorSchema | undefined) => {
   const filters = (
