@@ -104,23 +104,22 @@ def upgrade_organizations_schemas(orgid: str):
 
     async def fn():
         settings = Settings(echo_sql=False)  # type: ignore
-        os.environ["DATABASE_URI"] = settings.database_uri
-
         async with ResourcesProvider(settings) as rp:
+            engine = rp.async_database_engine
             async with rp.create_async_database_session() as s:
-                where = Organization.id == int(orgid) if orgid != "all" else True
-                q = sa.select(Organization.schema_name).where(where)
-                organizations_schema = (await s.scalars(q)).all()
-                if orgid != "all" and not organizations_schema:
-                    raise RuntimeError("Did not find an organization with given id")
-                for schema in organizations_schema:
-                    alembicArgs = [  # pylint: disable=invalid-name
-                        "--name", "org",
-                        "-x", f"schema={schema}",
-                        "--raiseerr",
-                        "upgrade", "head",
-                    ]
-                    alembic.config.main(argv=alembicArgs)
+                if orgid == "all":
+                    q = sa.select(Organization)
+                    organizations = (await s.scalars(q)).all()
+                    for org in organizations:
+                        await org.schema_builder.upgrade(engine)
+                        print(f"Upgraded {org.name} schema")
+                else:
+                    q = sa.select(Organization).where(Organization.id == int(orgid))
+                    org = await s.scalar(q)
+                    if org is not None:
+                        await org.schema_builder.upgrade(engine)
+                    else:
+                        raise RuntimeError("Did not find an organization with given name")
 
     anyio.run(fn)
 
