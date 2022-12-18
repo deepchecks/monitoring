@@ -5,6 +5,7 @@ import { EULAImage } from '../assets/bg/backgrounds';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { theme } from '../theme';
 import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
+import { termsAndConditions } from 'helpers/termsAndConditions';
 
 
 export const LicenseAgreementPage = function () {
@@ -43,10 +44,10 @@ export const LicenseAgreementPage = function () {
                 open={true}
                 scroll='paper'
                 fullWidth={true}
-                maxWidth='lg'
+                maxWidth='xl'
             >
-                <DialogTitle>
-                    Please review and approve our EULA agreement
+                <DialogTitle sx={{ml: '45px'}}>
+                    Please review and approve our service terms and conditions
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText
@@ -54,14 +55,7 @@ export const LicenseAgreementPage = function () {
                         ref={descriptionElementRef}
                         tabIndex={-1}
                     >
-                       {[...new Array(50)]
-              .map(
-                () => `Cras mattis consectetur purus sit amet fermentum.
-Cras justo odio, dapibus ac facilisis in, egestas eget quam.
-Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
-Praesent commodo cursus magna, vel scelerisque nisl consectetur et.`
-              )
-              .join('\n')} 
+                       <div dangerouslySetInnerHTML={{__html: termsAndConditions}} />
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
