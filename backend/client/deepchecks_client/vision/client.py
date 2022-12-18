@@ -493,7 +493,8 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         created_version = t.cast(t.Dict[str, t.Any], created_version)
         model_version_id = created_version['id']
-        return self._version_client(model_version_id, additional_image_properties=additional_image_properties)
+        return self._version_client(model_version_id, additional_image_properties=additional_image_properties,
+                                    send_images=send_images)
 
     def _version_client(
         self,
