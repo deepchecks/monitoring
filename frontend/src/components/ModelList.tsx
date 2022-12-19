@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 
-import { ModelsInfoSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
+import { ModelManagmentSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
 
 import { Box, List, Typography } from '@mui/material';
 
@@ -11,7 +11,7 @@ import { SearchField } from './SearchField';
 interface ModelListProps {
   activeModelId: number | null;
   filterMonitors: Dispatch<SetStateAction<number | null>>;
-  models: ModelsInfoSchema[];
+  models: ModelManagmentSchema[];
 }
 
 export function ModelList({ activeModelId, filterMonitors, models }: ModelListProps) {

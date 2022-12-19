@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import mixpanel from 'mixpanel-browser';
 
 import { GlobalStateContext } from 'context';
-import { ModelsInfoSchema } from 'api/generated';
+import { ModelManagmentSchema } from 'api/generated';
 
 import { alpha, Box, Typography } from '@mui/material';
 
@@ -15,7 +15,7 @@ interface ModelItemProps {
   alertsCount: number;
   onModelClick: (modelId: number) => void;
   onReset: (event: React.MouseEvent<HTMLDivElement>) => void;
-  model: ModelsInfoSchema;
+  model: ModelManagmentSchema;
 }
 
 const severity = 'critical';

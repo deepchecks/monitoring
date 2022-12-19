@@ -6,10 +6,10 @@ import ModelIcon from './ModelIcon';
 
 import { ArrowDropDown } from 'assets/icon/icon';
 
-import { ModelSchema } from 'api/generated';
+import { ModelManagmentSchema } from 'api/generated';
 
 interface ModelSelectProps {
-  model: ModelSchema;
+  model: ModelManagmentSchema;
   onOpen: (event: React.MouseEvent<HTMLDivElement>) => void;
   size: 'small' | 'medium';
 }

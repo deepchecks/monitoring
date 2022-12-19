@@ -1,13 +1,13 @@
 import React from 'react';
 
-import { ModelSchema } from 'api/generated';
+import { ModelManagmentSchema } from 'api/generated';
 
 import { Box } from '@mui/system';
 
 import ModelSelect from './ModelSelect';
 
 interface StaticAnalysisHeaderProps {
-  model: ModelSchema;
+  model: ModelManagmentSchema;
   onOpenModelsMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 

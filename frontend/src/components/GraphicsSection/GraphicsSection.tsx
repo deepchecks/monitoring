@@ -4,7 +4,7 @@ import { _DeepPartialObject } from 'chart.js/types/utils';
 import dayjs from 'dayjs';
 import mixpanel from 'mixpanel-browser';
 
-import { GetModelsApiV1ModelsGetQueryResult, MonitorSchema } from 'api/generated';
+import { GetModelsApiV1ModelsGetQueryResult, ModelManagmentSchema, MonitorSchema } from 'api/generated';
 
 import { Box, IconButton, Typography } from '@mui/material';
 
@@ -31,7 +31,7 @@ interface GraphicsSectionProps {
   monitor: MonitorSchema;
   onOpen: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
   onDelete: (monitor: MonitorSchema) => void;
-  models: GetModelsApiV1ModelsGetQueryResult;
+  models: GetModelsApiV1ModelsGetQueryResult | ModelManagmentSchema[];
 }
 
 interface MonitorInfo {

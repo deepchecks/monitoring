@@ -76,7 +76,7 @@ const SingleSelect = ({
           onChange={handleSelectValueChange}
           endAdornment={<ClearButton inputCheck={value} onClick={handleClearSelectedValue} />}
         >
-          {data.map(({ name }) => (
+          {data?.map(({ name }) => (
             <MenuItem key={name} value={name}>
               {name}
             </MenuItem>

@@ -1,6 +1,6 @@
 import React, { FC, useState } from 'react';
 import * as yup from 'yup';
-import { ModelsInfoSchema, useGetChecksApiV1ModelsModelIdChecksGet, CheckSchema, DataFilter } from '../api/generated';
+import { ModelManagmentSchema, useGetChecksApiV1ModelsModelIdChecksGet, CheckSchema, DataFilter } from '../api/generated';
 import { AlertRuleDialogStep, AlertRuleDialogStepBase, AlertRuleDialogStepRenderArgs } from './AlertRuleDialogStep';
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
 import { CircularProgress } from '@mui/material';
@@ -18,7 +18,7 @@ export interface AlertRuleDialogStep2Values {
 }
 
 export interface AlertRuleDialogStep2 extends AlertRuleDialogStepBase<AlertRuleDialogStep2Values> {
-  models: ModelsInfoSchema[];
+  models: ModelManagmentSchema[];
 }
 
 const validationSchema = yup.object().shape({

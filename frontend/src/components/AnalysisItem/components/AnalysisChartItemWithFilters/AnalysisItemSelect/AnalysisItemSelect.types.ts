@@ -1,16 +1,12 @@
+import { MonitorValueConf } from 'api/generated';
 import { AnalysisItemFilterTypes } from 'components/AnalysisItem/AnalysisItem.types';
 import { SetStateType } from 'helpers/types';
-
-export interface FiltersValue {
-  name: string;
-  is_agg: boolean | null;
-}
 
 export type SelectSize = 'small' | 'medium';
 
 export interface AnalysisItemSelectProps<T> {
   label: string;
-  data: FiltersValue[];
+  data?: MonitorValueConf[];
   size?: SelectSize;
   type: AnalysisItemFilterTypes;
   activeFilter: AnalysisItemFilterTypes | null;

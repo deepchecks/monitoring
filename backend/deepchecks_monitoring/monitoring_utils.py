@@ -20,7 +20,7 @@ import typing as t
 import orjson
 import sqlalchemy as sa
 from fastapi import Depends, Path, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, conlist, constr
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -154,8 +154,8 @@ class MonitorCheckConf(BaseModel):
 class MonitorCheckConfSchema(BaseModel):
     """List of data filters."""
 
-    check_conf: t.Dict[CheckParameterTypeEnum, t.Any]
-    res_conf: t.Union[t.List[str], None]
+    check_conf: t.Dict[CheckParameterTypeEnum, conlist(constr(min_length=1), min_items=1)]
+    res_conf: t.Union[conlist(constr(min_length=1), min_items=1), None]
 
     class Config:
         use_enum_values = True

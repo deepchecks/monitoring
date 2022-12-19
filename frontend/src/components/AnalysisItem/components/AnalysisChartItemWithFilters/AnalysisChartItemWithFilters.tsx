@@ -1,6 +1,6 @@
 import React, { PropsWithChildren } from 'react';
 
-import { MonitorCheckConfSchemaCheckConf } from 'api/generated';
+import { MonitorTypeConf } from 'api/generated';
 
 import { SelectProps, Stack } from '@mui/material';
 
@@ -14,7 +14,7 @@ import { SetStateType } from 'helpers/types';
 interface AnalysisChartItemWithFiltersProps extends SelectProps {
   title: string;
   subtitle: string;
-  filters: MonitorCheckConfSchemaCheckConf[];
+  filters: MonitorTypeConf[];
   activeFilter: AnalysisItemFilterTypes | null;
   isMostWorstActive: boolean;
   setActiveFilter: SetStateType<AnalysisItemFilterTypes | null>;
@@ -60,7 +60,7 @@ export function AnalysisChartItemWithFilters({
                 key={index + type}
                 label={type}
                 data={values}
-                type={type}
+                type={(type as AnalysisItemFilterTypes)}
                 activeFilter={activeFilter}
                 setActiveFilter={setActiveFilter}
                 setSelectValue={setMultipleSelectValue}

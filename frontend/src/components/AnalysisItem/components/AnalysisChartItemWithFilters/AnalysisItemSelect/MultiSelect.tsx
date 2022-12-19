@@ -64,7 +64,7 @@ const MultiSelect = ({
   const handleClose = (isApplyClicked?: boolean) => {
     setOpen(false);
 
-    if (!isApplyClicked || !filteredData.length) {
+    if (!isApplyClicked || !filteredData?.length) {
       setTimeout(() => {
         setMultiValue(savedMultiValue);
         clearSearchField();
@@ -97,7 +97,7 @@ const MultiSelect = ({
 
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-    const filtered = data.filter(item => item.name.toLowerCase().includes(value.toLowerCase().trim()));
+    const filtered = data?.filter(item => item.name.toLowerCase().includes(value.toLowerCase().trim()));
 
     setSearchFieldValue(value);
     setFilteredData(filtered);
@@ -153,7 +153,7 @@ const MultiSelect = ({
           </StyledStickyContainer>
 
           {/* <StyledMenuItemsList> */}
-          {filteredData.length ? (
+          {filteredData?.length ? (
             filteredData.map(({ name }) => (
               <MenuItem key={name} value={name} sx={{ p: '10px 15px' }}>
                 <StyledCheckbox
