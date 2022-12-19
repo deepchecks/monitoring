@@ -27,6 +27,7 @@ from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
+from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
 
 
@@ -83,9 +84,11 @@ def generate_user(random):
         async with resources_provider.create_async_database_session() as s:
             if random:
                 u = await generate_random_user(s, settings.auth_jwt_secret, with_org=True)
+                password_hash, token = auth.create_api_token(u.email)
+                u.api_secret_hash = password_hash
+                print(f"id:{u.id},\nemail:{u.email},\napi_token:{token},\naccess_token:{u.access_token}")
             else:
                 u = await generate_test_user(s, settings.auth_jwt_secret, with_org=True)
-            print(f"id:{u.id}, email:{u.email}, access_token:{u.access_token}")
             await s.commit()
     anyio.run(fn)
 

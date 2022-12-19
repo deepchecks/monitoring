@@ -215,50 +215,6 @@ async def test_regression_batch_log(
 
 
 @pytest.mark.asyncio
-async def test_regression_batch_update(
-    regression_model_version_client: DeepchecksModelVersionClient,
-    async_session: AsyncSession
-):
-    time = pdl.now().int_timestamp
-
-    regression_model_version_client.log_batch(
-        sample_ids=np.array(['1', '2', '3']),
-        data=pd.DataFrame.from_records([
-            {'a': 2, 'b': '2', 'c': 1},
-            {'a': 3, 'b': '4', 'c': -1},
-            {'a': 2, 'b': '0', 'c': 0},
-        ]),
-        timestamps=np.array([time, time, time]),
-        predictions=np.array(['2', '1', '0'])
-    )
-
-    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
-    assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
-
-    regression_model_version_client.update_batch(
-        sample_ids=np.array(['1', '2', '3']),
-        labels=np.array([1, 2, 1]),
-        data=pd.DataFrame.from_records([
-            {'a': 4, 'b': '4', 'c': 1},
-            {'a': 6, 'b': '8', 'c': -1},
-            {'a': 4, 'b': '0', 'c': 0},
-        ])
-    )
-
-    stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
-    assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
-
-    model_version = await async_session.get(
-        ModelVersion,
-        regression_model_version_client.model_version_id
-    )
-
-    stats = model_version.statistics
-    assert stats['_dc_label'] == {'max': 2.0, 'min': 1.0}
-    assert stats['_dc_prediction'] == {'max': 2.0, 'min': 0.0}
-
-
-@pytest.mark.asyncio
 async def test_regression_batch_update_only_label(regression_model_version_client: DeepchecksModelVersionClient):
     time = pdl.now().int_timestamp
 
@@ -312,6 +268,7 @@ async def test_regression_single_update(regression_model_version_client: Deepche
 @pytest.mark.asyncio
 async def test_regression_single_update_none(regression_model_version_client: DeepchecksModelVersionClient):
     time = pdl.now().int_timestamp
+
     regression_model_version_client.log_batch(
         sample_ids=np.array(['1', '2', '3']),
         data=pd.DataFrame.from_records([

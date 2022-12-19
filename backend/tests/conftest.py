@@ -206,9 +206,12 @@ def settings(async_engine, smtp_server):
 
 @pytest.fixture(scope="session")
 def redis():
-    with subprocess.Popen(["redis-server", "--port", "6380"]) as p:
-        yield Redis(port=6380)
-        p.kill()
+    if (uri := os.environ.get("TESTS_REDIS_URI")) is not None:
+        yield Redis.from_url(uri)
+    else:
+        with subprocess.Popen(["redis-server", "--port", "6380"]) as p:
+            yield Redis(port=6380)
+            p.kill()
 
 
 @pytest.fixture(scope="function", autouse=True)

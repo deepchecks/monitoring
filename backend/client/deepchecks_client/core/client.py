@@ -19,7 +19,8 @@ import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
-from deepchecks_client.core.utils import DataFilter, DeepchecksJsonValidator, parse_timestamp, pretty_print
+from deepchecks_client.core.utils import (DataFilter, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
+                                          TaskType, parse_timestamp, pretty_print)
 
 from .api import API
 
@@ -27,6 +28,7 @@ if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
 
 __all__ = ['DeepchecksModelVersionClient', 'DeepchecksModelClient', 'MAX_REFERENCE_SAMPLES']
+
 
 MAX_REFERENCE_SAMPLES = 100_000
 
@@ -57,6 +59,7 @@ class DeepchecksModelVersionClient:
         self.api = api
         self.model = model
         self.model_version_id = model_version_id
+        self.task_type = TaskType(self.model['task_type'])
         self._log_samples = []
         self._update_samples = []
 
@@ -72,6 +75,18 @@ class DeepchecksModelVersionClient:
 
         self.schema_validator = DeepchecksJsonValidator(self.schema)
         self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
+
+        sample_id_column = DeepchecksColumns.SAMPLE_ID_COL.value
+        label_column = DeepchecksColumns.SAMPLE_LABEL_COL.value
+
+        self.update_record_validator = DeepchecksJsonValidator({
+            'type': 'object',
+            'required': [sample_id_column],
+            'properties': {
+                sample_id_column: self.schema['properties'][sample_id_column],
+                label_column: self.schema['properties'][label_column]
+            },
+        })
 
         self.features = schemas['features']
         self.additional_data = schemas['additional_data']
@@ -109,14 +124,31 @@ class DeepchecksModelVersionClient:
         """
         raise NotImplementedError
 
-    def send(self):
-        """Send all the aggregated samples for upload or update."""
+    def send(self, samples_per_send: int = 10_000):
+        """Send all the aggregated samples for upload or update.
+
+        Parameters
+        ==========
+        samples_per_send : int , default 10_000
+            how many samples to send by one request
+        """
         if len(self._log_samples) > 0:
-            self.api.upload_samples(self.model_version_id, self._log_samples)
+            for i in range(0, len(self._log_samples), samples_per_send):
+                self.api.upload_samples(
+                    self.model_version_id,
+                    self._log_samples[i: i+samples_per_send]
+                )
+
             pretty_print(f'{len(self._log_samples)} new samples were successfully logged.')
             self._log_samples.clear()
+
         if len(self._update_samples) > 0:
-            self.api.update_samples(self.model_version_id, self._update_samples)
+            for i in range(0, len(self._update_samples), samples_per_send):
+                self.api.update_samples(
+                    self.model_version_id,
+                    self._update_samples[i: i+samples_per_send]
+                )
+
             pretty_print(f'{len(self._update_samples)} samples were successfully updated.')
             self._update_samples.clear()
 
@@ -141,17 +173,73 @@ class DeepchecksModelVersionClient:
             content = data.iloc[i:i + samples_per_request]
             self.api.upload_reference(self.model_version_id, content.to_json(orient='table', index=False))
 
-    def update_sample(self, sample_id: str, **values):
-        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload.
+    def update_sample(
+        self,
+        sample_id: str,
+        label: t.Any,
+    ):
+        """Update an existing sample.
+
+        Adds the sample to the update queue.
+        Requires a call to send() to upload.
 
         Parameters
         ----------
         sample_id : str
-             The sample id.
-        **values
-            The values to update.
+            The sample id.
+        label: Any
+            label of the sample
         """
-        raise NotImplementedError
+        if self.task_type in {TaskType.MULTICLASS, TaskType.BINARY}:
+            label = str(label)
+        elif self.task_type == TaskType.REGRESSION:
+            label = float(label)
+        elif self.task_type in TaskType.vision_types():
+            pass
+        else:
+            raise ValueError('Unknown model type - {self.task_type}')
+
+        sample = {DeepchecksColumns.SAMPLE_ID_COL: str(sample_id), DeepchecksColumns.SAMPLE_LABEL_COL: label}
+        sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
+        self.update_record_validator.validate(sample)
+        self._update_samples.append(sample)
+
+    def update_batch(
+        self,
+        sample_ids: t.Sequence[str],
+        labels: t.Sequence[t.Any],
+        samples_per_send: int = 10_000
+    ):
+        """Update samples labels.
+
+        Any previously appended samples will be send to the server.
+
+        Important to understand that updated labels are not used in alerts
+        calculation if update happened after "alert delay window" and that
+        they also do not trigger alerts recalculation.
+
+        TODO:
+        - add link to documentation explaining "alert delay window"
+
+        Parameters
+        ==========
+        sample_ids : Sequence[str]
+            A sequence of sample ids of already uploaded samples whose labels we wish to modify.
+        labels : Sequence[Any]
+            A sequence of sample labels.
+        samples_per_send: int , default 10_000
+            how many samples to send by one request
+        """
+        if len(sample_ids) == 0:
+            raise ValueError('"sample_ids" array cannot be empty')
+
+        if len(labels) != len(sample_ids):
+            raise ValueError('length of "labels" array must be equal to length of "sample_ids" array')
+
+        for sample_id, label in zip(sample_ids, labels):
+            self.update_sample(sample_id=sample_id, label=label)
+
+        self.send(samples_per_send)
 
     def time_window_statistics(
         self,

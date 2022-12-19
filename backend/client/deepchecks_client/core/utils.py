@@ -269,6 +269,14 @@ class DeepchecksEncoder:
             return tuple(cls.encode(v) for v in obj)
         if pd.isna(obj):
             return None
+
+        try:
+            import torch
+            if isinstance(obj, torch.Tensor):
+                return obj.tolist()
+        except ImportError:
+            pass
+
         return obj
 
 

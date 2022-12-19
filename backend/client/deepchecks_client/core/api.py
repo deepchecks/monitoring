@@ -204,7 +204,7 @@ class API:
 
         Returns
         -------
-         httpx.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:

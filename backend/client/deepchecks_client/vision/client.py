@@ -384,42 +384,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         self._ref_samples_uploaded += len(data)
         pretty_print('Reference data uploaded.')
 
-    def update_sample(
-        self,
-        sample_id: str,
-        label: t.Any = None,
-        **values
-    ):
-        """Update an existing sample. Adds the sample to the update queue. Requires a call to send() to upload.
-
-        Parameters
-        ----------
-        sample_id : str
-            The sample ID
-        label : Any, default: None
-            updated label for the sample.
-        values
-            any additional values to update
-        """
-        # Create update schema, which contains only non-required columns and sample id
-        required_columns = set(self.schema['required'])
-        optional_columns_schema = {
-            'type': 'object',
-            'properties': {k: v for k, v in self.schema['properties'].items()
-                           if k not in required_columns or k == DeepchecksColumns.SAMPLE_ID_COL.value},
-            'required': [DeepchecksColumns.SAMPLE_ID_COL.value],
-            'additionalProperties': False
-        }
-
-        update = {DeepchecksColumns.SAMPLE_ID_COL.value: sample_id, **values}
-
-        if label is not None:
-            update[DeepchecksColumns.SAMPLE_LABEL_COL.value] = label
-
-        update = DeepchecksEncoder.encode(update)
-        DeepchecksJsonValidator(schema=optional_columns_schema).validate(update)
-        self.api.update_samples(self.model_version_id, [update])
-
 
 class DeepchecksModelClient(core_client.DeepchecksModelClient):
     """Client to interact with a vision model in monitoring."""

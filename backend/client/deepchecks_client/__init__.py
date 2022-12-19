@@ -84,6 +84,7 @@ class DeepchecksClient:
 
         A model client is a client to interact with a specific model. It is used to update checks, monitors and alerts
         associated with the model. In addition, it can be used to create a new model version.
+
         Parameters
         ----------
         name: str
