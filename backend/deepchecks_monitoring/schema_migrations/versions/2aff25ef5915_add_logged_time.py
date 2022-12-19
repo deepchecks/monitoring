@@ -16,8 +16,6 @@ Create Date: 2022-12-11 10:37:00.305953
 """
 import sqlalchemy as sa
 from alembic import op
-from deepchecks import BaseCheck
-from deepchecks.core.reduce_classes import ReduceLabelMixin
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -29,6 +27,9 @@ depends_on = None
 
 
 def upgrade() -> None:
+    from deepchecks import BaseCheck
+    from deepchecks.core.reduce_classes import ReduceLabelMixin
+
     # Add logged timestamp to all monitor tables
     model_versions = op.get_bind().execute(text('SELECT * FROM model_versions')).fetchall()
     for version in model_versions:

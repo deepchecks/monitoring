@@ -80,3 +80,4 @@ Webhooks
 Notificator
 utils
 incrementing
+avro

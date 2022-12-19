@@ -225,8 +225,10 @@ freeze:
 
 
 check-migrations-liniarity:
-	@test $$($(ALEMBIC) -c ./backend/alembic.ini --name public heads | wc -l) -eq 1
-	@test $$($(ALEMBIC) -c ./backend/alembic.ini --name org heads | wc -l) -eq 1
+	@cd backend/ && test $$($(ALEMBIC) --name public heads | wc -l) -eq 1
+	@cd backend/ && test $$($(ALEMBIC) --name org heads | wc -l) -eq 1
+# @test $$($(ALEMBIC) --name public heads | wc -l) -eq 1
+# @test $$($(ALEMBIC) -c ./backend/alembic.ini --name org heads | wc -l) -eq 1
 
 
 ### Cleanup ######################################################

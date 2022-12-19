@@ -84,9 +84,15 @@ def generate_user(random):
         async with resources_provider.create_async_database_session() as s:
             if random:
                 u = await generate_random_user(s, settings.auth_jwt_secret, with_org=True)
-                password_hash, token = auth.create_api_token(u.email)
-                u.api_secret_hash = password_hash
-                print(f"id:{u.id},\nemail:{u.email},\napi_token:{token},\naccess_token:{u.access_token}")
+                token_hash, token = auth.create_api_token(u.email)
+                u.api_secret_hash = token_hash
+                print(
+                    f"Random User:\n"
+                    f"\tid: {u.id},\n"
+                    f"\temail: {u.email},\n"
+                    f"\tapi_token: {token},\n"
+                    f"\taccess_token: {u.access_token}\n"
+                )
             else:
                 u = await generate_test_user(s, settings.auth_jwt_secret, with_org=True)
             await s.commit()

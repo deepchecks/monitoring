@@ -11,7 +11,7 @@
 import pendulum as pdl
 from sqlalchemy import func, select
 
-from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Monitor
+from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor
 
 AlertsCountPerModel = (
     select(Check.model_id, func.count(Alert.id))
@@ -19,6 +19,17 @@ AlertsCountPerModel = (
     .join(Monitor.alert_rules)
     .join(AlertRule.alerts)
     .where(Alert.resolved.is_(False))
+    .group_by(Check.model_id)
+)
+
+
+CriticalAlertsCountPerModel = (
+    select(Check.model_id, func.count(Alert.id))
+    .join(Check.monitors)
+    .join(Monitor.alert_rules)
+    .join(AlertRule.alerts)
+    .where(Alert.resolved.is_(False))
+    .where(AlertRule.alert_severity == AlertSeverity.CRITICAL)
     .group_by(Check.model_id)
 )
 

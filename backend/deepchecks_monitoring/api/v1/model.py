@@ -7,33 +7,44 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+# pylint: disable=unused-argument
 """V1 API of the model."""
+import enum
+import io
 import typing as t
 from collections import defaultdict
 from datetime import datetime
 
+import pandas as pd
 import pendulum as pdl
-from fastapi import BackgroundTasks, Depends
-from pydantic import BaseModel, Field
+from fastapi import BackgroundTasks, Body, Depends, Path, Query
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field, validator
 from sqlalchemy import Integer as SQLInteger
-from sqlalchemy import delete, func, literal, select, text, union_all
+from sqlalchemy import case, delete, func, literal, select, text, union_all
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, MonitorsCountPerModel,
-                                                             get_alerts_per_model)
+from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, CriticalAlertsCountPerModel,
+                                                             MonitorsCountPerModel, get_alerts_per_model)
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
-                                                    field_length)
+from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
+                                                    exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model
+from deepchecks_monitoring.schema_models.alert import Alert
+from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
+from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
+from deepchecks_monitoring.schema_models.monitor import Monitor
 from deepchecks_monitoring.utils import auth
 
 from .router import router
@@ -511,3 +522,318 @@ async def get_model_columns(
     for (col_name, col_type) in return_columns:
         column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
     return column_dict
+
+
+class ConnectedModelSchema(BaseModel):
+    """Model schema for the "Connected Models" screen."""
+
+    id: int
+    name: str
+    description: t.Optional[str] = None
+    task_type: t.Optional[TaskType] = None
+    n_of_alerts: int
+    n_of_pending_rows: int
+    n_of_updating_versions: int
+    latest_update: t.Optional[datetime] = None
+
+    @validator("n_of_alerts", pre=True)
+    @classmethod
+    def validate_n_of_alerts(cls, value):
+        """Validate number of alerts."""
+        return value or 0
+
+    @validator("n_of_pending_rows", pre=True)
+    @classmethod
+    def validate_n_of_pending_rows(cls, value):
+        """Validate number of pending rows."""
+        return value or 0
+
+    @validator("n_of_updating_versions", pre=True)
+    @classmethod
+    def validate_n_of_updating_versions(cls, value):
+        """Validate number of updating versions."""
+        return value or 0
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+@router.get(
+    "/connected-models",
+    response_model=t.List[ConnectedModelSchema],
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve list of connected models."
+)
+async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> t.List[ConnectedModelSchema]:
+    """Retrieve list of models for the "Models management" screen."""
+    alerts_count = CriticalAlertsCountPerModel.cte()
+
+    latest_update = func.max(ModelVersion.last_update_time)
+    n_of_pending_rows = func.sum(ModelVersion.topic_end_offset - ModelVersion.ingestion_offset)
+
+    n_of_updating_versions = func.sum(case(
+        ((ModelVersion.topic_end_offset - ModelVersion.ingestion_offset) > 0, 1),
+        else_=0
+    ))
+
+    ingestion_info = (
+        select(
+            ModelVersion.model_id,
+            latest_update.label("latest_update"),
+            n_of_pending_rows.label("n_of_pending_rows"),
+            n_of_updating_versions.label("n_of_updating_versions")
+        )
+        .group_by(ModelVersion.model_id)
+        .cte()
+    )
+
+    records = (await session.execute(
+        select(
+            Model.id,
+            Model.name,
+            Model.task_type,
+            Model.description,
+            alerts_count.c.count.label("n_of_alerts"),
+            ingestion_info.c.latest_update,
+            ingestion_info.c.n_of_pending_rows,
+            ingestion_info.c.n_of_updating_versions
+        )
+        .select_from(Model)
+        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
+    )).all()
+
+    return [
+        ConnectedModelSchema.from_orm(record)
+        for record in records
+    ]
+
+
+class ConnectedModelVersionSchema(BaseModel):
+    """ModelVersion schema for the "Connected Models" screen."""
+
+    id: int
+    name: str
+    last_update_time: t.Optional[datetime]
+    n_of_pending_rows: int
+    n_of_alerts: int
+
+    @validator("n_of_alerts", pre=True)
+    @classmethod
+    def validate_n_of_alerts(cls, value):
+        """Validate number of alerts."""
+        return value or 0
+
+    @validator("n_of_pending_rows", pre=True)
+    @classmethod
+    def validate_n_of_pending_rows(cls, value):
+        """Validate number of pending rows."""
+        return value or 0
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
+
+
+@router.get(
+    "/connected-models/{model_id}/versions",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve list of versions of a connected model."
+)
+async def retrive_connected_model_versions(
+    model_id: int = Path(...),
+    session: AsyncSession = AsyncSessionDep
+) -> t.List[ConnectedModelVersionSchema]:
+    """Retrieve list of versions of a connected model."""
+    await exists_or_404(session=session, model=Model, id=model_id)
+
+    alerts_count = (
+        select(
+            func.jsonb_object_keys(Alert.failed_values).label("model_version_name"),
+            func.count(Alert.id).label("n_of_alerts")
+        )
+        .select_from(Alert)
+        .join(Alert.alert_rule)
+        .join(AlertRule.monitor)
+        .join(Monitor.check)
+        .where(Check.model_id == model_id)
+        .where(Alert.resolved.is_(False))
+        .where(AlertRule.alert_severity == AlertSeverity.CRITICAL)
+        .group_by(text("1"))
+        .cte()
+    )
+
+    n_of_pending_rows = ModelVersion.topic_end_offset - ModelVersion.ingestion_offset
+
+    # 'topic_end_offset' and 'ingestion_offset' both can be null
+    # in this case expression 'n_of_pending_rows' will return null,
+    # add 'case' expression to prevent this
+    n_of_pending_rows = case((n_of_pending_rows >= 0, n_of_pending_rows), else_=0)
+
+    records = (await session.execute(
+        select(
+            ModelVersion.id,
+            ModelVersion.name,
+            ModelVersion.last_update_time,
+            n_of_pending_rows.label("n_of_pending_rows"),
+            alerts_count.c.n_of_alerts
+        )
+        .outerjoin(alerts_count, alerts_count.c.model_version_name == ModelVersion.name)
+        .where(ModelVersion.model_id == model_id)
+    )).all()
+
+    return [
+        ConnectedModelVersionSchema.from_orm(it)
+        for it in records
+    ]
+
+
+class IngestionErrorsSortKey(str, enum.Enum):
+    """Sort key of ingestion errors output."""
+
+    TIMESTAMP = "timestamp"
+    ERROR = "error"
+
+
+class SortOrder(str, enum.Enum):
+    """Sort order of ingestion errors output."""
+
+    ASC = "asc"
+    DESC = "desc"
+
+
+class IngestionErrorSchema(BaseModel):
+    """IngestionError output schema."""
+
+    id: int
+    sample_id: t.Optional[str] = None
+    error: t.Optional[str] = None
+    created_at: datetime
+    sample: str
+
+    class Config:
+        """Config."""
+
+        orm_mode = True
+
+
+@router.get(
+    "/connected-models/{model_id}/versions/{version_id}/ingestion-errors",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve connected model version ingestion errors."
+)
+async def retrieve_connected_model_version_ingestion_errors(
+    model_id: int = Path(...),
+    version_id: int = Path(...),
+    sort_key: IngestionErrorsSortKey = Query(default=IngestionErrorsSortKey.TIMESTAMP),
+    sort_order: SortOrder = Query(default=SortOrder.DESC),
+    download: bool = Query(default=False),
+    limit: int = Query(default=50, le=10_000, ge=1),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = AsyncSessionDep
+):
+    """Retrieve connected model version ingestion errors."""
+    await exists_or_404(
+        session=session,
+        model=ModelVersion,
+        id=version_id,
+        model_id=model_id
+    )
+
+    order_by_expression: t.Dict[t.Tuple[IngestionErrorsSortKey, SortOrder], t.Any] = {
+        (IngestionErrorsSortKey.TIMESTAMP, SortOrder.ASC): IngestionError.created_at.asc(),
+        (IngestionErrorsSortKey.TIMESTAMP, SortOrder.DESC): IngestionError.created_at.desc(),
+        (IngestionErrorsSortKey.ERROR, SortOrder.ASC): IngestionError.error.asc(),
+        (IngestionErrorsSortKey.ERROR, SortOrder.DESC): IngestionError.error.desc(),
+    }
+
+    q = (
+        select(
+            IngestionError.id,
+            IngestionError.sample_id,
+            IngestionError.created_at,
+            IngestionError.error,
+            IngestionError.sample,
+        )
+        .where(IngestionError.model_version_id == version_id)
+        .order_by(order_by_expression[(sort_key, sort_order)])
+        .limit(limit)
+        .offset(offset)
+    )
+
+    if download is True:
+        # TODO:
+        # - add comments
+        # - reconsider
+        # - consider using more compact formats like avro/parquet
+        async def response_stream():
+            nonlocal session, q
+            n_of_rows = 1000
+            chunk_size = 10000000  # 10Mb
+            result = await session.stream(q)
+            async for records in result.partitions(n_of_rows):
+                buffer = io.BytesIO()
+                pd.DataFrame.from_records(records).to_csv(buffer, encoding="utf-8")
+                buffer.seek(0)
+                while True:
+                    batch = buffer.read(chunk_size)
+                    if not batch:
+                        break
+                    yield batch
+
+        return StreamingResponse(content=response_stream(), media_type="text/csv")
+
+    max_rows_per_request = 300
+
+    if limit > max_rows_per_request:
+        raise BadRequest(
+            f"Retrieval of more than {max_rows_per_request} rows by one request is not allowed. "
+            f"Use 'download=true' query parameter to download more than {max_rows_per_request} rows "
+            "of ingestion errors in csv format."
+        )
+
+    records = (await session.execute(q)).all()
+    return [IngestionErrorSchema.from_orm(it) for it in records]
+
+
+@router.get(
+    "/scorers",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve list of all available scorers."
+)
+async def retrieve_scorers(session: AsyncSession = AsyncSessionDep):
+    """Retrieve list of all available scorers."""
+    # TODO
+    return []
+
+
+@router.get(
+    "/connected-models/{model_id}/scorers",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Retrieve list of model scorers."
+)
+async def retrieve_model_scorers(
+    model_id: int = Path(...),
+    session: AsyncSession = AsyncSessionDep
+):
+    """Retrieve list of model scorers."""
+    # TODO
+    return []
+
+
+@router.post(
+    "/connected-models/{model_id}/scorers",
+    tags=[Tags.MODELS, "connected-models"],
+    description="Add a scorer to a model."
+)
+async def add_scorer(
+    model_id: int = Path(...),
+    body: t.Dict[str, t.Any] = Body(...),
+    session: AsyncSession = AsyncSessionDep
+):
+    """Add a scorer to a model."""
+    # TODO
+    return
