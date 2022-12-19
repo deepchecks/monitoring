@@ -17,7 +17,8 @@ export const GraphLayout = ({ title, checkPerSegment, children, ...props }: Prop
 const StyledContainer = styled(Box)({
   padding: '20px 40px',
   borderRadius: '10px',
-  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)'
+  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
+  background: 'white'
 });
 
 const StyledTitle = styled(Typography)({

@@ -1,27 +1,25 @@
 import React, { useCallback, useContext, useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from 'context';
-import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
-
 import {
   AlertRuleInfoSchema,
   useGetAlertRulesApiV1AlertRulesGet,
   useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost
-} from '../api/generated';
+} from 'api/generated';
+
+import { GlobalStateContext } from 'context';
 
 import { Box, List, ListItem, styled } from '@mui/material';
 
 // import { AlertSnackbar } from '../../components/AlertSnackbar/AlertSnackbar';
 // import { AlertDrawer } from '../../content/alert/AlertDrawer/AlertDrawer';
-import { AlertsDrawer } from '../components/AlertsDrawer';
-import { FiltersSort } from '../components/FiltersSort/FiltersSort';
-import { AlertsHeader } from '../components/AlertsHeader';
-import { AlertsResolveDialog } from '../components/AlertsResolveDialog';
-import { AlertsRulesItem } from '../components/AlertsRulesItem';
-import { AlertsSnackbar } from '../components/AlertsSnackbar';
-import { Loader } from '../components/Loader';
-
+import { AlertsDrawer } from 'components/AlertsDrawer';
+import { FiltersSort } from 'components/FiltersSort/FiltersSort';
+import { AlertsHeader } from 'components/AlertsHeader';
+import { AlertsResolveDialog } from 'components/AlertsResolveDialog';
+import { AlertsRulesItem } from 'components/AlertsRulesItem';
+import { AlertsSnackbar } from 'components/AlertsSnackbar';
+import { Loader } from 'components/Loader';
 import NoResults from 'components/NoResults';
 
 const snackbarPosition = {
@@ -43,16 +41,18 @@ export const AlertsPage = () => {
     isLoading: isAlertRuleResolveLoading
   } = useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost();
 
-  useRunMonitorLookback(drawerAlertRule?.monitor_id ?? null, drawerAlertRule?.model_id?.toString() ?? null);
+  const onResolve = useCallback(
+    async (alertRule: AlertRuleInfoSchema | null) => {
+      if (!alertRule) throw Error('Missing alertRule');
 
-  const onResolve = useCallback(async (alertRule: AlertRuleInfoSchema | null) => {
-    if (!alertRule) throw Error('Missing alertRule');
-    await mutateAlertRuleResolve({ alertRuleId: alertRule.id });
-    setIsNotification(true);
-    setResolveAlertRule(null);
+      await mutateAlertRuleResolve({ alertRuleId: alertRule.id });
+      setIsNotification(true);
+      setResolveAlertRule(null);
 
-    mixpanel.track('Resolve alerts');
-  }, []);
+      mixpanel.track('Resolve alerts');
+    },
+    [mutateAlertRuleResolve]
+  );
 
   const handleCloseSuccess = () => setIsNotification(false);
 
@@ -97,7 +97,6 @@ export const AlertsPage = () => {
       >
         <Box>{isError ? 'Something went wrong' : 'success'}</Box>
       </AlertsSnackbar>
-
       <AlertsResolveDialog
         open={!!resolveAlertRule}
         onClose={() => setResolveAlertRule(null)}

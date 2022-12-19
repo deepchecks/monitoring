@@ -6,9 +6,17 @@ interface SwitchButtonProps extends SwitchProps {
   label?: string;
   checked: boolean;
   setChecked: React.Dispatch<React.SetStateAction<boolean>>;
+  labelPlacement?: 'bottom' | 'top' | 'start' | 'end';
 }
 
-export function SwitchButton({ checked, setChecked, label, sx, ...props }: SwitchButtonProps) {
+export function SwitchButton({
+  checked,
+  setChecked,
+  label,
+  labelPlacement = 'start',
+  sx,
+  ...props
+}: SwitchButtonProps) {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked);
   };
@@ -17,7 +25,7 @@ export function SwitchButton({ checked, setChecked, label, sx, ...props }: Switc
     <StyledFormControlLabel
       control={<StyledSwitch sx={{ ...sx }} checked={checked} onChange={handleChange} {...props} />}
       label={label}
-      labelPlacement="start"
+      labelPlacement={labelPlacement}
     />
   );
 }
@@ -26,7 +34,11 @@ const StyledFormControlLabel = styled(FormControlLabel)({
   margin: 0,
 
   '& .MuiFormControlLabel-label': {
-    marginRight: '9px'
+    marginRight: '9px',
+
+    '&.Mui-disabled': {
+      opacity: 0.3
+    }
   }
 });
 

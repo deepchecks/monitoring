@@ -14,7 +14,7 @@ export const Loader = ({ sx = {} }: LoaderProps) => (
       height: '100%',
       display: 'flex',
       alignItems: 'center',
-      margin: '100px auto',
+      margin: '0 auto',
       ...sx
     }}
   >

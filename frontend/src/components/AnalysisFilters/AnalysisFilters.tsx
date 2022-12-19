@@ -78,7 +78,6 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
 
   const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as number;
-    console.log(event.target);
     setFrequency(value);
   };
 

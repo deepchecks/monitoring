@@ -183,7 +183,9 @@ const outerRadius = 18;
 
 function getAlertIndex(alerts: AlertSchema[], alertIndex: number, chart: ChartOption) {
   const failedValues = alerts[alertIndex].failed_values;
-  const datasetIndex = chart.data.datasets.findIndex(dataset => (`${Object.keys(Object.values(failedValues)[0])[0]}|${Object.keys(failedValues)[0]}` === dataset.label))
+  const datasetIndex = chart.data.datasets.findIndex(
+    dataset => `${Object.keys(Object.values(failedValues)[0])[0]}|${Object.keys(failedValues)[0]}` === dataset.label
+  );
   return datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
 }
 
@@ -374,7 +376,6 @@ export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
     } = chart;
 
     const angle = Math.PI / 180;
-
 
     const criticalColor = '#17003E';
 

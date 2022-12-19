@@ -43,6 +43,7 @@ module.exports = {
     'comma-dangle': ['error', 'never'],
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': ['warn'],
-    'react/react-in-jsx-scope': ['warn']
+    'react/react-in-jsx-scope': ['warn'],
+    'no-console': ['warn']
   }
 };

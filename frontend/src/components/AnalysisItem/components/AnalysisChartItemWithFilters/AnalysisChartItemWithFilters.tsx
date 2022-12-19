@@ -3,6 +3,7 @@ import React, { PropsWithChildren } from 'react';
 import { MonitorTypeConf } from 'api/generated';
 
 import { SelectProps, Stack } from '@mui/material';
+import { SxProps } from '@mui/system';
 
 import { AnalysisChartItem } from '../AnalysisChartItem';
 import SingleSelect from './AnalysisItemSelect/SingleSelect';
@@ -22,6 +23,7 @@ interface AnalysisChartItemWithFiltersProps extends SelectProps {
   multipleSelectValue: string[];
   setMultipleSelectValue: SetStateType<string[]>;
   setIsMostWorstActive: SetStateType<boolean>;
+  sx?: SxProps;
 }
 
 export function AnalysisChartItemWithFilters({
@@ -34,12 +36,16 @@ export function AnalysisChartItemWithFilters({
   setMultipleSelectValue,
   setIsMostWorstActive,
   subtitle,
-  title
+  title,
+  sx
 }: PropsWithChildren<AnalysisChartItemWithFiltersProps>) {
   return (
     <AnalysisChartItem
       subtitle={subtitle}
       title={title}
+      sx={{
+        ...sx
+      }}
       headerChildren={
         <Stack direction="row" spacing="10px">
           {filters.map(({ type, values }, index) =>

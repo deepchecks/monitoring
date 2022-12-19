@@ -17,9 +17,9 @@ function getTime(timeLabel: string, monitorFreq: number) {
   return dayjs(timeLabel).format('MMM. DD YYYY');
 }
 
-export const defaultTooltipCallbacks: (frequency: number) => _DeepPartialObject<
-  TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>
-> = frequency => ({
+export const defaultTooltipCallbacks: (
+  frequency: number
+) => _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = frequency => ({
   labelColor: (context: TooltipItem<'line'>) => ({
     backgroundColor: context.dataset?.borderColor as string,
     borderColor: context.dataset?.borderColor as string
@@ -27,7 +27,9 @@ export const defaultTooltipCallbacks: (frequency: number) => _DeepPartialObject<
   title: (context: TooltipItem<'line'>[]) => context[0].formattedValue,
   label: (context: TooltipItem<'line'>) => {
     const textArray = context?.dataset?.label?.split('|');
-    return `${getTime(context.label, frequency)} | ${(textArray && textArray[1]) || ''} | ${(textArray && textArray[0]) || ''}`;
+    return `${getTime(context.label, frequency)} | ${(textArray && textArray[1]) || ''} | ${
+      (textArray && textArray[0]) || ''
+    }`;
   }
 });
 

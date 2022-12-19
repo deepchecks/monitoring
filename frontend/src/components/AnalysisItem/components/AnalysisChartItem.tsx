@@ -1,12 +1,11 @@
 import React, { ReactNode, PropsWithChildren } from 'react';
 
-import { styled, Box, Stack, SxProps, Typography } from '@mui/material';
+import { styled, Box, Stack, Typography, BoxProps } from '@mui/material';
 
-interface AnalysisChartItemProps {
+interface AnalysisChartItemProps extends BoxProps {
   title: string;
   subtitle: string;
   headerChildren?: ReactNode;
-  sx?: SxProps;
 }
 
 export function AnalysisChartItem({
@@ -35,8 +34,7 @@ export function AnalysisChartItem({
 }
 
 const StyledAnalysisChartItem = styled(Box)({
-  minHeight: '528px',
-  padding: '16px 40px 0px 40px',
+  padding: '16px 40px',
   borderRadius: '10px',
   boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
 

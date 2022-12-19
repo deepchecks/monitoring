@@ -8,7 +8,7 @@ import mixpanel from 'mixpanel-browser';
 import { drawAlerts, drawCircle, minimapPanorama, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initMinimap } from './DiagramLine.helpers';
 
-import { alpha, Box } from '@mui/material';
+import { alpha, Box, Collapse } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
@@ -33,7 +33,8 @@ function DiagramLine({
   tooltipCallbacks = defaultTooltipCallbacks(timeFreq),
   analysis,
   comparison,
-  handlePointCLick
+  onPointCLick,
+  expand = true
 }: PropsWithChildren<DiagramLineProps>) {
   const [chartData, setChartData] = useState(data);
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
@@ -145,7 +146,7 @@ function DiagramLine({
     animation: false,
     responsive: true,
     onClick: (event, elements) => {
-      if (elements.length && handlePointCLick) {
+      if (elements.length && onPointCLick) {
         const { index, datasetIndex } = elements[0];
 
         const dataset = chartData.datasets[datasetIndex];
@@ -153,7 +154,7 @@ function DiagramLine({
         const timeLabel = chartData.labels?.[index] as number;
 
         if (datasetName && versionName && timeLabel) {
-          handlePointCLick(datasetName, versionName, timeLabel);
+          onPointCLick(datasetName, versionName, timeLabel);
         }
       }
     },
@@ -295,27 +296,26 @@ function DiagramLine({
   }, [chartData, comparison]);
 
   return isLoading ? (
-    <Loader />
+    <Loader sx={{ transform: 'translate(0, -16%)' }} />
   ) : (
     <>
-      <DiagramTutorialTooltip>
-        <Box
-          height={height ? height - 61 : 'auto'}
-          sx={{ position: 'relative' }}
+      <Collapse in={expand} timeout="auto" unmountOnExit>
+        <DiagramTutorialTooltip>
+          <Box height={height ? height - 61 : 'auto'} sx={{ position: 'relative' }}>
+            <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={0} />
+          </Box>
+        </DiagramTutorialTooltip>
+        <LegendsList
+          data={chartData}
+          lineIndexMap={lineIndexMap}
+          hideLine={hideLine}
+          legends={legends}
+          analysis={analysis}
+          comparison={comparison}
         >
-          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={1} />
-        </Box>
-      </DiagramTutorialTooltip>
-      <LegendsList
-        data={chartData}
-        lineIndexMap={lineIndexMap}
-        hideLine={hideLine}
-        legends={legends}
-        analysis={analysis}
-        comparison={comparison}
-      >
-        {children}
-      </LegendsList>
+          {children}
+        </LegendsList>
+      </Collapse>
       {changeAlertIndex && !!alerts.length && (
         <Minimap
           alerts={alerts}

@@ -6,7 +6,7 @@ import useDataIngestion from '../../hooks/useDataIngestion';
 
 import { Box, MenuItem } from '@mui/material';
 
-import { StyledSelect } from 'components/MarkedSelect';
+import { StyledSelect } from 'components/MarkedSelect/MarkedSelect';
 import DiagramLine from '../DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
 
@@ -26,7 +26,7 @@ interface DataIngestionProps {
 export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
   const { graphData, isLoading } = useDataIngestion(modelId);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
-  const [minTimeUnit, setMinTimeUnit ] = useState<TimeUnit>('day');
+  const [minTimeUnit, setMinTimeUnit] = useState<TimeUnit>('day');
   const [timeValue, setTimeValue] = useState<number>(86400);
 
   const handleTime = (newTimeValue: unknown) => {
@@ -34,14 +34,12 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
 
     const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
     setTimeValue(+newTimeValue);
-    
+
     if (+newTimeValue <= 3600) {
       setMinTimeUnit('minute');
-    }
-    else if (+newTimeValue <= 86400) {
+    } else if (+newTimeValue <= 86400) {
       setMinTimeUnit('hour');
-    }
-    else {
+    } else {
       setMinTimeUnit('day');
     }
     setCurrentTime(timeOptions[newTimeIndex].id);
@@ -56,15 +54,18 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
       <StyledFlexWrapper>
         <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
       </StyledFlexWrapper>
-      { isLoading ? 
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <Loader/>
-        </Box> : 
-        <StyledDiagramWrapper> 
+      {isLoading ? (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
+        >
+          <Loader sx={{ mt: '150px' }} />
+        </Box>
+      ) : (
+        <StyledDiagramWrapper>
           <DiagramTutorialTooltip>
             <DiagramLine data={graphData} height={392} minTimeUnit={minTimeUnit} timeFreq={timeValue}>
               <StyledSelect
@@ -81,7 +82,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps): JSX.Element => {
             </DiagramLine>
           </DiagramTutorialTooltip>
         </StyledDiagramWrapper>
-      }
+      )}
     </StyledFlexContent>
   );
 };

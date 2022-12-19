@@ -6,7 +6,7 @@ import { Box } from '@mui/material';
 
 import { GraphLayout } from './GraphLayout';
 
-import { TITLE, ACTIVE_BAR_COLOR, chartData, chartOptions, barsColorArray } from '../DataGraphs.helpers';
+import { TITLE, ACTIVE_BAR_COLOR, chartData, chartOptions, barsColorArray } from '../SegmentsDrillDown.helpers';
 import { SetStateType } from 'helpers/types';
 
 interface CheckPerSegmentProps {

@@ -1,20 +1,23 @@
-import React, { memo, useEffect, useContext, useState, useCallback } from 'react';
+import React, { memo, useEffect, useContext, useState } from 'react';
 
 import {
   CheckGroupBySchema,
+  DataFilter,
   getSchemaApiV1ModelVersionsModelVersionIdSchemaGet,
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
   SingleCheckRunOptions
 } from 'api/generated';
 import { AnalysisContext } from 'context/analysis-context';
 
-import { Drawer, styled, Box } from '@mui/material';
+import { styled, Box } from '@mui/material';
 
 import { AnalysisGroupByInfo } from './components/AnalysisGroupByInfo';
 import { AnalysisGroupByHeader } from './components/AnalysisGroupByHeader';
-import { AnalysisGroupByFeaturesSelect } from './components/AnalysisGroupByFeaturesSelect';
-import { DataGraphs } from './components/DataGraphs';
 import { Loader } from 'components/Loader';
+import { CustomDrawer } from 'components/CustomDrawer';
+import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
+import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
+import { RunDownloadSuite } from 'components/RunDownloadSuite';
 
 import { CheckTypeOptions } from 'helpers/types/check';
 import { ClassOrFeature, AnalysisGroupByProps, FeaturesResponse } from './AnalysisGroupBy.types';
@@ -36,32 +39,14 @@ const AnalysisGroupByComponent = ({
   const [loading, setLoading] = useState(false);
 
   const [classOrFeature, setClassOrFeature] = useState<ClassOrFeature | null>(null);
-  const [singleWindowMonitorOptions, setSingleCheckRunOptions] = useState<SingleCheckRunOptions | null>(null);
+  const [singleCheckRunOptions, setSingleCheckRunOptions] = useState<SingleCheckRunOptions | null>(null);
   const [featuresArray, setFeaturesArray] = useState<string[]>([]);
   const [selectedFeature, setSelectedFeature] = useState<string>();
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
+  const [activeBarFilters, setActiveBarFilters] = useState<DataFilter[]>([]);
 
   const propValuesAreNotNull = !!(datasetName && check && modelVersionId && timeLabel);
-
-  const runCheckGroupByFeature = useCallback(
-    async (selectedFeature: string, singleWindowMonitorOptions: SingleCheckRunOptions) => {
-      if (check && modelVersionId) {
-        setLoading(true);
-
-        const resp = await runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost(
-          check.id,
-          modelVersionId,
-          selectedFeature,
-          singleWindowMonitorOptions
-        );
-
-        setGroupBySchema(resp ? resp : []);
-        setLoading(false);
-        setGlobalLoading(false);
-      }
-    },
-    [check, modelVersionId]
-  );
+  const testSuitePropsAreNotNull = !!(selectedFeature && modelVersionId && singleCheckRunOptions);
 
   useEffect(() => {
     async function getData() {
@@ -75,14 +60,14 @@ const AnalysisGroupByComponent = ({
         setFeaturesArray(featuresNames);
         setSelectedFeature(featuresNames[0]);
 
-        const singleWindowMonitorOptions: SingleCheckRunOptions = {
+        const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
           end_time: new Date(timeLabel).toISOString(),
           filter: { filters: activeFilters.length ? activeFilters : [] },
           ...(additionalKwargs && { additional_kwargs: additionalKwargs })
         };
 
-        setSingleCheckRunOptions(singleWindowMonitorOptions);
+        setSingleCheckRunOptions(SingleCheckRunOptions);
 
         if (additionalKwargs && type) {
           const value =
@@ -107,63 +92,91 @@ const AnalysisGroupByComponent = ({
   }, [activeFilters, additionalKwargs, datasetName, frequency, modelVersionId, propValuesAreNotNull, timeLabel, type]);
 
   useEffect(() => {
-    if (selectedFeature && singleWindowMonitorOptions) {
-      runCheckGroupByFeature(selectedFeature, singleWindowMonitorOptions);
+    async function runCheckGroupByFeature() {
+      if (selectedFeature && singleCheckRunOptions && check && modelVersionId) {
+        setLoading(true);
+
+        const resp = await runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost(
+          check.id,
+          modelVersionId,
+          selectedFeature,
+          singleCheckRunOptions
+        );
+
+        setGroupBySchema(resp ? resp : []);
+        setLoading(false);
+        setGlobalLoading(false);
+      }
     }
-  }, [selectedFeature, runCheckGroupByFeature, singleWindowMonitorOptions]);
+
+    runCheckGroupByFeature();
+  }, [selectedFeature, singleCheckRunOptions, check, modelVersionId]);
 
   return (
-    <StyledDrawer anchor="right" {...props}>
-      {propValuesAreNotNull &&
-        singleWindowMonitorOptions &&
-        (globalLoading ? (
-          <Loader />
-        ) : (
-          <>
-            <StyledHeaderContainer>
-              <AnalysisGroupByHeader title={check.name || 'none'} onClick={onCloseIconClick} />
-              <AnalysisGroupByInfo
-                startTime={singleWindowMonitorOptions.start_time}
-                endTime={singleWindowMonitorOptions.end_time}
-                frequency={frequencyLabel}
-                checkName={check.name || 'none'}
-                modelName={modelName}
-                classOrFeature={classOrFeature}
-              />
-              <AnalysisGroupByFeaturesSelect
-                features={featuresArray}
-                feature={selectedFeature}
-                setFeature={setSelectedFeature}
-                disabled={loading}
-              />
-            </StyledHeaderContainer>
-            {loading ? (
-              <Loader />
-            ) : (
-              <DataGraphs
-                checkName={check.name}
-                checkId={check.id}
-                datasetName={datasetName}
+    <CustomDrawer loading={globalLoading} {...props}>
+      {propValuesAreNotNull && singleCheckRunOptions && (
+        <>
+          <StyledHeaderContainer>
+            <AnalysisGroupByHeader title={check.name || 'none'} onClick={onCloseIconClick} />
+            <AnalysisGroupByInfo
+              startTime={singleCheckRunOptions.start_time}
+              endTime={singleCheckRunOptions.end_time}
+              frequency={frequencyLabel}
+              checkName={check.name || 'none'}
+              modelName={modelName}
+              classOrFeature={classOrFeature}
+            />
+            <StyledControlledMarkedSelect
+              label="Select Feature"
+              value={selectedFeature}
+              values={featuresArray}
+              disabled={loading}
+              setValue={setSelectedFeature}
+            />
+          </StyledHeaderContainer>
+          {loading ? (
+            <Loader />
+          ) : (
+            <>
+              <SegmentsDrillDown
                 data={groupBySchema}
-                selectedFeature={selectedFeature}
-                modelVersionId={modelVersionId}
-                singleWindowMonitorOptions={singleWindowMonitorOptions}
+                checkName={check.name}
+                datasetName={datasetName}
+                setActiveBarFilters={setActiveBarFilters}
               />
-            )}
-          </>
-        ))}
-    </StyledDrawer>
+              {testSuitePropsAreNotNull && (
+                <StyledRunDownloadSuiteContainer>
+                  <RunDownloadSuite
+                    testSuiteButtonLabel="Run Test Suite"
+                    activeBarFilters={activeBarFilters}
+                    modelVersionId={modelVersionId}
+                    notebookType="check"
+                    notebookId={check.id}
+                    notebookName={check.name}
+                    singleCheckRunOptions={singleCheckRunOptions}
+                  />
+                </StyledRunDownloadSuiteContainer>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </CustomDrawer>
   );
 };
 
 export const AnalysisGroupBy = memo(AnalysisGroupByComponent);
 
-const StyledDrawer = styled(Drawer)({
-  '& .MuiPaper-root': {
-    width: '1090px'
-  }
-});
-
 const StyledHeaderContainer = styled(Box)({
   padding: '40px 40px 0'
+});
+
+const StyledControlledMarkedSelect = styled(ControlledMarkedSelect)({
+  width: '276px',
+  marginBottom: '14px'
+});
+
+const StyledRunDownloadSuiteContainer = styled(Box)({
+  margin: 'auto 36px 25px auto',
+  paddingTop: '25px'
 });

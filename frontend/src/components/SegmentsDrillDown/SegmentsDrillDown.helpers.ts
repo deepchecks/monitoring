@@ -10,7 +10,8 @@ export const barsColorArray = (length: number): string[] => Array(length).fill(B
 
 export const chartOptions = (data: number[]): ChartOptions<'bar'> => {
   const max = Math.max(...data);
-  const stepSize = max / 3;
+  const min = Math.min(...data);
+  const stepSize = Math.max(...data.map(d => Math.abs(d))) / 3;
 
   return {
     indexAxis: 'x' as const,
@@ -34,7 +35,8 @@ export const chartOptions = (data: number[]): ChartOptions<'bar'> => {
         type: 'category'
       },
       y: {
-        max: max + stepSize,
+        max: max <= 0 ? 0 : max + stepSize,
+        min: min >= 0 ? 0 : min - stepSize,
         ticks: {
           stepSize
         },

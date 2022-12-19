@@ -53,5 +53,6 @@ export interface DiagramLineProps {
   tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>>;
   analysis?: boolean;
   comparison?: boolean;
-  handlePointCLick?: (datasetName: string, versionName: string, timeLabel: number) => void;
+  onPointCLick?: (datasetName: string, versionName: string, timeLabel: number) => void;
+  expand?: boolean;
 }

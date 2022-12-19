@@ -1,13 +1,14 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import {
-  ModelManagmentSchema,
   useGetChecksApiV1ModelsModelIdChecksGet,
   CheckSchema,
-  MonitorCheckConfSchema
+  MonitorCheckConfSchema,
+  MonitorCheckConf
 } from 'api/generated';
 import useModels from 'hooks/useModels';
+import { AnalysisContext } from 'context/analysis-context';
 
 import { Box, Stack } from '@mui/material';
 
@@ -15,21 +16,16 @@ import { Loader } from 'components/Loader';
 import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters/ActiveColumnsFilters';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/AnalysisHeader/AnalysisHeader';
-import { AnalysisItem } from 'components/AnalysisItem/AnalysisItem';
+import { AnalysisItem } from 'components/AnalysisItem';
 import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
 
 import { getParams } from 'helpers/utils/getParams';
-
-import { CheckType } from 'helpers/types/check';
-
-const emptyModel = {
-  id: -1,
-  name: 'Empty'
-} as ModelManagmentSchema;
+import { CheckType, CheckTypeOptions } from 'helpers/types/check';
 
 export function AnalysisPage() {
   const location = useLocation();
-  const { models, isLoading: isModelsLoading } = useModels();
+  const { models, isLoading: isModelsLoading, getCurrentModel } = useModels();
+  const { isComparisonModeOn, comparisonMode, period, frequency, activeFilters } = useContext(AnalysisContext);
 
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
@@ -50,23 +46,13 @@ export function AnalysisPage() {
     }
   });
 
+  const currentModel = useMemo(() => getCurrentModel(modelId), [getCurrentModel, modelId]);
+
   useEffect(() => {
     if (models) {
       setModelId(+getParams()?.modelId || models[0]?.id);
     }
   }, [models, location.search]);
-
-  const currentModel = useMemo(
-    () =>
-      models.reduce((acc, model) => {
-        if (model.id === modelId) {
-          return model;
-        }
-
-        return acc;
-      }, emptyModel),
-    [models, modelId]
-  );
 
   useEffect(() => {
     if (models && modelId && modelId > -1) {
@@ -74,8 +60,24 @@ export function AnalysisPage() {
     }
   }, [modelId, models, refetch]);
 
-  const handlePointCLick = useCallback(
-    async (datasetName: string, versionName: string, timeLabel: number) => {
+  const handleDrawerOpen = useCallback(
+    (
+      datasetName: string,
+      versionName: string,
+      timeLabel: number,
+      additionalKwargs: MonitorCheckConfSchema | undefined,
+      checkInfo: MonitorCheckConf | undefined,
+      check: CheckSchema
+    ) => {
+      if (additionalKwargs) {
+        const type = checkInfo?.res_conf ? CheckTypeOptions.Class : CheckTypeOptions.Feature;
+
+        setCurrentType(type);
+        setCurrentAdditionalKwargs(additionalKwargs);
+      }
+
+      setCurrentCheck(check);
+
       if (versionName) {
         const modelVersionId = currentModel.versions.find(v => v.name === versionName)?.id;
 
@@ -120,10 +122,14 @@ export function AnalysisPage() {
                 key={check.id}
                 check={check}
                 lastUpdate={new Date()}
-                handlePointCLick={handlePointCLick}
-                setCurrentCheck={setCurrentCheck}
-                setCurrentAdditionalKwargs={setCurrentAdditionalKwargs}
-                setCurrentType={setCurrentType}
+                onPointCLick={handleDrawerOpen}
+                isComparisonModeOn={isComparisonModeOn}
+                comparisonMode={comparisonMode}
+                period={period}
+                frequency={frequency}
+                activeFilters={activeFilters}
+                height={528}
+                graphHeight={420}
               />
             ))
           )}

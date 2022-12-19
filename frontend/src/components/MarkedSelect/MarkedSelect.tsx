@@ -6,7 +6,6 @@ import { Clear } from 'assets/icon/icon';
 
 interface MarkedSelectProps extends SelectProps {
   children: ReactNode;
-  label: string;
   fullWidth?: boolean;
   clearValue?: () => void;
 }
@@ -20,7 +19,7 @@ export function MarkedSelect({
   children,
   label,
   fullWidth = false,
-  size,
+  size = 'small',
   clearValue,
   disabled,
   ...props
