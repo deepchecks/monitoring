@@ -101,7 +101,7 @@ class ModelVersionWorker:
         # If there is a timeout value might be none if nothing found.
         if value is None:
             return
-        organization_id, model_version_id = value.split("-")
+        organization_id, model_version_id = value.decode().split("-")
         with self.resource_provider.create_async_database_session(organization_id) as session:
             # If session is none, organization was removed.
             if session is None:
