@@ -133,10 +133,17 @@ jobs:
           task-definition: ${{ steps.render-alert-scheduler-container.outputs.task-definition }}
           container-name: worker
           image: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
+      - name: Fill in the new image ID in the Amazon ECS task definition - model version worker
+        id: render-model-version-worker-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-worker-container.outputs.task-definition }}
+          container-name: model-version-worker
+          image: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.render-worker-container.outputs.task-definition }}
+          task-definition: ${{ steps.render-model-version-worker-container.outputs.task-definition }}
           service: mon-commercial
           cluster: DevMonitoring
   e2e:
