@@ -53,6 +53,9 @@ import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as VisualModel } from './visualModel.svg';
 import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
 import { ReactComponent as Notebook } from './notebook.svg';
+import { ReactComponent as Share } from './share.svg';
+import { ReactComponent as Link } from './Link.svg';
+import { ReactComponent as MarkedMail } from './markedMail.svg';
 
 export {
   Alarm,
@@ -109,5 +112,8 @@ export {
   TestTube,
   VisualModel,
   Undo,
-  Notebook
+  Notebook,
+  Share,
+  Link,
+  MarkedMail
 };

@@ -11,7 +11,7 @@ import {
   useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost,
   useGetNotebookApiV1MonitorsMonitorIdGetNotebookPost
 } from '../api/generated';
-
+import { ShareButton } from './ShareButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
@@ -178,7 +178,7 @@ export const AlertsDrawerHeader = ({
     <StyledMainWrapper>
       <Box width={1}>
         <StyledTopSection>
-          <Stack direction="row" spacing="20px" alignItems="center">
+          <Stack direction="row" spacing="20px" alignItems="center" flexGrow={1}>
             <Box
               sx={{
                 padding: '10px 8px 5px 8px',
@@ -213,6 +213,7 @@ export const AlertsDrawerHeader = ({
               </Typography>
             </Box>
           </Stack>
+          <ShareButton onlyIcon={true}/>
           <StyledIconButton onClick={closeDrawer}>
             <CloseIcon />
           </StyledIconButton>

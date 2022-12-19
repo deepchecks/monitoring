@@ -12,7 +12,7 @@ interface StaticAnalysisHeaderProps {
 }
 
 const StaticAnalysisHeader = ({ model, onOpenModelsMenu }: StaticAnalysisHeaderProps) => (
-  <Box sx={{ py: '11px', borderBottom: theme => `1px dashed ${theme.palette.text.disabled}` }}>
+  <Box sx={{ py: '11px', flexGrow: 1 }}>
     <ModelSelect model={model} onOpen={onOpenModelsMenu} size="medium" />
   </Box>
 );

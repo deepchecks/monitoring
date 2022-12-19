@@ -2,6 +2,7 @@ import { Box, Button } from '@mui/material';
 import { Settings } from 'assets/icon/icon';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ShareButton } from './ShareButton';
 
 export const AlertsHeader = () => {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ export const AlertsHeader = () => {
             alignItems: 'center'
           }}
         >
+          <ShareButton/>
           <Button
             sx={{ width: 136 }}
             startIcon={<Settings fill="#fff" width={20} height={20} />}

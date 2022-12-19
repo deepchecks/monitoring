@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
           docker load --input /tmp/commImage.tar
-          docker tag ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+          docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -45,7 +45,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
       - name: Build and push
         run: |
-          docker push ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+          docker push ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
       - name: Download task definition
         run: |
           aws ecs describe-task-definition --task-definition mon-commercial-staging --query taskDefinition > task-definition.json
@@ -55,21 +55,21 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: app
-          image: ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+          image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
       - name:  Fill in the new image ID in the Amazon ECS task definition - alert-scheduler
         id: render-alert-scheduler-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ steps.render-app-container.outputs.task-definition }}
           container-name: alert-scheduler
-          image: ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+          image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
       - name: Fill in the new image ID in the Amazon ECS task definition - worker
         id: render-worker-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ steps.render-alert-scheduler-container.outputs.task-definition }}
           container-name: worker
-          image: ${{ secrets.MON_COMM_IMAGE_NAME }}:${{ env.TAG }}
+          image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:

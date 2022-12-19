@@ -12,6 +12,7 @@ import { PlusIcon } from '../assets/icon/icon';
 import { DrawerNames, DrawerNamesMap } from './MonitorDrawer/MonitorDrawer.types';
 
 import { colors } from 'theme/colors';
+import { ShareButton } from './ShareButton';
 
 interface DashboardHeaderProps {
   onOpen: (monitorName: DrawerNames) => void;
@@ -66,6 +67,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
               width: '1px'
             }}
           />
+          <ShareButton/>
           <Box onClick={handleClick}>
             <Button
               sx={{

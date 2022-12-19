@@ -10,6 +10,7 @@ import { styled, alpha, Box, List, MenuItem, Popover, Typography } from '@mui/ma
 import { SearchField } from '../SearchField';
 import StaticAnalysisHeader from './components/StaticAnalysisHeader';
 import FixedAnalysisHeader from './components/FixedAnalysisHeader';
+import { ShareButton } from '../ShareButton';
 
 interface AnalysisHeaderProps {
   changeModel: Dispatch<SetStateAction<number>>;
@@ -110,14 +111,18 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
           ))}
         </StyledAnalysisHeaderList>
       </Popover>
+      <ShareButton/>
     </StyledAnalysisHeader>
   );
 }
 
-const StyledAnalysisHeader = styled(Box)({
+const StyledAnalysisHeader = styled(Box)(({ theme }) => ({
   position: 'relative',
-  zIndex: 6
-});
+  zIndex: 6,
+  display: 'flex',
+  alignItems: 'center',
+  borderBottom: `1px dashed ${theme.palette.text.disabled}`
+}));
 
 const StyledAnalysisHeaderSearchField = styled(SearchField)(({ theme }) => ({
   minHeight: 40,
