@@ -33,7 +33,7 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
     # pylint: disable=import-outside-toplevel, redefined-outer-name
     from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
     from deepchecks_monitoring.schema_models.check import Check
-    from deepchecks_monitoring.schema_models.model_version import ModelVersion
+    from deepchecks_monitoring.schema_models.model import Model
 
     check_id = context.get_current_parameters()["check_id"]
     frequency = context.get_current_parameters()["frequency"]
@@ -42,14 +42,14 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
         select(
             sa.func.least(
                 sa.func.greatest(
-                    sa.func.min(ModelVersion.start_time),
-                    sa.func.max(ModelVersion.end_time) - timedelta(seconds=frequency * 10)
+                    Model.start_time,
+                    Model.end_time - timedelta(seconds=frequency * 10)
                 ),
                 sa.func.now()
             )
         )
         .join(Check, Check.id == check_id)
-        .where(ModelVersion.model_id == Check.model_id)
+        .where(Model.id == Check.model_id)
     )
 
     time_to_round = context.connection.execute(select_obj).scalar()
@@ -61,7 +61,9 @@ class Monitor(Base):
     """ORM model for the monitor."""
 
     __tablename__ = "monitors"
-    __table_args__ = (sa.CheckConstraint("frequency > 0", name="only_positive_frequency"),)
+    __table_args__ = (sa.CheckConstraint("frequency >= 3600 AND frequency % 3600 = 0", name="frequency_valid"),
+                      sa.CheckConstraint("aggregation_window >= 3600 AND aggregation_window % 3600 = 0 AND "
+                                         "aggregation_window >= frequency", name="aggregation_window_valid"),)
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(50))
@@ -73,7 +75,7 @@ class Monitor(Base):
     aggregation_window = sa.Column(sa.Integer, nullable=False)
     frequency = sa.Column(sa.Integer, nullable=False)
 
-    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=True, default=_get_start_schedule_time)
+    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=False, default=_get_start_schedule_time)
     latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
     check_id = sa.Column(

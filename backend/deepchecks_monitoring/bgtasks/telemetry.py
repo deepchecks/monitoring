@@ -17,8 +17,7 @@ from functools import wraps
 from timeit import default_timer as timer
 
 import anyio
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession  # pylint: disable=unused-import
-from sqlalchemy.sql import Executable
+from sqlalchemy.ext.asyncio import AsyncSession  # pylint: disable=unused-import
 
 from deepchecks_monitoring import __version__
 
@@ -83,7 +82,7 @@ class SchedulerInstrumentor:
             return
 
         scheduler_run = self.scheduler_type.run
-        scheduler_try_enqueue_tasks = self.scheduler_type.try_enqueue_tasks
+        scheduler_run_organization = self.scheduler_type.run_organization
 
         @wraps(scheduler_run)
         async def run(scheduler: "AlertsScheduler", *args, **kwargs):
@@ -111,42 +110,19 @@ class SchedulerInstrumentor:
                         span.record_exception(error)
                     raise
 
-        @wraps(scheduler_try_enqueue_tasks)
-        async def try_enqueue_tasks(
-            scheduler: "AlertsScheduler",
-            connection: AsyncConnection,
-            statement: Executable,
-            # using Ellipsis to identify unset parameters and to avoid
-            # copying defaults from original method
-            max_attempts: int = ...,
-            delay: int = ...,
-        ):
-            with self.tracer.start_as_current_span("AlertsScheduler.try_enqueue_tasks") as span:
+        @wraps(scheduler_run_organization)
+        async def run_organization(scheduler: "AlertsScheduler", *args, **kwargs):
+            with self.tracer.start_as_current_span("AlertsScheduler.run_organization") as span:
                 # NOTE:
                 # I do not use here semantic name for 'statement' attribute because
                 # uptrace always replaces the span name with it and in this case,
                 # it is not desirable
-                span.set_attribute("database.statement", str(statement))
                 span.set_attribute(SpanAttributes.CODE_NAMESPACE, "AlertsScheduler")
-                span.set_attribute(SpanAttributes.CODE_FUNCTION, "AlertsScheduler.run")
+                span.set_attribute(SpanAttributes.CODE_FUNCTION, "AlertsScheduler.run_organization")
                 start_time = timer()
 
-                kwargs = {}
-
-                if max_attempts is not Ellipsis:
-                    span.set_attribute("operation.max_attempts", str(max_attempts))
-                    kwargs["max_attempts"] = max_attempts
-                if delay is not Ellipsis:
-                    span.set_attribute("operation.delay", str(delay))
-                    kwargs["delay"] = max_attempts
-
                 try:
-                    enqueued_tasks = await scheduler_try_enqueue_tasks(
-                        self=scheduler,
-                        connection=connection,
-                        statement=statement,
-                        **kwargs
-                    )
+                    enqueued_tasks = await scheduler_run_organization(scheduler, *args, **kwargs)
 
                     span.set_status(Status(StatusCode.OK))
 
@@ -169,7 +145,7 @@ class SchedulerInstrumentor:
                     raise
 
         self.scheduler_type.run = run
-        self.scheduler_type.try_enqueue_tasks = try_enqueue_tasks
+        self.scheduler_type.run_organization = run_organization
 
 
 class WorkerInstrumentor:

@@ -155,25 +155,16 @@ class ModelVersion(Base):
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)
 
-    async def update_timestamps(self, timestamps: t.List[datetime], session: AsyncSession):
-        """Update start and end date if needed based on given timestamps.
-
-        Parameters
-        ----------
-        timestamps
-            Timestamps for update
-        session: AsyncSession
-            DB session to use
-        """
+    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
+        """Update start and end date if needed based on given timestamps."""
         # Running an update with min/max in order to prevent race condition when running in parallel
-        ts_updates = {}
-        if (min_timestamp := min(timestamps)) < self.start_time:
-            ts_updates[ModelVersion.start_time] = func.least(ModelVersion.start_time, min_timestamp)
-        if (max_timestamp := max(timestamps)) > self.end_time:
-            ts_updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
-
-        if ts_updates:
-            await ModelVersion.update(session, self.id, ts_updates)
+        updates = {}
+        if min_timestamp < self.start_time:
+            updates[ModelVersion.start_time] = func.least(ModelVersion.start_time, min_timestamp)
+        if max_timestamp > self.end_time:
+            updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
+        if updates:
+            await ModelVersion.update(session, self.id, updates)
 
     async def update_statistics(self, new_statistics: dict, session: AsyncSession):
         """Update the statistics with a lock on the row."""

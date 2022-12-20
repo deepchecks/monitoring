@@ -10,8 +10,12 @@
 """Module defining the model ORM model."""
 import enum
 import typing as t
+from datetime import datetime
 
+import pendulum as pdl
 import sqlalchemy as sa
+from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
@@ -55,6 +59,8 @@ class Model(Base):
     task_type = sa.Column(sa.Enum(TaskType))
     alerts_delay_labels_ratio = sa.Column(sa.Float, nullable=False)
     alerts_delay_seconds = sa.Column(sa.Integer, nullable=False)
+    start_time = sa.Column(sa.DateTime(timezone=True), default=pdl.datetime(3000, 1, 1))
+    end_time = sa.Column(sa.DateTime(timezone=True), default=pdl.datetime(1970, 1, 1))
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
@@ -71,3 +77,15 @@ class Model(Base):
         passive_deletes=True,
         passive_updates=True,
     )
+
+    async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
+        """Update start and end date if needed based on given timestamps."""
+        # Running an update with min/max in order to prevent race condition when running in parallel
+        updates = {}
+        if min_timestamp < self.start_time:
+            updates[Model.start_time] = func.least(Model.start_time, min_timestamp)
+        if max_timestamp > self.end_time:
+            updates[Model.end_time] = func.greatest(Model.end_time, max_timestamp)
+
+        if updates:
+            await Model.update(session, self.id, updates)

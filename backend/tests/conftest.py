@@ -217,6 +217,7 @@ def settings(async_engine, smtp_server, redis_client):
             port=str(redis_config["port"]),
             path="/" + str(redis_config["db"])
         )),
+        kafka_host=None,
     )
 
 

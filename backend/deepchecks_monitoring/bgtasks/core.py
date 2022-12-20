@@ -39,7 +39,7 @@ from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.utils import database
 
-__all__ = ["Task", "Worker", "actor"]
+__all__ = ["Task", "Worker", "actor", "TaskStatus"]
 
 # at least for now it is not needed
 # Base = t.cast(t.Any, declarative_base())

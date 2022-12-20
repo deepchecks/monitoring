@@ -318,7 +318,7 @@ async def test_update_monitor_freq(
     async_session: AsyncSession
 ):
     # Arrange
-    monitor = test_api.create_monitor(check_id=classification_model_check["id"])
+    monitor = test_api.create_monitor(check_id=classification_model_check["id"], monitor={"frequency": 3600 * 24})
     monitor = t.cast(Payload, monitor)
 
     monitor = await async_session.get(Monitor, monitor["id"])
@@ -329,10 +329,10 @@ async def test_update_monitor_freq(
 
     assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency != 0
 
-    test_api.update_monitor(monitor_id=monitor.id, monitor={"frequency": 86400 * 30})
+    test_api.update_monitor(monitor_id=monitor.id, monitor={"frequency": 3600 * 12})
 
     await async_session.refresh(monitor)
-    assert monitor.frequency == 86400 * 30
+    assert monitor.frequency == 3600 * 12
     assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
 
 

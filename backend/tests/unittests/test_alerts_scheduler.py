@@ -7,118 +7,41 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import asyncio
 import typing as t
-from datetime import datetime, timedelta, timezone
-from random import random
+from datetime import timedelta
 
-import anyio
 import pendulum as pdl
 import pytest
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncEngine
+from fastapi.testclient import TestClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus
-from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, create_task_enqueueing_query
+from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
-from deepchecks_monitoring.schema_models.monitor import Monitor
-from tests.common import Payload, TestAPI
-from tests.unittests.conftest import update_model_version_end
+from deepchecks_monitoring.schema_models import ModelVersion, Monitor, TaskType
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL
+from tests.common import TestAPI, upload_classification_data
 
+LABEL_CHECK_CONFIG = {
+    "class_name": "SingleDatasetPerformance",
+    "params": {"scorers": ["accuracy", "f1_macro"]},
+    "module_name": "deepchecks.tabular.checks"
+}
 
-async def schedule_tasks(async_engine, organization) -> t.List[Task]:
-    query = create_task_enqueueing_query(organization.id, organization.schema_name)
+NON_LABEL_CHECK_CONFIG = {
+    "class_name": "TrainTestFeatureDrift",
+    "module_name": "deepchecks.tabular.checks",
+    "params": {}
+}
 
-    async with async_engine.begin() as c:
-        await c.execute(query)
-
-    async with async_engine.connect() as c:
-        tasks_query = sa.select(Task).order_by(Task.execute_after.asc())
-        tasks_query = tasks_query.execution_options(schema_translate_map={None: organization.schema_name})
-        return t.cast(t.List[Task], (await c.execute(tasks_query)).all())
-
-
-UpdateMonitor = (
-    sa.update(Monitor)
-    .where(Monitor.id == sa.bindparam("monitor_id"))
-    .values({Monitor.scheduling_start: sa.bindparam("start")})
-    .returning(Monitor)
-)
-
-
-@pytest.mark.asyncio
-async def test_alert_rules_scheduler_query(
-    classification_model_check: Payload,
-    classification_model_version: Payload,
-    test_api: TestAPI,
-    async_engine: AsyncEngine,
-    user: User
-):
-    # == Prepare
-    await update_model_version_end(
-        async_engine,
-        classification_model_version["id"],
-        user.organization,
-    )
-    monitor = t.cast(Payload, test_api.create_monitor(
-        check_id=classification_model_check["id"],
-        monitor={
-            "lookback": 3600 * 3,
-            "name": "Test alert",
-            "frequency": 600,  # 10mins
-        }
-    ))
-
+async def get_tasks_and_latest_schedule(async_engine, user, monitor):
     async with async_engine.begin() as c:
         schema_translate_map = {None: user.organization.schema_name}
-        monitor = (await c.execute(
-            UpdateMonitor.execution_options(schema_translate_map=schema_translate_map),
-            parameters={"monitor_id": monitor["id"], "start": pdl.now() - pdl.duration(hours=1)}
-        )).first()
 
-    # == Act
-    tasks = await schedule_tasks(async_engine, user.organization)
-
-    # == Assert
-    assert len(tasks) == 7
-    assert_tasks(tasks, monitor, TaskStatus.SCHEDULED)
-
-
-@ pytest.mark.asyncio
-async def test_alert_rules_scheduler(
-    classification_model_check: Payload,
-    classification_model_version: Payload,
-    test_api: TestAPI,
-    async_engine: AsyncEngine,
-    user: User
-):
-    # == Prepare
-    schema_translate_map = {None: user.organization.schema_name}
-
-    await update_model_version_end(
-        async_engine,
-        classification_model_version["id"],
-        user.organization
-    )
-    monitor = t.cast(Payload, test_api.create_monitor(
-        check_id=classification_model_check["id"],
-        monitor={
-            "lookback": 3600 * 3,
-            "name": "Test alert",
-            "frequency": 600,  # 10mins
-        }
-    ))
-
-    async with async_engine.begin() as c:
-        monitor = (await c.execute(
-            UpdateMonitor.execution_options(schema_translate_map=schema_translate_map),
-            parameters={"monitor_id": monitor["id"], "start": pdl.now() - pdl.duration(hours=1)}
-        )).first()
-
-    async with async_engine.connect() as c:
-        # == Act
-        await AlertsScheduler(engine=None).enqueue_tasks(c)
-
-        # == Assert
         tasks = t.cast(t.List[Task], (await c.execute(
             sa.select(Task)
             .order_by(Task.execute_after.asc())
@@ -130,12 +53,44 @@ async def test_alert_rules_scheduler(
             .where(Monitor.id == monitor["id"])
             .execution_options(schema_translate_map=schema_translate_map)
         )).scalar_one()
+    return tasks, latest_schedule
 
-    assert len(tasks) == 7
+
+@ pytest.mark.asyncio
+async def test_scheduler_on_non_label_check(
+    async_engine: AsyncEngine,
+    user: User,
+    test_api: TestAPI,
+):
+    # == Prepare
+    # alerts delay should have no affect on the monitor since it is not a label check
+    model = test_api.create_model(model={"task_type":TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
+                                            "alerts_delay_seconds": 3600 * 24})
+    model_version = test_api.create_model_version(model["id"], model_version={"classes": ["0", "1", "2"]})
+    check = test_api.create_check(model["id"], check={"config": NON_LABEL_CHECK_CONFIG})
+    upload_classification_data(test_api, model_version["id"], is_labeled=False)
+
+    frequency = 3600
+    monitor = test_api.create_monitor(
+        check["id"], monitor=dict(
+            lookback=frequency * 3,
+            name="Test alert",
+            frequency=frequency,
+            aggregation_window=frequency
+        )
+    )
+
+    # == Act
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
+
+    # == Assert
+    tasks, latest_schedule = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    # last window of data is not scheduled since it schedule time didn't pass yet the model end time
+    assert len(tasks) == 6
 
     assert_tasks(
         t.cast(t.Sequence[Task], tasks),
-        t.cast(Monitor, monitor),
+        monitor,
         TaskStatus.SCHEDULED
     )
 
@@ -143,138 +98,208 @@ async def test_alert_rules_scheduler(
 
 
 @ pytest.mark.asyncio
-async def test_alert_rules_scheduler_monitor_update(
-    classification_model_check: Payload,
-    classification_model_version: Payload,
+async def test_scheduler_monitor_update(
     test_api: TestAPI,
     async_engine: AsyncEngine,
-    user: User
+    user: User,
+    client: TestClient
 ):
     # == Prepare
-    schema_translate_map = {None: user.organization.schema_name}
+    model = test_api.create_model(model={"task_type":TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
+                                            "alerts_delay_seconds": 3600 * 24})
+    model_version = test_api.create_model_version(model["id"], model_version={"classes": ["0", "1", "2"]})
+    check = test_api.create_check(model["id"], check={"config": NON_LABEL_CHECK_CONFIG})
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    frequency = 3600
+    # Create data for 2 windows, with first being 15 windows back to test:
+    # A. new monitor is running only on last 10
+    # B. there are tasks also on the empty windows
+    date_range = [curr_time.subtract(seconds=frequency * 15), curr_time.subtract(seconds=frequency)]
+    upload_classification_data(test_api, model_version["id"], is_labeled=False, daterange=date_range)
 
-    await update_model_version_end(
-        async_engine,
-        classification_model_version["id"],
-        user.organization,
-        end_time=datetime.now(timezone.utc)
-    )
-    monitor = t.cast(Payload, test_api.create_monitor(
-        check_id=classification_model_check["id"],
-        monitor={
-            "lookback": 3600 * 3,
-            "name": "Test alert",
-            "frequency": 3600,  # 1 hour
-        }
-    ))
-
-    async with async_engine.connect() as c:
-        # == Act
-        await AlertsScheduler(engine=async_engine).enqueue_tasks(c)
-
-        # == Assert
-        tasks = dict((await c.execute(
-            sa.select(Task.id, Task.name)
-            .order_by(Task.execute_after.asc())
-            .execution_options(schema_translate_map=schema_translate_map)
-        )).all())
-
-    assert len(tasks) == 11
-
-    # update monitor
-    test_api.update_monitor(
-        monitor_id=monitor["id"],
-        monitor={
-            "data_filters": {"filters": [{
-                "operator": "contains",
-                "value": ["a", "ff"],
-                "column": "meta_col"
-            }]}
-        }
+    monitor = test_api.create_monitor(
+        check["id"], monitor=dict(
+            lookback=frequency * 3,
+            name="Test alert",
+            frequency=frequency,
+            aggregation_window=frequency
+        )
     )
 
-    # test that 10 new alerts were scheduled
-    async with async_engine.connect() as c:
-        # == Act
-        await AlertsScheduler(engine=None).enqueue_tasks(c)
+    # == Act
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
 
-        # == Assert
-        updated_tasks = dict((await c.execute(
-            sa.select(Task.id, Task.name)
-            .order_by(Task.execute_after.asc())
-            .execution_options(schema_translate_map=schema_translate_map)
-        )).all())
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 10
+    assert pdl.instance(tasks[0].execute_after) == curr_time.subtract(seconds=10 * frequency)
+    assert pdl.instance(tasks[-1].execute_after) == curr_time.subtract(seconds=frequency)
 
-    assert len(updated_tasks) == 11  # should be the same as 10 were deleted
+   # update monitor - Should remove the current tasks defined
+    request = {
+        "data_filters": {"filters": [{
+            "operator": "contains",
+            "value": ["a", "ff"],
+            "column": "meta_col"
+        }]}
+    }
+    response = client.put(f"/api/v1/monitors/{monitor['id']}", json=request)
+    assert response.status_code == 200
 
-    # assert that 10 new tasks were really created
-    updated_tasks.update(tasks)
-    assert len(updated_tasks) == 21
+    # test that tasks are removed
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 0
+
+    # == Act - Should recreate the removed tasks
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
+
+    # test that new tasks were scheduled
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 10
 
 
 @pytest.mark.asyncio
 async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
-    classification_model_check: Payload,
-    classification_model_version: Payload,
-    test_api: TestAPI,
     async_engine: AsyncEngine,
-    user: User
+    user: User,
+    test_api: TestAPI,
 ):
     # == Prepare
-    schema_translate_map = {None: user.organization.schema_name}
-
-    await update_model_version_end(
-        async_engine,
-        classification_model_version["id"],
-        user.organization
+    # alerts delay should have no affect on the monitor since it is not a label check
+    model = test_api.create_model(model={"task_type":TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
+                                            "alerts_delay_seconds": 3600 * 24})
+    model_version = test_api.create_model_version(model["id"], model_version={"classes": ["0", "1", "2"]})
+    check = test_api.create_check(model["id"], check={"config": NON_LABEL_CHECK_CONFIG})
+    frequency = 3600 * 3
+    curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
+    date_range = [curr_time.subtract(seconds=frequency * 5), curr_time.subtract(seconds=frequency)]
+    upload_classification_data(test_api, model_version["id"], is_labeled=False, daterange=date_range)
+    monitor = test_api.create_monitor(
+        check["id"], monitor=dict(
+            lookback=frequency * 3,
+            name="Test alert",
+            frequency=frequency,
+            aggregation_window=frequency
+        )
     )
-    monitor = t.cast(Payload, test_api.create_monitor(
-        check_id=classification_model_check["id"],
-        monitor={
-            "lookback": 3600 * 3,
-            "name": "Test alert",
-            "frequency": 1,  # secs
-        }
-    ))
 
-    async with async_engine.begin() as c:
-        monitor = (await c.execute(
-            sa.select(Monitor)
-            .where(Monitor.id == monitor["id"])
-            .execution_options(schema_translate_map=schema_translate_map)
-        )).first()
-
-    async with anyio.create_task_group() as g:
-        for _ in range(8):
-            await anyio.sleep(random())
-            g.start_soon(AlertsScheduler(engine=async_engine, sleep_seconds=1).run)
-        await anyio.sleep(15)
-        g.cancel_scope.cancel()
+    # Run 10 parallel schedulers
+    scheduler = AlertsScheduler(engine=async_engine, sleep_seconds=1)
+    await asyncio.gather(*[scheduler.run_all_organizations() for _ in range(1)])
 
     # == Assert
-    async with async_engine.connect() as c:
-        tasks = t.cast(t.List[Task], (await c.execute(
-            sa.select(Task)
-            .order_by(Task.execute_after.asc())
-            .execution_options(schema_translate_map=schema_translate_map)
-        )).all())
-
-        # The number will vary from run to run depending on number of
-        # occurred serialization errors
-        assert len(tasks) > 0
-        assert_tasks(t.cast(t.Sequence[Task], tasks), t.cast(Monitor, monitor), TaskStatus.SCHEDULED)
-
-        latest_schedule = (await c.execute(
-            sa.select(Monitor.latest_schedule)
-            .where(Monitor.id == monitor["id"])
-            .execution_options(schema_translate_map=schema_translate_map)
-        )).scalar_one()
-
-        assert latest_schedule == tasks[-1].execute_after
+    tasks, latest_schedule = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    # last window of data is not scheduled since it schedule time didn't pass yet the model end time
+    assert len(tasks) == 4
+    assert_tasks(t.cast(t.Sequence[Task], tasks), monitor, TaskStatus.SCHEDULED)
+    assert latest_schedule == tasks[-1].execute_after
 
 
-def assert_tasks(tasks: t.Sequence[Task], monitor: Monitor, expected_status: TaskStatus):
-    reference = f"Monitor:{monitor.id}"
+@pytest.mark.asyncio
+async def test_scheduling_with_seconds_delay(
+    async_engine: AsyncEngine,
+    user: User,
+    test_api: TestAPI,
+):
+    # == Prepare
+    # alerts delay should have no affect on the monitor since it is not a label check
+    model = test_api.create_model(model={"task_type":TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
+                                            "alerts_delay_seconds": 3600 * 24})
+    model_version = test_api.create_model_version(model["id"], model_version={"classes": ["0", "1", "2"]})
+    check = test_api.create_check(model["id"], check={"config": LABEL_CHECK_CONFIG})
+    frequency = 3600 * 3
+    upload_classification_data(test_api, model_version["id"], is_labeled=False)
+    monitor = test_api.create_monitor(
+        check["id"], monitor=dict(
+            lookback=frequency * 3,
+            name="Test alert",
+            frequency=frequency,
+            aggregation_window=frequency
+        )
+    )
+
+    # == Act - Should not schedule tasks since we have delay of 24 hours
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
+
+    # == Assert
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 0
+
+    # == Act - Change logged timestamp of the data
+    session_factory = sessionmaker(async_engine, class_=AsyncSession)
+    async with session_factory.begin() as session:
+        schema_translate_map = {None: user.organization.schema_name}
+
+        model_version = t.cast(ModelVersion, (await session.execute(
+            sa.select(ModelVersion).execution_options(schema_translate_map=schema_translate_map)
+        )).first()[0])
+
+        new_log_time = pdl.now().subtract(seconds=3600 * 25).to_iso8601_string()
+        table = user.organization.schema_name + "." + model_version.get_monitor_table_name()
+        update_sql = f"update {table} set {SAMPLE_LOGGED_TIME_COL} = '{new_log_time}'::timestamptz"
+        await session.execute(text(update_sql))
+
+    # Should schedule tasks since we now passed the delay of 24 hours
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
+
+    # == Assert
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 2
+
+
+@pytest.mark.asyncio
+async def test_scheduling_with_labels_ratio_delay(
+    async_engine: AsyncEngine,
+    user: User,
+    test_api: TestAPI
+):
+    # == Prepare
+    # alerts delay should have no affect on the monitor since it is not a label check
+    model = test_api.create_model(model={"task_type":TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
+                                            "alerts_delay_seconds": 3600 * 24})
+    model_version = test_api.create_model_version(model["id"], model_version={"classes": ["0", "1", "2"]})
+    check = test_api.create_check(model["id"], check={"config": LABEL_CHECK_CONFIG})
+    frequency = 3600 * 3
+    upload_classification_data(test_api, model_version["id"], is_labeled=False)
+    monitor = test_api.create_monitor(
+        check["id"], monitor=dict(
+            lookback=frequency * 3,
+            name="Test alert",
+            frequency=frequency,
+            aggregation_window=frequency
+        )
+    )
+
+    # == Act - Should not schedule tasks since we have delay of 24 hours
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
+
+    # == Assert
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 0
+
+    # == Act - Add labels to all data
+    session_factory = sessionmaker(async_engine, class_=AsyncSession)
+    async with session_factory.begin() as session:
+        schema_translate_map = {None: user.organization.schema_name}
+
+        model_version = t.cast(ModelVersion, (await session.execute(
+            sa.select(ModelVersion).execution_options(schema_translate_map=schema_translate_map)
+        )).first()[0])
+
+        table = user.organization.schema_name + "." + model_version.get_monitor_table_name()
+        update_sql = f"update {table} set {SAMPLE_LABEL_COL} = '1'"
+        await session.execute(text(update_sql))
+
+    # Should schedule tasks since we now passed the delay of 24 hours
+    await AlertsScheduler(engine=async_engine).run_all_organizations()
+
+    # == Assert
+    tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
+    assert len(tasks) == 2
+
+
+
+def assert_tasks(tasks: t.Sequence[Task], monitor, expected_status: TaskStatus):
+    reference = f"Monitor:{monitor['id']}"
     prev_date = None
 
     for task in tasks:
@@ -284,12 +309,12 @@ def assert_tasks(tasks: t.Sequence[Task], monitor: Monitor, expected_status: Tas
         assert task.name.startswith(reference)
         assert task.queue == "monitors"
         assert isinstance(task.params, dict)
-        assert "monitor_id" in task.params and task.params["monitor_id"] == monitor.id
+        assert "monitor_id" in task.params and task.params["monitor_id"] == monitor["id"]
         assert "timestamp" in task.params and isinstance(task.params["timestamp"], str)
         assert pdl.parse(task.params["timestamp"]) == task.execute_after
 
         if prev_date is None:
             prev_date = task.execute_after
         else:
-            assert (task.execute_after - prev_date) == timedelta(seconds=monitor.frequency)
+            assert (task.execute_after - prev_date) == timedelta(seconds=monitor["frequency"])
             prev_date = task.execute_after

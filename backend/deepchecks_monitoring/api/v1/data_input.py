@@ -33,7 +33,7 @@ from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
-from deepchecks_monitoring.schema_models import Model, ModelVersion
+from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_S3_IMAGE_COL
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 
@@ -44,7 +44,7 @@ async def _log_or_update(model_version_id, data, session, data_ingest, user, res
     if len(data) == 0:
         return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
-                                                     options=joinedload(ModelVersion.model).load_only(Model.task_type))
+                                                     options=joinedload(ModelVersion.model))
     time = pdl.now()
     minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
     # Atomically getting the count and increasing in order to avoid race conditions

@@ -99,6 +99,7 @@ class DataGenerator:
         }
 
     def generate_random_monitor(self) -> "Payload":
+        frequency = random.choice([TimeUnit.DAY, TimeUnit.DAY * 4, TimeUnit.WEEK])
         return {
             "name": self.faker.name(),
             "lookback": random.choice([TimeUnit.WEEK, TimeUnit.WEEK * 2, TimeUnit.WEEK * 3]),
@@ -106,8 +107,8 @@ class DataGenerator:
             "dashboard_id": None,
             "data_filters": None,  # TODO:
             "additional_kwargs": None,
-            "aggregation_window": random.choice([TimeUnit.HOUR, TimeUnit.HOUR * 12, TimeUnit.DAY]),
-            "frequency": random.choice([TimeUnit.DAY, TimeUnit.DAY * 4, TimeUnit.WEEK]),
+            "aggregation_window": frequency * random.choice([1, 2, 4]),
+            "frequency": frequency,
         }
 
     def generate_random_alert_rule(self) -> "Payload":
@@ -469,8 +470,8 @@ class TestAPI:
         if monitor is None:
             monitor = generated_payload
         else:
-            if "lookback" in monitor and "aggregation_window" not in monitor:
-                monitor["aggregation_window"] = monitor["lookback"] / 12
+            if "aggregation_window" not in monitor:
+                monitor["aggregation_window"] = monitor["frequency"]
             monitor = {**generated_payload, **monitor}
 
         response = self.api.create_monitor(check_id=check_id, monitor=monitor, raise_on_status=False)

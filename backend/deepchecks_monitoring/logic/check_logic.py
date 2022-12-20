@@ -710,6 +710,6 @@ def reduce_check_window(model_results, monitor_options):
     """Reduce all the model versions results got from a check run on single window."""
     return {
         model_version: reduce_check_result(it["result"], monitor_options.additional_kwargs)
-        if it["result"] is not None else None
+        if it is not None else None
         for model_version, it in model_results.items()
     }

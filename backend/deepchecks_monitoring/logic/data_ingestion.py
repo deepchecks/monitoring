@@ -36,7 +36,6 @@ from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_S3_IMAGE_COL,
                                                              SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
-from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
 
 __all__ = ["DataIngestionBackend", "log_data", "update_data"]
@@ -131,17 +130,20 @@ async def log_data(
 
     if len(logged_samples) == 0:
         return []
-    all_timestamps = []
+    logged_timestamps = []
 
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
         update_statistics_from_sample(updated_statistics, sample, model_version.model.task_type)
-        all_timestamps.append(sample[SAMPLE_TS_COL])
+        logged_timestamps.append(sample[SAMPLE_TS_COL])
 
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
-    await model_version.update_timestamps(all_timestamps, session)
-    return all_timestamps
+    max_ts = max(logged_timestamps)
+    min_ts = min(logged_timestamps)
+    await model_version.update_timestamps(min_ts, max_ts, session)
+    await model_version.model.update_timestamps(min_ts, max_ts, session)
+    return logged_timestamps
 
 
 async def update_data(
@@ -302,7 +304,7 @@ class DataIngestionBackend(object):
                     return True
                 model_version: ModelVersion = (await session.execute(
                     select(ModelVersion)
-                    .options(joinedload(ModelVersion.model).load_only(Model.task_type))
+                    .options(joinedload(ModelVersion.model))
                     .where(ModelVersion.id == model_version_id))
                 ).scalars().first()
                 # If model version is none it was deleted, so no need to do anything
