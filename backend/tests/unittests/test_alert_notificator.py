@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 import pytest
 import sqlalchemy as sa
 from aiosmtpd.controller import Controller
-from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.bgtasks.actors import AlertNotificator
@@ -14,30 +13,28 @@ from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, TaskType
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
-from tests.common import create_alert_rule, create_check, create_monitor, generate_user
-from tests.conftest import add_model
+from tests.common import Payload, TestAPI, generate_user
 
 
 @pytest.mark.asyncio
 async def test_alert_email_notification(
     async_session: AsyncSession,
-    client: TestClient,
+    test_api: TestAPI,
     user: User,
     resources_provider: ResourcesProvider,
-    settings: Settings,
     smtp_server: Controller
 ):
-    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
-    check_id = t.cast(int, create_check(client, model_id))
-    monitor_id = t.cast(int, create_monitor(client, check_id))
-    alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+    alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
     alert_id = await async_session.scalar(sa.insert(Alert).values(
         failed_values={"1":["accuracy"], "2":["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
-        alert_rule_id=alert_rule_id
+        alert_rule_id=alert_rule["id"]
     ).returning(Alert.id))
 
     notificator = await AlertNotificator.instantiate(
@@ -52,8 +49,9 @@ async def test_alert_email_notification(
     assert were_emails_send
     assert len(smtp_server.handler.mailbox) == 1
 
+    deepchecks_email = t.cast(Settings, resources_provider.settings).deepchecks_email
     email = smtp_server.handler.mailbox[0]
-    assert email["From"] == f"Deepchecks App <{settings.deepchecks_email}>"
+    assert email["From"] == f"Deepchecks App <{deepchecks_email}>"
     assert email["To"] == user.email
     assert email["Subject"].startswith("Alert")
 
@@ -61,11 +59,10 @@ async def test_alert_email_notification(
 @pytest.mark.asyncio
 async def test_that_email_notification_levels_config_is_respected(
     async_session: AsyncSession,
-    client: TestClient,
+    test_api: TestAPI,
     user: User,
     smtp_server: Controller,
     resources_provider: ResourcesProvider,
-    settings: Settings
 ):
     now = datetime.now(timezone.utc)
 
@@ -75,23 +72,21 @@ async def test_that_email_notification_levels_config_is_respected(
         .values(email_notification_levels = [AlertSeverity.MID])
     )
 
-    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
-    check_id = t.cast(int, create_check(client, model_id))
-    monitor_id = t.cast(int, create_monitor(client, check_id))
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
 
     # Create alert rules with different severities,
     # first with severity that is included within org notification levels config
     # and second with severity that is not included
     alert_rules = [
-        t.cast(int, create_alert_rule(
-            client,
-            monitor_id,
-            payload={"alert_severity": "mid"}
+        t.cast(Payload, test_api.create_alert_rule(
+            monitor_id=monitor["id"],
+            alert_rule={"alert_severity": "mid"}
         )),
-        t.cast(int, create_alert_rule(
-            client,
-            monitor_id,
-            payload={"alert_severity": "low"}
+        t.cast(int, test_api.create_alert_rule(
+            monitor_id=monitor["id"],
+            alert_rule={"alert_severity": "low"}
         ))
     ]
 
@@ -100,13 +95,13 @@ async def test_that_email_notification_levels_config_is_respected(
             failed_values={"1":["accuracy"], "2":["accuracy"]},
             start_time=now,
             end_time=now + timedelta(hours=2),
-            alert_rule_id=alert_rules[0]
+            alert_rule_id=alert_rules[0]["id"]
         ).returning(Alert.id)),
         await async_session.scalar(sa.insert(Alert).values(
             failed_values={"1":["accuracy"], "2":["accuracy"]},
             start_time=now,
             end_time=now + timedelta(hours=2),
-            alert_rule_id=alert_rules[1]
+            alert_rule_id=alert_rules[1]["id"]
         ).returning(Alert.id))
     ]
 
@@ -122,8 +117,9 @@ async def test_that_email_notification_levels_config_is_respected(
     assert were_emails_send
     assert len(smtp_server.handler.mailbox) == 1
 
+    deepchecks_email = t.cast(Settings, resources_provider.settings).deepchecks_email
     email = smtp_server.handler.mailbox[0]
-    assert email["From"] == f"Deepchecks App <{settings.deepchecks_email}>"
+    assert email["From"] == f"Deepchecks App <{deepchecks_email}>"
     assert email["To"] == user.email
     assert email["Subject"].startswith("Alert")
 
@@ -146,11 +142,11 @@ async def test_that_email_notification_levels_config_is_respected(
 @pytest.mark.asyncio
 async def test_that_emails_are_send_to_all_members_of_organization(
     async_session: AsyncSession,
-    unauthorized_client: TestClient,
-    settings: Settings,
+    test_api: TestAPI,
     smtp_server: Controller,
     resources_provider: ResourcesProvider
 ):
+    settings = t.cast(Settings, resources_provider.settings)
     now = datetime.now(timezone.utc)
 
     users = [
@@ -167,18 +163,17 @@ async def test_that_emails_are_send_to_all_members_of_organization(
     async_session.add_all(users)
     await async_session.flush()
 
-    unauthorized_client.headers["Authorization"] = f"bearer {users[0].access_token}"
-
-    model_id = t.cast(int, add_model(unauthorized_client, task_type=TaskType.BINARY))
-    check_id = t.cast(int, create_check(unauthorized_client, model_id))
-    monitor_id = t.cast(int, create_monitor(unauthorized_client, check_id))
-    alert_rule_id = t.cast(int, create_alert_rule(unauthorized_client, monitor_id))
+    with test_api.reauthorize(t.cast(str, users[0].access_token)):
+        model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+        check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+        monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+        alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
 
     alert_id = await async_session.scalar(sa.insert(Alert).values(
         failed_values={"1":["accuracy"], "2":["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
-        alert_rule_id=alert_rule_id
+        alert_rule_id=alert_rule["id"]
     ).returning(Alert.id))
 
     notificator = await AlertNotificator.instantiate(
@@ -207,20 +202,20 @@ async def test_that_emails_are_send_to_all_members_of_organization(
 @pytest.mark.asyncio
 async def test_alert_slack_notification(
     async_session: AsyncSession,
-    client: TestClient,
+    test_api: TestAPI,
     user: User
 ):
-    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
-    check_id = t.cast(int, create_check(client, model_id))
-    monitor_id = t.cast(int, create_monitor(client, check_id))
-    alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+    alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
     alert_id = await async_session.scalar(sa.insert(Alert).values(
         failed_values={"1": ["accuracy"], "2": ["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
-        alert_rule_id=alert_rule_id
+        alert_rule_id=alert_rule["id"]
     ).returning(Alert.id))
 
     await async_session.execute(sa.insert(SlackInstallation).values(

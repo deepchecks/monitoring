@@ -15,14 +15,13 @@ import anyio
 import pendulum as pdl
 import pytest
 import sqlalchemy as sa
-from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, create_task_enqueueing_query
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models.monitor import Monitor
-from tests.conftest import add_monitor
+from tests.common import Payload, TestAPI
 from tests.unittests.conftest import update_model_version_end
 
 
@@ -48,32 +47,32 @@ UpdateMonitor = (
 
 @pytest.mark.asyncio
 async def test_alert_rules_scheduler_query(
-    classification_model_check_id,
-    classification_model_version_id,
-    client: TestClient,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+    test_api: TestAPI,
     async_engine: AsyncEngine,
     user: User
 ):
     # == Prepare
     await update_model_version_end(
         async_engine,
-        classification_model_version_id,
+        classification_model_version["id"],
         user.organization,
     )
-
-    monitor_id = add_monitor(
-        classification_model_check_id,
-        client,
-        lookback=3600 * 3,
-        name="Test alert",
-        frequency=600,  # 10mins
-    )
+    monitor = t.cast(Payload, test_api.create_monitor(
+        check_id=classification_model_check["id"],
+        monitor={
+            "lookback": 3600 * 3,
+            "name": "Test alert",
+            "frequency": 600,  # 10mins
+        }
+    ))
 
     async with async_engine.begin() as c:
         schema_translate_map = {None: user.organization.schema_name}
         monitor = (await c.execute(
             UpdateMonitor.execution_options(schema_translate_map=schema_translate_map),
-            parameters={"monitor_id": monitor_id, "start": pdl.now() - pdl.duration(hours=1)}
+            parameters={"monitor_id": monitor["id"], "start": pdl.now() - pdl.duration(hours=1)}
         )).first()
 
     # == Act
@@ -86,9 +85,9 @@ async def test_alert_rules_scheduler_query(
 
 @ pytest.mark.asyncio
 async def test_alert_rules_scheduler(
-    classification_model_check_id: int,
-    classification_model_version_id: int,
-    client: TestClient,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+    test_api: TestAPI,
     async_engine: AsyncEngine,
     user: User
 ):
@@ -97,21 +96,22 @@ async def test_alert_rules_scheduler(
 
     await update_model_version_end(
         async_engine,
-        classification_model_version_id,
+        classification_model_version["id"],
         user.organization
     )
-
-    monitor_id = add_monitor(
-        classification_model_check_id, client,
-        lookback=3600 * 3,
-        name="Test alert",
-        frequency=600,  # 10mins
-    )
+    monitor = t.cast(Payload, test_api.create_monitor(
+        check_id=classification_model_check["id"],
+        monitor={
+            "lookback": 3600 * 3,
+            "name": "Test alert",
+            "frequency": 600,  # 10mins
+        }
+    ))
 
     async with async_engine.begin() as c:
         monitor = (await c.execute(
             UpdateMonitor.execution_options(schema_translate_map=schema_translate_map),
-            parameters={"monitor_id": monitor_id, "start": pdl.now() - pdl.duration(hours=1)}
+            parameters={"monitor_id": monitor["id"], "start": pdl.now() - pdl.duration(hours=1)}
         )).first()
 
     async with async_engine.connect() as c:
@@ -127,7 +127,7 @@ async def test_alert_rules_scheduler(
 
         latest_schedule = (await c.execute(
             sa.select(Monitor.latest_schedule)
-            .where(Monitor.id == monitor_id)
+            .where(Monitor.id == monitor["id"])
             .execution_options(schema_translate_map=schema_translate_map)
         )).scalar_one()
 
@@ -144,9 +144,9 @@ async def test_alert_rules_scheduler(
 
 @ pytest.mark.asyncio
 async def test_alert_rules_scheduler_monitor_update(
-    classification_model_check_id: int,
-    classification_model_version_id: int,
-    client: TestClient,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+    test_api: TestAPI,
     async_engine: AsyncEngine,
     user: User
 ):
@@ -155,17 +155,18 @@ async def test_alert_rules_scheduler_monitor_update(
 
     await update_model_version_end(
         async_engine,
-        classification_model_version_id,
+        classification_model_version["id"],
         user.organization,
         end_time=datetime.now(timezone.utc)
     )
-
-    monitor_id = add_monitor(
-        classification_model_check_id, client,
-        lookback=3600 * 3,
-        name="Test alert",
-        frequency=3600,  # 1 hour
-    )
+    monitor = t.cast(Payload, test_api.create_monitor(
+        check_id=classification_model_check["id"],
+        monitor={
+            "lookback": 3600 * 3,
+            "name": "Test alert",
+            "frequency": 3600,  # 1 hour
+        }
+    ))
 
     async with async_engine.connect() as c:
         # == Act
@@ -180,16 +181,17 @@ async def test_alert_rules_scheduler_monitor_update(
 
     assert len(tasks) == 11
 
-   # update monitor
-    request = {
-        "data_filters": {"filters": [{
-            "operator": "contains",
-            "value": ["a", "ff"],
-            "column": "meta_col"
-        }]}
-    }
-    response = client.put(f"/api/v1/monitors/{monitor_id}", json=request)
-    assert response.status_code == 200
+    # update monitor
+    test_api.update_monitor(
+        monitor_id=monitor["id"],
+        monitor={
+            "data_filters": {"filters": [{
+                "operator": "contains",
+                "value": ["a", "ff"],
+                "column": "meta_col"
+            }]}
+        }
+    )
 
     # test that 10 new alerts were scheduled
     async with async_engine.connect() as c:
@@ -212,9 +214,9 @@ async def test_alert_rules_scheduler_monitor_update(
 
 @pytest.mark.asyncio
 async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
-    classification_model_check_id: int,
-    classification_model_version_id: int,
-    client: TestClient,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+    test_api: TestAPI,
     async_engine: AsyncEngine,
     user: User
 ):
@@ -223,22 +225,22 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
 
     await update_model_version_end(
         async_engine,
-        classification_model_version_id,
+        classification_model_version["id"],
         user.organization
     )
-
-    monitor_id = add_monitor(
-        classification_model_check_id,
-        client,
-        lookback=3600 * 3,
-        name="Test alert",
-        frequency=1,  # secs
-    )
+    monitor = t.cast(Payload, test_api.create_monitor(
+        check_id=classification_model_check["id"],
+        monitor={
+            "lookback": 3600 * 3,
+            "name": "Test alert",
+            "frequency": 1,  # secs
+        }
+    ))
 
     async with async_engine.begin() as c:
         monitor = (await c.execute(
             sa.select(Monitor)
-            .where(Monitor.id == monitor_id)
+            .where(Monitor.id == monitor["id"])
             .execution_options(schema_translate_map=schema_translate_map)
         )).first()
 
@@ -264,7 +266,7 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
 
         latest_schedule = (await c.execute(
             sa.select(Monitor.latest_schedule)
-            .where(Monitor.id == monitor_id)
+            .where(Monitor.id == monitor["id"])
             .execution_options(schema_translate_map=schema_translate_map)
         )).scalar_one()
 

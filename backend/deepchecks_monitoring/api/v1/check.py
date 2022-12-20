@@ -330,10 +330,13 @@ async def get_check_reference(
         Created check.
     """
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    model_results = await session.execute(select(Model).where(Model.id == check.model_id,
-                                                              Model.id == ModelVersion.model_id)
-                                          .options(selectinload(Model.versions)))
-    model: Model = model_results.scalars().first()
+
+    model = t.cast(Model, await session.scalar(
+        select(Model)
+        .where(Model.id == check.model_id, Model.id == ModelVersion.model_id)
+        .options(selectinload(Model.versions))
+    ))
+
     if model is None:
         model, model_versions = await fetch_or_404(session, Model, id=check.model_id), []
     else:
@@ -345,6 +348,7 @@ async def get_check_reference(
     return {version.name: val for version, val in result_per_version.items()}
 
 
+# TODO: Why POST method and not GET is used here?
 @router.post('/checks/{check_id}/get-notebook', tags=[Tags.CHECKS], response_class=PlainTextResponse)
 async def get_notebook(
         check_id: int,

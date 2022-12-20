@@ -24,7 +24,7 @@ from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
 @pytest.mark.asyncio
-async def test_quick_version(deepchecks_sdk_client: DeepchecksClient, async_session: AsyncSession):
+async def test_quick_version(deepchecks_sdk: DeepchecksClient, async_session: AsyncSession):
     # Arrange
     dataset = Dataset(
         pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
@@ -37,7 +37,7 @@ async def test_quick_version(deepchecks_sdk_client: DeepchecksClient, async_sess
     pred = [2, 1]
 
     # Act
-    deepchecks_sdk_client.create_tabular_model_version(
+    deepchecks_sdk.create_tabular_model_version(
         model_name='test',
         reference_dataset=dataset,
         reference_predictions=pred,
@@ -52,14 +52,10 @@ async def test_quick_version(deepchecks_sdk_client: DeepchecksClient, async_sess
     )
 
     # Assert
-    model = deepchecks_sdk_client.get_or_create_model(name='test', task_type='multiclass')
+    model = deepchecks_sdk.get_or_create_model(name='test', task_type='multiclass')
     assert model.get_versions() == {'ver': 1}
 
-    model_version: ModelVersion = await async_session.scalar(
-        select(ModelVersion)
-        .where(ModelVersion.id == 1)
-        .limit(1)
-    )
+    model_version: ModelVersion = await async_session.get(ModelVersion, 1)
     ref_table = model_version.get_reference_table(async_session)
     ref_data = (await async_session.execute(select(ref_table))).all()
     assert len(ref_data) == 2
@@ -67,7 +63,7 @@ async def test_quick_version(deepchecks_sdk_client: DeepchecksClient, async_sess
     assert len(ref_data[0][5]) == 3
 
 
-def test_quick_start_flow(deepchecks_sdk_client: DeepchecksClient):
+def test_quick_start_flow(deepchecks_sdk: DeepchecksClient):
     # Arrange
     data = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)])
     dataset = Dataset(data, label='label', cat_features=['b'])
@@ -78,7 +74,7 @@ def test_quick_start_flow(deepchecks_sdk_client: DeepchecksClient):
     timestamp = pd.Series([1662076799, 1662076899])
 
     # Act
-    version = deepchecks_sdk_client.create_tabular_model_version(
+    version = deepchecks_sdk.create_tabular_model_version(
         model_name='test',
         reference_dataset=dataset,
         reference_predictions=pred,
@@ -98,13 +94,14 @@ def test_quick_start_flow(deepchecks_sdk_client: DeepchecksClient):
     )
 
     # Assert
-    version = deepchecks_sdk_client.get_model_version(model_name='test', version_name='ver')
+    version = deepchecks_sdk.get_model_version(model_name='test', version_name='ver')
     assert version.model_version_id == 1
-    assert version.time_window_statistics(timestamp[0], timestamp[1] + 1) == \
-           {'num_samples': 2, 'num_labeled_samples': 2}
+    expected_statistics = {'num_samples': 2, 'num_labeled_samples': 2}
+    assert version.time_window_statistics(timestamp[0], timestamp[1] + 1) == expected_statistics
 
 
-def test_create_tabular_model_version_wrong_proba_length(deepchecks_sdk_client: DeepchecksClient):
+
+def test_create_tabular_model_version_wrong_proba_length(deepchecks_sdk: DeepchecksClient):
     # Arrange
     dataset = Dataset(
         pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
@@ -118,7 +115,7 @@ def test_create_tabular_model_version_wrong_proba_length(deepchecks_sdk_client: 
 
     # Act & Assert
     assert_that(
-        calling(deepchecks_sdk_client.create_tabular_model_version).with_args(
+        calling(deepchecks_sdk.create_tabular_model_version).with_args(
             model_name='test',
             reference_dataset=dataset,
             reference_predictions=pred,
@@ -135,7 +132,7 @@ def test_create_tabular_model_version_wrong_proba_length(deepchecks_sdk_client: 
     )
 
 
-def test_create_tabular_model_version_pass_proba_for_regression(deepchecks_sdk_client: DeepchecksClient):
+def test_create_tabular_model_version_pass_proba_for_regression(deepchecks_sdk: DeepchecksClient):
     # Arrange
     dataset = Dataset(
         pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
@@ -149,7 +146,7 @@ def test_create_tabular_model_version_pass_proba_for_regression(deepchecks_sdk_c
 
     # Act & Assert
     assert_that(
-        calling(deepchecks_sdk_client.create_tabular_model_version).with_args(
+        calling(deepchecks_sdk.create_tabular_model_version).with_args(
             model_name='test',
             reference_dataset=dataset,
             reference_predictions=pred,
@@ -166,7 +163,7 @@ def test_create_tabular_model_version_pass_proba_for_regression(deepchecks_sdk_c
     )
 
 
-def test_create_tabular_model_version_pass_probas_wrong_type(deepchecks_sdk_client: DeepchecksClient):
+def test_create_tabular_model_version_pass_probas_wrong_type(deepchecks_sdk: DeepchecksClient):
     # Arrange
     dataset = Dataset(
         pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
@@ -180,7 +177,7 @@ def test_create_tabular_model_version_pass_probas_wrong_type(deepchecks_sdk_clie
 
     # Act & Assert
     assert_that(
-        calling(deepchecks_sdk_client.create_tabular_model_version).with_args(
+        calling(deepchecks_sdk.create_tabular_model_version).with_args(
             model_name='test',
             reference_dataset=dataset,
             reference_predictions=pred,
@@ -197,7 +194,7 @@ def test_create_tabular_model_version_pass_probas_wrong_type(deepchecks_sdk_clie
     )
 
 
-def test_create_tabular_model_infer_model_classes(deepchecks_sdk_client: DeepchecksClient):
+def test_create_tabular_model_infer_model_classes(deepchecks_sdk: DeepchecksClient):
     # Arrange
     dataset = Dataset(
         pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
@@ -210,7 +207,7 @@ def test_create_tabular_model_infer_model_classes(deepchecks_sdk_client: Deepche
     pred = [2, 1]
 
     # Act
-    deepchecks_sdk_client.create_tabular_model_version(
+    deepchecks_sdk.create_tabular_model_version(
         model_name='test',
         reference_dataset=dataset,
         reference_predictions=pred,
@@ -221,11 +218,11 @@ def test_create_tabular_model_infer_model_classes(deepchecks_sdk_client: Deepche
     )
 
     # Assert
-    model_ver = deepchecks_sdk_client.get_or_create_model(name='test', task_type='multiclass').version('ver')
+    model_ver = deepchecks_sdk.get_or_create_model(name='test', task_type='multiclass').version('ver')
     assert_that(model_ver, has_property('model_classes', contains_exactly('0', '1', '2')))
 
 
-def test_create_tabular_without_probas_does_not_infer_classes(deepchecks_sdk_client: DeepchecksClient):
+def test_create_tabular_without_probas_does_not_infer_classes(deepchecks_sdk: DeepchecksClient):
     # Arrange
     dataset = Dataset(
         pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=2, b='2', c=1, label=0)]),
@@ -237,15 +234,15 @@ def test_create_tabular_without_probas_does_not_infer_classes(deepchecks_sdk_cli
     pred = [2, 1]
 
     # Act
-    deepchecks_sdk_client.create_tabular_model_version(
+    deepchecks_sdk.create_tabular_model_version(
         model_name='test',
         reference_dataset=dataset,
         reference_predictions=pred,
         schema=schema_file,
         task_type='multiclass',
-        version_name='ver'
+        version_name='V1'
     )
 
     # Assert
-    model_ver = deepchecks_sdk_client.get_or_create_model(name='test', task_type='multiclass').version('ver')
-    assert_that(model_ver, has_property('model_classes', is_(None)))
+    version_client = deepchecks_sdk.get_or_create_model(name='test', task_type='multiclass').version('V1')
+    assert_that(version_client, has_property('model_classes', is_(None)))

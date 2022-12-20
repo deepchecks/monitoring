@@ -129,7 +129,7 @@ async def get_create_model(
         model = Model(**model_schema.dict(exclude_none=True))
         session.add(model)
         await session.flush()
-    return {"id": model.id}
+    return {"id": model.id, "name": model.name}
 
 
 @router.get(

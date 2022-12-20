@@ -7,51 +7,62 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+import typing as t
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
-from deepchecks_monitoring.schema_models.dashboard import Dashboard
-from tests.api.test_monitor import add_monitor
+from tests.common import Payload, TestAPI
 
 
-@pytest.mark.asyncio
-async def test_get_dashboard_empty(classification_model_feature_check_id, client: TestClient):
-    resp_json = client.get('/api/v1/dashboards/').json()
-    assert classification_model_feature_check_id == 1
-    assert resp_json['id'] == 1
-    assert len(resp_json['monitors']) == 0
+@pytest.fixture()
+def category_mistmatch_check(
+    test_api: TestAPI,
+    classification_model: Payload,
+) -> Payload:
+    result = test_api.create_check(
+        model_id=classification_model["id"],
+        check={
+            "name": "Check",
+            "config": {
+                "class_name": "CategoryMismatchTrainTest",
+                "params": {},
+                "module_name": "deepchecks.tabular.checks"
+            }
+        }
+    )
+    return t.cast(Payload, result)
 
 
-@pytest.mark.asyncio
-async def test_add_dashboard_monitor(classification_model_feature_check_id, client: TestClient, async_session):
-    response = client.get('/api/v1/dashboards/')
-
-    assert response.json() == {'id': 1, 'name': None, 'monitors': []}
-    assert add_monitor(classification_model_feature_check_id, client) == 1
-
-    response = client.put('/api/v1/monitors/1', json={'dashboard_id': 1})
-    assert response.status_code == 200
-
-    # assert monitor was added
-    dashboard_results = await async_session.execute(select(Dashboard).options(selectinload(Dashboard.monitors)))
-    dashboard: Dashboard = dashboard_results.scalars().first()
-    assert len(dashboard.monitors) == 1
-    assert dashboard.monitors[0].id == 1
+def test_dashboard_retrieval(test_api: TestAPI):
+    dashboard = t.cast(Payload, test_api.fetch_dashboard())
+    assert dashboard["id"] == 1
+    assert len(dashboard["monitors"]) == 0
 
 
-@pytest.mark.asyncio
-async def test_remove_dashboard(client: TestClient):
-    # Arrange
-    client.get('/api/v1/dashboards/')
-    # Act
-    response = client.delete('/api/v1/dashboards/1')
-    assert response.status_code == 200
+def test_monitor_addition_to_dashboard(
+    test_api: TestAPI,
+    category_mistmatch_check: Payload,  # pylint: disable=redefined-outer-name
+):
+    dashboard = t.cast(Payload, test_api.fetch_dashboard())
+    assert dashboard == {"id": 1, "name": None, "monitors": []}
+
+    monitor = test_api.create_monitor(check_id=category_mistmatch_check["id"])
+    monitor = t.cast(Payload, monitor)
+
+    test_api.update_monitor(monitor_id=monitor["id"], monitor={"dashboard_id": 1})
+    dashboard = t.cast(Payload, test_api.fetch_dashboard())
+
+    assert len(dashboard["monitors"]) == 1
+    assert dashboard["monitors"][0]["id"] == monitor["id"]
 
 
-@pytest.mark.asyncio
-async def test_update_dashboard(client: TestClient):
-    client.get('/api/v1/dashboards/')
-    response = client.put('/api/v1/dashboards/1', json={'name': 'dashy'})
-    assert response.status_code == 200
+def test_dashboard_removal(test_api: TestAPI):
+    dashboard = t.cast(Payload, test_api.fetch_dashboard())
+    test_api.delete_dashboard(dashboard["id"])
+
+
+def test_dashboard_update(test_api: TestAPI):
+    # NOTE: all needed assertions will be done by "test_api.update_dashboard"
+    dashboard = t.cast(Payload, test_api.fetch_dashboard())
+    test_api.update_dashboard(dashboard_id=dashboard["id"], dashboard={"name": "dashy"})

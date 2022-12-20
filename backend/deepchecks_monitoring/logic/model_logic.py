@@ -188,8 +188,10 @@ async def get_results_for_model_versions_per_window(
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
     task_type = model.task_type
-    is_vision_check = isinstance(dp_check,
-                                 (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
+    is_vision_check = isinstance(
+        dp_check,
+        (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck)
+    )
 
     model_results = {}
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):

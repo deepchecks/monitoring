@@ -11,11 +11,14 @@ import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import IngestionError, ModelVersion
-from tests.common import generate_user
-from tests.conftest import ROWS_PER_MINUTE_LIMIT, send_reference_request
+from tests.common import Payload, TestAPI, generate_user
+from tests.conftest import ROWS_PER_MINUTE_LIMIT
 
 
 async def assert_ingestion_errors_count(num, session):
@@ -24,210 +27,286 @@ async def assert_ingestion_errors_count(num, session):
 
 
 @pytest.mark.asyncio
-async def test_log_data(client: TestClient, classification_model_version_id: int, async_session):
-    request = [{
-        "_dc_sample_id": "a000",
-        "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-        "_dc_prediction": "2",
-        "a": 11.1,
-        "b": "ppppp",
-    }]
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    assert response.status_code == 200
-    await assert_ingestion_errors_count(0, async_session)
-
-
-@pytest.mark.asyncio
-async def test_log_data_without_index(client: TestClient, classification_model_version_id: int, async_session):
-    request = [{
-        "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-        "_dc_prediction": "2",
-        "a": 11.1,
-        "b": "ppppp",
-    }]
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    assert response.status_code == 200
-    await assert_ingestion_errors_count(1, async_session)
-
-
-@pytest.mark.asyncio
-async def test_log_data_missing_columns(client: TestClient, classification_model_version_id: int, async_session):
-    request = [{
-        "_dc_sample_id": "a000",
-        "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat()
-    }]
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    assert response.status_code == 200
-    await assert_ingestion_errors_count(1, async_session)
-
-
-@pytest.mark.asyncio
-async def test_log_data_conflict(client: TestClient, classification_model_version_id: int, async_session):
-    # Arrange
-    request = [{
-        "_dc_sample_id": "a000",
-        "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-        "_dc_prediction": "2",
-        "a": 11.1,
-        "b": "ppppp",
-    }]
-    client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    # Act - log existing index
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    # Assert
-    assert response.status_code == 200
-    await assert_ingestion_errors_count(1, async_session)
-
-
-@pytest.mark.asyncio
-async def test_log_data_different_columns_in_samples(client: TestClient, classification_model_version_id: int,
-                                                     async_session):
-    request = [
-        {
+async def test_log_data(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
             "_dc_sample_id": "a000",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
             "_dc_prediction": "2",
             "a": 11.1,
             "b": "ppppp",
-            "c": 11
-        },
-        {
-            "_dc_sample_id": "a001",
-            "_dc_time": pdl.datetime(2020, 1, 1, 10, 0, 0).isoformat(),
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-            "_dc_prediction": "2",
-            "a": 11.1,
-            "b": "ppppp"
-        }
-    ]
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    assert response.status_code == 200
+        }]
+    )
     await assert_ingestion_errors_count(0, async_session)
 
 
 @pytest.mark.asyncio
-async def test_update_data(client: TestClient, classification_model_version_id: int, async_session):
-    # Arrange
-    request = [
-        {
-            "_dc_sample_id": "a000",
+async def test_log_data_without_index(
+    test_api: TestAPI ,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
             "_dc_prediction": "2",
             "a": 11.1,
             "b": "ppppp",
-            "c": 11
-        }
-    ]
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    assert response.status_code == 200
-    request = [{
-        "_dc_sample_id": "a000",
-        "_dc_label": "1",
-        "c": 0
-    }]
-    # Act
-    response = client.put(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    # Assert
-    assert response.status_code == 200, response.json()
-    await assert_ingestion_errors_count(0, async_session)
-
-
-@pytest.mark.asyncio
-async def test_update_data_not_existing_id(client: TestClient, classification_model_version_id: int, async_session):
-    # Arrange
-    request = [{
-        "_dc_sample_id": "not exists",
-        "_dc_label": "1",
-        "c": 0
-    }]
-    # Act
-    response = client.put(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    # Assert
-    assert response.status_code == 200, response.json()
+        }]
+    )
     await assert_ingestion_errors_count(1, async_session)
 
 
 @pytest.mark.asyncio
-async def test_update_data_no_id_column(client: TestClient, classification_model_version_id: int, async_session):
-    # Arrange
-    request = [{
-        "_dc_label": "1",
-        "c": 0
-    }]
-    # Act
-    response = client.put(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
-    # Assert
-    assert response.status_code == 200, response.json()
+async def test_log_data_missing_columns(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
+            "_dc_sample_id": "a000",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat()
+        }]
+    )
     await assert_ingestion_errors_count(1, async_session)
 
 
-async def test_send_reference_features(client: TestClient, classification_model_version_id: int):
-    # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1", "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
-    # Act
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100)
-    # Assert
-    assert response.status_code == 200
-
-
 @pytest.mark.asyncio
-async def test_send_reference_features_and_labels(client: TestClient, classification_model_version_id: int):
-    # Arrange
-    sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1",
-              "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
-    # Act
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100)
-    # Assert
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_send_reference_features_and_additional_data(client: TestClient, classification_model_version_id: int):
-    # Arrange
-    sample = {"a": 11.1, "b": "ppppp", "c": 42, "_dc_prediction": "1", "_dc_prediction_probabilities": [0.1, 0.3, 0.6]}
-    # Act
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100)
-    # Assert
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-@pytest.mark.skip(reason="takes a long time to run")
-async def test_send_reference_samples_exceed_limit(
-    client: TestClient,
-    classification_model_version_id: int,
+async def test_log_data_conflict(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
 ):
     # Arrange
+    samples = [{
+        "_dc_sample_id": "a000",
+        "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+        "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+        "_dc_prediction": "2",
+        "a": 11.1,
+        "b": "ppppp",
+    }]
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=samples
+    )
+    # Act - log existing index
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=samples
+    )
+    # Assert
+    await assert_ingestion_errors_count(1, async_session)
+
+
+@pytest.mark.asyncio
+async def test_log_data_different_columns_in_samples(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[
+            {
+                "_dc_sample_id": "a000",
+                "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+                "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+                "_dc_prediction": "2",
+                "a": 11.1,
+                "b": "ppppp",
+                "c": 11
+            },
+            {
+                "_dc_sample_id": "a001",
+                "_dc_time": pdl.datetime(2020, 1, 1, 10, 0, 0).isoformat(),
+                "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+                "_dc_prediction": "2",
+                "a": 11.1,
+                "b": "ppppp"
+            }
+        ]
+    )
+    await assert_ingestion_errors_count(0, async_session)
+
+
+@pytest.mark.asyncio
+async def test_update_data(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
+            "_dc_sample_id": "a000",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+            "_dc_prediction": "2",
+            "a": 11.1,
+            "b": "ppppp",
+            "c": 11
+        }]
+    )
+    # Act
+    test_api.update_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
+            "_dc_sample_id": "a000",
+            "_dc_label": "1",
+            "c": 0
+        }]
+    )
+    # Assert
+    await assert_ingestion_errors_count(0, async_session)
+
+
+@pytest.mark.asyncio
+async def test_update_of_not_existing_samples(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    test_api.update_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
+            "_dc_sample_id": "not exists",
+            "_dc_label": "1",
+            "c": 0
+        }]
+    )
+    # Assert
+    await assert_ingestion_errors_count(1, async_session)
+
+
+@pytest.mark.asyncio
+async def test_samples_update_without_providing_samples_id(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{
+            "_dc_sample_id": "first",
+            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+            "_dc_prediction": "2",
+            "a": 11.1,
+            "b": "ppppp",
+            "c": 11
+        }]
+    )
+    # Act
+    test_api.update_samples(
+        model_version_id=classification_model_version["id"],
+        samples=[{"c": 0}]
+    )
+    # Assert
+    await assert_ingestion_errors_count(1, async_session)
+
+
+
+def test_send_reference_features(
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
+    # Act
+    test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[{
+            "a": 11.1,
+            "b": "ppppp",
+            "_dc_prediction": "1",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
+        }] * 100
+    )
+
+
+def test_send_reference_features_and_labels(
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
+    # Act
+    test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[{
+            "_dc_label": "2",
+            "a": 11.1,
+            "b": "ppppp",
+            "_dc_prediction": "1",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
+        }] * 100
+    )
+
+
+def test_send_reference_features_and_additional_data(
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
+    # Act
+    test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[{
+            "a": 11.1, "b": "ppppp", "c": 42,
+            "_dc_prediction": "1",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
+        }] * 100
+    )
+
+
+@pytest.mark.skip(reason="takes a long time to run")
+def test_send_reference_samples_exceed_limit(
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
     sample = {"a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
     # Act
-    response = send_reference_request(client, classification_model_version_id, [sample] * 100_000)
-    assert response.status_code == 200
-
-    response = send_reference_request(client, classification_model_version_id, [sample] * 10)
-    assert response.status_code == 400
+    test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[sample] * 100_000
+    )
+    response = test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[sample] * 10,
+        expected_status=400
+    )
     assert response.json() == {"detail": "Maximum allowed number of reference data samples is already uploaded"}
 
 
-@pytest.mark.asyncio
-async def test_send_reference_too_large(client: TestClient, classification_model_version_id: int):
+def test_send_reference_too_large(
+    client: TestClient,
+    classification_model_version: Payload
+):
     # Act
     response = client.post(
-        f"/api/v1/model-versions/{classification_model_version_id}/reference",
-        headers={"content-length": "500000001"})
-
+        f"/api/v1/model-versions/{classification_model_version['id']}/reference",
+        headers={"content-length": "500000001"}
+    )
     # Assert
     assert response.status_code == 413
 
 
 @pytest.mark.asyncio
-async def test_statistics(client: TestClient, classification_model_version_id: int, async_session):
+async def test_statistics(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    async_session: AsyncSession
+):
     # Arrange
-    request = [
+    samples = [
         {
             "_dc_sample_id": "1",
             "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
@@ -255,10 +334,14 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
     ]
 
     # Act
-    client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
+    test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=samples
+    )
+
     # Assert
-    query = await async_session.execute(select(ModelVersion).where(ModelVersion.id == classification_model_version_id))
-    model_version = query.scalar()
+    model_version = await async_session.get(ModelVersion, classification_model_version["id"])
+
     diff = DeepDiff(model_version.statistics, {
         "a": {"max": 11.1, "min": -1},
         "b": {"values": ["something", "cat"]},
@@ -266,21 +349,27 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         "_dc_label": {"values": []},
         "_dc_prediction": {"values": ["2"]}
     }, ignore_order=True)
+
     assert not diff
 
     # Test update
     # Arrange
-    request = [
+    samples = [
         {
             "_dc_sample_id": "1",
             "_dc_label": "2",
             "c": 100
         }
     ]
+
     # Act
-    client.put(f"/api/v1/model-versions/{classification_model_version_id}/data", json=request)
+    test_api.update_samples(
+        model_version_id=classification_model_version["id"],
+        samples=samples
+    )
 
     await async_session.refresh(model_version)
+
     diff = DeepDiff(model_version.statistics, {
         "a": {"max": 11.1, "min": -1},
         "b": {"values": ["something", "cat"]},
@@ -288,13 +377,20 @@ async def test_statistics(client: TestClient, classification_model_version_id: i
         "_dc_label": {"values": ["2"]},
         "_dc_prediction": {"values": ["2"]}
     }, ignore_order=True)
+
     assert not diff
 
 
 @pytest.mark.asyncio
-async def test_log_data_exceeding_rate(client: TestClient, classification_model_version_id: int, async_session,
-                                       user, settings, classification_vision_model_version_id):
-    # Arrange
+async def test_log_data_exceeding_rate(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    classification_vision_model_version: Payload,
+    async_session: AsyncSession,
+    user: User,
+    settings: Settings,
+):
+    # == Arrange
     samples = [{
         "_dc_sample_id": str(i),
         "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
@@ -303,29 +399,45 @@ async def test_log_data_exceeding_rate(client: TestClient, classification_model_
         "b": "ppppp",
     } for i in range(ROWS_PER_MINUTE_LIMIT + 1)]
 
-    # Act
-    response = client.post(f"/api/v1/model-versions/{classification_model_version_id}/data", json=samples)
+    # == Act
+    response = test_api.upload_samples(
+        model_version_id=classification_model_version["id"],
+        samples=samples,
+        expected_status=413
+    )
 
-    # Assert
-    assert response.status_code == 413
-    assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute. "
-                                         "1000 first rows were received", "num_saved": ROWS_PER_MINUTE_LIMIT}
-    model_version = (await async_session.execute(select(ModelVersion)
-                                                 .where(ModelVersion.id == classification_model_version_id))).scalar()
-    monitor_table_name = model_version.get_monitor_table_name()
-    count = (await async_session.execute(select(func.count()).select_from(text(monitor_table_name)))).scalar()
+    # == Assert
+    assert response.json() == {
+        "num_saved": ROWS_PER_MINUTE_LIMIT,
+        "detail": (
+            f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute. "
+            "1000 first rows were received"
+        )
+    }
+
+    model_version = await async_session.get(ModelVersion, classification_model_version["id"])
+    monitor_table = model_version.get_monitor_table(async_session)
+    count = await async_session.scalar(select(func.count()).select_from(monitor_table))
+
     assert count == ROWS_PER_MINUTE_LIMIT
 
     # Test a second user in same organization is affected by it, on different model
-    # Arrange
-    user = await generate_user(async_session, organization_id=user.organization_id,
-                               auth_jwt_secret=settings.auth_jwt_secret)
-    client.headers["Authorization"] = f"Bearer {user.access_token}"
-    any_data = [{"_dc_sample_id": "1"}]
+    # == Arrange
+    user = await generate_user(
+        async_session,
+        organization_id=user.organization_id,
+        auth_jwt_secret=settings.auth_jwt_secret
+    )
 
-    # Act
-    response = client.post(f"/api/v1/model-versions/{classification_vision_model_version_id}/data", json=any_data)
-    # Assert response is exceeded
-    assert response.status_code == 413
-    assert response.json() == {"detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute",
-                               "num_saved": 0}
+    with test_api.reauthorize(token=str(user.access_token)):
+        # == Act
+        response = test_api.upload_samples(
+            model_version_id=classification_vision_model_version["id"],
+            samples=[{"_dc_sample_id": "1"}],
+            expected_status=413
+        )
+        # == Assert
+        assert response.json() == {
+            "detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute",
+            "num_saved": 0
+        }

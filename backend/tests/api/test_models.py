@@ -11,7 +11,6 @@ import typing as t
 
 import pendulum as pdl
 import pytest
-import randomname
 import sqlalchemy as sa
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
@@ -19,46 +18,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
-from tests.conftest import add_alert, add_alert_rule, add_check, add_model, add_model_version, add_monitor
+from tests.common import ModelIdentifiersPair, Payload, TestAPI, create_alert
 
 
-@pytest.mark.asyncio
-async def test_add_model(client: TestClient):
-    response = client.post("/api/v1/models",
-                           json={"name": "44", "task_type": "multiclass", "alerts_delay_labels_ratio": 0.5,
-                                 "alerts_delay_seconds": 60})
-    assert response.status_code == 200
-    assert response.json() == {"id": 1}
-
-    response = client.get("/api/v1/models")
-    assert response.status_code == 200
-    resp_json = response.json()
-    assert resp_json[0] == {"id": 1, "name": "44", "task_type": "multiclass", "description": None,
-                            "alerts_count": 0, "latest_time": None, "alerts_delay_labels_ratio": 0.5,
-                            "alerts_delay_seconds": 60}
+def test_model_creation(test_api: TestAPI):
+    payload = test_api.data_generator.generate_random_model()
+    model = t.cast(Payload, test_api.create_model(model=payload))
+    assert model == {"id": 1, **payload}
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
-async def test_get_columns_model(
-    classification_model_id: int,
-    classification_model_version_id: int,
-    client: TestClient,
-    async_session: AsyncSession,
+def test_model_columns_retrieval_with_model_that_has_versions(
+    test_api: TestAPI,
+    classification_model: Payload,
+    classification_model_version: Payload,  # pylint: disable=unused-argument
     identifier_kind: str
 ):
-    if identifier_kind == "by-name":
-        model = await async_session.get(Model, classification_model_id)
-        response = client.get(f"/api/v1/models/{model.name}/columns", params={"identifier_kind": "name"})
-    else:
-        response = client.get(f"/api/v1/models/{classification_model_id}/columns")
-
-    assert classification_model_version_id == 1
-    assert response.status_code == 200
-
+    columns = test_api.fetch_model_columns(
+        model_identifier=t.cast(ModelIdentifiersPair, classification_model),
+        identifier_kind=identifier_kind
+    )
     diff = DeepDiff(
         ignore_order=True,
-        t1=response.json(),
+        t1=t.cast(Payload, columns),
         t2={
             "a": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}},
             "b": {"type": "categorical", "stats": {"max": None, "min": None, "values": []}},
@@ -69,115 +51,150 @@ async def test_get_columns_model(
     assert not diff
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
-async def test_get_columns_model_without_versions(
-    classification_model_id: int,
-    client: TestClient,
-    async_session: AsyncSession,
+def test_model_columns_retrieval_with_model_that_does_not_have_versions(
+    test_api: TestAPI,
+    classification_model: Payload,
     identifier_kind: str,
 ):
-    if identifier_kind == "by-name":
-        model = await async_session.get(Model, classification_model_id)
-        response = client.get(f"/api/v1/models/{model.name}/columns", params={"identifier_kind": "name"})
-    else:
-        response = client.get(f"/api/v1/models/{classification_model_id}/columns")
-
-    assert response.status_code == 200, (response.reason, response.json())
-    assert response.json() == {}
+    columns = test_api.fetch_model_columns(
+        model_identifier=t.cast(ModelIdentifiersPair, classification_model),
+        identifier_kind=identifier_kind
+    )
+    assert len(t.cast(Payload, columns)) == 0
 
 
 @pytest.mark.asyncio
-async def test_get_models(classification_model_check_id, regression_model_check_id, client: TestClient, async_session):
+async def test_models_retrieval(
+    test_api: TestAPI,
+    classification_model_check: Payload,
+    regression_model_check: Payload,
+    async_session: AsyncSession
+):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    monitor_id_2 = add_monitor(regression_model_check_id, client)
+    monitors = t.cast(t.List[Payload], [
+        test_api.create_monitor(check_id=classification_model_check["id"]),
+        test_api.create_monitor(check_id=regression_model_check["id"])
+    ])
+    alert_rules = t.cast(t.List[Payload], [
+        test_api.create_alert_rule(monitor_id=monitors[0]["id"]),
+        test_api.create_alert_rule(monitor_id=monitors[1]["id"]),
+        test_api.create_alert_rule(
+            monitor_id=monitors[1]["id"],
+            alert_rule={"alert_severity": AlertSeverity.HIGH.value}
+        ),
+    ])
 
-    alert_rule_id = add_alert_rule(monitor_id, client, name=randomname.get_name())
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session, resolved=False)
-
-    alert_rule_id = add_alert_rule(monitor_id_2, client, name=randomname.get_name())
-    add_alert(alert_rule_id, async_session, resolved=False)
-    add_alert(alert_rule_id, async_session, resolved=False)
-
-    alert_rule_id = add_alert_rule(
-        monitor_id_2,
-        client,
-        alert_severity=AlertSeverity.HIGH.value,
-        name=randomname.get_name()
-    )
-    add_alert(alert_rule_id, async_session, resolved=False)
+    create_alert(alert_rules[0]["id"], async_session)
+    create_alert(alert_rules[0]["id"], async_session)
+    create_alert(alert_rules[0]["id"], async_session, resolved=False)
+    #
+    create_alert(alert_rules[1]["id"], async_session, resolved=False)
+    create_alert(alert_rules[1]["id"], async_session, resolved=False)
+    #
+    create_alert(alert_rules[2]["id"], async_session, resolved=False)
 
     await async_session.commit()
+
     # Act
-    response = client.get("/api/v1/models")
+    models = t.cast(t.List[Payload], test_api.fetch_models())
+
     # Assert
-    assert response.status_code == 200
-    assert response.json() == [
-        {"id": 1, "name": "classification model", "description": "test", "task_type": "multiclass",
-         "alerts_count": 1, "latest_time": None, "alerts_delay_labels_ratio": 0.0, "alerts_delay_seconds": 0},
-        {"id": 2, "name": "regression model", "description": "test", "task_type": "regression",
-         "alerts_count": 3, "latest_time": None, "alerts_delay_labels_ratio": 0.0, "alerts_delay_seconds": 0}
+    assert models == [
+        {
+            "id": 1,
+            "name": "Classification Model",
+            "description": "test",
+            "task_type": "multiclass",
+            "alerts_count": 1,
+            "latest_time": None,
+            "alerts_delay_labels_ratio": 0.0,
+            "alerts_delay_seconds": 0
+        },
+        {
+            "id": 2,
+            "name": "Regression Model",
+            "description": "test",
+            "task_type": "regression",
+            "alerts_count": 3,
+            "latest_time": None,
+            "alerts_delay_labels_ratio": 0.0,
+            "alerts_delay_seconds": 0
+        }
     ]
 
 
 @pytest.mark.asyncio
-async def test_get_models_latest_time(classification_model_id, client: TestClient, async_session):
+async def test_models_retrieval_output_correctness(
+    test_api: TestAPI,
+    classification_model: Payload,
+    async_session: AsyncSession
+):
+    """Verify that 'model-retrieval' endpoint returns correct 'latest_time' value."""
     # Arrange
     time = pdl.now()
-    async_session.add(ModelVersion(name="a", end_time=time.subtract(days=1), model_id=classification_model_id,))
-    async_session.add(ModelVersion(name="b", end_time=time, model_id=classification_model_id))
-    async_session.add(ModelVersion(name="c", end_time=time.subtract(days=2), model_id=classification_model_id))
+    async_session.add(ModelVersion(name="a", end_time=time.subtract(days=1), model_id=classification_model["id"]))
+    async_session.add(ModelVersion(name="b", end_time=time, model_id=classification_model["id"]))
+    async_session.add(ModelVersion(name="c", end_time=time.subtract(days=2), model_id=classification_model["id"]))
     await async_session.commit()
+
     # Act
-    response = client.get("/api/v1/models")
+    models = t.cast(t.List[Payload], test_api.fetch_models())
+
     # Assert
-    assert response.status_code == 200
-    assert response.json() == [
-        {"id": 1, "name": "classification model", "description": "test", "task_type": "multiclass",
-         "alerts_count": 0, "latest_time": time.int_timestamp, "alerts_delay_labels_ratio": 0.0,
-         "alerts_delay_seconds": 0},
-    ]
+    assert models == [{
+        "id": 1,
+        "name": "Classification Model",
+        "description": "test",
+        "task_type": "multiclass",
+        "alerts_count": 0,
+        "latest_time": time.int_timestamp,
+        "alerts_delay_labels_ratio": 0.0,
+        "alerts_delay_seconds": 0
+    }]
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
 async def test_model_deletion(
-    client: TestClient,
+    test_api: TestAPI,
     async_session: AsyncSession,
     identifier_kind: str
 ):
-    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
-    version_id = t.cast(int, add_model_version(model_id, client))
-    check_id = t.cast(int, add_check(model_id, client))
-    monitor_id = t.cast(int, add_monitor(check_id, client))
-    alert_rule_id = t.cast(int, add_alert_rule(monitor_id, client))
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    version = t.cast(Payload, test_api.create_model_version(model_id=model["id"]))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+    alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
 
-    monitor_table_name = f"model_{model_id}_monitor_data_{version_id}"
-    reference_table_name = f"model_{model_id}_ref_data_{version_id}"
+    monitor_table_name = f"model_{model['id']}_monitor_data_{version['id']}"
+    reference_table_name = f"model_{model['id']}_ref_data_{version['id']}"
 
     assert (await async_session.scalar(TableExists, params={"name": monitor_table_name})) is True
     assert (await async_session.scalar(TableExists, params={"name": reference_table_name})) is True
 
-    if identifier_kind == "by-name":
-        model = await async_session.get(Model, model_id)
-        response = client.delete(f"/api/v1/models/{model.name}", params={"identifier_kind": "name"})
-    else:
-        response = client.delete(f"/api/v1/models/{model_id}")
-
-    assert response.status_code == 200, (response.reason, response.json())
+    test_api.delete_model(
+        model_identifier=t.cast(ModelIdentifiersPair, model),
+        identifier_kind=identifier_kind
+    )
 
     async_session.expire_all()
-    assert (await async_session.get(Model, model_id)) is None
-    assert (await async_session.get(ModelVersion, version_id)) is None
-    assert (await async_session.get(Check, check_id)) is None
-    assert (await async_session.get(Monitor, monitor_id)) is None
-    assert (await async_session.get(AlertRule, alert_rule_id)) is None
+    assert (await async_session.get(Model, model["id"])) is None
+    assert (await async_session.get(ModelVersion, version["id"])) is None
+    assert (await async_session.get(Check, check["id"])) is None
+    assert (await async_session.get(Monitor, monitor["id"])) is None
+    assert (await async_session.get(AlertRule, alert_rule["id"])) is None
 
     assert (await async_session.scalar(TableExists, params={"name": monitor_table_name})) is False
     assert (await async_session.scalar(TableExists, params={"name": reference_table_name})) is False
+
+
+def test_get_models_statistics_no_models(client: TestClient):
+    # Act
+    response = client.get("/api/v1/models/data-ingestion")
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == {}
 
 
 TableExists = sa.text(
@@ -188,12 +205,3 @@ TableExists = sa.text(
         "LIMIT 1"
     ")"
 ).bindparams(sa.bindparam(key="name", type_=sa.String))
-
-
-@pytest.mark.asyncio
-async def test_get_models_statistics_no_models(client: TestClient):
-    # Act
-    response = client.get("/api/v1/models/data-ingestion")
-    # Assert
-    assert response.status_code == 200
-    assert response.json() == {}

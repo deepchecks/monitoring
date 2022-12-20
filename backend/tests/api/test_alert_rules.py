@@ -7,155 +7,151 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import typing as t
+
 import pytest
-from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
-from tests.conftest import add_alert, add_alert_rule, add_monitor
+from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
+from tests.common import TestAPI, create_alert
 
-
-@pytest.mark.asyncio
-async def test_add_alert_rule_no_feature(classification_model_check_id, client: TestClient):
-    # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    request = {
-        "condition": {
-            "operator": "greater_than",
-            "value": 100
-        },
-        "alert_severity": "low"
-    }
-    # Act
-    response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=request)
-    # Assert
-    assert response.status_code == 200
-    assert response.json()["id"] == 1
+as_dict = lambda v: t.cast(t.Dict[str, t.Any], v)
 
 
-@pytest.mark.asyncio
-async def test_add_alert_rule_with_feature(classification_model_check_id, client: TestClient):
-    # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    request = {
-        "condition": {
-            "operator": "greater_than",
-            "value": 100,
-        },
-        "alert_severity": "low"
-    }
-    # Act
-    response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=request)
-    # Assert
-    assert response.status_code == 200
-    assert response.json()["id"] == 1
-
-
-@pytest.mark.asyncio
-async def test_get_alert_rule(classification_model_check_id, client: TestClient):
-    # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client)
-    # Act
-    response = client.get(f"/api/v1/alert-rules/{alert_rule_id}")
-    assert response.json() == {
-        "id": 1,
-        "monitor_id": 1,
-        "condition": {"operator": "greater_than", "value": 100.0},
-        "alert_severity": "low",
-        "is_active": True
-    }
-
-
-@pytest.mark.asyncio
-async def test_remove_alert_rule(classification_model_check_id, client: TestClient):
-    # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client)
-    # Act
-    response = client.delete(f"/api/v1/alert-rules/{alert_rule_id}")
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_update_alert_rule(classification_model_check_id, client: TestClient):
-    # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client)
-    request = {
-        "condition": {"operator": "greater_than", "value": -0.1}
-    }
-    # Act
-    response = client.put(f"/api/v1/alert-rules/{alert_rule_id}", json=request)
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_count_alert_rule(
-    classification_model_check_id,
-    regression_model_check_id,
-    client: TestClient
+def test_alert_rule_creation(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any]
 ):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    add_alert_rule(monitor_id, client)
-    add_alert_rule(monitor_id, client)
-    monitor_id = add_monitor(regression_model_check_id, client)
-    add_alert_rule(monitor_id, client)
+    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
+
     # Act
-    response = client.get("/api/v1/alert-rules/count")
-    assert response.status_code == 200
-    assert response.json()[AlertSeverity.LOW.value] == 3
+    payload = test_api.data_generator.generate_random_alert_rule()
+    rule = as_dict(test_api.create_alert_rule(monitor_id=monitor["id"], alert_rule=payload))
+
+    # Assert
+    assert rule == {"id": 1, "monitor_id": monitor["id"], **payload}
 
 
-@pytest.mark.asyncio
-async def test_count_single_model(
-    classification_model_check_id,
-    regression_model_check_id,
-    client: TestClient
+def test_alert_rule_deletion(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any]
 ):
     # Arrange
-    monitor_id_1 = add_monitor(classification_model_check_id, client)
-    add_alert_rule(monitor_id_1, client)
-    add_alert_rule(monitor_id_1, client)
-    add_alert_rule(monitor_id_1, client)
-
-    monitor_id_2 = add_monitor(regression_model_check_id, client)
-    add_alert_rule(monitor_id_2, client)
+    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
+    rule = as_dict(test_api.create_alert_rule(monitor_id=monitor["id"]))
 
     # Act
-    response = client.get(f"/api/v1/models/{monitor_id_1}/alert-rules/count")
+    test_api.delete_alert_rule(rule["id"])
 
-    # Assert
-    assert response.status_code == 200
-    assert response.json()[AlertSeverity.LOW.value] == 3
+
+def test_alert_rule_update(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+):
+    # Arrange
+    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
+    rule = as_dict(test_api.create_alert_rule(monitor_id=monitor["id"]))
 
     # Act
-    response = client.get(f"/api/v1/models/{monitor_id_2}/alert-rules/count")
+    test_api.update_alert_rule(
+        alert_rule_id=rule["id"],
+        alert_rule={"condition": {"operator": "greater_than", "value": -0.1}}
+    )
+
+
+def test_alert_rules_count(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+    regression_model_check: t.Dict[str, t.Any],
+):
+    # Arrange
+    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
+    test_api.create_alert_rule(monitor_id=monitor["id"])
+    test_api.create_alert_rule(monitor_id=monitor["id"])
+    # ---
+    monitor = as_dict(test_api.create_monitor(regression_model_check["id"]))
+    test_api.create_alert_rule(monitor_id=monitor["id"])
+
+    # Act
+    data = as_dict(test_api.fetch_alert_rules_count())
 
     # Assert
-    assert response.status_code == 200
-    assert response.json()[AlertSeverity.LOW.value] == 1
+    assert sum(data.values()) == 3
+
+
+def test_alert_rules_count_for_single_model(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+    regression_model_check: t.Dict[str, t.Any],
+):
+    # Arrange
+    monitor = as_dict(test_api.create_monitor(
+        classification_model_check["id"]
+    ))
+    test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={"alert_severity": AlertSeverity.LOW.value}
+    )
+    test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={"alert_severity": AlertSeverity.LOW.value}
+    )
+    # ---
+    monitor = as_dict(test_api.create_monitor(
+        regression_model_check["id"]
+    ))
+    test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={"alert_severity": AlertSeverity.LOW.value}
+    )
+
+    # Act/Assert
+    data = as_dict(test_api.fetch_alert_rules_count(classification_model_check["id"]))
+    assert data[AlertSeverity.LOW.value] == 2
+    data = as_dict(test_api.fetch_alert_rules_count(regression_model_check["id"]))
+    assert data[AlertSeverity.LOW.value] == 1
 
 
 @pytest.mark.asyncio
-async def test_get_alert_rules(classification_model_check_id, client: TestClient, async_session):
+async def test_get_alert_rules(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+    async_session: AsyncSession
+):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
+    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
 
-    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.LOW.value)
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session, resolved=False)
-    alert_rule_id = add_alert_rule(monitor_id, client, alert_severity=AlertSeverity.MID.value)
-    add_alert(alert_rule_id, async_session)
-    add_alert(alert_rule_id, async_session, resolved=False)
-    add_alert(alert_rule_id, async_session, resolved=False)
+    alert_rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={
+            "alert_severity": AlertSeverity.LOW.value,
+            "condition": {"operator": "greater_than", "value": 100.0},
+        }
+    ))
+    create_alert(alert_rule["id"], async_session)
+    create_alert(alert_rule["id"], async_session)
+    create_alert(alert_rule["id"], async_session, resolved=False)
+
+    alert_rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={
+            "alert_severity": AlertSeverity.MID.value,
+            "condition": {"operator": "greater_than", "value": 100.0},
+        }
+    ))
+    create_alert(alert_rule["id"], async_session)
+    create_alert(alert_rule["id"], async_session, resolved=False)
+    create_alert(alert_rule["id"], async_session, resolved=False)
+
     await async_session.commit()
+
     # Act
-    response = client.get("/api/v1/alert-rules")
+    rules = test_api.fetch_alert_rules()
+    rules = t.cast(t.List[t.Dict[str, t.Any]], rules)
+
     # Assert
-    assert response.status_code == 200
-    assert response.json() == [
+    assert rules == [
         {
             "id": 2,
             "monitor_id": 1,
@@ -180,65 +176,65 @@ async def test_get_alert_rules(classification_model_check_id, client: TestClient
 
 
 @pytest.mark.asyncio
-async def test_get_all_alerts_of_alert_rule(classification_model_check_id, client: TestClient, async_session):
+async def test_alerts_retrieval(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+    async_session: AsyncSession
+):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(
-        monitor_id,
-        client,
-        alert_severity=AlertSeverity.LOW.value,
-    )
+    monitor = as_dict(test_api.create_monitor(check_id=classification_model_check["id"]))
+    rule = as_dict(test_api.create_alert_rule(monitor_id=monitor["id"]))
 
-    add_alert(alert_rule_id, async_session, resolved=False)
-    add_alert(alert_rule_id, async_session, resolved=False)
-    add_alert(alert_rule_id, async_session, resolved=False)
+    create_alert(rule["id"], async_session, resolved=False)
+    create_alert(rule["id"], async_session, resolved=False)
+    create_alert(rule["id"], async_session, resolved=False)
     await async_session.commit()
 
     # Act
-    response = client.get(f"/api/v1/alert-rules/{alert_rule_id}/alerts")
-    assert len(response.json()) == 3, response.json()
+    data = t.cast(t.List[t.Dict[str, t.Any]], test_api.fetch_alerts(rule["id"]))
+    assert len(data) == 3, data
 
 
 @pytest.mark.asyncio
-async def test_resolve_all_alerts_of_alert_rule(classification_model_check_id, client: TestClient, async_session):
+async def test_alerts_resolution(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+    async_session: AsyncSession
+):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(
-        monitor_id,
-        client,
-        alert_severity=AlertSeverity.LOW.value,
-    )
+    monitor = as_dict(test_api.create_monitor(check_id=classification_model_check["id"]))
 
-    alert1 = add_alert(alert_rule_id, async_session, resolved=False)
-    alert2 = add_alert(alert_rule_id, async_session, resolved=False)
-    alert3 = add_alert(alert_rule_id, async_session, resolved=False)
+    rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={"alert_severity": AlertSeverity.LOW.value}
+    ))
+
+    for _ in range(3):
+        create_alert(rule["id"], async_session, resolved=False)
+
     await async_session.commit()
 
-    # Act
-    response = client.post(f"/api/v1/alert-rules/{alert_rule_id}/resolve-all")
-
-    # Assert
-    assert response.status_code == 200
-    await async_session.refresh(alert1)
-    await async_session.refresh(alert2)
-    await async_session.refresh(alert3)
-    assert alert1.resolved is True
-    assert alert2.resolved is True
-    assert alert3.resolved is True
+    # Act/Assert
+    test_api.resolve_alerts(alert_rule_id=rule["id"])
 
 
-@pytest.mark.asyncio
-async def test_reactivate_alert_rule(classification_model_check_id, client: TestClient, async_session):
+def test_alert_rule_activation(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any]
+):
     # Arrange
-    monitor_id = add_monitor(classification_model_check_id, client)
-    alert_rule_id = add_alert_rule(monitor_id, client, is_active=False)
-    alert_rule = (await AlertRule.filter_by(async_session, id=alert_rule_id)).scalar()
+    monitor = as_dict(test_api.create_monitor(check_id=classification_model_check["id"]))
 
-    request = {
-        "is_active": True
-    }
+    rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={"is_active": False}
+    ))
+
     # Act
-    client.put(f"/api/v1/alert-rules/{alert_rule_id}", json=request)
+    updated_tule = as_dict(test_api.update_alert_rule(
+        alert_rule_id=rule["id"],
+        alert_rule={"is_active": True}
+    ))
+
     # Assert
-    await async_session.refresh(alert_rule)
-    assert alert_rule.is_active is True
+    assert updated_tule["is_active"] is True

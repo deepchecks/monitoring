@@ -1,21 +1,30 @@
+import contextlib
 import random
+import string
 import typing as t
 
 import faker
 import httpx
+import pandas as pd
+import pendulum as pdl
 from deepchecks.tabular.checks import TrainTestPerformance
-from fastapi.testclient import TestClient
+from deepchecks_client.core.api import API
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from deepchecks_monitoring.public_models import AlertSeverity, Organization, User, UserOAuthDTO
+from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
+from deepchecks_monitoring.public_models import Alert, AlertSeverity, ColumnType, Organization, User, UserOAuthDTO
+from deepchecks_monitoring.schema_models import TaskType
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 
-__all__ = ["generate_user"]
+if t.TYPE_CHECKING:
+    from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
+
+__all__ = ["generate_user", "DataGenerator", "TestAPI", "create_alert", "upload_classification_data"]
 
 
 async def generate_user(
     session: AsyncSession,
-    auth_jwt_secret: str = "qwert",
+    auth_jwt_secret: str,
     with_org: bool = True,
     switch_schema: bool = False,
     eula: bool = True,
@@ -61,192 +70,1334 @@ async def generate_user(
 
 # TODO: use deepchecks client for this
 
-def create_check(
-    client: TestClient,
-    model_id: int,
-    expected_status: int = 200,
-    payload: t.Optional[t.Dict[t.Any, t.Any]] = None
-) -> t.Union[httpx.Response, int]:
-    if not payload:
-        f = faker.Faker()
-        payload = {
-            "name": f.name(),
-            "config": TrainTestPerformance().config()
+
+class DataGenerator:
+    """Data and domain entities generation utility."""
+
+    def __init__(self):
+        self.faker = faker.Faker()
+
+    def generate_random_condition(self) -> "Payload":
+        return {
+            "operator": random.choice(list(OperatorsEnum)).value,
+            "value": random.randint(-10, 10)
         }
 
-    response = client.post(f"/api/v1/models/{model_id}/checks", json=payload)
+    def generate_random_model(self) -> "Payload":
+        return {
+            "name": self.faker.name(),
+            "task_type": random.choice(list(TaskType)).value,
+            "description": self.faker.text(),
+            "alerts_delay_labels_ratio": 0,
+            "alerts_delay_seconds": 0
+        }
 
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
-        return response
+    def generate_random_check(self) -> "Payload":
+        return {
+            "name": self.faker.name(),
+            "config": TrainTestPerformance().config(include_version=False)  # TODO:
+        }
 
-    assert response.status_code == expected_status, (response.content, response.status_code)
-
-    data = response.json()
-    assert isinstance(data, list)
-    assert isinstance(data[0], dict)
-    assert "id" in data[0]
-    return data[0]["id"]
-
-
-def create_monitor(
-    client: TestClient,
-    check_id: int,
-    expected_status: int = 200,
-    payload: t.Optional[t.Dict[t.Any, t.Any]] = None
-) -> t.Union[httpx.Response, int]:
-    if not payload:
-        f = faker.Faker()
-        payload = {
-            "name": f.name(),
-            "lookback": 1200,
-            "description": f.text(),
+    def generate_random_monitor(self) -> "Payload":
+        return {
+            "name": self.faker.name(),
+            "lookback": random.choice([TimeUnit.WEEK, TimeUnit.WEEK * 2, TimeUnit.WEEK * 3]),
+            "description": self.faker.text(),
             "dashboard_id": None,
-            "data_filters": None,
+            "data_filters": None,  # TODO:
             "additional_kwargs": None,
-            "aggregation_window": 100,
-            "frequency": 300,
+            "aggregation_window": random.choice([TimeUnit.HOUR, TimeUnit.HOUR * 12, TimeUnit.DAY]),
+            "frequency": random.choice([TimeUnit.DAY, TimeUnit.DAY * 4, TimeUnit.WEEK]),
         }
 
-    response = client.post(f"/api/v1/checks/{check_id}/monitors", json=payload)
+    def generate_random_alert_rule(self) -> "Payload":
+        return {
+            "condition": self.generate_random_condition(),
+            "alert_severity": random.choice(["low", "mid", "high", "critical"]),
+            "is_active": True
+        }
 
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
+    def generate_random_features(self, n_of_features):
+        column_types = [
+            ColumnType.BOOLEAN,
+            ColumnType.CATEGORICAL,
+            ColumnType.NUMERIC,
+            ColumnType.TEXT,
+            ColumnType.INTEGER,
+        ]
+        return dict(
+            (
+                random_string(),
+                random.choice(column_types)
+            )
+            for _ in range(n_of_features)
+        )
+
+    def generate_random_standart_webhook(self):
+        return {
+            "kind": "STANDART",
+            "name": self.faker.name(),
+            "description": self.faker.text(),
+            "http_url": "https://httpbin.org",
+            "http_method": random.choice(["GET", "POST"]),
+            "http_headers": {"X-value": "Hello world"},
+            "notification_levels": [
+                random.choice(list(AlertSeverity)).value
+                for _ in range(len(AlertSeverity))
+            ],
+        }
+
+
+class ExpectedHttpStatus:
+    """Utility class to assert response status."""
+
+
+    @classmethod
+    def create(cls, expected_status: "ExpectedStatus"):
+        return (
+            expected_status
+            if isinstance(expected_status, ExpectedHttpStatus)
+            else cls(expected_status)
+        )
+
+    def __init__(
+        self,
+        status: t.Union[t.Tuple[int, int], int] = (200, 299)
+    ):
+        if isinstance(status, int):
+            self.left = status
+            self.right = status
+
+        elif isinstance(status, (tuple, list)):
+            if len(status) != 2:
+                raise ValueError("Incorrect http status")
+
+            l, r = status
+
+            if l > r:
+                raise ValueError("Incorrect http status")
+            if l < 100 or r > 599:
+                raise ValueError("Incorrect http status")
+
+            self.left = l
+            self.right = r
+
+        else:
+            raise TypeError(
+                f"Unexpected type of http status - {type(status)}"
+            )
+
+    def assert_response_status(self, response: httpx.Response) -> httpx.Response:
+        r = self.left <= response.status_code <= self.right
+        assert r, (response.reason_phrase, response.status_code)
         return response
 
-    assert response.status_code == expected_status, (response.content, response.status_code)
+    def is_positive(self) -> bool:
+        return self.left >= 200 and self.right <= 299
 
-    data = response.json()
-    assert isinstance(data, dict)
-    assert "id" in data
-    return data["id"]
+    def is_negative(self) -> bool:
+        return not self.is_positive()
 
 
-def create_alert_rule(
-    client: TestClient,
-    monitor_id: int,
-    expected_status: int = 200,
-    payload: t.Optional[t.Dict[t.Any, t.Any]] = None
-) -> t.Union[httpx.Response, int]:
-    f = faker.Faker()
+ExpectedStatus = t.Union[int, t.Tuple[int, int], ExpectedHttpStatus]
+Payload = t.Dict[str, t.Any]
 
-    default_payload = {
-        "condition": {"value": 5.0, "operator": "equals"},
-        "alert_severity": random.choice(["low", "mid", "high", "critical"]),
-        "name": f.name()
-    }
-    payload = (
-        default_payload
-        if not payload else
-        {**default_payload, **payload}
+class ModelIdentifiersPair(t.TypedDict):
+    """Represents a model identifier choose."""
+
+    id: int
+    name: str
+
+class TestAPI:
+    """Utility class to test HTTP API."""
+
+    def __init__(self, api: API):
+        self.api = api
+        self.data_generator = DataGenerator()
+
+    @contextlib.contextmanager
+    def reauthorize(self, token: str):
+        current_token = self.api.session.headers["Authorization"]
+        self.api.session.headers["Authorization"] = f"Bearer {token}"
+        yield self
+        self.api.session.headers["Authorization"] = current_token
+
+    def create_model(
+        self,
+        model: t.Optional[Payload] = None,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        generated_payload = self.data_generator.generate_random_model()
+
+        model = (
+            {**generated_payload, **model}
+            if model is not None
+            else generated_payload
+        )
+
+        response = self.api.create_model(model, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data
+
+        return self.fetch_model(data["id"])
+
+    def delete_model(
+        self,
+        model_identifier: t.Union[str, int, ModelIdentifiersPair],
+        identifier_kind: str = "by-id",
+        expected_status: ExpectedStatus  = (200, 299)
+    ):
+        if identifier_kind == "by-id":
+            identifier = (
+                t.cast(int, model_identifier)
+                if not isinstance(model_identifier, dict)
+                else model_identifier["id"]
+            )
+            response = self.api.delete_model_by_id(identifier, raise_on_status=False)
+        elif identifier_kind == "by-name":
+            name = t.cast(str, model_identifier) if not isinstance(model_identifier, dict) else model_identifier["name"]
+            response = self.api.delete_model_by_name(name, raise_on_status=False)
+        else:
+            raise ValueError("Unknown identifier_kind value")
+
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        self.fetch_model(
+            model_identifier=model_identifier,
+            identifier_kind=identifier_kind,
+            expected_status=404
+        )
+
+    def fetch_model(
+        self,
+        model_identifier: t.Union[str, int, ModelIdentifiersPair],
+        identifier_kind: str = "by-id",
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        if identifier_kind == "by-id":
+            identifier = (
+                int(model_identifier)
+                if not isinstance(model_identifier, dict)
+                else model_identifier["id"]
+            )
+            response = self.api.fetch_model_by_id(identifier, raise_on_status=False)
+        elif identifier_kind == "by-name":
+            name = str(model_identifier) if not isinstance(model_identifier, dict) else model_identifier["name"]
+            response = self.api.fetch_model_by_name(name, raise_on_status=False)
+        else:
+            raise ValueError("Unknown identifier_kind value")
+
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        return self.assert_model_record(response.json())
+
+    @classmethod
+    def assert_model_record(cls, data) -> Payload:
+        assert isinstance(data, dict)
+        assert "id" in data and isinstance(data["id"], int)
+        assert "name" in data and isinstance(data["name"], str)
+        assert "description" in data
+        assert "task_type" in data
+        return data
+
+    def fetch_models(
+        self,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_models(raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+        return [self.assert_model_record(it) for it in data]
+
+    def fetch_model_columns(
+        self,
+        model_identifier: t.Union[str, int, ModelIdentifiersPair],
+        identifier_kind: str = "by-id",
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        if identifier_kind == "by-id":
+            identifier = (
+                int(model_identifier)
+                if not isinstance(model_identifier, dict)
+                else model_identifier["id"]
+            )
+            response = self.api.session.get(f"models/{identifier}/columns")
+        elif identifier_kind == "by-name":
+            name = str(model_identifier) if not isinstance(model_identifier, dict) else model_identifier["name"]
+            response = self.api.session.get(f"models/{name}/columns", params={"identifier_kind": "name"})
+        else:
+            raise ValueError("Unknown identifier_kind value")
+
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+
+        for v in data.values():
+            assert isinstance(v, dict)
+            assert "type" in v
+            assert "stats" in v
+
+        return data
+
+    def create_check(
+        self,
+        model_id: int,
+        check: t.Optional[Payload] = None,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        generated_payload = self.data_generator.generate_random_check()
+
+        check = (
+            {**generated_payload, **check}
+            if check is not None
+            else generated_payload
+        )
+
+        response = self.api.create_checks(model_id=model_id, checks=[check], raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+        assert isinstance(data[0], dict)
+        assert "id" in data[0]
+
+        checks = self.fetch_all_models_checks(model_id=model_id)
+        checks = t.cast(t.List[Payload], checks)
+
+        for it in checks:
+            if it["id"] == data[0]["id"]:
+                assert it["name"] == check["name"]
+                assert it["config"] == check["config"]
+                return it
+
+        assert False, "Check instance was not created"
+
+    def delete_model_checks(
+        self,
+        model_id: int,
+        checks_names: t.List[str],
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Optional[httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+
+        response = t.cast(httpx.Response, self.api.delete_model_checks_by_name(
+            model_id=model_id,
+            check_names=checks_names,
+            raise_on_status=False
+        ))
+
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        model_checks = self.fetch_all_models_checks(model_id=model_id)
+        model_checks = t.cast(t.List[Payload], model_checks)
+
+        for it in model_checks:
+            assert it["name"] not in checks_names, f"Check {it['name']} was not deleted"
+
+    def fetch_all_models_checks(
+        self,
+        model_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_all_model_checks_by_id(model_id=model_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            assert isinstance(it, dict)
+            assert "id" in it
+            assert "name" in it
+            assert "config" in it
+
+        return data
+
+    def create_monitor(
+        self,
+        check_id: int,
+        monitor: t.Optional[t.Dict[t.Any, t.Any]] = None,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        generated_payload = self.data_generator.generate_random_monitor()
+
+        if monitor is None:
+            monitor = generated_payload
+        else:
+            if "lookback" in monitor and "aggregation_window" not in monitor:
+                monitor["aggregation_window"] = monitor["lookback"] / 12
+            monitor = {**generated_payload, **monitor}
+
+        response = self.api.create_monitor(check_id=check_id, monitor=monitor, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data
+        return t.cast(Payload, self.fetch_monitor(data["id"]))
+
+    # TODO: consider adding corresponding method to sdk API class
+    def update_monitor(
+        self,
+        monitor_id: int,
+        monitor: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[Payload, httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put(f"monitors/{monitor_id}", json=monitor)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        update_monitor = t.cast(Payload, self.fetch_monitor(monitor_id=monitor_id))
+
+        for k in monitor.keys():
+            assert monitor[k] == update_monitor[k]
+
+        return update_monitor
+
+    def delete_monitor(
+        self,
+        monitor_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.delete(f"monitors/{monitor_id}")
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        self.fetch_monitor(monitor_id, expected_status=404)
+
+    def fetch_monitor(
+        self,
+        monitor_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_monitor(monitor_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data and isinstance(data["id"], int)
+        assert "name" in data and isinstance(data["name"], str)
+        assert "check" in data and isinstance(data["check"], dict)
+        assert "dashboard_id" in data
+        assert "lookback" in data and isinstance(data["lookback"], int)
+        assert "aggregation_window" in data and isinstance(data["aggregation_window"], int)
+        assert "description" in data and isinstance(data["description"], str)
+        assert "frequency" in data and isinstance(data["frequency"], int)
+        assert "data_filters" in data
+        return data
+
+    def execute_monitor(
+        self,
+        monitor_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"monitors/{monitor_id}/run", json=options)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        # TODO:
+        return data
+
+    def create_alert_rule(
+        self,
+        monitor_id: int,
+        alert_rule: t.Optional[t.Dict[t.Any, t.Any]] = None,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        generated_payload = self.data_generator.generate_random_alert_rule()
+
+        alert_rule = (
+            {**generated_payload, **alert_rule}
+            if alert_rule is not None
+            else generated_payload
+        )
+
+        response = self.api.create_alert_rule(monitor_id=monitor_id, alert_rule=alert_rule, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data
+
+        return t.cast(Payload, self.fetch_alert_rule(alert_rule_id=data["id"]))
+
+    def fetch_alert_rule(
+        self,
+        alert_rule_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_alert_rule(alert_rule_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        return self._assert_alert_rule(response.json())
+
+    @classmethod
+    def _assert_alert_rule(cls, data: Payload):
+        assert isinstance(data, dict)
+        assert "id" in data and isinstance(data["id"], int)
+        assert "monitor_id" in data and isinstance(data["monitor_id"], int)
+        assert "condition" in data and isinstance(data["condition"], dict)
+        assert "alert_severity" in data and isinstance(data["alert_severity"], str)
+        assert "is_active" in data and isinstance(data["is_active"], bool)
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def fetch_alert_rules(
+        self,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get("alert-rules")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            self._assert_alert_rule(it)
+
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def fetch_alert_rules_count(
+        self,
+        model_id: t.Optional[int] = None,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+
+        response = expected_status.assert_response_status(
+            self.api.session.get(f"models/{model_id}/alert-rules/count")
+            if model_id
+            else self.api.session.get("alert-rules/count")
+        )
+
+        if expected_status.is_negative():
+            return response
+
+        severities = {it.value for it in AlertSeverity}
+        data = response.json()
+        assert isinstance(data, dict)
+        assert all(k in severities for k in data.keys())
+        assert all(isinstance(v, int) for v in data.values())
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def delete_alert_rule(
+        self,
+        alert_rule_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Optional[httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.delete(f"alert-rules/{alert_rule_id}")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        self.fetch_alert_rule(alert_rule_id, expected_status=404)
+
+    # TODO: consider adding corresponding method to sdk API class
+    def update_alert_rule(
+        self,
+        alert_rule_id: int,
+        alert_rule: t.Dict[t.Any, t.Any],
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put(f"alert-rules/{alert_rule_id}", json=alert_rule)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        updated_alert_rule = self.fetch_alert_rule(alert_rule_id)
+        updated_alert_rule = t.cast(Payload, updated_alert_rule)
+
+        for k in alert_rule.keys():
+            assert alert_rule[k] == updated_alert_rule[k]
+
+        return updated_alert_rule
+
+    # TODO: consider adding corresponding method to sdk API class
+    def fetch_alerts(
+        self,
+        alert_rule_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get(f"alert-rules/{alert_rule_id}/alerts")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            self._assert_alert(it)
+
+        return data
+
+    def _assert_alert(self, data: Payload):
+        assert isinstance(data, dict)
+        assert "id" in data and isinstance(data["id"], int)
+        assert "created_at" in data and isinstance(data["created_at"], str)
+        assert "resolved" in data and isinstance(data["resolved"], bool)
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def resolve_alerts(
+        self,
+        alert_rule_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"alert-rules/{alert_rule_id}/resolve-all")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = self.fetch_alerts(alert_rule_id=alert_rule_id)
+        data = t.cast(t.List[Payload], data)
+
+        assert all(it["resolved"] is True for it in data)
+
+    # TODO: consider adding corresponding method to sdk API class
+    def resolve_alert(
+        self,
+        alert_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"alerts/{alert_id}/resolve")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+    # TODO: consider adding corresponding method to sdk API class
+    def fetch_alert(
+        self,
+        alert_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get(f"alerts/{alert_id}")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        return self._assert_alert(response.json())
+
+    # TODO: consider adding corresponding method to sdk API class
+    def fetch_number_of_unresolved_alerts(
+        self,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[Payload, httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get("alerts/count_active")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        severities = set(AlertSeverity)
+        data = response.json()
+        assert isinstance(data, dict)
+        assert all(k in severities for k in data.keys())
+        assert all(isinstance(v, int) for v in data.values())
+        return data
+
+    def create_model_version(
+        self,
+        model_id: int,
+        model_version: t.Optional[Payload] = None,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[Payload, httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+
+        # TODO:
+        # - generate features randomly
+        # - generate a dataset to upload
+        default_payload = {
+            "name": self.data_generator.faker.name(),
+            "features": {"a": "numeric", "b": "categorical"},
+            "additional_data": {"c": "numeric"},
+            "feature_importance": None,
+            "classes": None
+        }
+        model_version = (
+            {**default_payload, **model_version}
+            if model_version is not None
+            else default_payload
+        )
+        response = self.api.create_model_version(
+            model_id=model_id,
+            model_version=model_version,
+            raise_on_status=False
+        )
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data and isinstance(data["id"], int)
+
+        return self.fetch_model_version(model_version_id=data["id"])
+
+    def delete_model_version(
+        self,
+        model_version_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Optional[httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.delete_model_version_by_id(model_version_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        self.fetch_model_version(
+            model_version_id=model_version_id,
+            expected_status=404
+        )
+
+    def fetch_model_version(
+        self,
+        model_version_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_model_version_by_id(model_version_id=model_version_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data and isinstance(data["id"], int)
+        assert "model_id" in data and isinstance(data["model_id"], int)
+        assert "name" in data and isinstance(data["name"], str)
+        assert "start_time" in data and isinstance(data["start_time"], str)
+        assert "features_columns" in data and isinstance(data["features_columns"], dict)
+        assert "additional_data_columns" in data and isinstance(data["additional_data_columns"], dict)
+        assert "model_columns" in data and isinstance(data["model_columns"], dict)
+        assert "meta_columns" in data and isinstance(data["meta_columns"], dict)
+        assert "feature_importance" in data
+        assert "statistics" in data
+        assert "classes" in data
+        assert "label_map" in data
+        return data
+
+    def fetch_model_version_schema(
+        self,
+        model_version_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_model_version_schema(model_version_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "monitor_schema" in data and isinstance(data["monitor_schema"], dict)
+        assert "reference_schema" in data and isinstance(data["reference_schema"], dict)
+        assert "features" in data
+        assert "additional_data" in data
+        assert "classes" in data
+        assert "label_map" in data
+        assert "feature_importance" in data
+        return data
+
+    def create_alert_webhook(
+        self,
+        payload: t.Optional[t.Dict[t.Any, t.Any]] = None,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        default_payload = self.data_generator.generate_random_standart_webhook()
+
+        payload = (
+            default_payload
+            if not payload else
+            {**default_payload, **payload}
+        )
+
+        response = self.api.session.post("alert-webhooks", json=payload)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data
+        return self.fetch_alert_webhook(data["id"])
+
+    def delete_alert_webhook(
+        self,
+        webhook_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> httpx.Response:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.delete(f"alert-webhooks/{webhook_id}")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        self.fetch_alert_webhook(webhook_id=webhook_id, expected_status=404)
+        return response
+
+    def fetch_alert_webhook(
+        self,
+        webhook_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get(f"alert-webhooks/{webhook_id}")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        return assert_alert_webhook(response.json())
+
+    def fetch_all_alert_webhooks(
+        self,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get("alert-webhooks")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            assert_alert_webhook(it)
+
+        return data
+
+    def upload_reference(
+        self,
+        model_version_id: int,
+        data: t.List[Payload],
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> httpx.Response:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        df = pd.DataFrame(data=data)
+
+        response = t.cast(httpx.Response, self.api.upload_reference(
+            model_version_id=model_version_id,
+            reference=df.to_json(orient="table", index=False),
+            raise_on_status=False
+        ))
+
+        expected_status.assert_response_status(response)
+        return response
+
+    def upload_samples(
+        self,
+        model_version_id: int,
+        samples: t.List[Payload],
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> httpx.Response:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = t.cast(httpx.Response, self.api.upload_samples(
+            model_version_id=model_version_id,
+            samples=samples,
+            raise_on_status=False
+        ))
+        expected_status.assert_response_status(response)
+        return response
+
+    def update_samples(
+        self,
+        model_version_id: int,
+        samples: t.List[Payload],
+        expected_status: ExpectedStatus  = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = t.cast(httpx.Response, self.api.update_samples(
+            model_version_id=model_version_id,
+            samples=samples,
+            raise_on_status=False
+        ))
+        expected_status.assert_response_status(response)
+        return response
+
+    # TODO: consider adding corresponding method to sdk API class
+    def execute_check_for_window(
+        self,
+        check_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"checks/{check_id}/run/window", json=options)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def fetch_check_execution_info(
+        self,
+        check_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get(f"checks/{check_id}/info")
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        # TODO:
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def execute_check_for_range(
+        self,
+        check_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"checks/{check_id}/run/lookback", json=options)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "output" in data and isinstance(data["output"], dict)
+
+        for version, results in data["output"].items():
+            assert isinstance(version, str)
+            assert results is None or isinstance(results, list)
+            if results is not None:
+                for result in results:
+                    if result is not None:
+                        for k, v in result.items():
+                            assert isinstance(k, str)
+                            assert isinstance(v, float)
+
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def execute_check_for_reference(
+        self,
+        check_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"checks/{check_id}/run/reference", json=options)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        # TODO:
+        return data
+
+    # TODO: not sure whether it is a correct name
+    # TODO: consider adding corresponding method to sdk API class
+    def feature_drill_down(
+        self,
+        model_version_id: int,
+        check_id: int,
+        feature: str,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"checks/{check_id}/group-by/{model_version_id}/{feature}", json=options)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            assert isinstance(it, dict)
+            for k in ("name", "filters", "count", "value", "display"):
+                assert k in it
+
+        return data
+
+    def fetch_dashboard(
+        self,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.fetch_dashboard(raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data
+        assert "monitors" in data
+        # TODO:
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def delete_dashboard(
+        self,
+        dashboard_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> httpx.Response:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.delete(f"dashboards/{dashboard_id}")
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+        return response
+
+    # TODO: consider adding corresponding method to sdk API class
+    def update_dashboard(
+        self,
+        dashboard_id: int,
+        dashboard: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put(f"dashboards/{dashboard_id}", json=dashboard)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        updated_dashboard = t.cast(Payload, self.fetch_dashboard())
+
+        for k in dashboard.keys():
+            assert dashboard[k] == updated_dashboard[k]
+
+        return updated_dashboard
+
+    # TODO: consider adding corresponding method to sdk API class
+    def download_check_notebook(
+        self,
+        check_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, str]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"checks/{check_id}/get-notebook", json=options)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.text
+        assert len(data) != 0
+        return data
+
+    # TODO: consider adding corresponding method to sdk API class
+    def download_monitor_notebook(
+        self,
+        monitor_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"monitors/{monitor_id}/get-notebook", json=options)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.text
+        assert len(data) != 0
+        return data
+
+    def fetch_time_window_statistics(
+        self,
+        model_version_id: int,
+        start_time: t.Optional[str] = None,
+        end_time: t.Optional[str] = None,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+
+        response = t.cast(httpx.Response, self.api.fetch_model_version_time_window_statistics(
+            model_version_id=model_version_id,
+            start_time=start_time,
+            end_time=end_time,
+            raise_on_status=False
+        ))
+
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        # TODO:
+        return data
+
+    def fetch_n_of_samples(
+        self,
+        model_version_id: int,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.get_samples_count(model_version_id=model_version_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "monitor_count" in data
+        assert "reference_count" in data
+        return data
+
+    def execute_suite(
+        self,
+        model_version_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus  = (200, 299)
+    ) -> t.Union[httpx.Response, str]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"model-versions/{model_version_id}/suite-run", json=options)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        content = response.text
+        assert len(content) != 0
+        # TODO: consider using BeautifulSoup to assert content
+        return content
+
+
+def random_string(n=5):
+    return "".join(
+        random.choice(string.ascii_lowercase)
+        for it in range(n)
     )
 
-    response = client.post(f"/api/v1/monitors/{monitor_id}/alert-rules", json=payload)
 
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
-        return response
+def create_alert(alert_rule_id: int, async_session: AsyncSession, resolved: bool = True):
+    dt = pdl.from_timestamp(1600000)
 
-    assert response.status_code == expected_status, (response.content, response.status_code)
-
-    data = response.json()
-    assert isinstance(data, dict)
-    assert "id" in data
-    return data["id"]
-
-
-def create_alert_webhook(
-    client: TestClient,
-    expected_status: int = 201,
-    payload: t.Optional[t.Dict[t.Any, t.Any]] = None
-) -> t.Union[httpx.Response, int]:
-    f = faker.Faker()
-
-    default_payload = {
-        "kind": "STANDART",
-        "name": f.name(),
-        "description": f.text(),
-        "http_url": "https://httpbin.org",
-        "http_method": "GET",
-        "http_headers": {},
-        "notification_levels": [random.choice(list(AlertSeverity)).value],
-    }
-    payload = (
-        default_payload
-        if not payload else
-        {**default_payload, **payload}
+    alert = Alert(
+        failed_values={"v1": {"Accuracy": 0.3}},
+        alert_rule_id=alert_rule_id,
+        start_time=dt,
+        end_time=dt,
+        resolved=resolved
     )
 
-    response = client.post("/api/v1/alert-webhooks", json=payload)
-
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
-        return response
-
-    assert response.status_code == expected_status, (response.content, response.status_code)
-
-    data = response.json()
-    assert isinstance(data, dict)
-    assert "id" in data
-    return data["id"]
+    async_session.add(alert)
+    return alert
 
 
-def delete_alert_webhook(
-    webhook_id: int,
-    client: TestClient,
-    expected_status: int = 200,
-) -> httpx.Response:
-    response = client.delete(f"/api/v1/alert-webhooks/{webhook_id}")
-    assert response.status_code == expected_status
+def upload_classification_data(
+    api: TestAPI,
+    model_version_id: int,
+    daterange: t.Optional[t.Sequence["PendulumDateTime"]] = None,
+    id_prefix: str = "",
+    is_labeled: bool = True,
+    with_proba: bool = True,
+    samples_per_date: int = 1
+):
+    if daterange is None:
+        curr_time = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
+        day_before_curr_time = t.cast("PendulumDateTime", curr_time - pdl.duration(days=1))
+        daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 
-    if not 200 <= expected_status <= 299:
-        return response
+    data = []
 
-    retrieve_alert_webhook(client=client, webhook_id=webhook_id, expected_status=404)
-    return response
+    for i, date in enumerate(daterange):
+        time = date.isoformat()
+        label = ("2" if i != 1 else "1") if is_labeled else None
+        for j in range(samples_per_date):
+            time = date.isoformat()
+            label = ("2" if i != 1 else "1") if is_labeled else None
+            sample = {
+                "_dc_sample_id": f"{id_prefix}{i}_{j}",
+                "_dc_time": time,
+                "_dc_prediction": "2" if i % 2 else "1",
+                "_dc_label": label,
+                "a": 10 + i * j,
+                "b": "ppppp",
+            }
+            if with_proba:
+                sample["_dc_prediction_probabilities"] = [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3]
+            data.append(sample)
 
-
-def retrieve_alert_webhook(
-    webhook_id: int,
-    client: TestClient,
-    expected_status: int = 200,
-) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
-
-    response = client.get(f"/api/v1/alert-webhooks/{webhook_id}")
-
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
-        return response
-
-    assert response.status_code == expected_status
-    data = response.json()
-    assert_alert_webhook(data)
-
-    return data
-
-
-def retrieve_all_alert_webhooks(
-    client: TestClient,
-    expected_status: int = 200,
-) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
-
-    response = client.get("/api/v1/alert-webhooks")
-
-    if not 200 <= expected_status <= 299:
-        assert response.status_code == expected_status
-        return response
-
-    assert response.status_code == expected_status
-    data = response.json()
-    assert isinstance(data, list)
-
-    for it in data:
-        assert_alert_webhook(it)
-
-    return data
+    response = api.upload_samples(model_version_id=model_version_id, samples=data)
+    return response, daterange[0], daterange[-1]
 
 
-def assert_alert_webhook(data: t.Dict[str, t.Any]):
+def upload_vision_classification_data(
+    test_api: TestAPI,
+    model_version_id: int,
+):
+    now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
+    day_before = t.cast("PendulumDateTime", now - pdl.duration(days=1))
+    data = []
+
+    for i, hour in enumerate([1, 3, 7, 13]):
+        time = day_before.add(hours=hour).isoformat()
+        for j in range(10):
+            data.append({
+                "_dc_sample_id": f"{i} {j}",
+                "_dc_time": time,
+                "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
+                "_dc_label": j % 2,
+                "images Aspect Ratio": 0.677 / hour,
+                "images Area": 0.5,
+                "images Brightness": 0.5,
+                "images RMS Contrast": 0.5,
+                "images Mean Red Relative Intensity": 0.5,
+                "images Mean Blue Relative Intensity": 0.5,
+                "images Mean Green Relative Intensity": 0.5,
+            })
+
+    response = test_api.upload_samples(
+        model_version_id=model_version_id,
+        samples=data
+    )
+    return response, day_before, now
+
+
+# def send_reference_request(client, model_version_id, dicts: list):
+#     df = pd.DataFrame(data=dicts)
+#     data = df.to_json(orient="table", index=False)
+#     return client.post(
+#         f"/api/v1/model-versions/{model_version_id}/reference",
+#         files={"batch": ("data.json", data.encode())}
+#     )
+
+
+def assert_alert_webhook(data: Payload) -> Payload:
     assert isinstance(data, dict)
     assert "id" in data and isinstance(data["id"], int)
     assert "name" in data and isinstance(data["name"], str)
@@ -256,3 +1407,4 @@ def assert_alert_webhook(data: t.Dict[str, t.Any]):
     assert "http_method" in data and data["http_method"] in {"GET", "POST"}
     assert "notification_levels" in data and isinstance(data["notification_levels"], list)
     assert "additional_arguments" in data and isinstance(data["additional_arguments"], dict)
+    return data

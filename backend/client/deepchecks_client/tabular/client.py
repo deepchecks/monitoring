@@ -16,6 +16,7 @@ import typing as t
 import warnings
 from datetime import datetime
 
+import httpx
 import numpy as np
 import pandas as pd
 import pendulum as pdl
@@ -27,7 +28,7 @@ from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder,
-                                          DeepchecksJsonValidator, TaskType, parse_timestamp, pretty_print,
+                                          DeepchecksJsonValidator, TaskType, maybe_raise, parse_timestamp, pretty_print,
                                           validate_additional_data_schema)
 from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_predictions
 
@@ -393,15 +394,36 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         DeepchecksModelVersionClient
             Client to interact with the newly created version.
         """
-        existing_version_id = self._get_existing_version_id_or_none(version_name=name)
-        if existing_version_id is not None:
-            version_client = self._version_client(existing_version_id)
-            features = schema['features'] if schema else None
-            additional_data = schema['additional_data'] if schema else None
-            version_client.validate(features=features, additional_data=additional_data,
-                                    feature_importance=feature_importance, model_classes=model_classes)
+        response = t.cast(httpx.Response, self.api.fetch_model_version_by_name(
+            model_name=self.model['name'],
+            model_version_name=name,
+            raise_on_status=False
+        ))
+
+        if 200 <= response.status_code <= 299:
+            existing_version = response.json()
+            version_client = self._version_client(existing_version['id'])
+            features = None
+            additional_data = None
+
+            if schema is not None:
+                schema = read_schema(schema, fail_on_invalid_column=True)
+                features = schema['features']
+                additional_data = schema['additional_data']
+
+            version_client.validate(
+                features=features,
+                additional_data=additional_data,
+                feature_importance=feature_importance,
+                model_classes=model_classes
+            )
+
             return version_client
-        elif schema is None:
+
+        if response.status_code != 404:
+            maybe_raise(response)  # execution ends here, function will raose an error
+
+        if schema is None:
             raise ValueError('schema must be provided when creating a new version')
 
         schema = read_schema(schema, fail_on_invalid_column=True)

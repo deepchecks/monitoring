@@ -526,21 +526,25 @@ async def run_check_window(
 
     # get result from active sessions and run the check per each model version
     if not reference_only:
-        model_results_per_window = await get_results_for_model_versions_per_window(model_version_dataframes,
-                                                                                   model_versions,
-                                                                                   model,
-                                                                                   dp_check,
-                                                                                   monitor_options.additional_kwargs,
-                                                                                   s3_bucket,
-                                                                                   with_display)
+        model_results_per_window = await get_results_for_model_versions_per_window(
+            model_version_dataframes,
+            model_versions,
+            model,
+            dp_check,
+            monitor_options.additional_kwargs,
+            s3_bucket,
+            with_display
+        )
     else:
-        model_results_per_window = await get_results_for_model_versions_for_reference(model_version_dataframes,
-                                                                                      model_versions,
-                                                                                      model,
-                                                                                      dp_check,
-                                                                                      monitor_options.additional_kwargs,
-                                                                                      s3_bucket,
-                                                                                      with_display)
+        model_results_per_window = await get_results_for_model_versions_for_reference(
+            model_version_dataframes,
+            model_versions,
+            model,
+            dp_check,
+            monitor_options.additional_kwargs,
+            s3_bucket,
+            with_display
+        )
 
     model_results = {}
     for model_version, results_per_window in model_results_per_window.items():

@@ -253,7 +253,7 @@ async def get_alerts_of_alert_rule(
     alert_rule_id: int,
     session: AsyncSession = AsyncSessionDep
 ):
-    """Delete alert by id."""
+    """Get list of alerts raised by a given alert rule."""
     await exists_or_404(session, AlertRule, id=alert_rule_id)
     query = await session.execute(select(Alert).where(Alert.alert_rule_id == alert_rule_id).order_by(Alert.start_time))
     return [AlertSchema.from_orm(a) for a in query.scalars().all()]

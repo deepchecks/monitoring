@@ -20,6 +20,7 @@ from httpx import HTTPError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.schema_models import ModelVersion, TaskType
+from tests.common import Payload
 
 
 def _get_wierd_df():
@@ -36,69 +37,89 @@ def _get_wierd_df():
 
 
 def test_get_model_version(
-        classification_model_id,
-        classification_model_version_id,
-        deepchecks_sdk_client: DeepchecksClient
+    classification_model: Payload,
+    classification_model_version: Payload,
+    deepchecks_sdk: DeepchecksClient
 ):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    assert model_client.model["id"] == classification_model_id
-    model_version_client = model_client.version("v1")
-    assert model_version_client.model_version_id == classification_model_version_id
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
+    )
+    assert model_client.model["id"] == classification_model["id"]
+    model_version_client = model_client.version(classification_model_version["name"])
+    assert model_version_client.model_version_id == classification_model_version["id"]
 
 
 def test_get_model_version_with_features(
-        classification_model_id,
-        classification_model_version_id,
-        deepchecks_sdk_client: DeepchecksClient
+        classification_model: Payload,
+        classification_model_version: Payload,
+        deepchecks_sdk: DeepchecksClient
 ):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    schema_dict = {"features": {"a": "numeric", "b": "categorical"},
-                   "additional_data": {"c": "numeric"}}
-    assert model_client.model["id"] == classification_model_id
-    model_version_client = model_client.version(
-        "v1",
-        schema_dict
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
     )
-    assert model_version_client.model_version_id == classification_model_version_id
+    schema_dict = {
+        "features": {"a": "numeric", "b": "categorical"},
+        "additional_data": {"c": "numeric"}
+    }
+    assert model_client.model["id"] == classification_model["id"]
+    model_version_client = model_client.version(classification_model_version["name"], schema_dict)
+    assert model_version_client.model_version_id == classification_model_version["id"]
 
 
 def test_get_model_version_with_wrong_features(
-        classification_model_id,
-        classification_model_version_id,  # pylint: disable=unused-argument
-        deepchecks_sdk_client: DeepchecksClient
+        classification_model: Payload,
+        classification_model_version: Payload,
+        deepchecks_sdk: DeepchecksClient
 ):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    schema_dict = {"features": {"a": "numeric", "not-exist": "categorical"},
-                   "additional_data": {"c": "numeric"}}
-    assert model_client.model["id"] == classification_model_id
-    assert_that(calling(model_client.version).with_args("v1", schema_dict),
-                raises(ValueError))
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
+    )
+    schema_dict = {
+        "features": {"a": "numeric", "not-exist": "categorical"},
+        "additional_data": {"c": "numeric"}
+    }
+    assert model_client.model["id"] == classification_model["id"]
+
+    assert_that(
+        calling(model_client.version).with_args(
+            classification_model_version["name"],
+            schema_dict
+        ),
+        raises(ValueError)
+    )
 
 
 def test_add_model_version(
-        classification_model_id,
-        deepchecks_sdk_client: DeepchecksClient
+        classification_model: Payload,
+        deepchecks_sdk: DeepchecksClient
 ):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    schema_dict = {"features": {"a": "numeric", "b": "categorical"},
-                   "additional_data": {"c": "numeric"}}
-    assert model_client.model["id"] == classification_model_id
-    model_version_client = model_client.version("v1",
-                                                schema_dict)
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
+    )
+    schema_dict = {
+        "features": {"a": "numeric", "b": "categorical"},
+        "additional_data": {"c": "numeric"}
+    }
+    assert model_client.model["id"] == classification_model["id"]
+    model_version_client = model_client.version("v1", schema_dict)
     assert model_version_client.model_version_id == 1
-    model_version_client = model_client.version("v2",
-                                                schema_dict)
+    model_version_client = model_client.version("v2", schema_dict)
     assert model_version_client.model_version_id == 2
 
 
-def test_create_read_schema_string_io(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    assert model_client.model["id"] == classification_model_id
+def test_create_read_schema_string_io(
+    classification_model: Payload,
+    deepchecks_sdk: DeepchecksClient
+):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
+    )
+    assert model_client.model["id"] == classification_model["id"]
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
     file = io.StringIO()
@@ -116,40 +137,40 @@ def test_create_read_schema_string_io(classification_model_id, deepchecks_sdk_cl
         }
     }
 
-    model_version_client = model_client.version(
-        "v1",
-        schema_dict
-    )
-
+    model_version_client = model_client.version("v1",schema_dict)
     assert model_version_client.model_version_id == 1
 
 
-def test_create_read_schema_file(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    assert model_client.model["id"] == classification_model_id
+def test_create_read_schema_file(
+    classification_model: Payload,
+    deepchecks_sdk: DeepchecksClient
+):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
+    )
+
+    assert model_client.model["id"] == classification_model["id"]
+
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
     file = "test_schema.yaml"
     create_schema(dataset, file)
     schema_dict = read_schema(file)
-    model_version_client = model_client.version(
-        "v1",
-        schema_dict
-    )
+    model_version_client = model_client.version("v1",schema_dict)
     assert model_version_client.model_version_id == 1
 
 
 @pytest.mark.asyncio
 async def test_model_version_feature_importance_update(
-        deepchecks_sdk_client: DeepchecksClient,
+        deepchecks_sdk: DeepchecksClient,
         async_session: AsyncSession
 ):
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
     dataset_schema = describe_dataset(dataset)
 
-    model_client = deepchecks_sdk_client.get_or_create_model(
+    model_client = deepchecks_sdk.get_or_create_model(
         name="classification model",
         task_type=TaskType.MULTICLASS.value
     )
@@ -158,22 +179,25 @@ async def test_model_version_feature_importance_update(
         schema=dataset_schema
     )
 
-    feature_importance = {feature: 0.5 for feature in
-                          dataset_schema["features"].keys()}  # pylint: disable=consider-iterating-dictionary
-    version_client.set_feature_importance(feature_importance)
+    feature_importance = {
+        feature: 0.5
+        for feature in dataset_schema["features"]
+    }
 
+    version_client.set_feature_importance(feature_importance)
     model_version = await async_session.get(ModelVersion, version_client.model_version_id)
+
     assert model_version is not None
     assert isinstance(model_version.feature_importance, dict)
     assert model_version.feature_importance == feature_importance
 
 
-def test_model_version_deletion(deepchecks_sdk_client: DeepchecksClient):
+def test_model_version_deletion(deepchecks_sdk: DeepchecksClient):
     df = _get_wierd_df()
     dataset = Dataset(df, label="classification_label", features=["binary_feature", "fake_bool_feature"])
     dataset_schema = describe_dataset(dataset)
 
-    model_client = deepchecks_sdk_client.get_or_create_model(
+    model_client = deepchecks_sdk.get_or_create_model(
         name="classification model",
         task_type=TaskType.MULTICLASS.value
     )
@@ -182,10 +206,10 @@ def test_model_version_deletion(deepchecks_sdk_client: DeepchecksClient):
         schema=dataset_schema,
     )
 
-    deepchecks_sdk_client.delete_model_version(
+    deepchecks_sdk.delete_model_version(
         model_name="classification model",
         version_name="test-version"
     )
 
     with pytest.raises(HTTPError):
-        deepchecks_sdk_client.api.fetch_model_version_by_id(version_client.model_version_id)
+        deepchecks_sdk.api.fetch_model_version_by_id(version_client.model_version_id)

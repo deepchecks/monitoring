@@ -10,34 +10,32 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookHttpMethod, WebhookKind
-from tests.common import create_alert_rule, create_check, create_monitor
-from tests.conftest import add_model
+from tests.common import Payload, TestAPI
 
 
 @pytest.mark.asyncio
 async def test_standart_webhook_execution(
-    client: TestClient,
+    test_api: TestAPI,
     async_session: AsyncSession,
-    application: FastAPI  # app that were used to init "client:TestClient"
+    application: FastAPI  # app that were used to init "test_api:TestAPI"
 ):
     # TODO: prepopulate template database instead of creating entities here
-    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
-    check_id = t.cast(int, create_check(client, model_id))
-    monitor_id = t.cast(int, create_monitor(client, check_id))
-    alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+    alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
     alert_id = await async_session.scalar(sa.insert(Alert).values(
         failed_values={"1":["accuracy"], "2":["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
-        alert_rule_id=alert_rule_id
+        alert_rule_id=alert_rule["id"]
     ).returning(Alert.id))
 
     webhook = AlertWebhook(
@@ -105,24 +103,24 @@ async def test_standart_webhook_execution(
 @pytest.mark.asyncio
 async def test_pager_duty_webhook_execution(
     async_session: AsyncSession,
-    client: TestClient,
-    application: FastAPI  # app that were used to init "client:TestClient"
+    test_api: TestAPI,
+    application: FastAPI  # app that were used to init "test_api:TestAPI"
 ):
     api_token = os.environ["PAGER_DUTY_API_TOKEN"]
     event_routing_key = os.environ["PAGER_DUTY_EVENT_ROUTING_KEY"]
 
     # TODO: prepopulate template database instead of creating entities here
-    model_id = t.cast(int, add_model(client, task_type=TaskType.BINARY))
-    check_id = t.cast(int, create_check(client, model_id))
-    monitor_id = t.cast(int, create_monitor(client, check_id))
-    alert_rule_id = t.cast(int, create_alert_rule(client, monitor_id))
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+    alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
     alert_id = await async_session.scalar(sa.insert(Alert).values(
         failed_values={"1":["accuracy"], "2":["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
-        alert_rule_id=alert_rule_id
+        alert_rule_id=alert_rule["id"]
     ).returning(Alert.id))
 
     webhook = AlertWebhook(

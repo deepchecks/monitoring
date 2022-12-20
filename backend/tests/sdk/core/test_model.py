@@ -13,14 +13,14 @@ from deepchecks_client import DeepchecksClient
 
 
 @pytest.mark.asyncio
-async def test_create_delete_model(deepchecks_sdk_client: DeepchecksClient):
-    model = deepchecks_sdk_client.get_or_create_model(name='test_model', task_type='binary')
-    model2 = deepchecks_sdk_client.get_or_create_model('test_model')
+async def test_create_delete_model(deepchecks_sdk: DeepchecksClient):
+    model = deepchecks_sdk.get_or_create_model(name='test_model', task_type='binary')
+    model2 = deepchecks_sdk.get_or_create_model('test_model')
     assert model is model2
 
     # Delete
-    deepchecks_sdk_client.delete_model('test_model')
+    deepchecks_sdk.delete_model('test_model')
 
     with pytest.raises(ValueError) as exc_info:
-        deepchecks_sdk_client.get_model_version('test_model', 'ver1')
+        deepchecks_sdk.get_model_version('test_model', 'ver1')
     assert exc_info.value.args[0] == 'Model with name test_model does not exist.'

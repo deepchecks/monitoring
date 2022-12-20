@@ -11,33 +11,44 @@ import typing as t
 
 import pytest
 from deepchecks.tabular.checks import SingleDatasetPerformance
+from deepchecks_client import DeepchecksClient
 
-from client.deepchecks_client import DeepchecksClient
 from deepchecks_monitoring.schema_models.model import TaskType
+from tests.common import Payload
 
 
-@pytest.mark.asyncio
-async def test_get_model_client(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             description="test", task_type=TaskType.MULTICLASS.value)
-    assert model_client.model["id"] == classification_model_id
+def test_model_client_instantiation(
+    classification_model: Payload,
+    deepchecks_sdk: DeepchecksClient
+):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        description="test",
+        task_type=TaskType.MULTICLASS.value
+    )
+    assert model_client.model["id"] == classification_model["id"]
 
 
-@pytest.mark.asyncio
-async def test_get_model_client_just_name(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
-    assert model_client.model["id"] == classification_model_id
+def test_model_client_instantiation_with_name(
+    classification_model: Payload,
+    deepchecks_sdk: DeepchecksClient
+):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value
+    )
+    assert model_client.model["id"] == classification_model["id"]
 
 
-@pytest.mark.asyncio
-async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model 2",
-                                                             task_type=TaskType.MULTICLASS.value)
+def test_model_creation(deepchecks_sdk: DeepchecksClient):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name="classification model 2",
+        task_type=TaskType.MULTICLASS.value
+    )
     assert model_client.model["id"] == 1
     assert model_client.model["name"] == "classification model 2"
 
-    models = deepchecks_sdk_client.api.fetch_models()
+    models = deepchecks_sdk.api.fetch_models()
     models = t.cast(t.List[t.Dict[str, t.Any]], models)
 
     assert len(models) == 1
@@ -53,22 +64,23 @@ async def test_create_model(deepchecks_sdk_client: DeepchecksClient):
     }
 
 
-@pytest.mark.asyncio
-async def test_add_monitor(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value)
+def test_monitor_creation(deepchecks_sdk: DeepchecksClient):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name="classification model",
+        task_type=TaskType.MULTICLASS.value
+    )
     assert model_client.model["id"] == 1
-
     checks_name = list(model_client.get_checks().keys())[0]
     monitor_id = model_client.add_monitor(checks_name, frequency=86400, lookback=86400 * 30)
     assert monitor_id > 0
 
 
-@pytest.mark.asyncio
-async def test_add_alert_on_existing_monitor(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value,
-                                                             create_model_defaults=True)
+def test_alert_rule_creation_for_existing_monitor(deepchecks_sdk: DeepchecksClient):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name="classification model",
+        task_type=TaskType.MULTICLASS.value,
+        create_model_defaults=True
+    )
     assert model_client.model["id"] == 1
 
     checks_name = list(model_client.get_checks().keys())[0]
@@ -78,12 +90,16 @@ async def test_add_alert_on_existing_monitor(deepchecks_sdk_client: DeepchecksCl
     assert alert_id == 5
 
 
-@pytest.mark.asyncio
-async def test_add_alert_on_new_monitor(classification_model_id, deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value,
-                                                             create_model_defaults=False)
-    assert model_client.model["id"] == classification_model_id
+async def test_alert_rule_creation_for_new_monitor(
+    classification_model: Payload,
+    deepchecks_sdk: DeepchecksClient
+):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name=classification_model["name"],
+        task_type=TaskType.MULTICLASS.value,
+        create_model_defaults=False
+    )
+    assert model_client.model["id"] == classification_model["id"]
     model_client.add_checks({"check": SingleDatasetPerformance()})
 
     alert_id = model_client.add_alert_rule("check", 0.3, 86400)
@@ -93,10 +109,12 @@ async def test_add_alert_on_new_monitor(classification_model_id, deepchecks_sdk_
 
 
 @pytest.mark.asyncio
-async def test_add_defaults(deepchecks_sdk_client: DeepchecksClient):
-    model_client = deepchecks_sdk_client.get_or_create_model(name="classification model",
-                                                             task_type=TaskType.MULTICLASS.value,
-                                                             create_model_defaults=True)
+async def test_default_checks_creation(deepchecks_sdk: DeepchecksClient):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name="classification model",
+        task_type=TaskType.MULTICLASS.value,
+        create_model_defaults=True
+    )
     assert model_client.model["id"] == 1
     assert len(model_client.get_checks()) == 6
 

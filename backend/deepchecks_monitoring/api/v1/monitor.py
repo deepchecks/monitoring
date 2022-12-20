@@ -28,8 +28,8 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDe
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
-from deepchecks_monitoring.monitoring_utils import (DataFilterList, IdResponse, MonitorCheckConfSchema, exists_or_404,
-                                                    fetch_or_404, field_length)
+from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
+                                                    MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
 from deepchecks_monitoring.schema_models.monitor import Monitor
@@ -128,13 +128,16 @@ async def create_monitor(
 @router.get("/monitors/{monitor_id}", response_model=MonitorSchema, tags=[Tags.MONITORS])
 async def get_monitor(
     monitor_id: int,
-    session: AsyncSession = AsyncSessionDep
+    session: ExtendedAsyncSession = AsyncSessionDep
 ):
     """Get monitor by id."""
-    options = (joinedload(Monitor.check), joinedload(Monitor.alert_rules))
-    query = await Monitor.filter_by(session, options=options, id=monitor_id)
-    monitor = query.scalar()
-    return MonitorSchema.from_orm(monitor)
+    moonitor = await session.fetchone_or_404(
+        sa.select(Monitor)
+        .where(Monitor.id == monitor_id)
+        .options(joinedload(Monitor.check), joinedload(Monitor.alert_rules)),
+        message=f"'Monitor' with next set of arguments does not exist: id={monitor_id}"
+    )
+    return MonitorSchema.from_orm(moonitor)
 
 
 @router.put("/monitors/{monitor_id}", tags=[Tags.MONITORS])

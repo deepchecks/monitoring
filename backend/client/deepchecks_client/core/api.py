@@ -234,7 +234,7 @@ class API:
 
         Returns
         -------
-         httpx.Response
+        httpx.Response
             The response object.
         """
         if raise_on_status:
@@ -254,8 +254,8 @@ class API:
     def fetch_model_version_time_window_statistics(
         self,
         model_version_id: int,
-        start_time: str,
-        end_time: str,
+        start_time: t.Optional[str] = None,
+        end_time: t.Optional[str] = None,
         raise_on_status: bool = True
     ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch model version time window statistics.
@@ -264,9 +264,9 @@ class API:
         ----------
         model_version_id : int
             The model version ID
-        start_time : str
+        start_time : Optional[str] , default None
             The start time of the window
-        end_time : str
+        end_time : Optional[str] , default None
             The end time of the window
         raise_on_status : bool, optional
             Raise exception if status code is not 200.
@@ -713,7 +713,7 @@ class API:
         Union[httpx.Response, dict]
             The response object.
         """
-        response = self.session.post(f'model-versions/{model_version_id}')
+        response = self.session.get(f'model-versions/{model_version_id}')
         if raise_on_status:
             return maybe_raise(
                 response=response,
@@ -744,7 +744,7 @@ class API:
         Union[httpx.Response, dict]
             The response object.
         """
-        response = self.session.post(f'models/{model_name}/model-versions/{model_version_name}')
+        response = self.session.get(f'models/{model_name}/model-versions/{model_version_name}')
         if raise_on_status:
             return maybe_raise(
                 response=response,
@@ -857,6 +857,33 @@ class API:
         else:
             return self.session.post(url=f'monitors/{monitor_id}/alert-rules', json=alert_rule)
 
+    def fetch_alert_rule(
+        self,
+        alert_rule_id: int,
+        raise_on_status: bool = True
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
+        """Create alert rule.
+
+        Parameters
+        ----------
+        alert_rule_id : int
+            The ID of the alert rule
+        raise_on_status : bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        Union[httpx.Response, Dict[str, Any]]
+            The response from the server
+        """
+        if raise_on_status:
+            return maybe_raise(
+                self.session.get(url=f'alert-rules/{alert_rule_id}'),
+                msg='Failed to fetch alert rule.\n{error}'
+            ).json()
+        else:
+            return self.session.get(url=f'alert-rules/{alert_rule_id}')
+
     def create_monitor(
         self,
         check_id: int,
@@ -886,6 +913,32 @@ class API:
             ).json()
         else:
             return self.session.post(url=f'checks/{check_id}/monitors', json=monitor)
+
+    def fetch_monitor(
+        self,
+        monitor_id: int,
+        raise_on_status: bool = True
+    ):
+        """Create monitor.
+
+        Parameters
+        ----------
+        monitor_id : int
+            The ID of the monitor
+        raise_on_status : bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        Union[httpx.Response, Dict[str, Any]]
+            The response from the server
+        """
+        response = self.session.get(url=f'monitors/{monitor_id}')
+        return (
+            maybe_raise(response, msg='Failed to fetch a monitor record.\n{error}').json()
+            if raise_on_status
+            else response
+        )
 
     # TODO:
     # it should be called fetch_dashboard(s) and should return a list of dashboards
