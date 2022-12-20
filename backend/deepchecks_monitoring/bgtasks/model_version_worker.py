@@ -9,18 +9,20 @@
 # ----------------------------------------------------------------------------
 #
 """Contains alert scheduling logic."""
-import asyncio
 import logging.handlers
 import typing as t
 
+import aiokafka
 import anyio
 import pendulum as pdl
 import uvloop
-from kafka import KafkaConsumer
+from redis.asyncio import Redis, RedisCluster
+from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 
 from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
-from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_QUEUE_KEY, MODEL_VERSIONS_SORTED_SET_KEY
+from deepchecks_monitoring.logic.keys import (MODEL_VERSIONS_QUEUE_KEY, MODEL_VERSIONS_SORTED_SET_KEY,
+                                              get_data_topic_name)
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import ModelVersion
@@ -32,16 +34,16 @@ class ModelVersionWorker:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
+            redis: Redis,
+            consumer,
             logger: logging.Logger,
             process_interval_seconds: int
     ):
         self.resource_provider = resource_provider
         self.logger = logger
-        self.redis = self.resource_provider.redis_client
+        self.redis = redis
         self.process_interval_seconds = process_interval_seconds
-        # In tests for example we don't use kafka
-        if resource_provider.kafka_settings.kafka_host is not None:
-            self.consumer = KafkaConsumer(**self.resource_provider.kafka_settings.kafka_params)
+        self.consumer = consumer
 
     async def run_move_from_set_to_queue(self):
         """Run the main loop."""
@@ -60,10 +62,11 @@ class ModelVersionWorker:
 
     async def move_single_item_set_to_queue(self):
         """Get single item from the sorted set and move it to the queue if needed."""
-        items = self.redis.zrange(MODEL_VERSIONS_SORTED_SET_KEY, 0, 0, withscores=True)
-        # If set is empty, sleep for 1 second and return
+        items = await self.redis.zrange(MODEL_VERSIONS_SORTED_SET_KEY, 0, 0, withscores=True)
+        # If set is empty, sleep and return
         if not items:
-            await asyncio.sleep(1)
+            self.logger.info("No items in set, sleeping for %s seconds", self.process_interval_seconds)
+            await anyio.sleep(self.process_interval_seconds)
             return
         # Items are returned as tuple of (key, score)
         org_model_version, timestamp = items[0]
@@ -72,11 +75,14 @@ class ModelVersionWorker:
         if timestamp + self.process_interval_seconds > now:
             # We know that items are only added with sequential scores (timestamps), so we know we can sleep until the
             # first item is ready
-            await asyncio.sleep(timestamp + self.process_interval_seconds - now)
+            sleep_seconds = timestamp + self.process_interval_seconds - now
+            self.logger.info("Next item is not ready yet, sleeping for %s seconds", sleep_seconds)
+            await anyio.sleep(sleep_seconds)
             return
         # Two workers might get same item key, so if was already removed doesn't push to queue
-        if self.redis.zrem(MODEL_VERSIONS_SORTED_SET_KEY, org_model_version):
-            self.redis.rpush(MODEL_VERSIONS_QUEUE_KEY, org_model_version)
+        if await self.redis.zrem(MODEL_VERSIONS_SORTED_SET_KEY, org_model_version):
+            await self.redis.rpush(MODEL_VERSIONS_QUEUE_KEY, org_model_version)
+            self.logger.info("Moved item %s from set to queue", org_model_version)
 
     async def run_poll_from_queue(self):
         """Run the main loop."""
@@ -93,31 +99,44 @@ class ModelVersionWorker:
             self.logger.warning("Worker interrupted")
             raise
 
-    async def calculate_single_item_in_queue(self, timeout=None):
+    async def calculate_single_item_in_queue(self, timeout=0):
         """Run the actual calculations on a given model version id."""
         # First argument is the queue key, second is the popped value. if timeout is none the command blocks
         # indefinitely until a value is found.
-        _, value = self.redis.blpop(MODEL_VERSIONS_QUEUE_KEY, timeout=timeout)
+        value = await self.redis.blpop(MODEL_VERSIONS_QUEUE_KEY, timeout=timeout)
         # If there is a timeout value might be none if nothing found.
         if value is None:
             return
-        organization_id, model_version_id = value.decode().split("-")
-        with self.resource_provider.create_async_database_session(organization_id) as session:
+        self.logger.info("Popped item %s from queue", value)
+        organization_id, model_version_id = value[1].decode().split("-")
+        async with self.resource_provider.create_async_database_session(int(organization_id)) as session:
             # If session is none, organization was removed.
             if session is None:
+                self.logger.info("Organization %s not exists, skipping", organization_id)
                 return
 
-            model_version: ModelVersion = session.execute(
-                select(ModelVersion).where(ModelVersion.id == model_version_id)
-            ).scalar()
+            model_version: ModelVersion = (await session.execute(
+                select(ModelVersion).where(ModelVersion.id == int(model_version_id))
+            )).scalar_one_or_none()
 
             # Model version was deleted, doesn't need to do anything
             if model_version is None:
+                self.logger.info("Model version %s not exists, skipping", model_version_id)
                 return
 
             # Get kafka topic offset
             if self.consumer:
-                model_version.set_topic_offset(organization_id, self.consumer)
+                topic = get_data_topic_name(organization_id, model_version_id)
+                topics = (await self.consumer.topics())
+                if topic in topics:
+                    topic_partition = aiokafka.TopicPartition(get_data_topic_name(organization_id, model_version_id), 0)
+                    # The end_offset returned is the next offset (end + 1)
+                    assigment = list(self.consumer.assignment())
+                    assigment.append(topic_partition)
+                    self.consumer.assign(list(assigment))
+                    model_version.topic_end_offset = await self.consumer.position(topic_partition) - 1
+                else:
+                    self.logger.info("Topic %s not exists, skipping", topic)
 
             # It's possible only messages where pushed to the queue, but no data was updated yet. In that case  does
             # not update statistics.
@@ -151,6 +170,16 @@ class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):
         env_file_encoding = "utf-8"
 
 
+async def init_redis(redis_uri):
+    """Initialize redis connection."""
+    try:
+        redis = RedisCluster.from_url(redis_uri)
+        await redis.ping()
+        return redis
+    except RedisClusterException:
+        return Redis.from_url(redis_uri)
+
+
 def execute_worker():
     """Execute worker."""
 
@@ -167,8 +196,15 @@ def execute_worker():
         )
 
         async with ResourcesProvider(settings) as rp:
+            # In tests for example we don't use kafka
+            if rp.kafka_settings.kafka_host is not None:
+                consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
+                await consumer.start()
+
+            redis = await init_redis(rp.redis_settings.redis_uri)
+
             async with anyio.create_task_group() as g:
-                worker = ModelVersionWorker(rp, logger, settings.process_interval_seconds)
+                worker = ModelVersionWorker(rp, redis, consumer, logger, settings.process_interval_seconds)
                 # Creating single job to move items from set to queue, and multiple jobs to poll from the queue (the
                 # heavy lifting part)
                 g.start_soon(worker.run_move_from_set_to_queue)

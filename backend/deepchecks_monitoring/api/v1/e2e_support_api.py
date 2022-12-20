@@ -14,11 +14,12 @@ from time import perf_counter
 from typing import Union
 
 from fastapi import Depends
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, TopicPartition
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
+from deepchecks_monitoring.logic.keys import get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -41,7 +42,10 @@ async def wait_for_queue(
         return
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     consumer = KafkaConsumer(**resources_provider.kafka_settings.kafka_params)
-    model_version.set_topic_offset(organization_id=user.organization_id, consumer=consumer)
+    topic_partition = TopicPartition(get_data_topic_name(user.organization.id, model_version_id), 0)
+    # The end_offset returned is the next offset (end + 1)
+    model_version.topic_end_offset = consumer.end_offsets([topic_partition])[topic_partition] - 1
+
     start_time = perf_counter()
 
     while model_version.topic_end_offset > model_version.ingestion_offset and perf_counter() - start_time < 30:

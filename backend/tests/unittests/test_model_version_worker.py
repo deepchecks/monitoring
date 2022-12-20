@@ -13,7 +13,10 @@ from deepchecks_monitoring.bgtasks.model_version_worker import ModelVersionWorke
 
 
 async def run_worker(resources_provider):
-    worker = ModelVersionWorker(resources_provider, logging.getLogger(), process_interval_seconds=0)
+    redis = resources_provider.redis
+    kafka_consumer = None
+    worker = ModelVersionWorker(resources_provider, redis, kafka_consumer, logging.getLogger(),
+                                process_interval_seconds=1)
     await worker.move_single_item_set_to_queue()
     await worker.calculate_single_item_in_queue(timeout=10)
 
