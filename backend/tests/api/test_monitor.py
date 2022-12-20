@@ -15,6 +15,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.schema_models.monitor import Monitor
+from tests.api.test_check import upload_multiclass_reference_data
 from tests.common import Payload, TestAPI, upload_classification_data
 
 
@@ -367,7 +368,6 @@ def test_monitor_execution(
     # TODO: assert result
 
 
-
 def test_monitor_execution_with_invalid_end_time(
     test_api: TestAPI,
     classification_model_check: Payload
@@ -376,8 +376,73 @@ def test_monitor_execution_with_invalid_end_time(
     monitor = test_api.create_monitor(check_id=classification_model_check["id"])
     monitor = t.cast(Payload, monitor)
     # Act
-    test_api.execute_monitor(
+    response = test_api.execute_monitor(
         expected_status=422,
         monitor_id=monitor["id"],
         options={"end_time": "13000000"}
     )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_monitor_run_filter(classification_model_check, classification_model_version,
+                                  client, test_api: TestAPI):
+    response, start_time, end_time = upload_classification_data(test_api,
+                                                                classification_model_version["id"],
+                                                                samples_per_date=50)
+    assert response.status_code == 200, response.json()
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    assert upload_multiclass_reference_data(
+        test_api, classification_model_version).status_code == 200, response.json()
+
+    # without filter
+    monitor_id = test_api.create_monitor(
+        classification_model_check["id"],
+        monitor={
+            "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}},
+            "name": "monitory",
+            "lookback": 86400,
+            "aggregation_window": 3600,
+            "frequency": 3600,
+        }
+    )["id"]
+    response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={"end_time": end_time})
+
+    json_rsp = response.json()
+    assert "output" in json_rsp, json_rsp
+    assert json_rsp["output"] == {"v1": [None, None, None, None, None, None, None, None,
+                                         None, None, None, None, None, None, None, None, None,
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0}, None,
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 1.0}, None,
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0}]}
+
+    # with filter
+    monitor_id = test_api.create_monitor(
+        classification_model_check["id"],
+        monitor={
+            "additional_kwargs": {"check_conf": {"scorer": ["F1 Per Class"]}},
+            "name": "monitory",
+            "lookback": 86400,
+            "aggregation_window": 3600,
+            "frequency": 3600,
+            "data_filters": {
+                "filters": [{"column": "a", "operator": "greater_than", "value": 12},
+                            {"column": "b", "operator": "contains", "value": "ppppp"}]
+            }
+        }
+    )["id"]
+
+    response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={"end_time": end_time})
+
+    json_rsp = response.json()
+    assert json_rsp["output"] == {"v1": [None, None, None, None, None, None, None, None, None,
+                                         None, None, None, None, None, None, None, None, None, None,
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 1.0},
+                                         None,
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0}]}
