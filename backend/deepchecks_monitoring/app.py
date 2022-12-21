@@ -26,6 +26,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import FileResponse
 
+from deepchecks_monitoring import __version__
 from deepchecks_monitoring.api.v1 import global_router as v1_global_router
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
@@ -33,6 +34,7 @@ from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.middlewares import ProfilingMiddleware, SecurityAuditMiddleware
+from deepchecks_monitoring.monitoring_utils import collect_telemetry
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import auth
 
@@ -71,13 +73,14 @@ def create_application(
     settings = settings or Settings()
 
     # Configure telemetry with uptrace
-    if settings.instrument_telemetry:
+    if settings.uptrace_dsn and settings.instrument_telemetry:
         import uptrace  # pylint: disable=import-outside-toplevel
         uptrace.configure_opentelemetry(
             service_name="monitoring-commercial",
-            service_version="0.0.1",
+            service_version=__version__,
             dsn=settings.uptrace_dsn
         )
+        collect_telemetry(DataIngestionBackend)
 
     app = FastAPI(
         title=title,
@@ -150,7 +153,7 @@ def create_application(
             asyncio.create_task(app.state.data_ingestion_backend.cache_invalidator.run_invalidation_consumer())
 
         # Add telemetry
-        if settings.instrument_telemetry:
+        if settings.uptrace_dsn and settings.instrument_telemetry:
             FastAPIInstrumentor.instrument_app(app)
 
     # Set deepchecks testing library logging verbosity to error to not spam the logs

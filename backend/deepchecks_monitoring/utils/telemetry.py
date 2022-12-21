@@ -8,83 +8,50 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-# pylint: disable=import-outside-toplevel
-"""Background tasks open-telementy instrumentors."""
+"""Open-telementy instrumentors."""
 import json
 import logging
 import typing as t
 from functools import wraps
 from timeit import default_timer as timer
+from typing import TYPE_CHECKING
 
 import anyio
-from sqlalchemy.ext.asyncio import AsyncSession  # pylint: disable=unused-import
+import pendulum as pdl
+from opentelemetry import trace
+from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
+from opentelemetry.semconv.trace import SpanAttributes
+from opentelemetry.trace import SpanKind, Status, StatusCode
 
 from deepchecks_monitoring import __version__
+from deepchecks_monitoring.bgtasks.core import TaskStatus
+from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.schema_models import ModelVersion
 
-try:
-    import opentelemetry
-    from opentelemetry import trace
-    from opentelemetry.semconv.trace import SpanAttributes
-    from opentelemetry.trace import INVALID_SPAN, INVALID_SPAN_CONTEXT, Status, StatusCode, get_current_span
-except ImportError:
-    opentelemetry = None
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
+    from deepchecks_monitoring.bgtasks.core import Actor, Task, Worker
+    from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+    from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 
-if t.TYPE_CHECKING:
-    from .core import Actor, Task, Worker  # pylint: disable=unused-import
-    from .scheduler import AlertsScheduler  # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
 
-def collect_telemetry(routine: t.Any):
-    """Instrument open-telementry for given routine."""
-    from .core import Worker  # pylint: disable=redefined-outer-name
-    from .scheduler import AlertsScheduler  # pylint: disable=redefined-outer-name
-
-    # TODO:
-    # maybe also add an env var to control whether telemetry
-    # instrumentation will be applied
-    if opentelemetry is None:
-        logger.warning(
-            "Open Telemetry SDK is not installed, cannot "
-            "instrument open telemetry collectors"
-        )
-        return routine
-
-    if issubclass(routine, AlertsScheduler):
-        SchedulerInstrumentor(routine).instrument()
-        logger.info("Instrumented alerts scheduler telemetry collectors")
-        return routine
-
-    if issubclass(routine, Worker):
-        WorkerInstrumentor(routine).instrument()
-        logger.info("Instrumented worker telemetry collectors")
-        return routine
-
-    raise ValueError(
-        "Unknown routine, do not know how to do "
-        "open-telemetry instrumentation for it."
-    )
-
-
-class SchedulerInstrumentor:
+class SchedulerInstrumentor(BaseInstrumentor):
     """Alerts scheduler open-telemetry instrumentor."""
 
-    def __init__(self, scheduler_type: "t.Type[AlertsScheduler]"):
+    def _instrument(self, scheduler_type: "t.Type[AlertsScheduler]"):
+        """Instrument open-telemetry for given scheduler type."""
+
         self.tracer = trace.get_tracer("alerts-scheduler", __version__)
         self.scheduler_type = scheduler_type
 
-    def instrument(self):
-        """Instrument open-telemetry for given scheduler type."""
-        if not opentelemetry:
-            logger.warning("Opentelemetry SDK is not installed")
-            return
+        self.orig_scheduler_run = self.scheduler_type.run
+        self.orig_run_organization = self.scheduler_type.run_organization
 
-        scheduler_run = self.scheduler_type.run
-        scheduler_run_organization = self.scheduler_type.run_organization
-
-        @wraps(scheduler_run)
+        @wraps(self.orig_scheduler_run)
         async def run(scheduler: "AlertsScheduler", *args, **kwargs):
             start_time = timer()
             db_url = scheduler.engine.url
@@ -99,7 +66,7 @@ class SchedulerInstrumentor:
                 span.set_attribute("operation.sleep_seconds", scheduler.sleep_seconds)
 
                 try:
-                    await scheduler_run(scheduler, *args, **kwargs)
+                    await self.orig_scheduler_run(scheduler, *args, **kwargs)
                 except Exception as error:
                     end_time = timer()
                     span.set_attribute("operation.duration", end_time - start_time)
@@ -110,7 +77,7 @@ class SchedulerInstrumentor:
                         span.record_exception(error)
                     raise
 
-        @wraps(scheduler_run_organization)
+        @wraps(self.orig_run_organization)
         async def run_organization(scheduler: "AlertsScheduler", *args, **kwargs):
             with self.tracer.start_as_current_span("AlertsScheduler.run_organization") as span:
                 # NOTE:
@@ -122,7 +89,7 @@ class SchedulerInstrumentor:
                 start_time = timer()
 
                 try:
-                    enqueued_tasks = await scheduler_run_organization(scheduler, *args, **kwargs)
+                    enqueued_tasks = await self.orig_run_organization(scheduler, *args, **kwargs)
 
                     span.set_status(Status(StatusCode.OK))
 
@@ -147,28 +114,34 @@ class SchedulerInstrumentor:
         self.scheduler_type.run = run
         self.scheduler_type.run_organization = run_organization
 
+    def _uninstrument(self):
+        self.scheduler_type.run = self.orig_scheduler_run
+        self.scheduler_type.run_organization = self.orig_run_organization
 
-class WorkerInstrumentor:
+    def instrumentation_dependencies(self):
+        return []
+
+
+class WorkerInstrumentor(BaseInstrumentor):
     """Alerts scheduler open-telemetry instrumentor."""
 
-    def __init__(self, worker_type: "t.Type[Worker]"):
+    def _instrument(self, worker_type: "t.Type[Worker]"):
+        """Instrument open-telemetry for given worker type."""
+
         self.tracer = trace.get_tracer("bgtasks-worker", __version__)
         self.worker_type = worker_type
 
-    def instrument(self):
-        """Instrument open-telemetry for given worker type."""
-        if not opentelemetry:
-            logger.warning("Opentelemetry SDK is not installed")
-            return
+        self.orig_atomic_task_execution = self.worker_type.atomic_task_execution
+        self.orig_not_atomic_task_execution = self.worker_type.not_atomic_task_execution
 
-        self.worker_type.atomic_task_execution = self.wrap_task_execution(
+        self.worker_type.atomic_task_execution = self._wrap_task_execution(
             self.worker_type.atomic_task_execution
         )
-        self.worker_type.not_atomic_task_execution = self.wrap_task_execution(
+        self.worker_type.not_atomic_task_execution = self._wrap_task_execution(
             self.worker_type.not_atomic_task_execution
         )
 
-    def wrap_task_execution(self, original_fn):
+    def _wrap_task_execution(self, original_fn):
         """Wrap worker task execution method."""
         @wraps(original_fn)
         async def execute_task(
@@ -229,7 +202,6 @@ class WorkerInstrumentor:
                         span.record_exception(error)
                     raise
                 else:
-                    from .core import TaskStatus  # pylint: disable=redefined-outer-name
                     span.set_attribute("operation.task.status", task.status.value)
                     span.set_attribute("operation.task.finished_at", str(task.finished_at))
                     span.set_attribute("operation.task.error", task.error)
@@ -240,41 +212,62 @@ class WorkerInstrumentor:
 
         return execute_task
 
+    def _uninstrument(self):
+        self.worker_type.atomic_task_execution = self.orig_atomic_task_execution
+        self.worker_type.not_atomic_task_execution = self.orig_not_atomic_task_execution
 
-class TelemetyLoggingHandler(logging.Handler):
-    """Open telemetry logging handler.
+    def instrumentation_dependencies(self):
+        return []
 
-    Current handler adds log messages as events to the current span.
-    """
 
-    def emit(self, record: logging.LogRecord):
-        """Handle log record."""
-        if opentelemetry is None:
-            return
-        if (span := get_current_span()) == INVALID_SPAN:
-            return
-        if not span.is_recording():
-            return
-        if span.get_span_context() == INVALID_SPAN_CONTEXT:
-            return
+class DataIngetionInstrumentor(BaseInstrumentor):
+    """Data ingestion backend open-telemetry instrumentor."""
 
-        if span._lock.locked() is True:  # pylint: disable=protected-access
-            # WARNING:
-            # if a log message was emitted by a span method that acquired
-            # a lock then we will end up in the deadlock, it is because
-            # 'add_event' method also tries to acquire a lock, to prevent
-            # appearing in the deadlock we need to verify whether the lock
-            # is acquired or not
-            return
+    def _instrument(self, data_ingestion_backend_type: t.Type["DataIngestionBackend"]):
+        """Instrument fo the data ingestion backend."""
+        self.tracer = trace.get_tracer("data-ingestion-backend", __version__)
+        self.data_ingestion_backend_type = data_ingestion_backend_type
 
-        span.add_event(
-            name=record.getMessage(),
-            attributes={
-                "filename": record.filename,
-                "module": record.module,
-                "funcName": record.funcName,
-                "levelname": record.levelname,
-                "levelno": record.levelno,
-                "exc_text": record.exc_text or "",
+        self.orig_log_or_update = self.data_ingestion_backend_type.log_or_update
+
+        @wraps(self.data_ingestion_backend_type.log_or_update)
+        async def log_or_update(
+            data_ingestion_backend: "DataIngestionBackend",
+            model_version: ModelVersion,
+            data: t.List[t.Dict[str, t.Any]],
+            session: "AsyncSession",
+            user: User,
+            action: t.Literal["log", "update"],
+            log_time: pdl.DateTime,
+        ):
+            span_attributes = {
+                SpanAttributes.CODE_NAMESPACE: "DataIngestionBackend",
+                SpanAttributes.CODE_FUNCTION: "log_or_update",
+                "operation.user.id": user.id,
+                "operation.user.organization_id": user.organization_id,
+                "operation.size": len(data),
+                "operation.action": action,
             }
-        )
+
+            with self.tracer.start_as_current_span("DataIngestionBackend.log_or_update",
+                                                   kind=SpanKind.CONSUMER, attributes=span_attributes) as span:
+                start_time = timer()
+                try:
+                    result = await self.orig_log_or_update(data_ingestion_backend, model_version,
+                                                           data, session, user, action, log_time)
+                except Exception as error:
+                    span.set_attribute("operation.duration",  timer() - start_time)
+                    span.set_status(Status(StatusCode.ERROR))
+                    span.record_exception(error)
+                    raise
+                else:
+                    span.set_attribute("operation.duration",  timer() - start_time)
+                    return result
+
+        self.data_ingestion_backend_type.log_or_update = log_or_update
+
+    def _uninstrument(self):
+        self.data_ingestion_backend_type.log_or_update = self.orig_log_or_update
+
+    def instrumentation_dependencies(self):
+        return []

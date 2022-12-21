@@ -12,7 +12,6 @@
 import asyncio
 import copy
 import json
-import logging
 import typing as t
 
 import asyncpg.exceptions
@@ -27,11 +26,14 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from deepchecks_monitoring import __version__
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import get_data_topic_name, topic_name_to_ids
 from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_S3_IMAGE_COL,
                                                              SAMPLE_TS_COL)
@@ -223,14 +225,17 @@ class DataIngestionBackend(object):
 
     def __init__(
             self,
-            resources_provider,
+            resources_provider: ResourcesProvider,
             s3_bucket: str,
             logger=None
     ):
-        self.resources_provider = resources_provider
+        self.resources_provider: ResourcesProvider = resources_provider
         self.cache_invalidator = CacheInvalidator(resources_provider)
         self.s3_bucket = s3_bucket
-        self.logger = logger or logging.getLogger("data-ingestion")
+        self.logger = logger or configure_logger(
+            name="data-ingestion",
+            uptrace_dsn=resources_provider.settings.uptrace_dsn,
+        )
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
         self._producer = None
 
@@ -287,10 +292,10 @@ class DataIngestionBackend(object):
 
     async def run_data_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
-        await consume_from_kafka(self.resources_provider.kafka_settings, self.handle_data_messages,
+        await consume_from_kafka(self.resources_provider.kafka_settings, self._handle_data_messages,
                                  r"^data\-.*$", self.logger)
 
-    async def handle_data_messages(self, tp, messages) -> bool:
+    async def _handle_data_messages(self, tp, messages) -> bool:
         """Handle messages consumed from kafka."""
         organization_id, model_version_id = topic_name_to_ids(tp.topic)
         try:
@@ -334,7 +339,7 @@ class DataIngestionBackend(object):
             return True
         except Exception as exception:  # pylint: disable=broad-except
             self.logger.exception(exception)
-            # If it's not a db exception, we commit anyway to not get stuck
+            # If it"s not a db exception, we commit anyway to not get stuck
             await self.save_failures(organization_id, model_version_id, messages, exception)
             return True
 
@@ -360,7 +365,7 @@ class DataIngestionBackend(object):
             if self.use_kafka:
                 await self.cache_invalidator.send_invalidation(organization_id, model_version_id, int_timestamps)
             else:
-                # In case we don't have a running kafka call the cache invalidation directly
+                # In case we don"t have a running kafka call the cache invalidation directly
                 self.resources_provider.cache_functions.delete_monitor_cache_by_timestamp(organization_id,
                                                                                           model_version_id,
                                                                                           int_timestamps)

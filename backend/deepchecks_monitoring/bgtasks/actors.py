@@ -27,12 +27,12 @@ from sqlalchemy.orm import joinedload, selectinload
 from deepchecks_monitoring import __version__
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
-from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
-from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
+from deepchecks_monitoring.monitoring_utils import (DataFilterList, collect_telemetry, configure_logger,
+                                                    make_oparator_func)
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, Model
@@ -442,7 +442,6 @@ class WorkerSettings(Settings):
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
-    uptrace_dsn: t.Optional[str] = None
 
 
 class WorkerBootstrap:
@@ -457,7 +456,7 @@ class WorkerBootstrap:
         settings = self.settings_type()  # type: ignore
         service_name = "deepchecks-worker"
 
-        if settings.uptrace_dsn:
+        if settings.uptrace_dsn and settings.instrument_telemetry:
             import uptrace  # pylint: disable=import-outside-toplevel
             uptrace.configure_opentelemetry(
                 dsn=settings.uptrace_dsn,

@@ -29,9 +29,8 @@ from sqlalchemy.sql.functions import concat
 
 from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.core import Task
-from deepchecks_monitoring.bgtasks.telemetry import collect_telemetry
-from deepchecks_monitoring.config import DatabaseSettings
-from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
+from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.monitoring_utils import TimeUnit, collect_telemetry, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_COL,
@@ -238,7 +237,7 @@ def is_serialization_error(error: DBAPIError):
     )
 
 
-class SchedulerSettings(DatabaseSettings):
+class SchedulerSettings(Settings):
     """Scheduler settings."""
 
     scheduler_sleep_seconds: int = 30
@@ -246,13 +245,6 @@ class SchedulerSettings(DatabaseSettings):
     scheduler_loglevel: str = 'INFO'
     scheduler_logfile_maxsize: int = 10000000  # 10MB
     scheduler_logfile_backup_count: int = 3
-    uptrace_dsn: t.Optional[str] = None
-
-    class Config:
-        """Model config."""
-
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
 
 
 def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
@@ -261,7 +253,7 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
         settings = SchedulerSettings()  # type: ignore
         service_name = 'alerts-scheduler'
 
-        if settings.uptrace_dsn:
+        if settings.uptrace_dsn and settings.instrument_telemetry:
             import uptrace  # pylint: disable=import-outside-toplevel
             uptrace.configure_opentelemetry(
                 dsn=settings.uptrace_dsn,

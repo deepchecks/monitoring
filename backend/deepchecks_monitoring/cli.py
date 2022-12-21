@@ -18,13 +18,14 @@ import uvicorn
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.actors import WorkerBootstrap
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, execute_alerts_scheduler
 from deepchecks_monitoring.config import DatabaseSettings, Settings
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
+from deepchecks_monitoring.monitoring_utils import collect_telemetry, fetch_unused_monitoring_tables
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import auth
@@ -56,6 +57,14 @@ def consume_data():
     async def consume():
         settings = Settings()  # type: ignore
         resources_provider = ResourcesProvider(settings)
+        if settings.uptrace_dsn and settings.instrument_telemetry:
+            import uptrace  # pylint: disable=import-outside-toplevel
+            uptrace.configure_opentelemetry(
+                service_name="monitoring-commercial",
+                service_version=__version__,
+                dsn=settings.uptrace_dsn
+            )
+            collect_telemetry(DataIngestionBackend)
         backend = DataIngestionBackend(settings, resources_provider, settings.get_deepchecks_bucket())
         await backend.run_data_consumer()
 

@@ -16,10 +16,14 @@ import logging.handlers
 import operator
 import sys
 import typing as t
+from typing import TYPE_CHECKING
 
+import opentelemetry
 import orjson
 import sqlalchemy as sa
+import uptrace
 from fastapi import Depends, Path, Query
+from opentelemetry.trace import INVALID_SPAN, INVALID_SPAN_CONTEXT, get_current_span
 from pydantic import BaseModel, conlist, constr
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,16 +31,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.expression import ColumnOperators
 
-from deepchecks_monitoring.bgtasks.telemetry import TelemetyLoggingHandler
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 
-try:
-    import uptrace
-except ImportError:
-    uptrace = None
-
-if t.TYPE_CHECKING is True:
-    from deepchecks_monitoring.public_models.base import Base  # pylint: disable=unused-import
+if TYPE_CHECKING:
+    from deepchecks_monitoring.public_models.base import Base
 
 
 __all__ = [
@@ -613,3 +611,73 @@ class CheckIdentifier(EntityIdentifier):
     def entity(self):
         from deepchecks_monitoring.public_models import Check
         return Check
+
+
+def collect_telemetry(routine: t.Any):
+    """Instrument open-telementry for given routine."""
+    # pylint: disable=redefined-outer-name
+    from deepchecks_monitoring.bgtasks.actors import Worker
+    from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+    from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+    from deepchecks_monitoring.utils.telemetry import (DataIngetionInstrumentor, SchedulerInstrumentor,
+                                                       WorkerInstrumentor)
+
+    logger = logging.getLogger("instrumation")
+
+    if issubclass(routine, AlertsScheduler):
+        SchedulerInstrumentor().instrument(scheduler_type=routine)
+        logger.info("Instrumented alerts scheduler telemetry collectors")
+        return routine
+
+    if issubclass(routine, Worker):
+        WorkerInstrumentor().instrument(worker_type=routine)
+        logger.info("Instrumented worker telemetry collectors")
+        return routine
+
+    if issubclass(routine, DataIngestionBackend):
+        DataIngetionInstrumentor().instrument(data_ingestion_backend_type=routine)
+        logger.info("Instrumented data ingestion backend telemetry collectors")
+        return routine
+
+    raise ValueError(
+        "Unknown routine, do not know how to do open-telemetry instrumentation for it."
+    )
+
+
+class TelemetyLoggingHandler(logging.Handler):
+    """Open telemetry logging handler.
+
+    Current handler adds log messages as events to the current span.
+    """
+
+    def emit(self, record: logging.LogRecord):
+        """Handle log record."""
+        if opentelemetry is None:
+            return
+        if (span := get_current_span()) == INVALID_SPAN:
+            return
+        if not span.is_recording():
+            return
+        if span.get_span_context() == INVALID_SPAN_CONTEXT:
+            return
+
+        if span._lock.locked() is True:  # pylint: disable=protected-access
+            # WARNING:
+            # if a log message was emitted by a span method that acquired
+            # a lock then we will end up in the deadlock, it is because
+            # 'add_event' method also tries to acquire a lock, to prevent
+            # appearing in the deadlock we need to verify whether the lock
+            # is acquired or not
+            return
+
+        span.add_event(
+            name=record.getMessage(),
+            attributes={
+                "filename": record.filename,
+                "module": record.module,
+                "funcName": record.funcName,
+                "levelname": record.levelname,
+                "levelno": record.levelno,
+                "exc_text": record.exc_text or "",
+            }
+        )
