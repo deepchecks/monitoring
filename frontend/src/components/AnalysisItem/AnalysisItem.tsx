@@ -90,7 +90,7 @@ function AnalysisItemComponent({
         check_conf: {
           [activeFilter]: filter
         },
-        res_conf: []
+        res_conf: undefined
       };
 
       if (activeFilter !== AnalysisItemFilterTypes.AGGREGATION)
