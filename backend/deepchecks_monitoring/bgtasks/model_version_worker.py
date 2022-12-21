@@ -160,7 +160,7 @@ class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
     uptrace_dsn: t.Optional[str] = None
-    process_interval_seconds: int = 600
+    process_interval_seconds: int = 30
     num_workers: int = 3
 
     class Config:
