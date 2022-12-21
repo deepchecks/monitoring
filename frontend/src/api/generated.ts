@@ -19,6 +19,11 @@ export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string
 
 export type GetOrCreateVersionApiV1ModelsModelIdVersionPostParams = { identifier_kind?: IdentifierKind };
 
+export type AddScorerApiV1ConnectedModelsModelIdScorersPostBody = { [key: string]: any };
+
+export type RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetParams =
+  { sort_key?: IngestionErrorsSortKey; sort_order?: SortOrder; download?: boolean; limit?: number; offset?: number };
+
 export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: ColumnMetadata };
 
 export type GetModelColumnsApiV1ModelsModelIdColumnsGetParams = { identifier_kind?: IdentifierKind };
@@ -75,8 +80,6 @@ export type DeleteChecksByNameApiV1ModelsModelIdChecksDeleteParams = {
 export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | CheckCreationSchema[];
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
-
-export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertRulesApiV1AlertRulesGetSortbyItem =
   typeof GetAlertRulesApiV1AlertRulesGetSortbyItem[keyof typeof GetAlertRulesApiV1AlertRulesGetSortbyItem];
@@ -230,6 +233,19 @@ export interface StandartWebhookProperties {
   http_headers?: StandartWebhookPropertiesHttpHeaders;
   notification_levels?: AlertSeverity[];
 }
+
+export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
+
+/**
+ * Sort order of ingestion errors output.
+ */
+export type SortOrder = typeof SortOrder[keyof typeof SortOrder];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const SortOrder = {
+  asc: 'asc',
+  desc: 'desc'
+} as const;
 
 /**
  * Options for running check on a specific window.
@@ -574,6 +590,28 @@ export interface InvitationCreationSchema {
 }
 
 /**
+ * Sort key of ingestion errors output.
+ */
+export type IngestionErrorsSortKey = typeof IngestionErrorsSortKey[keyof typeof IngestionErrorsSortKey];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const IngestionErrorsSortKey = {
+  timestamp: 'timestamp',
+  error: 'error'
+} as const;
+
+/**
+ * IngestionError output schema.
+ */
+export interface IngestionErrorSchema {
+  id: number;
+  sample_id?: string;
+  error?: string;
+  created_at: string;
+  sample: string;
+}
+
+/**
  * Identifier kind.
  */
 export type IdentifierKind = unknown;
@@ -619,6 +657,31 @@ export interface DashboardSchema {
   id: number;
   name?: string;
   monitors: MonitorSchema[];
+}
+
+/**
+ * ModelVersion schema for the "Connected Models" screen.
+ */
+export interface ConnectedModelVersionSchema {
+  id: number;
+  name: string;
+  last_update_time?: string;
+  n_of_pending_rows: number;
+  n_of_alerts: number;
+}
+
+/**
+ * Model schema for the "Connected Models" screen.
+ */
+export interface ConnectedModelSchema {
+  id: number;
+  name: string;
+  description?: string;
+  task_type?: TaskType;
+  n_of_alerts: number;
+  n_of_pending_rows: number;
+  n_of_updating_versions: number;
+  latest_update?: string;
 }
 
 /**
@@ -3552,6 +3615,346 @@ export const useGetModelColumnsApiV1ModelsModelIdColumnsGet = <
   query.queryKey = queryKey;
 
   return query;
+};
+
+/**
+ * Retrieve list of connected models.
+ * @summary Retrieve Connected Models
+ */
+export const retrieveConnectedModelsApiV1ConnectedModelsGet = (signal?: AbortSignal) =>
+  customInstance<ConnectedModelSchema[]>({ url: `/api/v1/connected-models`, method: 'get', signal });
+
+export const getRetrieveConnectedModelsApiV1ConnectedModelsGetQueryKey = () => [`/api/v1/connected-models`];
+
+export type RetrieveConnectedModelsApiV1ConnectedModelsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveConnectedModelsApiV1ConnectedModelsGet>>
+>;
+export type RetrieveConnectedModelsApiV1ConnectedModelsGetQueryError = ErrorType<unknown>;
+
+export const useRetrieveConnectedModelsApiV1ConnectedModelsGet = <
+  TData = Awaited<ReturnType<typeof retrieveConnectedModelsApiV1ConnectedModelsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveConnectedModelsApiV1ConnectedModelsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetrieveConnectedModelsApiV1ConnectedModelsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveConnectedModelsApiV1ConnectedModelsGet>>> = ({
+    signal
+  }) => retrieveConnectedModelsApiV1ConnectedModelsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof retrieveConnectedModelsApiV1ConnectedModelsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Retrieve list of versions of a connected model.
+ * @summary Retrive Connected Model Versions
+ */
+export const retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet = (
+  modelId: number,
+  signal?: AbortSignal
+) =>
+  customInstance<ConnectedModelVersionSchema[]>({
+    url: `/api/v1/connected-models/${modelId}/versions`,
+    method: 'get',
+    signal
+  });
+
+export const getRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGetQueryKey = (modelId: number) => [
+  `/api/v1/connected-models/${modelId}/versions`
+];
+
+export type RetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet>>
+>;
+export type RetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGetQueryError =
+  ErrorType<HTTPValidationError>;
+
+export const useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet = <
+  TData = Awaited<ReturnType<typeof retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGetQueryKey(modelId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet>>
+  > = ({ signal }) => retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet(modelId, signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!modelId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Retrieve connected model version ingestion errors.
+ * @summary Retrieve Connected Model Version Ingestion Errors
+ */
+export const retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet =
+  (
+    modelId: number,
+    versionId: number,
+    params?: RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetParams,
+    signal?: AbortSignal
+  ) =>
+    customInstance<IngestionErrorSchema[]>({
+      url: `/api/v1/connected-models/${modelId}/versions/${versionId}/ingestion-errors`,
+      method: 'get',
+      params,
+      signal
+    });
+
+export const getRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetQueryKey =
+  (
+    modelId: number,
+    versionId: number,
+    params?: RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetParams
+  ) => [`/api/v1/connected-models/${modelId}/versions/${versionId}/ingestion-errors`, ...(params ? [params] : [])];
+
+export type RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
+      >
+    >
+  >;
+export type RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetQueryError =
+  ErrorType<HTTPValidationError>;
+
+export const useRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet =
+  <
+    TData = Awaited<
+      ReturnType<
+        typeof retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
+      >
+    >,
+    TError = ErrorType<HTTPValidationError>
+  >(
+    modelId: number,
+    versionId: number,
+    params?: RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetParams,
+    options?: {
+      query?: UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
+          >
+        >,
+        TError,
+        TData
+      >;
+    }
+  ): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+    const { query: queryOptions } = options ?? {};
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetQueryKey(
+        modelId,
+        versionId,
+        params
+      );
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
+        >
+      >
+    > = ({ signal }) =>
+      retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet(
+        modelId,
+        versionId,
+        params,
+        signal
+      );
+
+    const query = useQuery<
+      Awaited<
+        ReturnType<
+          typeof retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
+        >
+      >,
+      TError,
+      TData
+    >(queryKey, queryFn, { enabled: !!(modelId && versionId), ...queryOptions }) as UseQueryResult<TData, TError> & {
+      queryKey: QueryKey;
+    };
+
+    query.queryKey = queryKey;
+
+    return query;
+  };
+
+/**
+ * Retrieve list of all available scorers.
+ * @summary Retrieve Scorers
+ */
+export const retrieveScorersApiV1ScorersGet = (signal?: AbortSignal) =>
+  customInstance<unknown>({ url: `/api/v1/scorers`, method: 'get', signal });
+
+export const getRetrieveScorersApiV1ScorersGetQueryKey = () => [`/api/v1/scorers`];
+
+export type RetrieveScorersApiV1ScorersGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveScorersApiV1ScorersGet>>
+>;
+export type RetrieveScorersApiV1ScorersGetQueryError = ErrorType<unknown>;
+
+export const useRetrieveScorersApiV1ScorersGet = <
+  TData = Awaited<ReturnType<typeof retrieveScorersApiV1ScorersGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveScorersApiV1ScorersGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetrieveScorersApiV1ScorersGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveScorersApiV1ScorersGet>>> = ({ signal }) =>
+    retrieveScorersApiV1ScorersGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof retrieveScorersApiV1ScorersGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Retrieve list of model scorers.
+ * @summary Retrieve Model Scorers
+ */
+export const retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet = (modelId: number, signal?: AbortSignal) =>
+  customInstance<unknown>({ url: `/api/v1/connected-models/${modelId}/scorers`, method: 'get', signal });
+
+export const getRetrieveModelScorersApiV1ConnectedModelsModelIdScorersGetQueryKey = (modelId: number) => [
+  `/api/v1/connected-models/${modelId}/scorers`
+];
+
+export type RetrieveModelScorersApiV1ConnectedModelsModelIdScorersGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet>>
+>;
+export type RetrieveModelScorersApiV1ConnectedModelsModelIdScorersGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useRetrieveModelScorersApiV1ConnectedModelsModelIdScorersGet = <
+  TData = Awaited<ReturnType<typeof retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getRetrieveModelScorersApiV1ConnectedModelsModelIdScorersGetQueryKey(modelId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet>>
+  > = ({ signal }) => retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet(modelId, signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!modelId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Add a scorer to a model.
+ * @summary Add Scorer
+ */
+export const addScorerApiV1ConnectedModelsModelIdScorersPost = (
+  modelId: number,
+  addScorerApiV1ConnectedModelsModelIdScorersPostBody: AddScorerApiV1ConnectedModelsModelIdScorersPostBody
+) =>
+  customInstance<unknown>({
+    url: `/api/v1/connected-models/${modelId}/scorers`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: addScorerApiV1ConnectedModelsModelIdScorersPostBody
+  });
+
+export type AddScorerApiV1ConnectedModelsModelIdScorersPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addScorerApiV1ConnectedModelsModelIdScorersPost>>
+>;
+export type AddScorerApiV1ConnectedModelsModelIdScorersPostMutationBody =
+  AddScorerApiV1ConnectedModelsModelIdScorersPostBody;
+export type AddScorerApiV1ConnectedModelsModelIdScorersPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useAddScorerApiV1ConnectedModelsModelIdScorersPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addScorerApiV1ConnectedModelsModelIdScorersPost>>,
+    TError,
+    { modelId: number; data: AddScorerApiV1ConnectedModelsModelIdScorersPostBody },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addScorerApiV1ConnectedModelsModelIdScorersPost>>,
+    { modelId: number; data: AddScorerApiV1ConnectedModelsModelIdScorersPostBody }
+  > = props => {
+    const { modelId, data } = props ?? {};
+
+    return addScorerApiV1ConnectedModelsModelIdScorersPost(modelId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof addScorerApiV1ConnectedModelsModelIdScorersPost>>,
+    TError,
+    { modelId: number; data: AddScorerApiV1ConnectedModelsModelIdScorersPostBody },
+    TContext
+  >(mutationFn, mutationOptions);
 };
 
 /**

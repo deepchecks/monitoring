@@ -1,12 +1,11 @@
 import React, { useState, useRef, RefObject, useEffect } from 'react';
 import dayjs from 'dayjs';
 
-import { ModelManagmentSchema, ModelVersionManagmentSchema } from 'api/generated';
+import { ConnectedModelSchema, ModelVersionManagmentSchema } from 'api/generated';
 
 import { Stack, Typography, Tooltip } from '@mui/material';
 
 import ModelInfoBadge from './ModelInfoBadge';
-import VersionsList from './VersionsList';
 
 import {
   StyledModelInfoItemContainer,
@@ -21,15 +20,16 @@ import {
   StyledModalTitleText,
   StyledModalList,
   StyledModalCloseButton,
-  StyledDeleteModelButtonContainer,
+  StyledHoverButtonContainer,
   StyledDeleteModelButton,
   StyledDeleteModelButtonText
 } from './ModelInfoItem.style';
 
-import { CloseIcon, DeleteIcon } from 'assets/icon/icon';
+import { CloseIcon, DeleteIcon, ViewDetails } from 'assets/icon/icon';
+import ModelDetails from './ModelDetails';
 
 interface ModelInfoItemProps {
-  model: ModelManagmentSchema;
+  model: ConnectedModelSchema;
   onDelete: () => Promise<void>;
 }
 
@@ -46,12 +46,8 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const { name, latest_time: lastUpdate, monitors_count: monitors, alerts_count: alerts, versions } = model;
+  const { name, latest_update: lastUpdate, n_of_pending_rows: nPendingRows, n_of_alerts: nAlerts, n_of_updating_versions: nVersions } = model;
 
-  useEffect(() => {
-    const sorted = sortVersionsByEndDate(versions);
-    setSortedVersions(sorted);
-  }, [model]);
 
   const modelNameRef = useRef<HTMLElement>(null);
   const isEllipsisActive = !isEllipsisActiveCheck(modelNameRef);
@@ -79,37 +75,36 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
               <span ref={modelNameRef}>{name}</span>
             </StyledModelInfoItemName>
           </Tooltip>
-          <Typography>Last update: {lastUpdate ? dayjs.unix(lastUpdate).format('MMM. DD, YYYY') : '-'}</Typography>
+          <Typography>Last update: {lastUpdate ? dayjs(lastUpdate).format('MMM. DD, YYYY') : '-'}</Typography>
         </Stack>
 
-        <ModelInfoBadge value={monitors} title="Monitors" />
-        <ModelInfoBadge value={alerts} title="Alerts" marginLeft="8px" />
       </StyledModelInfoItemHeader>
-      <Stack sx={{ p: '20px' }}>
-        {sortedVersions.length === 0 ? (
-          <StyledNoVersionsTitle>There are no versions for this model yet</StyledNoVersionsTitle>
-        ) : (
-          <>
-            <StyledModelInfoVersionsTitle>Versions</StyledModelInfoVersionsTitle>
-            <VersionsList versions={sortedVersions.slice(0, RANGE)} />
-            {sortedVersions.length > RANGE && (
-              <StyledModelInfoHandleRangeButton variant="text" onClick={handleOpen}>
-                See all versions (+{sortedVersions.length - RANGE})
-              </StyledModelInfoHandleRangeButton>
-            )}
-          </>
-        )}
+      <Stack sx={{ p: '20px' , display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} style={isHovered ? {filter:'blur(5px)'} : {}}>
+        <ModelInfoBadge value={nAlerts} title="Critical" margin='0px 8px'/>
+        <ModelInfoBadge value={nVersions} title="Versions Updating"  margin='0px 8px'/>
+        <ModelInfoBadge value={nPendingRows} title="Pending Rows"  margin='0px 8px'/>
       </Stack>
+      
 
       {isHovered && (
-        <StyledDeleteModelButtonContainer>
-          <StyledDeleteModelButton onClick={onDelete}>
-            <Stack>
-              <DeleteIcon />
-              <StyledDeleteModelButtonText>Delete</StyledDeleteModelButtonText>
-            </Stack>
-          </StyledDeleteModelButton>
-        </StyledDeleteModelButtonContainer>
+        <>
+          <StyledHoverButtonContainer left='130px' bottom='50px'>
+            <StyledDeleteModelButton onClick={handleOpen}>
+              <Stack sx={{alignItems: 'center'}}>
+                <ViewDetails />
+                <StyledDeleteModelButtonText>View Details</StyledDeleteModelButtonText>
+              </Stack>
+            </StyledDeleteModelButton>
+          </StyledHoverButtonContainer>
+          <StyledHoverButtonContainer right='150px' bottom='50px'>
+            <StyledDeleteModelButton onClick={onDelete}>
+              <Stack>
+                <DeleteIcon />
+                <StyledDeleteModelButtonText marginTop='6px'>Delete</StyledDeleteModelButtonText>
+              </Stack>
+            </StyledDeleteModelButton>
+          </StyledHoverButtonContainer>
+        </>
       )}
 
       <StyledModal
@@ -120,13 +115,13 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
       >
         <StyledModalContent>
           <StyledModalTitle>
-            <StyledModalTitleText>{name} Versions list</StyledModalTitleText>
+            <StyledModalTitleText>{name} Details</StyledModalTitleText>
             <StyledModalCloseButton onClick={handleClose}>
               <CloseIcon />
             </StyledModalCloseButton>
           </StyledModalTitle>
           <StyledModalList>
-            <VersionsList versions={sortedVersions} />
+            <ModelDetails model={model} />
           </StyledModalList>
         </StyledModalContent>
       </StyledModal>

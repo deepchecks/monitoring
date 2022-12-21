@@ -5,7 +5,7 @@ import { colors } from 'theme/colors';
 export const StyledModelInfoItemContainer = styled(Stack)({
   position: 'relative',
   width: '428px',
-  height: '319px',
+  height: '207px',
   borderRadius: '10px',
   boxShadow: ' 0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
   fontSize: '16px',
@@ -68,8 +68,8 @@ export const StyledModal = styled(Modal)({
 });
 
 export const StyledModalContent = styled(Box)({
-  width: '500px',
-  height: '475px',
+  height: '660px',
+  width: '1000px',
   background: '#fff',
   padding: '30px'
 });
@@ -104,14 +104,10 @@ export const StyledModalList = styled(Box)({
   height: '350px'
 });
 
-export const StyledDeleteModelButtonContainer = styled(Stack)({
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
+export const StyledHoverButtonContainer = styled(Stack)({
   borderRadius: '10px',
   position: 'absolute',
-  right: '20px',
-  bottom: '20px'
+  display: 'block'
 });
 
 export const StyledDeleteModelButton = styled(IconButton)({
@@ -123,6 +119,5 @@ export const StyledDeleteModelButton = styled(IconButton)({
 export const StyledDeleteModelButtonText = styled(Typography)({
   fontSize: '10px',
   lineHeight: '12px',
-  letterSpacing: '0.4px',
-  marginTop: '6px'
+  letterSpacing: '0.4px'
 });

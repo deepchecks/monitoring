@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { ModelManagmentSchema, deleteModelApiV1ModelsModelIdDelete } from 'api/generated';
+import { deleteModelApiV1ModelsModelIdDelete, useRetrieveConnectedModelsApiV1ConnectedModelsGet, ConnectedModelSchema } from 'api/generated';
 
 import useModels from 'hooks/useModels';
 
@@ -17,9 +17,9 @@ import { colors } from 'theme/colors';
 
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
 
-const mapModelsNames = (models: ModelManagmentSchema[]) => models.map(m => m.name);
+const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
-const filterModels = (models: ModelManagmentSchema[], searchInputValue: string, searchValue: string | null) =>
+const filterModels = (models: ConnectedModelSchema[], searchInputValue: string, searchValue: string | null) =>
   models.filter(m => {
     if (searchValue) {
       return m.name === searchValue;
@@ -30,16 +30,16 @@ const filterModels = (models: ModelManagmentSchema[], searchInputValue: string, 
     }
   });
 
-const sortModels = (models: ModelManagmentSchema[], sortMethod: sortOptionsVariants) =>
+const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVariants) =>
   [...models].sort((a, b) =>
     sortMethod === sortOptionsVariants.AZ ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
   );
 
 export const ModelsPage = () => {
-  const { models, isLoading, refetchModels } = useModels();
-
-  const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>(models);
-  const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ModelManagmentSchema[]>(models);
+  // const { models, isLoading, refetchModels } = useModels();
+  const { data: models, isLoading } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const [modelsList, setModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
+  const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
   const [modelNamesArray, setModelNamesArray] = useState<string[]>([]);
 
   const [searchInputValue, setSearchInputValue] = useState('');
@@ -49,9 +49,13 @@ export const ModelsPage = () => {
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
 
   useEffect(() => {
+    if (!models) {
+      return;
+    }
+
     setModelsList(models);
 
-    let temp: ModelManagmentSchema[] = [];
+    let temp: ConnectedModelSchema[] = [];
 
     if (sort) {
       temp = sortModels(models, sort);
@@ -69,6 +73,10 @@ export const ModelsPage = () => {
   }, [models, searchInputValue, searchValue, sort]);
 
   useEffect(() => {
+    if (!modelsList) {
+      return;
+    }
+    
     if (!searchValue && !searchInputValue) {
       const m = sort ? sortModels(modelsList, sort) : modelsList;
       setFilteredAndSortedModelsList(m);
@@ -97,7 +105,7 @@ export const ModelsPage = () => {
   const handleSort = (sortMethod: sortOptionsVariants) => {
     setSort(sortMethod);
 
-    const sortedModels = sortModels(filteredAndSortedModelsList, sortMethod);
+    const sortedModels = filteredAndSortedModelsList ? sortModels(filteredAndSortedModelsList, sortMethod) : undefined;
     setFilteredAndSortedModelsList(sortedModels);
 
     handleCloseSortMenu();
@@ -105,7 +113,7 @@ export const ModelsPage = () => {
 
   const handleDeleteModel = async (modelId: number) => {
     await deleteModelApiV1ModelsModelIdDelete(modelId);
-    refetchModels();
+    // refetchModels();
   };
 
   const handleReset = () => {
@@ -175,7 +183,7 @@ export const ModelsPage = () => {
         </Stack>
 
         <StyledModelsList>
-          {isLoading ? (
+          {isLoading || !filteredAndSortedModelsList ? (
             <Loader />
           ) : filteredAndSortedModelsList.length !== 0 ? (
             filteredAndSortedModelsList.map(model => (

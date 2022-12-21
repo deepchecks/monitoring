@@ -641,6 +641,7 @@ class ConnectedModelVersionSchema(BaseModel):
 @router.get(
     "/connected-models/{model_id}/versions",
     tags=[Tags.MODELS, "connected-models"],
+    response_model=t.List[ConnectedModelVersionSchema],
     description="Retrieve list of versions of a connected model."
 )
 async def retrive_connected_model_versions(
@@ -723,7 +724,8 @@ class IngestionErrorSchema(BaseModel):
 @router.get(
     "/connected-models/{model_id}/versions/{version_id}/ingestion-errors",
     tags=[Tags.MODELS, "connected-models"],
-    description="Retrieve connected model version ingestion errors."
+    description="Retrieve connected model version ingestion errors.",
+    response_model=t.List[IngestionErrorSchema]
 )
 async def retrieve_connected_model_version_ingestion_errors(
     model_id: int = Path(...),

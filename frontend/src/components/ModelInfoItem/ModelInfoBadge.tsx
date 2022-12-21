@@ -11,8 +11,8 @@ interface ModelInfoBadgeProps extends StackProps {
 
 const ModelInfoBadge = ({ value, title, ...props }: ModelInfoBadgeProps) => (
   <StyledModelInfoBadge {...props}>
-    <Typography sx={{ fontSize: '18px', fontWeight: 700, lineHeight: '25.2px' }}>{value || 0}</Typography>
-    <Typography sx={{ fontSize: '10px', lineHeight: '14px' }}>{title}</Typography>
+    <Typography sx={{ fontSize: '24px', fontWeight: 700, lineHeight: '140%' }}>{value || 0}</Typography>
+    <Typography sx={{ fontSize: '12px', lineHeight: '140%' }}>{title}</Typography>
   </StyledModelInfoBadge>
 );
 
