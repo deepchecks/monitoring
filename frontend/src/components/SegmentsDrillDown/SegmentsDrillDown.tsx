@@ -30,10 +30,10 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
 
-  const plots = data[activeBarIndex]?.display as string[];
+  const plots = data ? data[activeBarIndex]?.display as string[] : [];
 
   useEffect(() => {
-    if (setActiveBarFilters) {
+    if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex].filters) {
       setActiveBarFilters(data[activeBarIndex].filters.filters);
     }
   }, [activeBarIndex, data, setActiveBarFilters]);
