@@ -183,7 +183,7 @@ def redis_url():
         yield uri
     else:
         with subprocess.Popen(["redis-server", "--port", "6380"]) as p:
-            yield "redis://localhost:6379/0"
+            yield "redis://localhost:6380/0"
             p.kill()
 
 
