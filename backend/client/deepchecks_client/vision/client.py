@@ -120,8 +120,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         labels_batch = [label] if label is not None else None
         properties_fields = {}
 
-        if calculated_properties := calc_additional_and_default_vision_properties(images_batch,
-                                                                                  additional_image_properties):
+        calculated_properties = calc_additional_and_default_vision_properties(images_batch,
+                                                                              additional_image_properties)
+        if calculated_properties:
             for name, values in calculated_properties.items():
                 properties_fields[image_property_field(name)] = values[0]  # we have only one image (only one value)
 

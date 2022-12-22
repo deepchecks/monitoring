@@ -195,7 +195,8 @@ def calc_bbox_properties(
             x, y, w, h = label[1:]  # bbox
             if is_bbox_collapsed(x, y, w, h):
                 continue
-            if (img := crop_image(img, x, y, w, h)).size == 0:
+            img = crop_image(img, x, y, w, h)
+            if img.size == 0:
                 continue
             cropped_images.append(img)
 

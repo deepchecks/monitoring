@@ -615,9 +615,11 @@ def _process_batch(
         all_columns = set(data_columns.keys())
         provided_columns = set(data.columns)
 
-        if missing_columns := all_columns.difference(provided_columns):
+        missing_columns = all_columns.difference(provided_columns)
+        if missing_columns:
             raise ValueError(f'The following schema columns are missing: {list(missing_columns)}')
-        if additional_columns := provided_columns.difference(all_columns):
+        additional_columns = provided_columns.difference(all_columns)
+        if additional_columns:
             warnings.warn(
                 'The following columns were not defined in schema '
                 f'and will be ignored: {list(additional_columns)}'
