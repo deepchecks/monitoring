@@ -23,7 +23,7 @@ __all__ = ['bins_for_feature']
 
 async def bins_for_feature(model_version: ModelVersion, feature: str, session: AsyncSession,
                            monitor_options: SingleCheckRunOptions, num_bins=30) \
-        -> t.Union[ColumnType, t.List[t.Dict]]:
+        -> t.Tuple[ColumnType, t.List[t.Dict]]:
     """Query from the database given number of bins.
 
     Parameters
@@ -52,7 +52,8 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
                                         func.cume_dist().over(order_by=feature_column).label('quantile')])\
             .select_from(table).where(where_clause).cte('feature_with_quantile')
         # Handle the case when quantile is 1, in this case the floor(quantile * bins number) doesn't work so setting it
-        # into the last bin manually
+        # into the last bin manually (bins number - 1).
+        # For nulls the window function returns 1, so they will get the last bin + 1.
         bucket = case([(Column('quantile') == 1, num_bins - 1)],
                       else_=func.floor(Column('quantile') * num_bins)).label('bucket')
         # Grouping the quantiles into buckets
@@ -91,7 +92,13 @@ def _get_range_scale(start, stop):
 
 
 def _add_scaled_bins_names(bins):
-    # Edges is length of bins + 1
+    # If there is a bucket of null values filter it out
+    null_bucket = next((b for b in bins if b['min'] is None), None)
+    if null_bucket:
+        null_bucket['name'] = 'Null'
+        bins = bins.copy()
+        bins.remove(null_bucket)
+
     edges = [b['min'] for b in bins] + [bins[len(bins) - 1]['max']]
     scaled_edges = []
     # Scaling every edge by the scale of it's range with its neighbouring edges.
