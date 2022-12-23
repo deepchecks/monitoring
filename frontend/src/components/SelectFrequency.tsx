@@ -4,9 +4,9 @@ import { Box, Link } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
 
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
-import { Subcategory } from './MonitorDrawer/Subcategory';
+import { Subcategory } from './Dashboard/MonitorDrawer/components/Subcategory';
 
-import { timeWindow } from './MonitorDrawer/MonitorForm/MonitorForm.helpers';
+import { timeWindow } from './Dashboard/MonitorDrawer/components/MonitorForm/MonitorForm.helpers';
 
 interface SelectFrequencyProps {
   timeWindows?: { label: string; value: number }[];

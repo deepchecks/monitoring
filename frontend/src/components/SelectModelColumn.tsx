@@ -8,10 +8,10 @@ import {
   useGetModelColumnsApiV1ModelsModelIdColumnsGet
 } from '../api/generated';
 import { ColumnStatsCategorical, ColumnStatsNumeric } from '../helpers/types/model';
-import { StyledTypographyLabel } from './MonitorDrawer/MonitorForm/MonitorForm.style';
+import { StyledTypographyLabel } from './Dashboard/MonitorDrawer/components/MonitorForm/MonitorForm.style';
 import { RangePicker } from './RangePicker';
 import { Box } from '@mui/material';
-import { Subcategory } from './MonitorDrawer/Subcategory';
+import { Subcategory } from './Dashboard/MonitorDrawer/components/Subcategory';
 import { SelectChangeEvent } from '@mui/material/Select';
 
 interface BaseSelectProps extends Omit<SelectPrimaryProps, 'children' | 'label' | 'onBlur'> {

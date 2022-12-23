@@ -9,7 +9,7 @@ import {
 
 import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import { useModels } from 'hooks/useModels';
-import useMonitorData from 'hooks/useAlertMonitorData';
+import useAlertMonitorData from 'hooks/useAlertMonitorData';
 
 import { Box, DrawerProps, Typography, styled } from '@mui/material';
 
@@ -27,7 +27,7 @@ interface AlertsDrawerProps extends DrawerProps {
 const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: AlertsDrawerProps) => {
   const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
   const currentModel = useMemo(() => alertRule && getCurrentModel(alertRule.model_id), [alertRule, getCurrentModel]);
-  const { graphData, isLoading: isGraphDataLoading } = useMonitorData(alertRule, currentModel?.latest_time);
+  const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(alertRule, currentModel?.latest_time);
 
   const [alertIndex, setAlertIndex] = useState(0);
   const [expand, setExpand] = useState(true);

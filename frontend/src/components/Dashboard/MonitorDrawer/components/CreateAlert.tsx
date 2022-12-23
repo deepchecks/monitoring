@@ -1,0 +1,198 @@
+import React, { memo, useEffect, useMemo, useCallback } from 'react';
+import dayjs from 'dayjs';
+import { useFormik } from 'formik';
+
+import {
+  AlertSeverity,
+  MonitorSchema,
+  OperatorsEnum,
+  useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost
+} from 'api/generated';
+import useModels from 'hooks/useModels';
+import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
+
+import { Box, Button, Divider, MenuItem, Stack, Typography } from '@mui/material';
+
+import { SelectCondition } from 'components/SelectCondition';
+import { MarkedSelect } from 'components/MarkedSelect';
+
+import processFrequency from 'helpers/utils/processFrequency';
+
+import { LookbackCheckProps } from '../MonitorDrawer.types';
+
+interface EditMonitorProps {
+  monitor: MonitorSchema;
+  onClose: () => void | undefined;
+  runCheckLookback: (props: LookbackCheckProps) => void;
+  setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
+}
+
+function CreateAlert({ monitor, onClose, runCheckLookback, setMonitorToRefreshId }: EditMonitorProps) {
+  const { modelsMap } = useModels();
+  const { mutate: createAlert } = useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost();
+
+  const modelId = useMemo(() => monitor?.check.model_id ?? null, [monitor]);
+
+  useRunMonitorLookback(+monitor.id, modelId?.toString() ?? null);
+
+  const modelName = useMemo(() => {
+    if (!modelId) return;
+    return modelsMap[modelId].name;
+  }, [modelId, modelsMap]);
+
+  const formikInitValues: { numericValue: number; operator: '' | OperatorsEnum; severity: '' | AlertSeverity } = {
+    numericValue: (monitor.data_filters?.filters[0].value as number) || 0,
+    operator: '',
+    severity: ''
+  };
+
+  const { values, getFieldProps, setFieldValue, ...formik } = useFormik({
+    initialValues: formikInitValues,
+    onSubmit: async values => {
+      if (values.severity !== '' && values.operator !== '') {
+        createAlert({
+          monitorId: monitor.id,
+          data: {
+            alert_severity: values.severity,
+            is_active: true,
+            condition: {
+              operator: values.operator,
+              value: values.numericValue
+            }
+          }
+        });
+      }
+
+      formik.resetForm();
+      onClose();
+    }
+  });
+
+  const checkInfoInitValue = () => ({
+    check_conf: {}
+  });
+
+  const updateGraph = useCallback(
+    (operator?: OperatorsEnum | undefined, value: string | number = '') => {
+      if (!monitor) return;
+
+      const checkId = +monitor.check.id;
+
+      const end_time = modelsMap[modelId]?.latest_time
+        ? new Date((modelsMap[modelId]?.latest_time as number) * 1000).toISOString()
+        : new Date().toISOString();
+
+      const lookbackCheckData: LookbackCheckProps = {
+        checkId,
+        data: {
+          start_time: new Date(new Date(end_time).getTime() - monitor.lookback * 1000).toISOString(),
+          end_time,
+          additional_kwargs: monitor.additional_kwargs || checkInfoInitValue(),
+          frequency: monitor.frequency,
+          aggregation_window: monitor.aggregation_window
+        }
+      };
+
+      if (operator) {
+        lookbackCheckData.data.filter = {
+          filters: [{ column: (monitor.data_filters?.filters[0].column as string) || '', operator, value }]
+        };
+      }
+
+      runCheckLookback(lookbackCheckData);
+    },
+    [modelId, modelsMap, monitor, runCheckLookback]
+  );
+
+  const monitorInfo = useMemo(
+    () => [
+      { label: 'Monitor name', value: monitor?.name },
+      { label: 'Model name', value: modelName },
+      { label: 'Check name', value: monitor?.check?.name },
+      { label: 'Feature name', value: monitor?.data_filters ? `${monitor?.data_filters.filters[0].column}` : 'N/A' },
+      {
+        label: 'Frequency',
+        value: monitor?.frequency ? processFrequency(dayjs.duration(monitor?.frequency, 'seconds')) : 'N/A'
+      },
+      { label: 'Display range', value: dayjs.duration(monitor.lookback, 'seconds').humanize() }
+    ],
+    [monitor, modelName]
+  );
+
+  useEffect(() => {
+    updateGraph();
+  }, [monitor, updateGraph]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    formik.handleSubmit(e);
+    setTimeout(() => setMonitorToRefreshId(monitor.id), 500);
+  };
+
+  return (
+    <form onSubmit={e => handleSubmit(e)}>
+      <Box
+        sx={{
+          padding: '40px 40px 47px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          height: 1
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ textAlign: 'center' }}>
+            New alert from monitor
+          </Typography>
+          <Stack mt="20px" spacing="15px">
+            {monitorInfo.map(({ label, value }) => (
+              <Typography variant="subtitle2" key={label} sx={{ color: theme => theme.palette.text.disabled }}>
+                {label}: {value}
+              </Typography>
+            ))}
+          </Stack>
+          <Divider sx={{ m: '40px 0 11px', border: theme => `1px dashed ${theme.palette.text.primary}` }} />
+          <Typography variant="subtitle1" sx={{ color: theme => theme.palette.text.primary }}>
+            Alert severity
+          </Typography>
+          <Box mt="25px">
+            <MarkedSelect
+              label="Severity"
+              size="small"
+              clearValue={() => {
+                setFieldValue('severity', '');
+              }}
+              disabled={!Object.keys(AlertSeverity).length}
+              {...getFieldProps('severity')}
+              fullWidth
+            >
+              {Object.keys(AlertSeverity).map(key => (
+                <MenuItem key={key} value={key}>
+                  {key}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+          </Box>
+          <Divider sx={{ m: '25px 0 11px', border: theme => `1px dashed ${theme.palette.text.primary}` }} />
+          <Typography variant="subtitle1" sx={{ color: theme => theme.palette.text.primary }}>
+            Raise alert when check value is:
+          </Typography>
+          <Box width={1} mt="25px">
+            <SelectCondition
+              operatorProps={getFieldProps('operator')}
+              valueProps={getFieldProps('numericValue')}
+              setFieldValue={setFieldValue}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Button type="submit" size="large" disabled={!values.operator || !values.severity} sx={{ width: 1 }}>
+            Save & Activate
+          </Button>
+        </Box>
+      </Box>
+    </form>
+  );
+}
+
+export default memo(CreateAlert);

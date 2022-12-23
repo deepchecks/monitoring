@@ -3,7 +3,7 @@ import { logoutApiV1AuthLogoutGet } from 'api/generated';
 import React from 'react';
 import { cancelPendingRequests } from 'services/customAxios';
 import useUser from '../hooks/useUser';
-import { StyledMenuItem } from './GraphicsSection/GraphicsSection.style';
+import { StyledMenuItem } from './Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
 
 export const UserInfo = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -32,7 +32,7 @@ export const UserInfo = () => {
 
   return (
     <>
-      <Box 
+      <Box
         sx={{ mt: 4, pt: '7px', pb: '20px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
         onClick={handleClick}
       >
@@ -61,27 +61,28 @@ export const UserInfo = () => {
           {user.full_name}
         </Typography>
       </Box>
-      <Divider 
-          sx={{
-            border: `1px dashed rgba(255, 255, 255, 0.4)`
-          }} 
-        />
-        <Typography
-          sx={{
-            lineHeight: '140%',
-            textTransform: 'ellipsis',
-            fontFamily: 'Roboto',
-            fontWeight: 400,
-            fontSize: 12,
-            marginTop: '20px',
-            letterSpacing: '0.1px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-          {user.organization?.name}
-        </Typography>
+      <Divider
+        sx={{
+          border: `1px dashed rgba(255, 255, 255, 0.4)`
+        }}
+      />
+      <Typography
+        sx={{
+          lineHeight: '140%',
+          textTransform: 'ellipsis',
+          fontFamily: 'Roboto',
+          fontWeight: 400,
+          fontSize: 12,
+          marginTop: '20px',
+          letterSpacing: '0.1px',
+          color: 'rgba(255, 255, 255, 0.7)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}
+      >
+        {user.organization?.name}
+      </Typography>
       <Menu
         id="basic-menu"
         anchorEl={anchorEl}
@@ -92,7 +93,9 @@ export const UserInfo = () => {
         }}
       >
         {/* <StyledMenuItem sx={{minWidth: 200}} onClick={handleMyAccount}><Typography variant="body2">My account</Typography></StyledMenuItem> */}
-        <StyledMenuItem sx={{minWidth: 200}} onClick={handleLogout}><Typography variant="body2">Logout</Typography></StyledMenuItem>
+        <StyledMenuItem sx={{ minWidth: 200 }} onClick={handleLogout}>
+          <Typography variant="body2">Logout</Typography>
+        </StyledMenuItem>
       </Menu>
     </>
   );

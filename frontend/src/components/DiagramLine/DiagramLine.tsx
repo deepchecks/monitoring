@@ -8,7 +8,7 @@ import mixpanel from 'mixpanel-browser';
 import { drawAlerts, drawCircle, minimapPanorama, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initMinimap } from './DiagramLine.helpers';
 
-import { alpha, Box, Collapse } from '@mui/material';
+import { alpha, Box, Collapse, Typography } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
@@ -295,13 +295,21 @@ function DiagramLine({
     }
   }, [chartData, comparison]);
 
+  const graphHeight = height ? height - 61 : 'auto';
+
   return isLoading ? (
     <Loader sx={{ transform: 'translate(0, -16%)' }} />
+  ) : !data.datasets.length || data.datasets.every(d => !d) ? (
+    <Box display="flex" alignItems="center" height={graphHeight}>
+      <Typography variant="h4" fontWeight={500} margin="0 auto">
+        No data for this monitor configuration
+      </Typography>
+    </Box>
   ) : (
     <>
       <Collapse in={expand} timeout="auto" unmountOnExit>
         <DiagramTutorialTooltip>
-          <Box height={height ? height - 61 : 'auto'} sx={{ position: 'relative' }}>
+          <Box height={graphHeight} position="relative">
             <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={0} />
           </Box>
         </DiagramTutorialTooltip>

@@ -1,7 +1,6 @@
 import React, { FC } from 'react';
 
 import { AnalysisProvider } from 'context/analysis-context';
-import { MonitorsDataProvider } from 'hooks/useMonitorsData';
 
 import { AlertRules } from 'pages/AlertRules';
 import { AlertsPage } from 'pages/AlertsPage';
@@ -41,11 +40,7 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Dashboard',
     link: '/dashboard',
-    element: () => (
-      <MonitorsDataProvider>
-        <DashboardPage />
-      </MonitorsDataProvider>
-    ),
+    element: () => <DashboardPage />,
     Icon: Dashboard,
     IconHover: DashboardHover,
     ActiveIcon: DashboardActive

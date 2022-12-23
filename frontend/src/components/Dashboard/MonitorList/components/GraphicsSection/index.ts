@@ -1,0 +1,1 @@
+export { GraphicsSection } from './GraphicsSection';

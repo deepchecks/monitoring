@@ -3,7 +3,6 @@ import { Outlet, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { GlobalStateProvider } from './context';
-import { MonitorsDataProvider } from 'hooks/useMonitorsData';
 import { StatsTimeProvider } from './hooks/useStatsTime';
 import useUser, { UserProvider } from './hooks/useUser';
 
@@ -71,14 +70,7 @@ const App = () => {
             <StatsTimeProvider>
               <Routes>
                 <Route element={<Layout />}>
-                  <Route
-                    path="/"
-                    element={
-                      <MonitorsDataProvider>
-                        <DashboardPage />
-                      </MonitorsDataProvider>
-                    }
-                  />
+                  <Route path="/" element={<DashboardPage />} />
                   {flatPathsInfo.map(({ link, element: PageElement }) => (
                     <Route key={link} path={link} element={<PageElement />} />
                   ))}

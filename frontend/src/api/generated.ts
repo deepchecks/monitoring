@@ -354,7 +354,7 @@ export interface MonitorNotebookSchema {
   as_script?: boolean;
 }
 
-export type MonitorCheckConfSchemaCheckConf = { [key: string]: any };
+export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
 
 /**
  * List of data filters.
@@ -1552,7 +1552,7 @@ export const useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete = <
 };
 
 /**
- * Delete alert by id.
+ * Get list of alerts raised by a given alert rule.
  * @summary Get Alerts Of Alert Rule
  */
 export const getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = (alertRuleId: number, signal?: AbortSignal) =>
