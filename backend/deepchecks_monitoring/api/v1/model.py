@@ -573,13 +573,14 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep,
     # Get model versions info
     model_version_cols = [ModelVersion.topic_end_offset, ModelVersion.ingestion_offset, ModelVersion.last_update_time,
                           ModelVersion.model_id, ModelVersion.last_update_time]
-    versions = (await session.scalars(select(ModelVersion).options(load_only(*model_version_cols)))).all()
+    versions: t.List[ModelVersion] = \
+        (await session.scalars(select(ModelVersion).options(load_only(*model_version_cols)))).all()
 
     lags = defaultdict(lambda: 0)
     num_updating = defaultdict(lambda: 0)
     last_update_time = {}
     for version in versions:
-        lag = version.topic_end_offset - version.ingestion_offset
+        lag = (version.topic_end_offset or 0) - (version.ingestion_offset or 0)
         last_update_time[version.model_id] = version.last_update_time if version.model_id not in last_update_time \
             else max(last_update_time[version.model_id], version.last_update_time)
         # If lag is negative, adding the model version to process list. This prevents edge cases when redis might get
