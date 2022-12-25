@@ -189,6 +189,41 @@ async def test_model_deletion(
     assert (await async_session.scalar(TableExists, params={"name": reference_table_name})) is False
 
 
+@pytest.mark.asyncio
+async def test_connected_models_api(
+    client: TestClient,
+    classification_model: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    time = pdl.now().in_tz("UTC")
+    async_session.add(ModelVersion(name="a", last_update_time=time.subtract(days=1),
+                                   model_id=classification_model["id"],
+                                   ingestion_offset=100, topic_end_offset=1000))
+    async_session.add(ModelVersion(name="b", last_update_time=time, model_id=classification_model["id"],
+                                   ingestion_offset=100, topic_end_offset=100))
+    async_session.add(ModelVersion(name="c", last_update_time=time.subtract(days=2),
+                                   model_id=classification_model["id"],
+                                   ingestion_offset=200, topic_end_offset=150))
+    await async_session.commit()
+
+    # Act
+    response = client.get("/api/v1/connected-models")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [{
+        "id": 1,
+        "latest_update": time.isoformat(),
+        "name": "Classification Model",
+        "description": "test",
+        "task_type": "multiclass",
+        "n_of_alerts": 0,
+        "n_of_pending_rows": 900,
+        "n_of_updating_versions": 1
+    }]
+
+
 def test_get_models_statistics_no_models(client: TestClient):
     # Act
     response = client.get("/api/v1/models/data-ingestion")

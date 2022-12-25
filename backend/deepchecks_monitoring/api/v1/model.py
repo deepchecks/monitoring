@@ -23,11 +23,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import Integer as SQLInteger
 from sqlalchemy import case, delete, func, literal, select, text, union_all
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, load_only, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, CriticalAlertsCountPerModel,
                                                              MonitorsCountPerModel, get_alerts_per_model)
@@ -566,28 +566,33 @@ class ConnectedModelSchema(BaseModel):
     tags=[Tags.MODELS, "connected-models"],
     description="Retrieve list of connected models."
 )
-async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> t.List[ConnectedModelSchema]:
+async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep,
+                                    cache_funcs=CacheFunctionsDep,
+                                    user: User = Depends(auth.CurrentActiveUser())) -> t.List[ConnectedModelSchema]:
     """Retrieve list of models for the "Models management" screen."""
+    # Get model versions info
+    model_version_cols = [ModelVersion.topic_end_offset, ModelVersion.ingestion_offset, ModelVersion.last_update_time,
+                          ModelVersion.model_id, ModelVersion.last_update_time]
+    versions = (await session.scalars(select(ModelVersion).options(load_only(*model_version_cols)))).all()
+
+    lags = defaultdict(lambda: 0)
+    num_updating = defaultdict(lambda: 0)
+    last_update_time = {}
+    for version in versions:
+        lag = version.topic_end_offset - version.ingestion_offset
+        last_update_time[version.model_id] = version.last_update_time if version.model_id not in last_update_time \
+            else max(last_update_time[version.model_id], version.last_update_time)
+        # If lag is negative, adding the model version to process list. This prevents edge cases when redis might get
+        # reset, so we lose the process set. in this way we make sure it will get updated.
+        if lag < 0:
+            cache_funcs.add_to_process_set(user.organization.id, version.id)
+        # If lag is smaller than 0 (the ingestion is faster than the update of topic offset) then we don't want to count
+        # it, to prevent weird cases.
+        elif lag > 0:
+            lags[version.model_id] += lag
+            num_updating[version.model_id] += 1
+
     alerts_count = CriticalAlertsCountPerModel.cte()
-
-    latest_update = func.max(ModelVersion.last_update_time)
-    n_of_pending_rows = func.sum(ModelVersion.topic_end_offset - ModelVersion.ingestion_offset)
-
-    n_of_updating_versions = func.sum(case(
-        ((ModelVersion.topic_end_offset - ModelVersion.ingestion_offset) > 0, 1),
-        else_=0
-    ))
-
-    ingestion_info = (
-        select(
-            ModelVersion.model_id,
-            latest_update.label("latest_update"),
-            n_of_pending_rows.label("n_of_pending_rows"),
-            n_of_updating_versions.label("n_of_updating_versions")
-        )
-        .group_by(ModelVersion.model_id)
-        .cte()
-    )
 
     records = (await session.execute(
         select(
@@ -596,19 +601,20 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> 
             Model.task_type,
             Model.description,
             alerts_count.c.count.label("n_of_alerts"),
-            ingestion_info.c.latest_update,
-            ingestion_info.c.n_of_pending_rows,
-            ingestion_info.c.n_of_updating_versions
         )
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
     )).all()
 
-    return [
-        ConnectedModelSchema.from_orm(record)
-        for record in records
-    ]
+    results = []
+    for record in records:
+        record = dict(record)
+        record["n_of_pending_rows"] = lags[record["id"]]
+        record["n_of_updating_versions"] = num_updating[record["id"]]
+        record["latest_update"] = last_update_time[record["id"]]
+        results.append(ConnectedModelSchema(**record))
+
+    return results
 
 
 class ConnectedModelVersionSchema(BaseModel):
