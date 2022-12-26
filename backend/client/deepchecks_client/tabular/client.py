@@ -624,7 +624,7 @@ def _process_batch(
                 'The following columns were not defined in schema '
                 f'and will be ignored: {list(additional_columns)}'
             )
-            data = data.loc[:list(data_columns.keys())]
+            data = data.loc[:, list(data_columns.keys())]
 
         # Validate "data" dataframe
         if data.shape[0] != len(sample_ids):
