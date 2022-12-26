@@ -21,7 +21,7 @@ from deepchecks.tabular import Dataset
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import ColumnType, DataSchema, describe_dataset, pretty_print
 
-__all__ = ['create_schema', 'read_schema', 'standardize_predictions']
+__all__ = ['create_schema', 'read_schema', 'standardize_input']
 
 
 def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
@@ -137,19 +137,19 @@ def read_schema(schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema],
     return schema
 
 
-def standardize_predictions(ys: t.Union[pd.Series, np.ndarray, t.List]) -> np.ndarray:
+def standardize_input(arr: t.Union[pd.Series, np.ndarray, t.List], input_role: str) -> np.ndarray:
     """Convert predictions input into a 1d numpy array."""
-    if isinstance(ys, pd.Series):
-        ys = ys.to_numpy()
-    elif isinstance(ys, t.List):
-        ys = np.asarray(ys)
-    elif not isinstance(ys, np.ndarray):
-        raise ValueError('Got unexpected type for predictions, should be one of list/padnas series/numpy array')
+    if isinstance(arr, (pd.Series, pd.Index)):
+        arr = arr.to_numpy()
+    elif isinstance(arr, t.List):
+        arr = np.asarray(arr)
+    elif not isinstance(arr, np.ndarray):
+        raise ValueError(f'Got unexpected type for {input_role}, should be one of list/padnas series/numpy array')
 
-    if ys.ndim > 1:
-        squeezed = ys.squeeze()
+    if arr.ndim > 1:
+        squeezed = arr.squeeze()
         if squeezed.ndim != 1:
-            raise ValueError(f'Got unworkable shape for predictions: {ys.shape}. Shape should be able to be reduced '
+            raise ValueError(f'Got unworkable shape for {input_role}: {arr.shape}. Shape should be able to be reduced '
                              f'to a single dimension.')
         return squeezed
-    return ys
+    return arr

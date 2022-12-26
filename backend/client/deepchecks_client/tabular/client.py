@@ -30,7 +30,7 @@ from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder,
                                           DeepchecksJsonValidator, TaskType, maybe_raise, parse_timestamp, pretty_print,
                                           validate_additional_data_schema)
-from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_predictions
+from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_input
 
 
 class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
@@ -316,7 +316,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                            dataset.datetime_name]]
         data = dataset.data[columns_to_use].copy()
 
-        predictions = standardize_predictions(predictions)
+        predictions = standardize_input(predictions, 'predictions')
         if len(predictions) != len(dataset):
             raise ValueError('predictions and dataset must contain the same number of items')
 
@@ -544,6 +544,7 @@ def _process_batch(
 ) -> t.List[t.Dict[str, t.Any]]:
     """Preapare and validate batch of samples."""
     # Validate 'sample_ids' array
+    sample_ids = standardize_input(sample_ids, 'sample_ids')
     if len(sample_ids) == 0:
         raise ValueError('"sample_ids" cannot be empty')
     if len(sample_ids) != len(np.unique(sample_ids)):
@@ -556,6 +557,7 @@ def _process_batch(
 
     # Validate 'timestamps' array
     if timestamps is not None:
+        timestamps = standardize_input(timestamps, 'timestamps')
         if len(timestamps) != len(sample_ids):
             raise ValueError(error_template.format('timestamps'))
         else:
@@ -563,7 +565,7 @@ def _process_batch(
 
     # Validate 'predictions' array
     if predictions is not None:
-        predictions = standardize_predictions(predictions)
+        predictions = standardize_input(predictions, 'predictions')
         if len(predictions) != len(sample_ids):
             raise ValueError(error_template.format('predictions'))
         else:
@@ -580,6 +582,7 @@ def _process_batch(
 
     # Validate 'labels' array
     if labels is not None:
+        labels = standardize_input(labels, 'labels')
         if len(labels) != len(sample_ids):
             raise ValueError(error_template.format('labels'))
         else:
