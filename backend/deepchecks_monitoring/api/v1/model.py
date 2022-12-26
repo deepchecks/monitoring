@@ -581,8 +581,9 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep,
     last_update_time = {}
     for version in versions:
         lag = (version.topic_end_offset or 0) - (version.ingestion_offset or 0)
-        last_update_time[version.model_id] = version.last_update_time if version.model_id not in last_update_time \
-            else max(last_update_time[version.model_id], version.last_update_time)
+        if version.last_update_time:
+            last_update_time[version.model_id] = version.last_update_time if version.model_id not in last_update_time \
+                else max(last_update_time[version.model_id], version.last_update_time)
         # If lag is negative, adding the model version to process list. This prevents edge cases when redis might get
         # reset, so we lose the process set. in this way we make sure it will get updated.
         if lag < 0:
@@ -612,7 +613,7 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep,
         record = dict(record)
         record["n_of_pending_rows"] = lags[record["id"]]
         record["n_of_updating_versions"] = num_updating[record["id"]]
-        record["latest_update"] = last_update_time[record["id"]]
+        record["latest_update"] = last_update_time.get(record["id"])
         results.append(ConnectedModelSchema(**record))
 
     return results

@@ -224,6 +224,71 @@ async def test_connected_models_api(
     }]
 
 
+@pytest.mark.asyncio
+async def test_connected_models_api_missing_version_data(
+    client: TestClient,
+    classification_model: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    time = pdl.now().in_tz("UTC")
+    async_session.add(ModelVersion(name="a",
+                                   model_id=classification_model["id"],
+                                   ingestion_offset=100))
+    async_session.add(ModelVersion(name="b",
+                                   model_id=classification_model["id"], topic_end_offset=250))
+    async_session.add(ModelVersion(name="c",
+                                   model_id=classification_model["id"],
+                                   last_update_time=time,
+                                   ingestion_offset=200, topic_end_offset=250))
+    await async_session.commit()
+
+    # Act
+    response = client.get("/api/v1/connected-models")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [{
+        "id": 1,
+        "latest_update": time.isoformat(),
+        "name": "Classification Model",
+        "description": "test",
+        "task_type": "multiclass",
+        "n_of_alerts": 0,
+        "n_of_pending_rows": 300,
+        "n_of_updating_versions": 2
+    }]
+
+
+@pytest.mark.asyncio
+async def test_connected_models_api_missing_all_version_data(
+    client: TestClient,
+    classification_model: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    async_session.add(ModelVersion(name="a",
+                                   model_id=classification_model["id"]))
+    async_session.add(ModelVersion(name="b",
+                                   model_id=classification_model["id"]))
+    await async_session.commit()
+
+    # Act
+    response = client.get("/api/v1/connected-models")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == [{
+        "id": 1,
+        "latest_update": None,
+        "name": "Classification Model",
+        "description": "test",
+        "task_type": "multiclass",
+        "n_of_alerts": 0,
+        "n_of_pending_rows": 0,
+        "n_of_updating_versions": 0
+    }]
+
 def test_get_models_statistics_no_models(client: TestClient):
     # Act
     response = client.get("/api/v1/models/data-ingestion")
