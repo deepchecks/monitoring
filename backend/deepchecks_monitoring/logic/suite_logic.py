@@ -12,14 +12,12 @@
 
 from deepchecks.tabular import checks as tabular_checks
 from deepchecks.tabular.suite import Suite as TabularSuite
-from deepchecks.vision import checks as vision_checks
-from deepchecks.vision.suite import Suite as VisionSuite
 from pandas import DataFrame
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.dependencies import AsyncSessionDep, S3BucketDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.check_logic import TimeWindowOption, load_data_for_check
-from deepchecks_monitoring.logic.model_logic import dataframe_to_dataset_and_pred, dataframe_to_vision_data_pred_props
+from deepchecks_monitoring.logic.model_logic import dataframe_to_dataset_and_pred
 from deepchecks_monitoring.schema_models import ModelVersion, TaskType
 
 
@@ -50,34 +48,10 @@ def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: b
     return TabularSuite(suite_name, *checks)
 
 
-def _create_vision_suite(suite_name: str, task_type: TaskType, has_reference: bool) -> VisionSuite:
-    """Create a vision suite based on provided parameters."""
-    checks = [vision_checks.LabelPropertyOutliers(), vision_checks.ImagePropertyOutliers()]
-
-    if task_type == TaskType.VISION_CLASSIFICATION:
-        checks.append(vision_checks.ConfusionMatrixReport())
-    elif task_type == TaskType.VISION_DETECTION:
-        checks.append(vision_checks.MeanAveragePrecisionReport())
-
-    if has_reference:  # todo: configure conditions based on alerts
-        checks.append(vision_checks.PropertyLabelCorrelationChange().add_condition_property_pps_difference_less_than())
-        checks.append(vision_checks.ImagePropertyDrift().add_condition_drift_score_less_than())
-        checks.append(vision_checks.ImageDatasetDrift().add_condition_drift_score_less_than())
-        checks.append(vision_checks.TrainTestLabelDrift().add_condition_drift_score_less_than())
-        checks.append(vision_checks.TrainTestPredictionDrift().add_condition_drift_score_less_than())
-        checks.append(vision_checks.ClassPerformance().add_condition_train_test_relative_degradation_less_than())
-    else:
-        checks.append(vision_checks.PropertyLabelCorrelation().add_condition_property_pps_less_than())
-        checks.append(vision_checks.SingleDatasetPerformance())
-
-    return VisionSuite(suite_name, *checks)
-
-
 async def run_suite_for_model_version(
         model_version: ModelVersion,
         window_options: TimeWindowOption,
         session: AsyncSession = AsyncSessionDep,
-        s3_bucket: str = S3BucketDep,
 ):
     """Run a relevant suite for a given window.
 
@@ -88,8 +62,6 @@ async def run_suite_for_model_version(
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
-    s3_bucket: str
-        The bucket that is used for s3 images
     """
     top_feat, feat_imp = model_version.get_top_features()
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options)
@@ -114,13 +86,6 @@ async def run_suite_for_model_version(
             test_df, model_version, top_feat)
         reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
             ref_df, model_version, top_feat)
-
-    elif task_type in [TaskType.VISION_DETECTION, TaskType.VISION_CLASSIFICATION]:
-        suite = _create_vision_suite(suite_name, task_type, len(ref_df) > 0)
-        test_dataset, test_pred, test_proba = \
-            dataframe_to_vision_data_pred_props(test_df, task_type, model_version, s3_bucket, use_images=True)
-        reference_dataset, reference_pred, reference_proba = \
-            dataframe_to_vision_data_pred_props(ref_df, task_type, model_version, s3_bucket, use_images=True)
     else:
         raise Exception(f"Unsupported task type {task_type}")
 
@@ -128,12 +93,6 @@ async def run_suite_for_model_version(
         reference_dataset, reference_pred, reference_proba = test_dataset, test_pred, test_proba
         test_dataset, test_pred, test_proba = None, None, None
 
-    if task_type in [TaskType.BINARY, TaskType.MULTICLASS, TaskType.REGRESSION]:
-        return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
-                         y_pred_train=reference_pred, y_proba_train=reference_proba,
-                         y_pred_test=test_pred, y_proba_test=test_proba, with_display=True)
-    else:
-        suite: VisionSuite
-        return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset,
-                         train_predictions=reference_pred, train_properties=reference_proba,
-                         test_predictions=test_pred, test_properties=test_proba, with_display=True)
+    return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
+                     y_pred_train=reference_pred, y_proba_train=reference_proba,
+                     y_pred_test=test_pred, y_proba_test=test_proba, with_display=True)

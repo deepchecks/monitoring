@@ -194,8 +194,6 @@ class DeepchecksModelVersionClient:
             label = str(label)
         elif self.task_type == TaskType.REGRESSION:
             label = float(label)
-        elif self.task_type in TaskType.vision_types():
-            pass
         else:
             raise ValueError('Unknown model type - {self.task_type}')
 

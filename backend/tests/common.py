@@ -152,7 +152,6 @@ class DataGenerator:
 class ExpectedHttpStatus:
     """Utility class to assert response status."""
 
-
     @classmethod
     def create(cls, expected_status: "ExpectedStatus"):
         return (
@@ -203,11 +202,13 @@ class ExpectedHttpStatus:
 ExpectedStatus = t.Union[int, t.Tuple[int, int], ExpectedHttpStatus]
 Payload = t.Dict[str, t.Any]
 
+
 class ModelIdentifiersPair(t.TypedDict):
     """Represents a model identifier choose."""
 
     id: int
     name: str
+
 
 class TestAPI:
     """Utility class to test HTTP API."""
@@ -226,7 +227,7 @@ class TestAPI:
     def create_model(
         self,
         model: t.Optional[Payload] = None,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         generated_payload = self.data_generator.generate_random_model()
@@ -254,7 +255,7 @@ class TestAPI:
         self,
         model_identifier: t.Union[str, int, ModelIdentifiersPair],
         identifier_kind: str = "by-id",
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ):
         if identifier_kind == "by-id":
             identifier = (
@@ -286,7 +287,7 @@ class TestAPI:
         self,
         model_identifier: t.Union[str, int, ModelIdentifiersPair],
         identifier_kind: str = "by-id",
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         if identifier_kind == "by-id":
             identifier = (
@@ -321,7 +322,7 @@ class TestAPI:
 
     def fetch_models(
         self,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.fetch_models(raise_on_status=False)
@@ -339,7 +340,7 @@ class TestAPI:
         self,
         model_identifier: t.Union[str, int, ModelIdentifiersPair],
         identifier_kind: str = "by-id",
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         if identifier_kind == "by-id":
             identifier = (
@@ -375,7 +376,7 @@ class TestAPI:
         self,
         model_id: int,
         check: t.Optional[Payload] = None,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         generated_payload = self.data_generator.generate_random_check()
@@ -413,7 +414,7 @@ class TestAPI:
         self,
         model_id: int,
         checks_names: t.List[str],
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Optional[httpx.Response]:
         expected_status = ExpectedHttpStatus.create(expected_status)
 
@@ -437,7 +438,7 @@ class TestAPI:
     def fetch_all_models_checks(
         self,
         model_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.fetch_all_model_checks_by_id(model_id=model_id, raise_on_status=False)
@@ -799,7 +800,7 @@ class TestAPI:
         self,
         model_id: int,
         model_version: t.Optional[Payload] = None,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[Payload, httpx.Response]:
         expected_status = ExpectedHttpStatus.create(expected_status)
 
@@ -838,7 +839,7 @@ class TestAPI:
     def delete_model_version(
         self,
         model_version_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Optional[httpx.Response]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.delete_model_version_by_id(model_version_id, raise_on_status=False)
@@ -856,7 +857,7 @@ class TestAPI:
     def fetch_model_version(
         self,
         model_version_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.fetch_model_version_by_id(model_version_id=model_version_id, raise_on_status=False)
@@ -885,7 +886,7 @@ class TestAPI:
     def fetch_model_version_schema(
         self,
         model_version_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.fetch_model_version_schema(model_version_id, raise_on_status=False)
@@ -909,7 +910,7 @@ class TestAPI:
     def create_alert_webhook(
         self,
         payload: t.Optional[t.Dict[t.Any, t.Any]] = None,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         default_payload = self.data_generator.generate_random_standart_webhook()
@@ -934,7 +935,7 @@ class TestAPI:
     def delete_alert_webhook(
         self,
         webhook_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> httpx.Response:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.delete(f"alert-webhooks/{webhook_id}")
@@ -949,7 +950,7 @@ class TestAPI:
     def fetch_alert_webhook(
         self,
         webhook_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.get(f"alert-webhooks/{webhook_id}")
@@ -962,7 +963,7 @@ class TestAPI:
 
     def fetch_all_alert_webhooks(
         self,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.get("alert-webhooks")
@@ -983,7 +984,7 @@ class TestAPI:
         self,
         model_version_id: int,
         data: t.List[Payload],
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> httpx.Response:
         expected_status = ExpectedHttpStatus.create(expected_status)
         df = pd.DataFrame(data=data)
@@ -1001,7 +1002,7 @@ class TestAPI:
         self,
         model_version_id: int,
         samples: t.List[Payload],
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> httpx.Response:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = t.cast(httpx.Response, self.api.upload_samples(
@@ -1016,7 +1017,7 @@ class TestAPI:
         self,
         model_version_id: int,
         samples: t.List[Payload],
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ):
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = t.cast(httpx.Response, self.api.update_samples(
@@ -1032,7 +1033,7 @@ class TestAPI:
         self,
         check_id: int,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"checks/{check_id}/run/window", json=options)
@@ -1049,7 +1050,7 @@ class TestAPI:
     def fetch_check_execution_info(
         self,
         check_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.get(f"checks/{check_id}/info")
@@ -1069,7 +1070,7 @@ class TestAPI:
         self,
         check_id: int,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"checks/{check_id}/run/lookback", json=options)
@@ -1100,7 +1101,7 @@ class TestAPI:
         self,
         check_id: int,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ):
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"checks/{check_id}/run/reference", json=options)
@@ -1122,7 +1123,7 @@ class TestAPI:
         check_id: int,
         feature: str,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"checks/{check_id}/group-by/{model_version_id}/{feature}", json=options)
@@ -1143,7 +1144,7 @@ class TestAPI:
 
     def fetch_dashboard(
         self,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.fetch_dashboard(raise_on_status=False)
@@ -1164,7 +1165,7 @@ class TestAPI:
     def delete_dashboard(
         self,
         dashboard_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> httpx.Response:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.delete(f"dashboards/{dashboard_id}")
@@ -1177,7 +1178,7 @@ class TestAPI:
         self,
         dashboard_id: int,
         dashboard: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.put(f"dashboards/{dashboard_id}", json=dashboard)
@@ -1199,7 +1200,7 @@ class TestAPI:
         self,
         check_id: int,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, str]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"checks/{check_id}/get-notebook", json=options)
@@ -1218,7 +1219,7 @@ class TestAPI:
         self,
         monitor_id: int,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ):
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"monitors/{monitor_id}/get-notebook", json=options)
@@ -1237,7 +1238,7 @@ class TestAPI:
         model_version_id: int,
         start_time: t.Optional[str] = None,
         end_time: t.Optional[str] = None,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
 
@@ -1261,7 +1262,7 @@ class TestAPI:
     def fetch_n_of_samples(
         self,
         model_version_id: int,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.get_samples_count(model_version_id=model_version_id, raise_on_status=False)
@@ -1281,7 +1282,7 @@ class TestAPI:
         self,
         model_version_id: int,
         options: Payload,
-        expected_status: ExpectedStatus  = (200, 299)
+        expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, str]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"model-versions/{model_version_id}/suite-run", json=options)
@@ -1355,39 +1356,6 @@ def upload_classification_data(
 
     response = api.upload_samples(model_version_id=model_version_id, samples=data)
     return response, daterange[0], daterange[-1]
-
-
-def upload_vision_classification_data(
-    test_api: TestAPI,
-    model_version_id: int,
-):
-    now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
-    day_before = t.cast("PendulumDateTime", now - pdl.duration(days=1))
-    data = []
-
-    for i, hour in enumerate([1, 3, 7, 13]):
-        time = day_before.add(hours=hour).isoformat()
-        for j in range(10):
-            data.append({
-                "_dc_sample_id": f"{i} {j}",
-                "_dc_time": time,
-                "_dc_prediction": [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3],
-                "_dc_label": j % 2,
-                "images Aspect Ratio": 0.677 / hour,
-                "images Area": 0.5,
-                "images Brightness": 0.5,
-                "images RMS Contrast": 0.5,
-                "images Mean Red Relative Intensity": 0.5,
-                "images Mean Blue Relative Intensity": 0.5,
-                "images Mean Green Relative Intensity": 0.5,
-            })
-
-    response = test_api.upload_samples(
-        model_version_id=model_version_id,
-        samples=data
-    )
-    return response, day_before, now
-
 
 # def send_reference_request(client, model_version_id, dicts: list):
 #     df = pd.DataFrame(data=dicts)

@@ -2072,8 +2072,6 @@ monitor_options : MonitorOptions
     The "monitor" options.
 session : AsyncSession, optional
     SQLAlchemy session.
-s3_bucket: str
-    The bucket that is used for s3 images
 
 Returns
 -------
@@ -2140,8 +2138,6 @@ monitor_options : MonitorOptions
     The window options.
 session : AsyncSession, optional
     SQLAlchemy session.
-s3_bucket: str
-    The bucket that is used for s3 images
 
 Returns
 -------
@@ -2207,8 +2203,6 @@ monitor_options : CheckRunOptions
     The monitor options.
 session : AsyncSession, optional
     SQLAlchemy session.
-s3_bucket: str
-    The bucket that is used for s3 images
 
 Returns
 -------
@@ -2397,8 +2391,6 @@ monitor_options : SingleCheckRunOptions
    The monitor options.
 session : AsyncSession
     SQLAlchemy session.
-s3_bucket: str
-    The bucket that is used for s3 images
 
 Returns
 -------
@@ -2781,8 +2773,6 @@ body
 session : AsyncSession, optional
     SQLAlchemy session.
 cache_funcs
-s3_bucket: str
-    The bucket that is used for s3 images
 user
 
 Returns

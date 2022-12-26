@@ -38,9 +38,8 @@ from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
-                                                             SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL,
-                                                             ColumnType, column_types_to_table_columns,
-                                                             get_model_columns_by_type)
+                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType,
+                                                             column_types_to_table_columns, get_model_columns_by_type)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
@@ -123,10 +122,7 @@ async def get_or_create_version(
     # Validate classes parameter
     have_classes = info.classes is not None
     classes = info.classes
-    if info.label_map is not None and model.task_type not in \
-            [TaskType.VISION_CLASSIFICATION, TaskType.VISION_DETECTION]:
-        raise BadRequest('Label map parameter is valid only for vision models, bot model task is '
-                         f'{model.task_type.value}')
+
     if have_classes:
         if model.task_type not in [TaskType.MULTICLASS, TaskType.BINARY]:
             raise BadRequest('Classes parameter is valid only for classification, bot model task is '
@@ -157,10 +153,7 @@ async def get_or_create_version(
     # Create json schema
     not_null_columns = list(meta_columns.keys()) + required_model_cols
     # Define the length of the array for probabilities column
-    if model.task_type == TaskType.VISION_CLASSIFICATION:
-        length_columns = {SAMPLE_PRED_COL: len(info.label_map) if info.label_map is not None else None}
-    else:
-        length_columns = {SAMPLE_PRED_PROBA_COL: len(classes) if have_classes else None}
+    length_columns = {SAMPLE_PRED_PROBA_COL: len(classes) if have_classes else None}
     monitor_table_schema = {
         'type': 'object',
         'properties': {name: data_type.to_json_schema_type(
@@ -187,10 +180,6 @@ async def get_or_create_version(
     # Create statistics info
     empty_statistics = {col: data_type.to_statistics_stub() for col, data_type in monitor_table_columns.items()
                         if data_type.to_statistics_stub() is not None}
-    if model.task_type in [TaskType.VISION_CLASSIFICATION, TaskType.VISION_DETECTION]:
-        empty_statistics[SAMPLE_LABEL_COL] = ColumnType.CATEGORICAL.to_statistics_stub()
-    if model.task_type == TaskType.VISION_DETECTION:
-        empty_statistics[SAMPLE_PRED_COL] = ColumnType.CATEGORICAL.to_statistics_stub()
 
     # To save the label map we must use string keys
     label_map = {str(key): val for key, val in info.label_map.items()} if info.label_map else None

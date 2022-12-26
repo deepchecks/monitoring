@@ -17,13 +17,11 @@ from numbers import Number
 import pandas as pd
 import pendulum as pdl
 from deepchecks import BaseCheck, CheckResult, SingleDatasetBaseCheck, TrainTestBaseCheck
-from deepchecks.core.reduce_classes import ReduceFeatureMixin, ReducePropertyMixin
+from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
                                                      regression_scorers_higher_is_better_dict,
                                                      regression_scorers_lower_is_better_dict)
 from deepchecks.utils.dataframes import un_numpy
-from deepchecks.vision.metrics_utils.scorers import classification_dict, detection_dict
-from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from pydantic import BaseModel, Field, root_validator, validator
 from sqlalchemy import Column, Table, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -225,15 +223,6 @@ def init_check_by_kwargs(check: Check, additional_kwargs: MonitorCheckConfSchema
     return dp_check
 
 
-def _get_properties_by_type(property_type: PropertiesInputType, vision_features):
-    props = []
-    for feat in vision_features:
-        prop_type, prop_name = feat.split(" ", 1)
-        if prop_type == property_type.value:
-            props.append({"name": prop_name})
-    return props
-
-
 def _metric_name_pretify(metric_name: str) -> str:
     return str.title(metric_name.replace("_", " "))
 
@@ -242,7 +231,7 @@ def _metric_api_listify(metric_names: t.List[str], ignore_binary: bool = True):
     """Convert metric names to be check/info api compatible."""
     metric_list = []
     for metric_name in metric_names:
-        # the metric_name split is a workaround for vision metrics as the default metric dict contains binary scorers
+        # the metric_name split is a workaround for metrics as the default metric dict contains binary scorers
         if not ignore_binary or len(metric_name.split("_")) != 1:
             metric_list.append({"name": _metric_name_pretify(metric_name),
                                 "is_agg": "per_class" not in metric_name})
@@ -269,24 +258,20 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
     if classes is not None:
         classes = [{"name": class_name} for class_name in classes]
     # get the scorers by task type
-    if model.task_type in [TaskType.VISION_CLASSIFICATION, TaskType.MULTICLASS]:
+    if model.task_type == TaskType.MULTICLASS:
         scorers = _metric_api_listify(multiclass_scorers_dict, ignore_binary=False)
-        # vision classification tasks support the tabular metrics too
-        if model.task_type == TaskType.VISION_CLASSIFICATION:
-            scorers += _metric_api_listify(classification_dict.keys())
     elif model.task_type == TaskType.REGRESSION:
         reg_scorers = sorted(list(regression_scorers_higher_is_better_dict.keys()) +
                              list(regression_scorers_lower_is_better_dict.keys()))
         scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True} for scorer_name in reg_scorers]
     elif model.task_type == TaskType.BINARY:
         scorers = [{"name": scorer_name, "is_agg": True} for scorer_name in binary_scorers_dict]
-    elif model.task_type == TaskType.VISION_DETECTION:
-        scorers = _metric_api_listify(detection_dict.keys())
+
     return {"check_conf": [{"type": CheckParameterTypeEnum.SCORER.value, "values": scorers}],
             "res_conf": {"type": CheckParameterTypeEnum.CLASS.value, "values": classes, "is_agg_shown": False}}
 
 
-def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_check: BaseCheck) -> MonitorCheckConf:
+def get_feature_property_info(latest_version: ModelVersion, dp_check: BaseCheck) -> MonitorCheckConf:
     """Get check info for checks that are instance of ReduceFeatureMixin or ReducePropertyMixin."""
     feat_names = [] if latest_version is None else list(latest_version.features_columns.keys())
     aggs_names = ["mean", "max", "none"]
@@ -300,17 +285,6 @@ def get_feature_property_info(latest_version: ModelVersion, check: Check, dp_che
         feature_values = [{"name": feat_name} for feat_name in feat_names]
         check_parameter_conf["check_conf"].append({"type": CheckParameterTypeEnum.FEATURE.value,
                                                    "values": feature_values, "is_agg_shown": False})
-    if isinstance(dp_check, ReducePropertyMixin):
-        # all those checks are of type property but use different property type (maybe we should refactor in deepchecks)
-        if "Image" in check.config["class_name"]:
-            property_type = PropertiesInputType.IMAGES
-        elif "Label" in check.config["class_name"]:
-            property_type = PropertiesInputType.LABELS
-        elif "Prediction" in check.config["class_name"]:
-            property_type = PropertiesInputType.PREDICTIONS
-        check_parameter_conf["check_conf"] \
-            .append({"type": CheckParameterTypeEnum.PROPERTY.value,
-                     "values": _get_properties_by_type(property_type, feat_names), "is_agg_shown": False})
     return check_parameter_conf
 
 
@@ -318,7 +292,6 @@ async def run_check_per_window_in_range(
         check_id: int,
         session: AsyncSession,
         monitor_options: MonitorOptions,
-        s3_bucket: str,
         monitor_id: int = None,
         cache_funcs: CacheFunctions = None,
         organization_id: int = None
@@ -338,8 +311,6 @@ async def run_check_per_window_in_range(
     session : AsyncSession
         The database session to use.
     monitor_options: MonitorOptions
-    s3_bucket: str
-        The bucket that is used for s3 images
     monitor_id
     cache_funcs
     organization_id
@@ -424,8 +395,7 @@ async def run_check_per_window_in_range(
                                                                     model_versions,
                                                                     model,
                                                                     dp_check,
-                                                                    monitor_options.additional_kwargs,
-                                                                    s3_bucket)
+                                                                    monitor_options.additional_kwargs)
 
     # Reduce the check results
     reduce_results = defaultdict(list)
@@ -459,7 +429,6 @@ async def run_check_window(
         session: AsyncSession,
         model: Model,
         model_versions: t.List[ModelVersion],
-        s3_bucket: t.Optional[str] = None,
         reference_only: bool = False,
         n_samples: int = 10_000,
         with_display: bool = False,
@@ -478,8 +447,6 @@ async def run_check_window(
         The model to run the check on.
     model_versions : List[ModelVersion]
         The model versions to run the check on.
-    s3_bucket: str, optional
-        The bucket that is used for s3 images
     reference_only : bool, optional
         Whether to run the check on reference data only.
     n_samples : int, optional
@@ -532,7 +499,6 @@ async def run_check_window(
             model,
             dp_check,
             monitor_options.additional_kwargs,
-            s3_bucket,
             with_display
         )
     else:
@@ -542,8 +508,6 @@ async def run_check_window(
             model,
             dp_check,
             monitor_options.additional_kwargs,
-            s3_bucket,
-            with_display
         )
 
     model_results = {}

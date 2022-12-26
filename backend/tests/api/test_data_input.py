@@ -385,7 +385,7 @@ async def test_statistics(
 async def test_log_data_exceeding_rate(
     test_api: TestAPI,
     classification_model_version: Payload,
-    classification_vision_model_version: Payload,
+    regression_model_version: Payload,
     async_session: AsyncSession,
     user: User,
     settings: Settings,
@@ -432,7 +432,7 @@ async def test_log_data_exceeding_rate(
     with test_api.reauthorize(token=str(user.access_token)):
         # == Act
         response = test_api.upload_samples(
-            model_version_id=classification_vision_model_version["id"],
+            model_version_id=regression_model_version["id"],
             samples=[{"_dc_sample_id": "1"}],
             expected_status=413
         )

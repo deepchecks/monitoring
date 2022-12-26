@@ -25,12 +25,3 @@ Tabular
 
     tabular/auto_quickstarts/index
     tabular/tabular_setup.rst
-
-Vision
-------
-
-.. toctree::
-    :maxdepth: 2
-    :caption: Vision
-
-    vision/auto_quickstarts/index

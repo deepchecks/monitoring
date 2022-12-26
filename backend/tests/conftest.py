@@ -332,26 +332,6 @@ def classification_model(test_api: TestAPI) -> t.Dict[str, t.Any]:
 
 
 @pytest_asyncio.fixture()
-def classification_vision_model(test_api: TestAPI) -> t.Dict[str, t.Any]:
-    model = test_api.create_model(model={
-        "name": "Vision Classification Model",
-        "task_type": TaskType.VISION_CLASSIFICATION.value,
-        "description": "test"
-    })
-    return t.cast(t.Dict[str, t.Any], model)
-
-
-@pytest_asyncio.fixture()
-def detection_model(test_api: TestAPI) -> t.Dict[str, t.Any]:
-    model = test_api.create_model(model={
-        "name": "Vision Classification Model",
-        "task_type": TaskType.VISION_DETECTION.value,
-        "description": "test"
-    })
-    return t.cast(t.Dict[str, t.Any], model)
-
-
-@pytest_asyncio.fixture()
 def regression_model(test_api: TestAPI) -> t.Dict[str, t.Any]:
     return t.cast(
         t.Dict[str, t.Any],
@@ -421,30 +401,6 @@ async def detection_model_version(
                 "partial_images Mean Red Relative Intensity": "array_float",
                 "partial_images Mean Blue Relative Intensity": "array_float",
                 "partial_images Mean Green Relative Intensity": "array_float",
-            },
-            "additional_data": {"is_good": "boolean"}
-        }
-    )
-    return t.cast(t.Dict[str, t.Any], result)
-
-
-@pytest_asyncio.fixture()
-async def classification_vision_model_version(
-    test_api: TestAPI,
-    classification_vision_model: t.Dict[str, t.Any],
-) -> t.Dict[str, t.Any]:
-    result = test_api.create_model_version(
-        model_id=classification_vision_model["id"],
-        model_version={
-            "name": "v1",
-            "features": {
-                "images Aspect Ratio": "numeric",
-                "images Area": "numeric",
-                "images Brightness": "numeric",
-                "images RMS Contrast": "numeric",
-                "images Mean Red Relative Intensity": "numeric",
-                "images Mean Blue Relative Intensity": "numeric",
-                "images Mean Green Relative Intensity": "numeric",
             },
             "additional_data": {"is_good": "boolean"}
         }

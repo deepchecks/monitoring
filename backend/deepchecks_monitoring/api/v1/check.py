@@ -24,7 +24,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, HostDep, S3BucketDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, HostDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
                                                      SingleCheckRunOptions, get_feature_property_info,
@@ -139,7 +139,6 @@ async def add_checks(
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
 
-    is_vision_model = 'vision' in model.task_type.value
     checks = [checks] if not isinstance(checks, t.Sequence) else checks
     existing_check_names = [t.cast(str, x.name) for x in t.cast(t.List[Check], model.checks)]
 
@@ -148,7 +147,7 @@ async def add_checks(
         if check_creation_schema.name in existing_check_names:
             raise BadRequest(f'Model already contains a check named {check_creation_schema.name}')
         is_vision_check = str(check_creation_schema.config['module_name']).startswith('deepchecks.vision')
-        if is_vision_model != is_vision_check:
+        if is_vision_check:
             raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
         dp_check = BaseCheck.from_config(check_creation_schema.config)
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
@@ -242,7 +241,6 @@ async def run_standalone_check_per_window_in_range(
         check_id: int,
         monitor_options: MonitorOptions,
         session: AsyncSession = AsyncSessionDep,
-        s3_bucket: str = S3BucketDep,
 ):
     """Run a check for each time window by start-end.
 
@@ -254,8 +252,6 @@ async def run_standalone_check_per_window_in_range(
         The "monitor" options.
     session : AsyncSession, optional
         SQLAlchemy session.
-    s3_bucket: str
-        The bucket that is used for s3 images
 
     Returns
     -------
@@ -266,7 +262,6 @@ async def run_standalone_check_per_window_in_range(
         check_id,
         session,
         monitor_options,
-        s3_bucket
     )
 
 
@@ -275,7 +270,6 @@ async def get_check_window(
         check_id: int,
         monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
-        s3_bucket: str = S3BucketDep,
 ):
     """Run a check for the time window.
 
@@ -287,8 +281,6 @@ async def get_check_window(
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
-    s3_bucket: str
-        The bucket that is used for s3 images
 
     Returns
     -------
@@ -299,7 +291,7 @@ async def get_check_window(
     start_time = monitor_options.start_time_dt()
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
-    model_results = await run_check_window(check, monitor_options, session, model, model_versions, s3_bucket)
+    model_results = await run_check_window(check, monitor_options, session, model, model_versions)
     result_per_version = reduce_check_window(model_results, monitor_options)
     return {version.name: val for version, val in result_per_version.items()}
 
@@ -309,7 +301,6 @@ async def get_check_reference(
         check_id: int,
         monitor_options: CheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
-        s3_bucket: str = S3BucketDep,
 ):
     """Run a check on the reference data.
 
@@ -321,8 +312,6 @@ async def get_check_reference(
         The monitor options.
     session : AsyncSession, optional
         SQLAlchemy session.
-    s3_bucket: str
-        The bucket that is used for s3 images
 
     Returns
     -------
@@ -342,7 +331,7 @@ async def get_check_reference(
     else:
         model_versions: t.List[ModelVersion] = model.versions
 
-    model_results = await run_check_window(check, monitor_options, session, model, model_versions, s3_bucket,
+    model_results = await run_check_window(check, monitor_options, session, model, model_versions,
                                            reference_only=True, n_samples=100_000)
     result_per_version = reduce_check_window(model_results, monitor_options)
     return {version.name: val for version, val in result_per_version.items()}
@@ -411,7 +400,7 @@ async def get_check_info(
     if isinstance(dp_check, ReduceMetricClassMixin):
         check_parameter_conf = get_metric_class_info(latest_version, model)
     elif isinstance(dp_check, (ReduceFeatureMixin, ReducePropertyMixin)):
-        check_parameter_conf = get_feature_property_info(latest_version, check, dp_check)
+        check_parameter_conf = get_feature_property_info(latest_version, dp_check)
     else:
         check_parameter_conf = {'check_conf': None, 'res_conf': None}
     return check_parameter_conf
@@ -425,7 +414,6 @@ async def run_check_group_by_feature(
         feature: str,
         monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
-        s3_bucket: str = S3BucketDep,
 ):
     """Run check window with a group by on given feature.
 
@@ -440,8 +428,6 @@ async def run_check_group_by_feature(
        The monitor options.
     session : AsyncSession
         SQLAlchemy session.
-    s3_bucket: str
-        The bucket that is used for s3 images
 
     Returns
     -------
@@ -498,7 +484,7 @@ async def run_check_group_by_feature(
 
     for f in filters:
         options = monitor_options.add_filters(f['filters'])
-        window_result = await run_check_window(check, options, session, model_version.model, [model_version], s3_bucket,
+        window_result = await run_check_window(check, options, session, model_version.model, [model_version],
                                                with_display=True)
         for model_version, result in window_result.items():
             if result is not None and result['result'] is not None:

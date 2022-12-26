@@ -29,10 +29,6 @@ from deepchecks_client.tabular.client import DeepchecksModelClient as TabularMod
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
 from deepchecks_client.tabular.utils import DataSchema
 
-if t.TYPE_CHECKING:
-    from deepchecks.vision import VisionData
-    from deepchecks_client.vision.client import ARRAY
-
 try:
     from importlib import metadata
 except ImportError:  # for Python<3.8
@@ -90,8 +86,8 @@ class DeepchecksClient:
         name: str
             Display name of the model.
         task_type: str, default: None
-            Task type of the model, possible values are regression, multiclass, binary, vision_classification and
-            vision_detection. Required for creation of a new model.
+            Task type of the model, possible values are regression, multiclass, binary.
+            Required for creation of a new model.
         description: str, default: None
             Additional description for the model.
         create_model_defaults: bool, default: True
@@ -164,9 +160,6 @@ class DeepchecksClient:
 
     def _select_model_client_type(self, task_type):
         model_type = TaskType(task_type)
-        if model_type in TaskType.vision_types():
-            from deepchecks_client.vision.client import DeepchecksModelClient as VisionModelClient
-            return VisionModelClient
         if model_type in TaskType.tabular_types():
             return TabularModelClient
         raise ValueError(f'Unknown task type - {task_type}')
@@ -231,111 +224,6 @@ class DeepchecksClient:
             raise ValueError(f'Model {model_name} does not have a version with name {version_name}.')
         else:
             return model.version(version_name)
-
-    def create_vision_model_version(
-        self,
-        *,
-        model_name: str,
-        reference_dataset: 'VisionData',
-        version_name: str = 'v1',
-        description: str = '',
-        reference_predictions: t.Optional[t.Union[t.Dict[int, 'ARRAY'], t.List['ARRAY']]] = None,
-        task_type: t.Union[str, TaskType, None] = None,
-        additional_image_properties: t.Optional[t.List[t.Dict[str, t.Any]]] = None,
-        samples_per_request: int = 32,
-        label_map: t.Optional[t.Dict[int, str]] = None,
-        additional_data: t.Optional[t.Dict[int, t.Dict[str, t.Any]]] = None,
-        additional_data_schema: t.Optional[t.Dict[str, ColumnTypeName]] = None,
-        send_images: bool = True,
-        alerts_delay_labels_ratio: float = 1.0,
-        alerts_delay_seconds: int = 3600 * 72  # 3 days
-    ):
-        """
-        Create a vision model version and upload the reference data if provided.
-
-        Parameters
-        ----------
-        model_name: str
-            The model name. Can be an existing model or a name for a new model.
-        version_name: str, default: 'v1'
-            The version name. Version name must be unique per model.
-        description: str, default: ''
-            A short description of the model.
-        task_type: Union[str, TaskType, None], default: None
-            The task type of the model, required for creation of a new model.
-            Can be inferred from 'reference_dataset.task_type' if set.
-            Possible string values: 'vision_classification', 'vision_detection'
-        reference_dataset: Optional[VisionData], default: None
-            The reference dataset object.
-        reference_predictions: Dict[int, torch.Tensor / np.ndarray]] / List[torch.Tensor / np.ndarray]], default: None
-            The predictions for the reference data in format {<index>: <predictions>} or [<predictions>]. If the
-            predictions are passed as a list, the order of the predictions must be the same as the order of the samples
-            returned by the dataloader of the vision data. If the predictions are passed as a dictionary, the keys must
-            be the indexes of the samples in the dataset from which the vision data dataloader was created.
-            The model predictions for the reference data.
-        additional_image_properties : List[Dict[str, Any]]
-            The additional image properties to use for the reference.
-            Should be in format:
-                [{'name': <str>, 'method': <callable>, 'output_type': <'continuous'/'discrete'/'class_id'>}]
-            See https://docs.deepchecks.com/stable/user-guide/vision/vision_properties.html for more info.
-        samples_per_request: int , default 32
-            data to the server is sent by batches,
-            this parameter controls batch size
-        label_map : Dict[int, str], optional
-            A dictionary mapping class ids to their names to be displayed in the different monitors.
-        additional_data: Dict[int, Dict[str, Any]], optional
-            The additional data in a format of {<index>: {<name>: <value>}}.
-            The keys must be the indexes of the samples in the dataset
-            from which the vision data dataloader was created.
-            Additional data is used for segmentation and filtering.
-        additional_data_schema: Dict[str, ColumnTypeName], optional
-            Schema for the additional data to add - in a format of {<name>: <ColumnData.value>}.
-            If not given it will be auto inferred if the additional_data is give.
-        send_images : bool , default True
-            If to send images to the server
-        alerts_delay_labels_ratio: float, default: 1.0
-            For alerts which needs labels, set the minimum ratio required to trigger the alert calculation, together
-            with `alerts_delay_seconds`, trigger occurs on the earliest of the two.
-        alerts_delay_seconds: int, default: 3 days
-            For alerts which needs labels, set the minimum time since the data was sent, in order to trigger the
-            alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
-
-        Returns
-        -------
-        deepchecks_client.vision.client.DeepchecksModelVersionClient
-        """
-        from deepchecks_client.vision.client import DeepchecksModelClient as DeepchecksVisionModelClient
-        from deepchecks_client.vision.utils import infer_additional_data_schema
-
-        if task_type is not None:
-            task_type = TaskType.convert(task_type)
-        else:
-            task_type = TaskType.convert(reference_dataset.task_type)
-            warnings.warn(
-                f'Task type was inferred to be {task_type.value} based on reference dataset provided. '
-                'It is recommended to provide it directly via the task_type argument. '
-                'Allowed values for task_type argument are "vision_classification" and "vision_detection"'
-            )
-
-        if additional_data_schema is None and additional_data is not None:
-            additional_data_schema = infer_additional_data_schema(additional_data)
-
-        model_client: DeepchecksVisionModelClient = self.get_or_create_model(
-            model_name, task_type, description, alerts_delay_labels_ratio=alerts_delay_labels_ratio,
-            alerts_delay_seconds=alerts_delay_seconds
-        )
-        version_client = model_client.version(version_name, additional_image_properties,
-                                              label_map=label_map, additional_data_schema=additional_data_schema,
-                                              send_images=send_images)
-
-        version_client.upload_reference(
-            vision_data=reference_dataset,
-            predictions=reference_predictions,
-            samples_per_request=samples_per_request,
-            additional_data=additional_data
-        )
-
-        return version_client
 
     @docstrings
     def create_tabular_model_version(

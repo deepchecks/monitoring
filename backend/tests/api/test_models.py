@@ -234,9 +234,9 @@ def test_get_models_statistics_no_models(client: TestClient):
 
 TableExists = sa.text(
     "SELECT EXISTS ("
-        "SELECT true "
-        "FROM information_schema.tables "
-        "WHERE table_name = :name "
-        "LIMIT 1"
+    "SELECT true "
+    "FROM information_schema.tables "
+    "WHERE table_name = :name "
+    "LIMIT 1"
     ")"
 ).bindparams(sa.bindparam(key="name", type_=sa.String))

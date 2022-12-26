@@ -11,7 +11,6 @@
 import typing as t
 from io import StringIO
 
-import boto3
 import numpy as np
 import pandas as pd
 import pendulum as pdl
@@ -26,15 +25,13 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import (AsyncSessionDep, DataIngestionDep, ResourcesProviderDep, S3BucketDep,
+from deepchecks_monitoring.dependencies import (AsyncSessionDep, DataIngestionDep, ResourcesProviderDep,
                                                 limit_request_size)
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_S3_IMAGE_COL
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 
 from .router import router
@@ -106,8 +103,6 @@ async def save_reference(
     model_version_id: int,
     batch: UploadFile,
     session: AsyncSession = AsyncSessionDep,
-    s3_bucket: str = S3BucketDep,
-    user: User = Depends(CurrentActiveUser()),
 ):
     """Upload reference data for a given model version.
 
@@ -119,8 +114,6 @@ async def save_reference(
         batch of reference samples
     session:
         database session instance
-    s3_bucket
-    user
     """
     max_samples = 100_000
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
@@ -137,18 +130,6 @@ async def save_reference(
     content = await batch.read()
     reference_batch: pd.DataFrame = pd.read_json(StringIO(content.decode()), orient="table")
     reference_batch = reference_batch.replace(np.NaN, pd.NA).where(reference_batch.notnull(), None)
-
-    if SAMPLE_S3_IMAGE_COL in reference_batch.columns:
-        if s3_bucket:
-            s3_client = boto3.client("s3")
-            base64_images_col = reference_batch[SAMPLE_S3_IMAGE_COL]
-            uri_images = []
-            for i, base64_image in enumerate(base64_images_col):
-                uri_images.append(base64_image_data_to_s3(base64_image, str(i + current_samples),
-                                                          model_version, user.organization_id, s3_bucket, s3_client))
-            reference_batch[SAMPLE_S3_IMAGE_COL] = pd.Series(uri_images)
-        else:
-            reference_batch[SAMPLE_S3_IMAGE_COL] = None
 
     items = []
 

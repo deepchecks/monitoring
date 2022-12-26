@@ -43,16 +43,10 @@ class TaskType(enum.Enum):
     REGRESSION = 'regression'
     MULTICLASS = 'multiclass'
     BINARY = 'binary'
-    VISION_CLASSIFICATION = 'vision_classification'
-    VISION_DETECTION = 'vision_detection'
 
     @classmethod
     def values(cls):
         return [e.value for e in TaskType]
-
-    @classmethod
-    def vision_types(cls):
-        return {cls.VISION_CLASSIFICATION, cls.VISION_DETECTION}
 
     @classmethod
     def tabular_types(cls):
@@ -69,20 +63,6 @@ class TaskType(enum.Enum):
 
         if isinstance(task_type, TabularTaskType):
             return cls(task_type.value)
-
-        # NOTE:
-        # it is here to not cause import error if user
-        # plans to use only tabular functionality and have
-        # not installed all required vision dependencies
-        from deepchecks_client.vision import DeepchecksTaskType as VisionTaskType
-
-        if isinstance(task_type, VisionTaskType):
-            if task_type in {VisionTaskType.SEMANTIC_SEGMENTATION, VisionTaskType.OTHER}:
-                raise ValueError(f'Not supported vision task type - {task_type}')
-            if task_type is VisionTaskType.CLASSIFICATION:
-                return cls.VISION_CLASSIFICATION
-            if task_type is VisionTaskType.OBJECT_DETECTION:
-                return cls.VISION_DETECTION
 
         raise ValueError(
             f'Unknown value type - {type(task_type)}, '
@@ -113,7 +93,6 @@ class DeepchecksColumns(str, enum.Enum):
     SAMPLE_ID_COL = '_dc_sample_id'
     SAMPLE_TS_COL = '_dc_time'
     SAMPLE_LABEL_COL = '_dc_label'
-    SAMPLE_S3_IMAGE_COL = '_dc_s3_image'
     SAMPLE_PRED_PROBA_COL = '_dc_prediction_probabilities'
     SAMPLE_PRED_COL = '_dc_prediction'
 

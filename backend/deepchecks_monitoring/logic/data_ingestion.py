@@ -15,7 +15,6 @@ import json
 import typing as t
 
 import asyncpg.exceptions
-import boto3
 import jsonschema.exceptions
 import pendulum as pdl
 import sqlalchemy.exc
@@ -30,13 +29,11 @@ from deepchecks_monitoring import __version__
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import get_data_topic_name, topic_name_to_ids
-from deepchecks_monitoring.logic.s3_image_utils import base64_image_data_to_s3
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import ModelVersion
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_S3_IMAGE_COL,
-                                                             SAMPLE_TS_COL)
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
 
@@ -46,8 +43,6 @@ __all__ = ["DataIngestionBackend", "log_data", "update_data"]
 async def log_data(
         model_version: ModelVersion,
         data: t.List[t.Dict[t.Any, t.Any]],
-        s3_bucket: str,
-        org_id: int,
         session: AsyncSession,
         log_times: t.List[pdl.DateTime]
 ):
@@ -67,8 +62,6 @@ async def log_data(
     validator_class = validator_for(model_version.monitor_json_schema)
     val_instance = validator_class(model_version.monitor_json_schema, format_checker=FormatChecker())
 
-    s3_client = boto3.client("s3") if s3_bucket and SAMPLE_S3_IMAGE_COL in model_version.model_columns else None
-
     for index, sample in enumerate(data):
         # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
         # to make sure all samples have same set of fields.
@@ -84,16 +77,6 @@ async def log_data(
             })
         else:
             sample[SAMPLE_LOGGED_TIME_COL] = log_times[index]
-            if sample.get(SAMPLE_S3_IMAGE_COL):
-                if s3_bucket:
-                    sample[SAMPLE_S3_IMAGE_COL] = base64_image_data_to_s3(sample[SAMPLE_S3_IMAGE_COL],
-                                                                          sample[SAMPLE_ID_COL],
-                                                                          model_version,
-                                                                          org_id,
-                                                                          s3_bucket,
-                                                                          s3_client)
-                else:
-                    sample[SAMPLE_S3_IMAGE_COL] = None
             # Timestamp is passed as string, convert it to datetime
             sample_timestamp = pdl.parse(sample[SAMPLE_TS_COL])
             if sample_timestamp <= now:
@@ -225,13 +208,11 @@ class DataIngestionBackend(object):
 
     def __init__(
             self,
-            resources_provider: ResourcesProvider,
-            s3_bucket: str,
+            resources_provider,
             logger=None
     ):
         self.resources_provider: ResourcesProvider = resources_provider
         self.cache_invalidator = CacheInvalidator(resources_provider)
-        self.s3_bucket = s3_bucket
         self.logger = logger or configure_logger(
             name="data-ingestion",
             uptrace_dsn=resources_provider.settings.uptrace_dsn,
@@ -283,8 +264,7 @@ class DataIngestionBackend(object):
             await asyncio.gather(*send_futures)
         else:
             if action == "log":
-                timestamps = await log_data(model_version, data, self.s3_bucket, user.organization_id, session,
-                                            [log_time] * len(data))
+                timestamps = await log_data(model_version, data, session, [log_time] * len(data))
             else:
                 timestamps = await update_data(model_version, data, session)
 
@@ -319,8 +299,7 @@ class DataIngestionBackend(object):
                 if log_samples:
                     samples = [m["data"] for m in log_samples]
                     log_times = [pdl.parse(m["log_time"]) for m in log_samples]
-                    timestamps += await log_data(model_version, samples, self.s3_bucket, organization_id, session,
-                                                 log_times)
+                    timestamps += await log_data(model_version, samples, session, log_times)
                 if update_samples:
                     samples = [m["data"] for m in update_samples]
                     timestamps += await update_data(model_version, samples, session)

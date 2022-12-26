@@ -11,32 +11,24 @@
 """Module defining utility functions for specific db objects."""
 import logging
 import typing as t
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-import torch
 from deepchecks.core import BaseCheck
 from deepchecks.core.errors import DeepchecksBaseError
 from deepchecks.tabular import Dataset
 from deepchecks.tabular import base_checks as tabular_base_checks
-from deepchecks.vision import VisionData
-from deepchecks.vision import base_checks as vision_base_checks
-from deepchecks.vision.utils.vision_properties import PropertiesInputType
 from sqlalchemy import VARCHAR, Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
-from torch.utils.data import DataLoader
 
 from deepchecks_monitoring.logic.cache_functions import CacheResult
-from deepchecks_monitoring.logic.vision_classes import TASK_TYPE_TO_VISION_DATA_CLASS, LabelVisionDataset
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
-from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, TaskType
+from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_S3_IMAGE_COL, SAMPLE_TS_COL,
-                                                             ColumnType)
+                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -110,53 +102,6 @@ def _batch_collate(batch):
     return list(imgs), list(labels)
 
 
-def dataframe_to_vision_data_pred_props(df: t.Union[pd.DataFrame, None],
-                                        task_type: TaskType,
-                                        model_version: ModelVersion,
-                                        s3_bucket: str,
-                                        use_images: bool = False) \
-        -> t.Tuple[VisionData, t.Dict[int, torch.Tensor], t.Dict[int, t.Any]]:
-    """Dataframe_to_dataset_and_pred."""
-    if df is None or len(df) == 0:
-        return None, None, None
-
-    df.reset_index(drop=True, inplace=True)
-    if task_type == TaskType.VISION_DETECTION:
-        labels = df[SAMPLE_LABEL_COL].apply(torch.Tensor).to_dict()
-    else:
-        labels = df[SAMPLE_LABEL_COL].to_dict()
-    df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
-
-    preds = df[SAMPLE_PRED_COL].apply(torch.Tensor).to_dict()
-    df.drop(SAMPLE_PRED_COL, inplace=True, axis=1)
-
-    s3_images = None
-    if SAMPLE_S3_IMAGE_COL in df.columns:
-        if use_images and not df[SAMPLE_S3_IMAGE_COL].isna().any():
-            s3_images = df[SAMPLE_S3_IMAGE_COL].to_list()
-        df.drop(SAMPLE_S3_IMAGE_COL, inplace=True, axis=1)
-
-    if df.empty:
-        static_props = None
-    else:
-        static_props = defaultdict(dict)
-        for col in df.columns:
-            prop_type, prop_name = col.split(' ', 1)
-            prop_type = PropertiesInputType(prop_type)
-            for ind, item in df[col].items():
-                if static_props[ind].get(prop_type) is None:
-                    static_props[ind][prop_type] = {prop_name: item}
-                else:
-                    static_props[ind][prop_type][prop_name] = item
-    data_loader = DataLoader(LabelVisionDataset(labels, s3_images), batch_size=30, collate_fn=_batch_collate)
-
-    # We need to convert the label map to be {int: str} because in the db we must have the keys as strings
-    label_map = {int(key): val for key, val in model_version.label_map.items()} if model_version.label_map else None
-
-    return (TASK_TYPE_TO_VISION_DATA_CLASS[task_type](data_loader, s3_bucket=s3_bucket, label_map=label_map),
-            preds, static_props)
-
-
 def get_top_features_or_from_conf(model_version: ModelVersion,
                                   additional_kwargs: MonitorCheckConfSchema,
                                   n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
@@ -181,17 +126,10 @@ async def get_results_for_model_versions_per_window(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
-        s3_bucket: str,
         with_display: bool = False,
-        use_images: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
-    task_type = model.task_type
-    is_vision_check = isinstance(
-        dp_check,
-        (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck)
-    )
 
     model_results = {}
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
@@ -202,12 +140,8 @@ async def get_results_for_model_versions_per_window(
             continue
 
         check_results = []
-        if not is_vision_check:
-            reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-                reference_table_dataframe, model_version, top_feat)
-        else:
-            reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_dataframe, task_type, model_version, s3_bucket, use_images=use_images)
+        reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
+            reference_table_dataframe, model_version, top_feat)
 
         for curr_test_info in test_infos:
             current_data = curr_test_info['data']
@@ -220,16 +154,9 @@ async def get_results_for_model_versions_per_window(
             elif current_data.empty:
                 curr_result = None
             else:
-                if not is_vision_check:
-                    test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(current_data,
-                                                                                   model_version,
-                                                                                   top_feat)
-                else:
-                    test_ds, test_pred, test_props = dataframe_to_vision_data_pred_props(current_data,
-                                                                                         task_type,
-                                                                                         model_version,
-                                                                                         s3_bucket,
-                                                                                         use_images=use_images)
+                test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(current_data,
+                                                                               model_version,
+                                                                               top_feat)
                 try:
                     if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                         curr_result = dp_check.run(
@@ -242,15 +169,6 @@ async def get_results_for_model_versions_per_window(
                             y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                             y_pred_test=test_pred, y_proba_test=test_proba,
                             with_display=with_display, model_classes=model_version.classes)
-                    elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
-                        curr_result = dp_check.run(
-                            test_ds, train_predictions=test_pred, train_properties=test_props,
-                            with_display=with_display)
-                    elif isinstance(dp_check, vision_base_checks.TrainTestCheck):
-                        curr_result = dp_check.run(
-                            reference_table_ds, test_ds, train_predictions=reference_table_pred,
-                            train_properties=reference_table_props, test_predictions=test_pred,
-                            test_properties=test_props, with_display=with_display)
                     else:
                         raise ValueError('incompatible check type')
 
@@ -275,14 +193,9 @@ async def get_results_for_model_versions_for_reference(
         model: Model,
         dp_check: BaseCheck,
         additional_kwargs: MonitorCheckConfSchema,
-        s3_bucket: str,
-        use_images: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions for reference."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
-    task_type = model.task_type
-    is_vision_check = isinstance(dp_check,
-                                 (vision_base_checks.SingleDatasetCheck, vision_base_checks.TrainTestCheck))
 
     model_reduces = {}
     # there is not test_info objects as in the run check per window because test isn't used here
@@ -292,26 +205,21 @@ async def get_results_for_model_versions_for_reference(
             continue
 
         reduced_outs = []
-        if not is_vision_check:
-            reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-                reference_table_dataframe, model_version, top_feat)
-        else:
-            reference_table_ds, reference_table_pred, reference_table_props = dataframe_to_vision_data_pred_props(
-                reference_table_dataframe, task_type, model_version, s3_bucket, use_images=use_images)
+        reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
+            reference_table_dataframe, model_version, top_feat)
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,
                                            y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                                            with_display=False)
-            elif isinstance(dp_check,  vision_base_checks.SingleDatasetCheck):
-                curr_result = dp_check.run(reference_table_ds, train_predictions=reference_table_pred,
-                                           train_properties=reference_table_props, with_display=False)
             else:
                 raise ValueError('incompatible check type')
 
         # In case of exception in the run putting none result
         except DeepchecksBaseError as e:
-            logging.getLogger('monitor_run_logger').exception(e.message)
+            message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
+                        f'got exception: {e.message}'
+            logging.getLogger('monitor_run_logger').error(message)
             curr_result = None
 
         reduced_outs.append({'result': curr_result})

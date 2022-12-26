@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-from tests.common import Payload, TestAPI, upload_classification_data, upload_vision_classification_data
+from tests.common import Payload, TestAPI, upload_classification_data
 
 
 def test_tabular_classification_suite_with_ref(
@@ -44,54 +44,5 @@ def test_tabular_classification_suite_without_ref(
     # NOTE: "test_api" will assert response status code
     test_api.execute_suite(
         model_version_id=classification_model_version["id"],
-        options={"start_time": start_date.isoformat(), "end_time": end_date.isoformat()}
-    )
-
-
-def test_vision_classification_suite_with_ref(
-    test_api: TestAPI,
-    classification_vision_model_version: Payload,
-):
-    # Arrange
-    sample = {
-        "_dc_label": 2,
-        "images Aspect Ratio": 0.2,
-        "images Area": 0.5,
-        "images Brightness": 0.5,
-        "images RMS Contrast": 0.5,
-        "images Mean Red Relative Intensity": 0.5,
-        "images Mean Blue Relative Intensity": 0.5,
-        "images Mean Green Relative Intensity": 0.5,
-        "_dc_prediction": [0.1, 0.3, 0.6]
-    }
-    test_api.upload_reference(
-        model_version_id=classification_vision_model_version["id"],
-        data=[sample] * 100
-    )
-    _, start_date, end_date = upload_vision_classification_data(
-        test_api=test_api,
-        model_version_id=classification_vision_model_version["id"],
-    )
-    # Act
-    # NOTE: "test_api" will assert response status code
-    test_api.execute_suite(
-        model_version_id=classification_vision_model_version["id"],
-        options={"start_time": start_date.isoformat(), "end_time": end_date.isoformat()}
-    )
-
-
-def test_vision_classification_suite_without_ref(
-    test_api: TestAPI,
-    classification_vision_model_version: Payload,
-):
-    # Arrange
-    _, start_date, end_date = upload_vision_classification_data(
-        test_api=test_api,
-        model_version_id=classification_vision_model_version["id"]
-    )
-    # Act
-    # NOTE: "test_api" will assert response status code
-    test_api.execute_suite(
-        model_version_id=classification_vision_model_version["id"],
         options={"start_time": start_date.isoformat(), "end_time": end_date.isoformat()}
     )

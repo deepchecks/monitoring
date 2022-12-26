@@ -65,7 +65,7 @@ def consume_data():
                 dsn=settings.uptrace_dsn
             )
             collect_telemetry(DataIngestionBackend)
-        backend = DataIngestionBackend(settings, resources_provider, settings.get_deepchecks_bucket())
+        backend = DataIngestionBackend(settings, resources_provider)
         await backend.run_data_consumer()
 
     anyio.run(consume)

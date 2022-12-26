@@ -9,7 +9,6 @@ Here you can see the api reference.
 
     deepchecks_client.core
     deepchecks_client.tabular
-    deepchecks_client.vision
 
 .. currentmodule:: deepchecks_client
 
@@ -17,7 +16,6 @@ Here you can see the api reference.
 
     core
     tabular
-    vision
 
 .. autosummary::
     :caption: Classes

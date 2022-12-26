@@ -34,8 +34,6 @@ class TaskType(enum.Enum):
     REGRESSION = "regression"
     BINARY = "binary"
     MULTICLASS = "multiclass"
-    VISION_CLASSIFICATION = "vision_classification"
-    VISION_DETECTION = "vision_detection"
 
 
 class Model(Base):

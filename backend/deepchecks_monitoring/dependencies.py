@@ -69,11 +69,6 @@ def get_cache_functions(request: fastapi.Request):
     return state.resources_provider.cache_functions
 
 
-def get_s3_bucket(request: fastapi.Request) -> str:
-    settings = request.app.state.settings
-    return settings.get_deepchecks_bucket()
-
-
 def get_host(request: fastapi.Request) -> str:
     settings = request.app.state.settings
     return settings.host
@@ -89,7 +84,6 @@ SettingsDep = fastapi.Depends(get_settings)
 DataIngestionDep = fastapi.Depends(get_data_ingestion_backend)
 CacheFunctionsDep = fastapi.Depends(get_cache_functions)
 ResourcesProviderDep = fastapi.Depends(get_resources_provider)
-S3BucketDep = fastapi.Depends(get_s3_bucket)
 HostDep = fastapi.Depends(get_host)
 
 # Examples of how to use those dependencies:
