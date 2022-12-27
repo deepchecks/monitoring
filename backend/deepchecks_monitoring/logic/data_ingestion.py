@@ -78,19 +78,24 @@ async def log_data(
         else:
             sample[SAMPLE_LOGGED_TIME_COL] = log_times[index]
             # Timestamp is passed as string, convert it to datetime
-            sample_timestamp = pdl.parse(sample[SAMPLE_TS_COL])
-            if sample_timestamp <= now:
-                sample[SAMPLE_TS_COL] = sample_timestamp
-                # If getting an index more then once,
-                # it will be override here and the last one will be used in arbitrary
-                valid_data[sample[SAMPLE_ID_COL]] = sample
-            else:
+            sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])
+            error = None
+            # If got same index more than once, log it as error
+            if sample[SAMPLE_ID_COL] in valid_data:
+                error = f"Got duplicate sample id: {sample[SAMPLE_ID_COL]}"
+            # If got future timestamp prevent save
+            elif sample[SAMPLE_TS_COL] > now:
+                error = f"Got future timestamp: {sample[SAMPLE_TS_COL]}"
+
+            if error:
                 errors.append({
                     "sample": str(sample),
                     "sample_id": sample.get(SAMPLE_ID_COL),
-                    "error": "Deepchecks disallow uploading of future data (timestamp > now)",
+                    "error": error,
                     "model_version_id": model_version.id
                 })
+            else:
+                valid_data[sample[SAMPLE_ID_COL]] = sample
 
     # Insert samples, and log samples which failed on existing index
     if valid_data:
