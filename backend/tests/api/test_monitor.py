@@ -418,7 +418,8 @@ async def test_monitor_run_filter(classification_model_check, classification_mod
                                          {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
                                          {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
                                          {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 1.0}, None,
-                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0}]}
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+                                         None]}
 
     # with filter
     monitor_id = test_api.create_monitor(
@@ -445,4 +446,5 @@ async def test_monitor_run_filter(classification_model_check, classification_mod
                                          {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
                                          {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 1.0},
                                          None,
-                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0}]}
+                                         {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+                                         None]}

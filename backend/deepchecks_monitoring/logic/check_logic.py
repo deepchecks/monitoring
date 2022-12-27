@@ -334,7 +334,8 @@ async def run_check_per_window_in_range(
     last_window_end = floor_window_for_time(monitor_options.end_time_dt(), monitor_options.frequency)
     num_windows_in_range = max(lookback // monitor_options.frequency, 1)
     first_window_end = last_window_end.subtract(seconds=(num_windows_in_range - 1) * monitor_options.frequency)
-    if last_window_end < monitor_options.end_time_dt():
+    # the last window might be partial so we need to create it manually
+    if last_window_end <= monitor_options.end_time_dt():
         last_window_end = last_window_end.add(seconds=monitor_options.frequency)
     all_windows = list((last_window_end - first_window_end).range("seconds", monitor_options.frequency))
 
