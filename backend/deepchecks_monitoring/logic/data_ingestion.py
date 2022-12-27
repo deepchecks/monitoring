@@ -284,10 +284,6 @@ class DataIngestionBackend(object):
         """Handle messages consumed from kafka."""
         organization_id, model_version_id = topic_name_to_ids(tp.topic)
         try:
-            messages_data = [json.loads(m.value) for m in messages]
-            log_samples = [m for m in messages_data if m["type"] == "log"]
-            update_samples = [m for m in messages_data if m["type"] == "update"]
-            timestamps = []
             async with self.resources_provider.create_async_database_session(organization_id) as session:
                 # If session is none, it means the organization was removed, so no need to do anything
                 if session is None:
@@ -300,7 +296,15 @@ class DataIngestionBackend(object):
                 # If model version is none it was deleted, so no need to do anything
                 if model_version is None:
                     return True
+
+                # If kafka commit failed we might rerun on same messages, so using the ingestion offset to forward
+                # already ingested messages
+                messages_data = [json.loads(m.value) for m in messages if m.offset > model_version.ingestion_offset]
+                log_samples = [m for m in messages_data if m["type"] == "log"]
+                update_samples = [m for m in messages_data if m["type"] == "update"]
+                timestamps = []
                 model_version.ingestion_offset = messages[-1].offset
+
                 if log_samples:
                     samples = [m["data"] for m in log_samples]
                     log_times = [pdl.parse(m["log_time"]) for m in log_samples]
@@ -308,6 +312,7 @@ class DataIngestionBackend(object):
                 if update_samples:
                     samples = [m["data"] for m in update_samples]
                     timestamps += await update_data(model_version, samples, session)
+
                 await self.after_data_update(organization_id, model_version_id, timestamps, session)
             return True
         except sqlalchemy.exc.SQLAlchemyError as exception:
