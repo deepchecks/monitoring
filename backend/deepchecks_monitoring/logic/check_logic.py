@@ -332,8 +332,10 @@ async def run_check_per_window_in_range(
     lookback = monitor_options.end_time_dt().int_timestamp - monitor_options.start_time_dt().int_timestamp
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
     last_window_end = floor_window_for_time(monitor_options.end_time_dt(), monitor_options.frequency)
-    num_windows_in_range = lookback // monitor_options.frequency
+    num_windows_in_range = max(lookback // monitor_options.frequency, 1)
     first_window_end = last_window_end.subtract(seconds=(num_windows_in_range - 1) * monitor_options.frequency)
+    if last_window_end < monitor_options.end_time_dt():
+        last_window_end = last_window_end.add(seconds=monitor_options.frequency)
     all_windows = list((last_window_end - first_window_end).range("seconds", monitor_options.frequency))
 
     model, model_versions = await get_model_versions_for_time_range(

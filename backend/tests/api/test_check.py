@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 # pylint: disable=redefined-outer-name
+from datetime import datetime
 import json
 import typing as t
 
@@ -497,6 +498,7 @@ def run_lookback(
 
     result = t.cast(Payload, result)
     assert len([out for out in result["output"]["v1"] if out is not None]) == 4
+    assert datetime.fromisoformat(result["time_labels"][-1]) >= datetime.fromisoformat(end_time)
 
 
 def test_run_lookback_empty_filters(
