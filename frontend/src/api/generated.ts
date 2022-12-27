@@ -81,6 +81,8 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
+export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
+
 export type GetAlertRulesApiV1AlertRulesGetSortbyItem =
   typeof GetAlertRulesApiV1AlertRulesGetSortbyItem[keyof typeof GetAlertRulesApiV1AlertRulesGetSortbyItem];
 
@@ -234,8 +236,6 @@ export interface StandartWebhookProperties {
   notification_levels?: AlertSeverity[];
 }
 
-export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
-
 /**
  * Sort order of ingestion errors output.
  */
@@ -328,41 +328,9 @@ export interface MonitorValueConf {
   is_agg?: boolean;
 }
 
-/**
- * List of data filters.
- */
-export interface MonitorTypeConf {
-  type: string;
-  values?: MonitorValueConf[];
-  is_agg_shown?: boolean;
-}
+export type MonitorUpdateSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
 
-/**
- * Schema defines the parameters for creating new monitor.
- */
-export interface MonitorRunSchema {
-  end_time?: string;
-}
-
-/**
- * Schema to get a monitor script/notebook.
- */
-export interface MonitorNotebookSchema {
-  end_time: string;
-  start_time: string;
-  model_version_id?: number;
-  as_script?: boolean;
-}
-
-export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
-
-/**
- * List of data filters.
- */
-export interface MonitorCheckConfSchema {
-  check_conf: MonitorCheckConfSchemaCheckConf;
-  res_conf?: string[];
-}
+export type MonitorUpdateSchemaDataFilters = DataFilterList | null;
 
 /**
  * Schema defines the parameters for creating new monitor.
@@ -371,11 +339,20 @@ export interface MonitorUpdateSchema {
   name?: string;
   lookback?: number;
   description?: string;
-  data_filters?: DataFilterList;
+  data_filters?: MonitorUpdateSchemaDataFilters;
   dashboard_id?: number;
-  additional_kwargs?: MonitorCheckConfSchema;
+  additional_kwargs?: MonitorUpdateSchemaAdditionalKwargs;
   frequency?: number;
   aggregation_window?: number;
+}
+
+/**
+ * List of data filters.
+ */
+export interface MonitorTypeConf {
+  type: string;
+  values?: MonitorValueConf[];
+  is_agg_shown?: boolean;
 }
 
 /**
@@ -396,6 +373,13 @@ export interface MonitorSchema {
 }
 
 /**
+ * Schema defines the parameters for creating new monitor.
+ */
+export interface MonitorRunSchema {
+  end_time?: string;
+}
+
+/**
  * Add to single window monitor options frequency and aggregation window to make it multi window.
  */
 export interface MonitorOptions {
@@ -408,6 +392,20 @@ export interface MonitorOptions {
 }
 
 /**
+ * Schema to get a monitor script/notebook.
+ */
+export interface MonitorNotebookSchema {
+  end_time: string;
+  start_time: string;
+  model_version_id?: number;
+  as_script?: boolean;
+}
+
+export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
+
+export type MonitorCreationSchemaDataFilters = DataFilterList | null;
+
+/**
  * Schema defines the parameters for creating new monitor.
  */
 export interface MonitorCreationSchema {
@@ -417,8 +415,18 @@ export interface MonitorCreationSchema {
   frequency: number;
   dashboard_id?: number;
   description?: string;
-  data_filters?: DataFilterList;
-  additional_kwargs?: MonitorCheckConfSchema;
+  data_filters?: MonitorCreationSchemaDataFilters;
+  additional_kwargs?: MonitorCreationSchemaAdditionalKwargs;
+}
+
+export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
+
+/**
+ * List of data filters.
+ */
+export interface MonitorCheckConfSchema {
+  check_conf: MonitorCheckConfSchemaCheckConf;
+  res_conf?: string[];
 }
 
 /**
