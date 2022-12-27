@@ -110,8 +110,7 @@ class AlertsScheduler:
             for model, monitors in monitors_per_model.items():
                 # Get the minimal time needed to query windows data for. Doing it together for all monitors in order to
                 # query the data once
-                minimum_time = min([pdl.instance(m.latest_schedule or m.scheduling_start)
-                                   .add(seconds=m.frequency - m.aggregation_window)
+                minimum_time = min([pdl.instance(m.latest_schedule).add(seconds=m.frequency - m.aggregation_window)
                                     for m in monitors])
 
                 versions = (await session.execute(select(ModelVersion).options(load_only(ModelVersion.model_id))
@@ -121,8 +120,7 @@ class AlertsScheduler:
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
-                    schedule_time = pdl.instance(monitor.latest_schedule or monitor.scheduling_start)\
-                        .add(seconds=monitor.frequency)
+                    schedule_time = pdl.instance(monitor.latest_schedule).add(seconds=monitor.frequency)
                     # IMPORTANT NOTE: Forwarding the schedule only if the rule is passing for ALL the model versions.
                     while (schedule_time <= model.end_time and
                            rules_pass(versions_windows, monitor, schedule_time, model)):

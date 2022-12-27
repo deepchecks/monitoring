@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 """Module defining the monitor ORM model."""
 import typing as t
-from datetime import timedelta
 
 import pendulum as pdl
 import sqlalchemy as sa
@@ -26,7 +25,9 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
     from deepchecks_monitoring.schema_models.dashboard import Dashboard  # pylint: disable=unused-import
 
-__all__ = ["Monitor"]
+__all__ = ["Monitor", "NUM_WINDOWS_TO_START"]
+
+NUM_WINDOWS_TO_START = 14
 
 
 def _get_start_schedule_time(context: DefaultExecutionContext):
@@ -39,22 +40,20 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
     frequency = context.get_current_parameters()["frequency"]
 
     select_obj = (
-        select(
-            sa.func.least(
-                sa.func.greatest(
-                    Model.start_time,
-                    Model.end_time - timedelta(seconds=frequency * 10)
-                ),
-                sa.func.now()
-            )
-        )
+        select(Model.start_time, Model.end_time)
         .join(Check, Check.id == check_id)
         .where(Model.id == Check.model_id)
     )
 
-    time_to_round = context.connection.execute(select_obj).scalar()
-
-    return floor_window_for_time(pdl.instance(time_to_round), frequency)
+    record = context.connection.execute(select_obj).first()
+    start_time, end_time = record[0], record[1]
+    # This indicates there is still no data for the model
+    if end_time < start_time:
+        time = pdl.now().subtract(seconds=frequency * NUM_WINDOWS_TO_START)
+    else:
+        time = max(pdl.instance(start_time),
+                   pdl.instance(end_time).subtract(seconds=frequency * NUM_WINDOWS_TO_START))
+    return floor_window_for_time(time, frequency)
 
 
 class Monitor(Base):
@@ -75,8 +74,7 @@ class Monitor(Base):
     aggregation_window = sa.Column(sa.Integer, nullable=False)
     frequency = sa.Column(sa.Integer, nullable=False)
 
-    scheduling_start = sa.Column(sa.DateTime(timezone=True), nullable=False, default=_get_start_schedule_time)
-    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False, default=_get_start_schedule_time)
 
     check_id = sa.Column(
         sa.Integer,

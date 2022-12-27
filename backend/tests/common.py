@@ -19,7 +19,7 @@ from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
 
-__all__ = ["generate_user", "DataGenerator", "TestAPI", "create_alert", "upload_classification_data"]
+__all__ = ["generate_user", "DataGenerator", "TestAPI", "create_alert", "upload_classification_data", "Payload"]
 
 
 async def generate_user(

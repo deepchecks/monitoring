@@ -16,6 +16,7 @@ from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
 from tests.common import ModelIdentifiersPair, Payload, TestAPI, create_alert
@@ -305,3 +306,30 @@ TableExists = sa.text(
     "LIMIT 1"
     ")"
 ).bindparams(sa.bindparam(key="name", type_=sa.String))
+
+
+@pytest.mark.asyncio
+async def test_model_set_monitors_time(
+    test_api: TestAPI,
+    client: TestClient,
+    async_session: AsyncSession,
+):
+    # Arrange
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check1 = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    check2 = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    test_api.create_monitor(check_id=check1["id"])
+    test_api.create_monitor(check_id=check1["id"])
+    test_api.create_monitor(check_id=check2["id"])
+    test_api.create_monitor(check_id=check2["id"])
+
+    # Act
+    new_date = pdl.now().subtract(years=1)
+    response = client.post(f"/api/v1/models/{model['id']}/monitors-set-schedule-time",
+                           json={"timestamp": new_date.isoformat()})
+    assert response.status_code == 200
+
+    # Assert
+    monitors = (await async_session.scalars(sa.select(Monitor))).all()
+    for monitor in monitors:
+        assert monitor.latest_schedule == floor_window_for_time(new_date, monitor.frequency)

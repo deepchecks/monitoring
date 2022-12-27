@@ -24,6 +24,7 @@ from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START
 from tests.common import TestAPI, upload_classification_data
 
 LABEL_CHECK_CONFIG = {
@@ -111,10 +112,10 @@ async def test_scheduler_monitor_update(
     check = test_api.create_check(model["id"], check={"config": NON_LABEL_CHECK_CONFIG})
     curr_time: pdl.DateTime = pdl.now().set(minute=0, second=0, microsecond=0)
     frequency = 3600
-    # Create data for 2 windows, with first being 15 windows back to test:
-    # A. new monitor is running only on last 10
+    # Create data for 2 windows, with first being 20 windows back to test:
+    # A. new monitor is running only on last 14
     # B. there are tasks also on the empty windows
-    date_range = [curr_time.subtract(seconds=frequency * 15), curr_time.subtract(seconds=frequency)]
+    date_range = [curr_time.subtract(seconds=frequency * 20), curr_time.subtract(seconds=frequency)]
     upload_classification_data(test_api, model_version["id"], is_labeled=False, daterange=date_range)
 
     monitor = test_api.create_monitor(
@@ -130,8 +131,8 @@ async def test_scheduler_monitor_update(
     await AlertsScheduler(engine=async_engine).run_all_organizations()
 
     tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
-    assert len(tasks) == 10
-    assert pdl.instance(tasks[0].execute_after) == curr_time.subtract(seconds=10 * frequency)
+    assert len(tasks) == NUM_WINDOWS_TO_START
+    assert pdl.instance(tasks[0].execute_after) == curr_time.subtract(seconds=NUM_WINDOWS_TO_START * frequency)
     assert pdl.instance(tasks[-1].execute_after) == curr_time.subtract(seconds=frequency)
 
    # update monitor - Should remove the current tasks defined
@@ -154,7 +155,7 @@ async def test_scheduler_monitor_update(
 
     # test that new tasks were scheduled
     tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
-    assert len(tasks) == 10
+    assert len(tasks) == NUM_WINDOWS_TO_START
 
 
 @pytest.mark.asyncio

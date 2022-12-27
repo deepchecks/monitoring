@@ -14,7 +14,9 @@ import pendulum as pdl
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
+from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Monitor
 from tests.api.test_check import upload_multiclass_reference_data
 from tests.common import Payload, TestAPI, upload_classification_data
 
@@ -53,7 +55,7 @@ async def test_add_monitor_month_schedule(
     ))
     # Assert
     monitor = await async_session.get(Monitor, monitor["id"])
-    assert pdl.instance(monitor.scheduling_start).int_timestamp % monitor.frequency == 0
+    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
 
 
 @pytest.mark.asyncio
@@ -74,7 +76,7 @@ async def test_add_monitor_day_schedule(
     ))
     # Assert
     monitor = await async_session.get(Monitor, monitor["id"])
-    assert pdl.instance(monitor.scheduling_start).int_timestamp % monitor.frequency == 0
+    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
 
 
 # TODO: give better name or add description
@@ -104,8 +106,8 @@ async def test_add_monitor_day_schedule_from_version(
     monitor = await async_session.get(Monitor, monitor["id"])
     # model version data was day before
     now = datetime.datetime.now() - datetime.timedelta(days=1)
-    assert pdl.instance(monitor.scheduling_start) < pdl.instance(now)
-    assert pdl.instance(monitor.scheduling_start).int_timestamp % monitor.frequency == 0
+    assert pdl.instance(monitor.latest_schedule) < pdl.instance(now)
+    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
 
 
 # TODO:
@@ -278,23 +280,27 @@ def test_monitor_notebook_retrieval(
 
 
 @pytest.mark.asyncio
-async def test_monitor_update(
+async def test_monitor_update_with_data(
     test_api: TestAPI,
     classification_model_check: Payload,
+    classification_model_version: Payload,
     async_session: AsyncSession
 ):
     # Arrange
+    upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"]
+    )
     monitor = test_api.create_monitor(check_id=classification_model_check["id"])
-    monitor = t.cast(Payload, monitor)
-
     monitor = await async_session.get(Monitor, monitor["id"])
-    latest_schedule = monitor.latest_schedule = monitor.scheduling_start
-    await async_session.flush()
+    model_version = await async_session.get(ModelVersion, classification_model_version["id"])
+
+    # Taking latest schedule forward to last schedule
+    latest_schedule = monitor.latest_schedule = floor_window_for_time(pdl.instance(model_version.end_time),
+                                                                      monitor.frequency)
     await async_session.commit()
-    await async_session.refresh(monitor)
 
     # Act
-    # NOTE: test_api will assert response status
     test_api.update_monitor(
         monitor_id=monitor.id,
         monitor={
@@ -307,32 +313,64 @@ async def test_monitor_update(
     )
 
     await async_session.refresh(monitor)
-    # assert latest_schedule after update is 10 windows earlier
-    assert latest_schedule - pdl.instance(monitor.latest_schedule) == pdl.duration(seconds=monitor.frequency * 10)
+    # assert latest_schedule after update is "num windows to start" windows earlier
+    assert latest_schedule - pdl.instance(monitor.latest_schedule) == \
+           pdl.duration(seconds=monitor.frequency * NUM_WINDOWS_TO_START)
+
+
+@pytest.mark.asyncio
+async def test_monitor_update_without_data(
+    test_api: TestAPI,
+    classification_model_check: Payload,
+    async_session: AsyncSession
+):
+    # Arrange
+    monitor = test_api.create_monitor(check_id=classification_model_check["id"])
+    monitor = await async_session.get(Monitor, monitor["id"])
+    latest_schedule = monitor.latest_schedule
+    # Act
+    test_api.update_monitor(
+        monitor_id=monitor.id,
+        monitor={
+            "data_filters": {"filters": [{
+                "operator": "contains",
+                "value": ["a", "ff"],
+                "column": "meta_col"
+            }]}
+        }
+    )
+
+    await async_session.refresh(monitor)
+    assert monitor.latest_schedule == latest_schedule
 
 
 @pytest.mark.asyncio
 async def test_update_monitor_freq(
     test_api: TestAPI,
     classification_model_check: Payload,
+    classification_model_version: Payload,
     async_session: AsyncSession
 ):
     # Arrange
-    monitor = test_api.create_monitor(check_id=classification_model_check["id"], monitor={"frequency": 3600 * 24})
+    upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"]
+    )
+    frequency = 3600 * 24
+    monitor = test_api.create_monitor(check_id=classification_model_check["id"], monitor={"frequency": frequency})
     monitor = t.cast(Payload, monitor)
-
     monitor = await async_session.get(Monitor, monitor["id"])
-    monitor.latest_schedule = monitor.scheduling_start + datetime.timedelta(seconds=10)
-    await async_session.flush()
-    await async_session.commit()
+
+    # Assert the latest schedule is by defined frequency
+    assert monitor.frequency == frequency
+    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
+
+    # Act
+    frequency = 3600 * 12
+    test_api.update_monitor(monitor_id=monitor.id, monitor={"frequency": frequency})
+
     await async_session.refresh(monitor)
-
-    assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency != 0
-
-    test_api.update_monitor(monitor_id=monitor.id, monitor={"frequency": 3600 * 12})
-
-    await async_session.refresh(monitor)
-    assert monitor.frequency == 3600 * 12
+    assert monitor.frequency == frequency
     assert pdl.instance(monitor.latest_schedule).int_timestamp % monitor.frequency == 0
 
 

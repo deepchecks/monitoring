@@ -186,10 +186,10 @@ async def test_alert_scheduling(
     for it in alerts:
         alert_per_rule[it.alert_rule_id].append(it)
 
-    assert all(len(v) == 10 for v in tasks_per_monitor.values())
+    assert all(len(v) == 14 for v in tasks_per_monitor.values())
     assert all(it.status == TaskStatus.COMPLETED for it in tasks)
-    assert len(alert_per_rule[rules[0]["id"]]) == 10
-    assert len(alert_per_rule[rules[1]["id"]]) == 6
+    assert len(alert_per_rule[rules[0]["id"]]) == 14
+    assert len(alert_per_rule[rules[1]["id"]]) == 8
 
     for alert in alert_per_rule[rules[0]["id"]]:
         assert alert.failed_values["v1"]["accuracy"] < 0.7

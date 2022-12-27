@@ -9,9 +9,9 @@
 # ----------------------------------------------------------------------------
 #
 # pylint: disable=redefined-outer-name
-from datetime import datetime
 import json
 import typing as t
+from datetime import datetime
 
 import httpx
 import pendulum as pdl

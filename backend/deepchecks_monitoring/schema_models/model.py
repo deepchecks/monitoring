@@ -87,3 +87,7 @@ class Model(Base):
 
         if updates:
             await Model.update(session, self.id, updates)
+
+    def has_data(self) -> bool:
+        """Check if model has data."""
+        return self.start_time <= self.end_time

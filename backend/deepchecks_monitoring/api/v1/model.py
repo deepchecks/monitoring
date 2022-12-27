@@ -22,15 +22,18 @@ from fastapi import BackgroundTasks, Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import Integer as SQLInteger
-from sqlalchemy import case, delete, func, literal, select, text, union_all
+from sqlalchemy import case, delete, func, literal, select, text, union_all, update
+from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from typing_extensions import TypedDict
 
+from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, CriticalAlertsCountPerModel,
-                                                             MonitorsCountPerModel, get_alerts_per_model)
+                                                             MonitorsCountPerModel, floor_window_for_time,
+                                                             get_alerts_per_model)
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
@@ -847,3 +850,45 @@ async def add_scorer(
     """Add a scorer to a model."""
     # TODO
     return
+
+
+class ModelScheduleTimeSchema(BaseModel):
+    """Model Schedule Time Schema."""
+    timestamp: str
+
+    @validator("timestamp")
+    def timestamp_validate(cls, value):  # pylint: disable=no-self-argument
+        """Get start time as datetime object."""
+        pdl.parse(value)
+        return value
+
+
+@router.post(
+    "/models/{model_id}/monitors-set-schedule-time",
+    tags=[Tags.MODELS, Tags.MONITORS],
+    summary="Set new scheduling time for all monitors of the model."
+)
+async def set_schedule_time(
+    body: ModelScheduleTimeSchema,
+    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+    session: AsyncSession = AsyncSessionDep,
+):
+    """Set schedule time."""
+    options = (selectinload(Model.checks).load_only(Check.id).selectinload(Check.monitors))
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs, options=options)
+
+    monitors = [monitor for check in model.checks for monitor in check.monitors]
+    monitor_ids = [monitor.id for monitor in monitors]
+    timestamp = pdl.parse(body.timestamp)
+
+    for monitor in monitors:
+        # Update schedule time
+        monitor.latest_schedule = floor_window_for_time(timestamp, monitor.frequency)
+
+    # Delete monitors tasks
+    await Task.delete_monitor_tasks(monitor_ids, timestamp, session)
+
+    # Resolving all alerts which are connected to this monitors
+    await session.execute(update(Alert).where(AlertRule.monitor_id.in_(monitor_ids))
+                          .values({Alert.resolved: True}),
+                          execution_options=immutabledict({"synchronize_session": False}))

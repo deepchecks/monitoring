@@ -15,10 +15,9 @@ import sqlalchemy as sa
 from fastapi import Depends, Response, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, validator
-from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy.util._collections import immutabledict
+from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
@@ -32,7 +31,7 @@ from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyn
                                                     MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
-from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Monitor
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
@@ -149,26 +148,30 @@ async def update_monitor(
     user: User = Depends(CurrentActiveUser())
 ):
     """Update monitor by id."""
-    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id,
-                                          options=selectinload(Monitor.alert_rules).load_only(AlertRule.id))
+    options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
+    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
+    model = monitor.check.model
     update_dict = body.dict(exclude_unset=True)
-    # if monitor is updated we should update latest_schedule in a way it'll run previous 10 windows
-    if monitor.latest_schedule is not None:
-        frequency = monitor.frequency if body.frequency is None else body.frequency
-        # make latest_schedule to be 10 windows earlier
-        ten_windows_earlier = pdl.instance(monitor.latest_schedule - 10 * pdl.duration(seconds=frequency))
-        update_dict["latest_schedule"] = floor_window_for_time(ten_windows_earlier, frequency)
 
-        await session.execute(sa.delete(Task).where(
-            sa.cast(Task.params["timestamp"].astext, TIMESTAMP(True)) > update_dict["latest_schedule"]),
-            execution_options=immutabledict({"synchronize_session": "fetch"}))
+    frequency = monitor.frequency if body.frequency is None else body.frequency
+    requires_recalculate_columns = ["frequency", "aggregation_window", "additional_kwargs", "data_filters"]
 
-    # Resolving all alerts which are connected to this monitor
-    alert_rule_ids = [x.id for x in monitor.alert_rules]
-    await session.execute(sa.update(Alert).where(Alert.alert_rule_id.in_(alert_rule_ids))
-                          .values({Alert.resolved: True}))
+    # If still no data, the monitor would not have run yet anyway so no need to update schedule/remove tasks.
+    if model.has_data() and any(key in update_dict for key in requires_recalculate_columns):
+        # Either continue from the latest schedule if it's early enough or take it back number of windows to start
+        new_schedule_time = min(pdl.instance(model.end_time).subtract(seconds=frequency * NUM_WINDOWS_TO_START),
+                                pdl.instance(monitor.latest_schedule))
+        update_dict["latest_schedule"] = floor_window_for_time(new_schedule_time, frequency)
+        # Delete monitor tasks
+        await Task.delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
+        # Resolving all alerts which are connected to this monitor
+        await session.execute(sa.update(Alert).where(AlertRule.monitor_id == monitor_id)
+                              .values({Alert.resolved: True}),
+                              execution_options=immutabledict({"synchronize_session": False}))
+        # Delete cache
+        cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
+
     await Monitor.update(session, monitor_id, update_dict)
-    cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 

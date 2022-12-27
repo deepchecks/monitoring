@@ -25,8 +25,9 @@ import sqlalchemy as sa
 from asyncpg.connection import Connection as AsyncpgConnection
 from asyncpg.connection import connect as asyncpg_connect
 from asyncpg.exceptions import PostgresConnectionError
-from sqlalchemy import event
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Integer, event
+from sqlalchemy.cimmutabledict import immutabledict
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.engine.url import URL as DatabaseUrl
 from sqlalchemy.exc import DisconnectionError
 from sqlalchemy.exc import TimeoutError as AlchemyTimeoutError
@@ -106,6 +107,17 @@ class Task(Base):
             f"<Task id:{self.id}, name:{self.name}, executor:{self.executor}, queue:{self.queue}, "
             f"status:{self.status}, priority:{self.priority}, params:{self.params}>"
         )
+
+    @classmethod
+    async def delete_monitor_tasks(cls, monitor_ids, schedule, session: AsyncSession):
+        """Delete monitor tasks."""
+        if not isinstance(monitor_ids, t.List):
+            monitor_ids = [monitor_ids]
+        await session.execute(sa.delete(Task).where(
+            sa.cast(Task.params["timestamp"].astext, TIMESTAMP(True)) > schedule,
+            sa.cast(Task.params["monitor_id"].astext, Integer).in_(monitor_ids),
+        ),
+            execution_options=immutabledict({"synchronize_session": False}))
 
 
 PGTaskNotificationFunc = sa.DDL("""
