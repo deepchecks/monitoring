@@ -20,7 +20,7 @@ import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
 from asyncpg import SerializationError
-from sqlalchemy import Column, func, literal_column, or_, select, text
+from sqlalchemy import Column, func, literal_column, select, text
 from sqlalchemy.dialects.postgresql import INTERVAL, insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -97,10 +97,10 @@ class AlertsScheduler:
             monitors = (await session.execute(
                 select(Monitor).options(joinedload(Monitor.check).load_only(Check.model_id, Check.is_label_required)
                                         .joinedload(Check.model))
-                .where(or_(
-                    Monitor.latest_schedule.is_(None),
+                .where(
+                    Monitor.latest_schedule.isnot(None),
                     Monitor.latest_schedule + func.cast(concat(Monitor.frequency, ' SECOND'), INTERVAL) <
-                    Model.end_time))
+                    Model.end_time)
                 )).scalars()
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
