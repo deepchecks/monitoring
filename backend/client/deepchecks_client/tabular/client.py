@@ -329,7 +329,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 raise ValueError('Can\'t pass prediction_probas to regression task.')
         else:
             if dataset.has_label():
-                data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(_string_formatter))
+                data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = \
+                    list(dataset.label_col.apply(_classification_label_formatter))
             if prediction_probas is not None:
                 data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = \
                     [_prediction_proba_formatter(prediction_proba, self.model_classes)
@@ -672,7 +673,7 @@ def _process_sample(
 
     if task_type in {TaskType.MULTICLASS, TaskType.BINARY}:
         if label is not None:
-            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
+            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = _classification_label_formatter(label)
 
         if prediction_proba is not None:
             sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = \
@@ -717,14 +718,22 @@ def _prediction_proba_formatter(prediction_probas, model_classes):
 
 
 def _classification_prediction_formatter(prediction, model_classes):
-    if not pd.isna(prediction):
-        if isinstance(prediction, Number) and int(prediction) == prediction:
-            prediction = int(prediction)
-        prediction = str(prediction)
-        if model_classes is not None and prediction not in model_classes:
-            raise ValueError(f'Provided prediction not in allowed model classes: {prediction}')
-        return str(prediction)
-    return None
+    if pd.isna(prediction):
+        return None
+    if isinstance(prediction, Number) and int(prediction) == prediction:
+        prediction = int(prediction)
+    prediction = str(prediction)
+    if model_classes is not None and prediction not in model_classes:
+        raise ValueError(f'Provided prediction not in allowed model classes: {prediction}')
+    return str(prediction)
+
+
+def _classification_label_formatter(label):
+    if pd.isna(label):
+        return None
+    if isinstance(label, Number) and int(label) == label:
+        label = int(label)
+    return str(label)
 
 
 def _datetime_formatter(datetime_obj):
