@@ -36,6 +36,7 @@ from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
+from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
 __all__ = ["DataIngestionBackend", "log_data", "update_data"]
 
@@ -77,8 +78,8 @@ async def log_data(
             })
         else:
             sample[SAMPLE_LOGGED_TIME_COL] = log_times[index]
-            # Timestamp is passed as string, convert it to datetime
-            sample[SAMPLE_TS_COL] = pdl.parse(sample[SAMPLE_TS_COL])
+            # Timestamps are passed as string, convert it to datetime
+            datetime_sample_formatter(sample, model_version)
             error = None
             # If got same index more than once, log it as error
             if sample[SAMPLE_ID_COL] in valid_data:
@@ -124,7 +125,7 @@ async def log_data(
 
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
-        update_statistics_from_sample(updated_statistics, sample, model_version.model.task_type)
+        update_statistics_from_sample(updated_statistics, sample)
         logged_timestamps.append(sample[SAMPLE_TS_COL])
 
     if model_version.statistics != updated_statistics:
@@ -173,6 +174,7 @@ async def update_data(
             errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
                                model_version_id=model_version.id))
             continue
+        datetime_sample_formatter(sample, model_version)
         valid_data[sample[SAMPLE_ID_COL]] = sample
         results.append(session.execute(
             update(table).where(table.c[SAMPLE_ID_COL] == sample[SAMPLE_ID_COL]).values(sample)
@@ -201,7 +203,7 @@ async def update_data(
     updated_statistics = copy.deepcopy(model_version.statistics)
 
     for sample in logged_samples:
-        update_statistics_from_sample(updated_statistics, sample, model_version.model.task_type)
+        update_statistics_from_sample(updated_statistics, sample)
     if model_version.statistics != updated_statistics:
         await model_version.update_statistics(updated_statistics, session)
 

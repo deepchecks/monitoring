@@ -25,7 +25,8 @@ import rfc3339_validator
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.utils.feature_inference import is_categorical
 from jsonschema import FormatChecker, validators
-from pandas.core.dtypes.common import is_bool_dtype, is_categorical_dtype, is_integer_dtype, is_numeric_dtype
+from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_datetime64_dtype, is_integer_dtype,
+                                       is_numeric_dtype, is_period_dtype)
 from pendulum.datetime import DateTime as PendulumDateTime
 from termcolor import cprint
 from typing_extensions import TypeAlias, TypedDict
@@ -261,12 +262,12 @@ class DeepchecksEncoder:
 
 def parse_timestamp(timestamp: t.Union[int, datetime, str]) -> 'PendulumDateTime':
     """Parse timestamp to datetime object."""
+    # If no timezone in datetime, assumed to be UTC and converted to local timezone
     if isinstance(timestamp, int) or np.issubdtype(type(timestamp), np.integer):
         return pdl.from_timestamp(timestamp, pdl.local_timezone())
     elif isinstance(timestamp, PendulumDateTime):
         return timestamp
     elif isinstance(timestamp, datetime):
-        # If no timezone in datetime, assumed to be UTC and converted to local timezone
         return pdl.instance(timestamp, pdl.local_timezone())
     elif isinstance(timestamp, str):
         if rfc3339_validator.validate_rfc3339(timestamp):
@@ -306,7 +307,7 @@ def pretty_print(msg: str):
 def _get_series_column_type(series: pd.Series):
     if series.dtype == 'object':
         # object might still be only of one type, so we re-infer the dtype
-        series = pd.Series(series.to_list(), name=series.name)
+        series = pd.Series(series.dropna().to_list(), name=series.name)
     if is_bool_dtype(series):
         return ColumnType.BOOLEAN.value
     if is_integer_dtype(series):
@@ -317,10 +318,13 @@ def _get_series_column_type(series: pd.Series):
         return ColumnType.NUMERIC.value
     if is_categorical_dtype(series):
         return ColumnType.CATEGORICAL.value
-    if series.apply(type).eq(str).all():
+    series_types = series.apply(type)
+    if series_types.eq(str).all():
         if is_categorical(series):
             return ColumnType.CATEGORICAL.value
         return ColumnType.TEXT.value
+    if series_types.eq(datetime).all() or is_datetime64_dtype(series) or is_period_dtype(series):
+        return ColumnType.DATETIME.value
     warnings.warn(f'Column {series.name} is of unsupported dtype - {series.dtype}.')
     return None
 

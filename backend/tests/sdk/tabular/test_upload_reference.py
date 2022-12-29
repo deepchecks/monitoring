@@ -8,9 +8,11 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import typing as t
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import pendulum as pdl
 import pytest
 from deepchecks.tabular.dataset import Dataset
 from deepchecks_client import DeepchecksClient, TaskType
@@ -107,6 +109,39 @@ async def test_regression_upload(
     ]
 
 
+@pytest.mark.asyncio
+async def test_regression_upload_w_date(regression_model: Payload,
+    deepchecks_sdk: DeepchecksClient,
+    async_session: AsyncSession,
+    test_api
+):
+    regression_model_version_w_datetime = test_api.create_model_version(
+        model_id=regression_model['id'],
+        model_version={
+            'name': 'v1',
+            'features': {'a': 'numeric', 'b': 'categorical'},
+            'feature_importance': {'a': 0.1, 'b': 0.5},
+            'additional_data': {'d': 'datetime'}
+        }
+    )
+    curr_time = pdl.parse(datetime.now().isoformat())
+    version_client = \
+        deepchecks_sdk.get_model_version(regression_model['name'], regression_model_version_w_datetime['name'])
+    df = pd.DataFrame([dict(a=2, b='2', d=curr_time, label=2), dict(a=3, b='4', d=curr_time.add(days=1), label=0)])
+    pred = [2, 1]
+    version_client.upload_reference(
+        Dataset(df, features=['a', 'b'], label='label'),
+        predictions=pred
+    )
+    model_version = await async_session.get(ModelVersion, version_client.model_version_id)
+    ref_table = model_version.get_reference_table(async_session)
+    ref_dict = (await async_session.execute(select(ref_table))).all()
+
+    assert ref_dict == [
+        (2.0, '2', curr_time, 2, 2),
+        (3.0, '4', curr_time.add(days=1), 0, 1),
+    ]
+
 def test_pass_probas_to_regression(
     deepchecks_sdk: DeepchecksClient,
     test_api: TestAPI,
@@ -185,7 +220,7 @@ def test_pass_probas_different_length_than_model_classes(
         calling(version_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
         raises(
             ValueError,
-            'number of classes in prediction_probas does not match number of classes in model classes.'
+            'Number of classes in prediction_probas does not match number of classes in model classes.'
         )
     )
 
@@ -216,7 +251,7 @@ def test_pass_new_predictions_not_in_model_classes(
     )
     assert_that(
         calling(dc_client.upload_reference).with_args(ds, pred, prediction_probas=proba),
-        raises(ValueError, 'Got predictions not in model classes: {\'3\'}')
+        raises(ValueError, 'Provided prediction not in allowed model classes: 3')
     )
 
 

@@ -16,6 +16,7 @@ import logging.handlers
 import operator
 import sys
 import typing as t
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 import opentelemetry
@@ -232,9 +233,16 @@ class TimeUnit(enum.IntEnum):
     WEEK = 7 * DAY
 
 
+def _none_serializable_to_json(obj):
+    """Serialize none serializable objects to a JSON serializable object."""
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
 def json_dumps(data) -> str:
     """Serialize given object to JSON string."""
-    return orjson.dumps(data).decode()
+    return orjson.dumps(data, default=_none_serializable_to_json).decode()
 
 
 async def fetch_or_404(

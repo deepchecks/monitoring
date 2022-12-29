@@ -1,9 +1,13 @@
 """Represent global utility functions."""
+import typing as t
+
+import pendulum as pdl
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
-__all__ = ['generate_random_user', 'generate_test_user']
+__all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter']
 
 
 async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with_org: bool = True):
@@ -58,3 +62,12 @@ async def generate_test_user(session: AsyncSession, auth_jwt_secret: str, with_o
     await session.commit()
     await session.refresh(u)
     return u
+
+
+def datetime_sample_formatter(sample: t.Dict, model_version: ModelVersion):
+    model_columns = model_version.monitor_json_schema['properties']
+    for col_name, val in sample.items():
+        if val is None or col_name not in model_columns:
+            continue
+        if model_columns[col_name].get('format') == 'date-time':
+            sample[col_name] = pdl.parse(val)

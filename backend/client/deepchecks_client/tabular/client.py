@@ -15,6 +15,7 @@ import pathlib
 import typing as t
 import warnings
 from datetime import datetime
+from numbers import Number
 
 import httpx
 import numpy as np
@@ -328,18 +329,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 raise ValueError('Can\'t pass prediction_probas to regression task.')
         else:
             if dataset.has_label():
-                data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(str))
+                data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = list(dataset.label_col.apply(_string_formatter))
             if prediction_probas is not None:
-                if self.model_classes is None:
-                    raise ValueError('Can\'t pass prediction_probas if version was not configured with model classes.')
-                if isinstance(prediction_probas, pd.DataFrame):
-                    prediction_probas = np.asarray(prediction_probas)
-                if prediction_probas.shape[1] != len(self.model_classes):
-                    raise ValueError('number of classes in prediction_probas does not match number of classes in '
-                                     'model classes.')
-                # TODO: add validation probas sum to one for each row?
-                data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = un_numpy(prediction_probas)
-            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = [str(x) for x in predictions]
+                data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = \
+                    [_prediction_proba_formatter(prediction_proba, self.model_classes)
+                     for prediction_proba in prediction_probas]
+            data[DeepchecksColumns.SAMPLE_PRED_COL.value] = \
+                [_classification_prediction_formatter(prediction, self.model_classes) for prediction in predictions]
 
             if self.model_classes:
                 new_labels = set(data[DeepchecksColumns.SAMPLE_LABEL_COL.value]) - set(self.model_classes)
@@ -353,8 +349,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             data = data.sample(core_client.MAX_REFERENCE_SAMPLES, random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')
 
-        # Make sure that integer categorical columns are still sent as strings:
-        data[self.categorical_columns] = data[self.categorical_columns].astype(str)
+        # Make sure that integer categorical columns and datetime columns are sent as strings:
+        for col in data.columns:
+            if col in self.categorical_columns:
+                data[col] = data[col].apply(_string_formatter)
+            elif col in self.datetime_columns:
+                data[col] = data[col].apply(_datetime_formatter)
 
         validator = DeepchecksJsonValidator(self.ref_schema)
         for _, row in data.iterrows():
@@ -675,23 +675,11 @@ def _process_sample(
             sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = str(label)
 
         if prediction_proba is not None:
-            if model_classes is None:
-                raise ValueError(
-                    'Can\'t pass prediction_proba if version was not '
-                    'configured with model classes.'
-                )
-            if len(prediction_proba) != len(model_classes):
-                raise ValueError(
-                    'Number of classes in prediction_proba does not '
-                    'match number of classes in model classes.'
-                )
-            sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = list(prediction_proba)
+            sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = \
+                _prediction_proba_formatter(prediction_proba, model_classes)
 
-        if prediction is not None:
-            prediction = str(prediction)
-            if model_classes is not None and prediction not in model_classes:
-                raise ValueError(f'Provided prediction not in allowed model classes: {prediction}')
-            sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = str(prediction)
+        sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = _classification_prediction_formatter(prediction,
+                                                                                               model_classes)
 
     elif task_type == TaskType.REGRESSION:
         if label is not None:
@@ -708,9 +696,48 @@ def _process_sample(
     # we need to make sure that numerical categorical data
     # are send as strings
     for name, kind in data_columns.items():
-        if kind == 'categorical' and name in sample:
-            sample[name] = str(sample[name])
+        if kind == ColumnType.CATEGORICAL and name in sample:
+            sample[name] = _string_formatter(sample[name])
+        elif kind == ColumnType.DATETIME and name in sample:
+            sample[name] = _datetime_formatter(sample[name])
 
     sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
     schema_validator.validate(sample)
     return sample
+
+
+def _prediction_proba_formatter(prediction_probas, model_classes):
+    if model_classes is None:
+        raise ValueError('Can\'t pass prediction_probas if version was not configured with model classes.')
+    if len(prediction_probas) != len(model_classes):
+        raise ValueError('Number of classes in prediction_probas does not match number of classes in '
+                         'model classes.')
+    # TODO: add validation probas sum to one for each row?
+    return un_numpy(prediction_probas)
+
+
+def _classification_prediction_formatter(prediction, model_classes):
+    if not pd.isna(prediction):
+        if isinstance(prediction, Number) and int(prediction) == prediction:
+            prediction = int(prediction)
+        prediction = str(prediction)
+        if model_classes is not None and prediction not in model_classes:
+            raise ValueError(f'Provided prediction not in allowed model classes: {prediction}')
+        return str(prediction)
+    return None
+
+
+def _datetime_formatter(datetime_obj):
+    if datetime_obj is None:
+        return None
+    if isinstance(datetime_obj, pd.Period):
+        datetime_obj = datetime_obj.to_timestamp()
+    elif isinstance(datetime_obj, np.datetime64):
+        datetime_obj = pd.Timestamp(datetime_obj.to_timestamp())
+    return parse_timestamp(datetime_obj).to_iso8601_string()
+
+
+def _string_formatter(some_obj):
+    if pd.isna(some_obj):
+        return None
+    return str(some_obj)

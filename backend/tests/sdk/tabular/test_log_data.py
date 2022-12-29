@@ -34,21 +34,21 @@ async def test_classification_log(
         prediction='2',
         prediction_proba=[0.1, 0.3, 0.6],
         label=2,
-        values={'a':2, 'b':'2', 'c':1}
+        values={'a': 2, 'b': '2', 'c': 1}
     )
     multiclass_model_version_client.log_sample(
         sample_id='2',
         prediction='1',
         prediction_proba=[0.1, 0.6, 0.1],
         label=2,
-        values={'a':3, 'b':'4', 'c':-1}
+        values={'a': 3, 'b': '4', 'c': -1}
     )
     multiclass_model_version_client.log_sample(
         sample_id='3',
         prediction='0',
         prediction_proba=[0.1, 0.6, 0.1],
         label=1,
-        values={'a':2, 'b':'0', 'c':0}
+        values={'a': 2, 'b': '0', 'c': 0}
     )
 
     multiclass_model_version_client.send()
@@ -64,6 +64,60 @@ async def test_classification_log(
     assert set(stats['b']['values']) == set(['4', '0', '2'])
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
+
+
+@pytest.mark.asyncio
+async def test_regression_w_date_log(
+    regression_model: Payload,
+    deepchecks_sdk: DeepchecksClient,
+    async_session: AsyncSession,
+    test_api
+):
+    regression_model_version_w_datetime = test_api.create_model_version(
+        model_id=regression_model['id'],
+        model_version={
+            'name': 'v1',
+            'features': {'a': 'numeric', 'b': 'categorical'},
+            'feature_importance': {'a': 0.1, 'b': 0.5},
+            'additional_data': {'d': 'datetime'}
+        }
+    )
+    curr_time = pdl.now()
+    version_client = \
+        deepchecks_sdk.get_model_version(regression_model['name'], regression_model_version_w_datetime['name'])
+    version_client.log_sample(
+        sample_id='1',
+        prediction=2,
+        label=1,
+        values={'a': 2, 'b': '2', 'd': curr_time}
+    )
+    version_client.log_sample(
+        sample_id='2',
+        prediction=2,
+        label=2,
+        values={'a': 3, 'b': '4', 'd': curr_time.add(days=-1)}
+    )
+    version_client.log_sample(
+        sample_id='3',
+        prediction=0,
+        label=1,
+        values={'a': 3, 'b': '0', 'd': curr_time.add(days=2)}
+    )
+
+    version_client.send()
+
+    model_version = await async_session.get(
+        ModelVersion,
+        version_client.model_version_id
+    )
+
+    stats = model_version.statistics
+    assert stats['_dc_label'] == {'max': 2, 'min': 1}
+    assert stats['_dc_prediction'] == {'max': 2, 'min': 0}
+    assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert stats['a'] == {'max': 3, 'min': 2}
+    assert stats['d'] == {'max': curr_time.add(days=2).timestamp(),
+                          'min': curr_time.add(days=-1).timestamp()}
 
 
 @pytest.mark.asyncio
@@ -91,19 +145,19 @@ async def test_classification_log_without_probas(
         sample_id='1',
         prediction='2',
         label=2,
-        values={'a':2, 'b':'2', 'c':1}
+        values={'a': 2, 'b': '2', 'c': 1}
     )
     version_client.log_sample(
         sample_id='2',
         prediction='1',
         label=2,
-        values={'a':3, 'b':'4', 'c':-1}
+        values={'a': 3, 'b': '4', 'c': -1}
     )
     version_client.log_sample(
         sample_id='3',
         prediction='0',
         label=1,
-        values={'a':2, 'b':'0', 'c':0}
+        values={'a': 2, 'b': '0', 'c': 0}
     )
     version_client.send()
 
@@ -126,19 +180,19 @@ async def test_regression_log(
         sample_id='1',
         prediction='2',
         label=2,
-        values={'a':2, 'b':'2', 'c':1}
+        values={'a': 2, 'b': '2', 'c': 1}
     )
     regression_model_version_client.log_sample(
         sample_id='2',
         prediction='1',
         label=2,
-        values={'a':3, 'b':'4', 'c':-1}
+        values={'a': 3, 'b': '4', 'c': -1}
     )
     regression_model_version_client.log_sample(
         sample_id='3',
         prediction='0',
         label=1,
-        values={'a':2, 'b':'0', 'c':0}
+        values={'a': 2, 'b': '0', 'c': 0}
     )
     regression_model_version_client.send()
 
@@ -352,11 +406,11 @@ def test_classification_log_pass_probas_without_classes(
             prediction='2',
             prediction_proba=[0.1, 0.3, 0.6],
             label=2,
-            values={'a':2, 'b':'2', 'c':1}
+            values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
             ValueError,
-            'Can\'t pass prediction_proba if version was not configured with model classes'
+            'Can\'t pass prediction_probas if version was not configured with model classes.'
         )
     )
 
@@ -387,11 +441,11 @@ def test_classification_log_pass_probas_not_same_length_as_classes(
             prediction='2',
             prediction_proba=[0.1, 0.3, 0.5, 0.1],
             label=2,
-            values={'a':2, 'b':'2', 'c':1}
+            values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
             ValueError,
-            'Number of classes in prediction_proba does not match number of classes in model classes.'
+            'Number of classes in prediction_probas does not match number of classes in model classes.'
         )
     )
 
@@ -420,7 +474,7 @@ def test_classification_log_pass_prediction_not_in_classes(
             prediction='10',
             prediction_proba=[0.1, 0.3, 0.6],
             label=2,
-            values={'a':2, 'b':'2', 'c':1}
+            values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
             ValueError,
@@ -448,7 +502,7 @@ def test_regression_log_sample_pass_proba(
             prediction=10,
             prediction_proba=[0.1],
             label=2,
-            values={'a':2, 'b':'2', 'c':1}
+            values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
             ValueError,

@@ -33,6 +33,7 @@ from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
+from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
 from .router import router
 
@@ -139,6 +140,7 @@ async def save_reference(
         item = row.to_dict()
         try:
             val_instance.validate(item)
+            datetime_sample_formatter(item, model_version)
             items.append(item)
         except ValidationError as e:
             raise BadRequest(f"Invalid reference data: {e}") from e

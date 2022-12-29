@@ -8,7 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the ModelVersion ORM model."""
-import logging
 import typing as t
 from collections import defaultdict
 from datetime import datetime
@@ -26,9 +25,7 @@ from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList
 from deepchecks_monitoring.schema_models.base import Base
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, ColumnType,
-                                                             column_types_to_table_columns)
-from deepchecks_monitoring.schema_models.model import TaskType
+from deepchecks_monitoring.schema_models.column_type import ColumnType, column_types_to_table_columns
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models import Model  # pylint: disable=unused-import
@@ -204,37 +201,22 @@ def _add_col_value(stats_values, col_value):
         stats_values.append(col_value)
 
 
-def update_statistics_from_sample(statistics: dict, sample: dict, task_type: TaskType):
+def update_statistics_from_sample(statistics: dict, sample: dict):
     """Update statistics dict inplace, using the sample given."""
-    logger = logging.getLogger("data-ingestion")
-    for col in statistics.keys():
+    for col, stats_info in statistics.items():
         if sample.get(col) is None:
             continue
         col_value = sample[col]
-        stats_info = statistics[col]
+        if isinstance(col_value, datetime):
+            col_value = col_value.timestamp()
         if "max" in stats_info:
-            stats_info["max"] = col_value if stats_info["max"] is None else max((stats_info["max"], col_value))
+            max_val = stats_info["max"]
+            stats_info["max"] = col_value if max_val is None else max((max_val, col_value))
         if "min" in stats_info:
-            stats_info["min"] = col_value if stats_info["min"] is None else min((stats_info["min"], col_value))
+            min_val = stats_info["min"]
+            stats_info["min"] = col_value if min_val is None else min((min_val, col_value))
         if "values" in stats_info:
-            if not isinstance(col_value, list):
-                _add_col_value(stats_info["values"], col_value)
-            elif task_type == TaskType.VISION_DETECTION:
-                if len(col_value) > 0:
-                    if col == SAMPLE_LABEL_COL:
-                        for label in col_value:
-                            if isinstance(label, list) and len(label) == 5:
-                                _add_col_value(stats_info["values"], int(label[0]))
-                            else:
-                                logger.warning("Failed to save statistics for the label column in vsion "
-                                               "detection as a wrong label format was given: %s", label)
-                    elif col == SAMPLE_PRED_COL:
-                        for pred in col_value:
-                            if isinstance(label, list) and len(pred) == 6:
-                                _add_col_value(stats_info["values"], int(pred[5]))
-                            else:
-                                logger.warning("Failed to save statistics for the prediction column in vsion "
-                                               "detection as a wrong prediction format was given: %s", label)
+            _add_col_value(stats_info["values"], col_value)
 
 
 def unify_statistics(original_statistics: dict, added_statistics: dict):

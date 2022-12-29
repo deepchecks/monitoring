@@ -85,7 +85,7 @@ class ColumnType(str, enum.Enum):
             ColumnType.TEXT: None,
             ColumnType.ARRAY_FLOAT: None,
             ColumnType.ARRAY_FLOAT_2D: None,
-            ColumnType.DATETIME: None
+            ColumnType.DATETIME: {"min": None, "max": None},
         }
         return types_map[self]
 

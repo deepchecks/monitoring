@@ -19,8 +19,8 @@ import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
-from deepchecks_client.core.utils import (DataFilter, DeepchecksColumns, DeepchecksEncoder, DeepchecksJsonValidator,
-                                          TaskType, parse_timestamp, pretty_print)
+from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder,
+                                          DeepchecksJsonValidator, TaskType, parse_timestamp, pretty_print)
 
 from .api import API
 
@@ -97,7 +97,12 @@ class DeepchecksModelVersionClient:
         self.categorical_columns = [
             feat
             for feat, value in self.all_columns.items()
-            if value == 'categorical'
+            if value == ColumnType.CATEGORICAL
+        ]
+        self.datetime_columns = [
+            feat
+            for feat, value in self.all_columns.items()
+            if value == ColumnType.DATETIME
         ]
 
     def log_sample(self, *args, **kwargs):
