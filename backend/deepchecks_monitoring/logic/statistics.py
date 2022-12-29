@@ -11,7 +11,7 @@
 import math
 import typing as t
 
-from sqlalchemy import Column, and_, case, func, select, text
+from sqlalchemy import Column, case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions
@@ -21,7 +21,7 @@ from deepchecks_monitoring.schema_models.column_type import ColumnType
 __all__ = ['bins_for_feature']
 
 
-async def bins_for_feature(model_version: ModelVersion, feature: str, session: AsyncSession,
+async def bins_for_feature(model_version: ModelVersion, table, feature: str, session: AsyncSession,
                            monitor_options: SingleCheckRunOptions, num_bins=30) \
         -> t.Tuple[ColumnType, t.List[t.Dict]]:
     """Query from the database given number of bins.
@@ -29,6 +29,7 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
     Parameters
     ----------
     model_version: ModelVersion
+    table
     feature: str
     session: AsyncSession
     monitor_options: SingleCheckRunOptions
@@ -44,13 +45,11 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
     """
     feature_type = ColumnType(model_version.features_columns[feature])
     feature_column = Column(feature)
-    table = model_version.get_monitor_table(session)
-    where_clause = and_(monitor_options.sql_time_filter(), monitor_options.sql_columns_filter())
     if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER]:
         # Adds for each feature his quantile
         feature_quantiles_cte = select([feature_column,
                                         func.cume_dist().over(order_by=feature_column).label('quantile')])\
-            .select_from(table).where(where_clause).cte('feature_with_quantile')
+            .select_from(table).where(monitor_options.sql_all_filters()).cte('feature_with_quantile')
         # Handle the case when quantile is 1, in this case the floor(quantile * bins number) doesn't work so setting it
         # into the last bin manually (bins number - 1).
         # For nulls the window function returns 1, so they will get the last bin + 1.
@@ -70,7 +69,8 @@ async def bins_for_feature(model_version: ModelVersion, feature: str, session: A
         query = select([
             feature_column.label('value'),
             func.count().label('count')
-        ]).select_from(table).where(where_clause).group_by(feature_column).order_by(text('count')).limit(num_bins)
+        ]).select_from(table).where(monitor_options.sql_all_filters()).group_by(feature_column)\
+            .order_by(text('count')).limit(num_bins)
         bins = (await session.execute(query)).all()
         return feature_type, bins
     else:

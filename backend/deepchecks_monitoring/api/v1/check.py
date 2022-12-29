@@ -14,6 +14,7 @@ from deepchecks import SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import (ReduceFeatureMixin, ReduceLabelMixin, ReduceMetricClassMixin,
                                             ReducePropertyMixin)
+from deepchecks.tabular.checks import SingleDatasetPerformance, TrainTestPerformance
 from fastapi import Query
 from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
@@ -27,10 +28,14 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, HostDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
-                                                     SingleCheckRunOptions, get_feature_property_info,
-                                                     get_metric_class_info, reduce_check_result, reduce_check_window,
-                                                     run_check_per_window_in_range, run_check_window)
-from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
+                                                     SingleCheckRunOptions, complete_sessions_for_check,
+                                                     get_feature_property_info, get_metric_class_info,
+                                                     init_check_by_kwargs, load_data_for_check, reduce_check_result,
+                                                     reduce_check_window, run_check_per_window_in_range,
+                                                     run_check_window)
+from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
+                                                     get_results_for_model_versions_per_window,
+                                                     get_top_features_or_from_conf)
 from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
@@ -442,6 +447,7 @@ async def run_check_group_by_feature(
         return BadRequest(f'Feature {feature} was not found in model version schema')
 
     # Get all data count
+    data_table = model_version.get_monitor_table(session)
     count = (await session.execute(select(func.count()).where(monitor_options.sql_all_filters())
                                    .select_from(model_version.get_monitor_table(session)))).scalar()
     if count == 0:
@@ -455,7 +461,7 @@ async def run_check_group_by_feature(
     }]
 
     # Get bins
-    feature_type, bins = await bins_for_feature(model_version, feature, session, monitor_options)
+    feature_type, bins = await bins_for_feature(model_version, data_table, feature, session, monitor_options)
 
     if feature_type == ColumnType.CATEGORICAL:
         for curr_bin in bins:
@@ -482,17 +488,45 @@ async def run_check_group_by_feature(
                 'count': curr_bin['count']
             })
 
+    # init check
+    check_to_run = init_check_by_kwargs(check, monitor_options.additional_kwargs)
+    # Ugly hack to show different display instead of the one of single dataset performance
+    if isinstance(check_to_run, SingleDatasetPerformance):
+        check_for_display = init_check_by_kwargs(TrainTestPerformance(), monitor_options.additional_kwargs)
+    else:
+        check_for_display = check_to_run
+    top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
+    load_reference = isinstance(check_to_run, (TrainTestBaseCheck, SingleDatasetPerformance))
+
     for f in filters:
-        options = monitor_options.add_filters(f['filters'])
-        window_result = await run_check_window(check, options, session, model_version.model, [model_version],
-                                               with_display=True)
-        for model_version, result in window_result.items():
-            if result is not None and result['result'] is not None:
-                check_result = result['result']
-                f['value'] = reduce_check_result(check_result, options.additional_kwargs)
-                f['display'] = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
-            else:
-                f['value'] = None
-                f['display'] = []
+        test_session, ref_session = load_data_for_check(model_version, session, top_feat,
+                                                        monitor_options.add_filters(f['filters']),
+                                                        with_reference=load_reference, with_test=True)
+        # The test info is used for caching purposes so need to fill it here
+        test_session_info = {'start': None, 'end': None, 'query': test_session}
+        model_versions_sessions = [(ref_session, [test_session_info])]
+        model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+        # Get value from check to run
+        model_results_per_window = get_results_for_model_versions_per_window(
+            model_version_dataframes, [model_version], model_version.model, check_to_run,
+            monitor_options.additional_kwargs, with_display=check_for_display == check_to_run)
+        # The function we called is more general, but we know here we have single version and window
+        result = model_results_per_window[model_version][0]
+        if result['result'] is not None:
+            check_result = result['result']
+            f['value'] = reduce_check_result(check_result, monitor_options.additional_kwargs)
+            f['display'] = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
+        else:
+            f['value'] = None
+            f['display'] = []
+
+        if check_for_display != check_to_run:
+            model_results_per_window = get_results_for_model_versions_per_window(
+                model_version_dataframes, [model_version], model_version.model, check_for_display,
+                monitor_options.additional_kwargs, with_display=True)
+            # The function we called is more general, but we know here we have single version and window
+            result = model_results_per_window[model_version][0]
+            if result['result'] is not None:
+                f['display'] = [d.to_json() for d in result['result'].display if isinstance(d, BaseFigure)]
 
     return filters

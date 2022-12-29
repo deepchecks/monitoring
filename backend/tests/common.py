@@ -1337,8 +1337,6 @@ def upload_classification_data(
     data = []
 
     for i, date in enumerate(daterange):
-        time = date.isoformat()
-        label = ("2" if i != 1 else "1") if is_labeled else None
         for j in range(samples_per_date):
             time = date.isoformat()
             label = ("2" if i != 1 else "1") if is_labeled else None

@@ -200,12 +200,12 @@ def check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
             check_conf["params"][kwarg_name] = kwarg_val
 
 
-def init_check_by_kwargs(check: Check, additional_kwargs: MonitorCheckConfSchema) -> BaseCheck:
+def init_check_by_kwargs(check: t.Union[Check, BaseCheck], additional_kwargs: MonitorCheckConfSchema) -> BaseCheck:
     """Initialize a check with additional kwargs.
 
     Parameters
     ----------
-    check : Check
+    check : Union[Check, BaseCheck]
         The check to initialize.
     additional_kwargs : MonitorCheckConfSchema
         Additional kwargs to pass to the check.
@@ -215,12 +215,13 @@ def init_check_by_kwargs(check: Check, additional_kwargs: MonitorCheckConfSchema
     dp_check : BaseCheck
         The initialized check.
     """
-    dp_check = check.initialize_check()
+    if isinstance(check, Check):
+        check = check.initialize_check()
     if additional_kwargs is not None:
-        check_conf = dp_check.config()
+        check_conf = check.config()
         check_kwarg_filter(check_conf, additional_kwargs)
-        dp_check = BaseCheck.from_config(check_conf)
-    return dp_check
+        return BaseCheck.from_config(check_conf)
+    return check
 
 
 def _metric_name_pretify(metric_name: str) -> str:
@@ -394,19 +395,15 @@ async def run_check_per_window_in_range(
     await session.commit()
 
     # get result from active sessions and run the check per each model version
-    check_results = await get_results_for_model_versions_per_window(model_version_dataframes,
-                                                                    model_versions,
-                                                                    model,
-                                                                    dp_check,
-                                                                    monitor_options.additional_kwargs)
+    check_results = get_results_for_model_versions_per_window(model_version_dataframes,
+                                                              model_versions,
+                                                              model,
+                                                              dp_check,
+                                                              monitor_options.additional_kwargs)
 
     # Reduce the check results
     reduce_results = defaultdict(list)
     for model_version, results in check_results.items():
-        # Model version might have no results at all. For example for train-test checks when there is no reference data
-        if results is None:
-            reduce_results[model_version.name] = None
-            continue
         for result_dict in results:
             result_value = result_dict["result"]
             if result_value is None:
@@ -462,11 +459,11 @@ async def run_check_window(
     model_reduces : Dict[str, Any]
         The results of the check.
     """
-    # get the relevant objects from the db
-    dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
-
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
+
+    # get the relevant objects from the db
+    dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
 
@@ -482,7 +479,7 @@ async def run_check_window(
                                                         with_reference=is_train_test_check or reference_only,
                                                         with_test=not reference_only,
                                                         n_samples=n_samples)
-        if reference_only:
+        if test_session is None:
             info = {}
         else:
             info = {"start": monitor_options.start_time_dt(),
@@ -496,7 +493,7 @@ async def run_check_window(
 
     # get result from active sessions and run the check per each model version
     if not reference_only:
-        model_results_per_window = await get_results_for_model_versions_per_window(
+        model_results_per_window = get_results_for_model_versions_per_window(
             model_version_dataframes,
             model_versions,
             model,
@@ -505,7 +502,7 @@ async def run_check_window(
             with_display
         )
     else:
-        model_results_per_window = await get_results_for_model_versions_for_reference(
+        model_results_per_window = get_results_for_model_versions_for_reference(
             model_version_dataframes,
             model_versions,
             model,
@@ -516,7 +513,7 @@ async def run_check_window(
     model_results = {}
     for model_version, results_per_window in model_results_per_window.items():
         # the original function is more general and runs it per window, we have only 1 window here
-        model_results[model_version] = None if results_per_window is None else results_per_window[0]
+        model_results[model_version] = results_per_window[0]
 
     return model_results
 
@@ -632,6 +629,7 @@ async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.
                     test_query = await curr_test_info["query"]
                     curr_test_info["data"] = pd.DataFrame(test_query.all(),
                                                           columns=[str(key) for key in test_query.keys()])
+                    del curr_test_info["query"]
                 else:
                     curr_test_info["data"] = pd.DataFrame()
         if reference_query is not None:

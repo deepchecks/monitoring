@@ -73,11 +73,11 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version
     if SAMPLE_PRED_COL in df.columns:
         if not df[SAMPLE_PRED_COL].isna().all():
             y_pred = np.array(df[SAMPLE_PRED_COL].to_list())
-        df.drop(SAMPLE_PRED_COL, inplace=True, axis=1)
+        df = df.drop(SAMPLE_PRED_COL, axis=1)
     if SAMPLE_PRED_PROBA_COL in df.columns:
         if not df[SAMPLE_PRED_PROBA_COL].isna().all():
             y_proba = np.array(df[SAMPLE_PRED_PROBA_COL].to_list())
-        df.drop(SAMPLE_PRED_PROBA_COL, inplace=True, axis=1)
+        df = df.drop(SAMPLE_PRED_PROBA_COL, axis=1)
 
     available_features = [feat_name for feat_name in model_version.features_columns.keys() if feat_name in top_feat]
     cat_features = [feat_name for feat_name, feat_type in model_version.features_columns.items()
@@ -86,7 +86,7 @@ def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version
                       'cat_features': cat_features, 'label_type': model_version.model.task_type.value}
 
     if df[SAMPLE_LABEL_COL].isna().all():
-        df.drop(SAMPLE_LABEL_COL, inplace=True, axis=1)
+        df = df.drop(SAMPLE_LABEL_COL, axis=1)
     else:
         dataset_params['label'] = SAMPLE_LABEL_COL
 
@@ -120,7 +120,7 @@ def get_top_features_or_from_conf(model_version: ModelVersion,
     return model_version.get_top_features(n_top)
 
 
-async def get_results_for_model_versions_per_window(
+def get_results_for_model_versions_per_window(
         model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
         model_versions: t.List[ModelVersion],
         model: Model,
@@ -133,11 +133,9 @@ async def get_results_for_model_versions_per_window(
 
     model_results = {}
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
-        # If reference is none then it wasn't queried (single dataset check) and if it's empty then it was queried
-        # and data wasn't found, therefore skipping the run.
-        if reference_table_dataframe is not None and reference_table_dataframe.empty:
-            model_results[model_version] = None
-            continue
+        # If this is a train test check then we require reference data in order to run
+        skip_run = isinstance(dp_check, tabular_base_checks.TrainTestCheck) and \
+                   (reference_table_dataframe is None or reference_table_dataframe.empty)
 
         check_results = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
@@ -145,9 +143,11 @@ async def get_results_for_model_versions_per_window(
 
         for curr_test_info in test_infos:
             current_data = curr_test_info['data']
+            if skip_run:
+                curr_result = None
             # If the data is cache result we are assuming it was indeed found in the cache and was validated before
             # passed here (meaning current_data.found must be true here)
-            if isinstance(current_data, CacheResult):
+            elif isinstance(current_data, CacheResult):
                 curr_result = current_data
             # If current_data is not cache result, then it must be a dataframe. If the dataframe is empty, skipping the
             # run and putting none result
@@ -187,7 +187,7 @@ async def get_results_for_model_versions_per_window(
     return model_results
 
 
-async def get_results_for_model_versions_for_reference(
+def get_results_for_model_versions_for_reference(
         model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
         model_versions: t.List[ModelVersion],
         model: Model,

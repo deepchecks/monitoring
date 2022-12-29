@@ -554,7 +554,7 @@ def test_run_lookback_empty_filters(
     )
 
     result = t.cast(Payload, result)
-    assert result["output"]["v1"] is None
+    assert all(x is None for x in result["output"]["v1"])
 
 
 def run_window(
@@ -803,6 +803,10 @@ def test_categorical_feature_drill_down(
         api=test_api,
         model_version_id=classification_model_version["id"],
     )
+    upload_multiclass_reference_data(
+        api=test_api,
+        classification_model_version=classification_model_version
+    )
 
     # == Act
     result = test_api.feature_drill_down(
@@ -820,17 +824,16 @@ def test_categorical_feature_drill_down(
 
     assert_that(result, contains_exactly(
         has_entries({
-            "name":
-            "All Data",
+            "name": "All Data",
             "value": has_length(3),
-            "display": has_length(0),
+            "display": has_length(1),
             "count": 4,
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
             "name": "ppppp",
             "value": has_length(3),
-            "display": has_length(0),
+            "display": has_length(1),
             "count": 4,
             "filters": has_entries({"filters": has_length(1)})
         })
