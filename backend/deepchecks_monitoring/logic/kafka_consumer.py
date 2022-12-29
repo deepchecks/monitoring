@@ -25,12 +25,13 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
                 group_id="data_group",  # Consumer must be in a group to commit
                 enable_auto_commit=False,  # Will disable autocommit
                 auto_offset_reset="earliest",  # If committed offset not found, start from beginning,
-                max_poll_records=100
+                max_poll_records=1000,
+                session_timeout_ms=60 * 1000,
             )
             await consumer.start()
             consumer.subscribe(pattern=pattern)
             while True:
-                result = await consumer.getmany(timeout_ms=10 * 1000)
+                result = await consumer.getmany(timeout_ms=30 * 1000)
                 for tp, messages in result.items():
                     if messages:
                         to_commit = await handle_func(tp, messages)
