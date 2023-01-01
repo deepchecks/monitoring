@@ -48,12 +48,12 @@ function calculateActiveFilters(filters: ColumnsFilters) {
       if (typeof value[0] === 'number' && typeof value[1] === 'number') {
         activeFilters.push({
           column,
-          operator: OperatorsMap.greater_than,
+          operator: OperatorsMap.greater_than_equals,
           value: value[0]
         });
         activeFilters.push({
           column,
-          operator: OperatorsMap.less_than,
+          operator: OperatorsMap.less_than_equals,
           value: value[1]
         });
         return;

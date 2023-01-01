@@ -129,8 +129,8 @@ function MonitorFormComponent({
     if (monitor) {
       if (column) {
         if (column.type === ColumnType.numeric || column.type === ColumnType.integer) {
-          filter.push({ column: values.column, operator: OperatorsEnum.greater_than, value: values.numericValue[0] });
-          filter.push({ column: values.column, operator: OperatorsEnum.less_than, value: values.numericValue[1] });
+          filter.push({ column: values.column, operator: OperatorsEnum.greater_than_equals, value: values.numericValue[0] });
+          filter.push({ column: values.column, operator: OperatorsEnum.less_than_equals, value: values.numericValue[1] });
         }
 
         if (column.type === ColumnType.categorical) {

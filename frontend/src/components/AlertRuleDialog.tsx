@@ -222,12 +222,12 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, ...props }: AlertRul
                             ? [
                                 {
                                   column: values.data_filter.column,
-                                  operator: 'greater_than',
+                                  operator: OperatorsEnum.greater_than_equals,
                                   value: values.data_filter.value[0]
                                 },
                                 {
                                   column: values.data_filter.column,
-                                  operator: 'less_than',
+                                  operator:  OperatorsEnum.less_than_equals,
                                   value: values.data_filter.value[1]
                                 }
                               ]
