@@ -1,15 +1,15 @@
-import React, { FC } from 'react';
+import React, { FC, Suspense, lazy } from 'react';
 
 import { AnalysisProvider } from 'context/analysis-context';
 
-import { AlertRules } from 'pages/AlertRules';
-import { AlertsPage } from 'pages/AlertsPage';
-import { DashboardPage } from 'pages/DashboardPage';
-import { IntegrationsPage } from 'pages/IntegrationsPage';
-import { AnalysisPage } from 'pages/AnalysisPage';
-import { NotificationsPage } from 'pages/NotificationsPage';
-import { ModelsPage } from 'pages/ModelsPage';
-import { APIKeyPage } from 'pages/APIKeyPage';
+const AlertRules = lazy(()=>import('pages/AlertRules'));
+const AlertsPage = lazy(()=>import('pages/AlertsPage'));
+const DashboardPage = lazy(()=>import('pages/DashboardPage'));
+const IntegrationsPage = lazy(()=>import('pages/IntegrationsPage'));
+const AnalysisPage = lazy(()=>import('pages/AnalysisPage'));
+const NotificationsPage = lazy(()=>import('pages/NotificationsPage'));
+const ModelsPage = lazy(()=>import('pages/ModelsPage'));
+const APIKeyPage = lazy(()=>import('pages/APIKeyPage'));
 
 import {
   Alarm,
@@ -48,7 +48,7 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Alerts',
     link: '/alerts',
-    element: AlertsPage,
+    element: () => <Suspense fallback={<div>Loading...</div>}><AlertsPage/></Suspense>,
     Icon: Alarm,
     IconHover: AlarmHover,
     ActiveIcon: AlarmActive
@@ -68,7 +68,7 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Configuration',
     link: '/configuration',
-    element: DashboardPage,
+    element: () => <DashboardPage />,
     Icon: Configuration,
     IconHover: ConfigurationHover,
     ActiveIcon: ConfigurationActive,
@@ -77,7 +77,7 @@ export const pathsInfo: PathInfo[] = [
         title: 'Alerts Rules',
         link: '/configuration/alert-rules',
         Icon: null,
-        element: AlertRules,
+        element: () => <AlertRules />,
         IconHover: null,
         ActiveIcon: null
       },
@@ -85,7 +85,7 @@ export const pathsInfo: PathInfo[] = [
         title: 'Models',
         link: '/configuration/models',
         Icon: null,
-        element: ModelsPage,
+        element: () => <ModelsPage />,
         IconHover: null,
         ActiveIcon: null
       },
@@ -93,7 +93,7 @@ export const pathsInfo: PathInfo[] = [
         title: 'Notification',
         link: '/configuration/notifications',
         Icon: null,
-        element: NotificationsPage,
+        element: () => <NotificationsPage />,
         IconHover: null,
         ActiveIcon: null
       },
@@ -101,7 +101,7 @@ export const pathsInfo: PathInfo[] = [
         title: 'Integrations',
         link: '/configuration/integrations',
         Icon: null,
-        element: IntegrationsPage,
+        element: () => <IntegrationsPage />,
         IconHover: null,
         ActiveIcon: null
       },
@@ -109,7 +109,7 @@ export const pathsInfo: PathInfo[] = [
         title: 'API Key',
         link: '/configuration/api-key',
         Icon: null,
-        element: APIKeyPage,
+        element: () => <APIKeyPage />,
         IconHover: null,
         ActiveIcon: null
       }

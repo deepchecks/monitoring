@@ -15,3 +15,5 @@ export const NotificationsPage = function () {
     </Box>
   );
 };
+
+export default NotificationsPage;

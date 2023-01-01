@@ -237,3 +237,5 @@ const StyledAutocompleteTextField = styled(TextField)(({ theme }) => ({
     }
   }
 }));
+
+export default ModelsPage;

@@ -113,3 +113,5 @@ export const AlertRules = () => {
     </Box>
   );
 };
+
+export default AlertRules;

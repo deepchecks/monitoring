@@ -15,3 +15,5 @@ export const APIKeyPage = function () {
     </Box>
   );
 };
+
+export default APIKeyPage;

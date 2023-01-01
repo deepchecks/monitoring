@@ -212,3 +212,5 @@ export const CompleteDetails = () => {
     </ThemeProvider>
   );
 };
+
+export default CompleteDetails;

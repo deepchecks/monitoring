@@ -15,3 +15,5 @@ export const IntegrationsPage = function () {
     </Box>
   );
 };
+
+export default IntegrationsPage;

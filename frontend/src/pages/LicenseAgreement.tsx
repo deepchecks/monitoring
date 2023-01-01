@@ -70,3 +70,5 @@ export const LicenseAgreementPage = function () {
         </ThemeProvider>
     );
 };
+
+export default LicenseAgreementPage;

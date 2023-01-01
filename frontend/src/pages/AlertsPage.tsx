@@ -120,3 +120,5 @@ const StyledListItem = styled(ListItem)({
     marginTop: 0
   }
 });
+
+export default AlertsPage;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -13,12 +13,13 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { pathsInfo } from 'helpers/helper';
 import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 
-import { DashboardPage } from 'pages/DashboardPage';
-import { CompleteDetails } from './pages/CompleteDetails';
 import { Sidebar } from './components/Sidebar';
 
 import 'overlayscrollbars/overlayscrollbars.css';
-import { LicenseAgreementPage } from 'pages/LicenseAgreement';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const CompleteDetails = lazy(() => import('./pages/CompleteDetails'));
+const LicenseAgreementPage = lazy(() => import('./pages/LicenseAgreement'));
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -68,16 +69,18 @@ const App = () => {
         <GlobalStateProvider>
           <UserProvider>
             <StatsTimeProvider>
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route path="/" element={<DashboardPage />} />
-                  {flatPathsInfo.map(({ link, element: PageElement }) => (
-                    <Route key={link} path={link} element={<PageElement />} />
-                  ))}
-                </Route>
-                <Route path="/complete-details" element={<CompleteDetails />} />
-                <Route path="/license-agreement" element={<LicenseAgreementPage />} />
-              </Routes>
+              <Suspense fallback={<div>Loading...</div>}>
+                <Routes>
+                  <Route element={<Layout />}>
+                    <Route path="/" element={<DashboardPage />} />
+                    {flatPathsInfo.map(({ link, element: PageElement }) => (
+                      <Route key={link} path={link} element={<PageElement />} />
+                    ))}
+                  </Route>
+                  <Route path="/complete-details" element={<CompleteDetails />} />
+                  <Route path="/license-agreement" element={<LicenseAgreementPage />} />
+                </Routes>
+              </Suspense>
             </StatsTimeProvider>
           </UserProvider>
         </GlobalStateProvider>

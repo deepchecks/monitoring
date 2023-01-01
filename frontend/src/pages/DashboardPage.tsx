@@ -71,3 +71,5 @@ export const DashboardPage = () => {
     </>
   );
 };
+
+export default DashboardPage;

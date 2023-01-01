@@ -150,3 +150,5 @@ export function AnalysisPage() {
     </>
   );
 }
+
+export default AnalysisPage;
