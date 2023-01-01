@@ -19,6 +19,7 @@ import jsonschema.exceptions
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse, ORJSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -103,6 +104,7 @@ def create_application(
         allow_credentials=True,
         expose_headers=["x-substatus"],
     )
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
 
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
