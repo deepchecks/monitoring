@@ -96,9 +96,9 @@ class SchedulerInstrumentor(BaseInstrumentor):
                     if enqueued_tasks is not None:
                         stringified_tasks = "\n".join([repr(task) for task in enqueued_tasks])
                         span.set_attribute("operation.enqueued_tasks", stringified_tasks)
-                        span.set_status(Status(description=f"{len(enqueued_tasks)} tasks enqueued"))
+                        span.set_attribute("description", f"Enqueued {len(enqueued_tasks)} tasks")
                     else:
-                        span.set_status(Status(description="0 tasks enqueued"))
+                        span.set_attribute("description", "Enqueued 0 tasks")
 
                     return enqueued_tasks
                 except Exception as error:
