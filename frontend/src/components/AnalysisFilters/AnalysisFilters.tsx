@@ -151,10 +151,6 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
             ))}
           </MarkedSelect>
           <ExpandableSelection
-            label="Look Back Window"
-            changeState={setLookback}
-            data={lookBackData}
-            value={lookback}
             endTime={model.latest_time}
           />
           <MarkedSelect
