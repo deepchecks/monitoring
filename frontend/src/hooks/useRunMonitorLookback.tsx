@@ -1,21 +1,15 @@
-import { useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost } from 'api/generated';
 import { useEffect } from 'react';
-import useModels from './useModels';
+import { useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost, ModelManagmentSchema } from 'api/generated';
 
-const useRunMonitorLookback = (monitorId: number | null, modelId: string | null) => {
-  const { modelsMap } = useModels();
-  const runMonitor = useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost();
+const useRunMonitorLookback = (monitorId: number | null, currentModel: ModelManagmentSchema | null) => {
+  const { mutateAsync } = useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost();
 
   useEffect(() => {
-    if (!modelId || !monitorId) return;
+    if (!currentModel || !monitorId) return;
 
-    const monitorModel = modelsMap[modelId];
-
-    if (!monitorModel) return;
-
-    const end_time = monitorModel.latest_time ? new Date(monitorModel.latest_time * 1000).toISOString() : '';
-    runMonitor.mutateAsync({ monitorId, data: { end_time } });
-  }, []);
+    const end_time = currentModel.latest_time ? new Date(currentModel.latest_time * 1000).toISOString() : '';
+    mutateAsync({ monitorId, data: { end_time } });
+  }, [currentModel, monitorId, mutateAsync]);
 };
 
 export default useRunMonitorLookback;

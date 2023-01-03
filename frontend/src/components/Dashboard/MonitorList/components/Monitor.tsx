@@ -13,7 +13,7 @@ import { GraphicsSection } from './GraphicsSection';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { SetStateType } from 'helpers/types';
-import { DrawerNames } from '../../MonitorDrawer/MonitorDrawer.types';
+import { DrawerNames } from '../../Dashboard.types';
 
 interface MonitorProps extends GridProps {
   initialMonitor: MonitorSchema;

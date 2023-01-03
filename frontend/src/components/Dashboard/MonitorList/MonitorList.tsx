@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import mixpanel from 'mixpanel-browser';
 
-import {
-  MonitorSchema,
-  useGetOrCreateDashboardApiV1DashboardsGet,
-  useDeleteMonitorApiV1MonitorsMonitorIdDelete
-} from 'api/generated';
+import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
 import useModels from 'hooks/useModels';
 
 import { Grid, GridProps } from '@mui/material';
@@ -14,33 +10,32 @@ import { Loader } from 'components/Loader';
 import { Monitor } from './components/Monitor';
 import { DeleteMonitor } from './components/DeleteMonitor';
 
-import { DrawerNames } from '../MonitorDrawer/MonitorDrawer.types';
+import { DrawerNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
 
 interface MonitorsListProps extends GridProps {
+  dashboard: DashboardSchema | undefined;
   currentModelId: number | null;
   currentMonitor: MonitorSchema | null;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
   handleOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
+  isLoading?: boolean;
 }
 
 export const MonitorList = ({
+  dashboard,
   currentModelId,
   currentMonitor,
   setCurrentMonitor,
   handleOpenMonitorDrawer,
   monitorToRefreshId,
   setMonitorToRefreshId,
+  isLoading,
   ...props
 }: MonitorsListProps) => {
   const { getCurrentModel } = useModels();
-  const { data: dashboard, isLoading } = useGetOrCreateDashboardApiV1DashboardsGet({
-    query: {
-      refetchOnWindowFocus: false
-    }
-  });
   const { mutateAsync: DeleteMonitorById } = useDeleteMonitorApiV1MonitorsMonitorIdDelete();
 
   const dashboardMonitors = useMemo(
@@ -48,7 +43,7 @@ export const MonitorList = ({
       (dashboard?.monitors || []).sort((a, b) =>
         getCurrentModel(a.check.model_id).name.localeCompare(getCurrentModel(b.check.model_id).name)
       ),
-    [dashboard, getCurrentModel]
+    [dashboard?.monitors, getCurrentModel]
   );
 
   const [monitors, setMonitors] = useState(dashboardMonitors);

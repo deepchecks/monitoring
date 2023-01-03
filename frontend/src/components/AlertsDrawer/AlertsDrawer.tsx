@@ -32,7 +32,7 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   const [alertIndex, setAlertIndex] = useState(0);
   const [expand, setExpand] = useState(true);
 
-  useRunMonitorLookback(alertRule?.monitor_id ?? null, alertRule?.model_id?.toString() ?? null);
+  useRunMonitorLookback(alertRule?.monitor_id ?? null, currentModel);
 
   const {
     data: alerts = [],

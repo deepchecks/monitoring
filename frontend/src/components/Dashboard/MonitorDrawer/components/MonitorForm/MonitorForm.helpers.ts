@@ -1,8 +1,7 @@
-import { MonitorSchema, OperatorsEnum, DataFilter } from 'api/generated';
-
-import { IContext } from 'context';
+import { DataFilter, MonitorCreationSchemaAdditionalKwargs, OperatorsEnum } from 'api/generated';
 
 import { timeValues } from 'helpers/time';
+import { SelectValues } from 'helpers/types';
 
 export const timeWindow = [
   { label: '1 hour', value: timeValues.hour },
@@ -12,65 +11,43 @@ export const timeWindow = [
   { label: '3 months', value: timeValues.threeMouths }
 ];
 
-const initialValue = {
-  check_conf: {}
-}
-export const checkInfoInitValue = () => (initialValue);
-
-export const formikInitValues = (monitor: MonitorSchema | undefined) => {
-  const filters = (
-    monitor?.data_filters?.filters?.length
-      ? monitor.data_filters.filters.length > 1
-        ? [monitor.data_filters.filters[0].value, monitor.data_filters.filters[1].value]
-        : monitor.data_filters.filters[0].value
-      : ''
-  ) as string | number[];
-
-  return {
-    name: monitor?.name || '',
-    category: (monitor?.data_filters?.filters[0].value as string) || '',
-    column: monitor?.data_filters?.filters[0].column || '',
-    numericValue: filters,
-    lookback: monitor?.lookback || '',
-    additional_kwargs: monitor?.additional_kwargs || checkInfoInitValue(),
-    frequency: monitor?.frequency || '',
-    aggregation_window: monitor?.aggregation_window || '',
-    check: monitor?.check || '',
-    model: ''
-  };
-};
-
-type formikInitValuesReturnType = ReturnType<typeof formikInitValues>;
-type monitorSchemaDataMonitor = MonitorSchema | undefined;
-type monitorSchemaDataOperator = 'contains' | 'greater_than' | undefined;
-type monitorSchemaDataOperatorValue = string | number[] | undefined;
-type monitorSchemaDataFilters = DataFilter[];
-
-export const monitorSchemaData = (
-  values: formikInitValuesReturnType,
-  monitor: monitorSchemaDataMonitor,
-  globalState: IContext,
-  operator: monitorSchemaDataOperator,
-  value: monitorSchemaDataOperatorValue,
-  filter?: monitorSchemaDataFilters
-) => ({
-  name: values.name,
-  lookback: +values.lookback,
-  aggregation_window: +values.aggregation_window,
-  frequency: +values.frequency,
-  dashboard_id: monitor ? monitor.dashboard_id : globalState.dashboard_id,
-  additional_kwargs: values.additional_kwargs,
-  data_filters: values.column
+export const buildKwargs = (
+  isResConf: boolean | undefined,
+  checkInfoFirstLevel: SelectValues,
+  checkInfoSecondLevel: SelectValues
+) =>
+  (isResConf
     ? {
-        filters: filter?.length
-          ? filter
-          : [
-              {
-                column: values.column,
-                operator: operator || OperatorsEnum.contains,
-                value: value || values.category
-              }
-            ]
+        check_conf: { ...(checkInfoFirstLevel && { scorer: [checkInfoFirstLevel] }) },
+        res_conf: checkInfoSecondLevel ? [checkInfoSecondLevel] : null
       }
-    : null
-});
+    : {
+        check_conf: {
+          ...(checkInfoFirstLevel && { 'aggregation method': [checkInfoFirstLevel] }),
+          ...(checkInfoSecondLevel && { feature: [checkInfoSecondLevel] })
+        },
+        res_conf: null
+      }) as MonitorCreationSchemaAdditionalKwargs;
+
+export const buildFilters = (
+  column: string | undefined,
+  category: SelectValues,
+  numericValue: number[] | undefined
+) => {
+  const filter: DataFilter[] = [];
+
+  if (column) {
+    if (category) {
+      filter.push({ column, operator: OperatorsEnum.contains, value: category });
+    } else if (numericValue) {
+      filter.push({ column, operator: OperatorsEnum.greater_than, value: numericValue[0] });
+      filter.push({ column, operator: OperatorsEnum.less_than, value: numericValue[1] });
+    }
+  }
+
+  return column && filter?.length
+    ? {
+        filters: filter
+      }
+    : null;
+};

@@ -18,7 +18,7 @@ import {
 import { PlusIcon } from 'assets/icon/icon';
 import { colors } from 'theme/colors';
 
-import { DrawerNames, DrawerNamesMap } from '../MonitorDrawer/MonitorDrawer.types';
+import { DrawerNames } from '../Dashboard.types';
 
 interface DashboardHeaderProps {
   onOpen: (monitorName: DrawerNames) => void;
@@ -29,7 +29,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
 
   const handleClick = () => {
     mixpanel.track('Click on Add monitor');
-    onOpen(DrawerNamesMap.CreateMonitor);
+    onOpen(DrawerNames.CreateMonitor);
   };
 
   return (

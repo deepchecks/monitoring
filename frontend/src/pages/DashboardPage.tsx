@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 
-import { MonitorSchema } from 'api/generated';
+import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
 import useModels from 'hooks/useModels';
 
 import { Grid } from '@mui/material';
@@ -11,16 +11,30 @@ import { DataIngestion } from 'components/Dashboard/DataIngestion';
 import { MonitorList } from 'components/Dashboard/MonitorList';
 import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 
-import { DrawerNames, DrawerNamesMap } from 'components/Dashboard/MonitorDrawer/MonitorDrawer.types';
+import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
 export const DashboardPage = () => {
-  const { models, isLoading } = useModels();
+  const { models, isLoading: isModelsLoading } = useModels();
+
+  const {
+    data: dashboard,
+    isLoading: isDashboardLoading,
+    refetch
+  } = useGetOrCreateDashboardApiV1DashboardsGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
+
+  function refetchMonitors() {
+    refetch();
+  }
 
   const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
   const [currentModelId, setCurrentModelId] = useState<number | null>(null);
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerName, setDrawerName] = useState(DrawerNamesMap.CreateMonitor);
+  const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
 
   const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
     if (monitor) setCurrentMonitor(monitor);
@@ -42,7 +56,7 @@ export const DashboardPage = () => {
             models={models}
             activeModelId={currentModelId}
             filterMonitors={setCurrentModelId}
-            isLoading={isLoading}
+            isLoading={isModelsLoading}
           />
         </Grid>
         <Grid item md={8}>
@@ -50,22 +64,23 @@ export const DashboardPage = () => {
         </Grid>
         <Grid item md={12}>
           <MonitorList
+            dashboard={dashboard}
             currentModelId={currentModelId}
             currentMonitor={currentMonitor}
             setCurrentMonitor={setCurrentMonitor}
             handleOpenMonitorDrawer={handleOpenMonitorDrawer}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
+            isLoading={isDashboardLoading}
           />
         </Grid>
       </Grid>
       <MonitorDrawer
-        anchor="right"
         monitor={currentMonitor}
+        refetchMonitors={refetchMonitors}
         drawerName={drawerName}
         open={isDrawerOpen}
         onClose={handleCloseMonitorDrawer}
-        ModalProps={{ onClose: handleCloseMonitorDrawer }}
         setMonitorToRefreshId={setMonitorToRefreshId}
       />
     </>

@@ -1,0 +1,122 @@
+import React, { useState, useEffect } from 'react';
+
+import { useDebounce } from 'hooks/useDebounce';
+
+import { Stack, Slider, SliderProps, Button, Box } from '@mui/material';
+
+import { StyledInputsWrapper, StyledLabel, StyledTextField } from './RangePicker.style';
+
+interface RangePickerProps extends SliderProps {
+  min: number;
+  max: number;
+  numericValue: number[];
+  setNumericValue: React.Dispatch<React.SetStateAction<number[] | undefined>>;
+  step?: number;
+}
+
+const DEFAULT_STEP = 0.01;
+
+export const RangePicker = ({
+  min,
+  max,
+  numericValue,
+  setNumericValue,
+  step = DEFAULT_STEP,
+  ...props
+}: RangePickerProps) => {
+  const [sliderValues, setSliderValues] = useState([numericValue[0], numericValue[1]]);
+  const [inputValues, setInputValues] = useState([numericValue[0].toString(), numericValue[1].toString()]);
+  const [minInputError, setMinInputError] = useState(false);
+  const [maxInputError, setMaxInputError] = useState(false);
+
+  const debouncedSliderValues: number[] = useDebounce<number[]>(sliderValues);
+
+  useEffect(() => {
+    if (numericValue[0] === debouncedSliderValues[0] && numericValue[1] === debouncedSliderValues[1]) return;
+    setNumericValue(debouncedSliderValues);
+  }, [setNumericValue, debouncedSliderValues, numericValue]);
+
+  const resetErrors = () => {
+    setMaxInputError(false);
+    setMinInputError(false);
+  };
+
+  const handleSliderChange = (event: Event, newValue: number | number[]) => {
+    const newSliderValue = newValue as number[];
+    const newInputValue = [newSliderValue[0].toString(), newSliderValue[1].toString()];
+
+    resetErrors();
+    setSliderValues(newSliderValue);
+    setInputValues(newInputValue);
+  };
+
+  const handleInputChange = (index: 0 | 1) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value: currentInputValue } = event.target;
+
+    const input = +currentInputValue;
+    const nonValidInput = input < min || input > max || isNaN(input);
+
+    setInputValues(prevState => {
+      const currentValues = [...prevState];
+      currentValues[index] = currentInputValue;
+      return currentValues;
+    });
+
+    if (index === 1 && (input <= numericValue[0] || nonValidInput)) {
+      setMaxInputError(true);
+    } else if (index === 0 && (input >= numericValue[1] || nonValidInput)) {
+      setMinInputError(true);
+    } else {
+      resetErrors();
+    }
+  };
+
+  const handleApplyInputValues = () => {
+    setSliderValues([+inputValues[0], +inputValues[1]]);
+  };
+
+  return (
+    <Box mt="39px">
+      <StyledLabel>Select Value</StyledLabel>
+      <Stack spacing="20px">
+        <Slider
+          value={sliderValues}
+          min={min}
+          max={max}
+          step={step}
+          onChange={handleSliderChange}
+          valueLabelDisplay="auto"
+          {...props}
+        />
+        <StyledInputsWrapper>
+          <StyledTextField
+            name="min"
+            value={inputValues[0]}
+            error={minInputError}
+            onChange={handleInputChange(0)}
+            placeholder={min.toString()}
+            type="number"
+            InputLabelProps={{
+              shrink: true
+            }}
+          />
+          {' - '}
+          <StyledTextField
+            name="max"
+            value={inputValues[1]}
+            error={maxInputError}
+            onChange={handleInputChange(1)}
+            placeholder={max.toString()}
+            type="number"
+            InputLabelProps={{
+              shrink: true
+            }}
+          />
+          <Button disabled={minInputError || maxInputError} onClick={handleApplyInputValues}>
+            Ok
+          </Button>
+        </StyledInputsWrapper>
+      </Stack>
+    </Box>
+  );
+};

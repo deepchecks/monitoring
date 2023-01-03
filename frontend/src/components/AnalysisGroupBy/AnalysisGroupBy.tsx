@@ -12,10 +12,12 @@ import { AnalysisContext } from 'context/analysis-context';
 import { styled, Box } from '@mui/material';
 
 import { AnalysisGroupByInfo } from './components/AnalysisGroupByInfo';
-import { AnalysisGroupByHeader } from './components/AnalysisGroupByHeader';
 import { Loader } from 'components/Loader';
-import { CustomDrawer } from 'components/CustomDrawer';
-import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
+import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
+import {
+  ControlledMarkedSelect,
+  ControlledMarkedSelectSelectValues
+} from 'components/MarkedSelect/ControlledMarkedSelect';
 import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 import { RunDownloadSuite } from 'components/RunDownloadSuite';
 
@@ -40,8 +42,8 @@ const AnalysisGroupByComponent = ({
 
   const [classOrFeature, setClassOrFeature] = useState<ClassOrFeature | null>(null);
   const [singleCheckRunOptions, setSingleCheckRunOptions] = useState<SingleCheckRunOptions | null>(null);
-  const [featuresArray, setFeaturesArray] = useState<string[]>([]);
-  const [selectedFeature, setSelectedFeature] = useState<string>();
+  const [featuresArray, setFeaturesArray] = useState<ControlledMarkedSelectSelectValues[]>([]);
+  const [selectedFeature, setSelectedFeature] = useState<ControlledMarkedSelectSelectValues>();
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
   const [activeBarFilters, setActiveBarFilters] = useState<DataFilter[]>([]);
 
@@ -93,7 +95,7 @@ const AnalysisGroupByComponent = ({
 
   useEffect(() => {
     async function runCheckGroupByFeature() {
-      if (selectedFeature && singleCheckRunOptions && check && modelVersionId) {
+      if (singleCheckRunOptions && check && modelVersionId && typeof selectedFeature === 'string') {
         setLoading(true);
 
         const resp = await runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost(
@@ -117,7 +119,7 @@ const AnalysisGroupByComponent = ({
       {propValuesAreNotNull && singleCheckRunOptions && (
         <>
           <StyledHeaderContainer>
-            <AnalysisGroupByHeader title={check.name || 'none'} onClick={onCloseIconClick} />
+            <CustomDrawerHeader title={check.name || 'none'} onClick={onCloseIconClick} marginBottom="32px" />
             <AnalysisGroupByInfo
               startTime={singleCheckRunOptions.start_time}
               endTime={singleCheckRunOptions.end_time}

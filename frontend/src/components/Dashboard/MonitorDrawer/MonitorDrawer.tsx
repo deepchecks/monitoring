@@ -1,119 +1,99 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ChartData } from 'chart.js';
 import mixpanel from 'mixpanel-browser';
 
-import { useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
+import {
+  MonitorSchema,
+  useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost,
+  MonitorOptions
+} from 'api/generated';
 
-import { Drawer, Box } from '@mui/material';
+import { DrawerProps, Stack } from '@mui/material';
 
-import CreateAlert from './components/CreateAlert';
-import { GraphView } from './components/GraphView';
+import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
+import { MonitorDrawerGraph as GraphView } from './components/MonitorDrawerGraph';
 import { MonitorForm } from './components/MonitorForm';
+import { CreateAlertForm } from './components/CreateAlertForm';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
-import { StyledStackWrapper } from './MonitorDrawer.style';
-import { MonitorDrawerProps, LookbackCheckProps, DrawerNamesMap } from './MonitorDrawer.types';
 
-function MonitorDrawerComponent({ monitor, drawerName, onClose, setMonitorToRefreshId, ...props }: MonitorDrawerProps) {
-  const [graphData, setGraphData] = useState<ChartData<'line'>>();
-  const [resetMonitor, setResetMonitor] = useState<boolean>(false);
+import { DrawerNames } from '../Dashboard.types';
+import { GraphData } from 'helpers/types';
+import { SelectValues } from 'helpers/types';
 
+interface MonitorDrawerProps extends DrawerProps {
+  monitor: MonitorSchema | null;
+  drawerName: DrawerNames;
+  setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
+  onClose: () => void;
+  refetchMonitors(): void;
+}
+
+export const MonitorDrawer = ({
+  monitor,
+  drawerName,
+  setMonitorToRefreshId,
+  open,
+  onClose,
+  refetchMonitors,
+  ...props
+}: MonitorDrawerProps) => {
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
-  const handleOnClose = useCallback(() => {
-    setGraphData(undefined);
-    onClose();
+  const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
 
-    mixpanel.track('Exited add/edit monitor window without saving');
-  }, [onClose]);
-
-  const handleLookback = useCallback(
-    async (graphData: LookbackCheckProps) => {
-      const { checkId, data } = graphData;
+  const handleGraphLookBack = useCallback(
+    async (checkId: SelectValues, data: MonitorOptions) => {
+      if (typeof checkId !== 'number') return setGraphData(null);
 
       try {
-        const res = await runCheck({
+        const response = await runCheck({
           checkId,
           data
         });
-        const parsedChartData = parseDataForLineChart(res);
+        const parsedChartData = parseDataForLineChart(response);
         setGraphData(parsedChartData);
       } catch (e) {
-        setGraphData(undefined);
+        setGraphData(null);
       }
     },
     [runCheck]
   );
 
-  const Content = useMemo(() => {
-    switch (drawerName) {
-      case DrawerNamesMap.CreateAlert:
-        return (
-          monitor && (
-            <CreateAlert
-              monitor={monitor}
-              onClose={handleOnClose}
-              runCheckLookback={handleLookback}
-              setMonitorToRefreshId={setMonitorToRefreshId}
-            />
-          )
-        );
+  const closeDrawer = () => {
+    onClose();
+    setTimeout(() => setGraphData(null), 500);
+  };
 
-      case DrawerNamesMap.CreateMonitor:
-        return (
-          <MonitorForm
-            onClose={handleOnClose}
-            runCheckLookback={handleLookback}
-            resetMonitor={resetMonitor}
-            setResetMonitor={setResetMonitor}
-            setMonitorToRefreshId={setMonitorToRefreshId}
-          />
-        );
-
-      case DrawerNamesMap.EditMonitor:
-        return (
-          monitor && (
-            <MonitorForm
-              onClose={handleOnClose}
-              runCheckLookback={handleLookback}
-              monitor={monitor}
-              resetMonitor={resetMonitor}
-              setResetMonitor={setResetMonitor}
-              setMonitorToRefreshId={setMonitorToRefreshId}
-            />
-          )
-        );
-
-      default:
-        return (
-          <MonitorForm
-            onClose={handleOnClose}
-            runCheckLookback={handleLookback}
-            resetMonitor={resetMonitor}
-            setResetMonitor={setResetMonitor}
-            setMonitorToRefreshId={setMonitorToRefreshId}
-          />
-        );
-    }
-  }, [drawerName, monitor, handleLookback, handleOnClose, resetMonitor, setMonitorToRefreshId]);
+  const handleOnCloseDrawer = () => {
+    mixpanel.track('Exited add/edit monitor window without saving');
+    closeDrawer();
+  };
 
   return (
-    <Drawer {...props}>
-      <StyledStackWrapper direction="row">
-        {Content}
-        <Box sx={{ overflow: 'auto' }}>
-          <GraphView
-            onClose={handleOnClose}
-            isLoading={isRunCheckLoading}
-            graphData={graphData}
-            setResetMonitor={setResetMonitor}
-            timeFreq={monitor?.frequency}
+    <CustomDrawer open={open} onClose={handleOnCloseDrawer} padding="40px" {...props}>
+      <CustomDrawerHeader title={drawerName} onClick={handleOnCloseDrawer} marginBottom="32px" />
+      <Stack direction="row" justifyContent="space-between" width={1} height={1}>
+        {drawerName === DrawerNames.CreateAlert && monitor ? (
+          <CreateAlertForm
+            monitor={monitor}
+            onClose={closeDrawer}
+            runCheckLookBack={handleGraphLookBack}
+            setMonitorToRefreshId={setMonitorToRefreshId}
           />
-        </Box>
-      </StyledStackWrapper>
-    </Drawer>
+        ) : (
+          <MonitorForm
+            monitor={monitor}
+            refetchMonitors={refetchMonitors}
+            setMonitorToRefreshId={setMonitorToRefreshId}
+            handleCloseDrawer={closeDrawer}
+            runCheckLookBack={handleGraphLookBack}
+            isDrawerOpen={!!open}
+          />
+        )}
+        <GraphView graphData={graphData} isLoading={isRunCheckLoading} timeFreq={monitor?.frequency} />
+      </Stack>
+    </CustomDrawer>
   );
-}
-
-export const MonitorDrawer = React.memo(MonitorDrawerComponent);
+};

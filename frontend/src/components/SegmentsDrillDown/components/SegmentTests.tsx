@@ -4,9 +4,11 @@ import Plot, { PlotParams } from 'react-plotly.js';
 import { GraphLayout } from './GraphLayout';
 import { NoGraphDataToShow } from './NoGraphDataToShow';
 
+import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
+
 interface SegmentTestsProps {
   activeBarName: string;
-  checkName: string | undefined;
+  checkName: ControlledMarkedSelectSelectValues;
   plots: PlotParams[];
 }
 

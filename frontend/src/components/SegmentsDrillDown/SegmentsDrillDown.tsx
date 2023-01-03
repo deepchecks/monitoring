@@ -9,10 +9,12 @@ import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
 
+import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
+
 interface SegmentsDrillDownProps {
   data: CheckGroupBySchema[];
-  datasetName: string | undefined;
-  checkName: string | undefined;
+  datasetName: ControlledMarkedSelectSelectValues;
+  checkName: ControlledMarkedSelectSelectValues;
   setActiveBarFilters?: React.Dispatch<React.SetStateAction<DataFilter[]>>;
 }
 
@@ -30,7 +32,7 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
 
-  const plots = data ? data[activeBarIndex]?.display as string[] : [];
+  const plots = data ? (data[activeBarIndex]?.display as string[]) : [];
 
   useEffect(() => {
     if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex].filters) {

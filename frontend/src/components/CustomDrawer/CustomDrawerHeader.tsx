@@ -4,12 +4,12 @@ import { styled, IconButton, Typography, Stack, StackProps } from '@mui/material
 
 import { CloseIcon } from 'assets/icon/icon';
 
-interface AnalysisGroupByHeaderProps extends StackProps {
+interface CustomDrawerHeaderProps extends StackProps {
   title: string;
   onClick: () => void;
 }
 
-export const AnalysisGroupByHeader = ({ title, onClick, ...props }: AnalysisGroupByHeaderProps) => (
+export const CustomDrawerHeader = ({ title, onClick, ...props }: CustomDrawerHeaderProps) => (
   <StyledContainer {...props}>
     <Typography variant="h4">{title}</Typography>
     <IconButton onClick={onClick} sx={{ background: 'transparent' }}>
@@ -21,6 +21,5 @@ export const AnalysisGroupByHeader = ({ title, onClick, ...props }: AnalysisGrou
 const StyledContainer = styled(Stack)({
   flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  marginBottom: '32px'
+  justifyContent: 'space-between'
 });

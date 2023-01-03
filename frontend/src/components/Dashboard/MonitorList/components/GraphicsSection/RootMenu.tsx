@@ -4,7 +4,7 @@ import { MenuProps, Typography } from '@mui/material';
 
 import { StyledMenuItem, StyledRootMenu } from './GraphicsSection.style';
 
-import { DrawerNamesMap, DrawerNames } from 'components/Dashboard/MonitorDrawer/MonitorDrawer.types';
+import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
 interface RootMenuProps extends MenuProps {
   handleOpenMonitor: (drawerName: DrawerNames) => void;
@@ -26,10 +26,10 @@ export const RootMenu = ({ handleOpenMonitor, handleOpenDeleteMonitor, ...props 
     }}
     {...props}
   >
-    <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNamesMap.CreateAlert)}>
+    <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.CreateAlert)}>
       <Typography variant="body2">Create alert</Typography>
     </StyledMenuItem>
-    <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNamesMap.EditMonitor)}>
+    <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.EditMonitor)}>
       <Typography variant="body2">Edit Monitor</Typography>
     </StyledMenuItem>
     <StyledMenuItem onClick={handleOpenDeleteMonitor}>

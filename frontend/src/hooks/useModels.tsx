@@ -18,17 +18,20 @@ export const useModels = () => {
     }
   });
 
-  models.sort((a, b) => a.name.localeCompare(b.name));
+  const sortedModels = useMemo(() => [...models].sort((a, b) => a.name.localeCompare(b.name)), [models]);
 
   const modelsMap = useMemo(() => {
     const map: Record<string, ModelManagmentSchema> = {};
-    models.forEach(model => (map[model.id] = model));
+    sortedModels.forEach(model => (map[model.id] = model));
     return map;
-  }, [models]);
+  }, [sortedModels]);
 
-  const getCurrentModel = useCallback((modelId: number) => modelsMap[modelId] || emptyModel, [modelsMap]);
+  const getCurrentModel = useCallback(
+    (modelId: number | undefined) => (modelId && modelsMap[modelId] ? modelsMap[modelId] : emptyModel),
+    [modelsMap]
+  );
 
-  return { modelsMap, models, isLoading, refetchModels, getCurrentModel };
+  return { modelsMap, models: sortedModels, isLoading, refetchModels, getCurrentModel };
 };
 
 export default useModels;

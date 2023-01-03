@@ -4,7 +4,7 @@ import { Box, Link } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
 
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
-import { Subcategory } from './Dashboard/MonitorDrawer/components/Subcategory';
+import { Subcategory } from 'components/Subcategory';
 
 import { timeWindow } from './Dashboard/MonitorDrawer/components/MonitorForm/MonitorForm.helpers';
 

@@ -2,10 +2,11 @@ import React, { PropsWithChildren } from 'react';
 
 import { Drawer, DrawerProps, styled } from '@mui/material';
 
-import { Loader } from './Loader';
+import { Loader } from 'components/Loader';
 
 interface CustomDrawerProps extends DrawerProps {
-  loading: boolean;
+  loading?: boolean;
+  padding?: string;
 }
 
 export const CustomDrawer = ({ loading, children, ...props }: PropsWithChildren<CustomDrawerProps>) => (
@@ -14,9 +15,16 @@ export const CustomDrawer = ({ loading, children, ...props }: PropsWithChildren<
   </StyledDrawer>
 );
 
-const StyledDrawer = styled(Drawer)({
-  '& .MuiPaper-root': {
-    width: 1090,
-    height: '100%'
-  }
-});
+interface StyledDrawerProps {
+  padding?: string;
+}
+
+export const StyledDrawer = styled(Drawer, { shouldForwardProp: prop => prop !== 'padding' })<StyledDrawerProps>(
+  ({ padding }) => ({
+    '& .MuiPaper-root': {
+      width: 1090,
+      height: '100%',
+      padding
+    }
+  })
+);

@@ -280,7 +280,7 @@ export const componentOptions: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }) => ({
         '& .Mui-disabled': {
-          opacity: 0.35
+          opacity: 0.6
         },
         '& label': {
           color: theme.palette.text.primary

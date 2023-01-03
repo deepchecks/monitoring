@@ -3,7 +3,10 @@ import React, { SyntheticEvent, memo } from 'react';
 import { Stack, styled, Tabs, Tab, Typography } from '@mui/material';
 
 import { SwitchButton } from 'components/SwitchButton';
-import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
+import {
+  ControlledMarkedSelect,
+  ControlledMarkedSelectSelectValues
+} from 'components/MarkedSelect/ControlledMarkedSelect';
 
 import { Checks, Research } from 'assets/icon/icon';
 import { colors } from 'theme/colors';
@@ -24,15 +27,15 @@ interface AlertsDrillDownToAnalysisHeaderProps {
   setTabIndex: SetStateType<number>;
   prevPeriod: boolean;
   setPrevPeriod: SetStateType<boolean>;
-  featuresNames: (string | undefined)[];
-  selectedFeature: string | undefined;
-  setSelectedFeature: SetStateType<string | undefined>;
-  checksNames: (string | undefined)[];
-  selectedCheck: string | undefined;
-  setSelectedCheck: SetStateType<string | undefined>;
-  datasetsNames: string[];
-  selectedDatasetName: string | undefined;
-  setSelectedDatasetName: SetStateType<string | undefined>;
+  featuresNames: ControlledMarkedSelectSelectValues[];
+  selectedFeature: ControlledMarkedSelectSelectValues;
+  setSelectedFeature: SetStateType<ControlledMarkedSelectSelectValues>;
+  checksNames: ControlledMarkedSelectSelectValues[];
+  selectedCheck: ControlledMarkedSelectSelectValues;
+  setSelectedCheck: SetStateType<ControlledMarkedSelectSelectValues>;
+  datasetsNames: ControlledMarkedSelectSelectValues[];
+  selectedDatasetName: ControlledMarkedSelectSelectValues;
+  setSelectedDatasetName: SetStateType<ControlledMarkedSelectSelectValues>;
   disabled?: boolean;
 }
 

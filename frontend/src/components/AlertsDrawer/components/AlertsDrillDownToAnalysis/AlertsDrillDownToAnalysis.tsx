@@ -22,6 +22,7 @@ import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 import { colors } from 'theme/colors';
 
 import { FeaturesResponse } from 'components/AnalysisGroupBy/AnalysisGroupBy.types';
+import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 
 interface AlertsDrillDownToAnalysisProps {
   modelId: number;
@@ -68,14 +69,14 @@ const AlertsDrillDownToAnalysisComponent = ({
   const [tabIndex, setTabIndex] = useState(0);
 
   const [prevPeriod, setPrevPeriod] = useState(false);
-  const [featuresArray, setFeaturesArray] = useState<string[]>([]);
-  const [selectedFeature, setSelectedFeature] = useState<string>();
+  const [featuresArray, setFeaturesArray] = useState<ControlledMarkedSelectSelectValues[]>([]);
+  const [selectedFeature, setSelectedFeature] = useState<ControlledMarkedSelectSelectValues>();
   const checksArray = useMemo(() => checks?.map(c => c.name) || [], [checks]);
-  const [selectedCheck, setSelectedCheck] = useState<string | undefined>();
+  const [selectedCheck, setSelectedCheck] = useState<ControlledMarkedSelectSelectValues>();
 
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
-  const [datasetsNamesArray, setDatasetsNamesArray] = useState<string[]>([]);
-  const [selectedDatasetName, setSelectedDatasetName] = useState<string | undefined>('');
+  const [datasetsNamesArray, setDatasetsNamesArray] = useState<ControlledMarkedSelectSelectValues[]>([]);
+  const [selectedDatasetName, setSelectedDatasetName] = useState<ControlledMarkedSelectSelectValues>('');
 
   const graphsRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -130,7 +131,7 @@ const AlertsDrillDownToAnalysisComponent = ({
 
   useEffect(() => {
     async function runCheckGroupByFeature() {
-      if (currentCheck?.id && modelVersionId && selectedFeature) {
+      if (currentCheck?.id && modelVersionId && typeof selectedFeature === 'string') {
         setFetching(true);
 
         const resp = await runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost(

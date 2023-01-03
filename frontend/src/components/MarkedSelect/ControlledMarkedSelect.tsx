@@ -4,10 +4,13 @@ import { SelectChangeEvent, MenuItem, SelectProps } from '@mui/material';
 
 import { MarkedSelect } from 'components/MarkedSelect';
 
-interface ControlledSelectProps extends SelectProps {
-  values: (string | undefined)[];
-  value: string | undefined;
-  setValue: Dispatch<SetStateAction<string | undefined>>;
+export type ControlledMarkedSelectSelectValues = string | number | undefined;
+
+interface ControlledMarkedSelectProps extends SelectProps {
+  values: (ControlledMarkedSelectSelectValues | { label: string; value: number })[];
+  value: ControlledMarkedSelectSelectValues;
+  setValue: Dispatch<SetStateAction<ControlledMarkedSelectSelectValues>>;
+  clearValue?: () => void;
 }
 
 export const ControlledMarkedSelectComponent = ({
@@ -15,17 +18,22 @@ export const ControlledMarkedSelectComponent = ({
   values,
   value,
   setValue,
+  clearValue,
   ...props
-}: ControlledSelectProps) => {
-  const handleValueChange = (event: SelectChangeEvent<unknown>) => setValue(event.target.value as string);
+}: ControlledMarkedSelectProps) => {
+  const handleValueChange = (event: SelectChangeEvent<unknown>) => setValue(event.target.value as string | number);
 
   return (
-    <MarkedSelect label={label} value={value} onChange={handleValueChange} {...props}>
-      {values.map((value, index) => (
-        <MenuItem key={`${value}${index}`} value={value}>
-          {value}
-        </MenuItem>
-      ))}
+    <MarkedSelect label={label} value={value} onChange={handleValueChange} clearValue={clearValue} {...props}>
+      {values.map((value, index) => {
+        const isObj = typeof value === 'object';
+
+        return (
+          <MenuItem key={`${value}${index}`} value={isObj ? value.value : value}>
+            {isObj ? value.label : value}
+          </MenuItem>
+        );
+      })}
     </MarkedSelect>
   );
 };

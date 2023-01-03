@@ -21,7 +21,7 @@ import {
 } from './GraphicsSection.style';
 
 import { GraphData } from 'helpers/types';
-import { DrawerNames, DrawerNamesMap } from 'components/Dashboard/MonitorDrawer/MonitorDrawer.types';
+import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { RootMenu } from './RootMenu';
 
 interface GraphicsSectionProps extends BoxProps {
@@ -65,7 +65,7 @@ function GraphicsSectionComponent({
   };
 
   const handleOpenMonitor = (drawerName: DrawerNames) => {
-    if (drawerName === DrawerNamesMap.EditMonitor) {
+    if (drawerName === DrawerNames.EditMonitor) {
       mixpanel.track('Click on Edit monitor');
     }
 
@@ -86,8 +86,9 @@ function GraphicsSectionComponent({
       { label: 'Check', text: monitor.check.name }
     ];
 
-    if (monitor.data_filters) {
-      const filters = monitor.data_filters.filters;
+    const filters = monitor?.data_filters?.filters;
+
+    if (filters?.length) {
       const text =
         filters.length > 1
           ? `${filters[0].value} < ${filters[0].column} < ${filters[1].value}`

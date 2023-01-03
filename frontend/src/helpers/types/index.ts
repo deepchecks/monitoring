@@ -19,3 +19,5 @@ export type WindowTimeout = ReturnType<typeof setTimeout>;
 export type WindowInterval = ReturnType<typeof setInterval>;
 
 export type SetStateType<T> = React.Dispatch<React.SetStateAction<T>>;
+
+export type SelectValues = string | number | undefined;

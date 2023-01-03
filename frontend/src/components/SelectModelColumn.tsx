@@ -8,10 +8,9 @@ import {
   useGetModelColumnsApiV1ModelsModelIdColumnsGet
 } from '../api/generated';
 import { ColumnStatsCategorical, ColumnStatsNumeric } from '../helpers/types/model';
-import { StyledTypographyLabel } from './Dashboard/MonitorDrawer/components/MonitorForm/MonitorForm.style';
 import { RangePicker } from './RangePicker';
-import { Box } from '@mui/material';
-import { Subcategory } from './Dashboard/MonitorDrawer/components/Subcategory';
+import { Box, styled, Typography } from '@mui/material';
+import { Subcategory } from 'components/Subcategory';
 import { SelectChangeEvent } from '@mui/material/Select';
 
 interface BaseSelectProps extends Omit<SelectPrimaryProps, 'children' | 'label' | 'onBlur'> {
@@ -121,3 +120,11 @@ const SelectModelColumnSub = ({ columnMetadata, setFieldValue, ...props }: Selec
       return null;
   }
 };
+
+const StyledTypographyLabel = styled(Typography)(({ theme }) => ({
+  fontSize: 12,
+  lineHeight: 1.57,
+  letterSpacing: '0.1px',
+  marginBottom: '10px',
+  color: theme.palette.text.disabled
+}));

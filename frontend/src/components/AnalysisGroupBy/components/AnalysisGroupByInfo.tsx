@@ -7,7 +7,7 @@ import { AnalysisGroupByInfoItem } from './AnalysisGroupByInfoItem';
 
 import { colors } from 'theme/colors';
 
-import { ClassOrFeature } from '../../AnalysisGroupBy.types';
+import { ClassOrFeature } from '../AnalysisGroupBy.types';
 
 interface AnalysisGroupByInfoProps extends StackProps {
   startTime: string;
