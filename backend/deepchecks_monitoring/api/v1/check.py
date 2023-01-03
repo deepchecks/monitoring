@@ -104,7 +104,7 @@ class CheckResultSchema(BaseModel):
 class CheckGroupBySchema(BaseModel):
     """Schema for result of a check group by run."""
 
-    name: str
+    name: t.Optional[str] = Field(nullable=True)
     value: t.Optional[t.Dict]
     display: t.List
     count: int
