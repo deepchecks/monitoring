@@ -8,7 +8,9 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module to define keys for kafka and redis."""
-from typing import Tuple
+import typing as t
+
+import pendulum as pdl
 
 MODEL_VERSIONS_QUEUE_KEY = "model-version-worker:queue"
 MODEL_VERSIONS_SORTED_SET_KEY = "model-version-worker:process-time"
@@ -27,7 +29,7 @@ def get_data_topic_name(organization_id, model_version_id) -> str:
     return f"{DATA_TOPIC_PREFIX}-{organization_id}-{model_version_id}"
 
 
-def topic_name_to_ids(topic_name: str) -> Tuple[int, int]:
+def topic_name_to_ids(topic_name: str) -> t.Tuple[int, int]:
     """Get data topic name and return organization id and model version id."""
     split = topic_name.split("-")
     if len(split) != 3 or split[0] not in [DATA_TOPIC_PREFIX, INVALIDATION_TOPIC_PREFIX]:
@@ -45,3 +47,31 @@ def get_invalidation_topic_name(organization_id, model_version_id) -> str:
         Name of the data topic to be used for invalidation topic name.
     """
     return f"{INVALIDATION_TOPIC_PREFIX}-{organization_id}-{model_version_id}"
+
+
+def build_monitor_cache_key(
+        organization_id: t.Optional[int],
+        model_version_id: t.Optional[int],
+        monitor_id: t.Optional[int],
+        start_time: t.Optional[pdl.DateTime],
+        end_time: t.Optional[pdl.DateTime]) -> str:
+    """Build key for the cache using the given parameters.
+
+    Parameters
+    ----------
+    organization_id: t.Optional[int]
+    model_version_id: t.Optional[int]
+    monitor_id: t.Optional[int]
+    start_time: t.Optional[pdl.DateTime]
+    end_time: t.Optional[pdl.DateTime]
+
+    Returns
+    -------
+    str
+    """
+    end_time = str(end_time.int_timestamp) if isinstance(end_time, pdl.DateTime) else "*"
+    start_time = str(start_time.int_timestamp) if isinstance(start_time, pdl.DateTime) else "*"
+    organization_id = organization_id if isinstance(organization_id, int) else "*"
+    model_version_id = model_version_id if isinstance(model_version_id, int) else "*"
+    monitor_id = monitor_id if isinstance(monitor_id, int) else "*"
+    return f"mon_cache:{organization_id}:{model_version_id}:{monitor_id}:{start_time}:{end_time}"

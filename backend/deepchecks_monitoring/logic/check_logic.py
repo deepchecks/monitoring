@@ -27,7 +27,7 @@ from sqlalchemy import Column, Table, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions, CacheResult
+from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
                                                      get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
@@ -371,7 +371,7 @@ async def run_check_per_window_in_range(
                     organization_id, model_version.id, monitor_id, window_start, window_end)
                 # If found the result in cache, skip querying
                 if cache_result.found:
-                    curr_test_info["data"] = cache_result
+                    curr_test_info["result"] = cache_result.value
                     continue
             if model_version.is_in_range(window_start, window_end):
                 filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
@@ -408,19 +408,15 @@ async def run_check_per_window_in_range(
     for model_version, results in check_results.items():
         for result_dict in results:
             result_value = result_dict["result"]
-            if result_value is None:
-                reduce_results[model_version.name].append(None)
-            elif isinstance(result_value, CacheResult):
-                reduce_results[model_version.name].append(result_value.value)
-            elif isinstance(result_value, CheckResult):
-                result_value = reduce_check_result(result_value, monitor_options.additional_kwargs)
-                reduce_results[model_version.name].append(result_value)
+            # If already from cache no need to reduce the result. If not, reduce and save to cache
+            if result_dict["from_cache"] is False:
+                if result_value is not None:
+                    result_value = reduce_check_result(result_value, monitor_options.additional_kwargs)
                 # If cache available and there is monitor id, save result to cache
                 if cache_funcs and monitor_id:
                     cache_funcs.set_monitor_cache(organization_id, model_version.id, monitor_id, result_dict["start"],
                                                   result_dict["end"], result_value)
-            else:
-                raise Exception(f"Got unknown result type {type(result_value)}, should never reach here")
+            reduce_results[model_version.name].append(result_value)
 
     return {"output": reduce_results, "time_labels": [d.isoformat() for d in all_windows]}
 

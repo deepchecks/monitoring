@@ -12,8 +12,10 @@ import typing as t
 
 import pendulum as pdl
 import pytest
+from redis.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.logic.keys import build_monitor_cache_key
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Monitor
@@ -378,6 +380,8 @@ def test_monitor_execution(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    redis_client: Redis,
+    user
 ):
     # Arrange
     monitor = t.cast(Payload, test_api.create_monitor(
@@ -398,12 +402,29 @@ def test_monitor_execution(
         model_version_id=classification_model_version["id"]
     )
     # Act
-    result = test_api.execute_monitor(
+    result_without_cache = test_api.execute_monitor(
         monitor_id=monitor["id"],
         options={"end_time": pdl.now().isoformat()}
     )
-    result = t.cast(Payload, result)
     # TODO: assert result
+    result_without_cache = t.cast(Payload, result_without_cache)
+
+    # Assert cache is populated
+    count_cache = 0
+    monitor_key = build_monitor_cache_key(user.organization_id, classification_model_version["id"], monitor["id"],
+                                          None, None)
+    for _ in redis_client.scan_iter(monitor_key):
+        count_cache += 1
+
+    assert count_cache == 8
+
+    # Assert result is same with cache
+    result_with_cache = test_api.execute_monitor(
+        monitor_id=monitor["id"],
+        options={"end_time": pdl.now().isoformat()}
+    )
+    assert result_with_cache == result_without_cache
+
 
 
 def test_monitor_execution_with_invalid_end_time(

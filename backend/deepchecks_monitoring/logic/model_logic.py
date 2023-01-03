@@ -24,7 +24,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
 
-from deepchecks_monitoring.logic.cache_functions import CacheResult
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
@@ -134,27 +133,28 @@ def get_results_for_model_versions_per_window(
     model_results = {}
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
         # If this is a train test check then we require reference data in order to run
-        skip_run = isinstance(dp_check, tabular_base_checks.TrainTestCheck) and \
-                   (reference_table_dataframe is None or reference_table_dataframe.empty)
+        missing_reference = isinstance(dp_check, tabular_base_checks.TrainTestCheck) and \
+                            (reference_table_dataframe is None or reference_table_dataframe.empty)
 
         check_results = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
             reference_table_dataframe, model_version, top_feat)
 
         for curr_test_info in test_infos:
-            current_data = curr_test_info['data']
-            if skip_run:
+            from_cache = False
+            # If we already loaded result from the cache, then no need to run the check again
+            if 'result' in curr_test_info:
+                from_cache = True
+                curr_result = curr_test_info['result']
+            # If the check needs reference to run, but it is missing then skip the check and put none result
+            elif missing_reference:
                 curr_result = None
-            # If the data is cache result we are assuming it was indeed found in the cache and was validated before
-            # passed here (meaning current_data.found must be true here)
-            elif isinstance(current_data, CacheResult):
-                curr_result = current_data
-            # If current_data is not cache result, then it must be a dataframe. If the dataframe is empty, skipping the
+            # If there is no result then must have a dataframe data. If the dataframe is empty, skipping the
             # run and putting none result
-            elif current_data.empty:
+            elif curr_test_info['data'].empty:
                 curr_result = None
             else:
-                test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(current_data,
+                test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(curr_test_info['data'],
                                                                                model_version,
                                                                                top_feat)
                 try:
@@ -180,7 +180,7 @@ def get_results_for_model_versions_per_window(
                     curr_result = None
 
             check_results.append({'result': curr_result, 'start': curr_test_info['start'],
-                                  'end': curr_test_info['end']})
+                                  'end': curr_test_info['end'], 'from_cache': from_cache})
 
         model_results[model_version] = check_results
 

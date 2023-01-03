@@ -198,6 +198,7 @@ def redis_client(redis_url: str):
 def settings(async_engine, smtp_server, redis_client):
     redis_config = t.cast(t.Dict[str, t.Any], redis_client.get_connection_kwargs())
     return Settings(
+        assets_folder="",
         database_uri=str(async_engine.url.set(drivername="postgresql")),  # type: ignore
         email_smtp_host=smtp_server.hostname,
         email_smtp_port=smtp_server.port,

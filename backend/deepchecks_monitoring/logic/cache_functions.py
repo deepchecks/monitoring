@@ -18,7 +18,7 @@ import pendulum as pdl
 import redis.exceptions
 from redis.client import Redis
 
-from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_SORTED_SET_KEY
+from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_SORTED_SET_KEY, build_monitor_cache_key
 
 MONITOR_CACHE_EXPIRY_TIME = 60 * 60 * 24 * 7  # 7 days
 
@@ -42,39 +42,11 @@ class CacheFunctions:
             self.delete_keys_by_pattern = self.redis.register_script(delete_keys_by_pattern_script)
             self.delete_monitor_by_timestamp = self.redis.register_script(delete_monitor_by_timestamp_script)
 
-    def build_monitor_cache_key(
-            self,
-            organization_id: t.Optional[int],
-            model_version_id: t.Optional[int],
-            monitor_id: t.Optional[int],
-            start_time: t.Optional[pdl.DateTime],
-            end_time: t.Optional[pdl.DateTime]) -> str:
-        """Build key for the cache using the given parameters.
-
-        Parameters
-        ----------
-        organization_id: t.Optional[int]
-        model_version_id: t.Optional[int]
-        monitor_id: t.Optional[int]
-        start_time: t.Optional[pdl.DateTime]
-        end_time: t.Optional[pdl.DateTime]
-
-        Returns
-        -------
-        str
-        """
-        end_time = str(end_time.int_timestamp) if isinstance(end_time, pdl.DateTime) else "*"
-        start_time = str(start_time.int_timestamp) if isinstance(start_time, pdl.DateTime) else "*"
-        organization_id = organization_id if isinstance(organization_id, int) else "*"
-        model_version_id = model_version_id if isinstance(model_version_id, int) else "*"
-        monitor_id = monitor_id if isinstance(monitor_id, int) else "*"
-        return f"mon_cache:{organization_id}:{model_version_id}:{monitor_id}:{start_time}:{end_time}"
-
     def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):
         """Get result from cache if exists. We can cache values which are "None" therefore to distinguish between the \
         situations we return CacheResult with 'found' property."""
         if self.use_cache:
-            key = self.build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
+            key = build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
             try:
                 p = self.redis.pipeline()
                 p.get(key)
@@ -94,7 +66,7 @@ class CacheFunctions:
         if not self.use_cache:
             return
         try:
-            key = self.build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
+            key = build_monitor_cache_key(organization_id, model_version_id, monitor_id, start_time, end_time)
             cache_val = json.dumps(value)
             p = self.redis.pipeline()
             p.set(key, cache_val)
@@ -115,7 +87,7 @@ class CacheFunctions:
         if not self.use_cache:
             return
         try:
-            pattern = self.build_monitor_cache_key(organization_id, None, monitor_id, None, None)
+            pattern = build_monitor_cache_key(organization_id, None, monitor_id, None, None)
             self.delete_keys_by_pattern(args=[pattern])
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
@@ -146,7 +118,7 @@ class CacheFunctions:
         if not self.use_cache:
             return
         try:
-            pattern = self.build_monitor_cache_key(organization_id, model_version_id, None, None, None)
+            pattern = build_monitor_cache_key(organization_id, model_version_id, None, None, None)
             self.delete_monitor_by_timestamp(args=[pattern, *timestamps])
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
