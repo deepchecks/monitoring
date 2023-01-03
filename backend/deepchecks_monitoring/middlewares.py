@@ -46,6 +46,7 @@ class ProfilingMiddleware:
                 output_html = profiler.output_html().encode()
                 # This modifies the "message" Dict in place, which is used by the "send" function below
                 response_headers = MutableHeaders(scope=message)
+                response_headers["content-encoding"] = ""
                 response_headers["content-length"] = str(len(output_html))
                 response_headers["content-type"] = "text/html; charset=utf-8"
                 await send(message)
