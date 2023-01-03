@@ -66,14 +66,16 @@ async def test_monitor_executor(
         test_api.create_model_version(classification_model["id"], dict(name="v3", classes=["0", "1", "2"])),
     ]
 
-    for version in versions[:2]:
-        upload_classification_data(test_api, version["id"])
+    curr_time = pdl.now().set(minute=0, second=0, microsecond=0)
+    day_before_curr_time = curr_time - pdl.duration(days=1)
+    daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 
-    now = pdl.now()
+    for version in versions[:2]:
+        upload_classification_data(test_api, version["id"], daterange=daterange)
 
     result: t.List[Alert] = await execute_monitor(
         monitor_id=monitor["id"],
-        timestamp=str(now),
+        timestamp=str(curr_time),
         session=async_session,
         organization_id=user.organization.id,
         organization_schema=user.organization.schema_name,
@@ -90,7 +92,7 @@ async def test_monitor_executor(
     assert alert.failed_values == {"v1": {"accuracy": 0.2}, "v2": {"accuracy": 0.2}}, alert.failed_values
 
     # Assert cache was saved
-    window_end = floor_window_for_time(now, TimeUnit.DAY)
+    window_end = floor_window_for_time(curr_time, TimeUnit.DAY)
     window_start = window_end.subtract(seconds=TimeUnit.DAY)
     cache_value = resources_provider.cache_functions.get_monitor_cache(user.organization.id, versions[0]["id"],
                                                                        monitor["id"], window_start, window_end)
