@@ -180,7 +180,7 @@ class FilterWindowOptions(MonitorOptions):
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
-def check_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
+def set_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
     """Filter the check_conf dictionary to only include the parameters that are relevant to the check type.
 
     Parameters
@@ -219,7 +219,9 @@ def init_check_by_kwargs(check: t.Union[Check, BaseCheck], additional_kwargs: Mo
         check = check.initialize_check()
     if additional_kwargs is not None:
         check_conf = check.config()
-        check_kwarg_filter(check_conf, additional_kwargs)
+        set_kwarg_filter(check_conf, additional_kwargs)
+        # Manually set deepchecks to not do sampling on the data inside the checks
+        check_conf["params"]["n_samples"] = None
         return BaseCheck.from_config(check_conf)
     return check
 

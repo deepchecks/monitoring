@@ -35,7 +35,7 @@ def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: b
         checks.append(tabular_checks.StringMismatchComparison().add_condition_no_new_variants())
         checks.append(tabular_checks.FeatureLabelCorrelationChange().add_condition_feature_pps_difference_less_than())
         checks.append(tabular_checks.TrainTestFeatureDrift().add_condition_drift_score_less_than())
-        checks.append(tabular_checks.WholeDatasetDrift().add_condition_overall_drift_value_less_than())
+        checks.append(tabular_checks.MultivariateDrift().add_condition_overall_drift_value_less_than())
         checks.append(tabular_checks.TrainTestLabelDrift().add_condition_drift_score_less_than())
         checks.append(tabular_checks.TrainTestPredictionDrift().add_condition_drift_score_less_than())
         checks.append(tabular_checks.TrainTestPerformance().add_condition_train_test_relative_degradation_less_than())
@@ -44,6 +44,10 @@ def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: b
         checks.append(tabular_checks.FeatureLabelCorrelation().add_condition_feature_pps_less_than())
         checks.append(tabular_checks.FeatureFeatureCorrelation().add_condition_max_number_of_pairs_above_threshold())
         checks.append(tabular_checks.SingleDatasetPerformance())
+
+    for check in checks:
+        if hasattr(check, "n_samples"):
+            check.n_samples = None
 
     return TabularSuite(suite_name, *checks)
 
