@@ -39,20 +39,20 @@ async def test_regression_log(regression_model_version_client: DeepchecksModelVe
         sample_id='4',
         prediction='2',
         label=2,
-        timestamp=time,
+        timestamp=time.int_timestamp,
         values=dict(a=2, b='2', c=1),
     )
     regression_model_version_client.log_sample(
         sample_id='5',
         prediction='1',
         label=2,
-        timestamp=time,
+        timestamp=time.int_timestamp,
         values=dict(a=3, b='4', c=-1),
     )
     regression_model_version_client.log_sample(
         sample_id='6',
         prediction='0',
-        timestamp=time,
+        timestamp=time.int_timestamp,
         values=dict(a=2, b='0', c=0),
     )
 

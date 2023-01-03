@@ -189,7 +189,7 @@ class ExpectedHttpStatus:
 
     def assert_response_status(self, response: httpx.Response) -> httpx.Response:
         r = self.left <= response.status_code <= self.right
-        assert r, (response.reason_phrase, response.status_code)
+        assert r, (response.reason_phrase, response.status_code, response.text[:50])
         return response
 
     def is_positive(self) -> bool:
@@ -922,6 +922,25 @@ class TestAPI:
         )
 
         response = self.api.session.post("alert-webhooks", json=payload)
+
+        # webhook creation endpoint verifies whether provided http_url is 'alive'
+        # or not, therefore, we need to give it a real URL, for that we use 'httpbin.org'
+        # that sometimes might not respond in time, here we try to detect those
+        # situations, and to skip the test if that happens
+        if (
+            response.status_code == 400
+            and "Failed to connect to the given URL address" in response.text
+            and "httpbin.org" in payload["http_url"]  # httpbin is a default http_url that is used
+        ):
+            import pytest  # pylint: disable=import-outside-toplevel
+            pytest.skip(
+                "default 'http_url' that is used to test webhook creation "
+                "probably become unavailable or did not manage to respond "
+                "in time, most commonly it is a temporary problem that does "
+                "not have anything with tests or functionality correctness, "
+                "therefore skipping this test"
+            )
+
         expected_status.assert_response_status(response)
 
         if expected_status.is_negative():

@@ -191,10 +191,10 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             self,
             sample_ids: np.ndarray,
             data: 'pd.DataFrame',
-            predictions: t.Union[pd.Series, np.ndarray, t.List],
-            prediction_probas: t.Optional[np.ndarray] = None,
+            predictions: t.Union[pd.Series, np.ndarray, t.List[t.Any]],
+            prediction_probas: t.Union[np.ndarray, pd.Series, t.List[t.Any], None] = None,
             labels: t.Optional[np.ndarray] = None,
-            timestamps: t.Optional[np.ndarray] = None,
+            timestamps: t.Union[np.ndarray, pd.Series, t.List[int], None] = None,
             samples_per_send: int = 10_000
     ):
         """Log batch of samples.
@@ -211,10 +211,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             set of predictions probabilities
         labels : Optional[numpy.ndarray] , default None
             set of labels
-        timestamps : Optional[numpy.ndarray] , default None
-            set of timestamps.
+        timestamps : Union[numpy.ndarray, pandas.Series, List[int], None] , default None
+            set of numerical timestamps that represent second-based epoch time.
             If not provided then current time will be used.
-            If no timezone info is provided on the datetime assumes local timezone.
         samples_per_send : int , default 10_000
             how many samples to send by one request
         """
@@ -224,6 +223,15 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         if timestamps is None:
             warnings.warn('log_batch was called without timestamps, using current time instead')
             timestamps = np.array([pdl.now()] * len(sample_ids))
+        elif isinstance(timestamps, np.ndarray):
+            pass
+        elif isinstance(timestamps, pd.Series):
+            timestamps = timestamps.to_numpy()
+        elif isinstance(timestamps, list):
+            timestamps = np.array(timestamps)
+        else:
+            kind = type(timestamps).__name__
+            raise TypeError(f'Unexpected type of "timestamps" parameter - {kind}')
 
         data_batch = _process_batch(
             schema_validator=self.schema_validator,
@@ -277,7 +285,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         """
         if timestamp is None:
             warnings.warn('log_sample was called without timestamp, using current time instead')
-            timestamp = pdl.now()
+            timestamp = pdl.now().int_timestamp
         self._log_samples.append(_process_sample(
             schema_validator=self.schema_validator,
             data_columns=self.all_columns,
@@ -669,7 +677,16 @@ def _process_sample(
         sample: t.Dict[str, t.Any] = {DeepchecksColumns.SAMPLE_ID_COL.value: str(sample_id), **values}
 
     if timestamp is not None:
-        sample[DeepchecksColumns.SAMPLE_TS_COL.value] = parse_timestamp(timestamp).to_iso8601_string()
+        if not isinstance(timestamp, int):
+            raise ValueError(
+                'Only numerical timestamps are allowed that '
+                'represent second-based epoch time'
+            )
+        else:
+            sample[DeepchecksColumns.SAMPLE_TS_COL.value] = (
+                pdl.from_timestamp(timestamp)
+                .to_iso8601_string()
+            )
 
     if task_type in {TaskType.MULTICLASS, TaskType.BINARY}:
         if label is not None:
