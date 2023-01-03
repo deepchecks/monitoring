@@ -24,12 +24,14 @@ export const defaultTooltipCallbacks: (
     backgroundColor: context.dataset?.borderColor as string,
     borderColor: context.dataset?.borderColor as string
   }),
-  title: (context: TooltipItem<'line'>[]) => context[0].formattedValue,
+  title: (context: TooltipItem<'line'>[]) => {
+    const textArray = context[0].dataset?.label?.split('|');
+    
+    return `${textArray && textArray[0]} : ${context[0].formattedValue}`
+  },
   label: (context: TooltipItem<'line'>) => {
     const textArray = context?.dataset?.label?.split('|');
-    return `${getTime(context.label, frequency)} | ${(textArray && textArray[1]) || ''} | ${
-      (textArray && textArray[0]) || ''
-    }`;
+    return `${getTime(context.label, frequency)} ${(textArray && textArray[1]) ? '| Version: ' + textArray[1] :  ''}`;
   }
 });
 

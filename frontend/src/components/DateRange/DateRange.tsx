@@ -54,13 +54,14 @@ export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRang
         <Box ref={selectRef}>
 
             <StyledTextField 
+                onClick={handleDatePickerOpen}
                 variant="outlined" 
                 label="Time Range"
                 value={ `${dayjs(range.startDate).format('MM/DD/YYYY')} - ${dayjs(range.endDate).format('MM/DD/YYYY')}` } 
                 size="small"
                 sx={{ cursor: 'pointer', width: '260px'}}
                 InputProps={{
-                    endAdornment: <Button onClick={handleDatePickerOpen} variant='text' sx={{minWidth: '24px', pl:'5px'}}><Calendar /></Button>,
+                    endAdornment: <Button variant='text' sx={{minWidth: '24px', pl:'5px'}}><Calendar /></Button>,
                     readOnly: true
                 }}>
             </StyledTextField>
