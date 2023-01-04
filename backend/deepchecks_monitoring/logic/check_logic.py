@@ -18,6 +18,7 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks import BaseCheck, CheckResult, SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
+from deepchecks.tabular import Suite
 from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
                                                      regression_scorers_higher_is_better_dict,
                                                      regression_scorers_lower_is_better_dict)
@@ -161,6 +162,16 @@ class MonitorOptions(SingleCheckRunOptions):
 
         return values
 
+    def calculate_windows(self):
+        lookback = self.end_time_dt().int_timestamp - self.start_time_dt().int_timestamp
+        last_window_end = floor_window_for_time(self.end_time_dt(), self.frequency)
+        num_windows_in_range = max(lookback // self.frequency, 1)
+        first_window_end = last_window_end.subtract(seconds=(num_windows_in_range - 1) * self.frequency)
+        # the last window might be partial so we need to create it manually
+        if last_window_end <= self.end_time_dt():
+            last_window_end = last_window_end.add(seconds=self.frequency)
+        return list((last_window_end - first_window_end).range("seconds", self.frequency))
+
 
 class SpecificVersionCheckRun(SingleCheckRunOptions):
     """Schema to run check using a specific version."""
@@ -300,13 +311,11 @@ async def run_check_per_window_in_range(
         organization_id: int = None
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
-
     The function gets the relevant model versions and the task type of the check.
     Then, it creates a session per model version and per time window.
     The sessions are executed and the results are returned.
     The results are then used to run the check.
     The function returns the results of the check and the time windows that were used.
-
     Parameters
     ----------
     check_id : int
@@ -327,23 +336,14 @@ async def run_check_per_window_in_range(
     check: Check = await fetch_or_404(session, Check, id=check_id)
     dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
 
-    if monitor_options.end_time_dt() < monitor_options.start_time_dt():
-        raise ValueError("start_time must be before end_time")
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
 
-    lookback = monitor_options.end_time_dt().int_timestamp - monitor_options.start_time_dt().int_timestamp
+    all_windows = monitor_options.calculate_windows()
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
-    last_window_end = floor_window_for_time(monitor_options.end_time_dt(), monitor_options.frequency)
-    num_windows_in_range = max(lookback // monitor_options.frequency, 1)
-    first_window_end = last_window_end.subtract(seconds=(num_windows_in_range - 1) * monitor_options.frequency)
-    # the last window might be partial so we need to create it manually
-    if last_window_end <= monitor_options.end_time_dt():
-        last_window_end = last_window_end.add(seconds=monitor_options.frequency)
-    all_windows = list((last_window_end - first_window_end).range("seconds", monitor_options.frequency))
 
     model, model_versions = await get_model_versions_for_time_range(
-        session, check, first_window_end.subtract(seconds=aggregation_window), last_window_end)
+        session, check.model_id, all_windows[0].subtract(seconds=aggregation_window), all_windows[-1])
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
@@ -419,6 +419,134 @@ async def run_check_per_window_in_range(
             reduce_results[model_version.name].append(result_value)
 
     return {"output": reduce_results, "time_labels": [d.isoformat() for d in all_windows]}
+
+
+async def run_suite_per_window_in_range(
+        check_ids: t.List[int],
+        session: AsyncSession,
+        monitor_options: MonitorOptions,
+) -> t.Union[t.Dict[int, t.Dict], t.Dict]:
+    """Run a suite on a monitor table per time window in the time range.
+
+    The function gets the relevant model versions and the task type of the check.
+    Then, it creates a session per model version and per time window.
+    The sessions are executed and the results are returned.
+    The results are then used to run the suite.
+    The function returns the results of each check and the time windows that were used.
+
+    Parameters
+    ----------
+    check_ids: t.Union[int, t.List[int]]
+        The id of the check to run.
+    session : AsyncSession
+        The database session to use.
+    monitor_options: MonitorOptions
+
+    Returns
+    -------
+    dict
+        A dictionary containing the output of the check and the time labels.
+    """
+    if len(check_ids) == 0:
+        return {}
+
+    # get the relevant objects from the db
+    checks: t.List[Check] = (await session.scalars(select(Check).where(Check.id.in_(check_ids)))).all()
+    if len(checks) == 0:
+        raise NotFound(f"Could not find checks with ids {check_ids}")
+    if len(set(check.model_id for check in checks)) > 1:
+        raise ValueError(f"Checks {check_ids} belong to different models")
+    model_id = checks[0].model_id
+
+    dp_checks = []
+    uses_reference_data = False
+    for check in checks:
+        dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
+        if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
+            raise ValueError(f"incompatible check type {type(dp_check)}")
+        uses_reference_data |= isinstance(dp_check, TrainTestBaseCheck)
+        dp_checks.append(dp_check)
+    suite = Suite("", *dp_checks)
+
+    all_windows = monitor_options.calculate_windows()
+    aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
+
+    model, model_versions = await get_model_versions_for_time_range(
+        session, model_id, all_windows[0].subtract(seconds=aggregation_window), all_windows[-1])
+
+    if len(model_versions) == 0:
+        raise NotFound("No relevant model versions found")
+
+    top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
+    model_columns = list(model_versions[0].model_columns.keys())
+
+    # execute an async session per each model version
+    model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
+    for model_version in model_versions:
+        # If filter does not fit the model version, skip it
+        if not model_version.is_filter_fit(monitor_options.filter):
+            continue
+
+        test_table = model_version.get_monitor_table(session)
+        select_obj = create_model_version_select_object(test_table, top_feat + model_columns)
+        test_info: t.List[t.Dict] = []
+        # create the session per time window
+        for window_end in all_windows:
+            window_start = window_end.subtract(seconds=aggregation_window)
+            curr_test_info = {"start": window_start, "end": window_end}
+            test_info.append(curr_test_info)
+            if model_version.is_in_range(window_start, window_end):
+                filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
+                filtered_select_obj = filtered_select_obj.filter(monitor_options.sql_columns_filter())
+                filtered_select_obj = random_sample(filtered_select_obj, test_table, n_samples=10_000)
+                curr_test_info["query"] = session.execute(filtered_select_obj)
+            else:
+                curr_test_info["data"] = pd.DataFrame()
+        # Query reference if the check use it
+        if uses_reference_data:
+            reference_table = model_version.get_reference_table(session)
+            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns)
+            reference_query = reference_query.filter(monitor_options.sql_columns_filter())
+            reference_query = session.execute(random_sample(reference_query, reference_table))
+        else:
+            reference_query = None
+
+        model_versions_sessions.append((reference_query, test_info))
+
+    # Complete queries and then commit the connection, to release back to the pool (since the check might take long time
+    # to run, and we don't want to unnecessarily hold the connection)
+    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    await session.commit()
+
+    # run the checks
+    # get result from active sessions and run the check per each model version
+    windows_results = get_results_for_model_versions_per_window(model_version_dataframes,
+                                                                model_versions,
+                                                                model,
+                                                                suite,
+                                                                monitor_options.additional_kwargs)
+
+    all_checks_results = {}
+    for check in checks:
+        all_checks_results[check.id] = {"output": defaultdict(list),
+                                        "time_labels": [d.isoformat() for d in all_windows]}
+
+    for model_version, model_version_results in windows_results.items():
+        for window_result in model_version_results:
+            suite_result = window_result["result"]
+            # If there was no production data for the window we will have no result
+            if suite_result is not None:
+                for check, check_result in zip(checks, suite_result.results):
+                    if isinstance(check_result, CheckResult):
+                        result_value = reduce_check_result(check_result, monitor_options.additional_kwargs)
+                    else:
+                        result_value = None
+                    all_checks_results[check.id]["output"][model_version.name].append(result_value)
+            else:
+                for check in checks:
+                    all_checks_results[check.id]["output"][model_version.name].append(None)
+
+    return all_checks_results
 
 
 async def run_check_window(

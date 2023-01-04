@@ -65,7 +65,7 @@ async def get_check_notebook(
     """
     check: Check = await fetch_or_404(session, Check, id=check_id)
     model, model_versions = await get_model_versions_for_time_range(
-        session, check, notebook_options.start_time_dt(), notebook_options.end_time_dt())
+        session, check.model_id, notebook_options.start_time_dt(), notebook_options.end_time_dt())
 
     if len(model_versions) == 0:
         raise NotFound('No relevant model version found')

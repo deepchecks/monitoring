@@ -32,7 +32,7 @@ from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckR
                                                      get_feature_property_info, get_metric_class_info,
                                                      init_check_by_kwargs, load_data_for_check, reduce_check_result,
                                                      reduce_check_window, run_check_per_window_in_range,
-                                                     run_check_window)
+                                                     run_check_window, run_suite_per_window_in_range)
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
@@ -241,6 +241,35 @@ async def get_checks(
     return [CheckSchema.from_orm(res) for res in results]
 
 
+@router.post('/checks/run-many', response_model=t.Dict[int, CheckResultSchema], tags=[Tags.CHECKS])
+async def run_many_checks_together(
+        monitor_options: MonitorOptions,
+        check_ids: t.List[int] = Query(alias='check_id'),
+        session: AsyncSession = AsyncSessionDep,
+):
+    """Run a check for each time window by start-end.
+
+    Parameters
+    ----------
+    check_ids : List[int]
+        ID of the check.
+    monitor_options : MonitorOptions
+        The "monitor" options.
+    session : AsyncSession, optional
+        SQLAlchemy session.
+
+    Returns
+    -------
+    CheckSchema
+        Created check.
+    """
+    return await run_suite_per_window_in_range(
+        check_ids,
+        session,
+        monitor_options,
+    )
+
+
 @router.post('/checks/{check_id}/run/lookback', response_model=CheckResultSchema, tags=[Tags.CHECKS])
 async def run_standalone_check_per_window_in_range(
         check_id: int,
@@ -295,7 +324,7 @@ async def get_check_window(
     check: Check = await fetch_or_404(session, Check, id=check_id)
     start_time = monitor_options.start_time_dt()
     end_time = monitor_options.end_time_dt()
-    model, model_versions = await get_model_versions_for_time_range(session, check, start_time, end_time)
+    model, model_versions = await get_model_versions_for_time_range(session, check.model_id, start_time, end_time)
     model_results = await run_check_window(check, monitor_options, session, model, model_versions)
     result_per_version = reduce_check_window(model_results, monitor_options)
     return {version.name: val for version, val in result_per_version.items()}

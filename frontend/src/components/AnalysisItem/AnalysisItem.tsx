@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { memo, useEffect, useState, useMemo, useCallback, MutableRefObject } from 'react';
 import dayjs from 'dayjs';
 
 import {
@@ -7,7 +7,8 @@ import {
   MonitorOptions,
   useGetCheckInfoApiV1ChecksCheckIdInfoGet,
   DataFilter,
-  MonitorCheckConf
+  MonitorCheckConf,
+  CheckResultSchema
 } from 'api/generated';
 import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
 
@@ -23,6 +24,8 @@ import { ComparisonModeOptions } from 'context/analysis-context';
 
 interface AnalysisItemProps {
   check: CheckSchema;
+  initialData?: CheckResultSchema;
+  checksWithCustomProps?: MutableRefObject<Set<number>>;
   lastUpdate: Date;
   isComparisonModeOn: boolean;
   comparisonMode: ComparisonModeOptions;
@@ -51,6 +54,8 @@ const showThreeDatasets = (dataSets: IDataset[], ascending = true) => showDatase
 
 function AnalysisItemComponent({
   check,
+  initialData,
+  checksWithCustomProps,
   lastUpdate,
   onPointCLick,
   isComparisonModeOn,
@@ -101,7 +106,15 @@ function AnalysisItemComponent({
   }, [activeFilter, checkConf?.length, filtersMultipleSelectValue, filtersSingleSelectValue]);
 
   useEffect(() => {
+    const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0
+    // Update the checksWithCustomProps set which indicates to the parent component if it needs to load this check data
+    if (hasCustomProps)
+      checksWithCustomProps?.current.add(check.id);
+    else
+      checksWithCustomProps?.current.delete(check.id);
+
     async function getData() {
+      let response;
       const runCheckBody: RunCheckBody = {
         checkId: check.id,
         data: {
@@ -110,14 +123,20 @@ function AnalysisItemComponent({
           end_time: period[1].toISOString()
         }
       };
+      // If there are no special arguments for this check, it is loaded it using a single request for all checks in analysis page
+      if (initialData && !hasCustomProps) {
+        response = initialData;
+      }
+      else {
+        if (activeFilters.length) {
+          runCheckBody.data.filter = { filters: activeFilters };
+        }
 
-      if (activeFilters.length) {
-        runCheckBody.data.filter = { filters: activeFilters };
+        runCheckBody.data.additional_kwargs = additionalKwargs;
+
+        response = await runCheck(runCheckBody);
       }
 
-      runCheckBody.data.additional_kwargs = additionalKwargs;
-
-      const response = await runCheck(runCheckBody);
       const parsedChartData = parseDataForLineChart(response);
 
       if (isComparisonModeOn && comparisonMode === ComparisonModeOptions.previousPeriod) {
@@ -181,7 +200,9 @@ function AnalysisItemComponent({
     isComparisonModeOn,
     isMostWorstActive,
     period,
-    runCheck
+    runCheck,
+    initialData,
+    checksWithCustomProps
   ]);
 
   const handlePointClick = useCallback(

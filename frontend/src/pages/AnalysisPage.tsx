@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState, useCallback, useContext } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useContext, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import {
   useGetChecksApiV1ModelsModelIdChecksGet,
   CheckSchema,
   MonitorCheckConfSchema,
-  MonitorCheckConf
+  MonitorCheckConf,
+  useRunManyChecksTogetherApiV1ChecksRunManyPost,
+  RunManyChecksTogetherApiV1ChecksRunManyPost200
 } from 'api/generated';
 import useModels from 'hooks/useModels';
 import { AnalysisContext } from 'context/analysis-context';
@@ -35,6 +37,8 @@ export function AnalysisPage() {
   const [currentModelVersionId, setCurrentModelVersionId] = useState<number | null>(null);
   const [currentTimeLabel, setCurrentTimeLabel] = useState<number | null>(null);
   const [currentType, setCurrentType] = useState<CheckType>(null);
+  const [checksInitialData, setChecksInitialData] = useState<RunManyChecksTogetherApiV1ChecksRunManyPost200 | undefined>(undefined);
+  const checksWithCustomProps = useRef(new Set<number>());
 
   const {
     data: checks,
@@ -46,6 +50,10 @@ export function AnalysisPage() {
     }
   });
 
+  const {
+    mutateAsync: mutateLoadCheckData
+  } = useRunManyChecksTogetherApiV1ChecksRunManyPost();
+
   const currentModel = useMemo(() => getCurrentModel(modelId), [getCurrentModel, modelId]);
 
   useEffect(() => {
@@ -54,11 +62,41 @@ export function AnalysisPage() {
     }
   }, [models, location.search]);
 
+  // If modelId has changed refetch the checks
   useEffect(() => {
-    if (models && modelId && modelId > -1) {
-      refetch();
+    if (modelId) {
+      setChecksInitialData(undefined)
+      refetch()
     }
-  }, [modelId, models, refetch]);
+  }, [modelId, refetch])
+
+  useEffect(() => {
+    if (checks) {
+      // We load in a single request all the checks that doesn't have a custom properties defined on them.
+      const fetchData = async () => {
+        const checksToLoad = checks?.filter(check => !checksWithCustomProps.current.has(check.id)).map(check => check.id)
+        if (checksToLoad.length > 1) {
+          // Removing current initial data in order to show loader
+          setChecksInitialData(undefined)
+          const response = await mutateLoadCheckData({
+            data: {
+              frequency,
+              start_time: period[0].toISOString(),
+              end_time: period[1].toISOString()
+            },
+            params: {check_id: checksToLoad}
+          })
+          setChecksInitialData(response)
+        }
+        else {
+          // If checks initial data is empty each check will load his own data
+          setChecksInitialData({})
+        }
+      }
+
+      fetchData()
+    }
+  }, [frequency, period, checks, mutateLoadCheckData]);
 
   const handleDrawerOpen = useCallback(
     (
@@ -103,7 +141,7 @@ export function AnalysisPage() {
     setCurrentType(null);
   }, []);
 
-  const isLoading = isModelsLoading || isChecksLoading;
+  const isLoading = isModelsLoading || isChecksLoading || checksInitialData == undefined;
 
   return (
     <>
@@ -121,6 +159,8 @@ export function AnalysisPage() {
               <AnalysisItem
                 key={check.id}
                 check={check}
+                initialData={checksInitialData[check.id]}
+                checksWithCustomProps={checksWithCustomProps}
                 lastUpdate={new Date()}
                 onPointCLick={handleDrawerOpen}
                 isComparisonModeOn={isComparisonModeOn}

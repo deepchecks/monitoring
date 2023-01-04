@@ -70,6 +70,10 @@ export type GetAllAlertRulesApiV1ConfigAlertRulesGetParams = {
   sortby?: GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem[];
 };
 
+export type RunManyChecksTogetherApiV1ChecksRunManyPost200 = { [key: string]: CheckResultSchema };
+
+export type RunManyChecksTogetherApiV1ChecksRunManyPostParams = { check_id: number[] };
+
 export type DeleteCheckByIdApiV1ModelsModelIdChecksCheckIdDeleteParams = { identifier_kind?: IdentifierKind };
 
 export type GetChecksApiV1ModelsModelIdChecksGetParams = { identifier_kind?: IdentifierKind };
@@ -2074,6 +2078,72 @@ export const useDeleteCheckByIdApiV1ModelsModelIdChecksCheckIdDelete = <
       checkId: string | number;
       params?: DeleteCheckByIdApiV1ModelsModelIdChecksCheckIdDeleteParams;
     },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Run a check for each time window by start-end.
+
+Parameters
+----------
+check_ids : List[int]
+    ID of the check.
+monitor_options : MonitorOptions
+    The "monitor" options.
+session : AsyncSession, optional
+    SQLAlchemy session.
+
+Returns
+-------
+CheckSchema
+    Created check.
+ * @summary Run Many Checks Together
+ */
+export const runManyChecksTogetherApiV1ChecksRunManyPost = (
+  monitorOptions: MonitorOptions,
+  params: RunManyChecksTogetherApiV1ChecksRunManyPostParams
+) =>
+  customInstance<RunManyChecksTogetherApiV1ChecksRunManyPost200>({
+    url: `/api/v1/checks/run-many`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: monitorOptions,
+    params
+  });
+
+export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>
+>;
+export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationBody = MonitorOptions;
+export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useRunManyChecksTogetherApiV1ChecksRunManyPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>,
+    TError,
+    { data: MonitorOptions; params: RunManyChecksTogetherApiV1ChecksRunManyPostParams },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>,
+    { data: MonitorOptions; params: RunManyChecksTogetherApiV1ChecksRunManyPostParams }
+  > = props => {
+    const { data, params } = props ?? {};
+
+    return runManyChecksTogetherApiV1ChecksRunManyPost(data, params);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>,
+    TError,
+    { data: MonitorOptions; params: RunManyChecksTogetherApiV1ChecksRunManyPostParams },
     TContext
   >(mutationFn, mutationOptions);
 };

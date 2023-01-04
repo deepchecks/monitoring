@@ -7,7 +7,7 @@ import faker
 import httpx
 import pandas as pd
 import pendulum as pdl
-from deepchecks.tabular.checks import TrainTestPerformance
+from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepchecks_client.core.api import API
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
@@ -95,7 +95,7 @@ class DataGenerator:
     def generate_random_check(self) -> "Payload":
         return {
             "name": self.faker.name(),
-            "config": TrainTestPerformance().config(include_version=False)  # TODO:
+            "config": SingleDatasetPerformance().config(include_version=False)  # TODO:
         }
 
     def generate_random_monitor(self) -> "Payload":

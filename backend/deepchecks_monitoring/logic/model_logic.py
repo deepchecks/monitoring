@@ -17,7 +17,7 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.core import BaseCheck
 from deepchecks.core.errors import DeepchecksBaseError
-from deepchecks.tabular import Dataset
+from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
 from sqlalchemy import VARCHAR, Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,17 +25,17 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
 
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
-from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
+from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                              SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
-                                            check: Check,
+                                            model_id: int,
                                             start_time: pdl.DateTime,
                                             end_time: pdl.DateTime) -> t.Tuple[Model, t.List[ModelVersion]]:
     """Get model versions for a time window."""
-    model_results = await session.execute(select(Model).where(Model.id == check.model_id,
+    model_results = await session.execute(select(Model).where(Model.id == model_id,
                                                               Model.id == ModelVersion.model_id,
                                                               ModelVersion.end_time >= start_time,
                                                               ModelVersion.start_time <= end_time)
@@ -44,7 +44,7 @@ async def get_model_versions_for_time_range(session: AsyncSession,
     if model is not None:
         model_versions: t.List[ModelVersion] = model.versions
         return model, model_versions
-    return await fetch_or_404(session, Model, id=check.model_id), []
+    return await fetch_or_404(session, Model, id=model_id), []
 
 
 def create_model_version_select_object(mon_table: Table, columns: t.List[str]) -> Select:
@@ -123,7 +123,7 @@ def get_results_for_model_versions_per_window(
         model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
         model_versions: t.List[ModelVersion],
         model: Model,
-        dp_check: BaseCheck,
+        dp_check: t.Union[BaseCheck, Suite],
         additional_kwargs: MonitorCheckConfSchema,
         with_display: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
@@ -157,20 +157,37 @@ def get_results_for_model_versions_per_window(
                 test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(curr_test_info['data'],
                                                                                model_version,
                                                                                top_feat)
+                shared_args = dict(
+                    feature_importance=feat_imp,
+                    with_display=with_display,
+                    model_classes=model_version.classes
+                )
+                single_dataset_args = dict(
+                    y_pred_train=test_pred,
+                    y_proba_train=test_proba,
+                    **shared_args
+                )
+                train_test_args = dict(
+                    train_dataset=reference_table_ds,
+                    test_dataset=test_ds,
+                    y_pred_train=reference_table_pred,
+                    y_proba_train=reference_table_proba,
+                    y_pred_test=test_pred,
+                    y_proba_test=test_proba,
+                    **shared_args
+                )
                 try:
                     if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
-                        curr_result = dp_check.run(
-                            test_ds, feature_importance=feat_imp,
-                            y_pred_train=test_pred, y_proba_train=test_proba,
-                            with_display=with_display, model_classes=model_version.classes)
+                        curr_result = dp_check.run(test_ds, **single_dataset_args)
                     elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
-                        curr_result = dp_check.run(
-                            reference_table_ds, test_ds, feature_importance=feat_imp,
-                            y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
-                            y_pred_test=test_pred, y_proba_test=test_proba,
-                            with_display=with_display, model_classes=model_version.classes)
+                        curr_result = dp_check.run(**train_test_args)
+                    elif isinstance(dp_check, Suite):
+                        if reference_table_dataframe is None:
+                            curr_result = dp_check.run(test_ds, **single_dataset_args)
+                        else:
+                            curr_result = dp_check.run(**train_test_args, run_single_dataset='Test')
                     else:
-                        raise ValueError('incompatible check type')
+                        raise ValueError(f'incompatible check type {type(dp_check)}')
 
                 # In case of exception in the run putting none result
                 except DeepchecksBaseError as e:
