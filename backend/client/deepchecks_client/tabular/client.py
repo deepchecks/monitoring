@@ -513,7 +513,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         checks = {
             'Feature Drift': TrainTestFeatureDrift(),
             'Prediction Drift': TrainTestPredictionDrift(),
-            'Label Drift': TrainTestLabelDrift(),
+            'Label Drift': TrainTestLabelDrift(ignore_na=True),
             'Train-Test Category Mismatch': CategoryMismatchTrainTest(),
             'Percent Of Nulls': PercentOfNulls()
         }
@@ -551,7 +551,7 @@ def _process_batch(
     model_classes: t.Optional[t.Sequence[str]] = None,
     prediction_probas: t.Optional[np.ndarray] = None,
 ) -> t.List[t.Dict[str, t.Any]]:
-    """Preapare and validate batch of samples."""
+    """Prepare and validate batch of samples."""
     # Validate 'sample_ids' array
     sample_ids = standardize_input(sample_ids, 'sample_ids')
     if len(sample_ids) == 0:

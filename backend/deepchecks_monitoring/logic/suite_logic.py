@@ -36,7 +36,7 @@ def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: b
         checks.append(tabular_checks.FeatureLabelCorrelationChange().add_condition_feature_pps_difference_less_than())
         checks.append(tabular_checks.TrainTestFeatureDrift().add_condition_drift_score_less_than())
         checks.append(tabular_checks.MultivariateDrift().add_condition_overall_drift_value_less_than())
-        checks.append(tabular_checks.TrainTestLabelDrift().add_condition_drift_score_less_than())
+        checks.append(tabular_checks.TrainTestLabelDrift(ignore_na=True).add_condition_drift_score_less_than())
         checks.append(tabular_checks.TrainTestPredictionDrift().add_condition_drift_score_less_than())
         checks.append(tabular_checks.TrainTestPerformance().add_condition_train_test_relative_degradation_less_than())
     else:
@@ -52,11 +52,8 @@ def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: b
     return TabularSuite(suite_name, *checks)
 
 
-async def run_suite_for_model_version(
-        model_version: ModelVersion,
-        window_options: TimeWindowOption,
-        session: AsyncSession = AsyncSessionDep,
-):
+async def run_suite_for_model_version(model_version: ModelVersion, window_options: TimeWindowOption,
+                                      session: AsyncSession = AsyncSessionDep, ):
     """Run a relevant suite for a given window.
 
     Parameters
@@ -84,19 +81,17 @@ async def run_suite_for_model_version(
 
     suite_name = f"Test Suite - Model {model_version.name} - Window {window_options.end_time_dt().date()}"
     task_type = model_version.model.task_type
-    if task_type in [TaskType.MULTICLASS, TaskType.BINARY, TaskType.REGRESSION]:
-        suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
-        test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
-            test_df, model_version, top_feat)
-        reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-            ref_df, model_version, top_feat)
-    else:
+    if task_type not in [TaskType.MULTICLASS, TaskType.BINARY, TaskType.REGRESSION]:
         raise Exception(f"Unsupported task type {task_type}")
+
+    suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
+    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version, top_feat)
+    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(ref_df, model_version, top_feat)
 
     if len(ref_df) == 0:  # if no reference is available, must pass test data as reference (as train)
         reference_dataset, reference_pred, reference_proba = test_dataset, test_pred, test_proba
         test_dataset, test_pred, test_proba = None, None, None
 
     return suite.run(train_dataset=reference_dataset, test_dataset=test_dataset, feature_importance=feat_imp,
-                     y_pred_train=reference_pred, y_proba_train=reference_proba,
-                     y_pred_test=test_pred, y_proba_test=test_proba, with_display=True)
+                     y_pred_train=reference_pred, y_proba_train=reference_proba, y_pred_test=test_pred,
+                     y_proba_test=test_proba, with_display=True)
