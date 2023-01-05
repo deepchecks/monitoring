@@ -165,7 +165,8 @@ async def update_monitor(
         # Delete monitor tasks
         await Task.delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
         # Resolving all alerts which are connected to this monitor
-        await session.execute(sa.update(Alert).where(AlertRule.monitor_id == monitor_id)
+        alert_rules_select = sa.select(AlertRule.id).where(AlertRule.monitor_id == monitor_id)
+        await session.execute(sa.update(Alert).where(Alert.alert_rule_id.in_(alert_rules_select))
                               .values({Alert.resolved: True}),
                               execution_options=immutabledict({"synchronize_session": False}))
         # Delete cache
