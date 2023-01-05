@@ -1010,7 +1010,7 @@ class TestAPI:
 
         response = t.cast(httpx.Response, self.api.upload_reference(
             model_version_id=model_version_id,
-            reference=df.to_json(orient="table", index=False),
+            reference=df.to_json(orient="split", index=False),
             raise_on_status=False
         ))
 

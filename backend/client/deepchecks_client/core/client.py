@@ -176,7 +176,7 @@ class DeepchecksModelVersionClient:
     ):
         for i in range(0, len(data), samples_per_request):
             content = data.iloc[i:i + samples_per_request]
-            self.api.upload_reference(self.model_version_id, content.to_json(orient='table', index=False))
+            self.api.upload_reference(self.model_version_id, content.to_json(orient='split', index=False))
 
     def update_sample(
         self,

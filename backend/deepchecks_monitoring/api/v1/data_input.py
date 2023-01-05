@@ -129,7 +129,8 @@ async def save_reference(
         raise BadRequest(limit_exceeded_message)
 
     content = await batch.read()
-    reference_batch: pd.DataFrame = pd.read_json(StringIO(content.decode()), orient="table")
+    reference_batch: pd.DataFrame = pd.read_json(StringIO(content.decode()), orient="split",
+                                                 convert_axes=False, dtype=False, convert_dates=False)
     reference_batch = reference_batch.replace(np.NaN, pd.NA).where(reference_batch.notnull(), None)
 
     items = []
