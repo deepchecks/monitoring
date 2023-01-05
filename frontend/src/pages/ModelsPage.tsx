@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { deleteModelApiV1ModelsModelIdDelete, useRetrieveConnectedModelsApiV1ConnectedModelsGet, ConnectedModelSchema } from 'api/generated';
 
-import useModels from 'hooks/useModels';
-
-import { Box, Menu, MenuItem, Stack, styled, TextField, Autocomplete, Typography } from '@mui/material';
+import { Box, Menu, MenuItem, Stack, styled, TextField, Autocomplete, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { Loader } from 'components/Loader';
@@ -36,12 +34,11 @@ const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVaria
   );
 
 export const ModelsPage = () => {
-  // const { models, isLoading, refetchModels } = useModels();
-  const { data: models, isLoading } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const { data: models, isLoading, refetch: refetchModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
   const [modelsList, setModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
   const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
   const [modelNamesArray, setModelNamesArray] = useState<string[]>([]);
-
+  const [modelIdToDelete, setModelIdToDelete] = useState<number | null>(null);
   const [searchInputValue, setSearchInputValue] = useState('');
   const [searchValue, setSearchValue] = useState<string | null>(null);
 
@@ -111,9 +108,20 @@ export const ModelsPage = () => {
     handleCloseSortMenu();
   };
 
-  const handleDeleteModel = async (modelId: number) => {
-    await deleteModelApiV1ModelsModelIdDelete(modelId);
-    // refetchModels();
+  const handleDeleteModel = async () => {
+    if (modelIdToDelete) {
+      await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
+      await refetchModels();
+      handleModalClose();
+    }
+  };
+
+  const handleModalClose = () => {
+    setModelIdToDelete(null);
+  }
+
+  const handleOpenModal = (modelId: number) => {
+    setModelIdToDelete(modelId);
   };
 
   const handleReset = () => {
@@ -125,76 +133,98 @@ export const ModelsPage = () => {
   };
 
   return (
-    <Box>
-      <HeaderLayout title="Connected Models" />
-      <StyledModelsContainer>
-        <Stack direction="row" justifyContent="space-between">
-          <Autocomplete
-            freeSolo
-            value={searchValue}
-            onChange={(event, newValue: string | null) => {
-              setSearchValue(newValue);
-            }}
-            inputValue={searchInputValue}
-            onInputChange={(event, newInputValue) => {
-              setSearchInputValue(newInputValue);
-            }}
-            options={modelNamesArray}
-            sx={{ width: 300 }}
-            renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
-          />
+    <>
+      <Box>
+        <HeaderLayout title="Connected Models" />
+        <StyledModelsContainer>
+          <Stack direction="row" justifyContent="space-between">
+            <Autocomplete
+              freeSolo
+              value={searchValue}
+              onChange={(event, newValue: string | null) => {
+                setSearchValue(newValue);
+              }}
+              inputValue={searchInputValue}
+              onInputChange={(event, newInputValue) => {
+                setSearchInputValue(newInputValue);
+              }}
+              options={modelNamesArray}
+              sx={{ width: 300 }}
+              renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
+            />
 
-          {searchInputValue || searchValue || sort ? (
-            <Stack direction="row" spacing="11px">
-              <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
+            {searchInputValue || searchValue || sort ? (
+              <Stack direction="row" spacing="11px">
+                <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
+                <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
+              </Stack>
+            ) : (
               <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-            </Stack>
-          ) : (
-            <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-          )}
+            )}
 
-          <Menu
-            anchorEl={anchorElSortMenu}
-            open={Boolean(anchorElSortMenu)}
-            onClose={handleCloseSortMenu}
-            MenuListProps={{
-              'aria-labelledby': 'basic-button'
-            }}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right'
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right'
-            }}
-          >
-            {sortOptions.map(sortMethod => (
-              <StyledSortMenuItem
-                sort={sort}
-                sortMethod={sortMethod}
-                key={sortMethod}
-                onClick={() => handleSort(sortMethod)}
-              >
-                <Typography variant="subtitle2">{sortMethod}</Typography>
-              </StyledSortMenuItem>
-            ))}
-          </Menu>
-        </Stack>
+            <Menu
+              anchorEl={anchorElSortMenu}
+              open={Boolean(anchorElSortMenu)}
+              onClose={handleCloseSortMenu}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button'
+              }}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right'
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right'
+              }}
+            >
+              {sortOptions.map(sortMethod => (
+                <StyledSortMenuItem
+                  sort={sort}
+                  sortMethod={sortMethod}
+                  key={sortMethod}
+                  onClick={() => handleSort(sortMethod)}
+                >
+                  <Typography variant="subtitle2">{sortMethod}</Typography>
+                </StyledSortMenuItem>
+              ))}
+            </Menu>
+          </Stack>
 
-        <StyledModelsList>
-          {isLoading || !filteredAndSortedModelsList ? (
-            <Loader />
-          ) : filteredAndSortedModelsList.length !== 0 ? (
-            filteredAndSortedModelsList.map(model => (
-              <ModelInfoItem key={model.id} model={model} onDelete={() => handleDeleteModel(model.id)} />
-            ))
-          ) : (
-            <NoResults marginTop="168px" handleReset={handleReset} />
-          )}
-        </StyledModelsList>
-      </StyledModelsContainer>
-    </Box>
+          <StyledModelsList>
+            {isLoading || !filteredAndSortedModelsList ? (
+              <Loader />
+            ) : filteredAndSortedModelsList.length !== 0 ? (
+              filteredAndSortedModelsList.map(model => (
+                <ModelInfoItem key={model.id} model={model} onDelete={async () => handleOpenModal(model.id)} />
+              ))
+            ) : (
+              <NoResults marginTop="168px" handleReset={handleReset} />
+            )}
+          </StyledModelsList>
+        </StyledModelsContainer>
+      </Box>
+
+      <Dialog
+        open={modelIdToDelete!==null}
+        onClose={handleModalClose}
+      >
+        <Box>
+          <DialogTitle>
+            { "Delete Model" }
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this model?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleModalClose} autoFocus>No</Button>
+            <Button onClick={handleDeleteModel} variant="outlined">Yes</Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+    </>
   );
 };
 
