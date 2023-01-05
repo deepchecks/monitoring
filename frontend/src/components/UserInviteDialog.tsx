@@ -84,8 +84,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
   const handleInviteToOrgClick = () => {
     if (btnEnabled) {
       const inviteSchema: InvitationCreationSchema = {
-        email: emailValue,
-        ttl: 1 * 24 * 60 * 60
+        email: emailValue
       };
 
       createInviteApiV1OrganizationInvitePut(inviteSchema)

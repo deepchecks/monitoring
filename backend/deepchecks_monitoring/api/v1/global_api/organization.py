@@ -22,7 +22,7 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep, get_email_sender_resource
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.integrations.email import EmailMessage, EmailSender
-from deepchecks_monitoring.monitoring_utils import exists_or_404, not_exists_or_400
+from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models import AlertSeverity, Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.user import User
@@ -48,8 +48,6 @@ async def create_invite(
         settings: Settings = SettingsDep
 ):
     """Create invite between organization and a user."""
-    if user.organization_id is None:
-        raise BadRequest('User does not belong to an organization')
     # Check organization exists
     await exists_or_404(session, Organization, id=user.organization_id)
     # If user already belong to an organization return bad request
@@ -57,8 +55,16 @@ async def create_invite(
     other_user = other_user_query.scalar_one_or_none()
     if other_user and other_user.organization_id is not None:
         raise BadRequest('User already associated to an organization')
-    # Check there is only single invitation for user
-    await not_exists_or_400(session, Invitation, email=body.email)
+
+    # Fetch user invitation if already exist
+    invitation = (await Invitation.filter_by(session, email=body.email)).scalar_one_or_none()
+    if invitation:
+        from_user = (await User.filter_by(session, email=invitation.creating_user)).scalar_one_or_none()
+        # If invitation not valid, remove it and allow new invitation
+        if invitation.expired() or from_user is None:
+            await invitation.delete(session)
+        else:
+            raise BadRequest('User already invited')
 
     invitation = Invitation(organization_id=user.organization_id, **body.dict(exclude_none=True),
                             creating_user=user.email)

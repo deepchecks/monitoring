@@ -11,6 +11,7 @@
 import typing as t
 from dataclasses import dataclass
 
+import pendulum as pdl
 import sqlalchemy as sa
 from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy import Table
@@ -52,3 +53,6 @@ class Invitation(Base):
             'organization': relationship('Organization')
         }
     }
+
+    def expired(self):
+        return self.ttl and pdl.instance(self.created_at).add(seconds=self.ttl) > pdl.now()

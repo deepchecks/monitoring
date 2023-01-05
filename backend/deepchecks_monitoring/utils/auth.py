@@ -25,7 +25,7 @@ from deepchecks_monitoring.exceptions import (AccessForbidden, BadRequest, Inval
                                               UnacceptedEULA, Unauthorized)
 from deepchecks_monitoring.utils import database
 
-__all__ = ["CurrentUser", "CurrentActiveUser", "AdminUser"]
+__all__ = ["CurrentUser", "CurrentActiveUser", "AdminUser", "create_api_token"]
 
 
 ALGORITHM = "HS256"
@@ -117,8 +117,11 @@ def create_access_token(
 def create_api_token(user_email):
     """Create an api token."""
     api_password = secrets.token_urlsafe(16)
+    # The hash power indicates how much compute is needed to validate the hash. It is used to prevent brute force,
+    # since every attempt will take longer time.
+    hash_power = 7
     # Saving the password hashed with random salt
-    hash_password = bcrypt.hashpw(api_password.encode(), bcrypt.gensalt(12)).decode()
+    hash_password = bcrypt.hashpw(api_password.encode(), bcrypt.gensalt(hash_power)).decode()
     # Create base64 token for the user
     token_for_the_user = base64.urlsafe_b64encode(user_email.encode()).decode() + "." + api_password
     return hash_password, token_for_the_user

@@ -11,7 +11,6 @@
 import typing as t
 from datetime import datetime
 
-import pendulum as pdl
 from fastapi import Depends, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
@@ -63,15 +62,17 @@ async def get_complete_details(
 ):
     """Get info needed for the complete details page."""
     query = await Invitation.filter_by(session, email=user.email)
-    invite = query.scalar_one_or_none()
+    invite: Invitation = query.scalar_one_or_none()
+    invite_info = None
     if invite:
         org = await fetch_or_404(session, Organization, id=invite.organization_id)
         from_user = (await User.filter_by(session, email=invite.creating_user)).scalar_one_or_none()
-        if from_user is None:
-            raise BadRequest("User which created invitation is not exists anymore")
-        invite_info = InvitationInfoSchema(from_user=from_user.full_name, org_name=org.name)
-    else:
-        invite_info = None
+        # Check invitation is expired or inviting user does not exist, remove the invitation
+        if invite.expired() or from_user is None:
+            # If expired - delete the invitation
+            await session.delete(invite)
+        else:
+            invite_info = InvitationInfoSchema(from_user=from_user.full_name, org_name=org.name)
 
     if user.organization_id:
         org = await fetch_or_404(session, Organization, id=user.organization_id)
@@ -108,9 +109,6 @@ async def update_complete_details(
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
     elif body.accept_invite:
         invite: Invitation = await fetch_or_404(session, Invitation, email=user.email)
-        # Check ttl
-        if invite.ttl and pdl.instance(invite.created_at).add(seconds=invite.ttl) < pdl.now():
-            raise BadRequest("Invite expired")
         # Check organization exists
         await exists_or_404(session, Organization, id=invite.organization_id)
         # Update user in database
