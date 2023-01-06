@@ -113,7 +113,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
   };
 
   const handleStartDateChange = (currentStartDate: Date | null) => {
-    if (currentStartDate && startDate && currentStartDate < startDate) {
+    if (currentStartDate && endDate && currentStartDate < endDate) {
       setStartDate(currentStartDate);
       changeAlertFilters(prevAlertFilters => ({
         ...prevAlertFilters,
