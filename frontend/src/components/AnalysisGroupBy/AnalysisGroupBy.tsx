@@ -52,7 +52,7 @@ const AnalysisGroupByComponent = ({
 
   useEffect(() => {
     async function getData() {
-      if (propValuesAreNotNull) {
+      if (propValuesAreNotNull && frequency) {
         setGlobalLoading(true);
 
         const { features } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
@@ -81,6 +81,7 @@ const AnalysisGroupByComponent = ({
         }
       }
     }
+
 
     getData();
 
@@ -116,7 +117,7 @@ const AnalysisGroupByComponent = ({
 
   return (
     <CustomDrawer loading={globalLoading} {...props}>
-      {propValuesAreNotNull && singleCheckRunOptions && (
+      {propValuesAreNotNull && singleCheckRunOptions && frequencyLabel && (
         <>
           <StyledHeaderContainer>
             <CustomDrawerHeader title={check.name || 'none'} onClick={onCloseIconClick} marginBottom="32px" />

@@ -8,6 +8,8 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining utility functions for alerts."""
+from datetime import datetime
+
 import pendulum as pdl
 from sqlalchemy import func, select
 
@@ -56,7 +58,7 @@ async def get_alerts_per_model(session) -> dict:
     return dict(results)
 
 
-def floor_window_for_time(time: pdl.DateTime, frequency: int) -> pdl.DateTime:
+def floor_window_for_time(time: datetime, frequency: int) -> pdl.DateTime:
     """Return the closest round window for the given time. if the time is round return itself, else returns \
     the closest window from the bottom.
 
@@ -70,5 +72,5 @@ def floor_window_for_time(time: pdl.DateTime, frequency: int) -> pdl.DateTime:
     pdl.DateTime
         The time of the end of the window
     """
-    num_windows_from_origin = (time.int_timestamp // frequency)
+    num_windows_from_origin = (int(time.timestamp()) // frequency)
     return pdl.from_timestamp(num_windows_from_origin * frequency)

@@ -50,6 +50,7 @@ export function AnalysisPage() {
     }
   });
 
+
   const {
     mutateAsync: mutateLoadCheckData
   } = useRunManyChecksTogetherApiV1ChecksRunManyPost();
@@ -71,7 +72,7 @@ export function AnalysisPage() {
   }, [modelId, refetch])
 
   useEffect(() => {
-    if (checks) {
+    if (checks && frequency && period) {
       // We load in a single request all the checks that doesn't have a custom properties defined on them.
       const fetchData = async () => {
         const checksToLoad = checks?.filter(check => !checksWithCustomProps.current.has(check.id)).map(check => check.id)
@@ -141,7 +142,7 @@ export function AnalysisPage() {
     setCurrentType(null);
   }, []);
 
-  const isLoading = isModelsLoading || isChecksLoading || checksInitialData == undefined;
+  const isLoading = isModelsLoading || isChecksLoading || checksInitialData == undefined || frequency == undefined || period == undefined;
 
   return (
     <>

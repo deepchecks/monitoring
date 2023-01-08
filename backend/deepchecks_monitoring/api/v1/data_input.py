@@ -74,7 +74,7 @@ async def log_data_batch(
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
     resources_provider=ResourcesProviderDep
-) -> Response:
+):
     """Insert batch data samples."""
     return await _log_or_update(model_version_id, data, session, data_ingest, user, resources_provider, "log")
 

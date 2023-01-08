@@ -3,20 +3,19 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   GetModelColumnsApiV1ModelsModelIdColumnsGet200,
   ModelManagmentSchema,
-  useGetModelColumnsApiV1ModelsModelIdColumnsGet
+  useGetModelColumnsApiV1ModelsModelIdColumnsGet,
+  useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet
 } from 'api/generated';
 
 import {
   AnalysisContext,
   ColumnsFilters,
   ComparisonModeOptions,
-  frequencyData,
-  lookBackData
+  frequencyData
 } from 'context/analysis-context';
 
 import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box, Typography } from '@mui/material';
 
-import { ExpandableSelection } from 'components/ExpandableSelection';
 import { MarkedSelect } from 'components/MarkedSelect';
 import { SwitchButton } from 'components/SwitchButton';
 import { DropDownFilter } from './components/DropDownFilter';
@@ -27,6 +26,8 @@ import { ColumnType } from 'helpers/types/model';
 import { comparisonModeData } from './AnalysisFilters.helpers';
 
 import { FilterIcon } from 'assets/icon/icon';
+import { DateRange } from 'components/DateRange/DateRange';
+
 
 interface AnalysisFiltersProps {
   model: ModelManagmentSchema;
@@ -39,29 +40,39 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     setIsComparisonModeOn,
     comparisonMode,
     setComparisonMode,
+    period,
     setPeriod,
-    lookback,
-    setLookback,
     frequency,
     setFrequency,
     setFilters,
     setInitialFilters,
     filtersLength,
     reset,
-    resetAll
+    resetAll,
+    setDefaultFrequency
   } = useContext(AnalysisContext);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
 
   const {
     data: columns = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
-    refetch,
+    refetch: refetchColumns,
     isLoading
   } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id, undefined, {
     query: {
       enabled: false
     }
   });
+
+  const {
+    data: defaultFrequency,
+    refetch: loadDefaultFrequency
+  } = useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
+    query: {
+      enabled: false
+    }
+  });
+
 
   const handleFiltersClose = () => {
     setAnchorEl(null);
@@ -90,15 +101,21 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   };
 
   useEffect(() => {
-    const time = model.latest_time ? model.latest_time * 1000 : Date.now();
-    setPeriod([new Date(time - lookback), new Date(time)]);
-  }, [model, setPeriod, lookback]);
+    if (defaultFrequency) {
+      setPeriod([new Date(defaultFrequency.start * 1000), new Date(defaultFrequency.end * 1000)]);
+      setFrequency(defaultFrequency.frequency)
+      setDefaultFrequency(defaultFrequency)
+    }
+  }, [setPeriod, setFrequency, defaultFrequency, setDefaultFrequency]);
 
   useEffect(() => {
     if (model.id !== -1) {
-      refetch();
+      setFrequency(null);
+      setPeriod(null);
+      refetchColumns();
+      loadDefaultFrequency();
     }
-  }, [model, refetch]);
+  }, [model, refetchColumns, loadDefaultFrequency, setPeriod, setFrequency]);
 
   useEffect(() => {
     if (Object.keys(columns).length) {
@@ -130,6 +147,12 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     }
   }, [columns, setFilters, setInitialFilters]);
 
+  const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
+    if (startTime && endTime) {
+      setPeriod([startTime, endTime]);
+    }
+  };
+
   return (
     <>
       <Stack direction="row" alignItems="center">
@@ -150,22 +173,24 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
               </MenuItem>
             ))}
           </MarkedSelect>
-          <ExpandableSelection
-            endTime={model.latest_time}
-          />
-          <MarkedSelect
-            label="Frequency"
-            size="small"
-            value={frequency}
-            onChange={handleFrequencyChange}
-            sx={{ width: '176px' }}
-          >
-            {frequencyData.map(({ label, value }, index) => (
-              <MenuItem key={`${value}${index}`} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </MarkedSelect>
+          { defaultFrequency ?
+          <>
+            <DateRange onChange={handleDateChange} startTime={period ? period[0] : undefined} endTime={period ? period[1] : undefined}/>
+            <MarkedSelect
+              label="Frequency"
+              size="small"
+              value={frequency ? frequency : ''}
+              onChange={handleFrequencyChange}
+              sx={{ width: '176px' }}
+            >
+              {frequencyData.map(({ label, value }, index) => (
+                <MenuItem key={`${value}${index}`} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+          </>: ''
+          }
           <StyledAnalysisFiltersDivider orientation="vertical" flexItem sx={{ ml: fixedHeader ? '27px' : '' }} />
           <StyledFiltersButton
             startIcon={<FilterIcon />}

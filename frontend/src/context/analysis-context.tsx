@@ -1,10 +1,11 @@
 import React, { createContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
 
-import { DataFilter } from 'api/generated';
+import { DataFilter, AutoFrequencyResponse } from 'api/generated';
 
 import { timeMap, timeValues } from 'helpers/time';
 import { SetStateType } from 'helpers/types';
 import { OperatorsMap } from 'helpers/conditionOperator';
+import dayjs from 'dayjs';
 
 export enum ComparisonModeOptions {
   previousPeriod = 'PREVIOUS_PERIOD',
@@ -20,13 +21,11 @@ export interface AnalysisContextValues {
   setIsComparisonModeOn: SetStateType<boolean>;
   comparisonMode: ComparisonModeOptions;
   setComparisonMode: SetStateType<ComparisonModeOptions>;
-  period: [Date, Date];
-  setPeriod: SetStateType<[Date, Date]>;
-  lookback: number;
-  setLookback: SetStateType<number>;
-  frequency: number;
-  frequencyLabel: string;
-  setFrequency: SetStateType<number>;
+  period: [Date, Date] | null;
+  setPeriod: SetStateType<[Date, Date] | null>;
+  frequency: number | null;
+  frequencyLabel: string | null;
+  setFrequency: SetStateType<number | null>;
   filters: ColumnsFilters;
   filtersLength: number;
   setFilters: SetStateType<ColumnsFilters>;
@@ -34,6 +33,8 @@ export interface AnalysisContextValues {
   activeFilters: DataFilter[];
   reset: boolean;
   resetAll: () => void;
+  defaultFrequency: AutoFrequencyResponse | null;
+  setDefaultFrequency: SetStateType<AutoFrequencyResponse | null>;
 }
 
 interface AnalysisProviderProps {
@@ -102,21 +103,15 @@ export const frequencyData = [
   { label: 'Monthly', value: timeValues.mouth }
 ];
 
-const INITIAL_FREQUENCY_LABEL = frequencyData[1].label;
-const INITIAL_DATE: [Date, Date] = [new Date(Date.now() - timeMap.month), new Date()];
-const INITIAL_LOOKBACK = lookBackData[1].value;
-
 export const AnalysisContext = createContext<AnalysisContextValues>({
   isComparisonModeOn: true,
   setIsComparisonModeOn: () => 1,
   comparisonMode: ComparisonModeOptions.previousPeriod,
   setComparisonMode: () => 1,
-  period: INITIAL_DATE,
+  period: null,
   setPeriod: () => 1,
-  lookback: INITIAL_LOOKBACK,
-  setLookback: () => 1,
   frequency: timeValues.day,
-  frequencyLabel: INITIAL_FREQUENCY_LABEL,
+  frequencyLabel: null,
   setFrequency: () => 1,
   filters: {},
   filtersLength: 0,
@@ -124,18 +119,19 @@ export const AnalysisContext = createContext<AnalysisContextValues>({
   setInitialFilters: () => 1,
   activeFilters: [],
   reset: false,
-  resetAll: () => 1
+  resetAll: () => 1,
+  defaultFrequency: null,
+  setDefaultFrequency: () => 1
 });
 
 export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   const [isComparisonModeOn, setIsComparisonModeOn] = useState(false);
   const [comparisonMode, setComparisonMode] = useState(ComparisonModeOptions.previousPeriod);
 
-  const [lookback, setLookback] = useState(INITIAL_LOOKBACK);
-  const [period, setPeriod] = useState(INITIAL_DATE);
+  const [period, setPeriod] = useState<[Date, Date] | null>(null);
 
-  const [frequency, setFrequency] = useState(timeValues.day);
-  const [frequencyLabel, setFrequencyLabel] = useState(INITIAL_FREQUENCY_LABEL);
+  const [frequency, setFrequency] = useState<number | null>(null);
+  const [frequencyLabel, setFrequencyLabel] = useState<string | null>(null);
 
   const [initialFilters, setInitialFilters] = useState<ColumnsFilters>({});
   const [filters, setFilters] = useState<ColumnsFilters>({});
@@ -144,8 +140,10 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
 
   const [reset, setReset] = useState(false);
 
+  const [defaultFrequency, setDefaultFrequency] = useState<AutoFrequencyResponse | null>(null);
+
   useEffect(() => {
-    const label = frequencyData.find(e => e.value === frequency)?.label || INITIAL_FREQUENCY_LABEL;
+    const label = frequencyData.find(e => e.value === frequency)?.label || null;
     setFrequencyLabel(label);
   }, [frequency]);
 
@@ -158,23 +156,30 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   }, [filters]);
 
   useEffect(() => {
-    if (isComparisonModeOn || frequency !== timeValues.day || filtersLength > 0) {
+    if (isComparisonModeOn || filtersLength > 0 ||
+       (frequency && defaultFrequency && frequency !== defaultFrequency.frequency) ||
+       (period && defaultFrequency && !dayjs(period[0]).isSame(dayjs.unix(defaultFrequency.start))) ||
+       (period && defaultFrequency && !dayjs(period[1]).isSame(dayjs.unix(defaultFrequency.end)))) {
       setReset(true);
     } else {
       setReset(false);
     }
-  }, [isComparisonModeOn, period, lookback, frequency, filtersLength]);
+  }, [isComparisonModeOn, period, frequency, filtersLength, defaultFrequency]);
 
   const resetAll = useCallback(() => {
     setIsComparisonModeOn(false);
     setComparisonMode(ComparisonModeOptions.previousPeriod);
-    // setLookback(INITIAL_LOOKBACK);
-    // setPeriod(INITIAL_DATE);
-    setFrequency(timeValues.day);
+    if (defaultFrequency) {
+      setFrequency(defaultFrequency.frequency);
+      setPeriod([dayjs.unix(defaultFrequency.start).toDate(), dayjs.unix(defaultFrequency.end).toDate()]);
+    } else {
+      setFrequency(null);
+      setPeriod(null);
+    }
     setFiltersLength(0);
     setFilters(initialFilters);
     setReset(false);
-  }, [initialFilters]);
+  }, [initialFilters, defaultFrequency]);
 
   const value = useMemo(
     () => ({
@@ -184,8 +189,6 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       setComparisonMode,
       period,
       setPeriod,
-      lookback,
-      setLookback,
       frequency,
       frequencyLabel,
       setFrequency,
@@ -195,7 +198,9 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       setInitialFilters,
       activeFilters,
       reset,
-      resetAll
+      resetAll,
+      defaultFrequency,
+      setDefaultFrequency
     }),
     [
       comparisonMode,
@@ -204,11 +209,12 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       frequency,
       frequencyLabel,
       isComparisonModeOn,
-      lookback,
       activeFilters,
       period,
       reset,
-      resetAll
+      resetAll,
+      defaultFrequency,
+      setDefaultFrequency
     ]
   );
 

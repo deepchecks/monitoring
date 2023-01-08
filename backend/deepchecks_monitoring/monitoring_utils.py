@@ -55,6 +55,9 @@ __all__ = [
     "NameIdResponse",
     "field_length",
     "configure_logger",
+    "ModelIdentifier",
+    "CheckIdentifier",
+    "MonitorCheckConf"
 ]
 
 
@@ -592,31 +595,40 @@ class EntityIdentifier(abc.ABC):
 
 
 class ModelIdentifier(EntityIdentifier):
+    """Model identifier which is either a model id or a model name."""
+
     path_parameter_name = "model_id"
     path_parameter_desc = "Model id or name"
 
     @property
     def entity(self):
+        """Return the ORM entity."""
         from deepchecks_monitoring.public_models import Model
         return Model
 
 
 class ModelVersionIdentifier(EntityIdentifier):
+    """Model version identifier which is either a model id or a model name."""
+
     path_parameter_name = "model_version_id"
     path_parameter_desc = "Model Version id or name"
 
     @property
     def entity(self):
+        """Return the ORM entity."""
         from deepchecks_monitoring.public_models import ModelVersion
         return ModelVersion
 
 
 class CheckIdentifier(EntityIdentifier):
+    """Check identifier which is either a model id or a model name."""
+
     path_parameter_name = "check_id"
     path_parameter_desc = "Check id or name"
 
     @property
     def entity(self):
+        """Return the ORM entity."""
         from deepchecks_monitoring.public_models import Check
         return Check
 

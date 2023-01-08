@@ -30,13 +30,13 @@ export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRang
     }, [startTime, endTime])
     const selectRef = React.useRef<HTMLDivElement>();
     const openDatePicker = Boolean(anchorEl);
-  
+
     const handleDatePickerOpen = () => {
       if (selectRef.current) {
         setAnchorEl(selectRef.current);
       }
     };
-  
+
     const handleDatePickerClose = () => {
       setAnchorEl(null);
     };
@@ -53,11 +53,11 @@ export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRang
     return (
         <Box ref={selectRef}>
 
-            <StyledTextField 
+            <StyledTextField
                 onClick={handleDatePickerOpen}
-                variant="outlined" 
+                variant="outlined"
                 label="Time Range"
-                value={ `${dayjs(range.startDate).format('MM/DD/YYYY')} - ${dayjs(range.endDate).format('MM/DD/YYYY')}` } 
+                value={ `${dayjs(range.startDate).format('MM/DD/YYYY')} - ${dayjs(range.endDate).format('MM/DD/YYYY')}` }
                 size="small"
                 sx={{ cursor: 'pointer', width: '260px'}}
                 InputProps={{
@@ -97,4 +97,3 @@ const StyledTextField = styled(TextField)({
         cursor: 'pointer'
       }
 })
-  

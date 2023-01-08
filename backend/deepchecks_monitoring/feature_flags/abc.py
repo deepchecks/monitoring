@@ -13,19 +13,21 @@ import os
 import typing as t
 from dataclasses import dataclass
 
+from pydantic.generics import GenericModel
+
 if t.TYPE_CHECKING:
-    from fastapi import Request  # pylint: disable=unused-import
     from ldclient.client import LDClient  # pylint: disable=unused-import
 
 __all__ = ["Variation", "LauchDarklyResolver", "EnvVarResolver", "FeatureFlag"]
 
 
-TBuiltinType = t.Union[int, float, str, t.List["TBuiltinType"], t.Dict["TBuiltinType", "TBuiltinType"]]
-T = t.TypeVar("T", bound="TBuiltinType")
+TBuiltinType = t.Union[int, float, str]
+TComposeType = t.Union[t.List["TBuiltinType"], t.Dict["TBuiltinType", "TBuiltinType"]]
+T = t.TypeVar("T", bound="TComposeType")
 
 
 @dataclass(frozen=True)
-class Variation(t.Generic[T]):
+class Variation(GenericModel, t.Generic[T]):
     """Feature flag variation."""
 
     value: T

@@ -10,6 +10,7 @@
 """V1 API of the check."""
 import typing as t
 
+import pendulum as pdl
 from deepchecks import SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import (ReduceFeatureMixin, ReduceLabelMixin, ReduceMetricClassMixin,
@@ -18,8 +19,8 @@ from deepchecks.tabular.checks import SingleDatasetPerformance, TrainTestPerform
 from fastapi import Query
 from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
-from pydantic import BaseModel, Field, validator
-from sqlalchemy import delete, func, select
+from pydantic import BaseModel, Field
+from sqlalchemy import Column, delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
@@ -36,11 +37,13 @@ from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckR
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
+from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
@@ -66,18 +69,6 @@ class CheckCreationSchema(BaseModel):
         """Schema config."""
 
         orm_mode = True
-
-    @validator('config')
-    def validate_configuration(cls, config):  # pylint: disable=no-self-argument
-        """Validate check configuration."""
-        try:
-            # 'from_config' will raise an ValueError if config is incorrect
-            BaseCheck.from_config(config)
-            return config
-        except TypeError as error:
-            # 'from_config' will raise a TypeError if it does not able to
-            # import given module/class from the config
-            raise ValueError(error.args[0]) from error
 
 
 class CheckSchema(BaseModel):
@@ -109,6 +100,14 @@ class CheckGroupBySchema(BaseModel):
     display: t.List
     count: int
     filters: DataFilterList
+
+
+class AutoFrequencyResponse(BaseModel):
+    """Response for auto frequency."""
+
+    frequency: int
+    start: int
+    end: int
 
 
 @router.post(
@@ -239,6 +238,63 @@ async def get_checks(
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
     return [CheckSchema.from_orm(res) for res in results]
+
+
+@router.get('/models/{model_id}/auto-frequency', tags=[Tags.CHECKS], response_model=AutoFrequencyResponse)
+async def get_model_auto_frequency(
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep,
+):
+    """Infer from the data the best frequency to show for analysis screen."""
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    end_time = pdl.instance(model.end_time)
+
+    def option_to_response(opt: dict):
+        return {
+            'frequency': opt['frequency'],
+            'start': end_time.subtract(days=opt['days']).int_timestamp,
+            'end': end_time.int_timestamp,
+        }
+
+    # If end time is none the model doesn't have any data, so return default
+    if end_time is None:
+        return option_to_response({'frequency': 3600 * 24, 'days': 30})
+
+    # Query random timestamps of samples in the last 90 days
+    start_time = end_time.subtract(days=90)
+    _, model_versions = await get_model_versions_for_time_range(
+        session, model.id, start_time, end_time)
+
+    total_timestamps = 10_000
+    timestamps_per_version = max(100, total_timestamps // len(model_versions))
+    timestamps = []
+    for model_version in model_versions:
+        ts_column = Column(SAMPLE_TS_COL)
+        query = select(ts_column).where(ts_column <= end_time, ts_column >= start_time)\
+            .order_by(func.random()).limit(timestamps_per_version)
+        version_ts = (await session.scalars(query.select_from(text(model_version.get_monitor_table_name())))).all()
+        timestamps.extend(version_ts)
+
+    # Set option in order of importance - the first option to pass 0.8 windows percentage returns, else the one with
+    # maximum percentage returns
+    options = [
+        {'frequency': 3600 * 24, 'days': 30},
+        {'frequency': 3600, 'days': 3},
+        {'frequency': 3600 * 24 * 7, 'days': 90}
+    ]
+    for option in options:
+        num_windows = int(option['days'] * 24 * 3600 / option['frequency'])
+        # Convert timestamps to windows and count number of unique windows
+        num_windows_exists = len(set((floor_window_for_time(x, option['frequency']) for x in timestamps
+                                      if x >= end_time.subtract(days=option['frequency']))))
+        option['percent_windows_exists'] = num_windows_exists / num_windows
+        # Return the first option that has at least 80% of the windows
+        if option['percent_windows_exists'] >= 0.8:
+            return option_to_response({'frequency': option['frequency'], 'days': option['days']})
+
+    # If no option has at least 80% of the windows, return the option with the highest percentage
+    max_option = max(options, key=lambda x: x['percent_windows_exists'])
+    return option_to_response({'frequency': max_option['frequency'], 'days': max_option['days']})
 
 
 @router.post('/checks/run-many', response_model=t.Dict[int, CheckResultSchema], tags=[Tags.CHECKS])

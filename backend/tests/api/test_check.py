@@ -1040,3 +1040,33 @@ async def test_get_notebook(
 
     notebook = t.cast(str, notebook)
     assert notebook.startswith("import")
+
+
+def test_auto_frequency(
+    test_api: TestAPI,
+    client: TestClient
+):
+    # Arrange
+    model = test_api.create_model(model={"task_type": TaskType.MULTICLASS.value})
+    curr_time = pdl.now().set(minute=0, second=0, microsecond=0).in_tz("UTC")
+    # Create 2 model versions
+    model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
+    upload_classification_data(
+        model_version_id=model_version["id"],
+        api=test_api,
+        daterange=[curr_time.subtract(days=x) for x in [1, 2, 3, 10, 20, 22, 40, 51, 53]]
+    )
+    model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
+    upload_classification_data(
+        model_version_id=model_version["id"],
+        api=test_api,
+        daterange=[curr_time.subtract(days=x) for x in [0, 1, 2, 3]]
+    )
+
+    # Act
+    request = client.get(f"/api/v1/models/{model['id']}/auto-frequency")
+
+    # Assert
+    assert request.status_code == 200
+    assert request.json() == {"frequency": 604800, "end": curr_time.int_timestamp,
+                              "start": curr_time.subtract(days=90).int_timestamp}
