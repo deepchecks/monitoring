@@ -16,7 +16,7 @@ describe('test dashboard', () => {
   })
 
   it('Add check and monitor - graphs appear', () => {
-    cy.addCheck(model_info)
+    cy.addPerformanceCheck(model_info)
     .then(checkInfo => cy.addMonitor(checkInfo))
     .then(() => {
       cy.visit('/')

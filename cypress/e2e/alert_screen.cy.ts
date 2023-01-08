@@ -3,7 +3,7 @@ describe('Alerts screen', () => {
     cy.createModelAndVersion('alerts model', 'multiclass', 'v1')
     .then(modelInfo => {
       cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21])
-      return cy.addCheck(modelInfo)
+      return cy.addPerformanceCheck(modelInfo)
     })
     .then(checkInfo => cy.addMonitor(checkInfo))
     .then(monitorInfo => cy.addAlertRule(monitorInfo))

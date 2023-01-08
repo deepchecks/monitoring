@@ -529,14 +529,14 @@ async def run_check_group_by_feature(
     # Validate feature
     possible_columns = list(model_version.features_columns.keys()) + list(model_version.additional_data_columns.keys())
     if feature not in possible_columns:
-        return BadRequest(f'Feature {feature} was not found in model version schema')
+        raise BadRequest(f'Feature {feature} was not found in model version schema')
 
     # Get all data count
     data_table = model_version.get_monitor_table(session)
     count = (await session.execute(select(func.count()).where(monitor_options.sql_all_filters())
                                    .select_from(model_version.get_monitor_table(session)))).scalar()
     if count == 0:
-        return NotFound('No data was found for given filters and dates')
+        raise NotFound('No data was found for given filters and dates')
 
     # Start with all data filter
     filters = [{

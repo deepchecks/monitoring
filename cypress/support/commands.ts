@@ -75,79 +75,125 @@ Cypress.Commands.add('resetState', () => {
 
 
 Cypress.Commands.add('createModelAndVersion', (modelName, taskType, modelVersionName) => {
-  // Creating a model
-  const modelRequest = { name: modelName, task_type: taskType, description: "Model created from Cypress!",
-                          alerts_delay_labels_ratio: 1, alerts_delay_seconds: 60 }
-  const modelVersionRequest = {
-    name: modelVersionName,
-    features: {
-        numeric_feature: "numeric",
-        categorical_feature: "categorical"
-    },
-    additional_data: {
-        non_feat: "numeric"
-    },
-  };
+    // Creating a model
+    const modelRequest = {
+        name: modelName, task_type: taskType, description: "Model created from Cypress!",
+        alerts_delay_labels_ratio: 1, alerts_delay_seconds: 60
+    };
+    const modelVersionRequest = {
+        name: modelVersionName,
+        features: {
+            numeric_feature: "numeric",
+            categorical_feature: "categorical"
+        },
+        additional_data: {
+            non_feat: "numeric"
+        },
+    };
 
-  return cy.request('POST', '/api/v1/models', modelRequest)
-    .then(response => response.body.id)
-    .then(modelId => {
-      cy.request('POST', `/api/v1/models/${modelId}/version`, modelVersionRequest).then(
-      versionResponse => {
-        const ModelVersionId = versionResponse.body.id
-        return {
-          'model_id': modelId,
-          'version_id': ModelVersionId,
-          'schema': modelVersionRequest,
-          'task_type': taskType
+    return cy.request('POST', '/api/v1/models', modelRequest)
+        .then(response => response.body.id)
+        .then(modelId => {
+            cy.request('POST', `/api/v1/models/${modelId}/version`, modelVersionRequest).then(
+                versionResponse => {
+                    const ModelVersionId = versionResponse.body.id
+                    return {
+                        'model_id': modelId,
+                        'version_id': ModelVersionId,
+                        'schema': modelVersionRequest,
+                        'task_type': taskType
 
-        }
-      });
-    })
+                    }
+                });
+        });
 });
 
 
-Cypress.Commands.add('addDataToVersion', (modelInfo: object, samplesPerHour=20, hourArr = [1, 3, 4, 5, 7]) => {
+Cypress.Commands.add('addDataToVersion', (modelInfo: object, samplesPerHour = 20, hourArr = [1, 3, 4, 5, 7], currTimeOffset: number = 0) => {
     const samples = samplesPerHour * hourArr.length
     const data: Record<string, unknown>[] = [];
-    const currTime = new Date('November 9, 2022 00:00:00').getTime();
+    const currTime = new Date('November 9, 2022 00:00:00').getTime() - currTimeOffset * 1000;
     const dayBefore = currTime - (24 * 60 * 60 * 1000);
     for (let i = 0; i < samples; i++) {
-        const hourIndex = i % hourArr.length
-        const hour = hourArr[hourIndex]
+        const hourIndex = i % hourArr.length;
+        const hour = hourArr[hourIndex];
         const date = new Date(dayBefore + (hour * 60 * 60 * 1000));
-        const label = modelInfo['task_type'] == 'regression' ? i : String(i % 3)
-        const pred = modelInfo['task_type'] == 'regression' ? i + (i % (hourIndex + 1)) : String((i + (i % (hourIndex + 1))) % 3)
+        const label = modelInfo['task_type'] == 'regression' ? i : String(i % 3);
+        const pred = modelInfo['task_type'] == 'regression' ? i + (i % (hourIndex + 1)) : String((i + (i % (hourIndex + 1))) % 3);
         const sample = {
-            "_dc_sample_id": i + '',
+            "_dc_sample_id": i + '_' + currTimeOffset,
             "_dc_time": date.toISOString(),
             "_dc_prediction": pred,
             "_dc_label": label,
             "numeric_feature": 10 + i,
-            "categorical_feature": "ppppp",
+            "categorical_feature": i % 3 ? "ppppp" : null,
             "non_feat": 2
-        }
+        };
 
         data.push(sample);
     }
 
     return cy.request('POST', '/api/v1/model-versions/' + modelInfo['version_id'] + '/data', data).then(() => {
         return cy.request('GET', '/api/v1/wait-for-queue/' + modelInfo['version_id'])
-    })
+    });
 });
 
+Cypress.Commands.add('formRequest', (method: string, url, formData, done) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url);
+    xhr.onload = function () {
+        done(xhr);
+    };
+    xhr.onerror = function () {
+        done(xhr);
+    };
+    xhr.send(formData);
+})
 
-Cypress.Commands.add('addCheck', (modelInfo: object) => {
-  const checkData = {
+Cypress.Commands.add('addReferenceToVersion', (modelInfo: object, samples: number = 100) => {
+    const columns = ["_dc_prediction", "_dc_label", "numeric_feature", "categorical_feature", "non_feat"];
+    const data = []
+    for (let i = 0; i < samples; i++) {
+        const label = modelInfo['task_type'] == 'regression' ? i : String(i % 3);
+        const pred = modelInfo['task_type'] == 'regression' ? i + (i / samples) : String(i + (i % 3));
+        const sample = [pred, label, 10 + i, i % 3 ? "ppppp" : null, 2];
+
+        data.push(sample);
+    }
+    const refDataSplit = {'columns': columns, 'data': data};
+    const formData = new FormData();
+    const blob = Cypress.Blob.base64StringToBlob(btoa(JSON.stringify(refDataSplit)), 'application/json');
+    formData.append('batch', blob)
+    return cy.formRequest('POST', '/api/v1/model-versions/' + modelInfo['version_id'] + '/reference', formData, function (response) {
+        expect(response.status).to.eq(200, response.text);
+        return response
+    });
+});
+
+Cypress.Commands.add('addPerformanceCheck', (modelInfo: object) => {
+    const checkData = {
         name: "checky v1",
         config: {
             class_name: "SingleDatasetPerformance",
-            params: {reduce: "mean"},
+            params: { reduce: "mean" },
+            module_name: "deepchecks.tabular.checks"
+        }
+    };
+
+    return cy.request('POST', '/api/v1/models/' + modelInfo['model_id'] + '/checks', checkData).then(response => response.body[0]);
+});
+
+Cypress.Commands.add('addNullsCheck', (modelInfo: object) => {
+    const checkData = {
+        name: "nully checky v1",
+        config: {
+            class_name: "PercentOfNulls",
+            params: {},
             module_name: "deepchecks.tabular.checks"
         }
     }
 
-  return cy.request('POST', '/api/v1/models/' + modelInfo['model_id'] + '/checks', checkData).then(response => response.body[0])
+    return cy.request('POST', '/api/v1/models/' + modelInfo['model_id'] + '/checks', checkData).then(response => response.body[0]);
 });
 
 Cypress.Commands.add('addMonitor', (checkInfo: object, frequency = 3600, lookback = 86400, aggregation_window = 3600) => {
@@ -156,12 +202,12 @@ Cypress.Commands.add('addMonitor', (checkInfo: object, frequency = 3600, lookbac
         "frequency": frequency,
         "lookback": lookback,
         "aggregation_window": aggregation_window,
-    }
+    };
 
     return cy.request('GET', '/api/v1/dashboards/').then(response => {
         monitorData['dashboard_id'] = response.body.id
         return cy.request('POST', `/api/v1/checks/${checkInfo['id']}/monitors`, monitorData)
-        .then(response => response.body)
+            .then(response => response.body)
     });
 });
 
@@ -176,5 +222,5 @@ Cypress.Commands.add('addAlertRule', (monitorInfo: object, operator = "less_than
     }
 
     return cy.request('POST', `api/v1/monitors/${monitorInfo['id']}/alert-rules`, data)
-      .then(response => response.body);
+        .then(response => response.body);
 });
