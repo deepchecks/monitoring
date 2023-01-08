@@ -27,6 +27,7 @@ import { comparisonModeData } from './AnalysisFilters.helpers';
 
 import { FilterIcon } from 'assets/icon/icon';
 import { DateRange } from 'components/DateRange/DateRange';
+import dayjs from 'dayjs';
 
 
 interface AnalysisFiltersProps {
@@ -53,6 +54,9 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   } = useContext(AnalysisContext);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
+  const [minDate, setMinDate] = useState<Date | null>(null);
+  const [maxDate, setMaxDate] = useState<Date | null>(null);
+  const maxWindowsCount = 30;
 
   const {
     data: columns = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
@@ -147,9 +151,20 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     }
   }, [columns, setFilters, setInitialFilters]);
 
-  const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
+  const handleDateSet = (startTime: Date | undefined, endTime: Date | undefined) => {
     if (startTime && endTime) {
       setPeriod([startTime, endTime]);
+    }
+  };
+
+  const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
+    if (frequency && dayjs(startTime).isSame(dayjs(endTime))) {
+      setMaxDate(dayjs(startTime).add(frequency * maxWindowsCount, 'second').toDate());
+      setMinDate(dayjs(startTime).subtract(frequency * maxWindowsCount, 'second').toDate());
+    }
+    else {
+      setMaxDate(null);
+      setMinDate(null);
     }
   };
 
@@ -175,7 +190,14 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
           </MarkedSelect>
           { defaultFrequency ?
           <>
-            <DateRange onChange={handleDateChange} startTime={period ? period[0] : undefined} endTime={period ? period[1] : undefined}/>
+            <DateRange
+              onApply={handleDateSet}
+              onChange={handleDateChange}
+              startTime={period ? period[0] : undefined}
+              endTime={period ? period[1] : undefined}
+              minDate={minDate ? minDate: undefined}
+              maxDate={maxDate ? maxDate: undefined}
+              />
             <MarkedSelect
               label="Frequency"
               size="small"

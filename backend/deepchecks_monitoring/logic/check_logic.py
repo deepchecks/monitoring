@@ -339,7 +339,7 @@ async def run_check_per_window_in_range(
     if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
         raise ValueError("incompatible check type")
 
-    all_windows = monitor_options.calculate_windows()
+    all_windows = monitor_options.calculate_windows()[-30:]
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
 
     model, model_versions = await get_model_versions_for_time_range(
@@ -469,7 +469,7 @@ async def run_suite_per_window_in_range(
         dp_checks[dp_check] = check.id
     suite = Suite("", *dp_checks.keys())
 
-    all_windows = monitor_options.calculate_windows()
+    all_windows = monitor_options.calculate_windows()[-30:]
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
 
     model, model_versions = await get_model_versions_for_time_range(

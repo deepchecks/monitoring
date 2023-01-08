@@ -7,14 +7,17 @@ import { Box, Button, Popover, styled, TextField } from '@mui/material';
 import { Calendar } from 'assets/icon/icon';
 
 interface DateRangeProps {
-    onChange: (startTime: Date | undefined, endTime: Date | undefined) => void;
+    onApply?: (startTime: Date | undefined, endTime: Date | undefined) => void;
+    onChange?: (startTime: Date | undefined, endTime: Date | undefined) => void;
     startTime?: Date;
     endTime?: Date;
+    maxDate?: Date;
+    minDate?: Date;
   }
 
-export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRangeProps) => {
+export const DateRange = ({ onApply: callOnApply, onChange: callOnChange, startTime, endTime, maxDate, minDate } : DateRangeProps) => {
     const initialRange : Range = {
-        startDate: startTime ? startTime : dayjs(endTime).subtract(1, 'month').toDate(),
+        startDate: startTime,
         endDate: endTime,
         key: 'selection'
       }
@@ -23,7 +26,7 @@ export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRang
 
     React.useEffect(() => {
         setRange({
-            startDate: startTime ? startTime : dayjs(endTime).subtract(1, 'month').toDate(),
+            startDate: startTime,
             endDate: endTime,
             key: 'selection'
         })
@@ -43,11 +46,12 @@ export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRang
 
     const onApply = () => {
         setAnchorEl(null);
-        onChange(range.startDate, range.endDate);
+        if (callOnApply) callOnApply(range.startDate, range.endDate);
     };
 
     const handleSelect = (selectedRange: RangeKeyDict) => {
         setRange(selectedRange['selection']);
+        if (callOnChange) callOnChange(selectedRange['selection'].startDate, selectedRange['selection'].endDate);
       };
 
     return (
@@ -72,6 +76,8 @@ export const DateRange = ({ onChange, startTime, endTime=new Date() } : DateRang
                 onClose={handleDatePickerClose}
             >
                 <DateRangePicker
+                    maxDate={maxDate}
+                    minDate={minDate}
                     ranges={[range]}
                     onChange={handleSelect} />
                 <Box
