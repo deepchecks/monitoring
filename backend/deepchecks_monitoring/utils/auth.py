@@ -80,7 +80,8 @@ async def get_user(
         ))
 
         # Validate user password
-        if not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode()):
+        if user is None or user.api_secret_hash is None or \
+                not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode()):
             raise Unauthorized("Received invalid secret")
 
         return user

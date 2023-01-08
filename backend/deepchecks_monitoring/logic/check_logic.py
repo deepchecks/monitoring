@@ -458,15 +458,16 @@ async def run_suite_per_window_in_range(
         raise ValueError(f"Checks {check_ids} belong to different models")
     model_id = checks[0].model_id
 
-    dp_checks = []
+    dp_checks = {}
     uses_reference_data = False
     for check in checks:
         dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
             raise ValueError(f"incompatible check type {type(dp_check)}")
         uses_reference_data |= isinstance(dp_check, TrainTestBaseCheck)
-        dp_checks.append(dp_check)
-    suite = Suite("", *dp_checks)
+        # Saves a mapping between the deepchecks' check object and check id
+        dp_checks[dp_check] = check.id
+    suite = Suite("", *dp_checks.keys())
 
     all_windows = monitor_options.calculate_windows()
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
@@ -536,12 +537,13 @@ async def run_suite_per_window_in_range(
             suite_result = window_result["result"]
             # If there was no production data for the window we will have no result
             if suite_result is not None:
-                for check, check_result in zip(checks, suite_result.results):
+                for check_result in suite_result.results:
                     if isinstance(check_result, CheckResult):
                         result_value = reduce_check_result(check_result, monitor_options.additional_kwargs)
                     else:
                         result_value = None
-                    all_checks_results[check.id]["output"][model_version.name].append(result_value)
+                    check_id = dp_checks[check_result.check]
+                    all_checks_results[check_id]["output"][model_version.name].append(result_value)
             else:
                 for check in checks:
                     all_checks_results[check.id]["output"][model_version.name].append(None)
