@@ -679,7 +679,7 @@ def _process_sample(
     if timestamp is not None:
         if not isinstance(timestamp, int):
             raise ValueError(
-                'Only numerical timestamps are allowed that '
+                'Only integer timestamps are allowed that '
                 'represent second-based epoch time'
             )
         else:

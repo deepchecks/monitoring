@@ -44,7 +44,7 @@ def create_schema(dataset: Dataset, schema_output_file='schema.yaml'):
     yaml_schema = io.StringIO()
     yaml_schema.write('# Automatically inferred schema.\n'
                       '# Some inferred types may be incorrect, please check carefully as it cannot be changed.\n'
-                      '# Possible values are: "numeric", "integer", "categorical", '
+                      '# Possible values are: "numeric", "integer", "categorical", "datetime", '
                       '"boolean", "text", "array_float", "array_float_2d".\n'
                       '# Please note that "integer" type cannot receive float types, '
                       'so if it may be needed in the future change the type to "numeric".\n'
