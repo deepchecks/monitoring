@@ -24,7 +24,7 @@ Then you should create the :class:`DeepchecksClient (API reference) <deepchecks_
     >>> import os
     >>> from deepchecks_client import DeepchecksClient
     >>> host = os.environ.get('DEEPCHECKS_API_HOST')  # Replace this with https://app.deepchecks.com
-    >>> # note to put the API token in your environment variables. Or alternatively (less recommended):
+    >>> # Make sure to put the API token in your environment variables. Or alternatively (less recommended):
     >>> # os.environ['DEEPCHECKS_API_TOKEN'] = 'uncomment-this-line-and-insert-your-api-token-here'
     >>> dc_client = DeepchecksClient(host=host, token=os.getenv('DEEPCHECKS_API_TOKEN'))
 
@@ -90,7 +90,7 @@ You can always delete a model using:
 .. admonition:: Permanently Deleting a Model
    :class: caution
 
-   This will delete the model, all model versions, and all associated datasets, so do that only if you are sure.
+   This will irreversibly delete the model, all model versions, and all associated datasets.
 
 Creating a New Model Version
 ============================
@@ -101,7 +101,7 @@ recommended to create a new model version after each retraining of the model for
 A model may have one or more model versions.
 
 A model version is created by calling :meth:`version <deepchecks_client.core.client.DeepchecksModelClient.version>`.
-Apart from its name, there are a couple of other important arguments to this method:
+Apart from the mandatory ``name`` argument, there are a couple of other important arguments to this method:
 
 - ``schema`` (mandatory) - A file or dict describing the types and roles of the columns in the dataset. See
   the `"Schema File" section <#schema-file>`__ for more details.
@@ -256,7 +256,7 @@ For more details about computing feature importance and it's uses in deepchecks,
 :doc:`feature importance guide <deepchecks:user-guide/tabular/feature_importance>`.
 
 Uploading a Reference Dataset
------------------------------
+=============================
 
 Reference data is a dataset to which we wish to compare our production data stream for a given model version. Providing
 reference data is optional, yet many important :doc:`checks <deepchecks:user-guide/general/deepchecks_hierarchy>` such as
