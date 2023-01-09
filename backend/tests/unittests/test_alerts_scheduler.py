@@ -138,7 +138,7 @@ async def test_scheduler_monitor_update(
    # update monitor - Should remove the current tasks defined
     request = {
         "data_filters": {"filters": [{
-            "operator": "contains",
+            "operator": "in",
             "value": ["a", "ff"],
             "column": "meta_col"
         }]}

@@ -491,7 +491,7 @@ def run_lookback(
             "filter": {
                 "filters": [
                     {"column": "a", "operator": "greater_than", "value": 12},
-                    {"column": "b", "operator": "contains", "value": "ppppp"}
+                    {"column": "b", "operator": "equals", "value": "ppppp"}
                 ]
             }
         }

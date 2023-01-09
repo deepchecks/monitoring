@@ -1,10 +1,10 @@
 import React, { createContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
 
-import { DataFilter, AutoFrequencyResponse } from 'api/generated';
+import { DataFilter, AutoFrequencyResponse, OperatorsEnum } from 'api/generated';
 
 import { timeMap, timeValues } from 'helpers/time';
 import { SetStateType } from 'helpers/types';
-import { OperatorsMap } from 'helpers/conditionOperator';
+import {  } from 'helpers/conditionOperator';
 import dayjs from 'dayjs';
 
 export enum ComparisonModeOptions {
@@ -49,27 +49,26 @@ function calculateActiveFilters(filters: ColumnsFilters) {
       if (typeof value[0] === 'number' && typeof value[1] === 'number') {
         activeFilters.push({
           column,
-          operator: OperatorsMap.greater_than_equals,
+          operator: OperatorsEnum.greater_than_equals,
           value: value[0]
         });
         activeFilters.push({
           column,
-          operator: OperatorsMap.less_than_equals,
+          operator: OperatorsEnum.less_than_equals,
           value: value[1]
         });
         return;
       }
 
       if (typeof value === 'object') {
-        Object.entries(value).forEach(([category, active]) => {
-          if (active) {
-            activeFilters.push({
-              column,
-              operator: OperatorsMap.contains,
-              value: category
-            });
-          }
-        });
+        const cateogires = Object.entries(value).filter(([, is_marked]) => is_marked).map(entry => entry[0]);
+        if (cateogires.length > 0) {
+          activeFilters.push({
+            column,
+            operator: OperatorsEnum.in,
+            value: cateogires
+          });
+        }
       }
     }
   });

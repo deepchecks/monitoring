@@ -315,7 +315,7 @@ export const OperatorsEnum = {
   greater_than: 'greater_than',
   less_than_equals: 'less_than_equals',
   less_than: 'less_than',
-  contains: 'contains',
+  in: 'in',
   equals: 'equals',
   not_equals: 'not_equals'
 } as const;

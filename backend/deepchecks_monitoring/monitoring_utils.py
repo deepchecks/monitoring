@@ -68,9 +68,9 @@ class OperatorsEnum(str, enum.Enum):
     GT = "greater_than"
     LE = "less_than_equals"
     LT = "less_than"
-    CONTAINS = "contains"
     EQ = "equals"
     NOT_EQ = "not_equals"
+    IN = "in"
 
     def __str__(self) -> str:
         """Return string representation."""
@@ -111,10 +111,11 @@ def make_oparator_func(oparator_enum: OperatorsEnum) -> t.Callable[[t.Any, t.Any
     else:
         has_not = False
         op_name = op_not_split[0]
-    op_func = getattr(operator, op_name.lower())
-    if oparator_enum == OperatorsEnum.CONTAINS:
-        return lambda a, b: not a.contains(b) if has_not else a.contains(b)
-    return lambda a, b: not op_func(a, b) if has_not else op_func(a, b)
+    if oparator_enum == OperatorsEnum.IN:
+        return lambda a, b: not a.in_(b) if has_not else a.in_(b)
+    else:
+        op_func = getattr(operator, op_name.lower())
+        return lambda a, b: not op_func(a, b) if has_not else op_func(a, b)
 
 
 class DataFilter(BaseModel):

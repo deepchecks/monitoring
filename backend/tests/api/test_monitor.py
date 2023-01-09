@@ -150,7 +150,7 @@ def test_monitor_creation_with_data_filter(
             "aggregation_window": 86400 * 30,
             "frequency": 86400,
             "data_filters": {"filters": [{
-                "operator": "contains",
+                "operator": "in",
                 "value": ["a", "ff"],
                 "column": "meta_col"
             }]}
@@ -307,7 +307,7 @@ async def test_monitor_update_with_data(
         monitor_id=monitor.id,
         monitor={
             "data_filters": {"filters": [{
-                "operator": "contains",
+                "operator": "in",
                 "value": ["a", "ff"],
                 "column": "meta_col"
             }]}
@@ -335,7 +335,7 @@ async def test_monitor_update_without_data(
         monitor_id=monitor.id,
         monitor={
             "data_filters": {"filters": [{
-                "operator": "contains",
+                "operator": "in",
                 "value": ["a", "ff"],
                 "column": "meta_col"
             }]}
@@ -491,7 +491,7 @@ async def test_monitor_run_filter(classification_model_check, classification_mod
             "frequency": 3600,
             "data_filters": {
                 "filters": [{"column": "a", "operator": "greater_than", "value": 12},
-                            {"column": "b", "operator": "contains", "value": "ppppp"}]
+                            {"column": "b", "operator": "equals", "value": "ppppp"}]
             }
         }
     )["id"]

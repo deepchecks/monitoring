@@ -24,7 +24,7 @@ interface SelectModelColumnProps extends BaseSelectProps {
 }
 
 const OPERATOR_BY_COLUMN_TYPE = {
-  [ColumnType.categorical]: OperatorsEnum.contains,
+  [ColumnType.categorical]: OperatorsEnum.equals,
   [ColumnType.numeric]: OperatorsEnum.greater_than_equals
 };
 

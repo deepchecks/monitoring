@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { AnalysisContext } from 'context/analysis-context';
 import React, { useContext, useState } from 'react';
+import { SearchField } from 'components/SearchField';
 
 interface CategoricalFilterProps {
   column: string;
@@ -31,15 +32,46 @@ export function CategoricalFilter({ column, data, onClose }: CategoricalFilterPr
     });
   };
 
+  const sortedData = data.sort()
+  const [filteredData, setFilteredData] = useState(sortedData);
+  const [searchValue, setSearchValue] = useState('');
+
   const onApply = () => {
     setFilters(currentFilters);
     onClose();
   };
 
+  const handleReset = () => {
+    setSearchValue('');
+    setFilteredData(sortedData);
+  };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { value } = event.target;
+
+      setSearchValue(value);
+
+      if (!value.trim()) {
+        setFilteredData(sortedData);
+        return;
+      }
+
+      setFilteredData(sortedData.filter(val => val.toLowerCase().includes(value.toLowerCase())));
+  }
+
   return (
     <Box>
+      <SearchField
+        size="small"
+        fullWidth
+        placeholder="Search..."
+        onChange={handleSearch}
+        onReset={handleReset}
+        value={searchValue}
+        sx={{ padding: '10px 10px 4px 10px', fontSize: 14, lineHeight: '17px' }}
+      />
       <List disablePadding sx={{ maxHeight: 250, overflow: 'auto' }}>
-        {data.map((label, index) => {
+        {filteredData.map((label, index) => {
           const labelId = `${label}-${index}`;
           return (
             <MenuItem key={index} sx={{ padding: 0 }}>

@@ -38,7 +38,7 @@ export const buildFilters = (
 
   if (column) {
     if (category) {
-      filter.push({ column, operator: OperatorsEnum.contains, value: category });
+      filter.push({ column, operator: OperatorsEnum.equals, value: category });
     } else if (numericValue) {
       filter.push({ column, operator: OperatorsEnum.greater_than, value: numericValue[0] });
       filter.push({ column, operator: OperatorsEnum.less_than, value: numericValue[1] });
