@@ -133,8 +133,7 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
             <AlertsDrillDownToAnalysis
               modelId={alertRule.model_id}
               period={period}
-              frequency={monitor.frequency}
-              filters={monitor?.data_filters?.filters}
+              monitor={monitor}
               modelVersionId={modelVersionId}
               singleCheckRunOptions={singleCheckRunOptions}
               expand={expand}

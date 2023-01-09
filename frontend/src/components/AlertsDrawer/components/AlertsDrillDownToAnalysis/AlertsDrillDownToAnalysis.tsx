@@ -6,7 +6,8 @@ import {
   getSchemaApiV1ModelVersionsModelVersionIdSchemaGet,
   SingleCheckRunOptions,
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
-  CheckGroupBySchema
+  CheckGroupBySchema,
+  MonitorSchema
 } from 'api/generated';
 import { ComparisonModeOptions } from 'context/analysis-context';
 import { useModels } from 'hooks/useModels';
@@ -27,8 +28,7 @@ import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/Cont
 interface AlertsDrillDownToAnalysisProps {
   modelId: number;
   period: [Date, Date];
-  frequency: number;
-  filters: DataFilter[] | undefined;
+  monitor: MonitorSchema;
   modelVersionId: number | undefined;
   singleCheckRunOptions: SingleCheckRunOptions;
   expand: boolean;
@@ -40,14 +40,15 @@ const NOW = new Date();
 const AlertsDrillDownToAnalysisComponent = ({
   modelId,
   period,
-  frequency,
-  filters,
+  monitor,
   modelVersionId,
   singleCheckRunOptions,
   expand,
   setExpand
 }: AlertsDrillDownToAnalysisProps) => {
   const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
+  const filters: DataFilter[] | undefined = monitor?.data_filters?.filters
+  const frequency: number = monitor.frequency
 
   const {
     data: checks,
@@ -97,8 +98,8 @@ const AlertsDrillDownToAnalysisComponent = ({
   const activeFilters = useMemo(() => filters || [], [filters]);
 
   useEffect(() => {
-    setSelectedCheck(checksArray[0]);
-  }, [checksArray]);
+    setSelectedCheck(checksArray.find(c => c == monitor.check.name));
+  }, [checksArray, monitor]);
 
   useEffect(() => {
     const datasetsNames = Object.keys(groupBySchema[0]?.value || {});
