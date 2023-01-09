@@ -46,7 +46,7 @@ const Layout = () => {
             sx={{
               background: BACKGROUND_COLOR_MAX_WIDTH,
               padding: '0 35px',
-              minWidth: '1200px',
+              minWidth: '1050px',
               width: '100%'
             }}
           >

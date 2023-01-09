@@ -44,7 +44,6 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
       onMouseLeave={() => setIsHovered(false)}
       sx={{
         position: 'relative',
-        width: '428px',
         borderRadius: '10px',
         boxShadow: ' 0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
         lineHeight: '34px',

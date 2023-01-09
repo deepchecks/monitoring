@@ -76,10 +76,7 @@ export const AlertRules = () => {
       <Box
         sx={{
           padding: '40px 0 ',
-          width: '100%',
-          [theme.breakpoints.down(1381)]: {
-            marginLeft: '83px'
-          }
+          width: '100%'
         }}
       >
         <FiltersSort isFilterByTimeLine={false} />
@@ -87,8 +84,8 @@ export const AlertRules = () => {
           sx={{
             padding: 0,
             marginTop: '40px',
-            display: 'flex',
-            flexWrap: 'wrap',
+            display: 'grid',
+            'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '20px'
           }}
         >

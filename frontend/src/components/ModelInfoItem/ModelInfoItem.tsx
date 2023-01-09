@@ -80,7 +80,7 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
 
       </StyledModelInfoItemHeader>
       <Stack sx={{ p: '20px' , display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} style={isHovered ? {filter:'blur(5px)'} : {}}>
-        <ModelInfoBadge value={nAlerts} title="Critical" margin='0px 8px'/>
+        <ModelInfoBadge value={nAlerts} title="Critical Alerts" margin='0px 8px'/>
         <ModelInfoBadge value={nVersions} title="Versions Updating"  margin='0px 8px'/>
         <ModelInfoBadge value={nPendingRows} title="Pending Rows"  margin='0px 8px'/>
       </Stack>
@@ -88,16 +88,14 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
 
       {isHovered && (
         <>
-          <StyledHoverButtonContainer left='130px' bottom='50px'>
+          <StyledHoverButtonContainer left='calc(50% - 77px)' bottom='30px'>
             <StyledDeleteModelButton onClick={handleOpen}>
               <Stack sx={{alignItems: 'center'}}>
                 <ViewDetails />
                 <StyledDeleteModelButtonText>View Details</StyledDeleteModelButtonText>
               </Stack>
             </StyledDeleteModelButton>
-          </StyledHoverButtonContainer>
-          <StyledHoverButtonContainer right='150px' bottom='50px'>
-            <StyledDeleteModelButton onClick={onDelete}>
+            <StyledDeleteModelButton sx={{marginLeft: '30px', paddingTop: '7px'}} onClick={onDelete}>
               <Stack>
                 <DeleteIcon />
                 <StyledDeleteModelButtonText marginTop='6px'>Delete</StyledDeleteModelButtonText>

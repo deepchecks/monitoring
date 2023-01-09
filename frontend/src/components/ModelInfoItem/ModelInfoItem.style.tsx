@@ -4,14 +4,13 @@ import { colors } from 'theme/colors';
 
 export const StyledModelInfoItemContainer = styled(Stack)({
   position: 'relative',
-  width: '428px',
-  height: '207px',
   borderRadius: '10px',
   boxShadow: ' 0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
   fontSize: '16px',
   fontWeight: 400,
   lineHeight: '150%',
-  outline: '6px solid transparent'
+  outline: '6px solid transparent',
+  paddingBottom: '10px'
 });
 
 export const StyledModelInfoItemHeader = styled(Stack)(({ theme }) => ({
@@ -22,7 +21,7 @@ export const StyledModelInfoItemHeader = styled(Stack)(({ theme }) => ({
 }));
 
 export const StyledModelInfoItemName = styled(Typography)({
-  fontSize: '24px',
+  fontSize: '20px',
   fontWeight: 700,
   lineHeight: '140%',
   overflow: 'hidden',
@@ -33,6 +32,7 @@ export const StyledModelInfoItemName = styled(Typography)({
 export const StyledModelInfoBadge = styled(Stack)({
   alignItems: 'center',
   justifyContent: 'center',
+  textAlign: 'center',
   minWidth: '50px',
   height: '60px',
   color: colors.neutral.blue[70],
@@ -107,14 +107,15 @@ export const StyledModalList = styled(Box)({
 export const StyledHoverButtonContainer = styled(Stack)({
   borderRadius: '10px',
   position: 'absolute',
-  display: 'block'
+  display: 'flex',
+  flexDirection: 'row'
 });
 
 export const StyledDeleteModelButton = styled(IconButton)({
   background: 'transparent',
-  padding: '4px',
-  transform: 'translate(2px, 10px)'
+  padding: '4px'
 });
+
 
 export const StyledDeleteModelButtonText = styled(Typography)({
   fontSize: '10px',

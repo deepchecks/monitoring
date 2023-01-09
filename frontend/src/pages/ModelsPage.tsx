@@ -230,15 +230,12 @@ export const ModelsPage = () => {
 
 const StyledModelsContainer = styled(Box)(({ theme }) => ({
   padding: '40px 0 ',
-  width: '100%',
-  [theme.breakpoints.down(1381)]: {
-    marginLeft: '83px'
-  }
+  width: '100%'
 }));
 
 const StyledModelsList = styled(Box)({
-  display: 'flex',
-  flexWrap: 'wrap',
+  display: 'grid',
+  'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
   gap: '20px',
   marginTop: '40px',
   padding: 0
