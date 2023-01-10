@@ -187,6 +187,9 @@ def test_monitor_creation_and_retrieval(
     assert monitor["aggregation_window"] == monitor_payload["aggregation_window"]
     assert monitor["data_filters"] == monitor_payload["data_filters"]
     assert monitor["check"] == classification_model_check
+    assert monitor["check"]["docs_link"] == \
+        "https://docs.deepchecks.com/stable/checks_gallery/tabular/" \
+        "model_evaluation/plot_single_dataset_performance.html"
     assert monitor["alert_rules"][0] == {"id": 1, **alert_rule}
 
 
@@ -317,7 +320,7 @@ async def test_monitor_update_with_data(
     await async_session.refresh(monitor)
     # assert latest_schedule after update is "num windows to start" windows earlier
     assert latest_schedule - pdl.instance(monitor.latest_schedule) == \
-           pdl.duration(seconds=monitor.frequency * NUM_WINDOWS_TO_START)
+        pdl.duration(seconds=monitor.frequency * NUM_WINDOWS_TO_START)
 
 
 @pytest.mark.asyncio
@@ -424,7 +427,6 @@ def test_monitor_execution(
         options={"end_time": pdl.now().isoformat()}
     )
     assert result_with_cache == result_without_cache
-
 
 
 def test_monitor_execution_with_invalid_end_time(

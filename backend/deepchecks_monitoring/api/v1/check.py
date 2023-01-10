@@ -77,6 +77,7 @@ class CheckSchema(BaseModel):
     config: CheckConfigSchema
     model_id: int
     id: int
+    docs_link: t.Optional[str] = Field(nullable=True)
     name: t.Optional[str] = Field(default=None, max_length=field_length(Check.name))
 
     class Config:
@@ -266,7 +267,7 @@ async def get_model_auto_frequency(
         session, model.id, start_time, end_time)
 
     total_timestamps = 10_000
-    timestamps_per_version = max(100, total_timestamps // len(model_versions))
+    timestamps_per_version = max(100, total_timestamps // max(len(model_versions), 1))
     timestamps = []
     for model_version in model_versions:
         ts_column = Column(SAMPLE_TS_COL)
@@ -316,8 +317,8 @@ async def run_many_checks_together(
 
     Returns
     -------
-    CheckSchema
-        Created check.
+    CheckResultSchema
+        Check run result.
     """
     return await run_suite_per_window_in_range(
         check_ids,
@@ -345,8 +346,8 @@ async def run_standalone_check_per_window_in_range(
 
     Returns
     -------
-    CheckSchema
-        Created check.
+    CheckResultSchema
+        Check run result.
     """
     return await run_check_per_window_in_range(
         check_id,
@@ -374,8 +375,8 @@ async def get_check_window(
 
     Returns
     -------
-    CheckSchema
-        Created check.
+    dict
+        {<version_name: check_res>}.
     """
     check: Check = await fetch_or_404(session, Check, id=check_id)
     start_time = monitor_options.start_time_dt()
@@ -405,8 +406,8 @@ async def get_check_reference(
 
     Returns
     -------
-    CheckSchema
-        Created check.
+    dict
+        {<version_name: check_res>}.
     """
     check: Check = await fetch_or_404(session, Check, id=check_id)
 

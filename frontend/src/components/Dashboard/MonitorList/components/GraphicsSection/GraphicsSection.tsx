@@ -23,6 +23,7 @@ import {
 import { GraphData } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { RootMenu } from './RootMenu';
+import { InfoLink } from 'components/info_link';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
@@ -176,6 +177,11 @@ function GraphicsSectionComponent({
                     <Typography variant="subtitle2" sx={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
                       {label}: {text}
                     </Typography>
+                    {label == 'Check' && monitor.check.docs_link &&
+                      <Typography variant="subtitle2">
+                        <InfoLink docs_link={monitor.check.docs_link}></InfoLink>
+                      </Typography>
+                    }
                     {monitorInfo.length - 1 !== index && <StyledDivider orientation="vertical" flexItem />}
                   </Box>
                 );

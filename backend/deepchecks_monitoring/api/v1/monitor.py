@@ -247,8 +247,8 @@ async def run_monitor_lookback(
 
     Returns
     -------
-    CheckSchema
-        Created check.
+    CheckResultSchema
+        Check run result.
     """
     monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)
     end_time = pdl.parse(body.end_time) if body.end_time else pdl.now()

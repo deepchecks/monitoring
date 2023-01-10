@@ -220,6 +220,7 @@ function AnalysisItemComponent({
         <AnalysisChartItemWithFilters
           title={check?.name || '-'}
           subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
+          docs_link={check.docs_link}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
           setSingleSelectValue={setFiltersSingleSelectValue}
@@ -244,6 +245,7 @@ function AnalysisItemComponent({
         <AnalysisChartItem
           subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
           title={check?.name || '-'}
+          docs_link={check.docs_link}
           sx={{ height, minHeight: height }}
         >
           <DiagramLine

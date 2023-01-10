@@ -14,6 +14,7 @@ import { SetStateType } from 'helpers/types';
 
 interface AnalysisChartItemWithFiltersProps extends SelectProps {
   title: string;
+  docs_link?: string | null;
   subtitle: string;
   filters: MonitorTypeConf[];
   activeFilter: AnalysisItemFilterTypes | null;
@@ -37,12 +38,14 @@ export function AnalysisChartItemWithFilters({
   setIsMostWorstActive,
   subtitle,
   title,
+  docs_link,
   sx
 }: PropsWithChildren<AnalysisChartItemWithFiltersProps>) {
   return (
     <AnalysisChartItem
       subtitle={subtitle}
       title={title}
+      docs_link={docs_link}
       sx={{
         ...sx
       }}

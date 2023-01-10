@@ -774,6 +774,7 @@ export interface CheckSchema {
   config: CheckConfigSchema;
   model_id: number;
   id: number;
+  docs_link?: string | null;
   name?: string;
 }
 
@@ -2169,8 +2170,8 @@ session : AsyncSession, optional
 
 Returns
 -------
-CheckSchema
-    Created check.
+CheckResultSchema
+    Check run result.
  * @summary Run Many Checks Together
  */
 export const runManyChecksTogetherApiV1ChecksRunManyPost = (
@@ -2235,8 +2236,8 @@ session : AsyncSession, optional
 
 Returns
 -------
-CheckSchema
-    Created check.
+CheckResultSchema
+    Check run result.
  * @summary Run Standalone Check Per Window In Range
  */
 export const runStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost = (
@@ -2301,8 +2302,8 @@ session : AsyncSession, optional
 
 Returns
 -------
-CheckSchema
-    Created check.
+dict
+    {<version_name: check_res>}.
  * @summary Get Check Window
  */
 export const getCheckWindowApiV1ChecksCheckIdRunWindowPost = (
@@ -2366,8 +2367,8 @@ session : AsyncSession, optional
 
 Returns
 -------
-CheckSchema
-    Created check.
+dict
+    {<version_name: check_res>}.
  * @summary Get Check Reference
  */
 export const getCheckReferenceApiV1ChecksCheckIdRunReferencePost = (
@@ -2937,8 +2938,8 @@ user
 
 Returns
 -------
-CheckSchema
-    Created check.
+CheckResultSchema
+    Check run result.
  * @summary Run Monitor Lookback
  */
 export const runMonitorLookbackApiV1MonitorsMonitorIdRunPost = (

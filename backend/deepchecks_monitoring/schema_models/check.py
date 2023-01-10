@@ -24,6 +24,9 @@ if t.TYPE_CHECKING:
 __all__ = ["Check"]
 
 
+_DOCS_LINK_FORMAT = "https://docs.deepchecks.com/stable/checks_gallery/{data_type}/{check_type}/plot_{check_name}.html"
+
+
 class Check(Base):
     """ORM model for the check."""
 
@@ -52,6 +55,16 @@ class Check(Base):
         passive_deletes=True,
         passive_updates=True
     )
+
+    @property
+    def docs_link(self) -> t.Optional[str]:
+        check = self.initialize_check()
+        package_module, data_type, checks_submodule, check_type, check_name = \
+            check.__module__.split(".")  # pylint: disable=unused-variable
+        # for future custom checks
+        if package_module != "deepchecks":
+            return None
+        return _DOCS_LINK_FORMAT.format(data_type=data_type, check_type=check_type, check_name=check_name)
 
     def initialize_check(self):
         """Initialize an instance of Deepchecks' check.
