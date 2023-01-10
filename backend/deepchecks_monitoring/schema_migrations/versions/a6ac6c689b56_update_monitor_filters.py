@@ -16,7 +16,6 @@ Create Date: 2023-01-10 10:45:41.715804
 """
 import json
 
-import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import text
 
@@ -38,8 +37,8 @@ def switch_func(old, new):
                 update = True
                 single_filter['operator'] = new
         if update:
-            op.get_bind().execute(text("UPDATE monitors SET data_filters = :data_filters WHERE id = :id"),
-                                  data_filters=json.dumps(data_filters), id=row['id'])
+            q = text("UPDATE monitors SET data_filters = :data_filters WHERE id = :id")
+            op.get_bind().execute(q.bindparams(id=row['id'], data_filters=json.dumps(data_filters)))
 
 
 def upgrade() -> None:
