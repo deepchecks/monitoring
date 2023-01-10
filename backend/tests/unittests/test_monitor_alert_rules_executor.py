@@ -66,7 +66,7 @@ async def test_monitor_executor(
         test_api.create_model_version(classification_model["id"], dict(name="v3", classes=["0", "1", "2"])),
     ]
 
-    curr_time = pdl.now().set(minute=0, second=0, microsecond=0)
+    curr_time = pdl.datetime(2023, 1, 9, 10).set(minute=0, second=0, microsecond=0)
     day_before_curr_time = curr_time - pdl.duration(days=1)
     daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 
