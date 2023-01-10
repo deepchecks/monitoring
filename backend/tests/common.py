@@ -77,9 +77,14 @@ class DataGenerator:
     def __init__(self):
         self.faker = faker.Faker()
 
-    def generate_random_condition(self) -> "Payload":
+    def generate_random_condition(self, numeric=False) -> "Payload":
+        if numeric:
+            options = [OperatorsEnum.EQ, OperatorsEnum.GE, OperatorsEnum.GT, OperatorsEnum.LT, OperatorsEnum.LE]
+        else:
+            options = [OperatorsEnum.EQ, OperatorsEnum.IN]
+
         return {
-            "operator": random.choice(list(OperatorsEnum)).value,
+            "operator": random.choice(options).value,
             "value": random.randint(-10, 10)
         }
 
@@ -113,7 +118,7 @@ class DataGenerator:
 
     def generate_random_alert_rule(self) -> "Payload":
         return {
-            "condition": self.generate_random_condition(),
+            "condition": self.generate_random_condition(numeric=True),
             "alert_severity": random.choice(["low", "mid", "high", "critical"]),
             "is_active": True
         }

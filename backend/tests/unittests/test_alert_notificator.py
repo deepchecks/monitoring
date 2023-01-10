@@ -69,7 +69,7 @@ async def test_that_email_notification_levels_config_is_respected(
     await async_session.execute(
         sa.update(Organization)
         .where(Organization.id == user.organization_id)
-        .values(email_notification_levels = [AlertSeverity.MID])
+        .values(email_notification_levels=[AlertSeverity.MID])
     )
 
     model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
@@ -92,13 +92,13 @@ async def test_that_email_notification_levels_config_is_respected(
 
     alerts = [
         await async_session.scalar(sa.insert(Alert).values(
-            failed_values={"1":["accuracy"], "2":["accuracy"]},
+            failed_values={"1": ["accuracy"], "2":["accuracy"]},
             start_time=now,
             end_time=now + timedelta(hours=2),
             alert_rule_id=alert_rules[0]["id"]
         ).returning(Alert.id)),
         await async_session.scalar(sa.insert(Alert).values(
-            failed_values={"1":["accuracy"], "2":["accuracy"]},
+            failed_values={"1": ["accuracy"], "2":["accuracy"]},
             start_time=now,
             end_time=now + timedelta(hours=2),
             alert_rule_id=alert_rules[1]["id"]
