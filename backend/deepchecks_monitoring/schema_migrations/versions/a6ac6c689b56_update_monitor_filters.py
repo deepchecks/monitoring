@@ -30,9 +30,9 @@ def switch_func(old, new):
     select = "SELECT id, data_filters FROM monitors WHERE data_filters is not null and data_filters <> 'null'::jsonb"
     rows = op.get_bind().execute(text(select)).fetchall()
     for row in rows:
-        data_filters = row['data_filters']['filters']
+        data_filters = row['data_filters']
         update = False
-        for single_filter in data_filters:
+        for single_filter in data_filters['filters']:
             if single_filter['operator'] == old:
                 update = True
                 single_filter['operator'] = new
