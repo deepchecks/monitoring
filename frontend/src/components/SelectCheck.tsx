@@ -14,7 +14,7 @@ import { Subcategory } from 'components/Subcategory';
 
 import { SetStateType, SelectValues } from 'helpers/types';
 
-interface MonitorFormCheckProps {
+interface SelectCheckProps {
   monitor: MonitorSchema | null;
   model: SelectValues;
   check: SelectValues;
@@ -27,7 +27,7 @@ interface MonitorFormCheckProps {
   disabled: boolean;
 }
 
-export const MonitorFormCheckComponent = ({
+export const SelectCheckComponent = ({
   monitor,
   model = 0,
   check,
@@ -38,9 +38,9 @@ export const MonitorFormCheckComponent = ({
   setCheckInfoSecondLevel,
   setIsResConf,
   disabled
-}: MonitorFormCheckProps) => {
+}: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
-  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor ? monitor.check.id : check ? +check : 0);
+  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor && !!monitor.check.id ? monitor.check.id : check ? +check : 0);
 
   const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id })), [checksList]);
   const firstLevelValues = useMemo(
@@ -128,4 +128,4 @@ export const MonitorFormCheckComponent = ({
   );
 };
 
-export const MonitorFormCheck = memo(MonitorFormCheckComponent);
+export const SelectCheck = memo(SelectCheckComponent);

@@ -12,7 +12,7 @@ import { RangePicker } from 'components/RangePicker/RangePicker';
 import { ColumnType } from 'helpers/types/model';
 import { SetStateType, SelectValues } from 'helpers/types';
 
-interface MonitorFormColumnProps {
+interface SelectColumnProps {
   monitor: MonitorSchema | null;
   model: SelectValues;
   column: string | undefined;
@@ -23,7 +23,7 @@ interface MonitorFormColumnProps {
   setNumericValue: SetStateType<number[] | undefined>;
 }
 
-const MonitorFormColumnComponent = ({
+const SelectColumnComponent = ({
   monitor,
   model = '',
   column,
@@ -32,7 +32,7 @@ const MonitorFormColumnComponent = ({
   setCategory,
   numericValue,
   setNumericValue
-}: MonitorFormColumnProps) => {
+}: SelectColumnProps) => {
   const { data: columns, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
 
   useEffect(() => {
@@ -109,4 +109,4 @@ const MonitorFormColumnComponent = ({
   );
 };
 
-export const MonitorFormColumn = memo(MonitorFormColumnComponent);
+export const SelectColumn = memo(SelectColumnComponent);

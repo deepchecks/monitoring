@@ -15,11 +15,11 @@ import { TextField, StackProps, Stack, Button, MenuItem, styled } from '@mui/mat
 
 import { MarkedSelect } from 'components/MarkedSelect';
 import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
-import { MonitorFormCheck as Check } from '../MonitorFormCheck';
-import { MonitorFormColumn as Column } from '../MonitorFormColumn';
+import { SelectCheck as Check } from '../../../../SelectCheck';
+import { SelectColumn as Column } from '../../../../SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 
-import { timeWindow, buildKwargs, buildFilters } from './MonitorForm.helpers';
+import { timeWindow, buildKwargs, buildFilters } from '../../../../../helpers/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
 

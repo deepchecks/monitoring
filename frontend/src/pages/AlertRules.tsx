@@ -15,11 +15,12 @@ import { Button, Box, useTheme } from '@mui/material';
 import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
 import { Loader } from 'components/Loader';
-import { AlertRuleDialog } from '../components/AlertRuleDialog';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 
 import { WhitePlusIcon } from 'assets/icon/icon';
 import NoResults from 'components/NoResults';
+import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
+import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
 
 export const AlertRules = () => {
   const theme = useTheme();
@@ -106,7 +107,10 @@ export const AlertRules = () => {
         </Box>
       </Box>
 
-      <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
+      <AlertRuleDialogProvider>
+        <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
+      </AlertRuleDialogProvider>
+
     </Box>
   );
 };

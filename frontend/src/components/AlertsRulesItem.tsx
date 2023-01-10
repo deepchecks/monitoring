@@ -15,7 +15,8 @@ import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/materi
 import { Loader } from './Loader';
 
 import { Checkmark, PencilDrawing } from '../assets/icon/icon';
-import { AlertRuleDialog } from './AlertRuleDialog';
+import { AlertRuleDialogProvider } from './AlertRuleDialog/AlertRuleDialogContext';
+import { AlertRuleDialog } from './AlertRuleDialog/AlertRuleDialog';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -113,8 +114,9 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
         </StyledBlur>
       )}
 
-    <AlertRuleDialog open={editedAlertRule !== undefined} onClose={onEditRuleClose} alertRuleId={editedAlertRule} />
-    </StyledMainWrapper>
+      <AlertRuleDialogProvider>
+        <AlertRuleDialog open={editedAlertRule !== undefined} onClose={onEditRuleClose} alertRuleId={editedAlertRule} />
+      </AlertRuleDialogProvider>    </StyledMainWrapper>
   );
 });
 
