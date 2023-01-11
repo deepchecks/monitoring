@@ -1,5 +1,10 @@
 import React, { PropsWithChildren, useEffect, useRef, useState, useCallback } from 'react';
-import { Chart, ChartOptions, LegendItem, registerables } from 'chart.js';
+import { Chart, Tooltip, ChartOptions, LegendItem, registerables } from 'chart.js';
+declare module 'chart.js' {
+  interface TooltipPositionerMap {
+    myCustomPositioner: TooltipPositionerFunction<ChartType>;
+  }
+}
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -20,6 +25,20 @@ import { colors } from 'theme/colors';
 import { DiagramLineProps } from './DiagramLine.types';
 
 Chart.register(...registerables, zoomPlugin);
+
+Tooltip.positioners.myCustomPositioner = function (elements, eventPosition) {
+  const nearest = Tooltip.positioners.nearest.call(this, elements, eventPosition);
+  if (nearest) {
+    const isRight = nearest.x < this.width / 2;
+    const isHide = (isRight && nearest.x + this.width > this.chart.width - 100) || (!isRight && nearest.x - this.width < 100);
+    return {
+      x: nearest.x,
+      y: nearest.y,
+      yAlign: isHide ? (nearest.y < this.chart.height / 2 ? 'top' : 'bottom') : undefined
+    };
+  }
+  return false
+}
 
 function DiagramLine({
   data,
@@ -162,7 +181,6 @@ function DiagramLine({
       chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
     },
     interaction: {
-      mode: 'nearest',
       intersect: false
     },
     layout: {
@@ -206,7 +224,8 @@ function DiagramLine({
           top: 4
         },
         boxPadding: 5,
-        callbacks: _tCallbacks
+        callbacks: _tCallbacks,
+        position: 'myCustomPositioner'
       },
       zoom: {
         limits: {
@@ -250,18 +269,18 @@ function DiagramLine({
       },
       y: analysis
         ? {
-            ticks: {
-              stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
-              align: 'end'
-            },
-            grid: { drawBorder: false, drawTicks: false },
-            min: range.current.min,
-            max: range.current.max === 0 ? 1 : range.current.max * 1.2
-          }
+          ticks: {
+            stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
+            align: 'end'
+          },
+          grid: { drawBorder: false, drawTicks: false },
+          min: range.current.min,
+          max: range.current.max === 0 ? 1 : range.current.max * 1.2
+        }
         : {
-            min: range.current.min,
-            max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
-          }
+          min: range.current.min,
+          max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
+        }
     }
   };
 
