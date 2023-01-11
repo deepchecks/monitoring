@@ -1,15 +1,13 @@
 import React, { useEffect } from 'react';
 
-import { Box, Button, Checkbox, CssBaseline, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Paper, Stack, ThemeProvider } from '@mui/material';
-import { EULAImage } from '../assets/bg/backgrounds';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { Box, Button, Checkbox, CssBaseline, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, ThemeProvider } from '@mui/material';
+import EULAImage from '../assets/bg/eulaBG.png';
 import { theme } from '../theme';
 import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
 import { termsAndConditions } from 'helpers/termsAndConditions';
 
 
 export const LicenseAgreementPage = function () {
-    const svgString = encodeURIComponent(renderToStaticMarkup(< EULAImage />));
     const descriptionElementRef = React.useRef<HTMLElement>(null);
     const [agree, setAgreement] = React.useState(false);
 
@@ -21,7 +19,7 @@ export const LicenseAgreementPage = function () {
     });
 
     const handleSubscribe = () => {
-        eulaAcceptanceApiV1UsersAcceptEulaGet().then(success => {
+        eulaAcceptanceApiV1UsersAcceptEulaGet().then(() => {
             window.location.href = '/'
         })
     };
@@ -31,7 +29,7 @@ export const LicenseAgreementPage = function () {
             <Grid container component="main" sx={{ height: '100vh' }}>
                 <CssBaseline />
                 <Box sx={{
-                    backgroundImage: `url("data:image/svg+xml,${svgString}")`,
+                    backgroundImage: `url(${EULAImage})`,
                     width: '100%',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center top',
@@ -60,7 +58,7 @@ export const LicenseAgreementPage = function () {
                 </DialogContent>
                 <DialogActions>
                     <FormControlLabel 
-                        control={<Checkbox value={agree} onChange={e => setAgreement(!agree)}></Checkbox>} 
+                        control={<Checkbox value={agree} onChange={() => setAgreement(!agree)}></Checkbox>} 
                         label="I agree to the end user license agreement"
                         sx={{flex: 1, ml: 0}}
                     />
