@@ -9,12 +9,15 @@ import { GraphLayout } from './GraphLayout';
 import { TITLE, ACTIVE_BAR_COLOR, chartData, chartOptions, barsColorArray } from '../SegmentsDrillDown.helpers';
 import { SetStateType } from 'helpers/types';
 
+
 interface CheckPerSegmentProps {
   dataSet: number[];
   labels: string[];
   setActiveBarName: SetStateType<string>;
   activeBarIndex: number;
   setActiveBarIndex: SetStateType<number>;
+  yTitle: string;
+  xTitle?: string;
 }
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
@@ -24,7 +27,9 @@ export const CheckPerSegment = ({
   labels,
   setActiveBarName,
   activeBarIndex,
-  setActiveBarIndex
+  setActiveBarIndex,
+  yTitle,
+  xTitle
 }: CheckPerSegmentProps) => {
   const chartRef = useRef<ChartJS<'bar'>>();
 
@@ -69,7 +74,7 @@ export const CheckPerSegment = ({
       <Box sx={{ height: '344px' }}>
         <Bar
           ref={chartRef}
-          options={chartOptions(dataSet)}
+          options={chartOptions(dataSet, yTitle, xTitle)}
           data={chartData(labels, dataSet)}
           onClick={handleBarClick}
         />

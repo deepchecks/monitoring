@@ -101,16 +101,23 @@ def _add_scaled_bins_names(bins):
 
     edges = [b['min'] for b in bins] + [bins[len(bins) - 1]['max']]
     scaled_edges = []
-    # Scaling every edge by the scale of it's range with its neighbouring edges.
+    # Run formatting for each edge
     for i, edge in enumerate(edges):
-        if -0.01 < edge < 0.01:
+        if edge == 0:
+            scaled_edges.append('0')
+        elif -0.01 < edge < 0.01:
             scaled_edges.append(format(edge, '.2e'))
         else:
+            # Scaling every edge by the scale of it's range with its neighbouring edges.
             prev_edge = edges[i - 1] if i - 1 >= 0 else None
             next_edge = edges[i + 1] if i + 1 < len(edges) else None
             scale = min(_get_range_scale(prev_edge, edge), _get_range_scale(edge, next_edge))
             scale_to_round = -scale if scale < -2 else 2
-            scaled_edges.append(round(edge, scale_to_round))
+            round_edge = round(edge, scale_to_round)
+            # If after round the number is whole, display it as whole number.
+            if int(round_edge) == round_edge:
+                round_edge = int(round_edge)
+            scaled_edges.append(round_edge)
 
     all_single_value = all(it['max'] == it['min'] for it in bins)
     for i, curr_bin in enumerate(bins):

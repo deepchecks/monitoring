@@ -91,7 +91,7 @@ export function AnalysisPage() {
         }
         else {
           // If checks initial data is empty each check will load his own data
-          setChecksInitialData({})
+          setChecksInitialData(undefined)
         }
       }
 
@@ -110,9 +110,23 @@ export function AnalysisPage() {
     ) => {
       if (additionalKwargs) {
         const type = checkInfo?.res_conf ? CheckTypeOptions.Class : CheckTypeOptions.Feature;
-
         setCurrentType(type);
-        setCurrentAdditionalKwargs(additionalKwargs);
+
+        if (additionalKwargs.check_conf['aggregation method'][0] == 'none') {
+          if (type === CheckTypeOptions.Feature) {
+            setCurrentAdditionalKwargs(
+              // Filter only the feature that was clicked on
+              {check_conf: {...additionalKwargs.check_conf, feature: [datasetName]},
+              res_conf: additionalKwargs.res_conf}
+            )
+          } else {
+            setCurrentAdditionalKwargs(
+              {check_conf: additionalKwargs.check_conf,
+              // Filter only the class that was clicked on
+              res_conf: [datasetName.replace(additionalKwargs.check_conf.scorer[0], '').trim()]}
+            )
+          }
+        }
       }
 
       setCurrentCheck(check);

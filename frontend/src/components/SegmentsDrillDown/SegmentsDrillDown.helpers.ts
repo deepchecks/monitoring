@@ -2,13 +2,13 @@ import { ChartOptions, ChartData } from 'chart.js';
 
 import { alpha } from '@mui/material';
 
-export const TITLE = 'Check per segment';
+export const TITLE = 'Check Per Segment';
 export const ACTIVE_BAR_COLOR = alpha('#00CCFF', 1);
 export const BAR_COLOR = alpha(ACTIVE_BAR_COLOR, 0.3);
 
 export const barsColorArray = (length: number): string[] => Array(length).fill(BAR_COLOR);
 
-export const chartOptions = (data: number[]): ChartOptions<'bar'> => {
+export const chartOptions = (data: number[], yTitle?: string, xTitle?: string): ChartOptions<'bar'> => {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const stepSize = Math.max(...data.map(d => Math.abs(d))) / 3;
@@ -32,7 +32,11 @@ export const chartOptions = (data: number[]): ChartOptions<'bar'> => {
         grid: {
           display: false
         },
-        type: 'category'
+        type: 'category',
+        title: {
+          display: xTitle !== undefined,
+          text: xTitle
+        }
       },
       y: {
         max: max <= 0 ? 0 : max + stepSize,
@@ -40,7 +44,11 @@ export const chartOptions = (data: number[]): ChartOptions<'bar'> => {
         ticks: {
           stepSize
         },
-        grid: { drawBorder: false, drawTicks: false }
+        grid: { drawBorder: false, drawTicks: false },
+        title: {
+          display: yTitle !== undefined,
+          text: yTitle
+        }
       }
     }
   };

@@ -35,7 +35,7 @@ const AnalysisGroupByComponent = ({
   type,
   ...props
 }: AnalysisGroupByProps) => {
-  const { frequency, activeFilters, frequencyLabel } = useContext(AnalysisContext);
+  const { frequency, activeFilters } = useContext(AnalysisContext);
 
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -58,9 +58,8 @@ const AnalysisGroupByComponent = ({
         const { features } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
           modelVersionId
         )) as FeaturesResponse;
-        const featuresNames = Object.keys(features);
-        setFeaturesArray(featuresNames);
-        setSelectedFeature(featuresNames[0]);
+
+        let featuresNames = Object.keys(features);
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
@@ -77,8 +76,17 @@ const AnalysisGroupByComponent = ({
               ? datasetName.replace(additionalKwargs.check_conf.scorer[0], '').trim()
               : datasetName;
 
-          value && setClassOrFeature({ type, value });
+          if (value) {
+            setClassOrFeature({ type, value });
+            // Filter selected feature from feature list
+            if (type === CheckTypeOptions.Feature) {
+              featuresNames = featuresNames.filter(feature => feature != value);
+            }
+          }
         }
+
+        setFeaturesArray(featuresNames);
+        setSelectedFeature(featuresNames[0]);
       }
     }
 
@@ -115,22 +123,33 @@ const AnalysisGroupByComponent = ({
     runCheckGroupByFeature();
   }, [selectedFeature, singleCheckRunOptions, check, modelVersionId]);
 
+  const getTitle = () => {
+    if (!check || !check.name) {
+      return ''
+    }
+    else if (classOrFeature) {
+      return `${check.name} - ${classOrFeature.value}`
+    }
+    else {
+      return check.name
+    }
+  }
+
   return (
     <CustomDrawer loading={globalLoading} {...props}>
-      {propValuesAreNotNull && singleCheckRunOptions && frequencyLabel && (
+      {propValuesAreNotNull && singleCheckRunOptions && (
         <>
           <StyledHeaderContainer>
-            <CustomDrawerHeader title={check.name || 'none'} onClick={onCloseIconClick} marginBottom="32px" />
+            <CustomDrawerHeader title={getTitle()} onClick={onCloseIconClick} marginBottom="32px" />
             <AnalysisGroupByInfo
               startTime={singleCheckRunOptions.start_time}
               endTime={singleCheckRunOptions.end_time}
-              frequency={frequencyLabel}
-              checkName={check.name || 'none'}
+              checkName={check.name || ''}
               modelName={modelName}
               classOrFeature={classOrFeature}
             />
             <StyledControlledMarkedSelect
-              label="Select Feature"
+              label="Group By Feature"
               value={selectedFeature}
               values={featuresArray}
               disabled={loading}
@@ -146,6 +165,7 @@ const AnalysisGroupByComponent = ({
                 checkName={check.name}
                 datasetName={datasetName}
                 setActiveBarFilters={setActiveBarFilters}
+                feature={selectedFeature?.toString() || ''}
               />
               {testSuitePropsAreNotNull && (
                 <StyledRunDownloadSuiteContainer>

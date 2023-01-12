@@ -12,7 +12,6 @@ import { ClassOrFeature } from '../AnalysisGroupBy.types';
 interface AnalysisGroupByInfoProps extends StackProps {
   startTime: string;
   endTime: string;
-  frequency: string;
   checkName: string;
   modelName: string;
   classOrFeature: ClassOrFeature | null;
@@ -23,7 +22,6 @@ const showDate = (date: string) => dayjs(date).format('DD/MM/YY HH:mm');
 export const AnalysisGroupByInfo = ({
   startTime,
   endTime,
-  frequency,
   checkName,
   modelName,
   classOrFeature,
@@ -31,7 +29,6 @@ export const AnalysisGroupByInfo = ({
 }: AnalysisGroupByInfoProps) => (
   <StyledContainer {...props}>
     <AnalysisGroupByInfoItem title="Date range" value={`${showDate(startTime)} - ${showDate(endTime)}`} />
-    <AnalysisGroupByInfoItem title="Frequency" value={frequency} />
     <AnalysisGroupByInfoItem title="Check" value={checkName} />
     <AnalysisGroupByInfoItem title="Model" value={modelName} />
     {classOrFeature && <AnalysisGroupByInfoItem title={classOrFeature.type} value={classOrFeature.value} />}

@@ -913,21 +913,21 @@ def test_numerical_feature_drill_down_with_single_value_in_bin(
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
-            "name": "10.0",
+            "name": "10",
             "value": has_length(3),
             "display": has_length(0),
             "count": 4,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "11.0",
+            "name": "11",
             "value": has_length(3),
             "display": has_length(0),
             "count": 1,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "12.0",
+            "name": "12",
             "value": has_length(3),
             "display": has_length(0),
             "count": 1,
@@ -972,14 +972,14 @@ def test_numerical_feature_drill_down(
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
-            "name": "[10.0, 11.0)",
+            "name": "[10, 11)",
             "value": has_length(3),
             "display": has_length(0),
             "count": 34,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "[106.0, 126.0]",
+            "name": "[106, 126]",
             "value": has_length(3),
             "display": has_length(0),
             "count": 6,

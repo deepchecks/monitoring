@@ -16,11 +16,12 @@ interface SegmentsDrillDownProps {
   datasetName: ControlledMarkedSelectSelectValues;
   checkName: ControlledMarkedSelectSelectValues;
   setActiveBarFilters?: React.Dispatch<React.SetStateAction<DataFilter[]>>;
+  feature?: string;
 }
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
-const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBarFilters }: SegmentsDrillDownProps) => {
+const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBarFilters, feature }: SegmentsDrillDownProps) => {
   const dataSet: number[] = useMemo(
     () => (data.length && datasetName ? data.map(d => (d.value ? d.value[datasetName] : 0)) : []),
     [data, datasetName]
@@ -31,6 +32,7 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
 
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
+  const [title, setTitle] = useState<string>();
 
   const plots = data ? (data[activeBarIndex]?.display as string[]) : [];
 
@@ -38,7 +40,9 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
     if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex].filters) {
       setActiveBarFilters(data[activeBarIndex].filters.filters);
     }
-  }, [activeBarIndex, data, setActiveBarFilters]);
+
+    setTitle(`${checkName} On Segment: ${activeBarName}`)
+  }, [activeBarIndex, data, setActiveBarFilters, activeBarName, checkName]);
 
   return (
     <StyledContainer>
@@ -52,10 +56,11 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
             setActiveBarName={setActiveBarName}
             activeBarIndex={activeBarIndex}
             setActiveBarIndex={setActiveBarIndex}
+            yTitle={`${checkName} ${datasetName}`}
+            xTitle={feature}
           />
           <SegmentTests
-            activeBarName={activeBarName}
-            checkName={checkName}
+            title={title}
             plots={plots.map(plot => JSON.parse(plot))}
           />
         </>
