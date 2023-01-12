@@ -41,7 +41,7 @@ export const AlertRuleDialogStepThree = ({handleNext, handleBack} : AlertRuleSte
         }, [runCheck, setGraphData]
     );
 
-    const endTime = modelsMap[monitor.check.model_id].latest_time ?? Date.now();
+    const endTime = (modelsMap && modelsMap[monitor.check.model_id] && modelsMap[monitor.check.model_id].latest_time) ?? Date.now();
 
     useEffect(() => {
         handleGraphLookBack(monitor.check.id, {
