@@ -1,4 +1,5 @@
 describe('Alerts screen', () => {
+
   it('check alert values', () => {
     cy.createModelAndVersion('alerts model', 'multiclass', 'v1')
     .then(modelInfo => {
@@ -26,4 +27,5 @@ describe('Alerts screen', () => {
         })
     })
   });
+
 });

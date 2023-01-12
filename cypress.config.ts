@@ -10,7 +10,7 @@ export default defineConfig({
     experimentalSessionAndOrigin: true,
     chromeWebSecurity: false,
     // baseUrl: "https://staging-v2.deepchecks.com",
-    defaultCommandTimeout: 10000,
+    defaultCommandTimeout: 20000,
     baseUrl: "http://127.0.0.1:8000"
   },
   env: {

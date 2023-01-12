@@ -76,9 +76,12 @@ Cypress.Commands.add('resetState', () => {
 
 Cypress.Commands.add('createModelAndVersion', (modelName, taskType, modelVersionName) => {
     // Creating a model
-    const modelRequest = {
-        name: modelName, task_type: taskType, description: "Model created from Cypress!",
-        alerts_delay_labels_ratio: 1, alerts_delay_seconds: 60
+    const modelRequest = { 
+        name: modelName, 
+        task_type: taskType, 
+        description: "Model created from Cypress!",
+        alerts_delay_labels_ratio: 1, 
+        alerts_delay_seconds: 60 
     };
     const modelVersionRequest = {
         name: modelVersionName,
@@ -94,18 +97,17 @@ Cypress.Commands.add('createModelAndVersion', (modelName, taskType, modelVersion
     return cy.request('POST', '/api/v1/models', modelRequest)
         .then(response => response.body.id)
         .then(modelId => {
-            cy.request('POST', `/api/v1/models/${modelId}/version`, modelVersionRequest).then(
-                versionResponse => {
-                    const ModelVersionId = versionResponse.body.id
-                    return {
-                        'model_id': modelId,
-                        'version_id': ModelVersionId,
-                        'schema': modelVersionRequest,
-                        'task_type': taskType
-
-                    }
-                });
-        });
+            cy.request('POST', `/api/v1/models/${modelId}/version`, modelVersionRequest)
+            .then(versionResponse => {
+                const ModelVersionId = versionResponse.body.id
+                return {
+                    'model_id': modelId,
+                    'version_id': ModelVersionId,
+                    'schema': modelVersionRequest,
+                    'task_type': taskType
+                }
+            });
+        })
 });
 
 
@@ -183,6 +185,7 @@ Cypress.Commands.add('addPerformanceCheck', (modelInfo: object) => {
     return cy.request('POST', '/api/v1/models/' + modelInfo['model_id'] + '/checks', checkData).then(response => response.body[0]);
 });
 
+
 Cypress.Commands.add('addNullsCheck', (modelInfo: object) => {
     const checkData = {
         name: "nully checky v1",
@@ -191,18 +194,44 @@ Cypress.Commands.add('addNullsCheck', (modelInfo: object) => {
             params: {},
             module_name: "deepchecks.tabular.checks"
         }
-    }
-
-    return cy.request('POST', '/api/v1/models/' + modelInfo['model_id'] + '/checks', checkData).then(response => response.body[0]);
+    };
+    return cy.request(
+        'POST', 
+        `/api/v1/models/${modelInfo.model_id}/checks`, 
+        checkData
+    ).then(response => response.body[0]);
 });
+
+
+Cypress.Commands.add('addCheck', (modelInfo: object, checkInfo?: object) => {
+    const defaultCheck = {
+        name: "nully checky v1",
+        config: {
+            class_name: "PercentOfNulls",
+            params: {},
+            module_name: "deepchecks.tabular.checks"
+        }
+    };
+    const checkData = 
+        checkInfo !== undefined
+        ? {...defaultCheck, ...checkInfo}
+        : defaultCheck;
+
+    return cy.request(
+        'POST', 
+        `/api/v1/models/${modelInfo.model_id}/checks`, 
+        checkData
+    ).then(response => response.body[0]);
+});
+
 
 Cypress.Commands.add('addMonitor', (checkInfo: object, frequency = 3600, lookback = 86400, aggregation_window = 3600) => {
     const monitorData = {
         name: `${checkInfo['name']} Monitor`,
-        "frequency": frequency,
-        "lookback": lookback,
-        "aggregation_window": aggregation_window,
-    };
+        frequency: frequency,
+        lookback: lookback,
+        aggregation_window: aggregation_window,
+    }
 
     return cy.request('GET', '/api/v1/dashboards/').then(response => {
         monitorData['dashboard_id'] = response.body.id

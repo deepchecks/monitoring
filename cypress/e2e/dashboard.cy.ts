@@ -43,6 +43,7 @@ describe('test dashboard', () => {
   })
 
   it('Add manual monitor - graphs appear', () => {
+    
     cy.visit('/')
     cy.contains('button', 'Add Monitor').click()
     cy.contains('div[role="presentation"]', 'New Monitor').get('input[name="name"]').type('manual monitor')
