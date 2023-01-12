@@ -22,7 +22,7 @@ __all__ = ['bins_for_feature']
 
 
 async def bins_for_feature(model_version: ModelVersion, table, feature: str, session: AsyncSession,
-                           monitor_options: SingleCheckRunOptions, num_bins=30) \
+                           monitor_options: SingleCheckRunOptions, numeric_bins=10, categorical_bins=30) \
         -> t.Tuple[ColumnType, t.List[t.Dict]]:
     """Query from the database given number of bins.
 
@@ -33,7 +33,8 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
     feature: str
     session: AsyncSession
     monitor_options: SingleCheckRunOptions
-    num_bins: int
+    numeric_bins: int
+    categorical_bins: int
 
     Returns
     -------
@@ -45,6 +46,7 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
     """
     feature_type = ColumnType(model_version.features_columns[feature])
     feature_column = Column(feature)
+    num_bins = numeric_bins if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER] else categorical_bins
     if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER]:
         # Adds for each feature his quantile
         feature_quantiles_cte = select([feature_column,

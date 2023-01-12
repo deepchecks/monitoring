@@ -972,17 +972,17 @@ def test_numerical_feature_drill_down(
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
-            "name": "[10, 11)",
+            "name": "[10, 16)",
             "value": has_length(3),
             "display": has_length(0),
-            "count": 34,
+            "count": 43,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "[106, 126]",
+            "name": "[85, 126]",
             "value": has_length(3),
             "display": has_length(0),
-            "count": 6,
+            "count": 16,
             "filters": has_entries({"filters": has_length(2)})
         })
     ))

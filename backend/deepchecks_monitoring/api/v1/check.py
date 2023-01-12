@@ -560,10 +560,11 @@ async def run_check_group_by_feature(
             })
     else:
         for curr_bin in bins:
-            # The bins from bins_for_feature returns the min, max inclusive and non-overlapping
             if curr_bin['min'] is None:
                 data_filters = [DataFilter(column=feature, operator=OperatorsEnum.EQ, value=None)]
             else:
+                # The bins from bins_for_feature returns the min, max inclusive and non-overlapping. Means we need to
+                # user greater equals and lower equals.
                 data_filters = [
                     DataFilter(column=feature, operator=OperatorsEnum.GE, value=curr_bin['min']),
                     DataFilter(column=feature, operator=OperatorsEnum.LE, value=curr_bin['max'])

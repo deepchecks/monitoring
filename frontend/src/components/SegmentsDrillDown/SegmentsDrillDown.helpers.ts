@@ -63,7 +63,8 @@ export const chartData = (labels: string[], data: number[]): ChartData<'bar'> =>
       borderColor: 'transparent',
       backgroundColor: barsColorArray(data.length),
       hoverBackgroundColor: ACTIVE_BAR_COLOR,
-      barPercentage: 0.5
+      barPercentage: 0.5,
+      minBarLength: 10  // Used to show also values of 0.
     }
   ]
 });

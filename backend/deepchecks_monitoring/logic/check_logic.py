@@ -451,7 +451,7 @@ async def run_suite_per_window_in_range(
         return {}
 
     # get the relevant objects from the db
-    checks: t.List[Check] = (await session.scalars(select(Check).where(Check.id.in_(check_ids)))).all()
+    checks: t.List[Check] = (await session.scalars(select(Check).where(Check.id.in_(set(check_ids))))).all()
     if len(checks) == 0:
         raise NotFound(f"Could not find checks with ids {check_ids}")
     if len(set(check.model_id for check in checks)) > 1:
