@@ -315,9 +315,9 @@ export const OperatorsEnum = {
   greater_than: 'greater_than',
   less_than_equals: 'less_than_equals',
   less_than: 'less_than',
-  in: 'in',
   equals: 'equals',
-  not_equals: 'not_equals'
+  not_equals: 'not_equals',
+  in: 'in'
 } as const;
 
 /**
@@ -2994,9 +2994,9 @@ export const useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost = <
  * @summary Get Or Create Dashboard
  */
 export const getOrCreateDashboardApiV1DashboardsGet = (signal?: AbortSignal) =>
-  customInstance<DashboardSchema>({ url: `/api/v1/dashboards/`, method: 'get', signal });
+  customInstance<DashboardSchema>({ url: `/api/v1/dashboards`, method: 'get', signal });
 
-export const getGetOrCreateDashboardApiV1DashboardsGetQueryKey = () => [`/api/v1/dashboards/`];
+export const getGetOrCreateDashboardApiV1DashboardsGetQueryKey = () => [`/api/v1/dashboards`];
 
 export type GetOrCreateDashboardApiV1DashboardsGetQueryResult = NonNullable<
   Awaited<ReturnType<typeof getOrCreateDashboardApiV1DashboardsGet>>

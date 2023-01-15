@@ -46,7 +46,7 @@ class DashboardUpdateSchema(BaseModel):
     name: str = Field(max_length=field_length(Dashboard.name))
 
 
-@router.get('/dashboards/', response_model=DashboardSchema, tags=[Tags.MONITORS])
+@router.get('/dashboards', response_model=DashboardSchema, tags=[Tags.MONITORS])
 async def get_or_create_dashboard(session: AsyncSession = AsyncSessionDep):
     """Get dashboard by if exists, if not then create it. Add top 5 unassigned monitors to the dashboard if empty."""
     monitor_options = (joinedload(Monitor.check), selectinload(Monitor.alert_rules))
