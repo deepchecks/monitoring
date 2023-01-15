@@ -26,7 +26,6 @@ async def auth0_login(
     redirect_uri = request.url_for('auth0_callback')
 
     print(request.headers)
-    print(request.session)
     # Only in debug mode we allow to define the return uri
     if settings.debug_mode:
         # If no return uri defined, then use the default '/'
@@ -34,6 +33,8 @@ async def auth0_login(
         redirect = await auth0_client.authorize_redirect(request, redirect_uri, state=return_uri)
     else:
         redirect = await auth0_client.authorize_redirect(request, redirect_uri)
+
+    print(request.session)
 
     return redirect
 
