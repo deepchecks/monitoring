@@ -8,13 +8,14 @@ import {
   useUpdateOrganizationApiV1OrganizationPut
 } from 'api/generated';
 
-import { Box, Button, Checkbox, Typography } from '@mui/material';
+import { Box, Button, Checkbox, styled, Typography } from '@mui/material';
 import { Stack } from '@mui/system';
 
 import { Loader } from './Loader';
 
 import { Email, Slack } from '../assets/icon/icon';
 import connectSlackBG from '../assets/bg/connectSlackBG.svg';
+import { colors } from '../theme/colors';
 
 export enum NotificationDictionary {
   email = 'email_notification_levels',
@@ -63,6 +64,20 @@ const notificationsMap: NotificationsMap = {
 };
 
 const notificationsItems = [NotificationDictionary.slack, NotificationDictionary.email] as const;
+
+const StyledTypography = styled(Typography)({
+  fontSize: '16px',
+  letterSpacing: 1,
+  textTransform: 'capitalize',
+  margin: '6px 0 0',
+  color: 'inherit',
+  lineHeight: '13px'
+});
+
+const StyledTypographyHeader = styled(StyledTypography)({
+  margin: '0',
+  fontWeight: '500'
+});
 
 export function AlertNotifications() {
   const navigate = useNavigate();
@@ -147,9 +162,7 @@ export function AlertNotifications() {
           color: theme.palette.text.primary
         })}
       >
-        <Typography variant="button" color="inherit">
-          Alert Notifications
-        </Typography>
+        <StyledTypographyHeader paragraph={true}>Alert Notifications</StyledTypographyHeader>
         <Stack direction="row" spacing="34px">
           {icons.map(({ label, Icon }, index) => {
             const condition =
@@ -168,9 +181,7 @@ export function AlertNotifications() {
                 onClick={linkToConnectSlack}
               >
                 <Icon />
-                <Typography variant="button" color="inherit" lineHeight="13px" mt="6px">
-                  {label}
-                </Typography>
+                <StyledTypography paragraph={true}>{label}</StyledTypography>
               </Box>
             );
           })}
@@ -212,7 +223,7 @@ export function AlertNotifications() {
           sx={theme => ({
             padding: '20px 30px',
             background: `url(${connectSlackBG}) no-repeat right`,
-            backgroundColor: theme.palette.primary.contrastText,
+            backgroundColor: colors.primary.violet[100],
             borderRadius: '10px',
             marginTop: '124px'
           })}
