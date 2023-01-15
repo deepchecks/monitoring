@@ -62,32 +62,49 @@ def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000)
     return sampled_select_obj.order_by(order_func).limit(n_samples)
 
 
-def dataframe_to_dataset_and_pred(df: t.Union[pd.DataFrame, None], model_version: ModelVersion, top_feat: t.List[str]) \
-        -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+def dataframe_to_dataset_and_pred(
+    df: t.Union[pd.DataFrame, None],
+    model_version: ModelVersion,
+    top_feat: t.List[str]
+) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None or len(df) == 0:
         return None, None, None
+
     y_pred = None
     y_proba = None
+
     if SAMPLE_PRED_COL in df.columns:
         if not df[SAMPLE_PRED_COL].isna().all():
             y_pred = np.array(df[SAMPLE_PRED_COL].to_list())
         df = df.drop(SAMPLE_PRED_COL, axis=1)
+
     if SAMPLE_PRED_PROBA_COL in df.columns:
         if not df[SAMPLE_PRED_PROBA_COL].isna().all():
             y_proba = np.array(df[SAMPLE_PRED_PROBA_COL].to_list())
         df = df.drop(SAMPLE_PRED_PROBA_COL, axis=1)
 
-    available_features = [feat_name for feat_name in model_version.features_columns.keys() if feat_name in top_feat]
-    cat_features = [feat_name for feat_name, feat_type in model_version.features_columns.items()
-                    if feat_name in top_feat and feat_type in [ColumnType.CATEGORICAL, ColumnType.BOOLEAN]]
-    dataset_params = {'features': available_features,
-                      'cat_features': cat_features, 'label_type': model_version.model.task_type.value}
+    available_features = [
+        feat_name
+        for feat_name in model_version.features_columns.keys()
+        if feat_name in top_feat
+    ]
+    cat_features = [
+        feat_name
+        for feat_name, feat_type in model_version.features_columns.items()
+        if feat_name in top_feat and feat_type in [ColumnType.CATEGORICAL, ColumnType.BOOLEAN]
+    ]
+    dataset_params = {
+        'features': available_features,
+        'cat_features': cat_features,
+        'label_type': model_version.model.task_type.value
+    }
 
     if df[SAMPLE_LABEL_COL].isna().all():
         df = df.drop(SAMPLE_LABEL_COL, axis=1)
     else:
-        dataset_params['label'] = SAMPLE_LABEL_COL
+        df = df.rename(columns={SAMPLE_LABEL_COL: 'label'})
+        dataset_params['label'] = 'label'
 
     if SAMPLE_TS_COL in df.columns:
         dataset_params['datetime_name'] = SAMPLE_TS_COL
