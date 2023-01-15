@@ -24,6 +24,8 @@ async def auth0_login(
     """Redirect to the Auth0 login page."""
     auth0_client = oauth.create_client('auth0')
     redirect_uri = request.url_for('auth0_callback')
+
+    print(request.headers)
     # Only in debug mode we allow to define the return uri
     if settings.debug_mode:
         # If no return uri defined, then use the default '/'
