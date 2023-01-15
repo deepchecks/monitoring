@@ -92,7 +92,7 @@ class RedisSettings(BaseDeepchecksSettings):
 class EmailSettings(BaseDeepchecksSettings):
     """Settings for mail service."""
 
-    host: AnyHttpUrl
+    host: AnyHttpUrl  # TODO: consider moving to Settings
     deepchecks_email: str = 'app@deepchecks.com'
     email_smtp_host: str
     email_smtp_port: int = 25
@@ -100,17 +100,29 @@ class EmailSettings(BaseDeepchecksSettings):
     email_smtp_password: str
 
 
-class Settings(DatabaseSettings, KafkaSettings, RedisSettings, EmailSettings, SlackSettings):
+class TelemetrySettings(BaseDeepchecksSettings):
+    """Telemetry settings."""
+
+    instrument_telemetry: bool = False
+    uptrace_dsn: str = ''
+
+
+class Settings(
+    DatabaseSettings,
+    KafkaSettings,
+    RedisSettings,
+    EmailSettings,
+    SlackSettings,
+    TelemetrySettings
+):
     """Settings for the deepchecks_monitoring package."""
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     debug_mode: bool = False
-    instrument_telemetry: bool = False
     lauchdarkly_sdk_key: str = ''
     oauth_domain: str
     oauth_client_id: str
     oauth_client_secret: str
-    uptrace_dsn: str = ''
     auth_jwt_secret: str
     access_audit: bool = False
 

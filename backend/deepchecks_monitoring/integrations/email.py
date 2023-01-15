@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 from typing_extensions import Self
 
-from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.config import EmailSettings
 
 # TODO: change this
 TEMPLATES_DIR = pathlib.Path(__file__).absolute().parent.parent / "templates"
@@ -132,9 +132,9 @@ class EmailMessage:
 class EmailSender:
     """Sends emails."""
 
-    settings: Settings
+    settings: EmailSettings
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: EmailSettings):
         self.settings = settings
 
         if not self.is_email_available:

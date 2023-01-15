@@ -27,9 +27,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import joinedload, load_only, sessionmaker
 from sqlalchemy.sql.functions import concat
 
-from deepchecks_monitoring import __version__
+from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.bgtasks.core import Task
-from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.monitoring_utils import TimeUnit, collect_telemetry, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
@@ -235,7 +234,7 @@ def is_serialization_error(error: DBAPIError):
     )
 
 
-class SchedulerSettings(Settings):
+class SchedulerSettings(config.DatabaseSettings, config.TelemetrySettings):
     """Scheduler settings."""
 
     scheduler_sleep_seconds: int = 30

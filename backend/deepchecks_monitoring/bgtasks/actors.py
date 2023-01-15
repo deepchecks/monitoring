@@ -24,10 +24,9 @@ from furl import furl
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from deepchecks_monitoring import __version__
+from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
-from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
@@ -274,13 +273,13 @@ class AlertNotificator:
             self.logger.error("Organization(id:%s) does not have members", org.id)
             return False
 
-        settings = self.resources_provider.settings
+        settings = self.resources_provider.email_settings
         alert_link = (furl(settings.host) / "alert-rules")
         alert_link = alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
 
         self.resources_provider.email_sender.send(EmailMessage(
             subject=f"Alert. Model: {model.name}, Monitor: {monitor.name}",
-            sender=self.resources_provider.settings.deepchecks_email,
+            sender=settings.deepchecks_email,
             recipients=members_emails,
             template_name="alert",
             template_context={
@@ -332,7 +331,7 @@ class AlertNotificator:
             )
             return False
 
-        deepchecks_host = self.resources_provider.settings.host
+        deepchecks_host = self.resources_provider.email_settings.host
         errors: t.List[t.Tuple[SlackInstallation, str]] = []
         notification = slack.SlackAlertNotification(alert, deepchecks_host).blocks()
 
@@ -375,7 +374,7 @@ class AlertNotificator:
                     w.execute(
                         alert=alert,
                         client=client,
-                        settings=self.resources_provider.settings,
+                        settings=self.resources_provider.email_settings,
                         logger=self.logger
                     )
                     for w in webhooks
@@ -435,7 +434,12 @@ def assert_check_results(
         )
 
 
-class WorkerSettings(Settings):
+class WorkerSettings(
+    config.DatabaseSettings,
+    config.RedisSettings,
+    config.EmailSettings,
+    config.TelemetrySettings
+):
     """Set of worker settings."""
 
     worker_logfile: t.Optional[str] = None

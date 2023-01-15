@@ -21,7 +21,6 @@ from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
-from pydantic.env_settings import BaseSettings
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -30,15 +29,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings, Settings
+from deepchecks_monitoring import config
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
-
-__all__ = ["ResourcesProvider"]
-
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.utils import database
+
+__all__ = ["ResourcesProvider"]
 
 
 class BaseResourcesProvider:
@@ -68,13 +66,8 @@ class BaseResourcesProvider:
 class ResourcesProvider(BaseResourcesProvider):
     """Provider of resources."""
 
-    # TODO:
-    # consider separating into: async resources provider and sync resources provider
-
-    settings: BaseSettings
-
-    def __init__(self, settings: BaseSettings):
-        self.settings = settings
+    def __init__(self, settings: config.BaseSettings):
+        self._settings = settings
         self._database_engine: t.Optional[Engine] = None
         self._session_factory: t.Optional[sessionmaker] = None
         self._async_database_engine: t.Optional[AsyncEngine] = None
@@ -89,37 +82,70 @@ class ResourcesProvider(BaseResourcesProvider):
         self._topics = set()
 
     @property
-    def database_settings(self) -> DatabaseSettings:
+    def database_settings(self) -> config.DatabaseSettings:
         """Return database settings."""
-        if not isinstance(self.settings, DatabaseSettings):
+        if not isinstance(self._settings, config.DatabaseSettings):
             raise AssertionError(
                 "In order to be able to instantiate sqlalchemy resources "
                 "you need to provide instance of 'DatabaseSettigns' "
                 "to the 'ResourcesProvider' constructor"
             )
-        return self.settings
+        return self._settings
 
     @property
-    def kafka_settings(self) -> KafkaSettings:
+    def kafka_settings(self) -> config.KafkaSettings:
         """Return kafka settings."""
-        if not isinstance(self.settings, KafkaSettings):
+        if not isinstance(self._settings, config.KafkaSettings):
             raise AssertionError(
                 "In order to be able to instantiate kafka resources "
                 "you need to provide instance of 'KafkaSettings' "
                 "to the 'ResourcesProvider' constructor"
             )
-        return self.settings
+        return self._settings
 
     @property
-    def redis_settings(self) -> RedisSettings:
+    def redis_settings(self) -> config.RedisSettings:
         """Get the redis settings."""
-        if not isinstance(self.settings, RedisSettings):
+        if not isinstance(self._settings, config.RedisSettings):
             raise AssertionError(
                 "In order to be able to instantiate redis resources "
                 "you need to provide instance of 'RedisSettings' "
                 "to the 'ResourcesProvider' constructor"
             )
-        return self.settings
+        return self._settings
+
+    @property
+    def email_settings(self) -> config.EmailSettings:
+        """Get the email settings."""
+        if not isinstance(self._settings, config.EmailSettings):
+            raise AssertionError(
+                "In order to be able to use email resources "
+                "you need to provide instance of 'EmailSettings' "
+                "to the 'ResourcesProvider' constructor"
+            )
+        return self._settings
+
+    @property
+    def telemetry_settings(self) -> config.TelemetrySettings:
+        """Get the telemetry settings."""
+        if not isinstance(self._settings, config.TelemetrySettings):
+            raise AssertionError(
+                "Provided settings instance type is not a subclass of "
+                "the 'TelemetrySettings', you need to provide instance "
+                "of 'TelemetrySettings' to the 'ResourcesProvider' constructor"
+            )
+        return self._settings
+
+    @property
+    def settings(self) -> config.Settings:
+        """Get settings."""
+        if not isinstance(self._settings, config.Settings):
+            raise AssertionError(
+                f"Settings instance of unknown type was provided - {type(self.settings)}, "
+                "you need to provide instance of 'Settings' "
+                "to the 'ResourcesProvider' constructor"
+            )
+        return self._settings
 
     def dispose_resources(self):
         """Dispose resources."""
@@ -205,7 +231,10 @@ class ResourcesProvider(BaseResourcesProvider):
         return self._async_session_factory
 
     @asynccontextmanager
-    async def create_async_database_session(self, organization_id=None) -> t.AsyncIterator[ExtendedAsyncSession]:
+    async def create_async_database_session(
+        self,
+        organization_id: t.Optional[int] = None
+    ) -> t.AsyncIterator[t.Optional[ExtendedAsyncSession]]:
         """Create async sqlalchemy database session."""
         async with self.async_session_factory() as session:  # pylint: disable=not-callable
             try:
@@ -236,7 +265,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return kafka producer."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return None
+            return
         if self._kafka_producer is None:
             self._kafka_producer = AIOKafkaProducer(**settings.kafka_params)
             await self._kafka_producer.start()
@@ -247,7 +276,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return kafka admin client. Used to manage kafka cluser."""
         settings = self.kafka_settings
         if settings.kafka_host is None:
-            return None
+            return
         if self._kafka_admin is None:
             self._kafka_admin = KafkaAdminClient(**settings.kafka_params)
         return self._kafka_admin
@@ -272,15 +301,8 @@ class ResourcesProvider(BaseResourcesProvider):
     @property
     def lauchdarkly_client(self) -> LDClient:
         """Launchdarkly client."""
-        if not isinstance(self.settings, Settings):
-            raise AssertionError(
-                "In order to be able to instantiate launch darkly resources "
-                "you need to provide instance of 'Settings' "
-                "to the 'ResourcesProvider' constructor"
-            )
         if self._lauchdarkly_client:
             return self._lauchdarkly_client
-
         ldclient.set_config(LDConfig(self.settings.lauchdarkly_sdk_key))
         self._lauchdarkly_client = ldclient.get()
         return self._lauchdarkly_client
@@ -289,19 +311,15 @@ class ResourcesProvider(BaseResourcesProvider):
         """Return variation of a flag."""
         ld_user = {"email": user.email, "key": user.email}
         if user.organization:
-            ld_user["custom"] = {"tier": user.organization.tier, "organization_id": user.organization.id}
+            ld_user["custom"] = {
+                "tier": user.organization.tier,
+                "organization_id": user.organization.id
+            }
         return self.lauchdarkly_client.variation(flag, ld_user, default)
 
     @property
     def oauth_client(self):
         """Oauth client."""
-        if not isinstance(self.settings, Settings):
-            raise AssertionError(
-                "In order to be able to instantiate OAuth resources "
-                "you need to provide instance of 'Settings' "
-                "to the 'ResourcesProvider' constructor"
-            )
-
         if self._oauth_client is None:
             try:
                 url = f"https://{self.settings.oauth_domain}/.well-known/openid-configuration"
@@ -319,15 +337,22 @@ class ResourcesProvider(BaseResourcesProvider):
                     client_kwargs={"scope": "openid profile email"},
                 )
             except Exception as e:
-                raise Exception("There was an error while trying to get the OpenID configuration from the server.") \
-                    from e
+                # TODO:
+                # looks weird/
+                # maybe better to specify more specific exception type
+                # and to wrap with try...except only specific line that
+                # might raise that exception
+                raise Exception(
+                    "There was an error while trying to get the OpenID "
+                    "configuration from the server."
+                ) from e
         return self._oauth_client
 
     @property
     def email_sender(self) -> EmailSender:
         """Email sender."""
         if self._email_sender is None:
-            self._email_sender = EmailSender(self.settings)
+            self._email_sender = EmailSender(self.email_settings)
         return self._email_sender
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
@@ -349,8 +374,11 @@ class ResourcesProvider(BaseResourcesProvider):
         # If still doesn't exist try to create
         try:
             kafka_admin.create_topics([
-                NewTopic(name=topic_name, num_partitions=num_partitions,
-                         replication_factor=self.kafka_settings.kafka_replication_factor)
+                NewTopic(
+                    name=topic_name,
+                    num_partitions=num_partitions,
+                    replication_factor=self.kafka_settings.kafka_replication_factor
+                )
             ])
             self._topics.add(topic_name)
             return False

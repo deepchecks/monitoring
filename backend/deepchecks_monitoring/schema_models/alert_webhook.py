@@ -15,7 +15,7 @@ from deepchecks_monitoring.public_models import AlertSeverity
 from deepchecks_monitoring.schema_models.base import Base
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.config import Settings  # pylint: disable=unused-import
+    from deepchecks_monitoring.config import EmailSettings  # pylint: disable=unused-import
     from deepchecks_monitoring.public_models import Monitor  # pylint: disable=unused-import
     from deepchecks_monitoring.public_models import Alert, AlertRule, Check, Model  # pylint: disable=unused-import
 
@@ -131,7 +131,7 @@ class AlertWebhook(Base):
         *,
         alert: "Alert",
         client: httpx.AsyncClient,
-        settings: "Settings",
+        settings: "EmailSettings",
         request_timeout: int = 60,
         logger: t.Optional[logging.Logger] = None
     ) -> bool:
@@ -213,7 +213,7 @@ class AlertWebhook(Base):
                 )
                 return False
 
-    def prepare_request_parameters(self, alert: "Alert", settings: "Settings") -> t.Dict[str, t.Any]:
+    def prepare_request_parameters(self, alert: "Alert", settings: "EmailSettings") -> t.Dict[str, t.Any]:
         """Prepare request parameters.
 
         Webhook kind will be taken into account and a corresponding payload will be prepared.
@@ -281,7 +281,7 @@ class AlertWebhook(Base):
                     },
                     "routing_key": additional_arguments["routing_key"],
                     "links": [{
-                        "href": str(prepare_alert_link(alert=alert, settings=settings)),
+                        "href": str(prepare_alert_link(alert=alert, deepchecks_host=settings.host)),
                         "text": "Deepchecks Alert"
                     }],
                     "event_action": "trigger",
