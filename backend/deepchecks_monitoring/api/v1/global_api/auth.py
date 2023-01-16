@@ -25,7 +25,6 @@ async def auth0_login(
     auth0_client = oauth.create_client('auth0')
     redirect_uri = request.url_for('auth0_callback')
 
-    print(request.headers)
     # Only in debug mode we allow to define the return uri
     if settings.debug_mode:
         # If no return uri defined, then use the default '/'
@@ -33,8 +32,6 @@ async def auth0_login(
         redirect = await auth0_client.authorize_redirect(request, redirect_uri, state=return_uri)
     else:
         redirect = await auth0_client.authorize_redirect(request, redirect_uri)
-
-    print(request.session)
 
     return redirect
 
@@ -48,12 +45,6 @@ async def auth0_callback(
 ):
     """Get the user details from the Auth0 callback."""
     auth0_client = oauth.create_client('auth0')
-
-    res = await get_state_data(request.session, request.query_params.get('state'))
-    print("StateData", res)
-    print("Cache:", auth0_client.framework.cache)
-    print("QP:", request.query_params)
-
     token = await auth0_client.authorize_access_token(request)
 
     try:
@@ -75,18 +66,6 @@ async def auth0_callback(
         resp.set_cookie('Authorization', f'Bearer {user.access_token}', httponly=True, secure=True)
 
     return resp
-
-
-async def get_state_data(session, state: str):
-    key = f'_state_auth0_{state}'
-    if session is not None:
-        value = session.get(key)
-    else:
-        value = None
-
-    if value:
-        return value.get('data')
-    return None
 
 
 @router.get('/auth/logout', tags=['security'])

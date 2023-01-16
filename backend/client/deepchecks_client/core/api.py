@@ -957,9 +957,9 @@ class API:
             The response object
         """
         if raise_on_status:
-            return self.session.get('dashboards/').json()
+            return self.session.get('dashboards').json()
         else:
-            return self.session.get('dashboards/')
+            return self.session.get('dashboards')
 
     def delete_model_checks_by_name(
         self,
