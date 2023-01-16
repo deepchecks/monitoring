@@ -48,7 +48,11 @@ async def auth0_callback(
 ):
     """Get the user details from the Auth0 callback."""
     auth0_client = oauth.create_client('auth0')
-    print(request.session)
+    res = await get_state_data(request.session, request.query_params.get('state'))
+    print("StateData", res)
+    print("Cache:", auth0_client.framework.cache)
+    print("QP:", request.query_params)
+
     token = await auth0_client.authorize_access_token(request)
 
     try:
@@ -70,6 +74,18 @@ async def auth0_callback(
         resp.set_cookie('Authorization', f'Bearer {user.access_token}', httponly=True, secure=True)
 
     return resp
+
+
+async def get_state_data(session, state: str):
+    key = f'_state_auth0_{state}'
+    if session is not None:
+        value = session.get(key)
+    else:
+        value = None
+
+    if value:
+        return value.get('data')
+    return None
 
 
 @router.get('/auth/logout', tags=['security'])
