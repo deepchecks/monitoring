@@ -82,7 +82,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
           sx={{
             fontSize: '14px',
             lineHeight: '120%',
-            marginLeft: '14px',
+            marginLeft: { xs: '6px', lg: '6px', xl: '14px' },
             fontWeight: active ? 500 : 400
           }}
           variant="subtitle1"
@@ -97,7 +97,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
             width: 16,
             height: 16,
             borderRadius: '50%',
-            marginRight: '30px',
+            marginRight: { xs: '20px', lg: '20px', xl: '30px' },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -116,7 +116,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
             width: 16,
             height: 16,
             borderRadius: '50%',
-            marginRight: '30px',
+            marginRight: { xs: '20px', lg: '20px', xl: '30px' },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

@@ -227,5 +227,9 @@ const StyledBottomSection = styled(Box)({
 const StyledButtonResolve = styled(Button)({
   width: 160,
   padding: '0 8px',
-  minHeight: 36
+  minHeight: 36,
+  '@media (max-width: 1536px)': {
+    padding: '0 4px',
+    width: 140
+  }
 });

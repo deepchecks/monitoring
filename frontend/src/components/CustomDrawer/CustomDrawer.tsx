@@ -24,7 +24,10 @@ export const StyledDrawer = styled(Drawer, { shouldForwardProp: prop => prop !==
     '& .MuiPaper-root': {
       width: 1090,
       height: '100%',
-      padding
+      padding,
+      '@media (max-width: 1536px)': {
+        width: 800
+      }
     }
   })
 );

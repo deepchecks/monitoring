@@ -184,7 +184,7 @@ export function AnalysisPage() {
                 frequency={frequency}
                 activeFilters={activeFilters}
                 height={528}
-                graphHeight={420}
+                graphHeight={359}
               />
             ))
           )}

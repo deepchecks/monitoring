@@ -54,7 +54,13 @@ export const StyledInputLabel = styled(InputLabel)(({ theme }) => ({
 }));
 
 export const StyledSelect = styled(Select)({
-  minWidth: 200
+  minWidth: 200,
+  '@media (max-width: 1536px)': {
+    minWidth: 100,
+    width: 147,
+    fontSize: '12px',
+    height: '40px'
+  }
 });
 
 interface StyledIconButtonProps {

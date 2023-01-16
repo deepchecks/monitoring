@@ -45,9 +45,8 @@ const Layout = () => {
           <Box
             sx={{
               background: BACKGROUND_COLOR_MAX_WIDTH,
-              padding: '0 35px',
-              minWidth: '1050px',
-              width: '100%'
+              padding: { xs: '0 30px', lg: '0 30px', xl: '0 35px' },
+              width: { xs: 'calc(100% - 196px)', lg: 'calc(100% - 196px)', xl: 'calc(100% - 237px)' }
             }}
           >
             <Outlet />

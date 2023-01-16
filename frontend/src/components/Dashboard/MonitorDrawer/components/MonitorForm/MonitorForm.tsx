@@ -183,7 +183,7 @@ export const MonitorForm = ({
   };
 
   return (
-    <Stack justifyContent="space-between" width="308px" {...props}>
+    <Stack justifyContent="space-between" width={{ xs: '147px', xl: '308px' }} {...props}>
       <Stack spacing="50px">
         <TextField
           label="Monitor name"

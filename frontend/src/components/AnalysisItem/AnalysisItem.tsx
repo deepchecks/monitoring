@@ -106,12 +106,10 @@ function AnalysisItemComponent({
   }, [activeFilter, checkConf?.length, filtersMultipleSelectValue, filtersSingleSelectValue]);
 
   useEffect(() => {
-    const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0
+    const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0;
     // Update the checksWithCustomProps set which indicates to the parent component if it needs to load this check data
-    if (hasCustomProps)
-      checksWithCustomProps?.current.add(check.id);
-    else
-      checksWithCustomProps?.current.delete(check.id);
+    if (hasCustomProps) checksWithCustomProps?.current.add(check.id);
+    else checksWithCustomProps?.current.delete(check.id);
 
     async function getData() {
       let response;
@@ -126,8 +124,7 @@ function AnalysisItemComponent({
       // If there are no special arguments for this check, it is loaded it using a single request for all checks in analysis page
       if (initialData && !hasCustomProps) {
         response = initialData;
-      }
-      else {
+      } else {
         if (activeFilters.length) {
           runCheckBody.data.filter = { filters: activeFilters };
         }
@@ -229,7 +226,7 @@ function AnalysisItemComponent({
           isMostWorstActive={isMostWorstActive}
           setIsMostWorstActive={setIsMostWorstActive}
           filters={checkConf}
-          sx={{ height, minHeight: height }}
+          sx={{ height: { xs: height - 104, xl: height }, minHeight: { xs: height - 104, xl: height } }}
         >
           <DiagramLine
             data={data}
@@ -238,15 +235,15 @@ function AnalysisItemComponent({
             onPointCLick={handlePointClick}
             timeFreq={frequency}
             analysis
-            height={graphHeight}
+            height={{ lg: graphHeight - 104, xl: graphHeight }}
           />
         </AnalysisChartItemWithFilters>
       ) : (
         <AnalysisChartItem
           subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
           title={check?.name || '-'}
+          sx={{ height: { xs: height - 104, xl: height }, minHeight: { xs: height - 104, xl: height } }}
           docs_link={check.docs_link}
-          sx={{ height, minHeight: height }}
         >
           <DiagramLine
             data={data}
@@ -254,7 +251,7 @@ function AnalysisItemComponent({
             comparison={isComparisonModeOn}
             onPointCLick={handlePointClick}
             analysis
-            height={graphHeight}
+            height={{ lg: graphHeight - 104, xl: graphHeight }}
           />
         </AnalysisChartItem>
       )}

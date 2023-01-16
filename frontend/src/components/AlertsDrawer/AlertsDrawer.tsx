@@ -116,7 +116,7 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
             />
             <DiagramLine
               data={graphData}
-              height={350}
+              height={{ lg: 280, xl: 350 }}
               minimap={{
                 alerts: alerts,
                 alertSeverity: alertRule.alert_severity || 'low',

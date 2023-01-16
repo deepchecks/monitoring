@@ -30,7 +30,10 @@ export const componentOptions: Components<Theme> = {
         padding: '0 13px',
         lineHeight: 2,
         minHeight: 36,
-        minWidth: 88
+        minWidth: 88,
+        '@media (max-width: 1536px)': {
+          padding: '0 9px'
+        }
       },
       sizeSmall: {
         padding: '0 11px',

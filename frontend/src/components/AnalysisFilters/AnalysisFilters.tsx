@@ -7,12 +7,7 @@ import {
   useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet
 } from 'api/generated';
 
-import {
-  AnalysisContext,
-  ColumnsFilters,
-  ComparisonModeOptions,
-  frequencyData
-} from 'context/analysis-context';
+import { AnalysisContext, ColumnsFilters, ComparisonModeOptions, frequencyData } from 'context/analysis-context';
 
 import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box, Typography } from '@mui/material';
 
@@ -28,7 +23,6 @@ import { comparisonModeData } from './AnalysisFilters.helpers';
 import { FilterIcon } from 'assets/icon/icon';
 import { DateRange } from 'components/DateRange/DateRange';
 import dayjs from 'dayjs';
-
 
 interface AnalysisFiltersProps {
   model: ModelManagmentSchema;
@@ -68,15 +62,12 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     }
   });
 
-  const {
-    data: defaultFrequency,
-    refetch: loadDefaultFrequency
-  } = useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
-    query: {
-      enabled: false
-    }
-  });
-
+  const { data: defaultFrequency, refetch: loadDefaultFrequency } =
+    useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
+      query: {
+        enabled: false
+      }
+    });
 
   const handleFiltersClose = () => {
     setAnchorEl(null);
@@ -107,8 +98,8 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   useEffect(() => {
     if (defaultFrequency) {
       setPeriod([new Date(defaultFrequency.start * 1000), new Date(defaultFrequency.end * 1000)]);
-      setFrequency(defaultFrequency.frequency)
-      setDefaultFrequency(defaultFrequency)
+      setFrequency(defaultFrequency.frequency);
+      setDefaultFrequency(defaultFrequency);
     }
   }, [setPeriod, setFrequency, defaultFrequency, setDefaultFrequency]);
 
@@ -159,10 +150,17 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
 
   const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
     if (frequency && dayjs(startTime).isSame(dayjs(endTime))) {
-      setMaxDate(dayjs(startTime).add(frequency * maxWindowsCount, 'second').toDate());
-      setMinDate(dayjs(startTime).subtract(frequency * maxWindowsCount, 'second').toDate());
-    }
-    else {
+      setMaxDate(
+        dayjs(startTime)
+          .add(frequency * maxWindowsCount, 'second')
+          .toDate()
+      );
+      setMinDate(
+        dayjs(startTime)
+          .subtract(frequency * maxWindowsCount, 'second')
+          .toDate()
+      );
+    } else {
       setMaxDate(null);
       setMinDate(null);
     }
@@ -180,7 +178,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
             value={comparisonMode}
             onChange={handleComparisonModeChange}
             disabled={!isComparisonModeOn}
-            sx={{ width: '176px' }}
+            sx={{ width: '178px' }}
           >
             {comparisonModeData.map(({ label, value }, index) => (
               <MenuItem key={`${value}${index}`} value={value}>
@@ -188,31 +186,33 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
               </MenuItem>
             ))}
           </MarkedSelect>
-          { defaultFrequency ?
-          <>
-            <DateRange
-              onApply={handleDateSet}
-              onChange={handleDateChange}
-              startTime={period ? period[0] : undefined}
-              endTime={period ? period[1] : undefined}
-              minDate={minDate ? minDate: undefined}
-              maxDate={maxDate ? maxDate: undefined}
+          {defaultFrequency ? (
+            <>
+              <DateRange
+                onApply={handleDateSet}
+                onChange={handleDateChange}
+                startTime={period ? period[0] : undefined}
+                endTime={period ? period[1] : undefined}
+                minDate={minDate ? minDate : undefined}
+                maxDate={maxDate ? maxDate : undefined}
               />
-            <MarkedSelect
-              label="Frequency"
-              size="small"
-              value={frequency ? frequency : ''}
-              onChange={handleFrequencyChange}
-              sx={{ width: '176px' }}
-            >
-              {frequencyData.map(({ label, value }, index) => (
-                <MenuItem key={`${value}${index}`} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-          </>: ''
-          }
+              <MarkedSelect
+                label="Frequency"
+                size="small"
+                value={frequency ? frequency : ''}
+                onChange={handleFrequencyChange}
+                sx={{ width: '176px' }}
+              >
+                {frequencyData.map(({ label, value }, index) => (
+                  <MenuItem key={`${value}${index}`} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </MarkedSelect>
+            </>
+          ) : (
+            ''
+          )}
           <StyledAnalysisFiltersDivider orientation="vertical" flexItem sx={{ ml: fixedHeader ? '27px' : '' }} />
           <StyledFiltersButton
             startIcon={<FilterIcon />}

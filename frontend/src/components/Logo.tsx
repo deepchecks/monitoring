@@ -5,14 +5,13 @@ import { ColoredLogo, Logo as LargeLogo } from '../assets/logo';
 interface LogoProps {
   isColored?: boolean;
 }
-
 export const Logo: FC<LogoProps> = ({ isColored }) => (
   <Box
     sx={{
       display: 'flex',
       justifyContent: 'center',
       cursor: 'pointer',
-      paddingTop: '48px',
+      padding: { xs: '32px 20px 0', lg: '32px 20px 0', xl: '48px 0' },
       width: isColored ? '280px' : 'unset'
     }}
   >

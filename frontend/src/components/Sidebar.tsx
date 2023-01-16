@@ -18,9 +18,8 @@ const StyledButton = styled(Button)(({ theme }) => ({
   background: 'none',
   borderRadius: 2,
   border: `1px solid ${alpha(theme.palette.common.white, 0.4)}}`,
-  padding: '12px 11px',
-  '& .MuiButton-startIcon.MuiButton-iconSizeMedium': {
-    marginRight: '12px'
+  '& .MuiButton-startIcon.MuiButton-iconSizeLarge': {
+    marginRight: '8px'
   }
 }));
 
@@ -63,7 +62,7 @@ export const Sidebar = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         background: colors.primary.violet[600],
-        width: '237px',
+        width: { xs: '196px', lg: '196px', xl: '237px' },
         height: '100vh',
         zIndex: 100
       }}
@@ -94,14 +93,14 @@ export const Sidebar = () => {
               <Logo />
             </Box>
 
-            <Box sx={{ mt: '40px', pl: '14px' }}>
+            <Box sx={{ mt: '40px', pl: { xs: '11px', lg: '11px', xl: '14px' } }}>
               {pathsInfo.map((info: PathInfo) => (
                 <SidebarMenuItem key={info.link} onOpenSumMenu={handleOpenAnalysisSubMenu} info={info} width={width} />
               ))}
             </Box>
           </Box>
 
-          <Box sx={{ padding: '50px 30px 50px' }}>
+          <Box sx={{ padding: { xs: '23px 20px', lg: '23px 20px', xl: '50px 30px' } }}>
             <StyledButton onClick={handleInviteToOrgClick} startIcon={<UserInvite />}>
               <Typography
                 sx={{

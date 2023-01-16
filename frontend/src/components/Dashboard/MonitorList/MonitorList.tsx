@@ -70,7 +70,7 @@ export const MonitorList = ({
   };
 
   return (
-    <Grid container spacing={4} marginBottom="32px" {...props}>
+    <Grid container spacing={{ xs: 2.5, lg: 2.5, xl: 4 }} marginBottom="32px" {...props}>
       {isLoading ? (
         <Loader sx={{ height: 'calc(100vh - 685px)' }} />
       ) : (

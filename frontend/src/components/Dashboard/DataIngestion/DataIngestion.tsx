@@ -7,7 +7,6 @@ import useDataIngestion from 'hooks/useDataIngestion';
 
 import { MenuItem } from '@mui/material';
 
-import { StyledSelect } from 'components/MarkedSelect/MarkedSelect';
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
 import { Loader } from 'components/Loader';
@@ -17,6 +16,7 @@ import {
   StyledFlexContent,
   StyledFlexWrapper,
   StyledLoaderBox,
+  StyledSelect,
   StyledTypographyTitle
 } from './DataIngestion.style';
 
@@ -52,7 +52,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   };
 
   return (
-    <StyledFlexContent sx={{ height: 1 }}>
+    <StyledFlexContent>
       <StyledFlexWrapper>
         <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
       </StyledFlexWrapper>
@@ -63,7 +63,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
       ) : (
         <StyledDiagramWrapper>
           <DiagramTutorialTooltip>
-            <DiagramLine data={graphData} height={392} minTimeUnit={minTimeUnit} timeFreq={timeValue}>
+            <DiagramLine data={graphData} minTimeUnit={minTimeUnit} timeFreq={timeValue} height={{ lg: 210, xl: 392 }}>
               <StyledSelect
                 value={currentTime.value.toString()}
                 onChange={e => handleTime(e.target.value)}

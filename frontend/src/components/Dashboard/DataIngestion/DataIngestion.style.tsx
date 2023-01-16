@@ -20,11 +20,17 @@ export const StyledFlexWrapper = styled(Box)({
   alignItems: 'center',
   padding: '16px 20px 16px',
   justifyContent: 'space-between',
-  marginBottom: '6px'
+  marginBottom: '6px',
+  '@media (max-width: 1536px)': {
+    padding: '10px 12px 10px'
+  }
 });
 
 export const StyledDiagramWrapper = styled(Box)({
-  padding: '0 20px 16px'
+  padding: '0 20px 16px',
+  '@media (max-width: 1536px)': {
+    padding: '0 12px 10px'
+  }
 });
 
 export const StyledSelect = styled(Select)(({ theme }) => ({
@@ -33,8 +39,11 @@ export const StyledSelect = styled(Select)(({ theme }) => ({
   alignSelf: 'end',
   '& .MuiSelect-icon': {
     '& + .MuiOutlinedInput-notchedOutline': {
-      border: `1px solid ${theme.palette.grey[50]}`
+      border: `1px solid ${theme.palette.grey[400]}`
     }
+  },
+  '@media (max-width: 1536px)': {
+    marginTop: '10px'
   }
 }));
 

@@ -42,10 +42,15 @@ export interface IMinimap {
   changeAlertIndex: SetStateType<number>;
 }
 
+interface DiagramLineHeight {
+  xl: number;
+  lg: number;
+}
+
 export interface DiagramLineProps {
   alert_rules?: Array<AlertRuleSchema>;
   data: ChartData<'line', GraphData>;
-  height?: number;
+  height: DiagramLineHeight;
   minTimeUnit?: TimeUnit;
   timeFreq?: number;
   isLoading?: boolean;

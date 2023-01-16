@@ -33,11 +33,16 @@ export const UserInfo = () => {
   return (
     <>
       <Box
-        sx={{ mt: 4, pt: '7px', pb: '20px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+        sx={{ mt: 4, pt: '7px', pb: '27px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
         onClick={handleClick}
       >
         <Avatar
-          sx={{ flexGrow: 0, border: theme => `2px solid ${alpha(theme.palette.common.white, 0.2)}` }}
+          sx={{
+            width: { xs: '24px', lg: '24px', xl: '36px' },
+            height: { xs: '24px', lg: '24px', xl: '36px' },
+            flexGrow: 0,
+            border: theme => `2px solid ${alpha(theme.palette.common.white, 0.2)}`
+          }}
           alt={full_name}
           src={picture_url}
         ></Avatar>

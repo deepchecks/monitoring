@@ -50,7 +50,11 @@ export const DashboardPage = () => {
   return (
     <>
       <DashboardHeader onOpen={handleOpenMonitorDrawer} />
-      <Grid container spacing={4}>
+      <Grid
+        container
+        sx={{ maxWidth: { xs: 'calc(100vw - 196px - 65px)', xl: 'calc(100vw - 237px - 65px)' } }}
+        spacing={{ xs: 2.5, lg: 2.5, xl: 4 }}
+      >
         <Grid item md={4}>
           <ModelList
             models={models}

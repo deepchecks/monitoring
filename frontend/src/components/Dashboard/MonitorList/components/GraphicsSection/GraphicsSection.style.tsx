@@ -6,7 +6,10 @@ export const StyledFlexContent = styled(Box)({
   boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
   paddingBottom: '30px',
   borderRadius: '10px',
-  height: '429px'
+  height: '429px',
+  '@media (max-width: 1536px)': {
+    height: '354px'
+  }
 });
 
 export const StyledTypographyTitle = styled(Typography)({

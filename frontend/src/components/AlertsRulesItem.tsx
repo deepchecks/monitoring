@@ -59,7 +59,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
     mixpanel.track('Click on Edit Rule button');
 
     event.stopPropagation();
-    setEditedAlertRule(alertRule.id)
+    setEditedAlertRule(alertRule.id);
   };
 
   const onEditRuleClose = () => {
@@ -127,7 +127,6 @@ const StyledMainWrapper = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   borderRadius: '10px',
   boxShadow: '0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
-  minWidth: 'fit-content',
   height: 100,
   width: '100%',
   position: 'relative',
@@ -135,6 +134,9 @@ const StyledMainWrapper = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.primary.light,
     cursor: 'pointer',
     outline: `6px solid ${theme.palette.primary.contrastText}`
+  },
+  '@media (max-width: 1536px)': {
+    height: 70
   }
 }));
 
@@ -173,7 +175,11 @@ const StyledCriticality = styled(Box, {
     padding: '22px 11px 20px 11px',
     textAlign: 'center',
     borderRadius: '10px 0px 0px 10px',
-    color: theme.palette.common.white
+    color: theme.palette.common.white,
+    '@media (max-width: 1536px)': {
+      minWidth: 65,
+      padding: '10px 11px 10px 11px'
+    }
   };
 });
 
@@ -183,7 +189,11 @@ const StyledDescription = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  minWidth: 290
+  minWidth: 290,
+  '@media (max-width: 1536px)': {
+    padding: '10px 20px 10px 30px',
+    minWidth: 221
+  }
 });
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -199,7 +209,10 @@ const StyledInfo = styled(Box)({
   padding: '31px 0',
   width: '100%',
   marginLeft: '16px',
-  height: '100%'
+  height: '100%',
+  '@media (max-width: 1536px)': {
+    padding: '16px 0'
+  }
 });
 
 const StyledProperty = styled(Box)({
@@ -207,7 +220,11 @@ const StyledProperty = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  width: 215
+  width: 215,
+  '@media (max-width: 1536px)': {
+    width: 'fit-content',
+    paddingRight: '30px'
+  }
 });
 
 const StyledTitle = styled(Typography)(({ theme }) => ({
@@ -228,7 +245,10 @@ const StyledBlur = styled(Box)({
   borderRadius: '10px',
   padding: '21px 25px 21px 87px',
   display: 'flex',
-  justifyContent: 'space-between'
+  justifyContent: 'space-between',
+  '@media (max-width: 1536px)': {
+    padding: '5px 25px 5px 87px'
+  }
 });
 
 const StyledIconButton = styled(IconButton)({

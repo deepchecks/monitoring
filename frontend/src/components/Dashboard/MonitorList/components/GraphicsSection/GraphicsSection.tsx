@@ -191,7 +191,7 @@ function GraphicsSectionComponent({
               <DiagramLine
                 data={data}
                 alert_rules={monitor.alert_rules}
-                height={320}
+                height={{ lg: 200, xl: 270 }}
                 minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'}
                 timeFreq={monitor.frequency}
               />

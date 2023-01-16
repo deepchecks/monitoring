@@ -46,7 +46,7 @@ export function ModelItem({ activeModel, alertsCount, onModelClick, onReset, mod
         <Box>
           <Typography variant="subtitle1">{model.name}</Typography>
           <StyledTypographyDate variant="body2">
-            Last data update: {model.latest_time ? dayjs.unix(model.latest_time).format('MMM. DD, YYYY') : '-'}
+            Last data update: {model.latest_time ? dayjs.unix(model.latest_time).format('MMM. DD, YY') : '-'}
           </StyledTypographyDate>
         </Box>
         <StyledAlertBadge severity={severity} onClick={linkToAlerts}>

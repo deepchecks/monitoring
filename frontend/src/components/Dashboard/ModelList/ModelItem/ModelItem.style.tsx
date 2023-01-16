@@ -15,6 +15,9 @@ export const StyledContainer = styled(ListItem, { shouldForwardProp: prop => pro
     };
     return {
       padding: '16px 38px 16px 30px',
+      '@media (max-width: 1536px)': {
+        padding: '12px 25px 12px 16px'
+      },
       cursor: 'pointer',
       position: 'relative',
       backgroundColor: active ? 'rgba(209, 216, 220, 0.5)' : theme.palette.common.white,
@@ -56,6 +59,10 @@ interface StyledAlertBadgeProps {
 export const StyledAlertBadge = styled(Box, { shouldForwardProp: prop => prop !== 'severity' })<StyledAlertBadgeProps>(
   ({ severity, theme }) => ({
     padding: '0 10px',
+    '@media (max-width: 1536px)': {
+      padding: '0 5px',
+      borderRadius: '15px'
+    },
     height: 60,
     display: 'flex',
     flexDirection: 'column',
@@ -80,6 +87,11 @@ export const StyledActiveModelResetButton = styled(Box)({
   backgroundColor: 'white',
   top: '50%',
   right: '8px',
+  '@media (max-width: 1536px)': {
+    right: '1px',
+    width: 18,
+    height: 18
+  },
   transform: 'translateY(-50%)',
 
   '::before, ::after': {

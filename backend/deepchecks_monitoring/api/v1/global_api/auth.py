@@ -48,6 +48,7 @@ async def auth0_callback(
 ):
     """Get the user details from the Auth0 callback."""
     auth0_client = oauth.create_client('auth0')
+
     res = await get_state_data(request.session, request.query_params.get('state'))
     print("StateData", res)
     print("Cache:", auth0_client.framework.cache)
