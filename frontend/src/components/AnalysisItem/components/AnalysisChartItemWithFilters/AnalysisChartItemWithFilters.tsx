@@ -17,26 +17,23 @@ interface AnalysisChartItemWithFiltersProps extends SelectProps {
   docs_link?: string | null;
   subtitle: string;
   filters: MonitorTypeConf[];
-  activeFilter: AnalysisItemFilterTypes | null;
   isMostWorstActive: boolean;
-  setActiveFilter: SetStateType<AnalysisItemFilterTypes | null>;
-  setSingleSelectValue: SetStateType<string>;
-  multipleSelectValue: string[];
-  setMultipleSelectValue: SetStateType<string[]>;
+  isDriftCheck: boolean;
   setIsMostWorstActive: SetStateType<boolean>;
   sx?: SxProps;
+  filteredValues: Record<AnalysisItemFilterTypes, string[]>;
+  setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
 }
 
 export function AnalysisChartItemWithFilters({
   children,
   filters,
-  activeFilter,
+  filteredValues,
+  setfilteredValues,
   isMostWorstActive,
-  setActiveFilter,
-  setSingleSelectValue,
-  setMultipleSelectValue,
   setIsMostWorstActive,
   subtitle,
+  isDriftCheck,
   title,
   docs_link,
   sx
@@ -57,10 +54,10 @@ export function AnalysisChartItemWithFilters({
                 key={index + type}
                 label={type}
                 data={values}
+                isDriftCheck={isDriftCheck}
                 type={type}
-                activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
-                setSelectValue={setSingleSelectValue}
+                filteredValues={filteredValues}
+                setfilteredValues={setfilteredValues}
                 isMostWorstActive={isMostWorstActive}
                 setIsMostWorstActive={setIsMostWorstActive}
               />
@@ -70,9 +67,8 @@ export function AnalysisChartItemWithFilters({
                 label={type}
                 data={values}
                 type={(type as AnalysisItemFilterTypes)}
-                activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
-                setSelectValue={setMultipleSelectValue}
+                filteredValues={filteredValues}
+                setfilteredValues={setfilteredValues}
                 isMostWorstActive={isMostWorstActive}
                 setIsMostWorstActive={setIsMostWorstActive}
               />

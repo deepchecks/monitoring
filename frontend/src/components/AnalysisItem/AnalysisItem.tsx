@@ -70,9 +70,8 @@ function AnalysisItemComponent({
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
   const [data, setData] = useState<typeof chartData>(chartData);
-  const [activeFilter, setActiveFilter] = useState<AnalysisItemFilterTypes | null>(null);
-  const [filtersSingleSelectValue, setFiltersSingleSelectValue] = useState('');
-  const [filtersMultipleSelectValue, setFiltersMultipleSelectValue] = useState<string[]>([]);
+
+  const [filteredValues, setfilteredValues] = useState<Record<AnalysisItemFilterTypes, string[]>>({} as any);
   const [isMostWorstActive, setIsMostWorstActive] = useState(false);
 
   const checkConf = useMemo(() => checkInfo?.check_conf, [checkInfo?.check_conf]);
@@ -83,27 +82,16 @@ function AnalysisItemComponent({
   );
 
   const additionalKwargs = useMemo(() => {
-    if (
-      checkConf?.length &&
-      (filtersSingleSelectValue.length || filtersMultipleSelectValue.length) &&
-      typeof activeFilter === 'string'
-    ) {
-      const filter =
-        activeFilter === AnalysisItemFilterTypes.AGGREGATION ? [filtersSingleSelectValue] : filtersMultipleSelectValue;
+    if (Object.keys(filteredValues).length) {
 
       const additionalKwargs = {
-        check_conf: {
-          [activeFilter]: filter
-        },
+        check_conf: filteredValues,
         res_conf: undefined
       };
 
-      if (activeFilter !== AnalysisItemFilterTypes.AGGREGATION)
-        additionalKwargs.check_conf[AnalysisItemFilterTypes.AGGREGATION] = ['none'];
-
       return additionalKwargs;
     }
-  }, [activeFilter, checkConf?.length, filtersMultipleSelectValue, filtersSingleSelectValue]);
+  }, [filteredValues, checkConf?.length]);
 
   useEffect(() => {
     const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0;
@@ -188,14 +176,14 @@ function AnalysisItemComponent({
 
     getData();
   }, [
-    activeFilters,
     additionalKwargs,
+    isMostWorstActive,
     ascending,
+    activeFilters,
     check.id,
     comparisonMode,
     frequency,
     isComparisonModeOn,
-    isMostWorstActive,
     period,
     runCheck,
     initialData,
@@ -218,14 +206,12 @@ function AnalysisItemComponent({
           title={check?.name || '-'}
           subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
           docs_link={check.docs_link}
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          setSingleSelectValue={setFiltersSingleSelectValue}
-          multipleSelectValue={filtersMultipleSelectValue}
-          setMultipleSelectValue={setFiltersMultipleSelectValue}
+          isDriftCheck={check && check.config.class_name.toLowerCase().includes('drift')}
           isMostWorstActive={isMostWorstActive}
           setIsMostWorstActive={setIsMostWorstActive}
           filters={checkConf}
+          filteredValues={filteredValues}
+          setfilteredValues={setfilteredValues}
           sx={{ height: { xs: height - 104, xl: height }, minHeight: { xs: height - 104, xl: height } }}
         >
           <DiagramLine

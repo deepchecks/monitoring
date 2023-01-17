@@ -37,15 +37,15 @@ const MenuProps: Partial<IMenuProps> = {
   }
 };
 
+/*eslint no-param-reassign: ["error", { "props": false }]*/
 const MultiSelect = ({
   size = 'small',
   label,
   data,
   type,
-  activeFilter,
   isMostWorstActive,
-  setActiveFilter,
-  setSelectValue,
+  filteredValues,
+  setfilteredValues,
   setIsMostWorstActive
 }: AnalysisItemSelectProps<MultiSelectValuesType>) => {
   const [filteredData, setFilteredData] = useState(data);
@@ -53,13 +53,6 @@ const MultiSelect = ({
   const [multiValue, setMultiValue] = useState<MultiSelectValuesType>([]);
   const [savedMultiValue, setSavedMultiValue] = useState<MultiSelectValuesType>([]);
   const [searchFieldValue, setSearchFieldValue] = useState('');
-
-  useEffect(() => {
-    if (activeFilter !== type) {
-      setMultiValue([]);
-      setSelectValue([]);
-    }
-  }, [setSelectValue, activeFilter, type]);
 
   const handleClose = (isApplyClicked?: boolean) => {
     setOpen(false);
@@ -73,26 +66,26 @@ const MultiSelect = ({
       return;
     }
 
-    setActiveFilter(type);
-    setSelectValue(multiValue);
-    setSavedMultiValue(multiValue);
-    setIsMostWorstActive(false);
-  };
+    filteredValues[type] = multiValue;
+    if (!filteredValues[AnalysisItemFilterTypes.AGGREGATION])
+      filteredValues[AnalysisItemFilterTypes.AGGREGATION] = ['none'];
+    setfilteredValues(filteredValues => ({...filteredValues}));
+    };
 
   const handleOpen = () => {
     setOpen(true);
   };
 
-  const handleSelectValueChange = (event: SelectChangeEvent<typeof multiValue>) => {
+  const handleSelectValueChange = (event: SelectChangeEvent<unknown>) => {
     const { value } = event.target;
-    const val = typeof value === 'string' ? value.split(',') : value;
+    const val = (typeof value === 'string' ? value.split(',') : value) as MultiSelectValuesType;
 
     setMultiValue(val);
+    setSavedMultiValue(val);
   };
 
   const handleWorstPerformersClick = () => {
     setIsMostWorstActive(!isMostWorstActive);
-    handleClearSelectedValue();
   };
 
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,10 +102,10 @@ const MultiSelect = ({
   };
 
   const handleClearSelectedValue = () => {
-    setActiveFilter(null);
     setMultiValue([]);
     setSavedMultiValue([]);
-    setSelectValue([]);
+    delete filteredValues[type];
+    setfilteredValues(filteredValues => ({...filteredValues}));
   };
 
   const handleResetSelection = () => {
@@ -127,8 +120,9 @@ const MultiSelect = ({
         </StyledMostWorstButton>
       )}
       <StyledRoundedSelectContainer fullWidth>
-        <InputLabel id={label} label={label} size={size} />
+        <InputLabel id={label} label={`Select ${label}`} size={size} />
         <StyledRoundedSelect
+          active={multiValue.length > 0 ? 1 : 0}
           size={size}
           label={label}
           labelId={label}
@@ -138,7 +132,7 @@ const MultiSelect = ({
           open={open}
           onOpen={handleOpen}
           onClose={() => handleClose(false)}
-          renderValue={selected => `Selected classes (${selected.length})`}
+          renderValue={selected => `Selected ${label}s (${(selected as Array<string>).length})`}
           MenuProps={MenuProps}
           endAdornment={<ClearButton inputCheck={multiValue.length} onClick={handleClearSelectedValue} />}
         >
@@ -193,8 +187,8 @@ const MultiSelect = ({
               Apply
             </Button>
           </StyledApplyButton>
-        </StyledRoundedSelect>
-      </StyledRoundedSelectContainer>
+        </StyledRoundedSelect >
+      </StyledRoundedSelectContainer >
     </>
   );
 };

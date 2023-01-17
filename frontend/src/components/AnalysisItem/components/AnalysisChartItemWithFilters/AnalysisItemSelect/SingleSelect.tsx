@@ -9,40 +9,43 @@ import { StyledRoundedSelectContainer, StyledRoundedSelect, StyledMostWorstButto
 import { AnalysisItemSelectProps } from './AnalysisItemSelect.types';
 import { AGGREGATION_NONE } from 'components/AnalysisItem/AnalysisItem.types';
 
+/*eslint no-param-reassign: ["error", { "props": false }]*/
 const SingleSelect = ({
   size = 'small',
   label,
   data,
   type,
-  activeFilter,
   isMostWorstActive,
-  setActiveFilter,
-  setSelectValue,
+  filteredValues,
+  isDriftCheck,
+  setfilteredValues,
   setIsMostWorstActive
 }: AnalysisItemSelectProps<string>) => {
   const [value, setValue] = useState('');
 
   const handleSetSelectValue = (value?: string) => {
     setIsMostWorstActive(value ? false : !isMostWorstActive);
-
+  
     const val = value || AGGREGATION_NONE;
-
-    setActiveFilter(type);
-    setSelectValue(val);
-    setValue(val);
+    setValue(val)
+    filteredValues[type] = [val];
+    setfilteredValues(filteredValues => ({...filteredValues}));
   };
 
-  const handleSelectValueChange = (event: SelectChangeEvent<typeof value>) => {
+  useEffect(() => {
+    if (filteredValues[type])
+      setValue(filteredValues[type][0]);
+  }, [filteredValues]);
+
+  const handleSelectValueChange = (event: SelectChangeEvent<unknown>) => {
     const { value } = event.target;
-    handleSetSelectValue(value);
+    handleSetSelectValue(value as string);
   };
 
   const handleMostDriftedClick = () => {
     if (isMostWorstActive) {
-      setValue('');
-      setSelectValue('');
+      handleClearSelectedValue();
       setIsMostWorstActive(false);
-
       return;
     }
 
@@ -50,25 +53,19 @@ const SingleSelect = ({
     handleSetSelectValue();
   };
 
-  const handleClearSelectedValue = useCallback(() => {
-    setActiveFilter(null);
+  const handleClearSelectedValue = () => {
     setValue('');
-    setSelectValue('');
-    setIsMostWorstActive(false);
-  }, [setActiveFilter, setSelectValue, setIsMostWorstActive]);
+    delete filteredValues[type];
+    setfilteredValues(filteredValues => ({...filteredValues}));
+  };
 
-  useEffect(() => {
-    if (activeFilter !== type) {
-      setValue('');
-      setSelectValue('');
-    }
-  }, [setSelectValue, activeFilter, type]);
 
   return (
     <>
       <StyledRoundedSelectContainer fullWidth>
-        <InputLabel id={label} label={label} size={size} />
+        <InputLabel id={label} label={`Select ${label}`} size={size} />
         <StyledRoundedSelect
+          active={value.length > 0 ? 1 : 0}
           size={size}
           label={label}
           labelId={label}
@@ -84,7 +81,7 @@ const SingleSelect = ({
         </StyledRoundedSelect>
       </StyledRoundedSelectContainer>
       <StyledMostWorstButton active={isMostWorstActive} onClick={handleMostDriftedClick}>
-        Most drifted
+        { isDriftCheck ? 'Most Drifted' : 'Highest Values'}
       </StyledMostWorstButton>
     </>
   );

@@ -9,11 +9,11 @@ export interface AnalysisItemSelectProps<T> {
   data?: MonitorValueConf[];
   size?: SelectSize;
   type: AnalysisItemFilterTypes;
-  activeFilter: AnalysisItemFilterTypes | null;
   isMostWorstActive: boolean;
-  setActiveFilter: SetStateType<AnalysisItemFilterTypes | null>;
-  setSelectValue: SetStateType<T>;
+  isDriftCheck?: boolean;
   setIsMostWorstActive: SetStateType<boolean>;
+  filteredValues: Record<AnalysisItemFilterTypes, string[]>;
+  setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
 }
 
 export type MultiSelectValuesType = string[];

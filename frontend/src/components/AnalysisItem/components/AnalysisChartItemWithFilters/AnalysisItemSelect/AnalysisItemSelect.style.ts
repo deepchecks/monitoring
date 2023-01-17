@@ -13,26 +13,32 @@ import {
 
 import { SearchField } from 'components/SearchField';
 
-export const StyledRoundedSelectContainer = styled(FormControl)({
+interface IsActive {
+  active: boolean | number;
+}
+
+export const StyledRoundedSelectContainer = styled(FormControl)(({ theme }) => ({
   position: 'relative',
   minHeight: 30,
-  height: 30
-});
+  height: 30,
+
+  color: theme.palette.primary.main,
+  '&:hover': {
+    color: theme.palette.common.white
+  }
+
+}));
 
 export const StyledRoundedSelectInputLabel = styled(InputLabel)(({ theme }) => ({
   transform: 'translate(14px, 7px) scale(1)',
-
-  '&.MuiFormLabel-root.MuiInputLabel-root': {
-    color: theme.palette.primary.main
-  },
+  color: 'inherit !important',
 
   '&.Mui-focused, &.MuiFormLabel-filled': {
-    transform: 'translate(14px, -5px) scale(0.75)',
-    color: theme.palette.primary.main
+    display: 'none'
   }
 }));
 
-export const StyledRoundedSelect = styled(Select)(({ theme }) => ({
+export const StyledRoundedSelect = styled(Select)<IsActive>(({ active, theme }) => ({
   minWidth: 192,
   minHeight: 30,
   fontSize: 12,
@@ -44,24 +50,33 @@ export const StyledRoundedSelect = styled(Select)(({ theme }) => ({
   '& .MuiOutlinedInput-notchedOutline, &:hover .MuiOutlinedInput-notchedOutline': {
     borderColor: theme.palette.primary.main
   },
-
+  '.MuiOutlinedInput-notchedOutline legend': {
+    width: 0
+  },
   '& .MuiSelect-select': {
     padding: '6.5px 22px 6.5px 10px'
   },
 
   '& svg': {
-    color: theme.palette.primary.main
-  }
-})) as unknown as typeof Select;
+    color: 'inherit'
+  },
 
-export const StyledRoundedSelectCloseButton = styled(IconButton)({
+  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
+  '&:hover, &:hover svg': {
+    fill: theme.palette.common.white,
+    color: theme.palette.common.white,
+    backgroundColor: theme.palette.primary.main
+  }
+}));
+
+export const StyledRoundedSelectCloseButton = styled(IconButton)(({ theme }) => ({
   position: 'absolute',
   right: '27px',
   bottom: '5px',
   width: '15px',
   padding: 0,
   background: 'transparent'
-});
+}));
 
 export const StyledSearchField = styled(SearchField)({
   padding: '15px 16px 0',
@@ -118,29 +133,25 @@ export const StyledApplyButton = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${alpha(theme.palette.grey[200], 0.5)}`
 }));
 
-interface StyledMostWorstButtonOptions {
-  active: boolean;
-}
-
 export const StyledMostWorstButton = styled(Button, {
   shouldForwardProp: prop => prop !== 'active'
-})<StyledMostWorstButtonOptions>(({ active, theme }) => ({
+})<IsActive>(({ active, theme }) => ({
   fontSize: 12,
   letterSpacing: '0.17px',
   fontWeight: active ? 700 : 400,
-  lineHeight: '16.8px',
   minWidth: 120,
   minHeight: 30,
   padding: 0,
   margin: 0,
   color: theme.palette.primary.main,
-  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
   border: `1px solid ${theme.palette.primary.main}`,
   borderRadius: '1000px',
   boxShadow: 'none',
 
+  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
   '&:hover': {
     color: theme.palette.common.white,
     backgroundColor: theme.palette.primary.main
   }
+
 }));

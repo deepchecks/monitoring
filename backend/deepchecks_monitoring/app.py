@@ -34,7 +34,7 @@ from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.middlewares import ProfilingMiddleware, SecurityAuditMiddleware, NoCacheMiddleware
+from deepchecks_monitoring.middlewares import NoCacheMiddleware, ProfilingMiddleware, SecurityAuditMiddleware
 from deepchecks_monitoring.monitoring_utils import collect_telemetry
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.utils import auth
