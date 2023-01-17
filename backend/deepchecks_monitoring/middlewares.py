@@ -65,10 +65,10 @@ class SecurityAuditMiddleware:
     """Access audit middleware."""
 
     def __init__(
-        self,
-        app: ASGIApp,
-        log_group_name: str = "deepchecks-access-audit",
-        log_stream_name: str = "deepchecks-access-audit",
+            self,
+            app: ASGIApp,
+            log_group_name: str = "deepchecks-access-audit",
+            log_stream_name: str = "deepchecks-access-audit",
     ):
         h = watchtower.CloudWatchLogHandler(
             log_group_name=log_group_name,
@@ -80,10 +80,10 @@ class SecurityAuditMiddleware:
         self.app = app
 
     async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send
+            self,
+            scope: Scope,
+            receive: Receive,
+            send: Send
     ):
         """Execute middleware."""
         from deepchecks_monitoring.utils import auth  # pylint: disable=import-outside-toplevel
@@ -145,3 +145,30 @@ class SecurityAuditMiddleware:
             }
 
         self.logger.exception(info)
+
+
+class NoCacheMiddleware:
+    """Responsible for disabling cache from REST API endpoints."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(
+            self,
+            scope: Scope,
+            receive: Receive,
+            send: Send
+    ):
+        """Execute middleware."""
+        if scope["type"] != "http" or not scope["path"].startswith("/api/"):
+            return await self.app(scope, receive, send)
+
+        async def wrapped_send(message: Message):
+            if message["type"] == "http.response.start":
+                headers = dict(message["headers"])
+                headers[b"cache-control"] = headers.get(b"cache-control", b"no-cache")
+                message["headers"] = [(k, v) for k, v in headers.items()]
+
+            await send(message)
+
+        await self.app(scope, receive, wrapped_send)

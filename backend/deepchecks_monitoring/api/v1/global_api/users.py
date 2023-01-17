@@ -175,8 +175,9 @@ class UserSchema(BaseModel):
     tags=["users"],
     description="Retrieve user details"
 )
-async def retrieve_user_info(user: User = Depends(auth.CurrentUser())) -> UserSchema:
+async def retrieve_user_info(response: Response, user: User = Depends(auth.CurrentUser())) -> UserSchema:
     """Retrieve user details."""
+    response.headers["cache-control"] = "max-age=3600"
     return UserSchema.from_orm(user)
 
 
