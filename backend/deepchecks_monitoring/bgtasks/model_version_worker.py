@@ -159,7 +159,6 @@ class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):
     loglevel: str = "INFO"
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
-    uptrace_dsn: t.Optional[str] = None
     process_interval_seconds: int = 30
     num_workers: int = 3
 
@@ -192,7 +191,6 @@ def execute_worker():
             log_level=settings.loglevel,
             logfile=settings.logfile,
             logfile_backup_count=settings.logfile_backup_count,
-            uptrace_dsn=settings.uptrace_dsn,
         )
 
         async with ResourcesProvider(settings) as rp:

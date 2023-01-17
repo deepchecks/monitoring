@@ -16,8 +16,6 @@ aiokafka==0.8.0
 uvloop==0.16.0
 nbformat>=5.4.0,<6
 deepchecks@git+https://github.com/deepchecks/deepchecks.git@main
-opentelemetry-instrumentation-asyncpg==0.34b0
-opentelemetry-instrumentation-fastapi==0.34b0
 redis[hiredis]>=4.3.4
 pandas>=1.1.5,<1.5.0
 deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main
@@ -30,7 +28,7 @@ itsdangerous~=2.1.2
 randomname~=0.1.5
 furl==2.1.3
 slack-sdk==3.18.1
-uptrace
 bcrypt==4.0.1
 pyinstrument
 watchtower==3.0.0
+sentry-sdk[fastapi]==1.13.0

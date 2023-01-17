@@ -25,10 +25,10 @@ from deepchecks_monitoring.config import DatabaseSettings, Settings
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.monitoring_utils import collect_telemetry, fetch_unused_monitoring_tables
+from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils import auth, telemetry
 from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
 
 
@@ -57,14 +57,10 @@ def consume_data():
     async def consume():
         settings = Settings()  # type: ignore
         resources_provider = ResourcesProvider(settings)
-        if settings.uptrace_dsn and settings.instrument_telemetry:
-            import uptrace  # pylint: disable=import-outside-toplevel
-            uptrace.configure_opentelemetry(
-                service_name="monitoring-commercial",
-                service_version=__version__,
-                dsn=settings.uptrace_dsn
-            )
-            collect_telemetry(DataIngestionBackend)
+        if settings.sentry_dsn:
+            import sentry_sdk  # pylint: disable=import-outside-toplevel
+            sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+            telemetry.collect_telemetry(DataIngestionBackend)
         backend = DataIngestionBackend(settings, resources_provider)
         await backend.run_data_consumer()
 

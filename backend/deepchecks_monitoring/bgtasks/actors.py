@@ -30,8 +30,7 @@ from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBr
 from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
-from deepchecks_monitoring.monitoring_utils import (DataFilterList, collect_telemetry, configure_logger,
-                                                    make_oparator_func)
+from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, Model
@@ -41,7 +40,7 @@ from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
-from deepchecks_monitoring.utils import slack
+from deepchecks_monitoring.utils import slack, telemetry
 
 __all__ = ["execute_monitor"]
 
@@ -460,21 +459,17 @@ class WorkerBootstrap:
         settings = self.settings_type()  # type: ignore
         service_name = "deepchecks-worker"
 
-        if settings.uptrace_dsn and settings.instrument_telemetry:
-            import uptrace  # pylint: disable=import-outside-toplevel
-            uptrace.configure_opentelemetry(
-                dsn=settings.uptrace_dsn,
-                service_name=service_name,
-                service_version=__version__,
-            )
-            collect_telemetry(Worker)
+        if settings.sentry_dsn:
+            import sentry_sdk  # pylint: disable=import-outside-toplevel
+            sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+            telemetry.collect_telemetry(Worker)
 
         logger = configure_logger(
             name=service_name,
             log_level=settings.worker_loglevel,
             logfile=settings.worker_logfile,
             logfile_backup_count=settings.worker_logfile_backup_count,
-            uptrace_dsn=settings.uptrace_dsn,
+            with_sentry_handler=bool(settings.sentry_dsn),
         )
 
         async with self.resources_provider_type(settings) as rp:

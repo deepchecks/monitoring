@@ -18,8 +18,8 @@ def _():
     from deepchecks_monitoring.bgtasks.core import Worker
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
     from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-    from deepchecks_monitoring.monitoring_utils import collect_telemetry
+    from deepchecks_monitoring.utils import telemetry
 
-    collect_telemetry(Worker)
-    collect_telemetry(AlertsScheduler)
-    collect_telemetry(DataIngestionBackend)
+    telemetry.collect_telemetry(Worker)
+    telemetry.collect_telemetry(AlertsScheduler)
+    telemetry.collect_telemetry(DataIngestionBackend)

@@ -104,7 +104,7 @@ class TelemetrySettings(BaseDeepchecksSettings):
     """Telemetry settings."""
 
     instrument_telemetry: bool = False
-    uptrace_dsn: str = ''
+    sentry_dsn: t.Optional[str] = None
 
 
 class Settings(

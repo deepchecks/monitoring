@@ -29,12 +29,12 @@ from sqlalchemy.sql.functions import concat
 
 from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.bgtasks.core import Task
-from deepchecks_monitoring.monitoring_utils import TimeUnit, collect_telemetry, configure_logger, json_dumps
+from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_COL,
                                                              SAMPLE_TS_COL)
-from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils import database, telemetry
 
 __all__ = ['AlertsScheduler']
 
@@ -250,21 +250,17 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
         settings = SchedulerSettings()  # type: ignore
         service_name = 'alerts-scheduler'
 
-        if settings.uptrace_dsn and settings.instrument_telemetry:
-            import uptrace  # pylint: disable=import-outside-toplevel
-            uptrace.configure_opentelemetry(
-                dsn=settings.uptrace_dsn,
-                service_name=service_name,
-                service_version=__version__,
-            )
-            collect_telemetry(scheduler_implementation)
+        if settings.sentry_dsn:
+            import sentry_sdk  # pylint: disable=import-outside-toplevel
+            sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+            telemetry.collect_telemetry(scheduler_implementation)
 
         logger = configure_logger(
             name=service_name,
             log_level=settings.scheduler_loglevel,
             logfile=settings.scheduler_logfile,
             logfile_backup_count=settings.scheduler_logfile_backup_count,
-            uptrace_dsn=settings.uptrace_dsn,
+            with_sentry_handler=bool(settings.sentry_dsn),
         )
 
         async_engine = create_async_engine(

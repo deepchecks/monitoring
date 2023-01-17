@@ -23,7 +23,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.params import Depends
 from fastapi.responses import JSONResponse, ORJSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import FileResponse
 
@@ -35,9 +34,8 @@ from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.middlewares import NoCacheMiddleware, ProfilingMiddleware, SecurityAuditMiddleware
-from deepchecks_monitoring.monitoring_utils import collect_telemetry
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils import auth, telemetry
 
 __all__ = ["create_application"]
 
@@ -74,14 +72,10 @@ def create_application(
     settings = settings or Settings()
 
     # Configure telemetry with uptrace
-    if settings.uptrace_dsn and settings.instrument_telemetry:
-        import uptrace  # pylint: disable=import-outside-toplevel
-        uptrace.configure_opentelemetry(
-            service_name="monitoring-commercial",
-            service_version=__version__,
-            dsn=settings.uptrace_dsn
-        )
-        collect_telemetry(DataIngestionBackend)
+    if settings.sentry_dsn:
+        import sentry_sdk  # pylint: disable=import-outside-toplevel
+        sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+        telemetry.collect_telemetry(DataIngestionBackend)
 
     app = FastAPI(
         title=title,
@@ -152,10 +146,6 @@ def create_application(
         if app.state.data_ingestion_backend.use_kafka:
             asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
             asyncio.create_task(app.state.data_ingestion_backend.cache_invalidator.run_invalidation_consumer())
-
-        # Add telemetry
-        if settings.uptrace_dsn and settings.instrument_telemetry:
-            FastAPIInstrumentor.instrument_app(app)
 
     # Set deepchecks testing library logging verbosity to error to not spam the logs
     deepchecks.set_verbosity(logging.ERROR)
