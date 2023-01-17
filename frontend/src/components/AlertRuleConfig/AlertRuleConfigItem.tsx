@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 import { AlertRuleConfigSchema } from 'api/generated';
@@ -20,6 +21,8 @@ interface AlertRuleConfigItemProps {
 export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleConfigItemProps) => {
   dayjs.extend(duration);
   dayjs.extend(relativeTime);
+  dayjs.extend(localizedFormat);
+
 
   const [isHovered, setIsHovered] = useState(false);
 
@@ -115,7 +118,7 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
             Recent Alert:
           </Typography>
           <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px' }}>
-            {recentAlert ? dayjs(recentAlert).format('MMM. DD, YYYY') : '-'}
+            {recentAlert ? dayjs(recentAlert).format('L') : '-'}
           </Typography>
         </Stack>
       </Stack>

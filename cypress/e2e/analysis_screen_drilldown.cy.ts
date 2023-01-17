@@ -12,7 +12,7 @@ describe('Analysis screen drilldown', () => {
         // default canvas click
         cy.get('canvas', {"timeout": 30000}).click().then(() => {
           // the time is in UTC here, locally it may differ
-          cy.contains('p', '08/11/22 00:00 - 09/11/22 00:00', {"timeout": 30000}).should('exist');
+          cy.contains('p', '11/08/22 00:00 - 11/09/22 00:00', {"timeout": 30000}).should('exist');
           cy.contains('p', 'Daily').should('exist');
           cy.contains('p', 'analysis model').should('exist');
           cy.contains('p', 'All Data of nully checky v1').should('exist');
@@ -34,7 +34,7 @@ describe('Analysis screen drilldown', () => {
         cy.contains('h6', 'categorical_feature - v1').should('exist');
         // canvas aggregation method none click
         cy.get('canvas').click().then(() => {
-          cy.contains('p', '03/11/22 00:00 - 10/11/22 00:00', {"timeout": 30000}).should('exist');
+          cy.contains('p', '11/03/22 00:00 - 11/10/22 00:00', {"timeout": 30000}).should('exist');
           cy.contains('p', 'Weekly').should('exist');
           cy.contains('p', 'analysis model').should('exist');
           cy.contains('p', 'categorical_feature').should('exist');

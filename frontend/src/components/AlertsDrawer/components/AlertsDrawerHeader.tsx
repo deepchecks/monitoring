@@ -1,5 +1,6 @@
 import React, { Dispatch, SetStateAction, useMemo } from 'react';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import {
   AlertRuleInfoSchema,
@@ -19,6 +20,8 @@ import processFrequency from 'helpers/utils/processFrequency';
 
 import { Checkmark, CloseIcon } from 'assets/icon/icon';
 import { ChartSvg } from 'assets/icon/chart';
+
+dayjs.extend(localizedFormat);
 
 interface AlertsDrawerHeaderProps {
   alertIndex: number;
@@ -121,7 +124,7 @@ export const AlertsDrawerHeader = ({
                   marginTop: '10px'
                 }}
               >
-                {dayjs(alert.end_time).format('DD.MM.YYYY')}
+                {dayjs(alert.end_time).format('L')}
               </Typography>
             </Box>
             <Box>

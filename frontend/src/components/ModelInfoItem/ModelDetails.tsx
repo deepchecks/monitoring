@@ -1,5 +1,6 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { ConnectedModelSchema, useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet } from 'api/generated';
 
@@ -9,6 +10,8 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { Loader } from 'components/Loader';
 import { HighPriority, ViewDetails } from 'assets/icon/icon';
+
+dayjs.extend(localizedFormat);
 
 interface ModelDetailsProps {
   model: ConnectedModelSchema;
@@ -69,7 +72,7 @@ const ModelDetails = ({ model }: ModelDetailsProps) => {
                 </Grid>
                 <Grid item xs={1}>
                   <Typography sx={{color: '#94A4AD'}}>
-                    Last update: {version.last_update_time ? `(${dayjs(version.last_update_time).format('MMM. DD, YYYY')})` : '- '}
+                    Last update: {version.last_update_time ? `(${dayjs(version.last_update_time).format('L')})` : '- '}
                   </Typography>
                 </Grid>
                 <Grid item xs={1}>

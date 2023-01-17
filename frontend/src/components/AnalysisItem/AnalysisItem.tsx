@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useState, useMemo, useCallback, MutableRefObject } from 'react';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import {
   CheckSchema,
@@ -21,6 +22,8 @@ import { showDatasets } from './AnalysisItem.helpers';
 
 import { AnalysisItemFilterTypes, IDataset } from './AnalysisItem.types';
 import { ComparisonModeOptions } from 'context/analysis-context';
+
+dayjs.extend(localizedFormat);
 
 interface AnalysisItemProps {
   check: CheckSchema;
@@ -204,7 +207,7 @@ function AnalysisItemComponent({
       {checkConf && checkConf.length ? (
         <AnalysisChartItemWithFilters
           title={check?.name || '-'}
-          subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
+          subtitle={`Last Update: ${dayjs(lastUpdate).format('L')}`}
           docs_link={check.docs_link}
           isDriftCheck={check && check.config.class_name.toLowerCase().includes('drift')}
           isMostWorstActive={isMostWorstActive}
@@ -226,7 +229,7 @@ function AnalysisItemComponent({
         </AnalysisChartItemWithFilters>
       ) : (
         <AnalysisChartItem
-          subtitle={`Last Update: ${dayjs(lastUpdate).format('MMM. DD, YYYY')}`}
+          subtitle={`Last Update: ${dayjs(lastUpdate).format('L')}`}
           title={check?.name || '-'}
           sx={{ height: { xs: height - 104, xl: height }, minHeight: { xs: height - 104, xl: height } }}
           docs_link={check.docs_link}

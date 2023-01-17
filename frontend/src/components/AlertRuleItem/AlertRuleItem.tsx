@@ -1,6 +1,7 @@
 import React, { memo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import {
   StyledBlur,
@@ -30,6 +31,8 @@ const titles = ['Model', 'Check', 'Condition', 'Check Frequency'];
 const columnMap = {
   greater_than_equals: '>'
 };
+
+dayjs.extend(localizedFormat);
 
 function AlertRuleItemComponent({ alertRule, onOpenDialog, onOpenDrawer }: AlertRuleItemProps) {
   const [hover, setHover] = useState<boolean>(false);
@@ -62,7 +65,7 @@ function AlertRuleItemComponent({ alertRule, onOpenDialog, onOpenDrawer }: Alert
       </StyledCriticality>
       <StyledDescription>
         <Typography variant="h5">{name}</Typography>
-        <Typography variant="body2">Latest alert: {dayjs(new Date()).format('MMM. DD, YYYY')}</Typography>
+        <Typography variant="body2">Latest alert: {dayjs(new Date()).format('L')}</Typography>
       </StyledDescription>
       <StyledDivider orientation="vertical" flexItem />
       <StyledInfo>

@@ -1,5 +1,6 @@
 import React, { PropsWithChildren, useState } from 'react';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import mixpanel from 'mixpanel-browser';
 
 import {
@@ -31,6 +32,9 @@ import {
 import { Loader } from './Loader';
 
 import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
+
+dayjs.extend(localizedFormat);
+
 
 export interface UserInviteDialogProps {
   open: boolean;
@@ -199,7 +203,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
                       flexItem
                       sx={{ margin: '0 5px', alignSelf: 'center', height: '8px' }}
                     />
-                    <Typography variant="caption">Active since {dayjs(created_at).format('MMMM DD. YYYY')}</Typography>
+                    <Typography variant="caption">Active since {dayjs(created_at).format('L')}</Typography>
                   </Stack>
                 </Box>
                 <Button variant="text" sx={{ padding: '0 16px' }} onClick={() => handleDeleteMember(id, email)}>

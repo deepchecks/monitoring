@@ -3,8 +3,12 @@ import { DateRangePicker, RangeKeyDict, Range } from 'react-date-range';
 import 'react-date-range/dist/theme/default.css';
 import 'react-date-range/dist/styles.css';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+
 import { Box, Button, Popover, styled, TextField } from '@mui/material';
 import { Calendar } from 'assets/icon/icon';
+
+dayjs.extend(localizedFormat);
 
 interface DateRangeProps {
   onApply?: (startTime: Date | undefined, endTime: Date | undefined) => void;
@@ -67,7 +71,7 @@ export const DateRange = ({
         onClick={handleDatePickerOpen}
         variant="outlined"
         label="Time Range"
-        value={`${dayjs(range.startDate).format('MM/DD/YYYY')} - ${dayjs(range.endDate).format('MM/DD/YYYY')}`}
+        value={`${dayjs(range.startDate).format('L')} - ${dayjs(range.endDate).format('L')}`}
         size="small"
         sx={{ cursor: 'pointer', width: { xs: '240px', xl: '260px' } }}
         InputProps={{

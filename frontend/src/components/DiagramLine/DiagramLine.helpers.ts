@@ -2,8 +2,11 @@ import { ChartArea, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js
 import { _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { IMinimap } from './DiagramLine.types';
+
+dayjs.extend(localizedFormat);
 
 export function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, colorStart: string, colorEnd: string) {
   const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
@@ -13,8 +16,8 @@ export function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, c
 }
 
 function getTime(timeLabel: string, monitorFreq: number) {
-  if (monitorFreq < 86400) return dayjs(timeLabel).format('MMM. DD YYYY hha');
-  return dayjs(timeLabel).format('MMM. DD YYYY');
+  if (monitorFreq < 86400) return dayjs(timeLabel).format('L LT');
+  return dayjs(timeLabel).format('L');
 }
 
 export const defaultTooltipCallbacks: (

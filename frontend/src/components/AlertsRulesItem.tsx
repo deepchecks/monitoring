@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import mixpanel from 'mixpanel-browser';
 
 import useModels from 'hooks/useModels';
@@ -20,6 +21,7 @@ import { AlertRuleDialog } from './AlertRuleDialog/AlertRuleDialog';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
+dayjs.extend(localizedFormat);
 
 export type AlertRuleItemProps = {
   alertRule: AlertRuleInfoSchema;
@@ -86,7 +88,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
       </StyledCriticality>
       <StyledDescription>
         <Typography variant="h5">{monitor?.name}</Typography>
-        <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('MMM. DD, YYYY')}</Typography>
+        <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('L')}</Typography>
       </StyledDescription>
       <StyledDivider orientation="vertical" flexItem />
       <StyledInfo>

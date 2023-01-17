@@ -224,7 +224,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
             <>
               <StyledDateWrapper>
                 <DatePicker
-                  inputFormat="DD MMM YYYY"
+                  inputFormat="L"
                   onChange={handleStartDateChange}
                   value={startDate}
                   label="Start Date"
@@ -234,7 +234,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
                 />
                 -
                 <DatePicker
-                  inputFormat="DD MMM YYYY"
+                  inputFormat="L"
                   onChange={handleEndDateChange}
                   value={endDate}
                   label="End Date"

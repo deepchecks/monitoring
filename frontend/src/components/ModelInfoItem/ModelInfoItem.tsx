@@ -1,5 +1,6 @@
 import React, { useState, useRef, RefObject, useEffect } from 'react';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { ConnectedModelSchema, ModelVersionManagmentSchema } from 'api/generated';
 
@@ -24,9 +25,10 @@ import {
   StyledDeleteModelButton,
   StyledDeleteModelButtonText
 } from './ModelInfoItem.style';
-
 import { CloseIcon, DeleteIcon, ViewDetails } from 'assets/icon/icon';
 import ModelDetails from './ModelDetails';
+
+dayjs.extend(localizedFormat);
 
 interface ModelInfoItemProps {
   model: ConnectedModelSchema;
@@ -75,7 +77,7 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
               <span ref={modelNameRef}>{name}</span>
             </StyledModelInfoItemName>
           </Tooltip>
-          <Typography>Last update: {lastUpdate ? dayjs(lastUpdate).format('MMM. DD, YYYY') : '-'}</Typography>
+          <Typography>Last update: {lastUpdate ? dayjs(lastUpdate).format('L') : '-'}</Typography>
         </Stack>
 
       </StyledModelInfoItemHeader>

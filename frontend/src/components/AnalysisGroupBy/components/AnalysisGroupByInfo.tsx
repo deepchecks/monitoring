@@ -1,5 +1,6 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { styled, Stack, StackProps } from '@mui/material';
 
@@ -17,7 +18,9 @@ interface AnalysisGroupByInfoProps extends StackProps {
   classOrFeature: ClassOrFeature | null;
 }
 
-const showDate = (date: string) => dayjs(date).format('DD/MM/YY HH:mm');
+dayjs.extend(localizedFormat);
+
+const showDate = (date: string) => dayjs(date).format('L LT');
 
 export const AnalysisGroupByInfo = ({
   startTime,
