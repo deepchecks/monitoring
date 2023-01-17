@@ -43,7 +43,7 @@ const DiagramTutorialTooltip = ({ children }: DiagramTutorialTooltipProps) => {
   };
 
   return (
-    <StyledTooltip
+    <FullLengthTooltip
       title={
         <>
           <Typography>Drag with mouse to view more the X axis.</Typography>
@@ -61,11 +61,11 @@ const DiagramTutorialTooltip = ({ children }: DiagramTutorialTooltipProps) => {
       onClose={handleClose}
     >
       <Box ref={tooltipRef}>{children}</Box>
-    </StyledTooltip>
+    </FullLengthTooltip>
   );
 };
 
-const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
+export const FullLengthTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))({
   [`& .${tooltipClasses.tooltip}`]: {

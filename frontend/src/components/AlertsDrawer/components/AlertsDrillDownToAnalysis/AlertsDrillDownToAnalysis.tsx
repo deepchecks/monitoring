@@ -12,7 +12,7 @@ import {
 import { ComparisonModeOptions } from 'context/analysis-context';
 import { useModels } from 'hooks/useModels';
 
-import { Box, styled, Stack } from '@mui/material';
+import { Box, Stack, styled } from '@mui/material';
 
 import { AlertsDrillDownToAnalysisHeader } from './AlertsDrillDownToAnalysisHeader';
 import { TabPanel } from 'components/TabPanel';
@@ -31,8 +31,6 @@ interface AlertsDrillDownToAnalysisProps {
   monitor: MonitorSchema;
   modelVersionId: number | undefined;
   singleCheckRunOptions: SingleCheckRunOptions;
-  expand: boolean;
-  setExpand: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const NOW = new Date();
@@ -42,13 +40,11 @@ const AlertsDrillDownToAnalysisComponent = ({
   period,
   monitor,
   modelVersionId,
-  singleCheckRunOptions,
-  expand,
-  setExpand
+  singleCheckRunOptions
 }: AlertsDrillDownToAnalysisProps) => {
   const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
-  const filters: DataFilter[] | undefined = monitor?.data_filters?.filters
-  const frequency: number = monitor.frequency
+  const filters: DataFilter[] | undefined = monitor?.data_filters?.filters;
+  const frequency: number = monitor.frequency;
 
   const {
     data: checks,
@@ -78,16 +74,6 @@ const AlertsDrillDownToAnalysisComponent = ({
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
   const [datasetsNamesArray, setDatasetsNamesArray] = useState<ControlledMarkedSelectSelectValues[]>([]);
   const [selectedDatasetName, setSelectedDatasetName] = useState<ControlledMarkedSelectSelectValues>('');
-
-  const graphsRef = React.useRef<HTMLDivElement | null>(null);
-
-  const onScroll = () => {
-    if (graphsRef.current?.scrollTop && graphsRef.current?.scrollTop > 50) {
-      setExpand(false);
-    } else {
-      setExpand(true);
-    }
-  };
 
   const currentCheck = useMemo(() => checks?.find(c => c.name === selectedCheck), [checks, selectedCheck]);
   const currenModelVersionId = useMemo(
@@ -151,7 +137,7 @@ const AlertsDrillDownToAnalysisComponent = ({
     runCheckGroupByFeature();
   }, [currentCheck?.id, modelVersionId, selectedFeature, singleCheckRunOptions]);
 
-  const loading = tabIndex === 0 ? isModelMapLoading : isChecksLoading || fetching;
+  const loading = tabIndex === 0 ? isChecksLoading || fetching || groupBySchema.length === 0 : isModelMapLoading;
 
   return (
     <StyledContainer>
@@ -171,16 +157,15 @@ const AlertsDrillDownToAnalysisComponent = ({
         setSelectedDatasetName={setSelectedDatasetName}
         disabled={loading}
       />
-      <OverlayContainer
-        ref={graphsRef}
-        onScroll={onScroll}
-        sx={{ height: `calc(100vh - ${tabIndex === 0 ? (expand ? '830px' : '500px') : expand ? '840px' : '510px'})` }}
-      >
+      <Box height={loading ? '80%' : 'auto'}>
         {loading ? (
           <Loader />
         ) : (
           <>
             <TabPanel value={tabIndex} index={0}>
+              <SegmentsDrillDown data={groupBySchema} checkName={selectedCheck} datasetName={selectedDatasetName} />
+            </TabPanel>
+            <TabPanel value={tabIndex} index={1}>
               <Stack
                 spacing="30px"
                 sx={{
@@ -203,26 +188,16 @@ const AlertsDrillDownToAnalysisComponent = ({
                 ))}
               </Stack>
             </TabPanel>
-            <TabPanel value={tabIndex} index={1}>
-              <SegmentsDrillDown data={groupBySchema} checkName={selectedCheck} datasetName={selectedDatasetName} />
-            </TabPanel>
           </>
         )}
-      </OverlayContainer>
+      </Box>
     </StyledContainer>
   );
 };
 
 const StyledContainer = styled(Box)({
-  height: '100%',
-  background: colors.neutral.grey[100],
-  borderTop: `3px solid ${colors.neutral.grey[200]}`,
-  overflow: 'hidden'
-});
-
-const OverlayContainer = styled(Box)({
-  overflow: 'overlay',
-  scrollbarWidth: 'thin'
+  flex: 1,
+  background: colors.neutral.grey[100]
 });
 
 export const AlertsDrillDownToAnalysis = memo(AlertsDrillDownToAnalysisComponent);

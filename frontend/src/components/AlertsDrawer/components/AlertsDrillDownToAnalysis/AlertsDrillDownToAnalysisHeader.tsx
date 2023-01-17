@@ -1,6 +1,6 @@
 import React, { SyntheticEvent, memo } from 'react';
 
-import { Stack, styled, Tabs, Tab, Typography } from '@mui/material';
+import { Stack, styled, Tabs, Tab, Typography, Box } from '@mui/material';
 
 import { SwitchButton } from 'components/SwitchButton';
 import {
@@ -60,54 +60,64 @@ export const AlertsDrillDownToAnalysisHeaderComponent = ({
   };
 
   return (
-    <Stack>
-      <StyledStack justifyContent="space-between" padding="40px 40px 20px">
+    <StyledContainer>
+      <StyledStack justifyContent="space-between" padding="30px 40px 10px">
         <StyledHeading>Alert drill-down</StyledHeading>
-        <StyledTabs value={tabIndex} onChange={handleTabChange} aria-label="alert drill down tabs">
-          <StyledTab label="checks" icon={<Checks />} iconPosition="start" {...a11yProps(0)} />
-          <StyledTab label="research" icon={<Research />} iconPosition="start" {...a11yProps(1)} />
-        </StyledTabs>
-      </StyledStack>
-      <StyledStack padding="0 40px 15px">
-        {tabIndex === 0 ? (
-          <SwitchButton
-            label="Compare to previous period"
-            labelPlacement="end"
-            checked={prevPeriod}
-            setChecked={setPrevPeriod}
-            disabled={disabled}
-          />
-        ) : (
-          <>
-            <StyledControlledMarkedSelect
-              label="Select feature"
-              values={featuresNames}
-              value={selectedFeature}
-              setValue={setSelectedFeature}
-              disabled={disabled}
-            />
-            <StyledControlledMarkedSelect
-              label="Select check"
-              values={checksNames}
-              value={selectedCheck}
-              setValue={setSelectedCheck}
-              disabled={disabled}
-            />
-            {datasetsNames.length > 1 && (
+        <StyledStack marginLeft="auto">
+          {tabIndex === 0 ? (
+            <>
               <StyledControlledMarkedSelect
-                label="Scorer/Feature"
-                values={datasetsNames}
-                value={selectedDatasetName}
-                setValue={setSelectedDatasetName}
+                label="Select feature"
+                values={featuresNames}
+                value={selectedFeature}
+                setValue={setSelectedFeature}
                 disabled={disabled}
               />
-            )}
-          </>
-        )}
+              <StyledControlledMarkedSelect
+                label="Select check"
+                values={checksNames}
+                value={selectedCheck}
+                setValue={setSelectedCheck}
+                disabled={disabled}
+              />
+              {datasetsNames.length > 1 && (
+                <StyledControlledMarkedSelect
+                  label="Scorer/Feature"
+                  values={datasetsNames}
+                  value={selectedDatasetName}
+                  setValue={setSelectedDatasetName}
+                  disabled={disabled}
+                />
+              )}
+            </>
+          ) : (
+            <Box marginRight="20px">
+              <SwitchButton
+                label="Compare to previous period"
+                labelPlacement="end"
+                checked={prevPeriod}
+                setChecked={setPrevPeriod}
+                disabled={disabled}
+              />
+            </Box>
+          )}
+        </StyledStack>
+        <StyledTabs value={tabIndex} onChange={handleTabChange} aria-label="alert drill down tabs">
+          <StyledTab label="research" icon={<Research />} iconPosition="start" {...a11yProps(0)} />
+          <StyledTab label="checks" icon={<Checks />} iconPosition="start" {...a11yProps(1)} />
+        </StyledTabs>
       </StyledStack>
-    </Stack>
+    </StyledContainer>
   );
 };
+
+const StyledContainer = styled(Stack)({
+  position: 'sticky',
+  top: 131,
+  background: 'inherit',
+  zIndex: 999,
+  borderTop: `3px solid ${colors.neutral.grey[200]}`
+});
 
 const StyledStack = styled(Stack)({
   alignItems: 'center',
@@ -121,7 +131,8 @@ const StyledHeading = styled(Typography)({
 });
 
 const StyledControlledMarkedSelect = styled(ControlledMarkedSelect)({
-  width: '181px',
+  width: '166px',
+  minWidth: '166px',
   marginRight: '20px'
 });
 

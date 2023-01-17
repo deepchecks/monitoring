@@ -10,15 +10,14 @@ import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import mixpanel from 'mixpanel-browser';
 
-import { drawAlerts, drawCircle, minimapPanorama, setAlertLine } from 'helpers/diagramLine';
-import { createGradient, defaultTooltipCallbacks, initMinimap } from './DiagramLine.helpers';
+import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
+import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
 
-import { alpha, Box, Collapse, Typography } from '@mui/material';
+import { alpha, Box, Typography, Stack } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
 import { Loader } from '../Loader';
-import { Minimap } from '../Minimap';
 
 import { colors } from 'theme/colors';
 
@@ -30,15 +29,16 @@ Tooltip.positioners.myCustomPositioner = function (elements, eventPosition) {
   const nearest = Tooltip.positioners.nearest.call(this, elements, eventPosition);
   if (nearest) {
     const isRight = nearest.x < this.width / 2;
-    const isHide = (isRight && nearest.x + this.width > this.chart.width - 100) || (!isRight && nearest.x - this.width < 100);
+    const isHide =
+      (isRight && nearest.x + this.width > this.chart.width - 100) || (!isRight && nearest.x - this.width < 100);
     return {
       x: nearest.x,
       y: nearest.y,
       yAlign: isHide ? (nearest.y < this.chart.height / 2 ? 'top' : 'bottom') : undefined
     };
   }
-  return false
-}
+  return false;
+};
 
 function DiagramLine({
   data,
@@ -48,22 +48,20 @@ function DiagramLine({
   minTimeUnit = 'day',
   timeFreq = 86400,
   isLoading,
-  minimap = initMinimap,
+  alertsWidget = initAlertsWidget,
   tooltipCallbacks = defaultTooltipCallbacks(timeFreq),
   analysis,
   comparison,
-  onPointCLick,
-  expand = true
+  onPointCLick
 }: PropsWithChildren<DiagramLineProps>) {
   const [chartData, setChartData] = useState(data);
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
   const [legends, setLegends] = useState<LegendItem[]>([]);
 
-  const { alerts, alertIndex, alertSeverity, changeAlertIndex } = minimap;
+  const { alerts, alertIndex, alertSeverity, changeAlertIndex } = alertsWidget;
   const _tCallbacks = { ...defaultTooltipCallbacks(timeFreq), ...tooltipCallbacks };
 
   const chartRef = useRef<Chart<'line', number[], string>>();
-  const minimapRef = useRef<HTMLDivElement[]>([]);
   const range = useRef({ min: 0, max: 0 });
 
   const getNewData = useCallback(() => {
@@ -112,28 +110,11 @@ function DiagramLine({
     };
   }, [data]);
 
-  const onChange = useCallback(({ chart }: { chart: Chart }) => {
-    if (chart.originalMinMax && minimapRef?.current?.length) {
-      const { min, max } = chart.scales.x;
-      const { originalMinMax } = chart;
-      const left = ((min - originalMinMax.min) / (originalMinMax.max - originalMinMax.min)) * 100;
-      const right = ((max - originalMinMax.min) / (originalMinMax.max - originalMinMax.min)) * 100;
-      const lf = left > 0 ? (left > 98 ? 98 : left) : 0;
-      const rg = right < 100 ? (right < 2 ? 2 : right) : 100;
-
-      minimapRef.current[0].style.width = `${lf}%`;
-      minimapRef.current[1].style.width = `${rg - lf}%`;
-      minimapRef.current[1].style.left = `${lf}%`;
-      minimapRef.current[2].style.width = `${100 - rg}%`;
-    }
-  }, []);
-
   const getActivePlugins = useCallback(() => {
     const currentPlugins = [drawCircle];
 
     if (alerts.length) {
       currentPlugins.push(drawAlerts(alerts));
-      currentPlugins.push(minimapPanorama(onChange));
     }
 
     if (alert_rules.length) {
@@ -141,7 +122,7 @@ function DiagramLine({
     }
 
     return currentPlugins;
-  }, [onChange, alert_rules, alerts]);
+  }, [alert_rules, alerts]);
 
   const hideLine = useCallback((item: LegendItem) => {
     mixpanel.track('Click on a legend on the graph');
@@ -212,9 +193,6 @@ function DiagramLine({
       legend: {
         display: false
       },
-      minimapPanorama: {
-        minimapRef: minimapRef.current[1]
-      },
       tooltip: {
         backgroundColor: colors.neutral.blue[100],
         padding: {
@@ -241,11 +219,9 @@ function DiagramLine({
         },
         pan: {
           enabled: false,
-          onPan: alerts.length ? onChange : () => 1,
           mode: 'xy'
         },
         zoom: {
-          onZoom: alerts.length ? onChange : () => 1,
           wheel: {
             enabled: false
           },
@@ -269,18 +245,18 @@ function DiagramLine({
       },
       y: analysis
         ? {
-          ticks: {
-            stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
-            align: 'end'
-          },
-          grid: { drawBorder: false, drawTicks: false },
-          min: range.current.min,
-          max: range.current.max === 0 ? 1 : range.current.max * 1.2
-        }
+            ticks: {
+              stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
+              align: 'end'
+            },
+            grid: { drawBorder: false, drawTicks: false },
+            min: range.current.min,
+            max: range.current.max === 0 ? 1 : range.current.max * 1.2
+          }
         : {
-          min: range.current.min,
-          max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
-        }
+            min: range.current.min,
+            max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
+          }
     }
   };
 
@@ -324,12 +300,12 @@ function DiagramLine({
     </Box>
   ) : (
     <>
-      <Collapse in={expand} timeout="auto" unmountOnExit>
-        <DiagramTutorialTooltip>
-          <Box height={{ xs: height.lg, lg: height.lg, xl: height.xl }} position="relative">
-            <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={0} />
-          </Box>
-        </DiagramTutorialTooltip>
+      <DiagramTutorialTooltip>
+        <Box height={{ xs: height.lg, lg: height.lg, xl: height.xl }} position="relative">
+          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={0} />
+        </Box>
+      </DiagramTutorialTooltip>
+      <Stack direction="row" alignItems="baseline" justifyContent="space-between" marginTop="5px">
         <LegendsList
           data={chartData}
           lineIndexMap={lineIndexMap}
@@ -340,18 +316,7 @@ function DiagramLine({
         >
           {children}
         </LegendsList>
-      </Collapse>
-      {changeAlertIndex && !!alerts.length && (
-        <Minimap
-          alerts={alerts}
-          alertIndex={alertIndex}
-          alertSeverity={alertSeverity}
-          changeAlertIndex={changeAlertIndex}
-          data={chartData}
-          options={options}
-          ref={minimapRef}
-        />
-      )}
+      </Stack>
     </>
   );
 }

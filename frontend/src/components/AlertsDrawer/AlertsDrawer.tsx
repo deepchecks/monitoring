@@ -11,7 +11,7 @@ import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import { useModels } from 'hooks/useModels';
 import useAlertMonitorData from 'hooks/useAlertMonitorData';
 
-import { Box, DrawerProps, Typography, styled } from '@mui/material';
+import { Box, DrawerProps, styled, Typography } from '@mui/material';
 
 import { AlertsDrawerHeader } from './components/AlertsDrawerHeader';
 import DiagramLine from '../DiagramLine/DiagramLine';
@@ -29,10 +29,9 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   const currentModel = useMemo(() => alertRule && getCurrentModel(alertRule.model_id), [alertRule, getCurrentModel]);
   const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(alertRule, currentModel?.latest_time);
 
-  const [alertIndex, setAlertIndex] = useState(0);
-  const [expand, setExpand] = useState(true);
-
   useRunMonitorLookback(alertRule?.monitor_id ?? null, currentModel);
+
+  const [alertIndex, setAlertIndex] = useState(0);
 
   const {
     data: alerts = [],
@@ -44,6 +43,12 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
       enabled: false
     }
   });
+
+  useEffect(() => {
+    if (alerts.length) {
+      setAlertIndex(alerts.length - 1);
+    }
+  }, [alerts]);
 
   const {
     data: monitor = null,
@@ -93,14 +98,14 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   }, [alertRule, refetchAlerts, refetchMonitor]);
 
   return (
-    <CustomDrawer loading={isLoading} onClose={onClose} {...props}>
+    <CustomDrawer loading={isLoading} onClose={onClose} sx={{ overflowY: 'scroll' }} {...props}>
       {isError || !alertRule ? (
         <Typography variant="h4" padding="40px">
           Something went wrong...
         </Typography>
       ) : (
         <>
-          <StyledHeaderContainer>
+          <StyledStickyHeader>
             <AlertsDrawerHeader
               alertIndex={alertIndex}
               changeAlertIndex={setAlertIndex}
@@ -114,21 +119,22 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
               singleCheckRunOptions={singleCheckRunOptions}
               currentModel={currentModel}
             />
+          </StyledStickyHeader>
+          <Box padding="16px 40px">
             <DiagramLine
               data={graphData}
               height={{ lg: 280, xl: 350 }}
-              minimap={{
+              alertsWidget={{
                 alerts: alerts,
-                alertSeverity: alertRule.alert_severity || 'low',
+                alertSeverity: alertRule?.alert_severity || 'low',
                 alertIndex: alertIndex,
                 changeAlertIndex: setAlertIndex
               }}
               minTimeUnit={monitor && monitor.frequency < 86400 ? 'hour' : 'day'}
               timeFreq={monitor?.frequency}
               alert_rules={[alertRule]}
-              expand={expand}
             />
-          </StyledHeaderContainer>
+          </Box>
           {alertRule?.model_id && monitor?.frequency && (
             <AlertsDrillDownToAnalysis
               modelId={alertRule.model_id}
@@ -136,8 +142,6 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
               monitor={monitor}
               modelVersionId={modelVersionId}
               singleCheckRunOptions={singleCheckRunOptions}
-              expand={expand}
-              setExpand={setExpand}
             />
           )}
         </>
@@ -146,9 +150,12 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   );
 };
 
-const StyledHeaderContainer = styled(Box)({
-  marginBottom: '60px',
-  padding: '16px 40px'
+const StyledStickyHeader = styled(Box)({
+  position: 'sticky',
+  top: 0,
+  zIndex: 999,
+  padding: '40px 40px 0',
+  background: 'inherit'
 });
 
 export const AlertsDrawer = memo(AlertsDrawerComponent);

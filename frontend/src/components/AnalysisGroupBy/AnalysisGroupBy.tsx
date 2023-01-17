@@ -90,7 +90,6 @@ const AnalysisGroupByComponent = ({
       }
     }
 
-
     getData();
 
     return () => {
@@ -170,7 +169,6 @@ const AnalysisGroupByComponent = ({
               {testSuitePropsAreNotNull && (
                 <StyledRunDownloadSuiteContainer>
                   <RunDownloadSuite
-                    testSuiteButtonLabel="Run Test Suite"
                     activeBarFilters={activeBarFilters}
                     modelVersionId={modelVersionId}
                     notebookType="check"

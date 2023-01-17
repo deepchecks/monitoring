@@ -60,7 +60,9 @@ import { ReactComponent as Link } from './Link.svg';
 import { ReactComponent as MarkedMail } from './markedMail.svg';
 import { ReactComponent as ViewDetails } from './viewDetails.svg';
 import { ReactComponent as HighPriority } from './highPriority.svg';
-
+import { ReactComponent as Check } from './check.svg';
+import { ReactComponent as Download } from './download.svg';
+import { ReactComponent as GraphReport } from './graphReport.svg';
 
 export {
   Alarm,
@@ -124,5 +126,8 @@ export {
   Link,
   MarkedMail,
   ViewDetails,
-  HighPriority
+  HighPriority,
+  Check,
+  Download,
+  GraphReport
 };

@@ -139,7 +139,9 @@ const StyledLegendsList = styled(Box)({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  width: '100%'
+  width: '100%',
+  height: '29px',
+  transform: 'translateY(2px)'
 });
 
 const StyledLegendsListContainer = styled(Stack)({
@@ -150,7 +152,7 @@ const StyledLegendsListContainer = styled(Stack)({
 const StyledLegendsHeader = styled(Typography)({
   fontWeight: '700',
   fontSize: '12px',
-  lineHeight: '28px',
+  lineHeight: '29px',
   letterSpacing: '0.17px',
   width: '75px'
 });

@@ -1,83 +1,13 @@
-import { alpha } from '@mui/material';
-import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
-import { Chart, ChartEvent, ChartMeta } from 'chart.js';
-import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
-import dayjs from 'dayjs';
 import { Dispatch, SetStateAction } from 'react';
+import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
+import { Chart, ChartEvent, ChartMeta } from 'chart.js';
+import dayjs from 'dayjs';
+
+import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
+
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
-import { lightPaletteOptions } from '../theme/palette';
 
-const drawFilledRhombus = (
-  ctx: CanvasRenderingContext2D,
-  meta: ChartMeta,
-  color: string,
-  index: number,
-  rhombusRadius: number,
-  rounding: number
-) => {
-  ctx.beginPath();
-  // eslint-disable-next-line no-param-reassign
-  ctx.fillStyle = color;
-  ctx.setLineDash([6, 0]);
-  ctx.moveTo(meta?.data[index]?.x - rounding, meta?.data[index]?.y - rhombusRadius + rounding);
-  ctx.quadraticCurveTo(
-    meta?.data[index]?.x,
-    meta?.data[index]?.y - rhombusRadius,
-    meta?.data[index]?.x + rounding,
-    meta?.data[index]?.y - rhombusRadius + rounding
-  );
-  ctx.lineTo(meta?.data[index]?.x + rhombusRadius - rounding, meta?.data[index]?.y - rounding);
-  ctx.quadraticCurveTo(
-    meta?.data[index]?.x + rhombusRadius,
-    meta?.data[index]?.y,
-    meta?.data[index]?.x + rhombusRadius - rounding,
-    meta?.data[index]?.y + rounding
-  );
-  ctx.lineTo(meta?.data[index]?.x + rounding, meta?.data[index]?.y + rhombusRadius - rounding);
-  ctx.quadraticCurveTo(
-    meta?.data[index]?.x,
-    meta?.data[index]?.y + rhombusRadius,
-    meta?.data[index]?.x - rounding,
-    meta?.data[index]?.y + rhombusRadius - rounding
-  );
-  ctx.lineTo(meta?.data[index]?.x - rhombusRadius + rounding, meta?.data[index]?.y + rounding);
-  ctx.quadraticCurveTo(
-    meta?.data[index]?.x - rhombusRadius,
-    meta?.data[index]?.y,
-    meta?.data[index]?.x - rhombusRadius + rounding,
-    meta?.data[index]?.y - rounding
-  );
-  ctx.fill();
-  ctx.closePath();
-};
-
-const drawExclamationMark = (
-  ctx: CanvasRenderingContext2D,
-  meta: ChartMeta,
-  color: string,
-  index: number,
-  height: number,
-  width: number
-) => {
-  // eslint-disable-next-line no-param-reassign
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.fillRect(
-    meta?.data[index]?.x - width / 2,
-    meta?.data[index]?.y - height / 2,
-    width,
-    height / 2 + (height * 0.2) / 2
-  );
-
-  ctx.fill();
-  ctx.closePath();
-  // eslint-disable-next-line no-param-reassign
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.fillRect(meta?.data[index]?.x - width / 2, meta?.data[index]?.y + height / 2, width, -height * 0.2);
-  ctx.fill();
-  ctx.closePath();
-};
+import { colors } from 'theme/colors';
 
 export const zoomOptions: ZoomPluginOptions = {
   limits: {
@@ -149,7 +79,6 @@ type ChartOption = Chart<'line', number[], string> & Tooltip;
 
 export const drawCircle = {
   id: 'drawCircle',
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   beforeDatasetsDraw(chart: ChartOption) {
     if (!chart.tooltip) return;
     const { ctx, tooltip } = chart;
@@ -172,6 +101,7 @@ export const drawCircle = {
 
 export const addSpace = (space: number) => {
   const extraSpace = 10 ** (space.toString().length - 1);
+
   if (extraSpace <= 1) {
     return 5;
   }
@@ -179,13 +109,14 @@ export const addSpace = (space: number) => {
   return extraSpace;
 };
 
-const outerRadius = 18;
+const OUTER_RADIUS = 18;
 
-function getAlertIndex(alerts: AlertSchema[], alertIndex: number, chart: ChartOption) {
+function getAlertMetaData(alerts: AlertSchema[], alertIndex: number, chart: ChartOption) {
   const failedValues = alerts[alertIndex].failed_values;
   const datasetIndex = chart.data.datasets.findIndex(
     dataset => `${Object.keys(Object.values(failedValues)[0])[0]}|${Object.keys(failedValues)[0]}` === dataset.label
   );
+
   return datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
 }
 
@@ -212,25 +143,26 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() && alertIndex !== activeIndex) {
-            const meta = getAlertIndex(alerts, alertIndex, chart);
+            const meta = getAlertMetaData(alerts, alertIndex, chart);
             const xData = meta.data[index].x;
             const yData = meta.data[index].y;
+            const currentTop = yData - OUTER_RADIUS < top ? yData - OUTER_RADIUS : top;
+            const currentBottom = yData + OUTER_RADIUS > bottom ? yData + OUTER_RADIUS : bottom;
+            const yCondition = yCursor < currentBottom && yCursor > currentTop;
+            const yCoordinates = yData - OUTER_RADIUS < yCursor && yData + OUTER_RADIUS > yCursor;
+
             let xLineMin = xData - deviation < xCursor;
             let xLineMax = xData + deviation > xCursor;
-            const currentTop = yData - outerRadius < top ? yData - outerRadius : top;
-            const currentBottom = yData + outerRadius > bottom ? yData + outerRadius : bottom;
-            const yCondition = yCursor < currentBottom && yCursor > currentTop;
-            const yRhombusCoordinates = yData - outerRadius < yCursor && yData + outerRadius > yCursor;
 
             let side = 0;
 
-            if (yRhombusCoordinates) {
+            if (yCoordinates) {
               if (yCursor <= yData) {
-                side = Math.abs((yCursor - (yData - outerRadius)) / Math.tan(angle * 45));
+                side = Math.abs((yCursor - (yData - OUTER_RADIUS)) / Math.tan(angle * 45));
               }
 
               if (yCursor > yData) {
-                side = Math.abs(outerRadius - (yCursor - yData) / Math.tan(angle * 45));
+                side = Math.abs(OUTER_RADIUS - (yCursor - yData) / Math.tan(angle * 45));
               }
 
               xLineMin = xData - side < xCursor;
@@ -255,232 +187,46 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       chartArea: { bottom, top }
     } = chart;
     const angle = Math.PI / 180;
-    const space = 8;
 
-    const criticalColor = '#17003E';
-
-    const drawActiveAlert = (index: number, meta: ChartMeta) => {
-      const rectWidth = 100;
-      const rectHeight = 32;
-
-      drawFilledRhombus(ctx, meta, criticalColor, index, 20, 2);
-      drawFilledRhombus(ctx, meta, alpha(criticalColor, 0.15), index, 30, 10);
-
-      ctx.beginPath();
-      ctx.fillStyle = criticalColor;
-      ctx.arc(
-        meta?.data[index]?.x - rectWidth / 2,
-        top - rectHeight / 2 - space,
-        rectHeight / 2,
-        angle * 0,
-        angle * 360,
-        false
-      );
-      ctx.fill();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.fillStyle = criticalColor;
-      ctx.arc(
-        meta?.data[index]?.x + rectWidth / 2,
-        top - rectHeight / 2 - space,
-        rectHeight / 2,
-        angle * 0,
-        angle * 360,
-        false
-      );
-      ctx.fill();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.fillStyle = criticalColor;
-      ctx.fillRect(meta?.data[index]?.x - rectWidth / 2, top - rectHeight - space, rectWidth, rectHeight);
-
-      ctx.fill();
-      ctx.closePath();
-
-      const currentIndex = activeIndex + 1;
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.font = '16px Roboto';
-      ctx.fillText(`Alert ${currentIndex}/${alerts.length}`, meta?.data[index]?.x, top - space / 4 - rectHeight / 2);
-
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = criticalColor;
-      ctx.setLineDash([6, 0]);
-      ctx.moveTo(meta?.data[index]?.x, bottom);
-      ctx.lineTo(meta?.data[index]?.x, meta?.data[index]?.y);
-      ctx.stroke();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = criticalColor;
-      ctx.setLineDash([6, 0]);
-      ctx.moveTo(meta?.data[index]?.x, meta?.data[index]?.y - 22);
-      ctx.lineTo(meta?.data[index]?.x, top - space);
-      ctx.stroke();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.fillStyle = criticalColor;
-      ctx.arc(meta?.data[index]?.x, bottom, 4, angle * 0, angle * 360, false);
-      ctx.fill();
-      ctx.closePath();
-
-      drawExclamationMark(ctx, meta, '#fff', index, 20, 4);
-    };
+    const CRITICAL_COLOR = colors.semantic.red;
 
     const drawAlert = (index: number, meta: ChartMeta) => {
       ctx.beginPath();
-      ctx.strokeStyle = criticalColor;
-      ctx.lineWidth = 0.8;
-      ctx.setLineDash([2, 3]);
+      ctx.fillStyle = colors.neutral.white;
+      ctx.arc(meta?.data[index]?.x, meta?.data[index]?.y, 4.5, angle * 0, angle * 360, false);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.fillStyle = CRITICAL_COLOR;
+      ctx.arc(meta?.data[index]?.x, meta?.data[index]?.y, 3.5, angle * 0, angle * 360, false);
+      ctx.fill();
+      ctx.closePath();
+    };
+
+    const drawActiveAlert = (index: number, meta: ChartMeta) => {
+      ctx.beginPath();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = CRITICAL_COLOR;
+
       ctx.moveTo(meta?.data[index]?.x, bottom);
       ctx.lineTo(meta?.data[index]?.x, top);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-      ctx.setLineDash([6, 0]);
 
-      drawFilledRhombus(ctx, meta, '#fff', index, outerRadius, 4);
-      drawFilledRhombus(ctx, meta, criticalColor, index, 14, 3);
-      drawFilledRhombus(ctx, meta, alpha('#fff', 0.85), index, 10, 0);
-      drawExclamationMark(ctx, meta, criticalColor, index, 12, 2);
+      ctx.stroke();
+      ctx.closePath();
+
+      drawAlert(index, meta);
     };
 
     if (chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf()) {
-            const meta = getAlertIndex(alerts, alertIndex, chart);
+            const meta = getAlertMetaData(alerts, alertIndex, chart);
             alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
           }
         });
       });
-    }
-  }
-});
-
-export const drawAlertsOnMinimap = (alerts: AlertSchema[]) => ({
-  id: 'drawAlertsOnMinimap',
-  afterDatasetsDraw(
-    chart: ChartOption,
-    args: Record<string, never>,
-    { activeIndex }: { activeIndex: number; severity: AlertSeverity }
-  ) {
-    const {
-      ctx,
-      chartArea: { bottom, top }
-    } = chart;
-
-    const angle = Math.PI / 180;
-
-    const criticalColor = '#17003E';
-
-    const drawActiveAlert = (index: number, meta: ChartMeta) => {
-      ctx.beginPath();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = criticalColor;
-      ctx.setLineDash([6, 0]);
-      ctx.moveTo(meta?.data[index]?.x, bottom);
-      ctx.lineTo(meta?.data[index]?.x, meta?.data[index]?.y + 4);
-      ctx.stroke();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = criticalColor;
-      ctx.setLineDash([6, 0]);
-      ctx.moveTo(meta?.data[index]?.x, meta?.data[index]?.y - 4);
-      ctx.lineTo(meta?.data[index]?.x, top);
-      ctx.stroke();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.fillStyle = criticalColor;
-      ctx.arc(meta?.data[index]?.x, meta?.data[index]?.y, 6, angle * 0, angle * 360, false);
-      ctx.stroke();
-      ctx.closePath();
-    };
-
-    const drawAlert = (index: number, meta: ChartMeta) => {
-      ctx.beginPath();
-      ctx.strokeStyle = '#17003E';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 2]);
-      ctx.moveTo(meta?.data[index]?.x, bottom);
-      ctx.lineTo(meta?.data[index]?.x, top);
-      ctx.stroke();
-      ctx.restore();
-      ctx.setLineDash([6, 0]);
-      ctx.save();
-    };
-    chart.pan;
-    if (chart?.data?.labels && chart?.data?.labels.length) {
-      chart?.data?.labels.forEach((label, index) => {
-        alerts.forEach(({ end_time }, alertIndex) => {
-          if (+label === dayjs(end_time).valueOf()) {
-            const meta = getAlertIndex(alerts, alertIndex, chart);
-            alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
-          }
-        });
-      });
-    }
-  }
-});
-
-export interface OriginalMinMax {
-  min: number;
-  max: number;
-}
-
-export const minimapPanorama = (onChange: ({ chart }: { chart: ChartOption }) => void) => ({
-  id: 'minimapPanorama',
-  beforeDatasetsDraw: () => 1,
-  afterDatasetsDraw: function (
-    chart: ChartOption,
-    args: Record<string, never>,
-    { minimapRef }: Record<string, HTMLDivElement>
-  ) {
-    if (chart.originalMinMax || !minimapRef) {
-      return;
-    }
-
-    const { labels } = chart.data;
-    if (labels && labels.length) {
-      // eslint-disable-next-line no-param-reassign
-      chart.originalMinMax = {
-        min: +new Date(labels[0]),
-        max: +new Date(labels[labels.length - 1])
-      };
-      onChange({ chart });
-
-      const mc = new Hammer.Manager(minimapRef);
-      const threshold = 10;
-
-      mc.add(new Hammer.Pinch());
-      mc.add(new Hammer.Pan({ threshold }));
-
-      let currentDeltaX = 0;
-      let currentDeltaY = 0;
-
-      const handlePan = function (e: HammerInput) {
-        const deltaX = e.deltaX - currentDeltaX;
-        const deltaY = e.deltaY - currentDeltaY;
-        currentDeltaX = e.deltaX;
-        currentDeltaY = e.deltaY;
-        const perc = parseFloat(minimapRef?.style?.width) / 100 || 0.1;
-        chart.pan({ x: -deltaX / perc, y: -deltaY / perc });
-      };
-
-      mc.on('panstart', function (e) {
-        currentDeltaX = 0;
-        currentDeltaY = 0;
-        handlePan(e);
-      });
-      mc.on('pan', handlePan);
     }
   }
 });

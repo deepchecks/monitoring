@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
 import {
@@ -9,13 +9,14 @@ import {
   DataFilter
 } from 'api/generated';
 
-import { styled } from '@mui/material';
+import { styled, Tooltip } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
-import { TestTube, Notebook } from 'assets/icon/icon';
+import { DownloadSuiteDropdown } from './DownloadSuiteDropdown';
+
+import { Download, GraphReport } from 'assets/icon/icon';
 
 interface RunDownloadSuiteProps {
-  testSuiteButtonLabel: string;
   modelVersionId: number | undefined;
   notebookId: number | undefined;
   notebookName: string | undefined;
@@ -27,7 +28,6 @@ interface RunDownloadSuiteProps {
 const ALERT_MESSAGE = 'Something went wrong!';
 
 export const RunDownloadSuite = ({
-  testSuiteButtonLabel,
   modelVersionId,
   notebookId,
   notebookName,
@@ -42,7 +42,14 @@ export const RunDownloadSuite = ({
   const { mutateAsync: mutateDownloadMonitorsNotebook, isLoading: isMonitorsNotebookLoading } =
     useGetNotebookApiV1MonitorsMonitorIdGetNotebookPost();
 
-  const prepareData = useCallback(() => {
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const prepareData = () => {
     const dataToSend: SingleCheckRunOptions = JSON.parse(JSON.stringify(singleCheckRunOptions));
 
     if (dataToSend.filter && activeBarFilters) {
@@ -50,9 +57,9 @@ export const RunDownloadSuite = ({
     }
 
     return dataToSend;
-  }, [activeBarFilters, singleCheckRunOptions]);
+  };
 
-  const handleRunTestSuite = useCallback(async () => {
+  const handleRunTestSuite = async () => {
     mixpanel.track('Run test suite click');
 
     if (modelVersionId) {
@@ -68,13 +75,14 @@ export const RunDownloadSuite = ({
     } else {
       alert(ALERT_MESSAGE);
     }
-  }, [modelVersionId, mutateRunSuit, prepareData]);
+  };
 
-  const handleDownloadNotebook = useCallback(async () => {
+  const handleDownloadNotebook = async (asScript?: 'as script') => {
     if (notebookId && modelVersionId) {
       const dataToSend: SingleCheckRunOptions = prepareData();
       const payload = {
         model_version_id: modelVersionId,
+        ...(asScript && { as_script: true }),
         ...dataToSend
       };
 
@@ -93,7 +101,7 @@ export const RunDownloadSuite = ({
 
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', (notebookName || 'notebook').replaceAll(' ', '_') + '.ipynb');
+      link.setAttribute('download', (notebookName || 'notebook').replaceAll(' ', '_') + (asScript ? '.py' : '.ipynb'));
 
       document.body.appendChild(link);
       link.click();
@@ -102,47 +110,42 @@ export const RunDownloadSuite = ({
     } else {
       alert(ALERT_MESSAGE);
     }
-  }, [
-    notebookId,
-    notebookName,
-    notebookType,
-    mutateDownloadChecksNotebook,
-    mutateDownloadMonitorsNotebook,
-    prepareData,
-    modelVersionId
-  ]);
+
+    handleClose();
+  };
+
+  const isNotebookLoading = isChecksNotebookLoading || isMonitorsNotebookLoading;
 
   return (
     <>
-      <StyledLoadingButton
-        size="small"
-        color="secondary"
-        loading={isChecksNotebookLoading || isMonitorsNotebookLoading}
-        loadingPosition="start"
-        variant="contained"
-        onClick={handleDownloadNotebook}
-        startIcon={<Notebook />}
-        sx={{ marginRight: '10px' }}
-      >
-        Get Notebook
-      </StyledLoadingButton>
-      <StyledLoadingButton
-        size="small"
-        color="secondary"
-        loading={isSuiteLoading}
-        loadingPosition="start"
-        variant="contained"
-        onClick={handleRunTestSuite}
-        startIcon={<TestTube />}
-      >
-        {testSuiteButtonLabel}
-      </StyledLoadingButton>
+      <Tooltip title="Download" placement="top">
+        <StyledLoadingButton
+          loading={isNotebookLoading}
+          variant="text"
+          onClick={(event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget)}
+          sx={{ marginRight: '10px' }}
+        >
+          <Download opacity={isNotebookLoading ? 0 : 1} />
+        </StyledLoadingButton>
+      </Tooltip>
+      <DownloadSuiteDropdown
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        downloadNotebook={handleDownloadNotebook}
+      />
+      <Tooltip title="Run test" placement="top">
+        <StyledLoadingButton loading={isSuiteLoading} variant="text" onClick={handleRunTestSuite}>
+          <GraphReport opacity={isSuiteLoading ? 0 : 1} />
+        </StyledLoadingButton>
+      </Tooltip>
     </>
   );
 };
 
 const StyledLoadingButton = styled(LoadingButton)({
-  width: 166,
+  minWidth: 36,
+  minHeight: 36,
   padding: 0,
-  minHeight: 36
+  borderRadius: '4px'
 });

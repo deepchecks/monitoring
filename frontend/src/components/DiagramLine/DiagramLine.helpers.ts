@@ -4,7 +4,7 @@ import 'chartjs-adapter-dayjs-3';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { IMinimap } from './DiagramLine.types';
+import { AlertsWidget } from './DiagramLine.types';
 
 dayjs.extend(localizedFormat);
 
@@ -29,16 +29,15 @@ export const defaultTooltipCallbacks: (
   }),
   title: (context: TooltipItem<'line'>[]) => {
     const textArray = context[0].dataset?.label?.split('|');
-    
-    return `${textArray && textArray[0]} : ${context[0].formattedValue}`
+    return `${textArray && textArray[0]} : ${context[0].formattedValue}`;
   },
   label: (context: TooltipItem<'line'>) => {
     const textArray = context?.dataset?.label?.split('|');
-    return `${getTime(context.label, frequency)} ${(textArray && textArray[1]) ? '| Version: ' + textArray[1] :  ''}`;
+    return `${getTime(context.label, frequency)} ${textArray && textArray[1] ? '| Version: ' + textArray[1] : ''}`;
   }
 });
 
-export const initMinimap: IMinimap = {
+export const initAlertsWidget: AlertsWidget = {
   alertSeverity: 'low',
   alertIndex: 0,
   alerts: [],

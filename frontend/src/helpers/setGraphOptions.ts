@@ -4,29 +4,21 @@ import { colors as pointColor } from '../theme/colors';
 export const PREVIOUS_PERIOD = '|previous_period';
 
 export const graphColors = [
-  '#36A2EB',
-  '#FF6384',
-  '#4BC0C0',
-  '#FF9F40',
-  '#9966FF',
-  '#FFCD56',
-  '#C9CBCF',
-  '#01A9DB',
-  '#A57DBD',
-  '#B9D8E2',
   '#0044FF',
-  '#BAA9A0',
-  '#00CCFF',
-  '#6099C2',
-  '#0088FF',
-  '#66E0FF',
-  '#2F6CA2',
-  '#668FFF',
-  '#4800FF',
-  '#0065FF',
-  '#0DDFEC',
+  '#C9AA99',
+  '#4BCED7',
+  '#AD7ACD',
+  '#B9D8E2',
+  '#735240',
+  '#7ABFFF',
   '#64A6CB',
-  '#7ABFFF'
+  '#4800FF',
+  '#BA8EAE',
+  '#6099C2',
+  '#66E0FF',
+  '#0088FF',
+  '#2F6CA2',
+  '#668FFF'
 ];
 
 const setLabel = (dashed: boolean, label: string) => (dashed ? label + PREVIOUS_PERIOD : label);

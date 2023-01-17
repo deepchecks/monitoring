@@ -26,7 +26,6 @@ export const StyledRoundedSelectContainer = styled(FormControl)(({ theme }) => (
   '&:hover': {
     color: theme.palette.common.white
   }
-
 }));
 
 export const StyledRoundedSelectInputLabel = styled(InputLabel)(({ theme }) => ({
@@ -153,5 +152,4 @@ export const StyledMostWorstButton = styled(Button, {
     color: theme.palette.common.white,
     backgroundColor: theme.palette.primary.main
   }
-
 }));
