@@ -279,7 +279,7 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
                              list(regression_scorers_lower_is_better_dict.keys()))
         scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True} for scorer_name in reg_scorers]
     elif model.task_type == TaskType.BINARY:
-        scorers = [{"name": scorer_name, "is_agg": True} for scorer_name in binary_scorers_dict]
+        scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True} for scorer_name in binary_scorers_dict]
 
     return {"check_conf": [{"type": CheckParameterTypeEnum.SCORER.value, "values": scorers}],
             "res_conf": {"type": CheckParameterTypeEnum.CLASS.value, "values": classes, "is_agg_shown": False}}

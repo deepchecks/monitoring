@@ -154,7 +154,7 @@ class MonitorCheckConf(BaseModel):
 class MonitorCheckConfSchema(BaseModel):
     """List of data filters."""
 
-    check_conf: t.Dict[CheckParameterTypeEnum, conlist(constr(min_length=1), min_items=1)]
+    check_conf: t.Dict[CheckParameterTypeEnum, t.Optional[conlist(constr(min_length=1), min_items=1)]]
     res_conf: t.Union[conlist(constr(min_length=1), min_items=1), None]
 
     class Config:

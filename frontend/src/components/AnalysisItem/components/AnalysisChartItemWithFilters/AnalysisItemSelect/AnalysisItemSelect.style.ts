@@ -134,7 +134,7 @@ export const StyledApplyButton = styled(Box)(({ theme }) => ({
 
 export const StyledMostWorstButton = styled(Button, {
   shouldForwardProp: prop => prop !== 'active'
-})<IsActive>(({ active, theme }) => ({
+})<IsActive>(({ active, disabled, theme }) => ({
   fontSize: 12,
   letterSpacing: '0.17px',
   fontWeight: active ? 700 : 400,
@@ -143,7 +143,7 @@ export const StyledMostWorstButton = styled(Button, {
   padding: 0,
   margin: 0,
   color: theme.palette.primary.main,
-  border: `1px solid ${theme.palette.primary.main}`,
+  border: `1px solid ${disabled ? theme.palette.primary.light : theme.palette.primary.main}`,
   borderRadius: '1000px',
   boxShadow: 'none',
 

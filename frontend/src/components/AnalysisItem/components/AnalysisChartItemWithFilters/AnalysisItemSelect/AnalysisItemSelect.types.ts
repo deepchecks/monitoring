@@ -1,4 +1,4 @@
-import { MonitorValueConf } from 'api/generated';
+import { CheckConfigSchemaParams, MonitorValueConf } from 'api/generated';
 import { AnalysisItemFilterTypes } from 'components/AnalysisItem/AnalysisItem.types';
 import { SetStateType } from 'helpers/types';
 
@@ -12,8 +12,9 @@ export interface AnalysisItemSelectProps<T> {
   isMostWorstActive: boolean;
   isDriftCheck?: boolean;
   setIsMostWorstActive: SetStateType<boolean>;
-  filteredValues: Record<AnalysisItemFilterTypes, string[]>;
+  filteredValues: Record<AnalysisItemFilterTypes, string[] | null>;
   setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
+  checkParams: CheckConfigSchemaParams;
 }
 
 export type MultiSelectValuesType = string[];

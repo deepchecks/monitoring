@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { SelectChangeEvent, MenuItem } from '@mui/material';
 
@@ -7,7 +7,7 @@ import ClearButton from './components/ClearButton';
 
 import { StyledRoundedSelectContainer, StyledRoundedSelect, StyledMostWorstButton } from './AnalysisItemSelect.style';
 import { AnalysisItemSelectProps } from './AnalysisItemSelect.types';
-import { AGGREGATION_NONE } from 'components/AnalysisItem/AnalysisItem.types';
+import { TypeMap } from 'components/AnalysisItem/AnalysisItem.types';
 
 /*eslint no-param-reassign: ["error", { "props": false }]*/
 const SingleSelect = ({
@@ -19,23 +19,19 @@ const SingleSelect = ({
   filteredValues,
   isDriftCheck,
   setfilteredValues,
-  setIsMostWorstActive
+  setIsMostWorstActive,
+  checkParams
 }: AnalysisItemSelectProps<string>) => {
-  const [value, setValue] = useState('');
+  const paramValue = useMemo(() => checkParams[TypeMap[type]], [checkParams[TypeMap[type]]]);
+  const [value, setValue] = useState((paramValue != 'none' && paramValue) || '');
 
-  const handleSetSelectValue = (value?: string) => {
+  const handleSetSelectValue = (value: string) => {
     setIsMostWorstActive(value ? false : !isMostWorstActive);
   
-    const val = value || AGGREGATION_NONE;
-    setValue(val)
-    filteredValues[type] = [val];
+    setValue(value)
+    filteredValues[type] = [value];
     setfilteredValues(filteredValues => ({...filteredValues}));
   };
-
-  useEffect(() => {
-    if (filteredValues[type])
-      setValue(filteredValues[type][0]);
-  }, [filteredValues]);
 
   const handleSelectValueChange = (event: SelectChangeEvent<unknown>) => {
     const { value } = event.target;
@@ -50,12 +46,12 @@ const SingleSelect = ({
     }
 
     setIsMostWorstActive(true);
-    handleSetSelectValue();
+    handleClearSelectedValue();
   };
 
   const handleClearSelectedValue = () => {
     setValue('');
-    delete filteredValues[type];
+    filteredValues[type] = ['none'];
     setfilteredValues(filteredValues => ({...filteredValues}));
   };
 
@@ -73,7 +69,7 @@ const SingleSelect = ({
           onChange={handleSelectValueChange}
           endAdornment={<ClearButton inputCheck={value} onClick={handleClearSelectedValue} />}
         >
-          {data?.map(({ name }) => (
+          {data?.filter(({name}) => name != 'none').map(({ name }) => (
             <MenuItem key={name} value={name}>
               {name}
             </MenuItem>

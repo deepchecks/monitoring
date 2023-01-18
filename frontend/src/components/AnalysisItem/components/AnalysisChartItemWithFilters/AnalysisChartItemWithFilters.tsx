@@ -1,6 +1,6 @@
 import React, { PropsWithChildren } from 'react';
 
-import { MonitorTypeConf } from 'api/generated';
+import { CheckConfigSchemaParams, MonitorTypeConf } from 'api/generated';
 
 import { SelectProps, Stack } from '@mui/material';
 import { SxProps } from '@mui/system';
@@ -17,17 +17,19 @@ interface AnalysisChartItemWithFiltersProps extends SelectProps {
   docs_link?: string | null;
   subtitle: string;
   filters: MonitorTypeConf[];
+  filteredValues: Record<AnalysisItemFilterTypes, string[]>;
+  setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
+  checkParams: CheckConfigSchemaParams;
   isMostWorstActive: boolean;
   isDriftCheck: boolean;
   setIsMostWorstActive: SetStateType<boolean>;
   sx?: SxProps;
-  filteredValues: Record<AnalysisItemFilterTypes, string[]>;
-  setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
 }
 
 export function AnalysisChartItemWithFilters({
   children,
   filters,
+  checkParams,
   filteredValues,
   setfilteredValues,
   isMostWorstActive,
@@ -51,6 +53,7 @@ export function AnalysisChartItemWithFilters({
           {filters.map(({ type, values }, index) =>
             type === AnalysisItemFilterTypes.AGGREGATION ? (
               <SingleSelect
+                checkParams={checkParams}
                 key={index + type}
                 label={type}
                 data={values}
@@ -64,6 +67,7 @@ export function AnalysisChartItemWithFilters({
             ) : (
               <MultiSelect
                 key={index + type}
+                checkParams={checkParams}
                 label={type}
                 data={values}
                 type={(type as AnalysisItemFilterTypes)}

@@ -210,6 +210,7 @@ function AnalysisItemComponent({
           subtitle={`Last Update: ${dayjs(lastUpdate).format('L')}`}
           docs_link={check.docs_link}
           isDriftCheck={check && check.config.class_name.toLowerCase().includes('drift')}
+          checkParams={check?.config.params || []}
           isMostWorstActive={isMostWorstActive}
           setIsMostWorstActive={setIsMostWorstActive}
           filters={checkConf}

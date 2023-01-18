@@ -210,7 +210,7 @@ def get_results_for_model_versions_per_window(
                 except DeepchecksBaseError as e:
                     message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
                               f'got exception: {e.message}'
-                    logging.getLogger('monitor_run_logger').error(message)
+                    logging.getLogger('monitor_run_logger').exception(message)
                     curr_result = None
 
             check_results.append({'result': curr_result, 'start': curr_test_info['start'],

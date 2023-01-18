@@ -6,6 +6,12 @@ export enum AnalysisItemFilterTypes {
   SCORER = 'scorer'
 }
 
+export const TypeMap = {
+  [AnalysisItemFilterTypes.AGGREGATION]: 'aggregation_method',
+  [AnalysisItemFilterTypes.FEATURE]: 'features',
+  [AnalysisItemFilterTypes.SCORER]: 'scorers'
+}
+
 export interface IDataset {
   id: string;
   label?: string | undefined;
