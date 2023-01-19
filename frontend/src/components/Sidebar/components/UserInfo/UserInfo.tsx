@@ -2,11 +2,14 @@ import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
 import { logoutApiV1AuthLogoutGet } from 'api/generated';
 import React from 'react';
 import { cancelPendingRequests } from 'services/customAxios';
-import useUser from '../hooks/useUser';
-import { StyledMenuItem } from './Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
+import useUser from '../../../../hooks/useUser';
+import { StyledMenuItem } from '../../../Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
+import { ReportModal } from './components/ReportModal';
 
 export const UserInfo = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = React.useState<boolean>(false);
+
   const open = Boolean(anchorEl);
   const { user } = useUser();
   if (!user) return null;
@@ -29,6 +32,9 @@ export const UserInfo = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const handleOpenReportModal = () => setIsReportModalOpen(true);
+  const handleCLoseReportModal = () => setIsReportModalOpen(false);
 
   return (
     <>
@@ -98,10 +104,14 @@ export const UserInfo = () => {
         }}
       >
         {/* <StyledMenuItem sx={{minWidth: 200}} onClick={handleMyAccount}><Typography variant="body2">My account</Typography></StyledMenuItem> */}
+        <StyledMenuItem sx={{ minWidth: 200 }} onClick={handleOpenReportModal}>
+          <Typography variant="body2">Report a bug</Typography>
+        </StyledMenuItem>
         <StyledMenuItem sx={{ minWidth: 200 }} onClick={handleLogout}>
           <Typography variant="body2">Logout</Typography>
         </StyledMenuItem>
       </Menu>
+      <ReportModal open={isReportModalOpen} onClose={handleCLoseReportModal} />
     </>
   );
 };

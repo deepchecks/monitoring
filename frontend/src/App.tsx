@@ -13,13 +13,14 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { pathsInfo } from 'helpers/helper';
 import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 
-import { Sidebar } from './components/Sidebar';
-
 import 'overlayscrollbars/overlayscrollbars.css';
+import { Sidebar } from './components/Sidebar';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const CompleteDetails = lazy(() => import('./pages/CompleteDetails'));
 const LicenseAgreementPage = lazy(() => import('./pages/LicenseAgreement'));
+
+import * as Sentry from "@sentry/react";
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -57,35 +58,41 @@ const Layout = () => {
   );
 };
 
+
+const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
+
 const App = () => {
   const queryClient = new QueryClient();
   const flatPathsInfo = pathsInfo.flatMap(pathInfo => [pathInfo, ...(pathInfo?.children ?? [])]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <GlobalStateProvider>
-          <UserProvider>
-            <StatsTimeProvider>
-              <Suspense fallback={<div>Loading...</div>}>
-                <Routes>
-                  <Route element={<Layout />}>
-                    <Route path="/" element={<DashboardPage />} />
-                    {flatPathsInfo.map(({ link, element: PageElement }) => (
-                      <Route key={link} path={link} element={<PageElement />} />
-                    ))}
-                  </Route>
-                  <Route path="/complete-details" element={<CompleteDetails />} />
-                  <Route path="/license-agreement" element={<LicenseAgreementPage />} />
-                </Routes>
-              </Suspense>
-            </StatsTimeProvider>
-          </UserProvider>
-        </GlobalStateProvider>
-      </LocalizationProvider>
-    </QueryClientProvider>
+    <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
+      <QueryClientProvider client={queryClient}>
+        <CssBaseline />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <GlobalStateProvider>
+            <UserProvider>
+              <StatsTimeProvider>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <SentryRoutes>
+                    <Route element={<Layout />}>
+                      <Route path="/" element={<DashboardPage />} />
+                      {flatPathsInfo.map(({ link, element: PageElement }) => (
+                        <Route key={link} path={link} element={<PageElement />} />
+                      ))}
+                    </Route>
+                    <Route path="/complete-details" element={<CompleteDetails />} />
+                    <Route path="/license-agreement" element={<LicenseAgreementPage />} />
+                  </SentryRoutes>
+                </Suspense>
+              </StatsTimeProvider>
+            </UserProvider>
+          </GlobalStateProvider>
+        </LocalizationProvider>
+      </QueryClientProvider>
+    </Sentry.ErrorBoundary>
   );
 };
 
-export default App;
+
+export default Sentry.withProfiler(App);

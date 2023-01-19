@@ -5,13 +5,13 @@ import { useScrollBar } from 'hooks/useScrollBar';
 import mixpanel from 'mixpanel-browser';
 import React, { useContext, useRef, useState } from 'react';
 import { colors } from 'theme/colors';
-import { PathInfo } from '../helpers/helper';
-import useWindowResize from '../hooks/windowResize';
-import { AnalysisSubMenu } from './AnalysisSubMenu';
-import { Logo } from './Logo';
-import { SidebarMenuItem } from './SidebarMenuItem';
-import { UserInfo } from './UserInfo';
-import { UserInviteDialog } from './UserInviteDialog';
+import { PathInfo } from '../../helpers/helper';
+import useWindowResize from '../../hooks/windowResize';
+import { AnalysisSubMenu } from './components/AnalysisSubMenu';
+import { Logo } from '../Logo';
+import { SidebarMenuItem } from './components/SidebarMenuItem';
+import { UserInfo } from './components/UserInfo';
+import { UserInviteDialog } from './components/UserInviteDialog';
 
 const StyledButton = styled(Button)(({ theme }) => ({
   width: '100%',

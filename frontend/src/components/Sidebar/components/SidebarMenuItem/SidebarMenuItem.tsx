@@ -4,8 +4,8 @@ import mixpanel from 'mixpanel-browser';
 
 import { Box, styled, Typography } from '@mui/material';
 
-import { colors } from '../theme/colors';
-import { PathInfo } from '../helpers/helper';
+import { colors } from '../../../../theme/colors';
+import { PathInfo } from '../../../../helpers/helper';
 
 import { Arrow } from 'assets/icon/icon';
 

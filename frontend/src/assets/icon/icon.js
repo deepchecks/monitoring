@@ -26,6 +26,7 @@ import { ReactComponent as EmailIcon } from './emailIcon.svg';
 import { ReactComponent as ExpandIcon } from './expand.svg';
 import { ReactComponent as ExpandMore } from './expandMore.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
+import { ReactComponent as FileUploadIcon } from './fileUpload.svg';
 import { ReactComponent as FilterIcon } from './filterIcon.svg';
 import { ReactComponent as GraphLegendCurrent } from './graphLegendCurrent.svg';
 import { ReactComponent as GraphLegendPrevious } from './graphLegendPrevious.svg';
@@ -91,6 +92,7 @@ export {
   EmailIcon,
   ExpandMore,
   FastForward,
+  FileUploadIcon,
   FilterIcon,
   GraphLegendCurrent,
   GraphLegendPrevious,

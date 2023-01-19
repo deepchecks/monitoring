@@ -29,7 +29,7 @@ import {
   useTheme
 } from '@mui/material';
 
-import { Loader } from './Loader';
+import { Loader } from '../../../Loader';
 
 import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
 

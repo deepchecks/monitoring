@@ -1,26 +1,40 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from 'react-router-dom';
 import { hotjar } from 'react-hotjar';
 import mixpanel from 'mixpanel-browser';
 import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
-import * as Sentry from "@sentry/react";
-import { BrowserTracing } from "@sentry/tracing";
-
+import * as Sentry from '@sentry/react';
+import { CaptureConsole } from '@sentry/integrations';
+import { BrowserTracing } from '@sentry/tracing';
 
 import { ThemeProvider } from '@mui/material';
 import { theme } from './theme';
 
 import App from './App';
 
-const sentryEnv = process.env.SENTRY_ENV;
-const sentryDsn = process.env.SENTRY_DSN;
+const sentryEnv = process.env.REACT_APP_SENTRY_ENV;
+const sentryDsn = process.env.REACT_APP_SENTRY_DSN;
 
 Sentry.init({
   dsn: sentryDsn,
-  integrations: [new BrowserTracing()],
-  tracesSampleRate: 0.4,
-  environment: sentryEnv
+  integrations: [
+    new BrowserTracing({
+      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+        React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes
+      )
+    }),
+    new CaptureConsole({
+      levels: ['warn', 'error']
+    })
+  ],
+  tracesSampleRate: 1,
+  environment: sentryEnv,
+  denyUrls: ["https://localhost:3000"]
 });
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
@@ -40,12 +54,14 @@ if (mixpanelId) {
   const LDProvider = await asyncWithLDProvider({
     clientSideID: process.env.REACT_APP_LD_CLIENT_SIDE_ID ? process.env.REACT_APP_LD_CLIENT_SIDE_ID : '',
     user: {
-      key: "noauthkey",
-      name: "Unauthorized User",
-      email: "unauthorized@unauth.com"
+      key: 'noauthkey',
+      name: 'Unauthorized User',
+      email: 'unauthorized@unauth.com'
     },
-    options: { /* ... */ }
-  }); 
+    options: {
+      /* ... */
+    }
+  });
 
   root.render(
     <BrowserRouter>
@@ -57,4 +73,3 @@ if (mixpanelId) {
     </BrowserRouter>
   );
 })();
-
