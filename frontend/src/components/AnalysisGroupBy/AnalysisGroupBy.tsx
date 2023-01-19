@@ -124,15 +124,13 @@ const AnalysisGroupByComponent = ({
 
   const getTitle = () => {
     if (!check || !check.name) {
-      return ''
+      return '';
+    } else if (classOrFeature) {
+      return `${check.name} - ${classOrFeature.value}`;
+    } else {
+      return check.name;
     }
-    else if (classOrFeature) {
-      return `${check.name} - ${classOrFeature.value}`
-    }
-    else {
-      return check.name
-    }
-  }
+  };
 
   return (
     <CustomDrawer loading={globalLoading} {...props}>
