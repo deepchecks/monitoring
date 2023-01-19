@@ -96,21 +96,16 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   };
 
   useEffect(() => {
-    if (defaultFrequency) {
-      setPeriod([new Date(defaultFrequency.start * 1000), new Date(defaultFrequency.end * 1000)]);
-      setFrequency(defaultFrequency.frequency);
-      setDefaultFrequency(defaultFrequency);
-    }
-  }, [setPeriod, setFrequency, defaultFrequency, setDefaultFrequency]);
-
-  useEffect(() => {
-    if (model.id !== -1) {
-      setFrequency(null);
-      setPeriod(null);
+    if (model.id != -1) {
       refetchColumns();
       loadDefaultFrequency();
+      if (defaultFrequency) {
+        setPeriod([new Date(defaultFrequency.start * 1000), new Date(defaultFrequency.end * 1000)]);
+        setFrequency(defaultFrequency.frequency);
+        setDefaultFrequency(defaultFrequency);
+      }
     }
-  }, [model, refetchColumns, loadDefaultFrequency, setPeriod, setFrequency]);
+  }, [model, refetchColumns, defaultFrequency, loadDefaultFrequency, setPeriod, setFrequency, setDefaultFrequency]);
 
   useEffect(() => {
     if (Object.keys(columns).length) {
