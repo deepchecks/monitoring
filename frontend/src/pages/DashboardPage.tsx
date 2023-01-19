@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 
 import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
 import useModels from 'hooks/useModels';
@@ -12,6 +12,7 @@ import { MonitorList } from 'components/Dashboard/MonitorList';
 import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { GlobalStateContext } from 'context';
 
 export const DashboardPage = () => {
   const { models, isLoading: isModelsLoading } = useModels();
@@ -31,7 +32,7 @@ export const DashboardPage = () => {
   }
 
   const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
-  const [currentModelId, setCurrentModelId] = useState<number | null>(null);
+  const { selectedModelId: currentModelId } = useContext(GlobalStateContext);
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
@@ -58,8 +59,6 @@ export const DashboardPage = () => {
         <Grid item md={4}>
           <ModelList
             models={models}
-            activeModelId={currentModelId}
-            filterMonitors={setCurrentModelId}
             isLoading={isModelsLoading}
           />
         </Grid>

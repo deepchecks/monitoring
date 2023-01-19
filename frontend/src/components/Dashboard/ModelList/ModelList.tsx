@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 
 import { ModelManagmentSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
 
@@ -7,20 +7,21 @@ import { ModelItem } from './ModelItem';
 import { SearchField } from 'components/SearchField';
 
 import { StyledContainer, StyledHeading, StyledList, StyledSearchFieldContainer } from './ModelList.style';
+import { GlobalStateContext } from 'context';
 
 interface ModelListProps {
-  activeModelId: number | null;
-  filterMonitors: Dispatch<SetStateAction<number | null>>;
   models: ModelManagmentSchema[];
   isLoading?: boolean;
 }
 
 const SEVERITY = 'critical';
 
-export function ModelList({ activeModelId, filterMonitors, models, isLoading }: ModelListProps) {
+export function ModelList({ models, isLoading }: ModelListProps) {
   const [filteredModels, setFilteredModels] = useState(models);
   const [modelName, setModelName] = useState('');
+  const { selectedModelId: activeModelId , changeSelectedModelId } = useContext(GlobalStateContext);
 
+  
   const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
     severity: [SEVERITY]
   });
@@ -31,7 +32,7 @@ export function ModelList({ activeModelId, filterMonitors, models, isLoading }: 
 
   const onReset = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    filterMonitors(null);
+    changeSelectedModelId(null);
   };
 
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,7 +51,7 @@ export function ModelList({ activeModelId, filterMonitors, models, isLoading }: 
   };
 
   const handleModelClick = (modelId: number) => {
-    filterMonitors(modelId);
+    changeSelectedModelId(modelId);
   };
 
   const alertsCountMap = useMemo(() => {

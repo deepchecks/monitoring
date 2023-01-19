@@ -13,6 +13,8 @@ export interface IContext {
   isLoggedIn: boolean;
   resetFilters: () => void;
   pathsInfo: PathInfo[];
+  selectedModelId: number | null;
+  changeSelectedModelId: Dispatch<SetStateAction<number | null >>;
 }
 
 const initialFilters = {
@@ -26,13 +28,16 @@ const initialValue: IContext = {
   dashboard_id: 1,
   isLoggedIn: false,
   resetFilters: () => 1,
-  pathsInfo: []
+  pathsInfo: [],
+  changeSelectedModelId: () => 1,
+  selectedModelId: null
 };
 
 export const GlobalStateContext = createContext<IContext>(initialValue);
 
 export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(initialFilters);
+  const [selectedModelId, setSelectedModelId] = useState<number|null>(null);
 
   const resetFilters = useCallback(() => {
     setAlertFilters(initialFilters);
@@ -47,7 +52,7 @@ export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children })
 
   return (
     <GlobalStateContext.Provider
-      value={{ ...initialValue, alertFilters, changeAlertFilters: setAlertFilters, resetFilters, pathsInfo }}
+      value={{ ...initialValue, alertFilters, changeAlertFilters: setAlertFilters, resetFilters, pathsInfo, selectedModelId, changeSelectedModelId: setSelectedModelId }}
     >
       {children}
     </GlobalStateContext.Provider>

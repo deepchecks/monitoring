@@ -23,13 +23,14 @@ import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
 
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType, CheckTypeOptions } from 'helpers/types/check';
+import { GlobalStateContext } from 'context';
 
 export function AnalysisPage() {
   const location = useLocation();
   const { models, isLoading: isModelsLoading, getCurrentModel } = useModels();
   const { isComparisonModeOn, comparisonMode, period, frequency, activeFilters } = useContext(AnalysisContext);
-
-  const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
+  const {selectedModelId} = useContext(GlobalStateContext);
+  const [modelId, setModelId] = useState(+getParams()?.modelId || selectedModelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
   const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
   const [currentDatasetName, setCurrentDatasetName] = useState<string | null>(null);
@@ -59,9 +60,9 @@ export function AnalysisPage() {
 
   useEffect(() => {
     if (models) {
-      setModelId(+getParams()?.modelId || models[0]?.id);
+      setModelId(+getParams()?.modelId || selectedModelId || models[0]?.id);
     }
-  }, [models, location.search]);
+  }, [models, selectedModelId, location.search]);
 
   // If modelId has changed refetch the checks
   useEffect(() => {
