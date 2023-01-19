@@ -70,7 +70,8 @@ const MultiSelect = ({
   const handleClose = (isApplyClicked?: boolean) => {
     setOpen(false);
 
-    if (!isApplyClicked || !filteredData?.length || multiValue == savedMultiValue) {
+    if (!isApplyClicked || !filteredData?.length ||
+      multiValue == savedMultiValue || multiValue.length + savedMultiValue.length == 0) {
       setTimeout(() => {
         setMultiValue(savedMultiValue);
         clearSearchField();
@@ -79,6 +80,7 @@ const MultiSelect = ({
       return;
     }
     setSavedMultiValue(multiValue);
+    setIsMostWorstActive(false);
 
     if (multiValue.length == 0) {
       handleClearSelectedValue();
@@ -151,7 +153,7 @@ const MultiSelect = ({
           title={'Only available if 1 scorer is selected and supports a per class metric'}
           active={isMostWorstActive}
           onClick={handleWorstPerformersClick}
-          sx={{minWidth: '180px'}}>
+          sx={{ minWidth: '180px' }}>
           Worst performed classes
         </StyledMostWorstButton>
       )}

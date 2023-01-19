@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 
 import { SelectChangeEvent, MenuItem } from '@mui/material';
 
@@ -25,12 +25,13 @@ const SingleSelect = ({
   const paramValue = useMemo(() => checkParams[TypeMap[type]], [checkParams[TypeMap[type]]]);
   const [value, setValue] = useState((paramValue != 'none' && paramValue) || '');
 
+
   const handleSetSelectValue = (value: string) => {
     setIsMostWorstActive(value ? false : !isMostWorstActive);
-  
+
     setValue(value)
     filteredValues[type] = [value];
-    setfilteredValues(filteredValues => ({...filteredValues}));
+    setfilteredValues(filteredValues => ({ ...filteredValues }));
   };
 
   const handleSelectValueChange = (event: SelectChangeEvent<unknown>) => {
@@ -52,9 +53,20 @@ const SingleSelect = ({
   const handleClearSelectedValue = () => {
     setValue('');
     filteredValues[type] = ['none'];
-    setfilteredValues(filteredValues => ({...filteredValues}));
+    setfilteredValues(filteredValues => ({ ...filteredValues }));
   };
 
+  useEffect(() => {
+    const val = filteredValues[type]
+    if (val) {
+      if (val[0] != 'none') {
+        setValue(val[0]);
+      }
+      else {
+        setValue('');
+      }
+    }
+  }, [filteredValues[type]])
 
   return (
     <>
@@ -69,7 +81,7 @@ const SingleSelect = ({
           onChange={handleSelectValueChange}
           endAdornment={<ClearButton inputCheck={value} onClick={handleClearSelectedValue} />}
         >
-          {data?.filter(({name}) => name != 'none').map(({ name }) => (
+          {data?.filter(({ name }) => name != 'none').map(({ name }) => (
             <MenuItem key={name} value={name}>
               {name}
             </MenuItem>
@@ -77,7 +89,7 @@ const SingleSelect = ({
         </StyledRoundedSelect>
       </StyledRoundedSelectContainer>
       <StyledMostWorstButton active={isMostWorstActive} onClick={handleMostDriftedClick}>
-        { isDriftCheck ? 'Most Drifted' : 'Highest Values'}
+        {isDriftCheck ? 'Most Drifted' : 'Highest Values'}
       </StyledMostWorstButton>
     </>
   );
