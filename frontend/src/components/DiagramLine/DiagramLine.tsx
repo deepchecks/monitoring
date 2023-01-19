@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, useEffect, useRef, useState, useCallback } from 'react';
-import { Chart, Tooltip, ChartOptions, LegendItem, registerables } from 'chart.js';
+import { Chart, Tooltip, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js';
 declare module 'chart.js' {
   interface TooltipPositionerMap {
     myCustomPositioner: TooltipPositionerFunction<ChartType>;
@@ -111,7 +111,7 @@ function DiagramLine({
   }, [data]);
 
   const getActivePlugins = useCallback(() => {
-    const currentPlugins = [drawCircle];
+    const currentPlugins: Plugin[] = [drawCircle];
 
     if (alerts.length) {
       currentPlugins.push(drawAlerts(alerts));

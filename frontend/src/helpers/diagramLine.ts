@@ -3,7 +3,7 @@ import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import dayjs from 'dayjs';
 
-import { AlertRuleSchema, AlertSchema, AlertSeverity } from 'api/generated';
+import { AlertRuleSchema, AlertSchema } from 'api/generated';
 
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
 
@@ -99,20 +99,11 @@ export const drawCircle = {
   }
 };
 
-export const addSpace = (space: number) => {
-  const extraSpace = 10 ** (space.toString().length - 1);
-
-  if (extraSpace <= 1) {
-    return 5;
-  }
-
-  return extraSpace;
-};
-
 const OUTER_RADIUS = 18;
 
-function getAlertMetaData(alerts: AlertSchema[], alertIndex: number, chart: ChartOption) {
+function getMetaData(alerts: AlertSchema[], alertIndex: number, chart: ChartOption) {
   const failedValues = alerts[alertIndex].failed_values;
+
   const datasetIndex = chart.data.datasets.findIndex(
     dataset => `${Object.keys(Object.values(failedValues)[0])[0]}|${Object.keys(failedValues)[0]}` === dataset.label
   );
@@ -122,7 +113,6 @@ function getAlertMetaData(alerts: AlertSchema[], alertIndex: number, chart: Char
 
 export const drawAlerts = (alerts: AlertSchema[]) => ({
   id: 'drawAlerts',
-  beforeDatasetsDraw: () => 1,
   afterEvent(
     chart: ChartOption,
     args: { event: ChartEvent; replay: boolean; changed?: boolean; cancelable: false; inChartArea: boolean },
@@ -143,7 +133,7 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() && alertIndex !== activeIndex) {
-            const meta = getAlertMetaData(alerts, alertIndex, chart);
+            const meta = getMetaData(alerts, alertIndex, chart);
             const xData = meta.data[index].x;
             const yData = meta.data[index].y;
             const currentTop = yData - OUTER_RADIUS < top ? yData - OUTER_RADIUS : top;
@@ -177,53 +167,30 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       });
     }
   },
-  afterDatasetsDraw(
-    chart: ChartOption,
-    args: Record<string, never>,
-    { activeIndex }: { activeIndex: number; severity: AlertSeverity }
-  ) {
+  beforeDatasetsDraw(chart: ChartOption, args: { cancelable: true }, { activeIndex }: { activeIndex: number }) {
     const {
       ctx,
       chartArea: { bottom, top }
     } = chart;
-    const angle = Math.PI / 180;
 
-    const CRITICAL_COLOR = colors.semantic.red;
-
-    const drawAlert = (index: number, meta: ChartMeta) => {
-      ctx.beginPath();
-      ctx.fillStyle = colors.neutral.white;
-      ctx.arc(meta?.data[index]?.x, meta?.data[index]?.y, 4.5, angle * 0, angle * 360, false);
-      ctx.fill();
-      ctx.closePath();
-
-      ctx.beginPath();
-      ctx.fillStyle = CRITICAL_COLOR;
-      ctx.arc(meta?.data[index]?.x, meta?.data[index]?.y, 3.5, angle * 0, angle * 360, false);
-      ctx.fill();
-      ctx.closePath();
-    };
-
-    const drawActiveAlert = (index: number, meta: ChartMeta) => {
+    const drawLine = (index: number, meta: ChartMeta) => {
       ctx.beginPath();
       ctx.lineWidth = 2;
-      ctx.strokeStyle = CRITICAL_COLOR;
+      ctx.strokeStyle = colors.semantic.red;
 
       ctx.moveTo(meta?.data[index]?.x, bottom);
       ctx.lineTo(meta?.data[index]?.x, top);
 
       ctx.stroke();
       ctx.closePath();
-
-      drawAlert(index, meta);
     };
 
-    if (chart?.data?.labels && chart?.data?.labels.length) {
-      chart?.data?.labels.forEach((label, index) => {
+    if (chart?.data?.labels?.length) {
+      chart.data.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf()) {
-            const meta = getAlertMetaData(alerts, alertIndex, chart);
-            alertIndex === activeIndex ? drawActiveAlert(index, meta) : drawAlert(index, meta);
+            const meta = getMetaData(alerts, alertIndex, chart);
+            alertIndex === activeIndex && drawLine(index, meta);
           }
         });
       });

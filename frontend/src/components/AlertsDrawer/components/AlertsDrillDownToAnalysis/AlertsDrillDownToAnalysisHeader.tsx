@@ -69,14 +69,14 @@ export const AlertsDrillDownToAnalysisHeaderComponent = ({
               <StyledControlledMarkedSelect
                 label="Select feature"
                 values={featuresNames}
-                value={selectedFeature}
+                value={selectedFeature || ''}
                 setValue={setSelectedFeature}
                 disabled={disabled}
               />
               <StyledControlledMarkedSelect
                 label="Select check"
                 values={checksNames}
-                value={selectedCheck}
+                value={selectedCheck || ''}
                 setValue={setSelectedCheck}
                 disabled={disabled}
               />
@@ -84,7 +84,7 @@ export const AlertsDrillDownToAnalysisHeaderComponent = ({
                 <StyledControlledMarkedSelect
                   label="Scorer/Feature"
                   values={datasetsNames}
-                  value={selectedDatasetName}
+                  value={selectedDatasetName || ''}
                   setValue={setSelectedDatasetName}
                   disabled={disabled}
                 />

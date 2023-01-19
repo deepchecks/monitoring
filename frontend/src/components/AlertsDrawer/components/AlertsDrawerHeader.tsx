@@ -127,9 +127,11 @@ export const AlertsDrawerHeader = ({
             </Box>
           </Tooltip>
           <Tooltip title="Resolve" placement="top">
-            <StyledButtonResolve variant="text" disabled={alert?.resolved} onClick={onResolve}>
-              <Check opacity={alert?.resolved ? 0.3 : 1} />
-            </StyledButtonResolve>
+            <Box>
+              <StyledButtonResolve variant="text" disabled={alert?.resolved} onClick={onResolve}>
+                <Check opacity={alert?.resolved ? 0.3 : 1} />
+              </StyledButtonResolve>
+            </Box>
           </Tooltip>
           <RunDownloadSuite
             modelVersionId={modelVersionId}

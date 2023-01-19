@@ -14,13 +14,13 @@ export const TypeMap = {
 
 export interface IDataset {
   id: string;
-  label?: string | undefined;
-  borderColor?: string | undefined;
-  pointBorderColor?: string | undefined;
-  pointBackgroundColor?: string | undefined;
-  pointHoverBackgroundColor?: string | undefined;
-  pointHoverBorderColor?: string | undefined;
-  hidden?: boolean | undefined;
-  dashed?: boolean | undefined;
+  label?: string;
+  borderColor?: string;
+  pointBorderColor?: string | string[];
+  pointBackgroundColor?: string | string[];
+  pointHoverBackgroundColor?: string;
+  pointHoverBorderColor?: string;
+  hidden?: boolean;
+  dashed?: boolean;
   data: (number | null)[];
 }

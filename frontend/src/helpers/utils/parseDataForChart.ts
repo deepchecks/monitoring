@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 
-import { CheckResultSchema } from 'api/generated';
+import { CheckResultSchema, Condition } from 'api/generated';
 
 import { setBarGraphOptions, setLineGraphOptions } from 'helpers/setGraphOptions';
 
@@ -8,8 +8,8 @@ interface ChartOptions {
   id: string;
   label?: string;
   borderColor?: string;
-  pointBorderColor?: string;
-  pointBackgroundColor?: string;
+  pointBorderColor?: string | string[];
+  pointBackgroundColor?: string | string[];
   pointHoverBackgroundColor?: string;
   pointHoverBorderColor?: string;
   hidden?: boolean;
@@ -21,8 +21,15 @@ type GraphOutputType = { [key: string]: number | null };
 
 const parseDataForChart = (
   graph: CheckResultSchema,
-  setChartOptions: (label: string, index: number, dashed: boolean) => ChartOptions,
-  dashed = false
+  setChartOptions: (
+    label: string,
+    index: number,
+    dashed: boolean,
+    condition?: Condition | undefined,
+    data?: (number | null)[]
+  ) => ChartOptions,
+  dashed = false,
+  condition?: Condition | undefined
 ) => {
   if (!graph) return { datasets: [], labels: [] };
 
@@ -62,7 +69,7 @@ const parseDataForChart = (
 
         return Object.keys(lines).map(lineKey => ({
           data: lines[lineKey],
-          ...setChartOptions(`${lineKey}|${key}`, counter++, dashed)
+          ...setChartOptions(`${lineKey}|${key}`, counter++, dashed, condition, lines[lineKey])
         }));
       })
       .flat(2),
@@ -70,8 +77,8 @@ const parseDataForChart = (
   };
 };
 
-export const parseDataForLineChart = (graph: CheckResultSchema, dashed = false) =>
-  parseDataForChart(graph, setLineGraphOptions, dashed);
+export const parseDataForLineChart = (graph: CheckResultSchema, dashed = false, condition?: Condition | undefined) =>
+  parseDataForChart(graph, setLineGraphOptions, dashed, condition);
 
 export const parseDataForBarChart = (graph: CheckResultSchema, dashed = false) =>
   parseDataForChart(graph, setBarGraphOptions, dashed);

@@ -17,8 +17,8 @@ const useAlertMonitorsData = (alertRule: AlertRuleInfoSchema | null, time: numbe
       };
     }
 
-    return parseDataForLineChart(data);
-  }, [data, isLoading]);
+    return parseDataForLineChart(data, false, alertRule?.condition);
+  }, [alertRule?.condition, data, isLoading]);
 
   return {
     graphData,
