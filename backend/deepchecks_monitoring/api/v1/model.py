@@ -517,11 +517,13 @@ async def get_model_columns(
     if len(model.versions) == 0:
         return {}
 
-    latest_version = model.versions[0]
+    latest_version: ModelVersion = model.versions[0]
     column_dict: t.Dict[str, ColumnMetadata] = {}
 
-    return_columns = list(latest_version.features_columns.items()) + list(
-        latest_version.additional_data_columns.items())
+    feat_imp_dict = latest_version.feature_importance or {}
+    return_columns = list(sorted(latest_version.features_columns.items(),
+                                 key=lambda item: feat_imp_dict.get(item[0], 0), reverse=True)) + \
+        list(latest_version.additional_data_columns.items())
     for (col_name, col_type) in return_columns:
         column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
     return column_dict

@@ -139,9 +139,9 @@ class ModelVersion(Base):
     def get_top_features(self, n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
         """Get top n features sorted by feature importance and the feature_importance."""
         if self.feature_importance:
-            feat_dict = dict(sorted(self.feature_importance.items(), key=lambda item: item[1])[:n_top])
-            feat = list(feat_dict.keys())
-            return feat, pd.Series(feat_dict)
+            most_important_features = sorted(self.feature_importance.items(),
+                                             key=lambda item: item[1], reverse=True)[:n_top]
+            return [feat[0] for feat in most_important_features], pd.Series(dict(most_important_features))
         return list(self.features_columns.keys())[:n_top], None
 
     def get_reference_table(self, connection) -> Table:

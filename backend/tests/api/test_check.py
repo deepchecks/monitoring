@@ -443,8 +443,8 @@ def test_feature_check_info(
             {
                 "type": "feature",
                 "values": [
-                    {"is_agg": None, "name": "a"},
-                    {"is_agg": None, "name": "b"}
+                    {"is_agg": None, "name": "b"},
+                    {"is_agg": None, "name": "a"}
                 ],
                 "is_agg_shown": False
             }
