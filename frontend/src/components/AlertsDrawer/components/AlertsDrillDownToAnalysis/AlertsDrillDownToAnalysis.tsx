@@ -182,7 +182,7 @@ const AlertsDrillDownToAnalysisComponent = ({
                     period={period}
                     frequency={frequency}
                     activeFilters={activeFilters}
-                    height={359}
+                    height={420}
                     graphHeight={250}
                   />
                 ))}
