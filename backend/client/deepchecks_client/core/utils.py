@@ -167,7 +167,12 @@ def maybe_raise(
 
     error_template = 'Error: {status} {reason} url {url}.\nBody:\n{body}'
     client_error_template = '{status} Client Error: {reason} for url: {url}.\nBody:\n{body}'
-    server_error_template = '{status} Server Internal Error: {reason} for url: {url}.\nBody:\n{body}'
+
+    server_error_template = (
+        '{status} Server Internal Error: {reason} for url: {url}.\n'
+        'Please, reach Deepchecks support team for more information about this problem.\n'
+        'Body:\n{body}'
+    )
 
     def select_template(status):
         if 400 <= status <= 499:

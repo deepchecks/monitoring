@@ -11,10 +11,13 @@
 """Backend API."""
 import json
 import typing as t
+import warnings
 from copy import copy
 from datetime import datetime
 
+import deepchecks_client
 import httpx
+import packaging.version
 import pandas as pd
 from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
 
@@ -56,6 +59,22 @@ class API:
         self.session = copy(session)
         self.session.base_url = self.session.base_url.join('/api/v1')
 
+        try:
+            backend_version = packaging.version.parse(self.retrieve_backend_version())
+            client_version = packaging.version.parse(deepchecks_client.__version__)
+        except packaging.version.InvalidVersion:
+            warnings.warn(
+                'Not able to compare backend and client versions, '
+                'backend or client use incorrect or legacy versioning schema.'
+            )
+        else:
+            if backend_version.major != client_version.major:
+                warnings.warn(
+                    'You are using an old, potentially incompatible with the current API, client version. '
+                    'Upgrade "deepchecks_client" version by running:\n'
+                    '>> pip install -U deepchecks_client'
+                )
+
     def say_hello(self, raise_on_status: bool = True) -> t.Optional[httpx.Response]:
         """Verify connectivity.
 
@@ -73,6 +92,19 @@ class API:
             maybe_raise(self.session.get('say-hello'), msg='Server not available.\n{error}')
         else:
             return self.session.get('say-hello')
+
+    def retrieve_backend_version(self) -> str:
+        """Return current active backend version.
+
+        Returns
+        -------
+        str : backend version string
+        """
+        payload = maybe_raise(
+            self.session.get('backend-version'),
+            msg='Server not available.\n{error}'
+        ).json()
+        return payload['version']
 
     def get_samples_count(
         self,

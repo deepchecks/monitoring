@@ -10,6 +10,8 @@
 """Module defining the Router for V1 API."""
 from fastapi import APIRouter
 
+from deepchecks_monitoring import __version__
+
 __all__ = ['router']
 
 
@@ -19,3 +21,8 @@ router = APIRouter(prefix='/api/v1')
 @router.get('/say-hello')
 async def hello_world() -> str:
     return 'Hello world'
+
+
+@router.get('/backend-version')
+async def retrieve_backend_version():
+    return {'version': __version__}
