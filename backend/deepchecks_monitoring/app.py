@@ -11,7 +11,6 @@
 import asyncio
 import logging
 import typing as t
-from dataclasses import asdict
 
 import deepchecks
 import dotenv
@@ -31,7 +30,6 @@ from deepchecks_monitoring.api.v1 import global_router as v1_global_router
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import Settings, tags_metadata
 from deepchecks_monitoring.exceptions import UnacceptedEULA
-from deepchecks_monitoring.feature_flags import Variation
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.middlewares import NoCacheMiddleware, ProfilingMiddleware, SecurityAuditMiddleware
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -89,7 +87,6 @@ def create_application(
     app.state.settings = settings
     app.state.resources_provider = resources_provider or ResourcesProvider(settings)
     app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider)
-    app.state.feature_flags = {}
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "https://localhost:3000"],
@@ -149,14 +146,6 @@ def create_application(
 
     # Set deepchecks testing library logging verbosity to error to not spam the logs
     deepchecks.set_verbosity(logging.ERROR)
-
-    @app.get("/feature-flags")
-    def retrieve_feature_flags(_: Request) -> t.Dict[str, t.Union[bool, Variation[t.Any]]]:
-        return {
-            flag.name: asdict(flag) if isinstance(flag, Variation) else flag
-            for flag in app.state.feature_flags.values()
-            if flag.is_public is True
-        }
 
     if settings.access_audit:
         app.add_middleware(SecurityAuditMiddleware)

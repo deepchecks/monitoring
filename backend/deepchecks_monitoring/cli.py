@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+#
+# pylint: disable=not-async-context-manager
 """Module defining the CLI of the monitoring package."""
 import os
 

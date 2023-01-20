@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=redefined-outer-name
+#  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
 import typing as t
 from contextlib import asynccontextmanager, contextmanager
@@ -230,6 +230,22 @@ class ResourcesProvider(BaseResourcesProvider):
             )
         return self._async_session_factory
 
+    @t.overload
+    def create_async_database_session(
+        self,
+        organization_id: None = None
+    ) -> t.AsyncContextManager[ExtendedAsyncSession]:
+        """Create async sqlalchemy database session."""
+        ...
+
+    @t.overload
+    def create_async_database_session(
+        self,
+        organization_id: int
+    ) -> t.AsyncContextManager[t.Optional[ExtendedAsyncSession]]:
+        """Create async sqlalchemy database session."""
+        ...
+
     @asynccontextmanager
     async def create_async_database_session(
         self,
@@ -239,13 +255,11 @@ class ResourcesProvider(BaseResourcesProvider):
         async with self.async_session_factory() as session:  # pylint: disable=not-callable
             try:
                 if organization_id:
-                    organization_schema = (await session.execute(
-                        select(Organization.schema_name).where(Organization.id == organization_id)
-                    )).scalar_one_or_none()
-
-                    # If can't find organization return none
+                    organization_schema = await session.scalar(
+                        select(Organization.schema_name)
+                        .where(Organization.id == organization_id)
+                    )
                     if organization_schema is None:
-                        await session.close()
                         yield
                         return
                     await database.attach_schema_switcher_listener(
@@ -254,9 +268,9 @@ class ResourcesProvider(BaseResourcesProvider):
                     )
                 yield session
                 await session.commit()
-            except Exception as error:
+            except Exception:
                 await session.rollback()
-                raise error
+                raise
             finally:
                 await session.close()
 

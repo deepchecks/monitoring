@@ -13,22 +13,26 @@ import typing as t
 
 import authlib.integrations.starlette_client
 import fastapi
-from fastapi import Depends, FastAPI, Request
+from fastapi import Request
 from kafka import KafkaAdminClient
 from pydantic import BaseSettings
 
-from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.exceptions import (BadRequest, BaseHTTPException, ContentLengthRequired, NotFound,
-                                              RequestTooLarge)
-from deepchecks_monitoring.feature_flags import FeatureFlag, Variation
+from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
 from deepchecks_monitoring.integrations.email import EmailSender
 
 if t.TYPE_CHECKING:
+    from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
     from deepchecks_monitoring.resources import ResourcesProvider
-    from deepchecks_monitoring.utils import ExtendedAsyncSession
 
-__all__ = ["AsyncSessionDep", "limit_request_size", "KafkaAdminDep", "SettingsDep", "DataIngestionDep",
-           "CacheFunctionsDep", "ResourcesProviderDep"]
+__all__ = [
+    "AsyncSessionDep",
+    "limit_request_size",
+    "KafkaAdminDep",
+    "SettingsDep",
+    "DataIngestionDep",
+    "CacheFunctionsDep",
+    "ResourcesProviderDep"
+]
 
 
 async def get_async_session(request: fastapi.Request) -> t.AsyncIterator["ExtendedAsyncSession"]:
@@ -129,69 +133,6 @@ def limit_request_size(size: int) -> t.Callable[[Request], None]:
             raise RequestTooLarge(f"Maximum allowed content-length is {mb} MB")
 
     return dependency
-
-
-def get_feature_flag(name: str) -> t.Callable[[Request], FeatureFlag]:
-    """Return feature flag dependency resolver."""
-    def dependency_resolver(request: Request) -> FeatureFlag:
-        return _get_feature_flag(name=name, app=request.app)
-    return dependency_resolver
-
-
-def _get_feature_flag(name: str, app: FastAPI) -> FeatureFlag:
-    """Return feature flag with given name otherwise raise an error."""
-    if not hasattr(app.state, "feature_flags"):
-        raise RuntimeError()  # TODO: message
-    feature_flags = t.cast(
-        t.Dict[str, FeatureFlag],
-        app.state.feature_flags
-    )
-    if name not in feature_flags:
-        raise RuntimeError(f"Unknown feature flag - {name}")
-    return feature_flags[name]
-
-
-def with_feature_flag(
-    name: str,
-    exception: t.Optional[BaseHTTPException] = None
-):
-    """Return feature flag dependency resolver.
-
-    Parameters
-    ----------
-    name : str
-        name of a feature flag
-    exception : Optional[BaseHTTPException] , default None
-        an exception to raise if feature flag was resolved
-        to a not 'truthy' value
-
-    Returns
-    -------
-    Callable[[Request], None]
-    """
-    def dependency_resolver(request: Request):
-        feature_flag = _get_feature_flag(name=name, app=request.app)
-        flag = feature_flag.resolve(request=request)  # TODO: current user entity also should be passed
-
-        if isinstance(flag, bool):
-            if flag is False:
-                raise exception or NotFound("resource not found")
-        elif isinstance(flag, Variation):
-            if isinstance(flag.value, bool):
-                if flag.value is False:
-                    raise exception or NotFound("resource not found")
-            else:
-                raise TypeError(
-                    "Do not know how to interpretate variation with "
-                    f"a value of type - {type(flag.value).__name__}. "
-                    f"Flag name - {name}"
-                )
-        else:
-            raise TypeError(
-                f"Unsupported type of flag - {type(flag)}. "
-                f"Flag name - {name}"
-            )
-    return dependency_resolver
 
 
 def get_oauth_resource(request: fastapi.Request) -> t.Callable[[Request], authlib.integrations.starlette_client.OAuth]:
