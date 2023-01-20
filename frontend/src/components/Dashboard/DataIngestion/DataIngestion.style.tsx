@@ -4,7 +4,11 @@ import { colors } from 'theme/colors';
 export const StyledFlexContent = styled(Box)(({ theme }) => ({
   boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
   borderRadius: '10px',
-  borderLeft: `8px solid ${theme.palette.primary.light}`
+  borderLeft: `8px solid ${theme.palette.primary.light}`,
+  height: '558px',
+  '@media (max-width: 1536px)': {
+    height: '328px'
+  }
 }));
 
 export const StyledTypographyTitle = styled(Typography)({

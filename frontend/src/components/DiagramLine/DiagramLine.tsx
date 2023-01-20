@@ -305,18 +305,16 @@ function DiagramLine({
           <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={0} />
         </Box>
       </DiagramTutorialTooltip>
-      <Stack direction="row" alignItems="baseline" justifyContent="space-between" marginTop="5px">
-        <LegendsList
-          data={chartData}
-          lineIndexMap={lineIndexMap}
-          hideLine={hideLine}
-          legends={legends}
-          analysis={analysis}
-          comparison={comparison}
-        >
-          {children}
-        </LegendsList>
-      </Stack>
+      <LegendsList
+        data={chartData}
+        lineIndexMap={lineIndexMap}
+        hideLine={hideLine}
+        legends={legends}
+        analysis={analysis}
+        comparison={comparison}
+      >
+        {children}
+      </LegendsList>
     </>
   );
 }

@@ -140,7 +140,6 @@ const StyledLegendsList = styled(Box)({
   justifyContent: 'space-between',
   alignItems: 'center',
   width: '100%',
-  height: '29px',
   transform: 'translateY(2px)'
 });
 
