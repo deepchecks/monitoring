@@ -105,6 +105,7 @@ class TelemetrySettings(BaseDeepchecksSettings):
 
     instrument_telemetry: bool = False
     sentry_dsn: t.Optional[str] = None
+    sentry_env: str = 'dev'
 
 
 class Settings(

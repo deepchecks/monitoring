@@ -252,7 +252,11 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
 
         if settings.sentry_dsn:
             import sentry_sdk  # pylint: disable=import-outside-toplevel
-            sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sample_rate=0.6,
+                environment=settings.sentry_env
+            )
             telemetry.collect_telemetry(scheduler_implementation)
 
         logger = configure_logger(
