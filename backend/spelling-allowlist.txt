@@ -84,3 +84,4 @@ enqueue
 avro
 queueing
 params
+Queuer

@@ -126,16 +126,20 @@ def execute_worker():
             logfile_backup_count=settings.logfile_backup_count,
         )
 
+        # When running main it creates TaskQueuer under __main__ module, which fails
+        # the telemetry collection. Adding here this import to fix this
+        from deepchecks_monitoring.bgtasks import tasks_queuer  # pylint: disable=import-outside-toplevel
+
         if settings.sentry_dsn:
             import sentry_sdk  # pylint: disable=import-outside-toplevel
             sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
-            telemetry.collect_telemetry(TasksQueuer)
+            telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate()]
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                worker = TasksQueuer(rp, workers, logger)
+                worker = tasks_queuer.TasksQueuer(rp, workers, logger)
                 g.start_soon(worker.run)
 
     uvloop.install()

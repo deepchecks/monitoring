@@ -132,10 +132,14 @@ def execute_worker():
             logfile_backup_count=settings.logfile_backup_count,
         )
 
+        # When running main it creates TaskRunner under __main__ module, which fails
+        # the telemetry collection. Adding here this import to fix this
+        from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
+
         if settings.sentry_dsn:
             import sentry_sdk  # pylint: disable=import-outside-toplevel
             sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
-            telemetry.collect_telemetry(TaskRunner)
+            telemetry.collect_telemetry(tasks_runner.TaskRunner)
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate()]
 
@@ -143,7 +147,7 @@ def execute_worker():
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 
             async with anyio.create_task_group() as g:
-                worker = TaskRunner(rp, async_redis, workers, logger)
+                worker = tasks_runner.TaskRunner(rp, async_redis, workers, logger)
                 for _ in range(settings.num_workers):
                     g.start_soon(worker.run)
 
