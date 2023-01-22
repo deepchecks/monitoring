@@ -46,9 +46,6 @@ __all__ = [
 ]
 
 
-logger = logging.getLogger(__name__)
-
-
 class SpanStatus(str, enum.Enum):
     CANCELED = "Coroutine Canceled"
     FAILED = "Execution Failed"
@@ -60,9 +57,11 @@ def collect_telemetry(routine: t.Any):
     # pylint: disable=redefined-outer-name,import-outside-toplevel
     from deepchecks_monitoring.bgtasks.actors import Worker
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+    from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
+    from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
     from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 
-    logger = logging.getLogger("instrumation")
+    logger = logging.getLogger("instrumentation")
 
     if issubclass(routine, AlertsScheduler):
         SchedulerInstrumentor(scheduler_type=routine).instrument()
