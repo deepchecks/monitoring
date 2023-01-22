@@ -15,6 +15,7 @@ General
     :caption: General
 
     general/concepts
+    general/faq
 
 Tabular
 -------

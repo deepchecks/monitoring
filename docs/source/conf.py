@@ -38,6 +38,7 @@ extensions = [
     'sphinx_gallery.gen_gallery',
     'sphinx_copybutton',
     'sphinx.ext.intersphinx',
+    'sphinx_toolbox.collapse',
 ]
 
 intersphinx_mapping = {
