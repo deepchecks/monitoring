@@ -122,9 +122,9 @@ async def get_create_model(
     """
     model = (await session.execute(select(Model).where(Model.name == model_schema.name))).scalars().first()
     if model is not None:
-        if model.bg_worker_task != model_schema.task_type:
+        if model.task_type != model_schema.task_type:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
-                             f"'{model_schema.task_type} and not the task type '{model.bg_worker_task}'")
+                             f"'{model_schema.task_type} and not the task type '{model.task_type}'")
         if model_schema.description is not None and model.description != model_schema.description:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the description "
                              f"'{model_schema.description} and not the description '{model.description}'")
@@ -412,7 +412,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
         ModelManagmentSchema(
             id=record.Model.id,
             name=record.Model.name,
-            task_type=record.Model.bg_worker_task,
+            task_type=record.Model.task_type,
             description=record.Model.description,
             alerts_count=record.n_of_alerts or 0,
             monitors_count=record.n_of_monitors or 0,
