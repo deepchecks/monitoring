@@ -1,6 +1,6 @@
 import React, { ReactNode, useEffect, useRef, useCallback, useState } from 'react';
 
-import { Box, styled } from '@mui/material';
+import { Box, BoxProps, styled } from '@mui/material';
 
 import HorizontalScrollingIconButton from './HorizontalScrollingIconButton';
 
@@ -8,14 +8,10 @@ import { WindowInterval } from 'helpers/types/index';
 
 export type SlideType = 'left' | 'right';
 
-interface HorizontalScrollingProps {
-  children: ReactNode;
-}
-
 const STEP = 30;
 const DISTANCE = 300;
 
-export const HorizontalScrolling = ({ children }: HorizontalScrollingProps) => {
+export const HorizontalScrolling = ({ children, component, ref, sx }: BoxProps) => {
   const [scroll, setScroll] = useState(0);
   const [width, setWidth] = useState(0);
 
@@ -61,7 +57,7 @@ export const HorizontalScrolling = ({ children }: HorizontalScrollingProps) => {
   const disabledLeftArrow = scroll === 0;
 
   return (
-    <StyledHorizontalScrolling>
+    <StyledHorizontalScrolling sx={sx} component={component} ref={ref}>
       <HorizontalScrollingIconButton
         type="left"
         slide={slide}

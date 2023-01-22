@@ -12,20 +12,25 @@ interface LegendItemProps extends BoxProps {
   lineIndexMap: Record<number, boolean>;
   analysis?: boolean;
   current?: boolean;
+  version: string;
+  indexInVersion: number;
 }
 
-const LegendItem = ({ item, lineIndexMap, analysis, current, onClick }: LegendItemProps) => {
+const LegendItem = ({ item, lineIndexMap, analysis, current, version, indexInVersion, onClick }: LegendItemProps) => {
   const text = item?.text?.split('|');
   const color = item.strokeStyle ? item.strokeStyle.toString() : '#00F0FF';
   const legendLabel =
     (text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT
       ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...`
-      : analysis
-      ? text[0] + ' - ' + text[1]
       : text[0]) || '-';
 
-  return (
-    <Tooltip title={item?.text || ''} disableHoverListener={item?.text?.length <= MAX_LENGTH_OF_TOOLTIP_TEXT}>
+  return <>
+    {
+      indexInVersion == 0 && analysis && <StyledLegendHeaderContainer>
+        <StyledLegendsHeader>{`${version}:`}</StyledLegendsHeader>
+      </StyledLegendHeaderContainer>
+    }
+    <Tooltip title={text[1] ? text[0] + ' - ' + text[1] : text[0]} placement='top'>
       <StyledLegendItem
         onClick={onClick}
         sx={{
@@ -42,8 +47,7 @@ const LegendItem = ({ item, lineIndexMap, analysis, current, onClick }: LegendIt
           <StyledLegendItemPoint
             sx={{
               backgroundColor: color
-            }}
-          />
+            }} />
         )}
 
         <Typography variant="subtitle2" marginLeft="10px">
@@ -51,7 +55,7 @@ const LegendItem = ({ item, lineIndexMap, analysis, current, onClick }: LegendIt
         </Typography>
       </StyledLegendItem>
     </Tooltip>
-  );
+  </>;
 };
 
 const StyledLegendItem = styled(Box)({
@@ -68,6 +72,24 @@ const StyledLegendItemPoint = styled(Box)({
   width: 9,
   height: 9,
   borderRadius: '3px'
+});
+
+const StyledLegendHeaderContainer = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  minWidth: 'max-content',
+  margin: '0 7px 0 1.7em',
+  padding: '3px 0',
+  ':first-of-type': {
+    marginLeft: 0
+  }
+});
+
+const StyledLegendsHeader = styled(Typography)({
+  fontWeight: '700',
+  fontSize: '12px',
+  lineHeight: '29px',
+  letterSpacing: '0.17px'
 });
 
 export default LegendItem;

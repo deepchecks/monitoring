@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, memo, useState, useEffect, useCallback } from 'react';
+import React, { PropsWithChildren, memo, useState, useEffect, useCallback, useMemo } from 'react';
 import { ChartData, LegendItem as ILegendItem } from 'chart.js';
 
 import { styled, Box, Stack, Typography } from '@mui/material';
@@ -42,6 +42,16 @@ const LegendsList = ({
   children
 }: PropsWithChildren<LegendsListProps>) => {
   const [delayedComparison, setDelayedComparison] = useState(comparison);
+  const versionsLegends = useMemo(() => {
+    const versionsLegends: Record<string, ILegendItem[]> = {}
+    for (let i = 0; i < legends.length; i++) {
+      const suffix = legends[i].text?.split('|')[1];
+      if (!versionsLegends[suffix])
+        versionsLegends[suffix] = [];
+      versionsLegends[suffix].push(legends[i]);
+    }
+    return versionsLegends;
+  }, [legends]);
 
   useEffect(() => {
     setTimeout(() => setDelayedComparison(comparison), 0);
@@ -79,55 +89,72 @@ const LegendsList = ({
           height={analysis ? ANALYSIS_LEGENDS_CONTAINER_HEIGHT : 'auto'}
           marginTop={analysis ? '13px' : '15px'}
         >
-          <HorizontalScrolling>
-            {delayedComparison ? (
-              <Stack justifyContent="space-between" height={ANALYSIS_LEGENDS_CONTAINER_HEIGHT}>
-                <StyledLegendsStack>
-                  <StyledLegendsHeader>Current</StyledLegendsHeader>
-                  {legends.map(
-                    (legendItem, index) =>
-                      !isEndsWithPreviousPeriod(legendItem) && (
-                        <LegendItem
-                          key={index}
-                          item={legendItem}
-                          lineIndexMap={lineIndexMap}
-                          analysis={analysis}
-                          current={true}
-                          onClick={() => handleCurrentPeriodLegendClick(legendItem)}
-                        />
-                      )
-                  )}
-                </StyledLegendsStack>
-                <StyledLegendsStack>
-                  <StyledLegendsHeader>Previous</StyledLegendsHeader>
-                  {legends.map(
-                    (legendItem, index) =>
-                      isEndsWithPreviousPeriod(legendItem) && (
-                        <LegendItem
-                          key={index}
-                          item={legendItem}
-                          lineIndexMap={lineIndexMap}
-                          analysis={analysis}
-                          current={false}
-                          onClick={() => handlePreviousPeriodLegendClick(legendItem)}
-                        />
-                      )
-                  )}
-                </StyledLegendsStack>
-              </Stack>
-            ) : (
-              legends.map((legendItem, index) => (
-                <LegendItem
-                  key={index}
-                  item={legendItem}
-                  lineIndexMap={lineIndexMap}
-                  analysis={analysis}
-                  current={true}
-                  onClick={() => hideLine(legendItem)}
-                />
-              ))
-            )}
-          </HorizontalScrolling>
+
+          {delayedComparison ? (
+            <Stack justifyContent="space-between" height={ANALYSIS_LEGENDS_CONTAINER_HEIGHT}>
+              <StyledLegendsStack>
+                <StyledLegendsHeader>Current</StyledLegendsHeader>
+                <HorizontalScrolling sx={{width: 'calc( 100% - 75px)'}}>
+                  {Object.keys(versionsLegends).map((version, versionIndex) =>
+                    versionsLegends[version].filter(val => !isEndsWithPreviousPeriod(val)).map((legendItem, index) =>
+                    (
+                      <LegendItem
+                        version={version}
+                        indexInVersion={index}
+                        key={index + versionIndex}
+                        item={legendItem}
+                        lineIndexMap={lineIndexMap}
+                        analysis={analysis}
+                        current={true}
+                        onClick={() => handleCurrentPeriodLegendClick(legendItem)}
+                      />
+                    )
+                    ))}
+                </HorizontalScrolling>
+              </StyledLegendsStack>
+              <StyledLegendsStack>
+                <StyledLegendsHeader>Previous</StyledLegendsHeader>
+                <HorizontalScrolling sx={{width: 'calc( 100% - 75px)'}}>
+                  {Object.keys(versionsLegends).map((version, versionIndex) =>
+                    versionsLegends[version].filter(val => isEndsWithPreviousPeriod(val)).map((legendItem, index) =>
+                    (
+                      <LegendItem
+                        version={version}
+                        indexInVersion={index}
+                        key={index + versionIndex}
+                        item={legendItem}
+                        lineIndexMap={lineIndexMap}
+                        analysis={analysis}
+                        current={true}
+                        onClick={() => handlePreviousPeriodLegendClick(legendItem)}
+                      />
+                    )
+                    ))}
+                </HorizontalScrolling>
+              </StyledLegendsStack>
+            </Stack>
+          ) : (
+            <HorizontalScrolling>
+              {Object.keys(versionsLegends).map((version, versionIndex) =>
+                versionsLegends[version].map((legendItem, index) =>
+                (
+                  <LegendItem
+                    version={version}
+                    indexInVersion={index}
+                    key={index + versionIndex}
+                    item={legendItem}
+                    lineIndexMap={lineIndexMap}
+                    analysis={analysis}
+                    current={true}
+                    onClick={() => hideLine(legendItem)}
+                  />
+                )
+                ))
+              }
+            </HorizontalScrolling>
+          )
+          }
+
         </StyledLegendsListContainer>
       )}
       {children}
