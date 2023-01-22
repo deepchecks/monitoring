@@ -21,7 +21,7 @@ import sqlalchemy.exc
 from jsonschema import FormatChecker
 from jsonschema.validators import validator_for
 from sqlalchemy import select, update
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -101,11 +101,20 @@ async def log_data(
 
     # Insert samples, and log samples which failed on existing index
     if valid_data:
+        data_list = list(valid_data.values())
+        # Postgres driver has a limit of 32767 query params, which for 1000 messages, limits us to 32 columns. In order
+        # to solve that we can either pre-compile the statement with bind literals, or separate to batches
+        num_columns = len(data_list[0])
+        max_messages_per_insert = 32767 // num_columns
         monitor_table = model_version.get_monitor_table(session)
-        statement = (insert(monitor_table).values(list(valid_data.values()))
-                     .on_conflict_do_nothing(index_elements=[SAMPLE_ID_COL]).returning(monitor_table.c[SAMPLE_ID_COL]))
-        results = (await session.execute(statement)).scalars()
-        logged_ids = set(results)
+        logged_ids = set()
+        for start_index in range(0, len(data_list), max_messages_per_insert):
+            batch = data_list[start_index:start_index + max_messages_per_insert]
+            statement = (postgresql.insert(monitor_table).values(batch)
+                         .on_conflict_do_nothing(index_elements=[SAMPLE_ID_COL])
+                         .returning(monitor_table.c[SAMPLE_ID_COL]))
+            results = (await session.execute(statement)).scalars()
+            logged_ids.update(set(results))
     else:
         logged_ids = set()
 
@@ -116,7 +125,7 @@ async def log_data(
                            model_version_id=model_version.id))
     # Save errors
     if errors:
-        await session.execute(insert(IngestionError).values(errors))
+        await session.execute(postgresql.insert(IngestionError).values(errors))
 
     # Update statistics and timestamps, running only on samples which were logged successfully
 
@@ -195,7 +204,7 @@ async def update_data(
                            model_version_id=model_version.id))
     # Save errors
     if errors:
-        await session.execute(insert(IngestionError).values(errors))
+        await session.execute(postgresql.insert(IngestionError).values(errors))
 
     if len(logged_samples) == 0:
         return []
@@ -345,7 +354,7 @@ class DataIngestionBackend(object):
                        "error": str(exception),
                        "model_version_id": model_version_id}
                       for sample in samples]
-            await session.execute(insert(IngestionError).values(values))
+            await session.execute(postgresql.insert(IngestionError).values(values))
 
     async def after_data_update(self, organization_id, model_version_id, timestamps_updated, session):
         """Update model version update time, calling cache invalidation, and adding current model version to \

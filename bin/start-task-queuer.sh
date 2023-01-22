@@ -1,2 +1,2 @@
 #!/bin/bash
-python -m deepchecks_monitoring.bgtasks.task_queuer
+python -m deepchecks_monitoring.bgtasks.tasks_queuer
