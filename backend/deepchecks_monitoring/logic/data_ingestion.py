@@ -25,7 +25,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from deepchecks_monitoring import __version__
+from deepchecks_monitoring.bgtasks.model_version_offset_update import insert_model_version_offset_update_task
+from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_model_version_topic_delete_task
 from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import get_data_topic_name, topic_name_to_ids
@@ -249,15 +250,16 @@ class DataIngestionBackend(object):
         """
         if action not in ("log", "update"):
             raise Exception(f"Unknown action: {action}")
-        self.resources_provider.cache_functions.add_to_process_set(user.organization_id, model_version.id)
+        await insert_model_version_offset_update_task(user.organization_id, model_version.id, session)
 
         if self.use_kafka:
             topic_name = get_data_topic_name(user.organization_id, model_version.id)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
-            # If topic was created, resetting the offsets
+            # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
             if not topic_existed:
                 model_version.ingestion_offset = 0
                 model_version.topic_end_offset = 0
+                await insert_model_version_topic_delete_task(user.organization_id, model_version.id, session)
 
             if self._producer is None:
                 self._producer = await self.resources_provider.kafka_producer
@@ -360,7 +362,3 @@ class DataIngestionBackend(object):
                 self.resources_provider.cache_functions.delete_monitor_cache_by_timestamp(organization_id,
                                                                                           model_version_id,
                                                                                           int_timestamps)
-
-        # Always add to process set since we use it to calculate the queue offset, so even if we didn't log any new
-        # data we still want to update the queue size.
-        self.resources_provider.cache_functions.add_to_process_set(organization_id, model_version_id)

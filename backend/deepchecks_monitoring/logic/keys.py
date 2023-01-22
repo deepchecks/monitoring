@@ -12,10 +12,9 @@ import typing as t
 
 import pendulum as pdl
 
-MODEL_VERSIONS_QUEUE_KEY = "model-version-worker:queue"
-MODEL_VERSIONS_SORTED_SET_KEY = "model-version-worker:process-time"
 DATA_TOPIC_PREFIX = "data"
 INVALIDATION_TOPIC_PREFIX = "invalidation"
+GLOBAL_TASK_QUEUE = "task_queue"
 
 
 def get_data_topic_name(organization_id, model_version_id) -> str:

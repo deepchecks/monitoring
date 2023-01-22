@@ -15,8 +15,10 @@ import json
 import logging
 import typing as t
 from functools import wraps
+from time import perf_counter
 
 import anyio
+import pendulum as pdl
 import sentry_sdk
 
 from deepchecks_monitoring import __version__
@@ -30,6 +32,8 @@ if t.TYPE_CHECKING:
 
     from deepchecks_monitoring.bgtasks.core import Actor, Task, Worker
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+    from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
+    from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
     from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 
 
@@ -73,6 +77,16 @@ def collect_telemetry(routine: t.Any):
     if issubclass(routine, DataIngestionBackend):
         DataIngetionInstrumentor(data_ingestion_backend_type=routine).instrument()
         logger.info("Instrumented data ingestion backend telemetry collectors")
+        return routine
+
+    if issubclass(routine, TaskRunner):
+        TaskRunerInstrumentor(task_runner_type=routine).instrument()
+        logger.info("Instrumented task runner telemetry collectors")
+        return routine
+
+    if issubclass(routine, TasksQueuer):
+        TasksQueuerInstrumentor(task_queuer_type=routine).instrument()
+        logger.info("Instrumented task queuer telemetry collectors")
         return routine
 
     raise ValueError(
@@ -349,3 +363,105 @@ class TelemetyLoggingHandler(logging.Handler):
             record.getMessage(),
             record.levelname
         )
+
+
+class TaskRunerInstrumentor:
+    """Task runner open-telemetry instrumentor."""
+
+    def __init__(self, task_runner_type: t.Type["TaskRunner"]):
+        self.task_runner_type = task_runner_type
+        self.original_run_single_task = self.task_runner_type.run_single_task
+
+    def instrument(self):
+        """Instrument the task runner functions we want to monitor."""
+
+        @wraps(self.original_run_single_task)
+        async def run_single_task(runner: "TaskRunner", task, session, queued_time):
+            settings = runner.resource_provider.settings
+
+            with sentry_sdk.start_transaction(name="Task Runner"):
+                sentry_sdk.set_context("deepchecks_monitoring", {
+                    "version": __version__
+                })
+                sentry_sdk.set_context("kafka", {
+                    "host": settings.kafka_host,
+                    "username": settings.kafka_username,
+                    "security_protocol": settings.kafka_security_protocol,
+                    "max_metadata_age": settings.kafka_max_metadata_age,
+                    "replication_factor": settings.kafka_replication_factor,
+                    "sasl_mechanism": settings.kafka_sasl_mechanism,
+                })
+                sentry_sdk.set_context("redis", {
+                    "uri": settings.redis_uri
+                })
+                sentry_sdk.set_context("database", {
+                    "uri": settings.database_uri
+                })
+                with sentry_sdk.start_span(op="TaskRunner.run_single_task") as span:
+                    span.set_data("task.num-pushed", str(task.num_pushed))
+                    span.set_data("task.params", json.dumps(task.params, indent=3))
+                    span.set_data("task.type", str(task.bg_worker_task))
+                    span.set_data("task.creation-time", str(task.creation_time))
+                    span.set_data("task.name", task.name)
+                    span.set_data("task.duration-in-queue", pdl.now().int_timestamp - queued_time)
+
+                    try:
+                        start = perf_counter()
+                        result = await self.original_run_single_task(runner, task, session, queued_time)
+                        span.set_data("task.execution-duration", perf_counter() - start)
+                        span.set_status(SpanStatus.OK)
+                    except Exception as error:
+                        span.set_status(SpanStatus.FAILED)
+                        sentry_sdk.capture_exception(error)
+                        raise
+                    else:
+                        return result
+
+        self.task_runner_type.run_single_task = run_single_task
+
+    def uninstrument(self):
+        self.task_runner_type.run_single_task = self.original_run_single_task
+
+
+class TasksQueuerInstrumentor:
+    """Task runner open-telemetry instrumentor."""
+
+    def __init__(self, task_queuer_type: t.Type["TasksQueuer"]):
+        self.task_queuer_type = task_queuer_type
+        self.original_move_tasks_to_queue = self.task_queuer_type.move_tasks_to_queue
+
+    def instrument(self):
+        """Instrument the task runner functions we want to monitor."""
+
+        @wraps(self.original_move_tasks_to_queue)
+        async def move_tasks_to_queue(queuer: "TasksQueuer"):
+            settings = queuer.resource_provider.settings
+
+            with sentry_sdk.start_transaction(name="Tasks Queuer"):
+                sentry_sdk.set_context("deepchecks_monitoring", {
+                    "version": __version__
+                })
+                sentry_sdk.set_context("redis", {
+                    "uri": settings.redis_uri
+                })
+                sentry_sdk.set_context("database", {
+                    "uri": settings.database_uri
+                })
+                with sentry_sdk.start_span(op="TasksQueuer.move_tasks_to_queue") as span:
+                    try:
+                        start = perf_counter()
+                        result = await self.original_move_tasks_to_queue(queuer)
+                        span.set_data("execution-duration", perf_counter() - start)
+                        span.set_data("queued-tasks-amount", result)
+                        span.set_status(SpanStatus.OK)
+                    except Exception as error:
+                        span.set_status(SpanStatus.FAILED)
+                        sentry_sdk.capture_exception(error)
+                        raise
+                    else:
+                        return result
+
+        self.task_queuer_type.move_tasks_to_queue = move_tasks_to_queue
+
+    def uninstrument(self):
+        self.task_queuer_type.move_tasks_to_queue = self.original_move_tasks_to_queue

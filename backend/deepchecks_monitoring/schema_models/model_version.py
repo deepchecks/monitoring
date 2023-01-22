@@ -87,9 +87,9 @@ class ModelVersion(Base):
     # Indicates the timestamp for which statistics was calculated for.
     last_statistics_update = Column(DateTime(timezone=True), nullable=True)
     # Indicates the latest messages offset that was ingested
-    ingestion_offset = Column(BigInteger, nullable=True)
+    ingestion_offset = Column(BigInteger, default=0)
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
-    topic_end_offset = Column(BigInteger, nullable=True)
+    topic_end_offset = Column(BigInteger, default=0)
 
     model_id = Column(
         Integer,

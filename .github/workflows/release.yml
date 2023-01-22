@@ -70,17 +70,24 @@ jobs:
           task-definition: ${{ steps.render-alert-scheduler-container.outputs.task-definition }}
           container-name: worker
           image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
-      - name: Fill in the new image ID in the Amazon ECS task definition - model version worker
-        id: render-model-version-worker-container
+      - name: Fill in the new image ID in the Amazon ECS task definition - task queuer
+        id: render-task-queuer-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ steps.render-worker-container.outputs.task-definition }}
-          container-name: model-version-worker
+          container-name: task-queuer
+          image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
+      - name: Fill in the new image ID in the Amazon ECS task definition - task runner
+        id: render-task-runner-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-queuer-container.outputs.task-definition }}
+          container-name: task-runner
           image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.render-model-version-worker-container.outputs.task-definition }}
+          task-definition: ${{ steps.render-task-runner-container.outputs.task-definition }}
           service: demo
           cluster: DevMonitoring
 

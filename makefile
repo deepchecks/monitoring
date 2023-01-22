@@ -335,7 +335,8 @@ env-setup: external-services-setup
 	@sleep 15
 	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
 	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-worker.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-model-version-worker.sh
+	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
+	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
 	@sleep 10
 
 cypress: env-setup

@@ -25,6 +25,7 @@ __all__ = [
     'DatabaseSettings',
     'RedisSettings',
     'KafkaSettings',
+    'TelemetrySettings'
 ]
 
 

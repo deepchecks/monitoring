@@ -14,11 +14,10 @@ import logging
 import typing as t
 from dataclasses import dataclass
 
-import pendulum as pdl
 import redis.exceptions
 from redis.client import Redis
 
-from deepchecks_monitoring.logic.keys import MODEL_VERSIONS_SORTED_SET_KEY, build_monitor_cache_key
+from deepchecks_monitoring.logic.keys import build_monitor_cache_key
 
 MONITOR_CACHE_EXPIRY_TIME = 60 * 60 * 24 * 7  # 7 days
 
@@ -95,13 +94,6 @@ class CacheFunctions:
     def delete_key(self, key):
         """Remove a given key from the cache."""
         self.redis.delete(key)
-
-    def add_to_process_set(self, organization_id: int, model_version_id: int):
-        """Add model version to process set."""
-        if not self.use_cache:
-            return
-        set_key = f"{organization_id}-{model_version_id}"
-        self.redis.zadd(MODEL_VERSIONS_SORTED_SET_KEY, {set_key: pdl.now().int_timestamp}, nx=True)
 
     def get_and_incr_user_rate_count(self, user, time, count_added):
         """Get the user's organization samples count for the given minute, and increase by the given amount."""

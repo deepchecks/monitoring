@@ -18,6 +18,7 @@ from deepchecks_monitoring.schema_models.monitor import Monitor
 from .base import Base
 from .invitation import Invitation
 from .organization import Organization
+from .task import Task
 from .user import User, UserOAuthDTO
 
 __all__ = [
@@ -36,5 +37,6 @@ __all__ = [
     "AlertSeverity",
     "Monitor",
     "BaseDeclarative",
-    "Invitation"
+    "Invitation",
+    "Task"
 ]
