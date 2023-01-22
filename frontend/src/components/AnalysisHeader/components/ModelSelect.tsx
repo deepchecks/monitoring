@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Stack, Tooltip, Typography } from '@mui/material';
+import { Stack, styled, Tooltip, Typography } from '@mui/material';
 
 import ModelIcon from './ModelIcon';
 
@@ -20,16 +20,28 @@ const sizeMap = {
       width: 32,
       height: 32
     },
-    py: '10px',
-    variant: 'h3'
+    variant: 'h3',
+    padding: '10px 0 10px 0',
+    xl: {
+      textWidth: 'max-content'
+    },
+    lg: {
+      textWidth: 'max-content'
+    }
   },
   small: {
     arrow: {
       width: 23,
       height: 23
     },
-    py: '10px',
-    variant: 'h5'
+    variant: 'h5',
+    padding: '10px 0 10px 0',
+    xl: {
+      textWidth: 'max-content'
+    },
+    lg: {
+      textWidth: '150px'
+    }
   }
 } as const;
 
@@ -48,21 +60,35 @@ const ModelSelect = ({ model, onOpen, size }: ModelSelectProps) => {
   );
 
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      sx={{ py: sizeMap[size].py, width: 'max-content', cursor: 'pointer' }}
-      onClick={onOpen}
-    >
+    <StyledSelectWrapper direction="row" alignItems="center" sx={{ padding: sizeMap[size].padding }} onClick={onOpen}>
       <Tooltip title={`${taskType} Model`} arrow>
         {ModelIcon(taskType, sizeMap[size].arrow.width, sizeMap[size].arrow.height)}
       </Tooltip>
-      <Typography variant={sizeMap[size].variant} sx={{ mx: '11px', minWidth: 100 }}>
+      <StyledModelName
+        variant={sizeMap[size].variant}
+        noWrap={true}
+        sx={{
+          width: sizeMap[size].xl.textWidth,
+          '@media (max-width: 1536px)': {
+            width: sizeMap[size].lg.textWidth
+          }
+        }}
+      >
         {model.name} Analysis
-      </Typography>
+      </StyledModelName>
       <ArrowDropDown />
-    </Stack>
+    </StyledSelectWrapper>
   );
 };
 
 export default ModelSelect;
+
+const StyledSelectWrapper = styled(Stack)({
+  width: 'max-content',
+  cursor: 'pointer'
+});
+
+const StyledModelName = styled(Typography)({
+  marginLeft: '11px',
+  minWidth: '100px'
+});

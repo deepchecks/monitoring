@@ -6,6 +6,8 @@ import { Stack, Box } from '@mui/system';
 
 import ModelSelect from './ModelSelect';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
+import { theme } from '../../../theme';
+import { styled } from '@mui/material';
 
 interface FixedAnalysisHeaderProps {
   model: ModelManagmentSchema;
@@ -14,17 +16,8 @@ interface FixedAnalysisHeaderProps {
 }
 
 const FixedAnalysisHeader = ({ model, open, onOpenModelsMenu }: FixedAnalysisHeaderProps) => (
-  <Stack
+  <StyledHeaderWrapper
     sx={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      zIndex: 10,
-      width: 1,
-      height: 75,
-      padding: '1px 17px 1px 255px',
-      background: theme => theme.palette.grey[100],
-      transition: 'all 0.35s ease-in-out',
       transform: open ? 'translateY(0)' : 'translateY(-100%)'
     }}
   >
@@ -36,7 +29,23 @@ const FixedAnalysisHeader = ({ model, open, onOpenModelsMenu }: FixedAnalysisHea
         <AnalysisFilters model={model} fixedHeader />
       </Box>
     </Stack>
-  </Stack>
+  </StyledHeaderWrapper>
 );
 
 export default FixedAnalysisHeader;
+
+const StyledHeaderWrapper = styled(Stack)(({ theme }) => ({
+  position: 'fixed',
+  top: 0,
+  left: '236px',
+  width: 'calc(100% - 236px)',
+  height: 75,
+  padding: '1px 17px 1px 19px',
+  background: theme.palette.grey[100],
+  transition: 'all 0.35s ease-in-out',
+  zIndex: 10,
+  '@media (max-width: 1536px)': {
+    left: '195px',
+    width: 'calc(100% - 195px)'
+  }
+}));

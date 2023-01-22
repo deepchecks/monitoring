@@ -35,6 +35,11 @@ const StyledFormControlLabel = styled(FormControlLabel)({
 
   '& .MuiFormControlLabel-label': {
     marginRight: '9px',
+    '@media (max-width: 1536px)': {
+      fontSize: '12px',
+      width: '70px',
+      marginRight: 0
+    },
 
     '&.Mui-disabled': {
       opacity: 0.3

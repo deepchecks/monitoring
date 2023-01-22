@@ -73,14 +73,20 @@ export const DateRange = ({
         label="Time Range"
         value={`${dayjs(range.startDate).format('L')} - ${dayjs(range.endDate).format('L')}`}
         size="small"
-        sx={{ cursor: 'pointer', width: { xs: '240px', xl: '260px' } }}
+        sx={{ cursor: 'pointer', width: { xs: '205px', xl: '260px' } }}
         InputProps={{
           endAdornment: (
             <Button variant="text" sx={{ minWidth: '24px', pl: '5px' }}>
               <Calendar />
             </Button>
           ),
-          readOnly: true
+          readOnly: true,
+          sx: {
+            fontSize: '16px',
+            '@media (max-width: 1536px)': {
+              fontSize: '12px'
+            }
+          }
         }}
       ></StyledTextField>
       <Popover
