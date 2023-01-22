@@ -1,4 +1,4 @@
-import React, { useEffect, memo } from 'react';
+import React, { useEffect, useMemo, memo } from 'react';
 
 import { MonitorSchema, useGetModelColumnsApiV1ModelsModelIdColumnsGet } from 'api/generated';
 
@@ -33,7 +33,8 @@ const SelectColumnComponent = ({
   numericValue,
   setNumericValue
 }: SelectColumnProps) => {
-  const { data: columns, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
+  const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
+  const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
 
   useEffect(() => {
     const filters = monitor?.data_filters?.filters;
@@ -82,7 +83,7 @@ const SelectColumnComponent = ({
               </MenuItem>
             ))}
           </MarkedSelect>
-          {column &&
+          {column && 
             (columns[column].type === ColumnType.categorical ? (
               <Subcategory>
                 <ControlledMarkedSelect

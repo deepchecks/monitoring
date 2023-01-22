@@ -36,8 +36,9 @@ export const SelectModelColumn = ({
   ...props
 }: SelectModelColumnProps) => {
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(modelId);
+  const columns = useMemo(() => Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)
+    .map(([key, value]) => ({ key, value })), [columnsMap]);
 
-  const columns = useMemo(() => Object.entries(columnsMap).map(([key, value]) => ({ key, value })), [columnsMap]);
   const column = props.value as string;
   const columnMetadata = column ? columnsMap[column] : undefined;
 

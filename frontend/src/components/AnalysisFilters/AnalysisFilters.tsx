@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 
 import {
   GetModelColumnsApiV1ModelsModelIdColumnsGet200,
@@ -52,15 +52,8 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   const [maxDate, setMaxDate] = useState<Date | null>(null);
   const maxWindowsCount = 30;
 
-  const {
-    data: columns = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
-    refetch: refetchColumns,
-    isLoading
-  } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id, undefined, {
-    query: {
-      enabled: false
-    }
-  });
+  const { data: columnsMap = {}, refetch: refetchColumns, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id);
+  const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
 
   const { data: defaultFrequency, refetch: loadDefaultFrequency } =
     useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
