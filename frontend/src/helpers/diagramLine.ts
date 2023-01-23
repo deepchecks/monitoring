@@ -3,9 +3,7 @@ import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 import { Chart, ChartEvent, ChartMeta } from 'chart.js';
 import dayjs from 'dayjs';
 
-import { AlertRuleSchema, AlertSchema } from 'api/generated';
-
-import { OperatorsEnumMap } from '../helpers/conditionOperator';
+import { AlertRuleSchema, AlertSchema, OperatorsEnum } from 'api/generated';
 
 import { colors } from 'theme/colors';
 
@@ -40,26 +38,34 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     if (!y) return;
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
 
-    ctx.beginPath();
+    ctx.save();
+    
     // const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || ('medium' as AlertSeverity)];
     const severity_color = '#17003E';
     ctx.strokeStyle = severity_color;
     ctx.lineWidth = 2;
-    ctx.setLineDash([6, 6]);
+
+    ctx.beginPath();
     ctx.moveTo(left, yOffset);
     ctx.lineTo(right, yOffset);
+    ctx.closePath();
+
+    ctx.shadowColor = severity_color;
+    ctx.shadowBlur = 10;
+    if (alert_rule.condition.operator == OperatorsEnum.greater_than_equals || alert_rule.condition.operator == OperatorsEnum.greater_than) {
+      ctx.shadowOffsetY = -6;
+    } else if (alert_rule.condition.operator == OperatorsEnum.less_than_equals || alert_rule.condition.operator == OperatorsEnum.less_than) {
+      ctx.shadowOffsetY = 6;
+    }
+    
+    ctx.setLineDash([6, 6]);
     ctx.stroke();
-    ctx.restore();
-    ctx.setLineDash([6, 0]);
-    ctx.save();
-    const angle = Math.PI / 180;
-    ctx.translate(0, 0);
-    ctx.font = 'bold 12px Roboto';
-    ctx.fillStyle = severity_color;
-    ctx.direction = 'inherit';
-    ctx.textAlign = 'center';
-    ctx.rotate(270 * angle);
-    ctx.fillText(OperatorsEnumMap[alert_rule.condition.operator], -yOffset, right + 10);
+
+    ctx.shadowColor = "unset";
+    ctx.shadowOffsetY = 0;
+    ctx.shadowOffsetX = 0
+    ctx.shadowBlur = 0;
+
     ctx.restore();
   }
 });

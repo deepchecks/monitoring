@@ -88,7 +88,7 @@ function DiagramLine({
             currentChart.ctx,
             currentChart.chartArea,
             alpha(el.borderColor as string, 0),
-            alpha(el.borderColor as string, 0.1)
+            alpha(el.borderColor as string, 0)
           )
         };
       })
