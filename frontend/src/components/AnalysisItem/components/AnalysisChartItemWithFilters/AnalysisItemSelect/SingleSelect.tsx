@@ -9,7 +9,6 @@ import { StyledRoundedSelectContainer, StyledRoundedSelect, StyledMostWorstButto
 import { AnalysisItemSelectProps } from './AnalysisItemSelect.types';
 import { TypeMap } from 'components/AnalysisItem/AnalysisItem.types';
 
-/*eslint no-param-reassign: ["error", { "props": false }]*/
 const SingleSelect = ({
   size = 'small',
   label,
@@ -18,20 +17,23 @@ const SingleSelect = ({
   isMostWorstActive,
   filteredValues,
   isDriftCheck,
-  setfilteredValues,
+  setFilteredValues,
   setIsMostWorstActive,
   checkParams
-}: AnalysisItemSelectProps<string>) => {
-  const paramValue = useMemo(() => checkParams[TypeMap[type]], [checkParams[TypeMap[type]]]);
-  const [value, setValue] = useState((paramValue != 'none' && paramValue) || '');
+}: AnalysisItemSelectProps) => {
+  const paramValue = useMemo(() => checkParams[TypeMap[type]], [checkParams, type]);
 
+  const [value, setValue] = useState((paramValue !== 'none' && paramValue) || '');
 
   const handleSetSelectValue = (value: string) => {
     setIsMostWorstActive(value ? false : !isMostWorstActive);
 
-    setValue(value)
-    filteredValues[type] = [value];
-    setfilteredValues(filteredValues => ({ ...filteredValues }));
+    setValue(value);
+
+    const newFilteredValues = { ...filteredValues };
+
+    newFilteredValues[type] = [value];
+    setFilteredValues(newFilteredValues);
   };
 
   const handleSelectValueChange = (event: SelectChangeEvent<unknown>) => {
@@ -52,21 +54,20 @@ const SingleSelect = ({
 
   const handleClearSelectedValue = () => {
     setValue('');
-    filteredValues[type] = ['none'];
-    setfilteredValues(filteredValues => ({ ...filteredValues }));
+
+    const newFilteredValues = { ...filteredValues };
+
+    newFilteredValues[type] = ['none'];
+    setFilteredValues(newFilteredValues);
   };
 
   useEffect(() => {
-    const val = filteredValues[type]
+    const val = filteredValues[type];
+
     if (val) {
-      if (val[0] != 'none') {
-        setValue(val[0]);
-      }
-      else {
-        setValue('');
-      }
+      val[0] !== 'none' ? setValue(val[0]) : setValue('');
     }
-  }, [filteredValues[type]])
+  }, [filteredValues, type]);
 
   return (
     <>
@@ -81,11 +82,13 @@ const SingleSelect = ({
           onChange={handleSelectValueChange}
           endAdornment={<ClearButton inputCheck={value} onClick={handleClearSelectedValue} />}
         >
-          {data?.filter(({ name }) => name != 'none').map(({ name }) => (
-            <MenuItem key={name} value={name}>
-              {name}
-            </MenuItem>
-          ))}
+          {data
+            ?.filter(({ name }) => name != 'none')
+            .map(({ name }) => (
+              <MenuItem key={name} value={name}>
+                {name}
+              </MenuItem>
+            ))}
         </StyledRoundedSelect>
       </StyledRoundedSelectContainer>
       <StyledMostWorstButton active={isMostWorstActive} onClick={handleMostDriftedClick}>

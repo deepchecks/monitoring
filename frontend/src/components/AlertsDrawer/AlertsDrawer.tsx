@@ -25,16 +25,10 @@ interface AlertsDrawerProps extends DrawerProps {
 }
 
 const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: AlertsDrawerProps) => {
-  const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
-  const currentModel = useMemo(() => alertRule && getCurrentModel(alertRule.model_id), [alertRule, getCurrentModel]);
-  const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(alertRule, currentModel?.latest_time);
-
-  useRunMonitorLookback(alertRule?.monitor_id ?? null, currentModel);
-
   const [alertIndex, setAlertIndex] = useState(0);
 
   const {
-    data: alerts = [],
+    data: allAlerts = [],
     isLoading: isAlertsLoading,
     refetch: refetchAlerts,
     isError
@@ -44,11 +38,23 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
     }
   });
 
+  const alerts = useMemo(() => [...allAlerts].filter(a => a.resolved === false), [allAlerts]);
+
   useEffect(() => {
     if (alerts.length) {
       setAlertIndex(alerts.length - 1);
     }
   }, [alerts]);
+
+  const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
+  const currentModel = useMemo(() => alertRule && getCurrentModel(alertRule.model_id), [alertRule, getCurrentModel]);
+  const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(
+    alertRule,
+    currentModel?.latest_time,
+    alerts
+  );
+
+  useRunMonitorLookback(alertRule?.monitor_id ?? null, currentModel);
 
   const {
     data: monitor = null,

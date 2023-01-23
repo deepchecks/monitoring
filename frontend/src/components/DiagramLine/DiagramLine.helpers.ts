@@ -1,4 +1,4 @@
-import { ChartArea, TooltipCallbacks, TooltipItem, TooltipModel } from 'chart.js';
+import { ChartArea, TooltipCallbacks, TooltipItem, TooltipModel, Tooltip } from 'chart.js';
 import { _DeepPartialObject } from 'chart.js/types/utils';
 import 'chartjs-adapter-dayjs-3';
 import dayjs from 'dayjs';
@@ -42,4 +42,19 @@ export const initAlertsWidget: AlertsWidget = {
   alertIndex: 0,
   alerts: [],
   changeAlertIndex: () => 1
+};
+
+Tooltip.positioners.myCustomPositioner = function (elements, eventPosition) {
+  const nearest = Tooltip.positioners.nearest.call(this, elements, eventPosition);
+  if (nearest) {
+    const isRight = nearest.x < this.width / 2;
+    const isHide =
+      (isRight && nearest.x + this.width > this.chart.width - 100) || (!isRight && nearest.x - this.width < 100);
+    return {
+      x: nearest.x,
+      y: nearest.y,
+      yAlign: isHide ? (nearest.y < this.chart.height / 2 ? 'top' : 'bottom') : undefined
+    };
+  }
+  return false;
 };

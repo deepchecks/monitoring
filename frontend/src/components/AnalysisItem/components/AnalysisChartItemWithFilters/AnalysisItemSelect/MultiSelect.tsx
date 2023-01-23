@@ -45,7 +45,6 @@ function getNameFromData(name: string, data: MonitorValueConf[] | undefined) {
   return undefined;
 }
 
-/*eslint no-param-reassign: ["error", { "props": false }]*/
 const MultiSelect = ({
   size = 'small',
   label,
@@ -53,25 +52,30 @@ const MultiSelect = ({
   type,
   isMostWorstActive,
   filteredValues,
-  setfilteredValues,
+  setFilteredValues,
   setIsMostWorstActive,
   checkParams
-}: AnalysisItemSelectProps<MultiSelectValuesType>) => {
-  const [filteredData, setFilteredData] = useState(data);
-  const [open, setOpen] = useState(false);
+}: AnalysisItemSelectProps) => {
   const defaultSelectedValues = useMemo(() => {
     const paramValues: string[] = Object.values(checkParams[TypeMap[type]] || []);
     return paramValues.map(name => getNameFromData(name, data)).filter(val => typeof val == 'string');
-  }, [checkParams[TypeMap[type]]]);
-  const [multiValue, setMultiValue] = useState<MultiSelectValuesType>(defaultSelectedValues as string[] || []);
+  }, [checkParams, data, type]);
+
+  const [filteredData, setFilteredData] = useState(data);
+  const [open, setOpen] = useState(false);
+  const [multiValue, setMultiValue] = useState<MultiSelectValuesType>((defaultSelectedValues as string[]) || []);
   const [savedMultiValue, setSavedMultiValue] = useState<MultiSelectValuesType>([]);
   const [searchFieldValue, setSearchFieldValue] = useState('');
 
   const handleClose = (isApplyClicked?: boolean) => {
     setOpen(false);
 
-    if (!isApplyClicked || !filteredData?.length ||
-      multiValue == savedMultiValue || multiValue.length + savedMultiValue.length == 0) {
+    if (
+      !isApplyClicked ||
+      !filteredData?.length ||
+      multiValue == savedMultiValue ||
+      multiValue.length + savedMultiValue.length == 0
+    ) {
       setTimeout(() => {
         setMultiValue(savedMultiValue);
         clearSearchField();
@@ -87,11 +91,15 @@ const MultiSelect = ({
       return;
     }
 
-    filteredValues[type] = multiValue;
-    if (!filteredValues[AnalysisItemFilterTypes.AGGREGATION]) {
-      filteredValues[AnalysisItemFilterTypes.AGGREGATION] = ['none'];
+    const newFilteredValues = { ...filteredValues };
+
+    newFilteredValues[type] = multiValue;
+
+    if (!newFilteredValues[AnalysisItemFilterTypes.AGGREGATION]) {
+      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] = ['none'];
     }
-    setfilteredValues(filteredValues => ({ ...filteredValues }));
+
+    setFilteredValues(newFilteredValues);
   };
 
   const handleOpen = () => {
@@ -108,14 +116,15 @@ const MultiSelect = ({
   const handleWorstPerformersClick = () => {
     if (!isMostWorstActive) {
       const perClassMetric = getNameFromData(multiValue[0].split(' ')[0] + ' Per Class', data);
-      if (!perClassMetric) {
-        console.log(`No scorer named ${perClassMetric} available.`)  // just in case ¯\_(ツ)_/¯ 
-        return;
-      }
+      if (!perClassMetric) return;
+
       setMultiValue([perClassMetric]);
       setSavedMultiValue([perClassMetric]);
-      filteredValues[type] = [perClassMetric];
-      setfilteredValues(filteredValues => ({ ...filteredValues }));
+
+      const newFilteredValues = { ...filteredValues };
+
+      newFilteredValues[type] = [perClassMetric];
+      setFilteredValues(newFilteredValues);
     }
     setIsMostWorstActive(!isMostWorstActive);
   };
@@ -136,8 +145,12 @@ const MultiSelect = ({
   const handleClearSelectedValue = () => {
     setMultiValue([]);
     setSavedMultiValue([]);
-    filteredValues[type] = null;
-    setfilteredValues(filteredValues => ({ ...filteredValues }));
+
+    const newFilteredValues = { ...filteredValues };
+
+    newFilteredValues[type] = ['none'];
+    setFilteredValues(newFilteredValues);
+
     setIsMostWorstActive(false);
   };
 
@@ -153,7 +166,8 @@ const MultiSelect = ({
           title={'Only available if 1 scorer is selected and supports a per class metric'}
           active={isMostWorstActive}
           onClick={handleWorstPerformersClick}
-          sx={{ minWidth: '180px' }}>
+          sx={{ minWidth: '180px' }}
+        >
           Worst performed classes
         </StyledMostWorstButton>
       )}
@@ -171,9 +185,10 @@ const MultiSelect = ({
           onOpen={handleOpen}
           onClose={() => handleClose(false)}
           renderValue={selected =>
-            (selected as Array<string>).length > 1 ?
-              `Selected ${label}s (${(selected as Array<string>).length})` :
-              (selected as Array<string>)[0]}
+            (selected as Array<string>).length > 1
+              ? `Selected ${label}s (${(selected as Array<string>).length})`
+              : (selected as Array<string>)[0]
+          }
           MenuProps={MenuProps}
           endAdornment={<ClearButton inputCheck={multiValue.length} onClick={handleClearSelectedValue} />}
         >
@@ -229,8 +244,8 @@ const MultiSelect = ({
               Apply
             </Button>
           </StyledApplyButton>
-        </StyledRoundedSelect >
-      </StyledRoundedSelectContainer >
+        </StyledRoundedSelect>
+      </StyledRoundedSelectContainer>
     </>
   );
 };

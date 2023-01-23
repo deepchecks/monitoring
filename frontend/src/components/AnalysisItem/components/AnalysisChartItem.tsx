@@ -1,11 +1,11 @@
 import React, { ReactNode, PropsWithChildren } from 'react';
 
 import { styled, Box, Stack, Typography, BoxProps } from '@mui/material';
-import { InfoLink } from 'components/info_link';
+import { InfoLink } from 'components/InfoLink';
 
 interface AnalysisChartItemProps extends BoxProps {
   title: string;
-  docs_link?: string | null;
+  docsLink?: string | null;
   subtitle: string;
   headerChildren?: ReactNode;
 }
@@ -16,7 +16,7 @@ export function AnalysisChartItem({
   subtitle,
   sx,
   title,
-  docs_link
+  docsLink
 }: PropsWithChildren<AnalysisChartItemProps>) {
   return (
     <StyledAnalysisChartItem
@@ -28,11 +28,11 @@ export function AnalysisChartItem({
         <Box>
           <StyledTitle>{title}</StyledTitle>
           <StyledSubTitle>{subtitle}</StyledSubTitle>
-          {docs_link &&
+          {docsLink && (
             <StyledSubTitle>
-              <InfoLink docs_link={docs_link}></InfoLink>
+              <InfoLink docsLink={docsLink}></InfoLink>
             </StyledSubTitle>
-          }
+          )}
         </Box>
         {headerChildren}
       </Stack>

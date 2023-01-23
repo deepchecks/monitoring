@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 
-import { CheckResultSchema, Condition } from 'api/generated';
+import { CheckResultSchema, AlertSchema } from 'api/generated';
 
 import { setBarGraphOptions, setLineGraphOptions } from 'helpers/setGraphOptions';
 
@@ -25,15 +25,17 @@ const parseDataForChart = (
     label: string,
     index: number,
     dashed: boolean,
-    condition?: Condition | undefined,
-    data?: (number | null)[]
+    alerts?: AlertSchema[],
+    timeLabels?: number[]
   ) => ChartOptions,
   dashed = false,
-  condition?: Condition | undefined
+  alerts?: AlertSchema[]
 ) => {
   if (!graph) return { datasets: [], labels: [] };
 
   let counter = 0;
+
+  const labels = graph.time_labels?.map(date => dayjs(date).valueOf());
 
   return {
     datasets: Object.keys(graph.output)
@@ -69,16 +71,16 @@ const parseDataForChart = (
 
         return Object.keys(lines).map(lineKey => ({
           data: lines[lineKey],
-          ...setChartOptions(`${lineKey}|${key}`, counter++, dashed, condition, lines[lineKey])
+          ...setChartOptions(`${lineKey}|${key}`, counter++, dashed, alerts, labels)
         }));
       })
       .flat(2),
-    labels: graph.time_labels?.map(date => dayjs(date).valueOf())
+    labels
   };
 };
 
-export const parseDataForLineChart = (graph: CheckResultSchema, dashed = false, condition?: Condition | undefined) =>
-  parseDataForChart(graph, setLineGraphOptions, dashed, condition);
+export const parseDataForLineChart = (graph: CheckResultSchema, dashed = false, alerts?: AlertSchema[]) =>
+  parseDataForChart(graph, setLineGraphOptions, dashed, alerts);
 
 export const parseDataForBarChart = (graph: CheckResultSchema, dashed = false) =>
   parseDataForChart(graph, setBarGraphOptions, dashed);

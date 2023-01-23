@@ -1,8 +1,12 @@
 import { useEffect, useMemo } from 'react';
-import { AlertRuleInfoSchema, useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost } from '../api/generated';
+import { AlertRuleInfoSchema, useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost, AlertSchema } from '../api/generated';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 
-const useAlertMonitorsData = (alertRule: AlertRuleInfoSchema | null, time: number | undefined) => {
+const useAlertMonitorsData = (
+  alertRule: AlertRuleInfoSchema | null,
+  time: number | undefined,
+  alerts: AlertSchema[]
+) => {
   const { data, mutate, isLoading } = useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost();
 
   useEffect(() => {
@@ -17,8 +21,8 @@ const useAlertMonitorsData = (alertRule: AlertRuleInfoSchema | null, time: numbe
       };
     }
 
-    return parseDataForLineChart(data, false, alertRule?.condition);
-  }, [alertRule?.condition, data, isLoading]);
+    return parseDataForLineChart(data, false, alerts);
+  }, [alerts, data, isLoading]);
 
   return {
     graphData,

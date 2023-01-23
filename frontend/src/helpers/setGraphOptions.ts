@@ -1,6 +1,5 @@
-import { Condition } from 'api/generated';
+import { AlertSchema } from 'api/generated';
 import { alpha } from '@mui/material';
-import { OperatorsEnumMap } from './conditionOperator';
 import { colors } from '../theme/colors';
 
 export const PREVIOUS_PERIOD = '|previous_period';
@@ -30,21 +29,31 @@ const setLabel = (dashed: boolean, label: string) => (dashed ? label + PREVIOUS_
 const setBorderDash = (dashed: boolean) => (dashed ? [10, 5] : []);
 
 const buildPointsPropertiesArray = (
-  data: (number | null)[] | undefined,
-  condition: Condition | undefined,
+  label: string,
+  alerts: AlertSchema[] | undefined,
+  timeLabels: number[] | undefined,
   defaultColor: string
 ) => {
   const pointColors: string[] = [];
   const pointRadiuses: number[] = [];
 
-  if (condition && data) {
-    data.forEach(value => {
-      if (value && eval(`${value} ${OperatorsEnumMap[condition.operator]} ${condition.value}`)) {
-        pointColors.push(ALERT_COLOR);
-        pointRadiuses.push(4);
-      } else {
-        pointColors.push(defaultColor);
-        pointRadiuses.push(3);
+  if (alerts && timeLabels) {
+    const datasetLabel = label?.split('|');
+    const unresolvedAlerts = [...alerts].filter(a => a.resolved === false);
+
+    timeLabels.forEach(label => {
+      const currentAlert = unresolvedAlerts.find(alert => new Date(alert.end_time).getTime() === label);
+
+      if (currentAlert) {
+        const version = currentAlert.failed_values[datasetLabel[1]] || {};
+
+        if (Object.keys(version).includes(datasetLabel[0])) {
+          pointColors.push(ALERT_COLOR);
+          pointRadiuses.push(4);
+        } else {
+          pointColors.push(defaultColor);
+          pointRadiuses.push(3);
+        }
       }
     });
   }
@@ -56,16 +65,16 @@ export const setLineGraphOptions = (
   label: string,
   index: number,
   dashed = false,
-  condition?: Condition | undefined,
-  data?: (number | null)[]
+  alerts?: AlertSchema[],
+  timeLabels?: number[]
 ) => {
   const defaultColor = GRAPH_COLORS[index];
-  const { pointColors, pointRadiuses } = buildPointsPropertiesArray(data, condition, defaultColor);
+  const { pointColors, pointRadiuses } = buildPointsPropertiesArray(label, alerts, timeLabels, defaultColor);
 
   return {
     id: label,
     label: setLabel(dashed, label),
-    pointBorderWidth: condition && data ? 1 : 0,
+    pointBorderWidth: alerts && timeLabels ? 1 : 0,
     borderColor: GRAPH_COLORS[index % GRAPH_COLORS.length],
     pointBorderColor: '#fff',
     pointBackgroundColor: pointColors.length ? pointColors : defaultColor,

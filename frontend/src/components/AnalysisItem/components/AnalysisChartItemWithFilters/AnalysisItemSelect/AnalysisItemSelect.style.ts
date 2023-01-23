@@ -28,14 +28,14 @@ export const StyledRoundedSelectContainer = styled(FormControl)(({ theme }) => (
   }
 }));
 
-export const StyledRoundedSelectInputLabel = styled(InputLabel)(({ theme }) => ({
+export const StyledRoundedSelectInputLabel = styled(InputLabel)({
   transform: 'translate(14px, 7px) scale(1)',
   color: 'inherit !important',
 
   '&.Mui-focused, &.MuiFormLabel-filled': {
     display: 'none'
   }
-}));
+});
 
 export const StyledRoundedSelect = styled(Select)<IsActive>(({ active, theme }) => ({
   minWidth: 192,
@@ -68,14 +68,14 @@ export const StyledRoundedSelect = styled(Select)<IsActive>(({ active, theme }) 
   }
 }));
 
-export const StyledRoundedSelectCloseButton = styled(IconButton)(({ theme }) => ({
+export const StyledRoundedSelectCloseButton = styled(IconButton)({
   position: 'absolute',
   right: '27px',
   bottom: '5px',
   width: '15px',
   padding: 0,
   background: 'transparent'
-}));
+});
 
 export const StyledSearchField = styled(SearchField)({
   padding: '15px 16px 0',

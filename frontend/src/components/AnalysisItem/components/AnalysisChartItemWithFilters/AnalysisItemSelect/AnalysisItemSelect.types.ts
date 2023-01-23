@@ -1,10 +1,10 @@
 import { CheckConfigSchemaParams, MonitorValueConf } from 'api/generated';
-import { AnalysisItemFilterTypes } from 'components/AnalysisItem/AnalysisItem.types';
+import { AnalysisItemFilterTypes, FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
 import { SetStateType } from 'helpers/types';
 
 export type SelectSize = 'small' | 'medium';
 
-export interface AnalysisItemSelectProps<T> {
+export interface AnalysisItemSelectProps {
   label: string;
   data?: MonitorValueConf[];
   size?: SelectSize;
@@ -12,8 +12,8 @@ export interface AnalysisItemSelectProps<T> {
   isMostWorstActive: boolean;
   isDriftCheck?: boolean;
   setIsMostWorstActive: SetStateType<boolean>;
-  filteredValues: Record<AnalysisItemFilterTypes, string[] | null>;
-  setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
+  filteredValues: FilteredValues;
+  setFilteredValues: SetStateType<FilteredValues>;
   checkParams: CheckConfigSchemaParams;
 }
 

@@ -11,14 +11,15 @@ import MultiSelect from './AnalysisItemSelect/MultiSelect';
 
 import { AnalysisItemFilterTypes } from '../../AnalysisItem.types';
 import { SetStateType } from 'helpers/types';
+import { FilteredValues } from '../../AnalysisItem.types';
 
 interface AnalysisChartItemWithFiltersProps extends SelectProps {
   title: string;
-  docs_link?: string | null;
+  docsLink?: string | null;
   subtitle: string;
   filters: MonitorTypeConf[];
-  filteredValues: Record<AnalysisItemFilterTypes, string[]>;
-  setfilteredValues: SetStateType<Record<AnalysisItemFilterTypes, string[]>>;
+  filteredValues: FilteredValues;
+  setFilteredValues: SetStateType<FilteredValues>;
   checkParams: CheckConfigSchemaParams;
   isMostWorstActive: boolean;
   isDriftCheck: boolean;
@@ -31,20 +32,20 @@ export function AnalysisChartItemWithFilters({
   filters,
   checkParams,
   filteredValues,
-  setfilteredValues,
+  setFilteredValues,
   isMostWorstActive,
   setIsMostWorstActive,
   subtitle,
   isDriftCheck,
   title,
-  docs_link,
+  docsLink,
   sx
 }: PropsWithChildren<AnalysisChartItemWithFiltersProps>) {
   return (
     <AnalysisChartItem
       subtitle={subtitle}
       title={title}
-      docs_link={docs_link}
+      docsLink={docsLink}
       sx={{
         ...sx
       }}
@@ -60,7 +61,7 @@ export function AnalysisChartItemWithFilters({
                 isDriftCheck={isDriftCheck}
                 type={type}
                 filteredValues={filteredValues}
-                setfilteredValues={setfilteredValues}
+                setFilteredValues={setFilteredValues}
                 isMostWorstActive={isMostWorstActive}
                 setIsMostWorstActive={setIsMostWorstActive}
               />
@@ -70,9 +71,9 @@ export function AnalysisChartItemWithFilters({
                 checkParams={checkParams}
                 label={type}
                 data={values}
-                type={(type as AnalysisItemFilterTypes)}
+                type={type as AnalysisItemFilterTypes}
                 filteredValues={filteredValues}
-                setfilteredValues={setfilteredValues}
+                setFilteredValues={setFilteredValues}
                 isMostWorstActive={isMostWorstActive}
                 setIsMostWorstActive={setIsMostWorstActive}
               />

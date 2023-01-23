@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, useEffect, useRef, useState, useCallback } from 'react';
-import { Chart, Tooltip, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js';
+import { Chart, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js';
 declare module 'chart.js' {
   interface TooltipPositionerMap {
     myCustomPositioner: TooltipPositionerFunction<ChartType>;
@@ -24,21 +24,6 @@ import { colors } from 'theme/colors';
 import { DiagramLineProps } from './DiagramLine.types';
 
 Chart.register(...registerables, zoomPlugin);
-
-Tooltip.positioners.myCustomPositioner = function (elements, eventPosition) {
-  const nearest = Tooltip.positioners.nearest.call(this, elements, eventPosition);
-  if (nearest) {
-    const isRight = nearest.x < this.width / 2;
-    const isHide =
-      (isRight && nearest.x + this.width > this.chart.width - 100) || (!isRight && nearest.x - this.width < 100);
-    return {
-      x: nearest.x,
-      y: nearest.y,
-      yAlign: isHide ? (nearest.y < this.chart.height / 2 ? 'top' : 'bottom') : undefined
-    };
-  }
-  return false;
-};
 
 function DiagramLine({
   data,
@@ -289,6 +274,24 @@ function DiagramLine({
       setLegends(legendItems);
     }
   }, [chartData, comparison]);
+
+  useEffect(() => {
+    const currentChart = chartRef.current;
+
+    if (currentChart && alerts.length) {
+      currentChart.data.datasets.forEach((currentDataset, currentDatasetIndex) => {
+        const label = currentDataset.label?.split('|') || ['', ''];
+        const failedValue = alerts[alertIndex]?.failed_values[label[1] || ''] || {};
+        const evaluationResult = Object.keys(failedValue).includes(label[0] || '');
+
+        currentChart.setDatasetVisibility(currentDatasetIndex, evaluationResult);
+        setLineIndexMap(prevState => ({
+          ...prevState,
+          [currentDatasetIndex]: !evaluationResult
+        }));
+      });
+    }
+  }, [alertIndex, alerts]);
 
   return isLoading ? (
     <Loader sx={{ transform: 'translate(0, -16%)' }} />
