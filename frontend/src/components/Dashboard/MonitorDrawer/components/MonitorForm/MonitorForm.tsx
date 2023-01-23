@@ -183,8 +183,8 @@ export const MonitorForm = ({
   };
 
   return (
-    <Stack justifyContent="space-between" width={{ xs: '147px', xl: '308px' }} {...props}>
-      <Stack spacing="50px">
+    <Stack width={{ xs: '147px', xl: '308px' }} sx={{overflowY: 'unset'}} {...props}>
+      <Stack spacing="50px" sx={{height: 'calc(100% - 100px)', overflowY: 'auto'}}>
         <TextField
           label="Monitor name"
           size="small"
@@ -279,6 +279,7 @@ export const MonitorForm = ({
       <StyledButton
         onClick={handleMonitorSave}
         disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack}
+        sx={{margin: 'auto auto 20px auto'}}
       >
         Save
       </StyledButton>

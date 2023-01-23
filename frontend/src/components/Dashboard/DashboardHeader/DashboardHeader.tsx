@@ -43,7 +43,7 @@ export const DashboardHeader = ({ onOpen }: DashboardHeaderProps) => {
           </Stack>
           <StyledDivider />
           <ShareButton />
-          <Box onClick={handleClick}>
+          <Box onClick={handleClick} sx={{marginLeft: '1em'}}>
             <StyledButton variant="text" startIcon={<PlusIcon fill={colors.primary.violet[400]} />}>
               Add Monitor
             </StyledButton>

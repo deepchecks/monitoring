@@ -41,7 +41,7 @@ export const AlertsHeader = () => {
         >
           <ShareButton/>
           <Button
-            sx={{ width: 136 }}
+            sx={{ width: 136, marginLeft: '1em' }}
             startIcon={<Settings fill="#fff" width={20} height={20} />}
             onClick={linkToSettings}
           >
