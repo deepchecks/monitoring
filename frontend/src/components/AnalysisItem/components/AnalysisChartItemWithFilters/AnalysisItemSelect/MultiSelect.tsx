@@ -179,6 +179,7 @@ const MultiSelect = ({
         >
           <StyledStickyContainer>
             <StyledSearchField
+              placeholder={`Search ${label}`}
               value={searchFieldValue}
               onChange={handleSearch}
               onReset={clearSearchField}
