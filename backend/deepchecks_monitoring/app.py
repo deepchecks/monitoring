@@ -146,7 +146,6 @@ def create_application(
     async def app_startup():
         if app.state.data_ingestion_backend.use_kafka:
             asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
-            asyncio.create_task(app.state.data_ingestion_backend.cache_invalidator.run_invalidation_consumer())
 
     # Set deepchecks testing library logging verbosity to error to not spam the logs
     deepchecks.set_verbosity(logging.ERROR)

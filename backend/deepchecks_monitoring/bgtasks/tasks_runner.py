@@ -18,6 +18,7 @@ from redis.asyncio import Redis, RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 
+from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings, TelemetrySettings
@@ -138,10 +139,14 @@ def execute_worker():
 
         if settings.sentry_dsn:
             import sentry_sdk  # pylint: disable=import-outside-toplevel
-            sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sample_rate=1.0,
+                environment=settings.sentry_env
+            )
             telemetry.collect_telemetry(tasks_runner.TaskRunner)
 
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate()]
+        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
 
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)

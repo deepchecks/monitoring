@@ -15,6 +15,7 @@ import pendulum as pdl
 DATA_TOPIC_PREFIX = "data"
 INVALIDATION_TOPIC_PREFIX = "invalidation"
 GLOBAL_TASK_QUEUE = "task_queue"
+INVALIDATION_SET_PREFIX = "invalidation"
 
 
 def get_data_topic_name(organization_id, model_version_id) -> str:
@@ -37,15 +38,15 @@ def topic_name_to_ids(topic_name: str) -> t.Tuple[int, int]:
     return int(split[1]), int(split[2])
 
 
-def get_invalidation_topic_name(organization_id, model_version_id) -> str:
-    """Get name of kafka topic for invalidation messages.
+def get_invalidation_set_key(organization_id, model_version_id) -> str:
+    """Get name of redis key for invalidation timestamps.
 
     Returns
     -------
     str
-        Name of the data topic to be used for invalidation topic name.
+        key to be used for invalidation timestamps.
     """
-    return f"{INVALIDATION_TOPIC_PREFIX}-{organization_id}-{model_version_id}"
+    return f"{INVALIDATION_SET_PREFIX}:{organization_id}:{model_version_id}"
 
 
 def build_monitor_cache_key(

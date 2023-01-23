@@ -7,7 +7,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.logic.keys import get_data_topic_name, get_invalidation_topic_name
+from deepchecks_monitoring.logic.keys import get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
@@ -41,8 +41,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider):
         model_version_id = task.params['model_version_id']
         org_id = task.params['organization_id']
-        topic_names = [get_data_topic_name(org_id, model_version_id),
-                       get_invalidation_topic_name(org_id, model_version_id)]
+        topic_names = [get_data_topic_name(org_id, model_version_id)]
         reinsert_task = False
 
         organization_schema = (await session.execute(

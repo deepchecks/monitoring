@@ -1,7 +1,11 @@
 import pendulum as pdl
 import pytest
+from sqlalchemy import select
 
+from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation, \
+    insert_model_version_cache_invalidation_task
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
+from deepchecks_monitoring.public_models import Task
 
 
 @pytest.mark.asyncio
@@ -51,9 +55,15 @@ async def test_delete_monitor_cache_by_timestamp(resources_provider):
                                       start_time=start_time, end_time=end_time, value='some value')
         start_time = end_time
 
-    # Act
-    timestamps = [now.add(seconds=140).int_timestamp, now.add(seconds=520).int_timestamp,
-                  now.add(seconds=1000).int_timestamp]
-    cache_funcs.delete_monitor_cache_by_timestamp(organization_id=1, model_version_id=1, timestamps=timestamps)
+    timestamps_to_invalidate = {now.add(seconds=140).int_timestamp, now.add(seconds=520).int_timestamp,
+                                now.add(seconds=1000).int_timestamp}
+    cache_funcs.add_invalidation_timestamps(1, 1, timestamps_to_invalidate)
+
+    # Act - run task
+    async with resources_provider.async_session_factory() as session:
+        task_id = await insert_model_version_cache_invalidation_task(1, 1, session=session)
+        task = await session.scalar(select(Task).where(Task.id == task_id))
+        await ModelVersionCacheInvalidation().run(task, session, resources_provider)
+
     # Assert - 2 monitors and 3 timestamps
     assert len(cache_funcs.redis.keys()) == 400 - 2 * 3

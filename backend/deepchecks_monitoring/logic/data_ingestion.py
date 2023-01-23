@@ -25,9 +25,9 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import insert_model_version_cache_invalidation_task
 from deepchecks_monitoring.bgtasks.model_version_offset_update import insert_model_version_offset_update_task
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_model_version_topic_delete_task
-from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import get_data_topic_name, topic_name_to_ids
 from deepchecks_monitoring.monitoring_utils import configure_logger
@@ -229,7 +229,6 @@ class DataIngestionBackend(object):
             logger=None
     ):
         self.resources_provider: ResourcesProvider = resources_provider
-        self.cache_invalidator = CacheInvalidator(resources_provider)
         self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
         self._producer = None
@@ -361,10 +360,7 @@ class DataIngestionBackend(object):
             await session.execute(update(ModelVersion).where(ModelVersion.id == model_version_id).values(
                 {ModelVersion.last_update_time: pdl.now()}))
             int_timestamps = {ts.set(minute=0, second=0, microsecond=0).int_timestamp for ts in timestamps_updated}
-            if self.use_kafka:
-                await self.cache_invalidator.send_invalidation(organization_id, model_version_id, int_timestamps)
-            else:
-                # In case we don"t have a running kafka call the cache invalidation directly
-                self.resources_provider.cache_functions.delete_monitor_cache_by_timestamp(organization_id,
-                                                                                          model_version_id,
-                                                                                          int_timestamps)
+
+            self.resources_provider.cache_functions.add_invalidation_timestamps(organization_id, model_version_id,
+                                                                                int_timestamps)
+            await insert_model_version_cache_invalidation_task(organization_id, model_version_id, session)

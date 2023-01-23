@@ -24,8 +24,6 @@ from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.actors import WorkerBootstrap
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, execute_alerts_scheduler
 from deepchecks_monitoring.config import DatabaseSettings, Settings
-from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.cache_invalidation import CacheInvalidator
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
 from deepchecks_monitoring.public_models import Organization
@@ -69,18 +67,6 @@ def consume_data():
             telemetry.collect_telemetry(DataIngestionBackend)
         backend = DataIngestionBackend(settings, resources_provider)
         await backend.run_data_consumer()
-
-    anyio.run(consume)
-
-
-@cli.command()
-def consume_invalidation():
-    """Run kafka invalidation consumer."""
-    async def consume():
-        settings = Settings()  # type: ignore
-        resources_provider = ResourcesProvider(settings)
-        backend = CacheInvalidator(resources_provider, CacheFunctions(resources_provider.redis_client))
-        await backend.run_invalidation_consumer()
 
     anyio.run(consume)
 

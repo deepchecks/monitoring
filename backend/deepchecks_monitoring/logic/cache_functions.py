@@ -14,10 +14,11 @@ import logging
 import typing as t
 from dataclasses import dataclass
 
+import pendulum as pdl
 import redis.exceptions
 from redis.client import Redis
 
-from deepchecks_monitoring.logic.keys import build_monitor_cache_key
+from deepchecks_monitoring.logic.keys import build_monitor_cache_key, get_invalidation_set_key
 
 MONITOR_CACHE_EXPIRY_TIME = 60 * 60 * 24 * 7  # 7 days
 
@@ -37,9 +38,6 @@ class CacheFunctions:
         self.use_cache = redis_client is not None
         self.redis: Redis = redis_client
         self.logger = logging.Logger("cache-functions")
-        if self.redis:
-            self.delete_keys_by_pattern = self.redis.register_script(delete_keys_by_pattern_script)
-            self.delete_monitor_by_timestamp = self.redis.register_script(delete_monitor_by_timestamp_script)
 
     def get_monitor_cache(self, organization_id, model_version_id, monitor_id, start_time, end_time):
         """Get result from cache if exists. We can cache values which are "None" therefore to distinguish between the \
@@ -87,7 +85,10 @@ class CacheFunctions:
             return
         try:
             pattern = build_monitor_cache_key(organization_id, None, monitor_id, None, None)
-            self.delete_keys_by_pattern(args=[pattern])
+            keys_to_delete = []
+            for key in self.redis.scan_iter(match=pattern):
+                keys_to_delete.append(key)
+            self.redis.delete(*keys_to_delete)
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
 
@@ -105,45 +106,7 @@ class CacheFunctions:
         # Return the count before incrementing
         return count_after_increase - count_added
 
-    def delete_monitor_cache_by_timestamp(self, organization_id: int, model_version_id: int, timestamps: t.List[int]):
-        """Delete monitor cache entries by timestamp."""
-        if not self.use_cache:
-            return
-        try:
-            pattern = build_monitor_cache_key(organization_id, model_version_id, None, None, None)
-            self.delete_monitor_by_timestamp(args=[pattern, *timestamps])
-        except redis.exceptions.RedisError as e:
-            self.logger.exception(e)
-
-
-delete_keys_by_pattern_script = """
-    local cursor = 0
-    repeat
-        local result = redis.call('SCAN', cursor, 'MATCH', ARGV[1])
-        for _,key in ipairs(result[2]) do
-            redis.call('DEL', key)
-        end
-        cursor = tonumber(result[1])
-    until cursor == 0
-"""
-
-
-delete_monitor_by_timestamp_script = """
-    local cursor = 0
-    local pattern = table.remove(ARGV, 1)
-    local timestamps = ARGV
-    repeat
-        local result = redis.call('SCAN', cursor, 'MATCH', pattern)
-        for _,key in ipairs(result[2]) do
-            local split = {key:match'(.+):(.+):(.+):(.+):(.+):(.+)'}
-            local start_time, end_time = split[5], split[6]
-            for _, ts in ipairs(timestamps) do
-                if start_time <= ts and ts < end_time then
-                    redis.call('DEL', key)
-                    break
-                end
-            end
-        end
-        cursor = tonumber(result[1])
-    until cursor == 0
-"""
+    def add_invalidation_timestamps(self, organization_id: int, model_version_id: int, timestamps: t.Set[int]):
+        key = get_invalidation_set_key(organization_id, model_version_id)
+        now = pdl.now().timestamp()
+        self.redis.zadd(key, {ts: now for ts in timestamps})

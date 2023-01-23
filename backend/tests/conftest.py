@@ -190,8 +190,8 @@ def redis_url():
 @pytest.fixture(scope="function")
 def redis_client(redis_url: str):
     with Redis.from_url(redis_url) as r:
-        yield r
         r.flushdb()
+        yield r
 
 
 @pytest.fixture(scope="function")
