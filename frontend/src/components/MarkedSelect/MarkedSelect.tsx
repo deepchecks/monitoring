@@ -1,6 +1,6 @@
 import React, { ReactNode, memo } from 'react';
 
-import { styled, FormControl, IconButton, SelectProps, InputLabel, Select } from '@mui/material';
+import { styled, FormControl, IconButton, SelectProps, InputLabel, Select, FormHelperText } from '@mui/material';
 
 import { Clear } from 'assets/icon/icon';
 
@@ -8,6 +8,7 @@ interface MarkedSelectProps extends SelectProps {
   children: ReactNode;
   fullWidth?: boolean;
   clearValue?: () => void;
+  formHelper?: [string, object];
 }
 
 const sizeMap = {
@@ -22,6 +23,7 @@ function MarkedSelectComponent({
   size = 'small',
   clearValue,
   disabled,
+  formHelper,
   ...props
 }: MarkedSelectProps) {
   const handleClearClick = () => {
@@ -45,6 +47,7 @@ function MarkedSelectComponent({
       >
         {children}
       </StyledSelect>
+      {formHelper !== undefined && <FormHelperText sx={formHelper[1]}>{formHelper[0]}</FormHelperText>}
     </FormControl>
   );
 }

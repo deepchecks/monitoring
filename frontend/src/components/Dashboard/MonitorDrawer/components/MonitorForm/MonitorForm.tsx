@@ -243,6 +243,7 @@ export const MonitorForm = ({
               setAggregationWindow('');
             }}
             fullWidth
+            formHelper={['Advanced', { fontSize: '12px', margin: 0, color: '#9D60FB', marginTop: '5px' }]}
           >
             {timeWindow.map(({ label, value }, index) => (
               <MenuItem

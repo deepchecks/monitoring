@@ -13,7 +13,7 @@ import mixpanel from 'mixpanel-browser';
 import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
 
-import { alpha, Box, Typography, Stack } from '@mui/material';
+import { alpha, Box, Typography, Stack, styled } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
@@ -297,9 +297,9 @@ function DiagramLine({
     <Loader sx={{ transform: 'translate(0, -16%)' }} />
   ) : !data.datasets.length || data.datasets.every(d => !d) ? (
     <Box display="flex" alignItems="center" height={{ xs: height.lg - 61, lg: height.lg - 61, xl: height.xl - 61 }}>
-      <Typography variant="h4" fontWeight={500} margin="0 auto">
+      <StyledNoDataWarning variant="h4" fontWeight={500} margin="0 auto">
         No data for this monitor configuration
-      </Typography>
+      </StyledNoDataWarning>
     </Box>
   ) : (
     <>
@@ -323,3 +323,17 @@ function DiagramLine({
 }
 
 export default DiagramLine;
+
+const StyledNoDataWarning = styled(Typography)({
+  fontWeight: '500',
+  margin: '0 auto',
+  '@media (max-width: 1765px)': {
+    fontSize: '22px'
+  },
+  '@media (max-width: 1665px)': {
+    fontSize: '20px'
+  },
+  '@media (max-width: 1565px)': {
+    fontSize: '18px'
+  }
+});
