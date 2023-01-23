@@ -15,8 +15,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 import pendulum as pdl
-from deepchecks.core import BaseCheck
-from deepchecks.core.errors import DeepchecksBaseError
+from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
 from sqlalchemy import VARCHAR, Table, func, select
@@ -206,8 +205,12 @@ def get_results_for_model_versions_per_window(
                     else:
                         raise ValueError(f'incompatible check type {type(dp_check)}')
 
-                # In case of exception in the run putting none result
-                except DeepchecksBaseError as e:
+                # For not enough samples does not log the error
+                except errors.NotEnoughSamplesError:
+                    # In case of exception in the run putting none result
+                    curr_result = None
+                # For rest of the errors logs them
+                except errors.DeepchecksBaseError as e:
                     message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
                               f'got exception: {e.message}'
                     logging.getLogger('monitor_run_logger').exception(message)
@@ -250,7 +253,7 @@ def get_results_for_model_versions_for_reference(
                 raise ValueError('incompatible check type')
 
         # In case of exception in the run putting none result
-        except DeepchecksBaseError as e:
+        except errors.DeepchecksBaseError as e:
             message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
                         f'got exception: {e.message}'
             logging.getLogger('monitor_run_logger').error(message)
