@@ -264,7 +264,6 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
             log_level=settings.scheduler_loglevel,
             logfile=settings.scheduler_logfile,
             logfile_backup_count=settings.scheduler_logfile_backup_count,
-            with_sentry_handler=bool(settings.sentry_dsn),
         )
 
         async_engine = create_async_engine(

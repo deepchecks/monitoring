@@ -230,10 +230,7 @@ class DataIngestionBackend(object):
     ):
         self.resources_provider: ResourcesProvider = resources_provider
         self.cache_invalidator = CacheInvalidator(resources_provider)
-        self.logger = logger or configure_logger(
-            name="data-ingestion",
-            with_sentry_handler=resources_provider.settings.sentry_dsn is not None,
-        )
+        self.logger = logger or configure_logger(name="data-ingestion")
         self.use_kafka = self.resources_provider.kafka_settings.kafka_host is not None
         self._producer = None
 

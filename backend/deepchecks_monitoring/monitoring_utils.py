@@ -402,7 +402,6 @@ def configure_logger(
     message_format: str = "%(asctime)s %(levelname)s %(name)s %(message)s",
     logfile: t.Optional[str] = None,
     logfile_backup_count: int = 3,
-    with_sentry_handler: bool = False
 ):
     """Configure logger instance."""
     logger = logging.getLogger(name)
@@ -414,13 +413,6 @@ def configure_logger(
     h.setLevel(log_level)
     h.setFormatter(formatter)
     logger.addHandler(h)
-
-    if with_sentry_handler:
-        from deepchecks_monitoring.utils.telemetry import TelemetyLoggingHandler
-        h = TelemetyLoggingHandler()
-        h.setLevel(log_level)
-        h.setFormatter(formatter)
-        logger.addHandler(h)
 
     if logfile:
         h = logging.handlers.RotatingFileHandler(

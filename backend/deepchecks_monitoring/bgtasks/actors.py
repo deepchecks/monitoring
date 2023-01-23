@@ -473,7 +473,6 @@ class WorkerBootstrap:
             log_level=settings.worker_loglevel,
             logfile=settings.worker_logfile,
             logfile_backup_count=settings.worker_logfile_backup_count,
-            with_sentry_handler=bool(settings.sentry_dsn),
         )
 
         async with self.resources_provider_type(settings) as rp:

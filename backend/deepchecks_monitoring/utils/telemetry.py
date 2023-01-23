@@ -41,7 +41,6 @@ __all__ = [
     "collect_telemetry",
     "SchedulerInstrumentor",
     "WorkerInstrumentor",
-    "TelemetyLoggingHandler",
     "DataIngetionInstrumentor"
 ]
 
@@ -343,25 +342,6 @@ class DataIngetionInstrumentor:
 
     def uninstrument(self):
         self.data_ingestion_backend_type.log_or_update = self.original_log_or_update
-
-
-class TelemetyLoggingHandler(logging.Handler):
-    """Open telemetry logging handler.
-
-    Current handler adds log messages as events to the current span.
-    """
-
-    def emit(self, record: logging.LogRecord):
-        """Handle log record."""
-        transaction = sentry_sdk.Hub.current.scope.transaction
-
-        if transaction is None:
-            return
-
-        sentry_sdk.capture_message(
-            record.getMessage(),
-            record.levelname
-        )
 
 
 class TaskRunerInstrumentor:
