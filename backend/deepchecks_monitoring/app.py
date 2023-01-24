@@ -72,10 +72,13 @@ def create_application(
     # Configure telemetry with uptrace
     if settings.sentry_dsn:
         import sentry_sdk  # pylint: disable=import-outside-toplevel
+
+        from deepchecks_monitoring.utils.other import sentry_send_hook  # pylint: disable=import-outside-toplevel
         sentry_sdk.init(
             dsn=settings.sentry_dsn,
             traces_sample_rate=0.6,
-            environment=settings.sentry_env
+            environment=settings.sentry_env,
+            before_send_transaction=sentry_send_hook
         )
         telemetry.collect_telemetry(DataIngestionBackend)
 
