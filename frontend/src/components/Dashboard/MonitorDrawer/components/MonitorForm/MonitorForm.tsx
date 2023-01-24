@@ -30,6 +30,8 @@ interface MonitorFormProps extends StackProps {
   handleCloseDrawer: () => void;
   isDrawerOpen: boolean;
   refetchMonitors(): void;
+  frequency: SelectValues;
+  setFrequency: SetStateType<SelectValues>;
 }
 
 export const MonitorForm = ({
@@ -39,6 +41,8 @@ export const MonitorForm = ({
   handleCloseDrawer,
   isDrawerOpen,
   refetchMonitors,
+  frequency,
+  setFrequency,
   ...props
 }: MonitorFormProps) => {
   const [monitorName, setMonitorName] = useState(monitor?.name || '');
@@ -49,7 +53,6 @@ export const MonitorForm = ({
   const [checkInfoSecondLevel, setCheckInfoSecondLevel] = useState<SelectValues>('');
   const [isResConf, setIsResConf] = useState<boolean | undefined>();
 
-  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
   const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || '');
 
@@ -244,7 +247,6 @@ export const MonitorForm = ({
               setAggregationWindow('');
             }}
             fullWidth
-            formHelper={['Advanced', { fontSize: '12px', margin: 0, color: '#9D60FB', marginTop: '5px' }]}
           >
             {timeWindow.map(({ label, value }, index) => (
               <MenuItem

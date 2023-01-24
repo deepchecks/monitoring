@@ -71,6 +71,8 @@ export const MonitorDrawer = ({
     closeDrawer();
   };
 
+  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
+
   return (
     <CustomDrawer open={open} onClose={handleOnCloseDrawer} padding="40px 40px 0 40px" {...props}>
       <CustomDrawerHeader title={drawerName} onClick={handleOnCloseDrawer} marginBottom="32px" />
@@ -90,9 +92,11 @@ export const MonitorDrawer = ({
             handleCloseDrawer={closeDrawer}
             runCheckLookBack={handleGraphLookBack}
             isDrawerOpen={!!open}
+            frequency={frequency}
+            setFrequency={setFrequency}
           />
         )}
-        <GraphView graphData={graphData} isLoading={isRunCheckLoading} timeFreq={monitor?.frequency} />
+        <GraphView graphData={graphData} isLoading={isRunCheckLoading} timeFreq={frequency && +frequency || monitor?.frequency} />
       </Stack>
     </CustomDrawer>
   );

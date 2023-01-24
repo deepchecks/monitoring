@@ -16,16 +16,12 @@ interface SelectFrequencyProps {
 }
 
 export const SelectFrequency = ({ timeWindows = timeWindow, setFieldValue, ...props }: SelectFrequencyProps) => {
-  const [advanced, setAdvanced] = useState<boolean>(false);
   const [aggWindow, setAggWindow] = useState<number>(props.aggregation_window);
   const [frequency, setFrequency] = useState<number>(props.frequency);
 
   const handleFrequencyChange = (event: SelectChangeEvent<number | unknown>) => {
     setFieldValue('frequency', event.target.value as number);
     setFrequency(event.target.value as number);
-    if (!advanced) {
-      handleAggWindowChange(event);
-    }
   };
 
   const handleAggWindowChange = (event: SelectChangeEvent<number | unknown>) => {
@@ -42,23 +38,7 @@ export const SelectFrequency = ({ timeWindows = timeWindow, setFieldValue, ...pr
           </SelectPrimaryItem>
         ))}
       </SelectPrimary>
-      {!advanced ? (
-        <Link
-          underline="hover"
-          sx={{ display: 'flex' }}
-          onClick={() => {
-            setAdvanced(true);
-          }}
-        >
-          Advanced
-        </Link>
-      ) : (
-        ''
-      )}
-      {!advanced ? (
-        ''
-      ) : (
-        <Subcategory>
+      <Subcategory>
           <SelectPrimary label="Aggregation Window" onChange={handleAggWindowChange} value={aggWindow}>
             {timeWindows.map(({ label, value }) => (
               <SelectPrimaryItem value={value} key={label}>
@@ -67,7 +47,6 @@ export const SelectFrequency = ({ timeWindows = timeWindow, setFieldValue, ...pr
             ))}
           </SelectPrimary>
         </Subcategory>
-      )}
     </Box>
   );
 };
