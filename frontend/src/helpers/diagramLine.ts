@@ -48,7 +48,6 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     ctx.beginPath();
     ctx.moveTo(left, yOffset);
     ctx.lineTo(right, yOffset);
-    ctx.closePath();
 
     ctx.shadowColor = severity_color;
     ctx.shadowBlur = 10;
