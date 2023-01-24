@@ -51,14 +51,15 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   const maxWindowsCount = 30;
 
   const {
-    data: columnsMap = {},
+    data: columnsMap = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
     refetch: refetchColumns,
     isLoading
-  } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id);
-  const columns = useMemo(
-    () => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)),
-    [columnsMap]
-  );
+  } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id, undefined, {
+    query: {
+      enabled: false
+    }
+  });
+  const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
 
   const { data: defaultFrequency, refetch: loadDefaultFrequency } =
     useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {

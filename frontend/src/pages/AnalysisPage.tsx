@@ -92,7 +92,7 @@ export function AnalysisPage() {
         }
         else {
           // If checks initial data is empty each check will load his own data
-          setChecksInitialData(undefined)
+          setChecksInitialData({})
         }
       }
 
