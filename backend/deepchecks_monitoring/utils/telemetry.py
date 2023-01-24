@@ -356,25 +356,27 @@ class TaskRunerInstrumentor:
 
         @wraps(self.original_run_single_task)
         async def run_single_task(runner: "TaskRunner", task, session, queued_time):
-            settings = runner.resource_provider.settings
+            redis_uri = runner.resource_provider.redis_settings.redis_uri
+            database_uri = runner.resource_provider.database_settings.database_uri
+            kafka_settings = runner.resource_provider.kafka_settings
 
             with sentry_sdk.start_transaction(name="Task Runner"):
                 sentry_sdk.set_context("deepchecks_monitoring", {
                     "version": __version__
                 })
                 sentry_sdk.set_context("kafka", {
-                    "host": settings.kafka_host,
-                    "username": settings.kafka_username,
-                    "security_protocol": settings.kafka_security_protocol,
-                    "max_metadata_age": settings.kafka_max_metadata_age,
-                    "replication_factor": settings.kafka_replication_factor,
-                    "sasl_mechanism": settings.kafka_sasl_mechanism,
+                    "host": kafka_settings.kafka_host,
+                    "username": kafka_settings.kafka_username,
+                    "security_protocol": kafka_settings.kafka_security_protocol,
+                    "max_metadata_age": kafka_settings.kafka_max_metadata_age,
+                    "replication_factor": kafka_settings.kafka_replication_factor,
+                    "sasl_mechanism": kafka_settings.kafka_sasl_mechanism,
                 })
                 sentry_sdk.set_context("redis", {
-                    "uri": settings.redis_uri
+                    "uri": redis_uri
                 })
                 sentry_sdk.set_context("database", {
-                    "uri": settings.database_uri
+                    "uri": database_uri
                 })
                 with sentry_sdk.start_span(op="TaskRunner.run_single_task") as span:
                     span.set_data("task.num-pushed", str(task.num_pushed))
@@ -414,17 +416,18 @@ class TasksQueuerInstrumentor:
 
         @wraps(self.original_move_tasks_to_queue)
         async def move_tasks_to_queue(queuer: "TasksQueuer"):
-            settings = queuer.resource_provider.settings
+            redis_uri = queuer.resource_provider.redis_settings.redis_uri
+            database_uri = queuer.resource_provider.database_settings.database_uri
 
             with sentry_sdk.start_transaction(name="Tasks Queuer"):
                 sentry_sdk.set_context("deepchecks_monitoring", {
                     "version": __version__
                 })
                 sentry_sdk.set_context("redis", {
-                    "uri": settings.redis_uri
+                    "uri": redis_uri
                 })
                 sentry_sdk.set_context("database", {
-                    "uri": settings.database_uri
+                    "uri": database_uri
                 })
                 with sentry_sdk.start_span(op="TasksQueuer.move_tasks_to_queue") as span:
                     try:

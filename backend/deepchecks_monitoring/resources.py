@@ -141,7 +141,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Get settings."""
         if not isinstance(self._settings, config.Settings):
             raise AssertionError(
-                f"Settings instance of unknown type was provided - {type(self.settings)}, "
+                f"Settings instance of unknown type was provided - {type(self._settings)}, "
                 "you need to provide instance of 'Settings' "
                 "to the 'ResourcesProvider' constructor"
             )
