@@ -32,7 +32,7 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
     isLoading: isAlertsLoading,
     refetch: refetchAlerts,
     isError
-  } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule?.id as number, {
+  } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule?.id as number, undefined, {
     query: {
       enabled: false
     }

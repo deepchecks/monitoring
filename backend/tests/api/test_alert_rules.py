@@ -186,13 +186,19 @@ async def test_alerts_retrieval(
     rule = as_dict(test_api.create_alert_rule(monitor_id=monitor["id"]))
 
     create_alert(rule["id"], async_session, resolved=False)
-    create_alert(rule["id"], async_session, resolved=False)
+    create_alert(rule["id"], async_session, resolved=True)
     create_alert(rule["id"], async_session, resolved=False)
     await async_session.commit()
 
     # Act
     data = t.cast(t.List[t.Dict[str, t.Any]], test_api.fetch_alerts(rule["id"]))
     assert len(data) == 3, data
+
+    data = t.cast(t.List[t.Dict[str, t.Any]], test_api.fetch_alerts(rule["id"], False))
+    assert len(data) == 2, data
+
+    data = t.cast(t.List[t.Dict[str, t.Any]], test_api.fetch_alerts(rule["id"], True))
+    assert len(data) == 1, data
 
 
 @pytest.mark.asyncio

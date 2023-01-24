@@ -194,7 +194,7 @@ class ExpectedHttpStatus:
 
     def assert_response_status(self, response: httpx.Response) -> httpx.Response:
         r = self.left <= response.status_code <= self.right
-        assert r, (response.reason_phrase, response.status_code, response.text[:50])
+        assert r, (response.reason_phrase, response.status_code, response.text)
         return response
 
     def is_positive(self) -> bool:
@@ -712,10 +712,12 @@ class TestAPI:
     def fetch_alerts(
         self,
         alert_rule_id: int,
+        resolved: bool = None,
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        response = self.api.session.get(f"alert-rules/{alert_rule_id}/alerts")
+        params = {} if resolved is None else {"resolved": resolved}
+        response = self.api.session.get(f"alert-rules/{alert_rule_id}/alerts", params=params)
         expected_status.assert_response_status(response)
 
         if expected_status.is_negative():

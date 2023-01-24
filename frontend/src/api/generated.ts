@@ -91,6 +91,8 @@ export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: Id
 
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
+export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
+
 export type GetAlertRulesApiV1AlertRulesGetSortbyItem =
   typeof GetAlertRulesApiV1AlertRulesGetSortbyItem[keyof typeof GetAlertRulesApiV1AlertRulesGetSortbyItem];
 
@@ -178,18 +180,6 @@ export interface ValidationError {
   loc: ValidationErrorLocItem[];
   msg: string;
   type: string;
-}
-
-/**
- * Schema for user.
- */
-export interface UserSchema {
-  id: number;
-  email: string;
-  created_at: string;
-  full_name?: string;
-  picture_url?: string;
-  organization?: OrganizationSchema;
 }
 
 /**
@@ -305,6 +295,18 @@ export interface OrganizationSchema {
 }
 
 /**
+ * Schema for user.
+ */
+export interface UserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: OrganizationSchema;
+}
+
+/**
  * Operators for numeric and categorical filters.
  */
 export type OperatorsEnum = typeof OperatorsEnum[keyof typeof OperatorsEnum];
@@ -409,9 +411,19 @@ export interface MonitorNotebookSchema {
   as_script?: boolean;
 }
 
-export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
-
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
+
+export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
+
+/**
+ * List of data filters.
+ */
+export interface MonitorCheckConfSchema {
+  check_conf: MonitorCheckConfSchemaCheckConf;
+  res_conf?: string[];
+}
+
+export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
 
 /**
  * Schema defines the parameters for creating new monitor.
@@ -425,16 +437,6 @@ export interface MonitorCreationSchema {
   description?: string;
   data_filters?: MonitorCreationSchemaDataFilters;
   additional_kwargs?: MonitorCreationSchemaAdditionalKwargs;
-}
-
-export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
-
-/**
- * List of data filters.
- */
-export interface MonitorCheckConfSchema {
-  check_conf: MonitorCheckConfSchemaCheckConf;
-  res_conf?: string[];
 }
 
 /**
@@ -979,6 +981,44 @@ export const useHelloWorldApiV1SayHelloGet = <
     helloWorldApiV1SayHelloGet(signal);
 
   const query = useQuery<Awaited<ReturnType<typeof helloWorldApiV1SayHelloGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * @summary Retrieve Backend Version
+ */
+export const retrieveBackendVersionApiV1BackendVersionGet = (signal?: AbortSignal) =>
+  customInstance<unknown>({ url: `/api/v1/backend-version`, method: 'get', signal });
+
+export const getRetrieveBackendVersionApiV1BackendVersionGetQueryKey = () => [`/api/v1/backend-version`];
+
+export type RetrieveBackendVersionApiV1BackendVersionGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveBackendVersionApiV1BackendVersionGet>>
+>;
+export type RetrieveBackendVersionApiV1BackendVersionGetQueryError = ErrorType<unknown>;
+
+export const useRetrieveBackendVersionApiV1BackendVersionGet = <
+  TData = Awaited<ReturnType<typeof retrieveBackendVersionApiV1BackendVersionGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveBackendVersionApiV1BackendVersionGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetrieveBackendVersionApiV1BackendVersionGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveBackendVersionApiV1BackendVersionGet>>> = ({
+    signal
+  }) => retrieveBackendVersionApiV1BackendVersionGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof retrieveBackendVersionApiV1BackendVersionGet>>, TError, TData>(
     queryKey,
     queryFn,
     queryOptions
@@ -1588,12 +1628,16 @@ export const useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete = <
  * Get list of alerts raised by a given alert rule.
  * @summary Get Alerts Of Alert Rule
  */
-export const getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = (alertRuleId: number, signal?: AbortSignal) =>
-  customInstance<AlertSchema[]>({ url: `/api/v1/alert-rules/${alertRuleId}/alerts`, method: 'get', signal });
+export const getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = (
+  alertRuleId: number,
+  params?: GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams,
+  signal?: AbortSignal
+) => customInstance<AlertSchema[]>({ url: `/api/v1/alert-rules/${alertRuleId}/alerts`, method: 'get', params, signal });
 
-export const getGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetQueryKey = (alertRuleId: number) => [
-  `/api/v1/alert-rules/${alertRuleId}/alerts`
-];
+export const getGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetQueryKey = (
+  alertRuleId: number,
+  params?: GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams
+) => [`/api/v1/alert-rules/${alertRuleId}/alerts`, ...(params ? [params] : [])];
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetQueryResult = NonNullable<
   Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet>>
@@ -1605,6 +1649,7 @@ export const useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = <
   TError = ErrorType<HTTPValidationError>
 >(
   alertRuleId: number,
+  params?: GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet>>,
@@ -1616,11 +1661,11 @@ export const useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = <
   const { query: queryOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetQueryKey(alertRuleId);
+    queryOptions?.queryKey ?? getGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetQueryKey(alertRuleId, params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet>>> = ({
     signal
-  }) => getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRuleId, signal);
+  }) => getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRuleId, params, signal);
 
   const query = useQuery<
     Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet>>,
@@ -5785,43 +5830,6 @@ export const useEulaAcceptanceApiV1UsersAcceptEulaGet = <
     eulaAcceptanceApiV1UsersAcceptEulaGet(signal);
 
   const query = useQuery<Awaited<ReturnType<typeof eulaAcceptanceApiV1UsersAcceptEulaGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * @summary Retrieve Feature Flags
- */
-export const retrieveFeatureFlagsFeatureFlagsGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/feature-flags`, method: 'get', signal });
-
-export const getRetrieveFeatureFlagsFeatureFlagsGetQueryKey = () => [`/feature-flags`];
-
-export type RetrieveFeatureFlagsFeatureFlagsGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof retrieveFeatureFlagsFeatureFlagsGet>>
->;
-export type RetrieveFeatureFlagsFeatureFlagsGetQueryError = ErrorType<unknown>;
-
-export const useRetrieveFeatureFlagsFeatureFlagsGet = <
-  TData = Awaited<ReturnType<typeof retrieveFeatureFlagsFeatureFlagsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveFeatureFlagsFeatureFlagsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getRetrieveFeatureFlagsFeatureFlagsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveFeatureFlagsFeatureFlagsGet>>> = ({ signal }) =>
-    retrieveFeatureFlagsFeatureFlagsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof retrieveFeatureFlagsFeatureFlagsGet>>, TError, TData>(
     queryKey,
     queryFn,
     queryOptions

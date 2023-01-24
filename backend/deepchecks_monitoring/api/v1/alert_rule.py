@@ -251,11 +251,15 @@ async def delete_alert_rule(
 @router.get("/alert-rules/{alert_rule_id}/alerts", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
 async def get_alerts_of_alert_rule(
     alert_rule_id: int,
+    resolved: t.Optional[bool] = None,
     session: AsyncSession = AsyncSessionDep
 ):
     """Get list of alerts raised by a given alert rule."""
     await exists_or_404(session, AlertRule, id=alert_rule_id)
-    query = await session.execute(select(Alert).where(Alert.alert_rule_id == alert_rule_id).order_by(Alert.start_time))
+    query = select(Alert).where(Alert.alert_rule_id == alert_rule_id)
+    if resolved is not None:
+        query = query.where(Alert.resolved == resolved)
+    query = await session.execute(query.order_by(Alert.start_time))
     return [AlertSchema.from_orm(a) for a in query.scalars().all()]
 
 
