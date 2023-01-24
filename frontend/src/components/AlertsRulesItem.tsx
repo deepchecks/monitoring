@@ -11,7 +11,7 @@ import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorId
 import processFrequency from '../helpers/utils/processFrequency';
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
 
-import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/material';
+import { alpha, Box, Divider, IconButton, styled, Tooltip, Typography } from '@mui/material';
 
 import { Loader } from './Loader';
 
@@ -87,7 +87,11 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
         <Typography variant="subtitle2">{alert_severity}</Typography>
       </StyledCriticality>
       <StyledDescription>
-        <Typography variant="h5">{monitor?.name}</Typography>
+        <Tooltip title={monitor?.name ? monitor?.name : 'undefined'}>
+          <StyledMonitorName noWrap={true} variant="h5">
+            {monitor?.name}
+          </StyledMonitorName>
+        </Tooltip>
         <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('L')}</Typography>
       </StyledDescription>
       <StyledDivider orientation="vertical" flexItem />
@@ -115,10 +119,10 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
           </Box>
         </StyledBlur>
       )}
-
       <AlertRuleDialogProvider>
         <AlertRuleDialog open={editedAlertRule !== undefined} onClose={onEditRuleClose} alertRuleId={editedAlertRule} />
-      </AlertRuleDialogProvider>    </StyledMainWrapper>
+      </AlertRuleDialogProvider>{' '}
+    </StyledMainWrapper>
   );
 });
 
@@ -195,6 +199,13 @@ const StyledDescription = styled(Box)({
   '@media (max-width: 1536px)': {
     padding: '10px 20px 10px 30px',
     minWidth: 221
+  }
+});
+
+const StyledMonitorName = styled(Typography)({
+  width: '240px',
+  '@media (max-width: 1536px)': {
+    width: '171px'
   }
 });
 

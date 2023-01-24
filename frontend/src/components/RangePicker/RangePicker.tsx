@@ -76,7 +76,7 @@ export const RangePicker = ({
   };
 
   return (
-    <Box mt="39px">
+    <Box mt="10px">
       <StyledLabel>Select Value</StyledLabel>
       <Stack spacing="20px">
         <Slider

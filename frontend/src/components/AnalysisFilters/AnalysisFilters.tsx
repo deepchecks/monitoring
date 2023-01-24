@@ -52,8 +52,15 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   const [maxDate, setMaxDate] = useState<Date | null>(null);
   const maxWindowsCount = 30;
 
-  const { data: columnsMap = {}, refetch: refetchColumns, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id);
-  const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
+  const {
+    data: columnsMap = {},
+    refetch: refetchColumns,
+    isLoading
+  } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model.id);
+  const columns = useMemo(
+    () => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)),
+    [columnsMap]
+  );
 
   const { data: defaultFrequency, refetch: loadDefaultFrequency } =
     useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
@@ -167,6 +174,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
             onChange={handleComparisonModeChange}
             disabled={!isComparisonModeOn}
             sx={{ width: '178px' }}
+            width={{ xs: 160, xl: null }}
           >
             {comparisonModeData.map(({ label, value }, index) => (
               <MenuItem key={`${value}${index}`} value={value}>
@@ -190,6 +198,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
                 value={frequency ? frequency : ''}
                 onChange={handleFrequencyChange}
                 sx={{ width: '176px' }}
+                width={{ xs: 160, xl: null }}
               >
                 {frequencyData.map(({ label, value }, index) => (
                   <MenuItem key={`${value}${index}`} value={value}>

@@ -9,6 +9,7 @@ interface MarkedSelectProps extends SelectProps {
   fullWidth?: boolean;
   clearValue?: () => void;
   formHelper?: [string, object];
+  width?: StyledSelectWidth;
 }
 
 const sizeMap = {
@@ -24,6 +25,7 @@ function MarkedSelectComponent({
   clearValue,
   disabled,
   formHelper,
+  width,
   ...props
 }: MarkedSelectProps) {
   const handleClearClick = () => {
@@ -34,6 +36,7 @@ function MarkedSelectComponent({
     <FormControl fullWidth={fullWidth} disabled={disabled}>
       <StyledInputLabel size={sizeMap[size]}>{label}</StyledInputLabel>
       <StyledSelect
+        width={width}
         size={size}
         label={label}
         endAdornment={
@@ -56,15 +59,26 @@ export const StyledInputLabel = styled(InputLabel)(({ theme }) => ({
   color: theme.palette.text.disabled
 }));
 
-export const StyledSelect = styled(Select)({
-  minWidth: 200,
-  '@media (max-width: 1536px)': {
-    minWidth: 100,
-    width: 147,
-    fontSize: '12px',
-    height: '40px'
-  }
-});
+interface StyledSelectWidth {
+  xs: number | null;
+  xl: number | null;
+}
+
+interface StyledSelectProps {
+  width?: StyledSelectWidth;
+}
+
+export const StyledSelect = styled(Select, { shouldForwardProp: prop => prop !== 'width' })<StyledSelectProps>(
+  ({ width }) => ({
+    minWidth: 200,
+    '@media (max-width: 1536px)': {
+      minWidth: 100,
+      width: width ? width.xs : '100%',
+      fontSize: '12px',
+      height: '40px'
+    }
+  })
+);
 
 interface StyledIconButtonProps {
   active: boolean;
