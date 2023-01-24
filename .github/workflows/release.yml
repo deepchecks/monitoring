@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "TAG=$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)" >> $GITHUB_ENV
           docker load --input /tmp/commImage.tar
-          docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
+          docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} ${{ secrets.MON_IMAGE_NAME }}:$(echo -n "${{ github.event.ref }}" | cut -d '/' -f3)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
