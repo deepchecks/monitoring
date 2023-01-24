@@ -72,7 +72,7 @@ class TaskRunner:
         else:
             # Return value from redis is (redis key, value, score)
             task_id = int(task_entry[1].decode())
-            queued_time = int(task_entry[2].decode())
+            queued_time = task_entry[2]
 
         async with self.resource_provider.create_async_database_session() as session:
             task = await session.scalar(select(Task).where(Task.id == task_id))
