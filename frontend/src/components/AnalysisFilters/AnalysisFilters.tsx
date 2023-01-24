@@ -14,7 +14,6 @@ import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box
 import { MarkedSelect } from 'components/MarkedSelect';
 import { SwitchButton } from 'components/SwitchButton';
 import { DropDownFilter } from './components/DropDownFilter';
-import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
 
 import { ColumnType } from 'helpers/types/model';
@@ -47,7 +46,6 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     setDefaultFrequency
   } = useContext(AnalysisContext);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
   const [minDate, setMinDate] = useState<Date | null>(null);
   const [maxDate, setMaxDate] = useState<Date | null>(null);
   const maxWindowsCount = 30;
@@ -85,14 +83,6 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
   const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as number;
     setFrequency(value);
-  };
-
-  const handleOpenSortMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorElSortMenu(e.currentTarget);
-  };
-
-  const handleCloseSortMenu = () => {
-    setAnchorElSortMenu(null);
   };
 
   useEffect(() => {
@@ -224,19 +214,15 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
           </StyledFiltersButton>
         </Stack>
         <Box sx={{ ml: 'auto' }}>
-          {reset ? (
-            fixedHeader ? (
+          {reset &&
+            (fixedHeader ? (
               <FiltersResetButton title="Reset all" handleReset={resetAll} isLoading={isLoading} divider={false} />
             ) : (
               <Stack direction="row" spacing="11px">
                 <FiltersResetButton title="Reset all" handleReset={resetAll} isLoading={isLoading} divider={false} />
                 <StyledAnalysisFiltersDivider orientation="vertical" flexItem />
-                <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
               </Stack>
-            )
-          ) : (
-            !fixedHeader && <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-          )}
+            ))}
         </Box>
       </Stack>
       <DropDownFilter anchorEl={anchorEl} columns={columns} open={!!anchorEl} onClose={handleFiltersClose} />
