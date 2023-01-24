@@ -17,7 +17,8 @@ const useAlertMonitorsData = (
   const graphData = useMemo(() => {
     if (isLoading || !data || !Object.keys(data).length) {
       return {
-        datasets: []
+        datasets: [],
+        labels: []
       };
     }
 

@@ -13,7 +13,7 @@ import mixpanel from 'mixpanel-browser';
 import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
 
-import { alpha, Box, Typography, Stack, styled } from '@mui/material';
+import { alpha, Box, Typography, styled } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
@@ -280,18 +280,21 @@ function DiagramLine({
 
     if (currentChart && alerts.length) {
       currentChart.data.datasets.forEach((currentDataset, currentDatasetIndex) => {
-        const label = currentDataset.label?.split('|') || ['', ''];
-        const failedValue = alerts[alertIndex]?.failed_values[label[1] || ''] || {};
-        const evaluationResult = Object.keys(failedValue).includes(label[0] || '');
+        const label: string[] | undefined = currentDataset.label?.split('|');
 
-        currentChart.setDatasetVisibility(currentDatasetIndex, evaluationResult);
-        setLineIndexMap(prevState => ({
-          ...prevState,
-          [currentDatasetIndex]: !evaluationResult
-        }));
+        if (label) {
+          const failedValue = alerts[alertIndex]?.failed_values[label[1]] || {};
+          const evaluationResult = Object.keys(failedValue).includes(label[0]);
+
+          currentChart.setDatasetVisibility(currentDatasetIndex, evaluationResult);
+          setLineIndexMap(prevState => ({
+            ...prevState,
+            [currentDatasetIndex]: !evaluationResult
+          }));
+        }
       });
     }
-  }, [alertIndex, alerts]);
+  }, [chartData, alertIndex, alerts]);
 
   return isLoading ? (
     <Loader sx={{ transform: 'translate(0, -16%)' }} />

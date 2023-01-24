@@ -7,16 +7,14 @@ import {
   SingleCheckRunOptions
 } from 'api/generated';
 
-import useRunMonitorLookback from 'hooks/useRunMonitorLookback';
 import { useModels } from 'hooks/useModels';
-import useAlertMonitorData from 'hooks/useAlertMonitorData';
 
 import { Box, DrawerProps, styled, Typography } from '@mui/material';
 
 import { AlertsDrawerHeader } from './components/AlertsDrawerHeader';
-import DiagramLine from '../DiagramLine/DiagramLine';
 import { CustomDrawer } from '../CustomDrawer';
 import { AlertsDrillDownToAnalysis } from './components/AlertsDrillDownToAnalysis';
+import { AlertsDrawerDiagram } from './components/AlertsDrawerDiagram';
 
 interface AlertsDrawerProps extends DrawerProps {
   alertRule: AlertRuleInfoSchema | null;
@@ -28,17 +26,19 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   const [alertIndex, setAlertIndex] = useState(0);
 
   const {
-    data: allAlerts = [],
+    data: alerts = [],
     isLoading: isAlertsLoading,
     refetch: refetchAlerts,
     isError
-  } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(alertRule?.id as number, undefined, {
-    query: {
-      enabled: false
+  } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(
+    alertRule?.id as number,
+    { resolved: false },
+    {
+      query: {
+        enabled: false
+      }
     }
-  });
-
-  const alerts = useMemo(() => [...allAlerts].filter(a => a.resolved === false), [allAlerts]);
+  );
 
   useEffect(() => {
     if (alerts.length) {
@@ -48,19 +48,12 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
 
   const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
   const currentModel = useMemo(() => alertRule && getCurrentModel(alertRule.model_id), [alertRule, getCurrentModel]);
-  const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(
-    alertRule,
-    currentModel?.latest_time,
-    alerts
-  );
-
-  useRunMonitorLookback(alertRule?.monitor_id ?? null, currentModel);
 
   const {
     data: monitor = null,
     isLoading: isMonitorLoading,
     refetch: refetchMonitor
-  } = useGetMonitorApiV1MonitorsMonitorIdGet(alertRule?.monitor_id as number, {
+  } = useGetMonitorApiV1MonitorsMonitorIdGet(alertRule?.monitor_id || -1, {
     query: {
       enabled: false
     }
@@ -94,7 +87,7 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
     ];
   }, [alertIndex, alerts, monitor?.frequency]);
 
-  const isLoading = isAlertsLoading || isMonitorLoading || isModelMapLoading || isGraphDataLoading;
+  const isLoading = isAlertsLoading || isMonitorLoading || isModelMapLoading;
 
   useEffect(() => {
     if (alertRule) {
@@ -126,21 +119,14 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
               currentModel={currentModel}
             />
           </StyledStickyHeader>
-          <Box padding="16px 40px">
-            <DiagramLine
-              data={graphData}
-              height={{ lg: 280, xl: 350 }}
-              alertsWidget={{
-                alerts: alerts,
-                alertSeverity: alertRule?.alert_severity || 'low',
-                alertIndex: alertIndex,
-                changeAlertIndex: setAlertIndex
-              }}
-              minTimeUnit={monitor && monitor.frequency < 86400 ? 'hour' : 'day'}
-              timeFreq={monitor?.frequency}
-              alert_rules={[alertRule]}
-            />
-          </Box>
+          <AlertsDrawerDiagram
+            monitor={monitor}
+            alerts={alerts}
+            alertRule={alertRule}
+            alertIndex={alertIndex}
+            setAlertIndex={setAlertIndex}
+            currentModel={currentModel}
+          />
           {alertRule?.model_id && monitor?.frequency && (
             <AlertsDrillDownToAnalysis
               modelId={alertRule.model_id}

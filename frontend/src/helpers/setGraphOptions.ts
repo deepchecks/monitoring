@@ -4,7 +4,7 @@ import { colors } from '../theme/colors';
 
 export const PREVIOUS_PERIOD = '|previous_period';
 
-export const GRAPH_COLORS = [
+const GRAPH_COLORS = [
   '#0044FF',
   '#C9AA99',
   '#4BCED7',
@@ -21,14 +21,12 @@ export const GRAPH_COLORS = [
   '#2F6CA2',
   '#668FFF'
 ];
-
 const ALERT_COLOR = colors.semantic.red;
 
 const setLabel = (dashed: boolean, label: string) => (dashed ? label + PREVIOUS_PERIOD : label);
-
 const setBorderDash = (dashed: boolean) => (dashed ? [10, 5] : []);
 
-const buildPointsPropertiesArray = (
+const buildPointPropertiesArray = (
   label: string,
   alerts: AlertSchema[] | undefined,
   timeLabels: number[] | undefined,
@@ -39,21 +37,16 @@ const buildPointsPropertiesArray = (
 
   if (alerts && timeLabels) {
     const datasetLabel = label?.split('|');
-    const unresolvedAlerts = [...alerts].filter(a => a.resolved === false);
 
-    timeLabels.forEach(label => {
-      const currentAlert = unresolvedAlerts.find(alert => new Date(alert.end_time).getTime() === label);
+    timeLabels.forEach(timeLabel => {
+      const currentAlert = alerts.find(alert => new Date(alert.end_time).getTime() === timeLabel);
 
-      if (currentAlert) {
-        const version = currentAlert.failed_values[datasetLabel[1]] || {};
-
-        if (Object.keys(version).includes(datasetLabel[0])) {
-          pointColors.push(ALERT_COLOR);
-          pointRadiuses.push(4);
-        } else {
-          pointColors.push(defaultColor);
-          pointRadiuses.push(3);
-        }
+      if (Object.keys(currentAlert?.failed_values[datasetLabel[1]] || {}).includes(datasetLabel[0])) {
+        pointColors.push(ALERT_COLOR);
+        pointRadiuses.push(4);
+      } else {
+        pointColors.push(defaultColor);
+        pointRadiuses.push(3);
       }
     });
   }
@@ -69,7 +62,7 @@ export const setLineGraphOptions = (
   timeLabels?: number[]
 ) => {
   const defaultColor = GRAPH_COLORS[index];
-  const { pointColors, pointRadiuses } = buildPointsPropertiesArray(label, alerts, timeLabels, defaultColor);
+  const { pointColors, pointRadiuses } = buildPointPropertiesArray(label, alerts, timeLabels, defaultColor);
 
   return {
     id: label,
