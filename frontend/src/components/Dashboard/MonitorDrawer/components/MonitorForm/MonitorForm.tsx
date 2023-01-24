@@ -183,9 +183,10 @@ export const MonitorForm = ({
   };
 
   return (
-    <Stack width={{ xs: '147px', xl: '308px' }} sx={{overflowY: 'unset'}} {...props}>
-      <Stack spacing="50px" sx={{height: 'calc(100% - 100px)', overflowY: 'auto'}}>
+    <Stack width={{ xs: '147px', xl: '308px' }} {...props}>
+      <Stack spacing="50px" sx={{height: 'calc(100% - 100px)', overflowY: 'auto', overflowX: 'hidden'}}>
         <TextField
+          sx={{marginTop: '10px'}}
           label="Monitor name"
           size="small"
           value={monitorName}
