@@ -40,8 +40,8 @@ export const buildFilters = (
     if (category) {
       filter.push({ column, operator: OperatorsEnum.equals, value: category });
     } else if (numericValue) {
-      filter.push({ column, operator: OperatorsEnum.greater_than, value: numericValue[0] });
-      filter.push({ column, operator: OperatorsEnum.less_than, value: numericValue[1] });
+      filter.push({ column, operator: OperatorsEnum.greater_than_equals, value: numericValue[0] });
+      filter.push({ column, operator: OperatorsEnum.less_than_equals, value: numericValue[1] });
     }
   }
 
