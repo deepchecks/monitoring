@@ -1,5 +1,4 @@
 """Represent global utility functions."""
-import random
 import typing as t
 
 import pendulum as pdl
@@ -77,9 +76,11 @@ def datetime_sample_formatter(sample: t.Dict, model_version: ModelVersion):
 def sentry_send_hook(event, *args, **kwargs):  # pylint: disable=unused-argument
     """Sentry transaction send hook.
 
-    Sentry "N+1 DB queries" detector incorrectly identifies a load of monitoring
-    data during monitor execution as the 'N+1' problem, to prevent this we add a
-    random integer number at the end of each query that loads monitoring data.
+    Sentry "N+1 DB queries" detector incorrectly identifies a load of
+    monitoring data during monitor execution as the 'N+1' problem, to
+    prevent this we change a span 'op' key to the next value - 'monitoring-data-load'.
+    Sentry uses this key to identify database queries and expects it to be equal
+    to 'db' or 'db.query'.
     """
     if event.get('type') == 'transaction':
         for span in event.get('spans', tuple()):
@@ -87,6 +88,5 @@ def sentry_send_hook(event, *args, **kwargs):  # pylint: disable=unused-argument
                 span.get('op') in ['db', 'db.query', 'db.sql.query']
                 and '_monitor_data_' in span.get('description', '')
             ):
-                i = random.randint(0, 100)
-                span['description'] = f'{span["description"]} -- rand: {i}, prevent sentry from N+1 detection'
+                span['op'] = 'monitoring-data-load'
     return event
