@@ -97,7 +97,7 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   }, [alertRule, refetchAlerts, refetchMonitor]);
 
   return (
-    <CustomDrawer loading={isLoading} onClose={onClose} sx={{ overflowY: 'scroll' }} {...props}>
+    <CustomDrawer loading={isLoading} onClose={onClose} {...props}>
       {isError || !alertRule ? (
         <Typography variant="h4" padding="40px">
           Something went wrong...

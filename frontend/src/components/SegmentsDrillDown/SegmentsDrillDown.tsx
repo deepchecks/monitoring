@@ -21,7 +21,13 @@ interface SegmentsDrillDownProps {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
-const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBarFilters, feature }: SegmentsDrillDownProps) => {
+const SegmentsDrillDownComponent = ({
+  data,
+  datasetName,
+  checkName,
+  setActiveBarFilters,
+  feature
+}: SegmentsDrillDownProps) => {
   const dataSet: number[] = useMemo(
     () => (data.length && datasetName ? data.map(d => (d.value ? d.value[datasetName] : 0)) : []),
     [data, datasetName]
@@ -41,7 +47,7 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
       setActiveBarFilters(data[activeBarIndex].filters.filters);
     }
 
-    setTitle(`${checkName} On Segment: ${activeBarName}`)
+    setTitle(`${checkName} On Segment: ${activeBarName}`);
   }, [activeBarIndex, data, setActiveBarFilters, activeBarName, checkName]);
 
   return (
@@ -59,10 +65,7 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
             yTitle={`${checkName} ${datasetName}`}
             xTitle={feature}
           />
-          <SegmentTests
-            title={title}
-            plots={plots.map(plot => JSON.parse(plot))}
-          />
+          <SegmentTests title={title} plots={plots.map(plot => JSON.parse(plot))} />
         </>
       )}
     </StyledContainer>
@@ -72,7 +75,18 @@ const SegmentsDrillDownComponent = ({ data, datasetName, checkName, setActiveBar
 const StyledContainer = styled(Box)({
   overflow: 'overlay',
   padding: '20px 40px 20px',
-  scrollbarWidth: 'thin'
+  scrollbarWidth: 'thin',
+
+  '::-webkit-scrollbar': {
+    '-webkit-appearance': 'none',
+    width: '7px'
+  },
+
+  '::-webkit-scrollbar-thumb': {
+    borderRadius: '4px',
+    backgroundColor: 'rgba(0,0,0,.5)',
+    '-webkit-box-shadow': '0 0 1px rgba(255,255,255,.5)'
+  }
 });
 
 export const SegmentsDrillDown = memo(SegmentsDrillDownComponent);
