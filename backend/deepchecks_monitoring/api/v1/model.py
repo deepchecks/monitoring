@@ -369,6 +369,7 @@ class ModelManagmentSchema(BaseModel):
     latest_time: t.Optional[int] = None
     description: t.Optional[str] = None
     task_type: t.Optional[TaskType] = None
+    has_data: bool = False
     versions: t.List[ModelVersionManagmentSchema]
 
     class Config:
@@ -416,6 +417,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
             description=record.Model.description,
             alerts_count=record.n_of_alerts or 0,
             monitors_count=record.n_of_monitors or 0,
+            has_data=record.Model.has_data(),
             latest_time=(
                 # versions relationship is ordered by desc(end_time) during load
                 record.Model.versions[0].end_time.timestamp()
