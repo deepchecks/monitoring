@@ -11,7 +11,6 @@
 import typing as t
 from datetime import datetime
 
-import pendulum as pdl
 from fastapi import Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy import func, insert, select, update
@@ -55,7 +54,8 @@ class AlertRuleInfoSchema(AlertRuleSchema):
 
     model_id: int
     alerts_count: int = 0
-    max_end_time: pdl.DateTime
+    resolved_alerts_count: int = 0
+    max_end_time: datetime
 
 
 class AlertRuleUpdateSchema(BaseModel):
@@ -144,10 +144,10 @@ async def get_alert_rules(
     alerts_info = (
         select(
             Alert.alert_rule_id.label("alert_rule_id"),
-            func.count(Alert.id).label("alerts_count"),
-            func.max(Alert.end_time).label("max_end_time")
+            func.count(Alert.id).filter(Alert.resolved.is_(False)).label("alerts_count"),
+            func.count(Alert.id).filter(Alert.resolved.is_(True)).label("resolved_alerts_count"),
+            func.max(Alert.end_time).filter(Alert.resolved.is_(False)).label("max_end_time")
         )
-        .where(Alert.resolved.is_(False))
         .group_by(Alert.alert_rule_id)
     )
 
@@ -172,6 +172,7 @@ async def get_alert_rules(
             AlertRule.is_active,
             Check.model_id,
             alerts_info.c.alerts_count,
+            alerts_info.c.resolved_alerts_count,
             alerts_info.c.max_end_time,
             severity_index
         )
@@ -272,3 +273,18 @@ async def resolve_all_alerts_of_alert_rule(
     await exists_or_404(session, AlertRule, id=alert_rule_id)
     await session.execute(update(Alert).where(Alert.alert_rule_id == alert_rule_id).values({Alert.resolved: True}))
     return Response(status_code=status.HTTP_200_OK)
+
+
+@router.post(
+    "/alert-rules/{alert_rule_id}/alerts/reactivate-resolved",
+    tags=[Tags.ALERTS],
+    status_code=status.HTTP_200_OK,
+    description="Reactivate all resolved alerts"
+)
+async def reactivate_resolved_alerts(
+    alert_rule_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Reactivate all resolved alerts."""
+    await exists_or_404(session, AlertRule, id=alert_rule_id)
+    await session.execute(update(Alert).where(Alert.alert_rule_id == alert_rule_id).values(resolved=False))

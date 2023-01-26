@@ -712,7 +712,7 @@ class TestAPI:
     def fetch_alerts(
         self,
         alert_rule_id: int,
-        resolved: bool = None,
+        resolved: t.Optional[bool] = None,
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
@@ -743,7 +743,7 @@ class TestAPI:
         self,
         alert_rule_id: int,
         expected_status: ExpectedStatus = (200, 299)
-    ):
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"alert-rules/{alert_rule_id}/resolve-all")
         expected_status.assert_response_status(response)
@@ -755,19 +755,58 @@ class TestAPI:
         data = t.cast(t.List[Payload], data)
 
         assert all(it["resolved"] is True for it in data)
+        return data
+
+    def reactivate_rule_alerts(
+        self,
+        alert_rule_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"alert-rules/{alert_rule_id}/alerts/reactivate-resolved")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = self.fetch_alerts(alert_rule_id=alert_rule_id)
+        data = t.cast(t.List[Payload], data)
+        assert all(it["resolved"] is False for it in data)
+        return data
 
     # TODO: consider adding corresponding method to sdk API class
     def resolve_alert(
         self,
         alert_id: int,
         expected_status: ExpectedStatus = (200, 299)
-    ):
+    ) -> t.Union[Payload, httpx.Response]:
         expected_status = ExpectedHttpStatus.create(expected_status)
         response = self.api.session.post(f"alerts/{alert_id}/resolve")
         expected_status.assert_response_status(response)
 
         if expected_status.is_negative():
             return response
+
+        alert = t.cast(Payload, self.fetch_alert(alert_id))
+        assert alert["resolved"] is True
+        return alert
+
+    # TODO: consider adding corresponding method to sdk API class
+    def reactivate_alert(
+        self,
+        alert_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[Payload, httpx.Response]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"alerts/{alert_id}/reactivate")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        alert = t.cast(Payload, self.fetch_alert(alert_id))
+        assert alert["resolved"] is False
+        return alert
 
     # TODO: consider adding corresponding method to sdk API class
     def fetch_alert(

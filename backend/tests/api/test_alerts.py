@@ -52,6 +52,26 @@ async def test_alert_resolution(
     assert alert["resolved"] is True
 
 
+@pytest.mark.asyncio
+async def test_alert_reactivation(
+    classification_model_check: Payload,
+    test_api: TestAPI,
+    async_session: AsyncSession
+):
+    # Arrange
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=classification_model_check["id"]))
+    rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
+    alert = create_alert(rule["id"], async_session, resolved=True)
+    await async_session.commit()
+    await async_session.refresh(alert)
+    # Act/Assert
+    alert_id = t.cast(int, alert.id)
+    alert = t.cast(Payload, test_api.fetch_alert(alert_id=alert_id))
+    assert alert["resolved"] is True
+    # TestAPI will assert that 'resolved' flag is eq to False
+    test_api.reactivate_alert(alert_id=alert_id)
+
+
 async def generate_monitor_with_alert_rules(
     check_id: int,
     api: TestAPI,

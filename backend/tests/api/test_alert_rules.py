@@ -13,7 +13,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
-from tests.common import TestAPI, create_alert
+from tests.common import Payload, TestAPI, create_alert
 
 as_dict = lambda v: t.cast(t.Dict[str, t.Any], v)
 
@@ -159,6 +159,7 @@ async def test_get_alert_rules(
             "alert_severity": "mid",
             "model_id": 1,
             "alerts_count": 2,
+            "resolved_alerts_count": 1,
             "max_end_time": "1970-01-19T12:26:40+00:00",
             "is_active": True
         },
@@ -169,6 +170,7 @@ async def test_get_alert_rules(
             "alert_severity": "low",
             "model_id": 1,
             "alerts_count": 1,
+            "resolved_alerts_count": 2,
             "max_end_time": "1970-01-19T12:26:40+00:00",
             "is_active": True
         }
@@ -224,6 +226,34 @@ async def test_alerts_resolution(
     test_api.resolve_alerts(alert_rule_id=rule["id"])
 
 
+@pytest.mark.asyncio
+async def test_alerts_reactivation(
+    test_api: TestAPI,
+    classification_model_check: t.Dict[str, t.Any],
+    async_session: AsyncSession
+):
+    # Arrange
+    monitor = as_dict(test_api.create_monitor(check_id=classification_model_check["id"]))
+
+    rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={"alert_severity": AlertSeverity.LOW.value}
+    ))
+
+    for _ in range(3):
+        create_alert(rule["id"], async_session, resolved=True)
+
+    await async_session.commit()
+
+    # Act/Assert
+    alerts = test_api.fetch_alerts(alert_rule_id=rule["id"])
+    alerts = t.cast(t.List[Payload], alerts)
+    assert all(it["resolved"] is True for it in alerts)
+
+    # TestAPI will assert that 'resolved' flag is eq to False
+    test_api.reactivate_rule_alerts(alert_rule_id=rule["id"])
+
+
 def test_alert_rule_activation(
     test_api: TestAPI,
     classification_model_check: t.Dict[str, t.Any]
@@ -237,10 +267,10 @@ def test_alert_rule_activation(
     ))
 
     # Act
-    updated_tule = as_dict(test_api.update_alert_rule(
+    updated_rule = as_dict(test_api.update_alert_rule(
         alert_rule_id=rule["id"],
         alert_rule={"is_active": True}
     ))
 
     # Assert
-    assert updated_tule["is_active"] is True
+    assert updated_rule["is_active"] is True

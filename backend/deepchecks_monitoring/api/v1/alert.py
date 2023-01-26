@@ -13,7 +13,7 @@ import typing as t
 import pendulum as pdl
 from fastapi import Response, status
 from pydantic import BaseModel
-from sqlalchemy import false, func, select
+from sqlalchemy import false, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
@@ -69,6 +69,21 @@ async def resolve_alert(
     await exists_or_404(session, Alert, id=alert_id)
     await Alert.update(session, alert_id, {Alert.resolved: True})
     return Response(status_code=status.HTTP_200_OK)
+
+
+@router.post(
+    "/alerts/{alert_id}/reactivate",
+    tags=[Tags.ALERTS],
+    status_code=status.HTTP_200_OK,
+    description="Reactivate resolved alert."
+)
+async def reactivate_alert(
+    alert_id: int,
+    session: AsyncSession = AsyncSessionDep
+):
+    """Reactivate resolved alert."""
+    await exists_or_404(session, Alert, id=alert_id)
+    await session.execute(update(Alert).where(Alert.id == alert_id).values(resolved=False))
 
 
 @router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
