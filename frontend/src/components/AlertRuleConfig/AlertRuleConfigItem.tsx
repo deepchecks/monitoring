@@ -65,7 +65,8 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
             flexGrow: 1,
             backgroundColor: isHovered ? alpha(theme.palette.primary.contrastText, 0.4) : alpha(headerColor, 0.1),
             color: isHovered ? theme.palette.primary.main : theme.palette.text.primary,
-            transition: 'color .4s'
+            transition: 'color .4s',
+            borderTopRightRadius: '0.6rem'
           }}
         >
           <Typography
@@ -76,7 +77,6 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
           >
             {name} Alert
           </Typography>
-          {/* <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px' }}>added by : {}</Typography> */}
         </Stack>
       </Stack>
       <Stack
@@ -130,7 +130,7 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
           sx={{
             borderRadius: '10px',
             height: '100px',
-            width: '384px',
+            width: '100%',
             position: 'absolute',
             right: '0',
             bottom: '0',
@@ -143,7 +143,6 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              width: '30px',
               borderRadius: '10px'
             }}
             variant="text"
@@ -152,26 +151,14 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
             <PencilDrawing />
             <Typography sx={{ fontSize: '10px', lineHeight: '12px', letterSpacing: '0.4px' }}>Edit rule</Typography>
           </Button>
-          {/* <Button
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: '30px'
-            }}
-            variant="text"
-          >
-            <PauseIcon />
-            <Typography sx={{ fontSize: '10px', lineHeight: '12px', letterSpacing: '0.4px' }}>Pause rule</Typography>
-          </Button> */}
           <Button
             sx={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              borderRadius: '10px'
+              borderRadius: '10px',
+              marginRight: '0.3em'
             }}
             variant="text"
             onClick={() => onDelete()}
