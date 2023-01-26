@@ -26,9 +26,9 @@ describe("Alert Rules Screen", () => {
         GT: "Greater than",
         LTE: "Less than equals",
         LT: "Less than",
-        IN: "In",
         EQ: "Equals",
-        NEQ: "Not equals"
+        NEQ: "Not equals",
+        IN: "In",
     };
 
     const availableModels = [

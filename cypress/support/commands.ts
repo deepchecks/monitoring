@@ -233,7 +233,7 @@ Cypress.Commands.add('addMonitor', (checkInfo: object, frequency = 3600, lookbac
         aggregation_window: aggregation_window,
     }
 
-    return cy.request('GET', '/api/v1/dashboards/').then(response => {
+    return cy.request('GET', '/api/v1/dashboards').then(response => {
         monitorData['dashboard_id'] = response.body.id
         return cy.request('POST', `/api/v1/checks/${checkInfo['id']}/monitors`, monitorData)
             .then(response => response.body)
@@ -249,7 +249,6 @@ Cypress.Commands.add('addAlertRule', (monitorInfo: object, operator = "less_than
         },
         "alert_severity": alert_severity
     }
-
     return cy.request('POST', `api/v1/monitors/${monitorInfo['id']}/alert-rules`, data)
         .then(response => response.body);
 });
