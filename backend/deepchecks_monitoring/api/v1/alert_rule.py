@@ -55,7 +55,7 @@ class AlertRuleInfoSchema(AlertRuleSchema):
     model_id: int
     alerts_count: int = 0
     resolved_alerts_count: int = 0
-    max_end_time: datetime
+    max_end_time: t.Optional[datetime] = None
 
 
 class AlertRuleUpdateSchema(BaseModel):
