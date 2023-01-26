@@ -7,10 +7,11 @@ Setting Up a New Tabular Model
 This guide provides a deep dive into the process and reviews the different options for setting up a new tabular
 model and model version. For a more streamlined guide that will quickly take you through the essentials of getting
 started with deepchecks for tabular data, see the
-:doc:`Tabular Quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`.
+:doc:`Tabular Quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`. For a more detailed guide on
+uploading production data to Deepchecks, see the :doc:`/user-guide/tabular/tabular_production` guide.
 
 In order to start working with deepchecks, you must first instantiate a
-:class:`DeepchecksClient (API reference) <deepchecks_client.DeepchecksClient>` object. To do that, first generate a
+:class:`DeepchecksClient <deepchecks_client.DeepchecksClient>` object. To do that, first generate a
 personal API token using the application's dashboard:
 
 .. image:: /_static/images/quickstart/get_api_token.png
@@ -76,6 +77,9 @@ Additional optional parameters for the model creation are:
   alongside the model in the deepchecks monitoring system.
 - ``create_defaults`` - Whether to add default checks, monitors and alerts to the model. Default is ``True``, but you can
   set it to ``False`` if you want to later manually add only the checks, monitors and alerts relevant to your use case.
+- ``alerts_delay_labels_ratio`` and ``alerts_delay_seconds`` - See the
+  :doc:`Handling Delayed Labels in Alerts </user-guide/tabular/tabular_production#updating-labels>` section of the
+  production data guide for more details.
 
 Deleting a Model
 ----------------

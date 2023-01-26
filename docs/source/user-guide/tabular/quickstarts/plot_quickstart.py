@@ -114,8 +114,6 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # Same as with the reference data, for classification tasks also predicted probabilities can be sent
 # enabling computation of probability based metrics such as AUC, log_loss, brier scorer and more.
 
-import pandas as pd
-
 timestamp, label_col = 'datestamp', 'price'
 _, prod_data = load_data(data_format='DataFrame')
 _, prod_predictions = load_pre_calculated_prediction()

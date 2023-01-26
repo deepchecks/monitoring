@@ -103,9 +103,9 @@ Sending Data
 
     * Deepchecks drift checks compare the production data to the reference data in order to produce insights. If
       there is a known reason for why the distributions is different you can handle it in one of the following ways:
-        * Upload a portion of previous production data as the reference data.
-        * Filter or downsample the full reference data so it matches the expected production distribution.
-        * Edit the different monitors to run on segments in which the distribution is expected to be similar.
+       1. Upload a portion of previous production data as the reference data.
+       2. Filter or downsample the full reference data so it matches the expected production distribution.
+       3. Edit the different monitors to run on segments in which the distribution is expected to be similar.
 
 .. collapse:: Can my reference data have more features than my production data?
 
@@ -140,7 +140,7 @@ Sending Data
       trained on, yet still understandable for a human viewer.
     * It would be better to provide features after normalizations but before applying
       one hot encoding.
-קספ
+
 .. collapse:: What data should I send?
 
     * The more data you send the greater the value deepchecks can provide! Specifically, deepchecks can receive data
