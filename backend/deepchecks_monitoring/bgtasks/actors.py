@@ -139,7 +139,8 @@ async def _execute_monitor(
             logger.info("AlertRule(id:%s) is not active, skipping it", alert_rule.id)
         elif alert := assert_check_results(alert_rule, check_results):
             alert.start_time = start_time
-            alert.end_time = end_time
+            # We want to save the end time of the alert as inclusive, so subtracting 1 microsecond
+            alert.end_time = end_time.subtract(microseconds=1)
             AlertCreationSchema.validate(alert)
             session.add(alert)
             await session.commit()
