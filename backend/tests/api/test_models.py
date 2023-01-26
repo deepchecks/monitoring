@@ -14,12 +14,13 @@ import pytest
 import sqlalchemy as sa
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
+from hamcrest import assert_that, has_key
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
-from tests.common import ModelIdentifiersPair, Payload, TestAPI, create_alert
+from tests.common import ModelIdentifiersPair, Payload, TestAPI, create_alert, upload_classification_data
 
 
 def test_model_creation(test_api: TestAPI):
@@ -290,12 +291,32 @@ async def test_connected_models_api_missing_all_version_data(
         "n_of_updating_versions": 0
     }]
 
-def test_get_models_statistics_no_models(client: TestClient):
+def test_get_models_ingestion_no_models(client: TestClient):
     # Act
     response = client.get("/api/v1/models/data-ingestion")
     # Assert
     assert response.status_code == 200
     assert response.json() == {}
+
+
+def test_get_models_ingestion_no_end_time(
+    client: TestClient,
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
+    # Arrange
+    upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        samples_per_date=2,
+        daterange=[pdl.now().subtract(years=2)]
+    )
+
+    # Act
+    response = client.get("/api/v1/models/data-ingestion")
+    # Assert
+    assert response.status_code == 200
+    assert_that(response.json(), has_key("1"))
 
 
 TableExists = sa.text(

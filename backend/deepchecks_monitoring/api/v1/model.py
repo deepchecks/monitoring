@@ -197,7 +197,6 @@ async def _retrieve_models_data_ingestion(
         return getattr(columns, SAMPLE_TS_COL)
 
     model_identifier_name = "id"
-    end_time = pdl.parse(end_time) if end_time else pdl.now()
     models_query = select(Model).options(selectinload(Model.versions))
 
     if model_identifier is not None:
@@ -228,6 +227,8 @@ async def _retrieve_models_data_ingestion(
         agg_time_unit = "hour"
     else:
         agg_time_unit = "day"
+
+    end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
     union = union_all(*(
         select(

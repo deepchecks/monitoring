@@ -24,6 +24,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.exc import StaleDataError
 
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import insert_model_version_cache_invalidation_task
 from deepchecks_monitoring.bgtasks.model_version_offset_update import insert_model_version_offset_update_task
@@ -324,6 +325,9 @@ class DataIngestionBackend(object):
 
                 await self.after_data_update(organization_id, model_version_id, timestamps, session)
             return True
+        except StaleDataError:
+            # In case model version was deleted, we will get foreign key violation, so we ignore it
+            return True
         except sqlalchemy.exc.SQLAlchemyError as exception:
             self.logger.exception(exception)
             # Sqlalchemy wraps the asyncpg exceptions in orig field
@@ -350,7 +354,13 @@ class DataIngestionBackend(object):
                        "error": str(exception),
                        "model_version_id": model_version_id}
                       for sample in samples]
-            await session.execute(postgresql.insert(IngestionError).values(values))
+            try:
+                await session.execute(postgresql.insert(IngestionError).values(values))
+            except StaleDataError:
+                # In case model version was deleted, we will get foreign key violation, so we ignore it
+                pass
+            except sqlalchemy.exc.SQLAlchemyError as e:
+                self.logger.exception(e)
 
     async def after_data_update(self, organization_id, model_version_id, timestamps_updated, session):
         """Update model version update time, calling cache invalidation, and adding current model version to \
