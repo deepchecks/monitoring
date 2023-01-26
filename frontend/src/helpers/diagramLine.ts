@@ -42,13 +42,13 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     
     // const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || ('medium' as AlertSeverity)];
     const severity_color = '#17003E';
-    ctx.strokeStyle = severity_color;
     ctx.lineWidth = 2;
 
+    ctx.strokeStyle = 'white';
     ctx.beginPath();
     ctx.moveTo(left, yOffset);
     ctx.lineTo(right, yOffset);
-
+    ctx.closePath();
     ctx.shadowColor = severity_color;
     ctx.shadowBlur = 10;
     if (alert_rule.condition.operator == OperatorsEnum.greater_than_equals || alert_rule.condition.operator == OperatorsEnum.greater_than) {
@@ -56,15 +56,20 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     } else if (alert_rule.condition.operator == OperatorsEnum.less_than_equals || alert_rule.condition.operator == OperatorsEnum.less_than) {
       ctx.shadowOffsetY = 6;
     }
-    
-    ctx.setLineDash([6, 6]);
     ctx.stroke();
 
+    ctx.strokeStyle = severity_color;
     ctx.shadowColor = "unset";
     ctx.shadowOffsetY = 0;
     ctx.shadowOffsetX = 0
     ctx.shadowBlur = 0;
 
+    ctx.beginPath();
+    ctx.moveTo(left, yOffset);
+    ctx.lineTo(right, yOffset);
+    ctx.setLineDash([6, 6]);
+    ctx.stroke();
+  
     ctx.restore();
   }
 });
