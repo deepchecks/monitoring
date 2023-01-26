@@ -24,6 +24,11 @@ export const AlertRuleDialogStepThree = ({ handleNext, handleBack }: AlertRuleSt
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
   const { modelsMap } = useModels();
 
+  useEffect(() => {
+    setOperator(alertRule.condition.operator);
+    setNumericValue(alertRule.condition.value || 0);
+  }, [alertRule]);
+
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 

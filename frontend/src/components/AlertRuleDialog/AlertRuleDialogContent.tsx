@@ -8,6 +8,7 @@ const steps = ['Basic Info', 'Monitor Data', 'Rule'];
 
 interface AlertRuleDialogContentProps {
   handleComplete: () => void;
+  startingStep?: number;
 }
 
 export interface AlertRuleStepBaseProps {
@@ -15,8 +16,8 @@ export interface AlertRuleStepBaseProps {
   handleBack?: () => void;
 }
 
-export const AlertRuleDialogContent = ({ handleComplete }: AlertRuleDialogContentProps) => {
-  const [activeStep, setActiveStep] = React.useState(0);
+export const AlertRuleDialogContent = ({ handleComplete, startingStep }: AlertRuleDialogContentProps) => {
+  const [activeStep, setActiveStep] = React.useState(startingStep ? startingStep : 0);
 
   const handleNext = () => {
     activeStep === steps.length - 1 ? handleComplete() : setActiveStep(activeStep + 1);

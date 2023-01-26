@@ -58,10 +58,10 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   };
 
   const handleEditRuleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    mixpanel.track('Click on Edit Rule button');
-
     event.stopPropagation();
+    mixpanel.track('Click on Edit Rule button');
     setEditedAlertRule(alertRule.id);
+    return;
   };
 
   const onEditRuleClose = () => {
@@ -69,9 +69,8 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   };
 
   const handleOpenDrawer = (event: React.MouseEvent<HTMLDivElement>) => {
-    mixpanel.track('Click on the alert');
-
     event.stopPropagation();
+    mixpanel.track('Click on the alert');
     return onDrawerOpen();
   };
 
@@ -81,48 +80,55 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   if (isMonitorLoading) return <Loader />;
 
   return (
-    <StyledMainWrapper onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} onClick={handleOpenDrawer}>
-      <StyledCriticality criticality={alert_severity}>
-        <Typography variant="h4">{alerts_count}</Typography>
-        <Typography variant="subtitle2">{alert_severity}</Typography>
-      </StyledCriticality>
-      <StyledDescription>
-        <Tooltip title={monitor?.name ? monitor?.name : 'undefined'}>
-          <StyledMonitorName noWrap={true} variant="h5">
-            {monitor?.name}
-          </StyledMonitorName>
-        </Tooltip>
-        <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('L')}</Typography>
-      </StyledDescription>
-      <StyledDivider orientation="vertical" flexItem />
-      <StyledInfo>
-        {titles.map((title, index) => (
-          <StyledProperty key={title}>
-            <StyledTitle>{title}</StyledTitle>
-            <Typography variant="body2">{data[index]}</Typography>
-          </StyledProperty>
-        ))}
-      </StyledInfo>
-      {hover && (
-        <StyledBlur>
-          <Box onClick={handleEditRuleClick}>
-            <StyledIconButton>
-              <PencilDrawing width={30} height={30} />
-            </StyledIconButton>
-            <StyledCaption variant="caption">Edit Rule</StyledCaption>
-          </Box>
-          <Box onClick={handleOpenResolve}>
-            <StyledIconButton>
-              <Checkmark width={30} height={30} />
-            </StyledIconButton>
-            <StyledCaption variant="caption">Resolve all</StyledCaption>
-          </Box>
-        </StyledBlur>
-      )}
+    <>
+      <StyledMainWrapper onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} onClick={handleOpenDrawer}>
+        <StyledCriticality criticality={alert_severity}>
+          <Typography variant="h4">{alerts_count}</Typography>
+          <Typography variant="subtitle2">{alert_severity}</Typography>
+        </StyledCriticality>
+        <StyledDescription>
+          <Tooltip title={monitor?.name ? monitor?.name : 'undefined'}>
+            <StyledMonitorName noWrap={true} variant="h5">
+              {monitor?.name}
+            </StyledMonitorName>
+          </Tooltip>
+          <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('L')}</Typography>
+        </StyledDescription>
+        <StyledDivider orientation="vertical" flexItem />
+        <StyledInfo>
+          {titles.map((title, index) => (
+            <StyledProperty key={title}>
+              <StyledTitle>{title}</StyledTitle>
+              <Typography variant="body2">{data[index]}</Typography>
+            </StyledProperty>
+          ))}
+        </StyledInfo>
+        {hover && (
+          <StyledBlur>
+            <Box onClick={handleEditRuleClick}>
+              <StyledIconButton>
+                <PencilDrawing width={30} height={30} />
+              </StyledIconButton>
+              <StyledCaption variant="caption">Edit Rule</StyledCaption>
+            </Box>
+            <Box onClick={handleOpenResolve}>
+              <StyledIconButton>
+                <Checkmark width={30} height={30} />
+              </StyledIconButton>
+              <StyledCaption variant="caption">Resolve all</StyledCaption>
+            </Box>
+          </StyledBlur>
+        )}
+      </StyledMainWrapper>
       <AlertRuleDialogProvider>
-        <AlertRuleDialog open={editedAlertRule !== undefined} onClose={onEditRuleClose} alertRuleId={editedAlertRule} />
+        <AlertRuleDialog
+          open={editedAlertRule !== undefined}
+          onClose={onEditRuleClose}
+          startingStep={2}
+          alertRuleId={editedAlertRule}
+        />
       </AlertRuleDialogProvider>{' '}
-    </StyledMainWrapper>
+    </>
   );
 });
 
