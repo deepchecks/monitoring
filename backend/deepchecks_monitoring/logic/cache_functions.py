@@ -88,7 +88,8 @@ class CacheFunctions:
             keys_to_delete = []
             for key in self.redis.scan_iter(match=pattern):
                 keys_to_delete.append(key)
-            self.redis.delete(*keys_to_delete)
+            if keys_to_delete:
+                self.redis.delete(*keys_to_delete)
         except redis.exceptions.RedisError as e:
             self.logger.exception(e)
 
