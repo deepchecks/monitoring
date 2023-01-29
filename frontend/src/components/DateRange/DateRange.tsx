@@ -80,13 +80,7 @@ export const DateRange = ({
               <Calendar />
             </Button>
           ),
-          readOnly: true,
-          sx: {
-            fontSize: '16px',
-            '@media (max-width: 1536px)': {
-              fontSize: '12px'
-            }
-          }
+          readOnly: true
         }}
       ></StyledTextField>
       <Popover
@@ -116,6 +110,10 @@ export const DateRange = ({
 
 const StyledTextField = styled(TextField)({
   '.MuiOutlinedInput-input': {
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontSize: '16px',
+    '@media (max-width: 1536px)': {
+      fontSize: '12px'
+    }
   }
 });

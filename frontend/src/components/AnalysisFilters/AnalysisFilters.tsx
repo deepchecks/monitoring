@@ -59,7 +59,10 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
       enabled: false
     }
   });
-  const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
+  const columns = useMemo(
+    () => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)),
+    [columnsMap]
+  );
 
   const { data: defaultFrequency, refetch: loadDefaultFrequency } =
     useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
@@ -156,7 +159,12 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     <>
       <Stack direction="row" alignItems="center">
         {fixedHeader && <StyledAnalysisFiltersDivider orientation="vertical" flexItem sx={{ ml: '5px' }} />}
-        <Stack direction="row" alignItems="center" spacing="14px" marginRight={fixedHeader ? 'auto' : ''}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={{ xs: '5px', xl: '14px' }}
+          marginRight={fixedHeader ? 'auto' : ''}
+        >
           <SwitchButton checked={isComparisonModeOn} setChecked={setIsComparisonModeOn} label="Data comparison" />
           <MarkedSelect
             label="Comparison Mode"
@@ -165,7 +173,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
             onChange={handleComparisonModeChange}
             disabled={!isComparisonModeOn}
             sx={{ width: '178px' }}
-            width={{ xs: 160, xl: null }}
+            width={{ xs: 150, xl: null }}
           >
             {comparisonModeData.map(({ label, value }, index) => (
               <MenuItem key={`${value}${index}`} value={value}>

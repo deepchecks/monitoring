@@ -74,8 +74,12 @@ export const StyledSelect = styled(Select, { shouldForwardProp: prop => prop !==
     '@media (max-width: 1536px)': {
       minWidth: 100,
       width: width ? width.xs : '100%',
-      fontSize: '12px',
-      height: '40px'
+      height: '36px'
+    },
+    '& .MuiSelect-select': {
+      '@media (max-width: 1536px)': {
+        fontSize: '12px'
+      }
     }
   })
 );
