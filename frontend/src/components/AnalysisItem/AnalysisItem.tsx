@@ -41,7 +41,12 @@ function AnalysisItemComponent({
       enabled: false
     }
   });
-  refetchInfo();
+  // If check.id has changed refetch the check info
+  useEffect(() => {
+    if (check.id) {
+      refetchInfo();
+    }
+  }, [check.id, refetchInfo])
 
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
