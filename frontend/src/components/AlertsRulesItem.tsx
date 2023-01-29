@@ -99,7 +99,9 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
           {titles.map((title, index) => (
             <StyledProperty key={title}>
               <StyledTitle>{title}</StyledTitle>
-              <Typography variant="body2">{data[index]}</Typography>
+              <Typography noWrap={true} variant="body2">
+                {data[index]}
+              </Typography>
             </StyledProperty>
           ))}
         </StyledInfo>
@@ -225,12 +227,11 @@ const StyledInfo = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '31px 0',
+  padding: '31px 16px',
   width: '100%',
-  marginLeft: '16px',
   height: '100%',
   '@media (max-width: 1536px)': {
-    padding: '16px 0'
+    padding: '16px 16px'
   }
 });
 
@@ -239,11 +240,7 @@ const StyledProperty = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  width: 215,
-  '@media (max-width: 1536px)': {
-    width: 'fit-content',
-    paddingRight: '30px'
-  }
+  width: '22.5%'
 });
 
 const StyledTitle = styled(Typography)(({ theme }) => ({
