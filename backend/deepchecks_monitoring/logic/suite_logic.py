@@ -10,8 +10,8 @@
 
 """Module defining utility functions for suite running."""
 
-from deepchecks.tabular import checks as tabular_checks
 from deepchecks.tabular.suite import Suite as TabularSuite
+from deepchecks.tabular.suites import production_suite
 from pandas import DataFrame
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,33 +23,15 @@ from deepchecks_monitoring.schema_models import ModelVersion, TaskType
 
 def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: bool) -> TabularSuite:
     """Create a tabular suite based on provided parameters."""
-    checks = [tabular_checks.WeakSegmentsPerformance().add_condition_segments_relative_performance_greater_than(),
-              tabular_checks.PercentOfNulls()]
-    if task_type == TaskType.REGRESSION:
-        checks.append(tabular_checks.RegressionErrorDistribution().add_condition_kurtosis_greater_than())
-    else:
-        checks.append(tabular_checks.ConfusionMatrixReport())
-        checks.append(tabular_checks.RocReport().add_condition_auc_greater_than())
+    suite = production_suite(task_type, is_comparative=has_reference)
 
-    if has_reference:  # todo: configure conditions based on alerts
-        checks.append(tabular_checks.StringMismatchComparison().add_condition_no_new_variants())
-        checks.append(tabular_checks.FeatureLabelCorrelationChange().add_condition_feature_pps_difference_less_than())
-        checks.append(tabular_checks.TrainTestFeatureDrift().add_condition_drift_score_less_than())
-        checks.append(tabular_checks.MultivariateDrift().add_condition_overall_drift_value_less_than())
-        checks.append(tabular_checks.TrainTestLabelDrift(ignore_na=True).add_condition_drift_score_less_than())
-        checks.append(tabular_checks.TrainTestPredictionDrift().add_condition_drift_score_less_than())
-        checks.append(tabular_checks.TrainTestPerformance().add_condition_train_test_relative_degradation_less_than())
-    else:
-        checks.append(tabular_checks.StringMismatch().add_condition_no_variants())
-        checks.append(tabular_checks.FeatureLabelCorrelation().add_condition_feature_pps_less_than())
-        checks.append(tabular_checks.FeatureFeatureCorrelation().add_condition_max_number_of_pairs_above_threshold())
-        checks.append(tabular_checks.SingleDatasetPerformance())
+    suite.name = suite_name
 
-    for check in checks:
-        if hasattr(check, "n_samples"):
-            check.n_samples = None
+    for check_name in suite.checks:
+        if hasattr(suite.checks[check_name], "n_samples"):
+            suite.checks[check_name].n_samples = None
 
-    return TabularSuite(suite_name, *checks)
+    return suite
 
 
 async def run_suite_for_model_version(model_version: ModelVersion, window_options: TimeWindowOption,
