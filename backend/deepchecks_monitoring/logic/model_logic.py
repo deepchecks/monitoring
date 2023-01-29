@@ -46,9 +46,12 @@ async def get_model_versions_for_time_range(session: AsyncSession,
     return await fetch_or_404(session, Model, id=model_id), []
 
 
-def create_model_version_select_object(mon_table: Table, columns: t.List[str]) -> Select:
+def create_model_version_select_object(mon_table: Table, columns: t.List[str], filter_label_exist) -> Select:
     """Create model version select object."""
-    return select([mon_table.c[col] for col in columns if col in mon_table.c])
+    s = select([mon_table.c[col] for col in columns if col in mon_table.c])
+    if filter_label_exist:
+        s = s.where(mon_table.c[SAMPLE_LABEL_COL].isnot(None))
+    return s
 
 
 def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000) -> Select:

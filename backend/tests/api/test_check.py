@@ -16,6 +16,7 @@ from datetime import datetime
 import httpx
 import pendulum as pdl
 import pytest
+from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepdiff import DeepDiff
 from hamcrest import assert_that, contains_exactly, has_entries, has_items, has_length
 from starlette.testclient import TestClient
@@ -1070,3 +1071,34 @@ def test_auto_frequency(
     assert request.status_code == 200
     assert request.json() == {"frequency": 604800, "end": curr_time.int_timestamp,
                               "start": curr_time.subtract(days=90).int_timestamp}
+
+
+def test_label_check_runs_only_on_data_with_label(
+    test_api: TestAPI,
+):
+    # Arrange
+    model = test_api.create_model(model={"task_type": TaskType.MULTICLASS.value})
+    curr_time = pdl.now().set(minute=0, second=0, microsecond=0).in_tz("UTC")
+    model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"],
+                                                                                       "name": "v1"})
+    upload_classification_data(
+        model_version_id=model_version["id"],
+        api=test_api,
+        daterange=[curr_time.subtract(days=1)],
+        is_labeled=False,
+        samples_per_date=200
+    )
+    check = test_api.create_check(model["id"],
+                                  check={"config": SingleDatasetPerformance().config(include_version=False)})
+
+    # Act
+    result = test_api.execute_check_for_window(
+        check_id=check["id"],
+        options={
+            "start_time": curr_time.subtract(days=1).isoformat(),
+            "end_time": curr_time.isoformat()
+        }
+    )
+
+    # Assert
+    assert result == {"v1": None}

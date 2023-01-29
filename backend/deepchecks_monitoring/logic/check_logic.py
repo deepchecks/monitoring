@@ -359,7 +359,7 @@ async def run_check_per_window_in_range(
             continue
 
         test_table = model_version.get_monitor_table(session)
-        select_obj = create_model_version_select_object(test_table, top_feat + model_columns)
+        select_obj = create_model_version_select_object(test_table, top_feat + model_columns, check.is_label_required)
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
@@ -383,7 +383,8 @@ async def run_check_per_window_in_range(
         # Query reference if the check use it, and there are results not from cache
         if isinstance(dp_check, TrainTestBaseCheck) and any(("query" in x for x in test_info)):
             reference_table = model_version.get_reference_table(session)
-            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns)
+            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns,
+                                                                 check.is_label_required)
             reference_query = reference_query.filter(monitor_options.sql_columns_filter())
             reference_query = session.execute(random_sample(reference_query, reference_table))
         else:
@@ -491,7 +492,8 @@ async def run_suite_per_window_in_range(
             continue
 
         test_table = model_version.get_monitor_table(session)
-        select_obj = create_model_version_select_object(test_table, top_feat + model_columns)
+        select_obj = create_model_version_select_object(test_table, top_feat + model_columns, False)
+        select_obj = select_obj.filter(monitor_options.sql_columns_filter())
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
@@ -500,7 +502,6 @@ async def run_suite_per_window_in_range(
             test_info.append(curr_test_info)
             if model_version.is_in_range(window_start, window_end):
                 filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
-                filtered_select_obj = filtered_select_obj.filter(monitor_options.sql_columns_filter())
                 filtered_select_obj = random_sample(filtered_select_obj, test_table, n_samples=10_000)
                 curr_test_info["query"] = session.execute(filtered_select_obj)
             else:
@@ -508,7 +509,7 @@ async def run_suite_per_window_in_range(
         # Query reference if the check use it
         if uses_reference_data:
             reference_table = model_version.get_reference_table(session)
-            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns)
+            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns, False)
             reference_query = reference_query.filter(monitor_options.sql_columns_filter())
             reference_query = session.execute(random_sample(reference_query, reference_table))
         else:
@@ -608,7 +609,8 @@ async def run_check_window(
         test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
                                                         with_reference=is_train_test_check or reference_only,
                                                         with_test=not reference_only,
-                                                        n_samples=n_samples)
+                                                        n_samples=n_samples,
+                                                        filter_labels_exist=check.is_label_required)
         if test_session is None:
             info = {}
         else:
@@ -655,6 +657,7 @@ def create_execution_data_query(
         columns: t.List[str] = None,
         n_samples: int = 10_000,
         all_columns: bool = False,
+        filter_labels_exist: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
 
@@ -668,6 +671,8 @@ def create_execution_data_query(
         The number of samples to collect
     all_columns: bool, default False
         Whether to load all the columns instead of just the top features
+    filter_labels_exist: bool, default False
+        Whether to filter the data to only include rows with labels
 
     Returns
     -------
@@ -677,7 +682,7 @@ def create_execution_data_query(
     if all_columns:
         data_query = select(data_table)
     else:
-        data_query = create_model_version_select_object(data_table, columns)
+        data_query = create_model_version_select_object(data_table, columns, filter_labels_exist)
     data_query = data_query.filter(options.sql_all_filters()
                                    if SAMPLE_TS_COL in data_table.c else options.sql_columns_filter())
     return session.execute(random_sample(data_query, data_table, n_samples=n_samples))
@@ -692,6 +697,7 @@ def load_data_for_check(
         with_test: bool = True,
         n_samples: int = 10_000,
         all_columns: bool = False,
+        filter_labels_exist: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
 
@@ -709,6 +715,8 @@ def load_data_for_check(
         The number of samples to collect
     all_columns: bool, default False
         Whether to load all the columns instead of just the top features
+    filter_labels_exist: bool, default False
+        Whether to filter out samples that don't have labels
 
     Returns
     -------
@@ -727,7 +735,8 @@ def load_data_for_check(
                                                       columns=columns,
                                                       options=options,
                                                       n_samples=n_samples,
-                                                      all_columns=all_columns)
+                                                      all_columns=all_columns,
+                                                      filter_labels_exist=filter_labels_exist)
     else:
         reference_query = None
 
@@ -739,7 +748,8 @@ def load_data_for_check(
                                                      columns=columns,
                                                      options=options,
                                                      n_samples=n_samples,
-                                                     all_columns=all_columns)
+                                                     all_columns=all_columns,
+                                                     filter_labels_exist=filter_labels_exist)
         else:
             test_query = None
     else:
@@ -774,8 +784,10 @@ async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.
     return model_version_dataframes
 
 
-def reduce_check_result(result: CheckResult, additional_kwargs) -> t.Dict[str, Number]:
+def reduce_check_result(result: CheckResult, additional_kwargs) -> t.Optional[t.Dict[str, Number]]:
     """Reduce check result and apply filtering on the check results (after reduce)."""
+    if result is None:
+        return
     final_result = {}
 
     def set_key_value(key, value):
