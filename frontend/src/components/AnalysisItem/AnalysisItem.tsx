@@ -36,11 +36,13 @@ function AnalysisItemComponent({
   height,
   graphHeight
 }: AnalysisItemProps) {
-  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(check.id, {
+  const { data: checkInfo, refetch: refetchInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(check.id, {
     query: {
       enabled: false
     }
   });
+  refetchInfo();
+
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
   const [data, setData] = useState<typeof chartData>(chartData);
