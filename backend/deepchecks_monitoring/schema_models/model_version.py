@@ -18,7 +18,7 @@ import pendulum as pdl
 import sqlalchemy as sa
 from pydantic.main import BaseModel
 from sqlalchemy import (ARRAY, BigInteger, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
-                        UniqueConstraint, func, select)
+                        UniqueConstraint, func, select, update)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
@@ -161,7 +161,7 @@ class ModelVersion(Base):
         if max_timestamp > self.end_time:
             updates[ModelVersion.end_time] = func.greatest(ModelVersion.end_time, max_timestamp)
         if updates:
-            await ModelVersion.update(session, self.id, updates)
+            await session.execute(update(ModelVersion).where(ModelVersion.id == self.id).values(updates))
 
     async def update_statistics(self, new_statistics: dict, session: AsyncSession):
         """Update the statistics with a lock on the row."""

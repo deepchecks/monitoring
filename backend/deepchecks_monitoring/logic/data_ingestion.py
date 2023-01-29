@@ -47,7 +47,8 @@ async def log_data(
         model_version: ModelVersion,
         data: t.List[t.Dict[t.Any, t.Any]],
         session: AsyncSession,
-        log_times: t.List[pdl.DateTime]
+        log_times: t.List[pdl.DateTime],
+        logger
 ):
     """Insert batch data samples.
 
@@ -57,6 +58,7 @@ async def log_data(
     data
     session
     log_times
+    logger
     """
     now = pdl.now()
     valid_data = {}
@@ -125,11 +127,9 @@ async def log_data(
         errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error="Duplicate index on log",
                            model_version_id=model_version.id))
     # Save errors
-    if errors:
-        await session.execute(postgresql.insert(IngestionError).values(errors))
+    await save_failures(session, errors, logger)
 
     # Update statistics and timestamps, running only on samples which were logged successfully
-
     if len(logged_samples) == 0:
         return []
     logged_timestamps = []
@@ -151,7 +151,8 @@ async def log_data(
 async def update_data(
         model_version: ModelVersion,
         data: t.List[t.Dict[t.Any, t.Any]],
-        session: AsyncSession
+        session: AsyncSession,
+        logger
 ):
     """Update data samples.
 
@@ -204,8 +205,7 @@ async def update_data(
         errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error="Index not found on update",
                            model_version_id=model_version.id))
     # Save errors
-    if errors:
-        await session.execute(postgresql.insert(IngestionError).values(errors))
+    await save_failures(session, errors, logger)
 
     if len(logged_samples) == 0:
         return []
@@ -219,6 +219,23 @@ async def update_data(
         await model_version.update_statistics(updated_statistics, session)
 
     return logged_timestsamps
+
+
+async def save_failures(session, errors, logger):
+    """Save failed messages into ingestion errors table."""
+    try:
+        if not errors:
+            return
+        await session.execute(postgresql.insert(IngestionError).values(errors))
+    except Exception as exception:   # pylint: disable=broad-except
+        if isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
+            # SQLAlchemy wraps the original error in a weird way, so we need to extract it
+            pg_exception = sqlalchemy_exception_to_asyncpg_exception(exception)
+            if isinstance(pg_exception, asyncpg.exceptions.ForeignKeyViolationError):
+                # In case model version was deleted, we will get foreign key violation, so we ignore it
+                logger.info("Got %s probably due to model version being removed", " ".join(exception.args))
+        else:
+            logger.exception("Got unexpected error while saving ingestion errors")
 
 
 class DataIngestionBackend(object):
@@ -279,9 +296,9 @@ class DataIngestionBackend(object):
             await asyncio.gather(*send_futures)
         else:
             if action == "log":
-                timestamps = await log_data(model_version, data, session, [log_time] * len(data))
+                timestamps = await log_data(model_version, data, session, [log_time] * len(data), self.logger)
             else:
-                timestamps = await update_data(model_version, data, session)
+                timestamps = await update_data(model_version, data, session, self.logger)
 
             await self.after_data_update(user.organization_id, model_version.id, timestamps, session)
 
@@ -318,51 +335,37 @@ class DataIngestionBackend(object):
                 if log_samples:
                     samples = [m["data"] for m in log_samples]
                     log_times = [pdl.parse(m["log_time"]) for m in log_samples]
-                    timestamps += await log_data(model_version, samples, session, log_times)
+                    timestamps += await log_data(model_version, samples, session, log_times, self.logger)
                 if update_samples:
                     samples = [m["data"] for m in update_samples]
-                    timestamps += await update_data(model_version, samples, session)
+                    timestamps += await update_data(model_version, samples, session, self.logger)
 
                 await self.after_data_update(organization_id, model_version_id, timestamps, session)
             return True
         except Exception as exception:  # pylint: disable=broad-except
             if isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
                 # SQLAlchemy wraps the original error in a weird way, so we need to extract it
-                exception = sqlalchemy_exception_to_asyncpg_exception(exception)
-            if isinstance(exception, asyncpg.exceptions.PostgresConnectionError):
-                # In case of connection error does not commit the kafka messages, in order to try
-                # again
-                self.logger.info("Got %s, does not commit kafka messages", str(exception))
-                return False
-            if isinstance(exception, asyncpg.exceptions.UndefinedTableError):
-                self.logger.info("Got %s probably due to model version being removed, "
-                                 "committing kafka messages anyway", str(exception))
-                return True
+                pg_exception = sqlalchemy_exception_to_asyncpg_exception(exception)
+                if isinstance(pg_exception, asyncpg.exceptions.PostgresConnectionError):
+                    # In case of connection error does not commit the kafka messages, in order to try
+                    # again
+                    self.logger.info("Got %s, does not commit kafka messages", " ".join(exception.args))
+                    return False
+                if isinstance(pg_exception, (asyncpg.exceptions.UndefinedTableError,
+                                             sqlalchemy.orm.exc.StaleDataError)):
+                    self.logger.info("Got %s probably due to model version being removed, "
+                                     "committing kafka messages anyway", " ".join(exception.args))
+                    return True
 
             self.logger.exception("Got unexpected error, saving errors and committing kafka messages anyway")
-            await self.save_failures(organization_id, model_version_id, messages, exception)
-            return True
-
-    async def save_failures(self, organization_id, model_version_id, messages, data_exception):
-        """Save failed messages into ingestion errors table."""
-        async with self.resources_provider.create_async_database_session(organization_id) as session:
-            samples = [json.loads(m.value.decode())["data"] for m in messages]
-            values = [{"sample_id": sample.get(SAMPLE_ID_COL),
-                       "sample": json.dumps(sample),
-                       "error": str(data_exception),
+            errors = [{"sample_id": json.loads(m.value.decode())["data"].get(SAMPLE_ID_COL),
+                       "sample": m.value.decode(),
+                       "error": str(exception),
                        "model_version_id": model_version_id}
-                      for sample in samples]
-            try:
-                await session.execute(postgresql.insert(IngestionError).values(values))
-            except Exception as exception:   # pylint: disable=broad-except
-                if isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
-                    # SQLAlchemy wraps the original error in a weird way, so we need to extract it
-                    exception = sqlalchemy_exception_to_asyncpg_exception(exception)
-                if isinstance(exception, asyncpg.exceptions.ForeignKeyViolationError):
-                    # In case model version was deleted, we will get foreign key violation, so we ignore it
-                    self.logger.info("Got %s probably due to model version being removed", exception)
-                else:
-                    self.logger.exception("Got unexpected error while saving ingestion errors")
+                      for m in messages]
+            async with self.resources_provider.create_async_database_session(organization_id) as session:
+                await save_failures(session, errors, self.logger)
+            return True
 
     async def after_data_update(self, organization_id, model_version_id, timestamps_updated, session):
         """Update model version update time, calling cache invalidation, and adding current model version to \

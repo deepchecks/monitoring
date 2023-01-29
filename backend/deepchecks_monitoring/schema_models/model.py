@@ -14,7 +14,7 @@ from datetime import datetime
 
 import pendulum as pdl
 import sqlalchemy as sa
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
@@ -86,7 +86,7 @@ class Model(Base):
             updates[Model.end_time] = func.greatest(Model.end_time, max_timestamp)
 
         if updates:
-            await Model.update(session, self.id, updates)
+            await session.execute(update(Model).where(Model.id == self.id).values(updates))
 
     def has_data(self) -> bool:
         """Check if model has data."""

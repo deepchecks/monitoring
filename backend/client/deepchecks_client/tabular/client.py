@@ -409,6 +409,11 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             raise_on_status=False
         ))
 
+        # Using the feature importance in few places, so first change it to dict if needed
+        if feature_importance is not None:
+            if isinstance(feature_importance, pd.Series):
+                feature_importance = dict(feature_importance)
+
         if 200 <= response.status_code <= 299:
             existing_version = response.json()
             version_client = self._version_client(existing_version['id'])
@@ -451,8 +456,6 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     raise ValueError(f'value of features must be one of {ColumnType.values()} but got {value}')
 
             if feature_importance is not None:
-                if isinstance(feature_importance, pd.Series):
-                    feature_importance = dict(feature_importance)
                 if not isinstance(feature_importance, dict):
                     raise ValueError('feature_importance must be a dict')
                 if any((not isinstance(v, float) for v in feature_importance.values())):

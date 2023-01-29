@@ -221,5 +221,5 @@ def sqlalchemy_exception_to_asyncpg_exception(exception: sa.exc.SQLAlchemyError)
     """Convert sqlalchemy exception to asyncpg exception."""
     if hasattr(exception, "orig"):
         code = exception.orig.pgcode
-        return asyncpg.exceptions.PostgresError.get_message_class_for_sqlstate(code)
+        return asyncpg.exceptions.PostgresError.get_message_class_for_sqlstate(code)()
     return exception
