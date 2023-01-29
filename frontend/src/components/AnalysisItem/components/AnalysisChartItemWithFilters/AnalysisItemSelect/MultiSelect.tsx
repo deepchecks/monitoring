@@ -146,9 +146,10 @@ const MultiSelect = ({
     setMultiValue([]);
     setSavedMultiValue([]);
 
-    const newFilteredValues = { ...filteredValues };
+    // need to be any to set as null
+    const newFilteredValues: any = { ...filteredValues };
 
-    newFilteredValues[type] = ['none'];
+    newFilteredValues[type] = null;
     setFilteredValues(newFilteredValues);
 
     setIsMostWorstActive(false);
