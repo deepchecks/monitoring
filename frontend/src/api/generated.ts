@@ -111,6 +111,7 @@ export type GetAlertRulesApiV1AlertRulesGetParams = {
   models?: number[];
   severity?: AlertSeverity[];
   is_active?: boolean;
+  resolved?: boolean;
   sortby?: GetAlertRulesApiV1AlertRulesGetSortbyItem[];
 };
 
@@ -137,6 +138,7 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
   models?: number[];
   severity?: AlertSeverity[];
   is_active?: boolean;
+  resolved?: boolean;
   sortby?: GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetSortbyItem[];
 };
 
@@ -565,6 +567,7 @@ export interface ModelManagmentSchema {
   latest_time?: number;
   description?: string;
   task_type?: TaskType;
+  has_data?: boolean;
   versions: ModelVersionManagmentSchema[];
 }
 
@@ -930,7 +933,7 @@ export interface AlertRuleInfoSchema {
   is_active: boolean;
   model_id: number;
   alerts_count?: number;
-  max_end_time: string;
+  max_end_time?: string;
 }
 
 /**
@@ -1108,6 +1111,49 @@ export const useResolveAlertApiV1AlertsAlertIdResolvePost = <
 
   return useMutation<
     Awaited<ReturnType<typeof resolveAlertApiV1AlertsAlertIdResolvePost>>,
+    TError,
+    { alertId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Reactivate resolved alert.
+ * @summary Reactivate Alert
+ */
+export const reactivateAlertApiV1AlertsAlertIdReactivatePost = (alertId: number) =>
+  customInstance<unknown>({ url: `/api/v1/alerts/${alertId}/reactivate`, method: 'post' });
+
+export type ReactivateAlertApiV1AlertsAlertIdReactivatePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reactivateAlertApiV1AlertsAlertIdReactivatePost>>
+>;
+
+export type ReactivateAlertApiV1AlertsAlertIdReactivatePostMutationError = ErrorType<HTTPValidationError>;
+
+export const useReactivateAlertApiV1AlertsAlertIdReactivatePost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reactivateAlertApiV1AlertsAlertIdReactivatePost>>,
+    TError,
+    { alertId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reactivateAlertApiV1AlertsAlertIdReactivatePost>>,
+    { alertId: number }
+  > = props => {
+    const { alertId } = props ?? {};
+
+    return reactivateAlertApiV1AlertsAlertIdReactivatePost(alertId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof reactivateAlertApiV1AlertsAlertIdReactivatePost>>,
     TError,
     { alertId: number },
     TContext
@@ -1718,6 +1764,50 @@ export const useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllP
 
   return useMutation<
     Awaited<ReturnType<typeof resolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost>>,
+    TError,
+    { alertRuleId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Reactivate all resolved alerts
+ * @summary Reactivate Resolved Alerts
+ */
+export const reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost = (alertRuleId: number) =>
+  customInstance<unknown>({ url: `/api/v1/alert-rules/${alertRuleId}/alerts/reactivate-resolved`, method: 'post' });
+
+export type ReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost>>
+>;
+
+export type ReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPostMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost>>,
+    TError,
+    { alertRuleId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost>>,
+    { alertRuleId: number }
+  > = props => {
+    const { alertRuleId } = props ?? {};
+
+    return reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost(alertRuleId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost>>,
     TError,
     { alertRuleId: number },
     TContext

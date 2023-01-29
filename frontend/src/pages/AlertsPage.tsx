@@ -34,7 +34,7 @@ export const AlertsPage = () => {
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [isNotification, setIsNotification] = useState<boolean>(false);
 
-  const { data: alertRules, isLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
+  const { data: alertRules, isLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet({...alertFilters, resolved: false});
   const {
     mutateAsync: mutateAlertRuleResolve,
     isError: isAlertRuleResolveError,

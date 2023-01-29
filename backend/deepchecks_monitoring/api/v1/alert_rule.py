@@ -54,7 +54,6 @@ class AlertRuleInfoSchema(AlertRuleSchema):
 
     model_id: int
     alerts_count: int = 0
-    resolved_alerts_count: int = 0
     max_end_time: t.Optional[datetime] = None
 
 
@@ -114,6 +113,7 @@ async def get_alert_rules(
     models: t.List[int] = Query(default=[]),
     severity: t.List[AlertSeverity] = Query(default=[]),
     is_active: t.Optional[bool] = Query(default=None),
+    resolved: t.Optional[bool] = Query(default=None),
     sortby: t.List[t.Literal[
         "severity:asc",
         "severity:desc",
@@ -141,15 +141,14 @@ async def get_alert_rules(
     List[AlertSchema]
         All the alerts for a given monitor.
     """
-    alerts_info = (
-        select(
-            Alert.alert_rule_id.label("alert_rule_id"),
-            func.count(Alert.id).filter(Alert.resolved.is_(False)).label("alerts_count"),
-            func.count(Alert.id).filter(Alert.resolved.is_(True)).label("resolved_alerts_count"),
-            func.max(Alert.end_time).filter(Alert.resolved.is_(False)).label("max_end_time")
-        )
-        .group_by(Alert.alert_rule_id)
+    alerts_info = select(
+        Alert.alert_rule_id.label("alert_rule_id"),
+        func.count(Alert.id).label("alerts_count"),
+        func.max(Alert.end_time).label("max_end_time")
     )
+    if resolved is not None:
+        alerts_info = alerts_info.where(Alert.resolved.is_(resolved))
+    alerts_info = alerts_info.group_by(Alert.alert_rule_id)
 
     if start is not None:
         alerts_info = alerts_info.where(Alert.start_time >= start)
@@ -172,7 +171,6 @@ async def get_alert_rules(
             AlertRule.is_active,
             Check.model_id,
             alerts_info.c.alerts_count,
-            alerts_info.c.resolved_alerts_count,
             alerts_info.c.max_end_time,
             severity_index
         )
@@ -259,7 +257,7 @@ async def get_alerts_of_alert_rule(
     await exists_or_404(session, AlertRule, id=alert_rule_id)
     query = select(Alert).where(Alert.alert_rule_id == alert_rule_id)
     if resolved is not None:
-        query = query.where(Alert.resolved == resolved)
+        query = query.where(Alert.resolved.is_(resolved))
     query = await session.execute(query.order_by(Alert.start_time))
     return [AlertSchema.from_orm(a) for a in query.scalars().all()]
 

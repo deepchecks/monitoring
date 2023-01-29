@@ -630,10 +630,12 @@ class TestAPI:
     # TODO: consider adding corresponding method to sdk API class
     def fetch_alert_rules(
         self,
+        resolved: t.Optional[bool] = None,
         expected_status: ExpectedStatus = (200, 299)
-    ) -> t.Union[httpx.Response, t.List[Payload]]:
+) -> t.Union[httpx.Response, t.List[Payload]]:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        response = self.api.session.get("alert-rules")
+        params = {} if resolved is None else {"resolved": resolved}
+        response = self.api.session.get("alert-rules", params=params)
         expected_status.assert_response_status(response)
 
         if expected_status.is_negative():
