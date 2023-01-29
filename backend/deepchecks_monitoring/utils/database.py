@@ -3,6 +3,7 @@ import contextlib
 import logging
 import typing as t
 
+import asyncpg
 import sqlalchemy as sa
 from alembic import command, config
 from sqlalchemy import event
@@ -14,7 +15,8 @@ from sqlalchemy.schema import CreateSchema, DDLElement
 
 from deepchecks_monitoring.bgtasks import core as bgtasks_core
 
-__all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_switcher"]
+__all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_switcher",
+           "sqlalchemy_exception_to_asyncpg_exception"]
 
 
 class SessionParameter(DDLElement):
@@ -39,10 +41,10 @@ class SessionParameter(DDLElement):
     inherit_cache = False
 
     def __init__(
-        self,
-        name: str,
-        value: t.Union[str, int, float, t.Sequence[str]],
-        local: bool = False,
+            self,
+            name: str,
+            value: t.Union[str, int, float, t.Sequence[str]],
+            local: bool = False,
     ):
         super().__init__()
 
@@ -84,8 +86,8 @@ def visit_reset_session_parameter(
 
 
 async def attach_schema_switcher_listener(
-    session: AsyncSession,
-    schema_search_path: t.List[str]
+        session: AsyncSession,
+        schema_search_path: t.List[str]
 ):
     """Attach schema search path switcher listener."""
     pg_session_parameter = SessionParameter("search_path", local=True, value=schema_search_path)
@@ -98,8 +100,8 @@ async def attach_schema_switcher_listener(
 
 @contextlib.asynccontextmanager
 async def attach_schema_switcher(
-    session: AsyncSession,
-    schema_search_path: t.List[str]
+        session: AsyncSession,
+        schema_search_path: t.List[str]
 ):
     """Attach schema search path switcher listener."""
     pg_session_parameter = SessionParameter("search_path", local=True, value=schema_search_path)
@@ -119,12 +121,12 @@ class SchemaBuilder:
     """Postgres schema builder."""
 
     def __init__(
-        self,
-        name: str,
-        *,
-        metadata: t.Optional[sa.MetaData] = None,
-        migrations_location: t.Optional[str] = None,
-        logger: t.Optional[logging.Logger] = None
+            self,
+            name: str,
+            *,
+            metadata: t.Optional[sa.MetaData] = None,
+            migrations_location: t.Optional[str] = None,
+            logger: t.Optional[logging.Logger] = None
     ):
         if metadata and migrations_location:
             raise ValueError(
@@ -207,9 +209,17 @@ class SchemaBuilder:
         return await connection.scalar(
             sa.text(
                 "select exists ( "
-                    "select 1 "
-                    "from information_schema.schemata "
-                    "where schema_name = :schema_name "
+                "select 1 "
+                "from information_schema.schemata "
+                "where schema_name = :schema_name "
                 ")"
             ).bindparams(schema_name=schema)
         )
+
+
+def sqlalchemy_exception_to_asyncpg_exception(exception: sa.exc.SQLAlchemyError) -> asyncpg.exceptions.PostgresError:
+    """Convert sqlalchemy exception to asyncpg exception."""
+    if hasattr(exception, "orig"):
+        code = exception.orig.pgcode
+        return asyncpg.exceptions.PostgresError.get_message_class_for_sqlstate(code)
+    return exception

@@ -24,7 +24,6 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from sqlalchemy.orm.exc import StaleDataError
 
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import insert_model_version_cache_invalidation_task
 from deepchecks_monitoring.bgtasks.model_version_offset_update import insert_model_version_offset_update_task
@@ -38,6 +37,7 @@ from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
+from deepchecks_monitoring.utils.database import sqlalchemy_exception_to_asyncpg_exception
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
 __all__ = ["DataIngestionBackend", "log_data", "update_data"]
@@ -325,42 +325,44 @@ class DataIngestionBackend(object):
 
                 await self.after_data_update(organization_id, model_version_id, timestamps, session)
             return True
-        except StaleDataError:
-            # In case model version was deleted, we will get foreign key violation, so we ignore it
-            return True
-        except sqlalchemy.exc.SQLAlchemyError as exception:
-            self.logger.exception(exception)
-            # Sqlalchemy wraps the asyncpg exceptions in orig field
-            if hasattr(exception, "orig"):
-                exception = exception.orig
+        except Exception as exception:  # pylint: disable=broad-except
+            if isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
+                # SQLAlchemy wraps the original error in a weird way, so we need to extract it
+                exception = sqlalchemy_exception_to_asyncpg_exception(exception)
             if isinstance(exception, asyncpg.exceptions.PostgresConnectionError):
                 # In case of connection error does not commit the kafka messages, in order to try
                 # again
+                self.logger.info("Got %s, does not commit kafka messages", str(exception))
                 return False
-            await self.save_failures(organization_id, model_version_id, messages, exception)
-            return True
-        except Exception as exception:  # pylint: disable=broad-except
-            self.logger.exception(exception)
-            # If it"s not a db exception, we commit anyway to not get stuck
+            if isinstance(exception, asyncpg.exceptions.UndefinedTableError):
+                self.logger.info("Got %s probably due to model version being removed, "
+                                 "committing kafka messages anyway", str(exception))
+                return True
+
+            self.logger.exception("Got unexpected error, saving errors and committing kafka messages anyway")
             await self.save_failures(organization_id, model_version_id, messages, exception)
             return True
 
-    async def save_failures(self, organization_id, model_version_id, messages, exception):
+    async def save_failures(self, organization_id, model_version_id, messages, data_exception):
         """Save failed messages into ingestion errors table."""
         async with self.resources_provider.create_async_database_session(organization_id) as session:
             samples = [json.loads(m.value.decode())["data"] for m in messages]
             values = [{"sample_id": sample.get(SAMPLE_ID_COL),
                        "sample": json.dumps(sample),
-                       "error": str(exception),
+                       "error": str(data_exception),
                        "model_version_id": model_version_id}
                       for sample in samples]
             try:
                 await session.execute(postgresql.insert(IngestionError).values(values))
-            except StaleDataError:
-                # In case model version was deleted, we will get foreign key violation, so we ignore it
-                pass
-            except sqlalchemy.exc.SQLAlchemyError as e:
-                self.logger.exception(e)
+            except Exception as exception:   # pylint: disable=broad-except
+                if isinstance(exception, sqlalchemy.exc.SQLAlchemyError):
+                    # SQLAlchemy wraps the original error in a weird way, so we need to extract it
+                    exception = sqlalchemy_exception_to_asyncpg_exception(exception)
+                if isinstance(exception, asyncpg.exceptions.ForeignKeyViolationError):
+                    # In case model version was deleted, we will get foreign key violation, so we ignore it
+                    self.logger.info("Got %s probably due to model version being removed", exception)
+                else:
+                    self.logger.exception("Got unexpected error while saving ingestion errors")
 
     async def after_data_update(self, organization_id, model_version_id, timestamps_updated, session):
         """Update model version update time, calling cache invalidation, and adding current model version to \
