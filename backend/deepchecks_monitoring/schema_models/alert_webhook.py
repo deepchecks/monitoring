@@ -15,9 +15,9 @@ from deepchecks_monitoring.public_models import AlertSeverity
 from deepchecks_monitoring.schema_models.base import Base
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.config import EmailSettings  # pylint: disable=unused-import
-    from deepchecks_monitoring.public_models import Monitor  # pylint: disable=unused-import
-    from deepchecks_monitoring.public_models import Alert, AlertRule, Check, Model  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.config import EmailSettings
+    from deepchecks_monitoring.public_models import Alert, AlertRule, Check, Model, Monitor
 
 __all__ = ["AlertWebhook", "WebhookHttpMethod"]
 

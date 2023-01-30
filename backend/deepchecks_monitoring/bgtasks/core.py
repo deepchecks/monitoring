@@ -32,6 +32,7 @@ from sqlalchemy.engine.url import URL as DatabaseUrl
 from sqlalchemy.exc import DisconnectionError
 from sqlalchemy.exc import TimeoutError as AlchemyTimeoutError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
+from sqlalchemy.orm.exc import StaleDataError
 # from sqlalchemy.orm import declarative_base
 from typing_extensions import Awaitable, ParamSpec, Self, TypeAlias
 
@@ -768,7 +769,14 @@ class Worker:
         """Start processing tasks."""
         async with self.create_database_session() as session:
             async for task in self.tasks_broker.next_task(session):
-                await self.execute_task(session, task)
+                try:
+                    await self.execute_task(session, task)
+                except StaleDataError:
+                    self.logger.warning(
+                        "Task execution failed. "
+                        "Task record was removed from the database during exeuction"
+                    )
+                    await session.rollback()
 
     async def execute_task(self, session: AsyncSession, task: Task):
         """Execute task logic."""
