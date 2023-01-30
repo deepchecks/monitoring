@@ -11,6 +11,7 @@ export default defineConfig({
     chromeWebSecurity: false,
     // baseUrl: "https://staging-v2.deepchecks.com",
     defaultCommandTimeout: 20000,
+    responseTimeout: 45000,
     baseUrl: "http://127.0.0.1:8000"
   },
   env: {

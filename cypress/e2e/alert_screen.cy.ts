@@ -18,12 +18,12 @@ describe('Alerts screen', () => {
         alertDrawerLi.should('have.text', 2);
         alertDrawerLi.click();
 
-        cy.contains('h4', 'checky v1 Monitor'); // to wait for alert modal to load
-        cy.contains('h4', 'checky v1 Monitor').parent().parent().parent().parent().within(() => {
-          cy.contains('p', 'Rule: Value < 0.5').should('exist');
-          cy.contains('p', '11.8.2022').should('exist');
-          cy.contains('h6', 'alerts model').should('exist');
-          cy.contains('h6', 'checky v1').should('exist');
+        cy.contains('p', 'checky v1 Monitor'); // to wait for alert modal to load
+        cy.contains('p', 'checky v1 Monitor').parent().parent().within(() => {
+            cy.contains('h6', 'Accuracy, Recall - Macro ...').should('exist');
+            cy.contains('h6', '< 0.5').should('exist');
+            cy.contains('h6', 'alerts model').should('exist');
+            cy.contains('h6', 'checky v1').should('exist');
         })
     })
   });

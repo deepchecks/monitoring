@@ -12,8 +12,8 @@
 import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
+import httpx
 import ldclient
-import requests
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
@@ -337,7 +337,7 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._oauth_client is None:
             try:
                 url = f"https://{self.settings.oauth_domain}/.well-known/openid-configuration"
-                openid_configuration = requests.get(url).json()
+                openid_configuration = httpx.get(url).json()
                 self._oauth_client = OAuth()
                 self._oauth_client.register(
                     name="auth0",
