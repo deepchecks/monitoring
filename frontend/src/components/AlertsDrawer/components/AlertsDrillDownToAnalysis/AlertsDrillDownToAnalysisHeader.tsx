@@ -67,14 +67,14 @@ export const AlertsDrillDownToAnalysisHeaderComponent = ({
           {tabIndex === 0 ? (
             <>
               <StyledControlledMarkedSelect
-                label="Select feature"
+                label="Feature"
                 values={featuresNames}
                 value={selectedFeature || ''}
                 setValue={setSelectedFeature}
                 disabled={disabled}
               />
               <StyledControlledMarkedSelect
-                label="Select check"
+                label="Check"
                 values={checksNames}
                 value={selectedCheck || ''}
                 setValue={setSelectedCheck}
