@@ -1,4 +1,4 @@
-import React, { FC, Suspense, lazy } from 'react';
+import React, { FC, lazy } from 'react';
 
 import { AnalysisProvider } from 'context/analysis-context';
 
@@ -48,11 +48,7 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Alerts',
     link: '/alerts',
-    element: () => (
-      <Suspense fallback={<div>Loading...</div>}>
-        <AlertsPage />
-      </Suspense>
-    ),
+    element: () => <AlertsPage />,
     Icon: Alarm,
     IconHover: AlarmHover,
     ActiveIcon: AlarmActive,
@@ -61,11 +57,7 @@ export const pathsInfo: PathInfo[] = [
         title: 'Resolved Alerts',
         link: '/resolved-alerts',
         Icon: null,
-        element: () => (
-          <Suspense fallback={<div>Loading...</div>}>
-            <AlertsPage resolved />
-          </Suspense>
-        ),
+        element: () => <AlertsPage resolved />,
         IconHover: null,
         ActiveIcon: null
       }

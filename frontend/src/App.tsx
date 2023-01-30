@@ -1,6 +1,7 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, ReactNode } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react';
 
 import { GlobalStateProvider } from './context';
 import { StatsTimeProvider } from './hooks/useStatsTime';
@@ -10,17 +11,17 @@ import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
+import { Sidebar } from './components/Sidebar';
+import { Loader } from 'components/Loader';
+
 import { pathsInfo } from 'helpers/helper';
 import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 
 import 'overlayscrollbars/overlayscrollbars.css';
-import { Sidebar } from './components/Sidebar';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const CompleteDetails = lazy(() => import('./pages/CompleteDetails'));
 const LicenseAgreementPage = lazy(() => import('./pages/LicenseAgreement'));
-
-import * as Sentry from "@sentry/react";
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -58,8 +59,9 @@ const Layout = () => {
   );
 };
 
+const LazyWrapper = ({ children }: { children: ReactNode }) => <Suspense fallback={<Loader />}>{children}</Suspense>;
 
-const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
+const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -73,18 +75,45 @@ const App = () => {
           <GlobalStateProvider>
             <UserProvider>
               <StatsTimeProvider>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <SentryRoutes>
-                    <Route element={<Layout />}>
-                      <Route path="/" element={<DashboardPage />} />
-                      {flatPathsInfo.map(({ link, element: PageElement }) => (
-                        <Route key={link} path={link} element={<PageElement />} />
-                      ))}
-                    </Route>
-                    <Route path="/complete-details" element={<CompleteDetails />} />
-                    <Route path="/license-agreement" element={<LicenseAgreementPage />} />
-                  </SentryRoutes>
-                </Suspense>
+                <SentryRoutes>
+                  <Route element={<Layout />}>
+                    <Route
+                      path="/"
+                      element={
+                        <LazyWrapper>
+                          <DashboardPage />
+                        </LazyWrapper>
+                      }
+                    />
+                    {flatPathsInfo.map(({ link, element: PageElement }) => (
+                      <Route
+                        key={link}
+                        path={link}
+                        element={
+                          <LazyWrapper>
+                            <PageElement />
+                          </LazyWrapper>
+                        }
+                      />
+                    ))}
+                  </Route>
+                  <Route
+                    path="/complete-details"
+                    element={
+                      <LazyWrapper>
+                        <CompleteDetails />
+                      </LazyWrapper>
+                    }
+                  />
+                  <Route
+                    path="/license-agreement"
+                    element={
+                      <LazyWrapper>
+                        <LicenseAgreementPage />
+                      </LazyWrapper>
+                    }
+                  />
+                </SentryRoutes>
               </StatsTimeProvider>
             </UserProvider>
           </GlobalStateProvider>
@@ -93,6 +122,5 @@ const App = () => {
     </Sentry.ErrorBoundary>
   );
 };
-
 
 export default Sentry.withProfiler(App);
