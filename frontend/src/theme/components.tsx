@@ -282,9 +282,6 @@ export const componentOptions: Components<Theme> = {
   MuiFormControl: {
     styleOverrides: {
       root: ({ theme }) => ({
-        '& .Mui-disabled': {
-          opacity: 0.6
-        },
         '& label': {
           color: theme.palette.text.primary
         },
