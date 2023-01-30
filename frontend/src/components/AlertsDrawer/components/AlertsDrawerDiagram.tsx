@@ -30,7 +30,7 @@ export const AlertsDrawerDiagram = ({
   const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(alertRule, alertMonitorDataTime, alerts);
 
   useEffect(() => {
-    if (graphData.labels.length > 0) {
+    if (graphData.labels.length > 0 && alerts[alertIndex]?.end_time) {
       const currentAlertEndTime = new Date(alerts[alertIndex].end_time).getTime();
 
       if (graphData.labels.includes(currentAlertEndTime)) return;

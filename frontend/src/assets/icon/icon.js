@@ -64,6 +64,7 @@ import { ReactComponent as HighPriority } from './highPriority.svg';
 import { ReactComponent as Check } from './check.svg';
 import { ReactComponent as Download } from './download.svg';
 import { ReactComponent as GraphReport } from './graphReport.svg';
+import { ReactComponent as Sync } from './sync.svg';
 
 export {
   Alarm,
@@ -131,5 +132,6 @@ export {
   HighPriority,
   Check,
   Download,
-  GraphReport
+  GraphReport,
+  Sync
 };

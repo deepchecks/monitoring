@@ -1,10 +1,17 @@
-import { Box, Button } from '@mui/material';
-import { Settings } from 'assets/icon/icon';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import { Box, Button } from '@mui/material';
+
 import { ShareButton } from './ShareButton';
 
-export const AlertsHeader = () => {
+import { Settings } from 'assets/icon/icon';
+
+interface AlertsHeaderProps {
+  resolved?: boolean;
+}
+
+export const AlertsHeader = ({ resolved }: AlertsHeaderProps) => {
   const navigate = useNavigate();
 
   const linkToSettings = () => {
@@ -31,7 +38,7 @@ export const AlertsHeader = () => {
             color: '#94a4ad'
           }}
         >
-          Alerts
+          {resolved ? 'Resolved alerts' : 'Alerts'}
         </Box>
         <Box
           sx={{
@@ -39,7 +46,7 @@ export const AlertsHeader = () => {
             alignItems: 'center'
           }}
         >
-          <ShareButton/>
+          <ShareButton />
           <Button
             sx={{ width: 136, marginLeft: '1em' }}
             startIcon={<Settings fill="#fff" width={20} height={20} />}

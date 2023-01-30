@@ -89,6 +89,8 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
+export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
+
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
@@ -145,6 +147,24 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
 /**
+ * Schema for organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
+  id: number;
+  name: string;
+}
+
+/**
+ * Schema for the organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
+  name: string;
+  is_slack_connected: boolean;
+  slack_notification_levels: AlertSeverity[];
+  email_notification_levels: AlertSeverity[];
+}
+
+/**
  * Schema for getting rows in a specific window.
  */
 export interface WindowDataSchema {
@@ -182,6 +202,18 @@ export interface ValidationError {
   loc: ValidationErrorLocItem[];
   msg: string;
   type: string;
+}
+
+/**
+ * Schema for user.
+ */
+export interface UserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
 }
 
 /**
@@ -286,26 +318,6 @@ export interface PagerDutyWebhookProperties {
 export interface OrganizationUpdateSchema {
   slack_notification_levels?: AlertSeverity[];
   email_notification_levels?: AlertSeverity[];
-}
-
-/**
- * Schema for organization.
- */
-export interface OrganizationSchema {
-  id: number;
-  name: string;
-}
-
-/**
- * Schema for user.
- */
-export interface UserSchema {
-  id: number;
-  email: string;
-  created_at: string;
-  full_name?: string;
-  picture_url?: string;
-  organization?: OrganizationSchema;
 }
 
 /**
@@ -963,7 +975,7 @@ export interface AlertRuleConfigSchema {
  * @summary Hello World
  */
 export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/say-hello`, method: 'get', signal });
+  customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
 
 export const getHelloWorldApiV1SayHelloGetQueryKey = () => [`/api/v1/say-hello`];
 
@@ -1859,7 +1871,7 @@ export const useListWebhooksApiV1AlertWebhooksGet = <
 export const createWebhookApiV1AlertWebhooksPost = (
   createWebhookApiV1AlertWebhooksPostBody: CreateWebhookApiV1AlertWebhooksPostBody
 ) =>
-  customInstance<unknown>({
+  customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
     url: `/api/v1/alert-webhooks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -5446,7 +5458,11 @@ export const useCreateInviteApiV1OrganizationInvitePut = <
  * @summary Retrive Organization
  */
 export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/organization`, method: 'get', signal });
+  customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
+    url: `/api/v1/organization`,
+    method: 'get',
+    signal
+  });
 
 export const getRetriveOrganizationApiV1OrganizationGetQueryKey = () => [`/api/v1/organization`];
 

@@ -95,7 +95,7 @@ export const Sidebar = () => {
 
             <Box sx={{ mt: '40px', pl: { xs: '11px', lg: '11px', xl: '14px' } }}>
               {pathsInfo.map((info: PathInfo) => (
-                <SidebarMenuItem key={info.link} onOpenSumMenu={handleOpenAnalysisSubMenu} info={info} width={width} />
+                <SidebarMenuItem key={info.link} onOpenSubMenu={handleOpenAnalysisSubMenu} info={info} width={width} />
               ))}
             </Box>
           </Box>

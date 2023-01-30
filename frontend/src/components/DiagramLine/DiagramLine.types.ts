@@ -15,6 +15,7 @@ declare module 'chart.js' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface PluginOptionsByType<TType extends ChartType> {
     drawAlerts: {
+      alerts: AlertSchema[];
       activeIndex: number;
       changeAlertIndex: SetStateType<number>;
       severity: AlertSeverity;

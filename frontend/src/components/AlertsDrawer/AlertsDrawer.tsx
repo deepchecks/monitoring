@@ -4,7 +4,8 @@ import {
   AlertRuleInfoSchema,
   useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet,
   useGetMonitorApiV1MonitorsMonitorIdGet,
-  SingleCheckRunOptions
+  SingleCheckRunOptions,
+  AlertSchema
 } from 'api/generated';
 
 import { useModels } from 'hooks/useModels';
@@ -18,21 +19,22 @@ import { AlertsDrawerDiagram } from './components/AlertsDrawerDiagram';
 
 interface AlertsDrawerProps extends DrawerProps {
   alertRule: AlertRuleInfoSchema | null;
-  onResolve: () => void;
   onClose: () => void;
+  resolved?: boolean;
 }
 
-const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: AlertsDrawerProps) => {
+const AlertsDrawerComponent = ({ onClose, alertRule, resolved, ...props }: AlertsDrawerProps) => {
   const [alertIndex, setAlertIndex] = useState(0);
+  const [alerts, setAlerts] = useState<AlertSchema[]>([]);
 
   const {
-    data: alerts = [],
+    data: initialAlerts = [],
     isLoading: isAlertsLoading,
     refetch: refetchAlerts,
     isError
   } = useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet(
-    alertRule?.id as number,
-    { resolved: false },
+    alertRule?.id || -1,
+    { resolved: !!resolved },
     {
       query: {
         enabled: false
@@ -41,10 +43,11 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
   );
 
   useEffect(() => {
-    if (alerts.length) {
-      setAlertIndex(alerts.length - 1);
+    if (initialAlerts.length) {
+      setAlerts(initialAlerts);
+      setAlertIndex(initialAlerts.length - 1);
     }
-  }, [alerts]);
+  }, [initialAlerts]);
 
   const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
   const currentModel = useMemo(() => alertRule && getCurrentModel(alertRule.model_id), [alertRule, getCurrentModel]);
@@ -96,8 +99,13 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
     }
   }, [alertRule, refetchAlerts, refetchMonitor]);
 
+  const handleCloseDrawer = () => {
+    setAlerts([]);
+    onClose();
+  };
+
   return (
-    <CustomDrawer loading={isLoading} onClose={onClose} {...props}>
+    <CustomDrawer loading={isLoading} onClose={handleCloseDrawer} {...props}>
       {isError || !alertRule ? (
         <Typography variant="h4" padding="40px">
           Something went wrong...
@@ -110,13 +118,14 @@ const AlertsDrawerComponent = ({ onClose, onResolve, alertRule, ...props }: Aler
               changeAlertIndex={setAlertIndex}
               alert={alert}
               alerts={alerts}
+              setAlerts={setAlerts}
               alertRule={alertRule}
               onClose={onClose}
-              onResolve={onResolve}
               monitor={monitor}
               modelVersionId={modelVersionId}
               singleCheckRunOptions={singleCheckRunOptions}
               currentModel={currentModel}
+              resolved={resolved}
             />
           </StyledStickyHeader>
           <AlertsDrawerDiagram

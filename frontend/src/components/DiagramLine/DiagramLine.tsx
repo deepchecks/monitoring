@@ -99,7 +99,7 @@ function DiagramLine({
     const currentPlugins: Plugin[] = [drawCircle];
 
     if (alerts.length) {
-      currentPlugins.push(drawAlerts(alerts));
+      currentPlugins.push(drawAlerts);
     }
 
     if (alert_rules.length) {
@@ -171,6 +171,7 @@ function DiagramLine({
     },
     plugins: {
       drawAlerts: {
+        alerts,
         activeIndex: alertIndex,
         changeAlertIndex,
         severity: alertSeverity

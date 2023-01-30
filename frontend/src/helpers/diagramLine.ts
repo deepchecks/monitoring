@@ -39,7 +39,7 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
 
     ctx.save();
-    
+
     // const severity_color = lightPaletteOptions.severity[alert_rule.alert_severity || ('medium' as AlertSeverity)];
     const severity_color = '#17003E';
     ctx.lineWidth = 2;
@@ -51,17 +51,23 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     ctx.closePath();
     ctx.shadowColor = severity_color;
     ctx.shadowBlur = 10;
-    if (alert_rule.condition.operator == OperatorsEnum.greater_than_equals || alert_rule.condition.operator == OperatorsEnum.greater_than) {
+    if (
+      alert_rule.condition.operator == OperatorsEnum.greater_than_equals ||
+      alert_rule.condition.operator == OperatorsEnum.greater_than
+    ) {
       ctx.shadowOffsetY = -6;
-    } else if (alert_rule.condition.operator == OperatorsEnum.less_than_equals || alert_rule.condition.operator == OperatorsEnum.less_than) {
+    } else if (
+      alert_rule.condition.operator == OperatorsEnum.less_than_equals ||
+      alert_rule.condition.operator == OperatorsEnum.less_than
+    ) {
       ctx.shadowOffsetY = 6;
     }
     ctx.stroke();
 
     ctx.strokeStyle = severity_color;
-    ctx.shadowColor = "unset";
+    ctx.shadowColor = 'unset';
     ctx.shadowOffsetY = 0;
-    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetX = 0;
     ctx.shadowBlur = 0;
 
     ctx.beginPath();
@@ -69,7 +75,7 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     ctx.lineTo(right, yOffset);
     ctx.setLineDash([6, 6]);
     ctx.stroke();
-  
+
     ctx.restore();
   }
 });
@@ -118,28 +124,32 @@ function getMetaData(alerts: AlertSchema[], alertIndex: number, chart: ChartOpti
     dataset => `${Object.keys(Object.values(failedValues)[0])[0]}|${Object.keys(failedValues)[0]}` === dataset.label
   );
 
-  return datasetIndex != -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
+  return datasetIndex !== -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
 }
 
-export const drawAlerts = (alerts: AlertSchema[]) => ({
+export const drawAlerts = {
   id: 'drawAlerts',
   afterEvent(
     chart: ChartOption,
     args: { event: ChartEvent; replay: boolean; changed?: boolean; cancelable: false; inChartArea: boolean },
-    { activeIndex, changeAlertIndex }: { activeIndex: number; changeAlertIndex: Dispatch<SetStateAction<number>> }
+    {
+      alerts,
+      activeIndex,
+      changeAlertIndex
+    }: { alerts: AlertSchema[]; activeIndex: number; changeAlertIndex: Dispatch<SetStateAction<number>> }
   ) {
     const {
       chartArea: { bottom, top }
     } = chart;
 
-    const click = args.event.type;
+    const eventType = args.event.type;
     const xCursor = args.event.x;
     const yCursor = args.event.y;
     const deviation = 4;
 
     const angle = Math.PI / 180;
 
-    if (click === 'click' && xCursor && yCursor && chart?.data?.labels && chart?.data?.labels.length) {
+    if (eventType === 'click' && xCursor && yCursor && chart?.data?.labels && chart?.data?.labels.length) {
       chart?.data?.labels.forEach((label, index) => {
         alerts.forEach(({ end_time }, alertIndex) => {
           if (+label === dayjs(end_time).valueOf() && alertIndex !== activeIndex) {
@@ -177,7 +187,11 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       });
     }
   },
-  beforeDatasetsDraw(chart: ChartOption, args: { cancelable: true }, { activeIndex }: { activeIndex: number }) {
+  beforeDatasetsDraw(
+    chart: ChartOption,
+    args: { cancelable: true },
+    { alerts, activeIndex }: { alerts: AlertSchema[]; activeIndex: number }
+  ) {
     const {
       ctx,
       chartArea: { bottom, top }
@@ -206,4 +220,4 @@ export const drawAlerts = (alerts: AlertSchema[]) => ({
       });
     }
   }
-});
+};

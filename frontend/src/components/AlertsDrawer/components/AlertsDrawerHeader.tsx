@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useMemo, useEffect } from 'react';
+import React, { Dispatch, SetStateAction, useMemo, useEffect, useState, useContext } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
@@ -7,8 +7,12 @@ import {
   AlertSchema,
   ModelManagmentSchema,
   MonitorSchema,
-  SingleCheckRunOptions
+  SingleCheckRunOptions,
+  useResolveAlertApiV1AlertsAlertIdResolvePost,
+  useGetAlertRulesApiV1AlertRulesGet,
+  useReactivateAlertApiV1AlertsAlertIdReactivatePost
 } from 'api/generated';
+import { GlobalStateContext } from 'context';
 
 import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, Tooltip } from '@mui/material';
 
@@ -17,11 +21,12 @@ import { ShareButton } from 'components/ShareButton';
 import { AlertsBadge } from './AlertBadge';
 import { DiagramAlertCountWidget } from 'components/DiagramAlertCountWidget';
 import { FullLengthTooltip } from 'components/DiagramTutorialTooltip';
+import { AlertsSnackbar } from 'components/AlertsSnackbar';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
 
-import { CloseIcon, Check } from 'assets/icon/icon';
+import { CloseIcon, Check, Sync } from 'assets/icon/icon';
 import { colors } from 'theme/colors';
 
 dayjs.extend(localizedFormat);
@@ -29,16 +34,22 @@ dayjs.extend(localizedFormat);
 interface AlertsDrawerHeaderProps {
   alertIndex: number;
   alerts: AlertSchema[];
+  setAlerts: Dispatch<SetStateAction<AlertSchema[]>>;
   alertRule: AlertRuleInfoSchema;
   changeAlertIndex: Dispatch<SetStateAction<number>>;
-  onResolve: () => void;
   onClose: () => void;
   monitor: MonitorSchema | null;
   modelVersionId: number | undefined;
   alert: AlertSchema;
   singleCheckRunOptions: SingleCheckRunOptions;
   currentModel: ModelManagmentSchema | null;
+  resolved?: boolean;
 }
+
+const SNACKBAR_POSITION = {
+  vertical: 'bottom',
+  horizontal: 'right'
+} as const;
 
 const MAX_CHARACTERS = 27;
 const LABEL_VALUE_TITLE_MAX_CHARACTERS = 25;
@@ -48,18 +59,43 @@ let INFO_TITLES = DEFAULT_INFO_TITLES;
 
 export const AlertsDrawerHeader = ({
   alerts,
+  setAlerts,
   alertRule,
   alertIndex,
   changeAlertIndex,
-  onResolve,
   onClose,
   monitor,
   modelVersionId,
   alert,
   singleCheckRunOptions,
-  currentModel
+  currentModel,
+  resolved
 }: AlertsDrawerHeaderProps) => {
   const theme = useTheme();
+  const { alertFilters } = useContext(GlobalStateContext);
+  const {
+    mutateAsync: resolve,
+    isError: resolveAlertError,
+    isLoading: resolveAlertIsLoading
+  } = useResolveAlertApiV1AlertsAlertIdResolvePost();
+  const {
+    mutateAsync: reactivate,
+    isError: reactivateAlertError,
+    isLoading: reactivateAlertIsLoading
+  } = useReactivateAlertApiV1AlertsAlertIdReactivatePost();
+  const { refetch: refetchAlertRule } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
+
+  const [isNotification, setIsNotification] = useState(false);
+
+  const handleAlert = async () => {
+    const alertId = alert.id;
+    resolved ? await reactivate({ alertId }) : await resolve({ alertId });
+
+    await refetchAlertRule();
+    changeAlertIndex(prevIndex => (prevIndex === 0 ? 0 : prevIndex - 1));
+    setAlerts(prevAlerts => [...prevAlerts].filter(a => a.id !== alertId));
+    setIsNotification(true);
+  };
 
   const alertColorsMap = useMemo(
     () => ({
@@ -76,16 +112,18 @@ export const AlertsDrawerHeader = ({
 
   useEffect(() => {
     const valuesArr = [];
-    const failedValues = alerts[alertIndex]?.failed_values;
+    const failedValues = alert?.failed_values;
 
-    for (const failedValue in failedValues) {
-      valuesArr.push(...Object.keys(alerts[alertIndex].failed_values[failedValue]));
+    if (alert?.failed_values) {
+      for (const failedValue in failedValues) {
+        valuesArr.push(...Object.keys(alert.failed_values[failedValue]));
+      }
+
+      const infoTitle = [...new Set(valuesArr)].join(', ');
+
+      INFO_TITLES = [infoTitle, ...DEFAULT_INFO_TITLES];
     }
-
-    const infoTitle = [...new Set(valuesArr)].join(', ');
-
-    INFO_TITLES = [infoTitle, ...DEFAULT_INFO_TITLES];
-  }, [alertIndex, alerts, condition.operator, condition.value]);
+  }, [alert?.failed_values]);
 
   const info: string[] = useMemo(
     () => [
@@ -108,6 +146,9 @@ export const AlertsDrawerHeader = ({
   );
 
   const monitorName = monitor?.name || 'N/A';
+  const isError = resolveAlertError || reactivateAlertError;
+  const isLoading = resolveAlertIsLoading || reactivateAlertIsLoading;
+  const iconOpacity = isLoading ? 0.3 : 1;
 
   return (
     <>
@@ -126,10 +167,10 @@ export const AlertsDrawerHeader = ({
               <ShareButton onlyIcon />
             </Box>
           </Tooltip>
-          <Tooltip title="Resolve" placement="top">
+          <Tooltip title={resolved ? 'Reactivate' : 'Resolve'} placement="top">
             <Box>
-              <StyledButtonResolve variant="text" disabled={alert?.resolved} onClick={onResolve}>
-                <Check opacity={alert?.resolved ? 0.3 : 1} />
+              <StyledButtonResolve variant="text" disabled={isLoading} onClick={handleAlert}>
+                {resolved ? <Sync opacity={iconOpacity} /> : <Check opacity={iconOpacity} />}
               </StyledButtonResolve>
             </Box>
           </Tooltip>
@@ -165,6 +206,15 @@ export const AlertsDrawerHeader = ({
           ))}
         </StyledFlexWrapper>
       </StyledBottomSection>
+      <AlertsSnackbar
+        anchorOrigin={SNACKBAR_POSITION}
+        open={isNotification}
+        autoHideDuration={6000}
+        onClose={() => setIsNotification(false)}
+        severity={isError ? 'error' : 'success'}
+      >
+        <Box>{isError ? 'Something went wrong' : 'Success'}</Box>
+      </AlertsSnackbar>
     </>
   );
 };

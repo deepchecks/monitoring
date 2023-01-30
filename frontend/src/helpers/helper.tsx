@@ -2,14 +2,14 @@ import React, { FC, Suspense, lazy } from 'react';
 
 import { AnalysisProvider } from 'context/analysis-context';
 
-const AlertRules = lazy(()=>import('pages/AlertRules'));
-const AlertsPage = lazy(()=>import('pages/AlertsPage'));
-const DashboardPage = lazy(()=>import('pages/DashboardPage'));
-const IntegrationsPage = lazy(()=>import('pages/IntegrationsPage'));
-const AnalysisPage = lazy(()=>import('pages/AnalysisPage'));
-const NotificationsPage = lazy(()=>import('pages/NotificationsPage'));
-const ModelsPage = lazy(()=>import('pages/ModelsPage'));
-const APIKeyPage = lazy(()=>import('pages/APIKeyPage'));
+const AlertRules = lazy(() => import('pages/AlertRules'));
+const AlertsPage = lazy(() => import('pages/AlertsPage'));
+const DashboardPage = lazy(() => import('pages/DashboardPage'));
+const IntegrationsPage = lazy(() => import('pages/IntegrationsPage'));
+const AnalysisPage = lazy(() => import('pages/AnalysisPage'));
+const NotificationsPage = lazy(() => import('pages/NotificationsPage'));
+const ModelsPage = lazy(() => import('pages/ModelsPage'));
+const APIKeyPage = lazy(() => import('pages/APIKeyPage'));
 
 import {
   Alarm,
@@ -48,10 +48,28 @@ export const pathsInfo: PathInfo[] = [
   {
     title: 'Alerts',
     link: '/alerts',
-    element: () => <Suspense fallback={<div>Loading...</div>}><AlertsPage/></Suspense>,
+    element: () => (
+      <Suspense fallback={<div>Loading...</div>}>
+        <AlertsPage />
+      </Suspense>
+    ),
     Icon: Alarm,
     IconHover: AlarmHover,
-    ActiveIcon: AlarmActive
+    ActiveIcon: AlarmActive,
+    children: [
+      {
+        title: 'Resolved Alerts',
+        link: '/resolved-alerts',
+        Icon: null,
+        element: () => (
+          <Suspense fallback={<div>Loading...</div>}>
+            <AlertsPage resolved />
+          </Suspense>
+        ),
+        IconHover: null,
+        ActiveIcon: null
+      }
+    ]
   },
   {
     title: 'Analysis',

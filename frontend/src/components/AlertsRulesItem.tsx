@@ -11,13 +11,14 @@ import { AlertRuleInfoSchema, AlertSeverity, useGetMonitorApiV1MonitorsMonitorId
 import processFrequency from '../helpers/utils/processFrequency';
 import { OperatorsEnumMap } from '../helpers/conditionOperator';
 
-import { alpha, Box, Divider, IconButton, styled, Tooltip, Typography } from '@mui/material';
+import { alpha, Box, Divider, IconButton, styled, Tooltip, Typography, Stack } from '@mui/material';
 
 import { Loader } from './Loader';
-
-import { Checkmark, PencilDrawing } from '../assets/icon/icon';
-import { AlertRuleDialogProvider } from './AlertRuleDialog/AlertRuleDialogContext';
 import { AlertRuleDialog } from './AlertRuleDialog/AlertRuleDialog';
+
+import { AlertRuleDialogProvider } from './AlertRuleDialog/AlertRuleDialogContext';
+
+import { Checkmark, PencilDrawing, Sync } from '../assets/icon/icon';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -27,13 +28,14 @@ export type AlertRuleItemProps = {
   alertRule: AlertRuleInfoSchema;
   onResolveOpen: () => void;
   onDrawerOpen: () => void;
+  resolved?: boolean;
 };
 
 const titles = ['Model', 'Check', 'Condition', 'Check Frequency'];
 
-export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }: AlertRuleItemProps) => {
-  const [hover, setHover] = useState<boolean>(false);
-  const [editedAlertRule, setEditedAlertRule] = useState<number | undefined>(undefined);
+export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, resolved }: AlertRuleItemProps) => {
+  const [hover, setHover] = useState(false);
+  const [editedAlertRule, setEditedAlertRule] = useState<number | undefined>();
 
   const { modelsMap } = useModels();
 
@@ -51,17 +53,15 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   ];
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
-    mixpanel.track('Click on the Resolve All');
-
     event.stopPropagation();
+    mixpanel.track('Click on the Resolve All');
     return onResolveOpen();
   };
 
   const handleEditRuleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     mixpanel.track('Click on Edit Rule button');
-    setEditedAlertRule(alertRule.id);
-    return;
+    return setEditedAlertRule(alertRule.id);
   };
 
   const onEditRuleClose = () => {
@@ -82,12 +82,12 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
   return (
     <>
       <StyledMainWrapper onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} onClick={handleOpenDrawer}>
-        <StyledCriticality criticality={alert_severity}>
+        <StyledCriticality criticality={alert_severity} resolved={resolved}>
           <Typography variant="h4">{alerts_count}</Typography>
           <Typography variant="subtitle2">{alert_severity}</Typography>
         </StyledCriticality>
         <StyledDescription>
-          <Tooltip title={monitor?.name ? monitor?.name : 'undefined'}>
+          <Tooltip title={monitor?.name ? monitor?.name : 'N/A'}>
             <StyledMonitorName noWrap={true} variant="h5">
               {monitor?.name}
             </StyledMonitorName>
@@ -107,29 +107,29 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen }:
         </StyledInfo>
         {hover && (
           <StyledBlur>
-            <Box onClick={handleEditRuleClick}>
+            <Stack onClick={handleEditRuleClick}>
               <StyledIconButton>
                 <PencilDrawing width={30} height={30} />
               </StyledIconButton>
               <StyledCaption variant="caption">Edit Rule</StyledCaption>
-            </Box>
-            <Box onClick={handleOpenResolve}>
+            </Stack>
+            <Stack onClick={handleOpenResolve}>
               <StyledIconButton>
-                <Checkmark width={30} height={30} />
+                {resolved ? <Sync width={30} height={30} /> : <Checkmark width={30} height={30} />}
               </StyledIconButton>
-              <StyledCaption variant="caption">Resolve all</StyledCaption>
-            </Box>
+              <StyledCaption variant="caption">{resolved ? 'Reactivate' : 'Resolve all'}</StyledCaption>
+            </Stack>
           </StyledBlur>
         )}
       </StyledMainWrapper>
       <AlertRuleDialogProvider>
         <AlertRuleDialog
-          open={editedAlertRule !== undefined}
+          open={!!editedAlertRule}
           onClose={onEditRuleClose}
           startingStep={2}
           alertRuleId={editedAlertRule}
         />
-      </AlertRuleDialogProvider>{' '}
+      </AlertRuleDialogProvider>
     </>
   );
 });
@@ -156,29 +156,32 @@ const StyledMainWrapper = styled(Box)(({ theme }) => ({
 
 type StyledCriticalityProps = {
   criticality?: AlertSeverity;
+  resolved?: boolean;
 };
+
+const RESOLVED_ALERT_COLOR_OPACITY = 0.7;
 
 const StyledCriticality = styled(Box, {
   shouldForwardProp: prop => prop !== 'criticality'
-})<StyledCriticalityProps>(({ criticality = 'low', theme }) => {
+})<StyledCriticalityProps>(({ criticality = 'low', resolved, theme }) => {
   const getColor = (filed: AlertSeverity): string => {
     if (filed === 'low') {
-      return theme.palette.error.contrastText;
+      return alpha(theme.palette.error.contrastText, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'mid') {
-      return theme.palette.error.light;
+      return alpha(theme.palette.error.light, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'high') {
-      return theme.palette.error.dark;
+      return alpha(theme.palette.error.dark, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'critical') {
-      return theme.palette.error.main;
+      return alpha(theme.palette.error.main, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
-    return theme.palette.error.main;
+    return alpha(theme.palette.error.main, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
   };
 
   return {

@@ -4,29 +4,31 @@ import mixpanel from 'mixpanel-browser';
 
 import { Box, styled, Typography } from '@mui/material';
 
-import { colors } from '../../../../theme/colors';
-import { PathInfo } from '../../../../helpers/helper';
+import { colors } from 'theme/colors';
+import { PathInfo } from 'helpers/helper';
 
 import { Arrow } from 'assets/icon/icon';
 
 interface SidebarMenuItemProps {
   width: number;
   info: PathInfo;
-  onOpenSumMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onOpenSubMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps) {
+function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps) {
   const location = useLocation();
 
   const [hover, setHover] = useState(false);
-  const [isConfigurationOpen, setIsConfigurationOpen] = useState(false);
+  const [submenuIsOpen, setSubmenuIsOpen] = useState(false);
 
   const { ActiveIcon, Icon, IconHover, link } = info;
   const active = location?.pathname.startsWith(link);
   const activeHover = hover && !active;
 
-  const openOrCloseConfiguration = () => {
-    setIsConfigurationOpen(prevState => !prevState);
+  const toggleSubMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+    setSubmenuIsOpen(prevState => !prevState);
   };
 
   const onMouseOver = () => {
@@ -92,7 +94,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
       </Box>
       {info.title === 'Analysis' && (
         <Box
-          onClick={onOpenSumMenu}
+          onClick={onOpenSubMenu}
           sx={theme => ({
             width: 16,
             height: 16,
@@ -110,8 +112,9 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
           <Arrow />
         </Box>
       )}
-      {info.title === 'Configuration' && (
+      {(info.title === 'Configuration' || info.title === 'Alerts') && (
         <Box
+          onClick={info.title === 'Alerts' ? toggleSubMenu : () => 1}
           sx={theme => ({
             width: 16,
             height: 16,
@@ -124,11 +127,11 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
             backgroundColor: activeHover ? colors.primary.violet[300] : theme.palette.primary.contrastText
           })}
         >
-          {isConfigurationOpen ? (
+          {submenuIsOpen ? (
             <Box
               sx={theme => ({
                 height: 2,
-                width: 7,
+                width: 8,
                 background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black
               })}
             />
@@ -136,14 +139,14 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
             <Box
               sx={theme => ({
                 height: 2,
-                width: 7,
+                width: 8,
                 background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black,
                 position: 'relative',
                 ':after': {
                   content: "''",
                   display: 'block',
                   width: 2,
-                  height: 7,
+                  height: 8,
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
@@ -178,7 +181,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
           }}
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}
-          onClick={openOrCloseConfiguration}
+          onClick={toggleSubMenu}
         >
           {MenuItem}
         </Box>
@@ -196,7 +199,7 @@ function SidebarMenuItemComponent({ info, onOpenSumMenu }: SidebarMenuItemProps)
         </StyledLinkWrapper>
       )}
 
-      {isConfigurationOpen &&
+      {submenuIsOpen &&
         info.children?.map(childInfo => (
           <StyledLinkWrapper
             to={childInfo.link}
