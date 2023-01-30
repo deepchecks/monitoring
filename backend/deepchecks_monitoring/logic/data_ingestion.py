@@ -126,25 +126,33 @@ async def log_data(
     for sample in not_logged_samples:
         errors.append(dict(sample=str(sample), sample_id=sample[SAMPLE_ID_COL], error="Duplicate index on log",
                            model_version_id=model_version.id))
-    # Save errors
-    await save_failures(session, errors, logger)
+
+    if len(logged_samples) == 0:
+        # If did not log any samples, only needs to save the errors. If did log samples, will save the errors later
+        # after updating the model
+        await save_failures(session, errors, logger)
+        return []
 
     # Update statistics and timestamps, running only on samples which were logged successfully
-    if len(logged_samples) == 0:
-        return []
     logged_timestamps = []
-
     updated_statistics = copy.deepcopy(model_version.statistics)
     for sample in logged_samples:
         update_statistics_from_sample(updated_statistics, sample)
         logged_timestamps.append(sample[SAMPLE_TS_COL])
 
-    if model_version.statistics != updated_statistics:
-        await model_version.update_statistics(updated_statistics, session)
     max_ts = max(logged_timestamps)
     min_ts = min(logged_timestamps)
-    await model_version.update_timestamps(min_ts, max_ts, session)
+    # IMPORTANT: In order to prevent deadlock in case of model deletion, we need to update the model first, because
+    # we must acquire the locks on the model and model versions in the same order (model first, then model version).
     await model_version.model.update_timestamps(min_ts, max_ts, session)
+
+    # Save errors only after updating model, since it also acquires a lock on the model version
+    await save_failures(session, errors, logger)
+
+    # Update model version statistics and timestamps
+    if model_version.statistics != updated_statistics:
+        await model_version.update_statistics(updated_statistics, session)
+    await model_version.update_timestamps(min_ts, max_ts, session)
     return logged_timestamps
 
 
