@@ -54,6 +54,7 @@ export interface DiagramLineProps {
   alertsWidget?: AlertsWidget;
   tooltipCallbacks?: _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>>;
   analysis?: boolean;
+  previousPeriodLabels?: number[];
   comparison?: boolean;
   onPointCLick?: (datasetName: string, versionName: string, timeLabel: number) => void;
 }

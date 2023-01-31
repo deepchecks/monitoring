@@ -21,8 +21,12 @@ function getTime(timeLabel: string, monitorFreq: number) {
 }
 
 export const defaultTooltipCallbacks: (
-  frequency: number
-) => _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = frequency => ({
+  frequency: number,
+  previousPeriodLabels: number[]
+) => _DeepPartialObject<TooltipCallbacks<'line', TooltipModel<'line'>, TooltipItem<'line'>>> = (
+  frequency,
+  previousPeriodLabels
+) => ({
   labelColor: (context: TooltipItem<'line'>) => ({
     backgroundColor: context.dataset?.borderColor as string,
     borderColor: context.dataset?.borderColor as string
@@ -33,16 +37,16 @@ export const defaultTooltipCallbacks: (
   },
   label: (context: TooltipItem<'line'>) => {
     const textArray = context?.dataset?.label?.split('|');
-    return `${getTime(context.label, frequency)} ${textArray && textArray[1] ? '| Version: ' + textArray[1] : ''}`;
+
+    if (previousPeriodLabels.length && context.dataset.label?.endsWith('|previous_period')) {
+      return `${getTime(new Date(previousPeriodLabels[context.dataIndex]).toISOString(), frequency)} ${
+        textArray && textArray[1] ? '| Version: ' + textArray[1] : ''
+      }`;
+    } else {
+      return `${getTime(context.label, frequency)} ${textArray && textArray[1] ? '| Version: ' + textArray[1] : ''}`;
+    }
   }
 });
-
-export const initAlertsWidget: AlertsWidget = {
-  alertSeverity: 'low',
-  alertIndex: 0,
-  alerts: [],
-  changeAlertIndex: () => 1
-};
 
 Tooltip.positioners.myCustomPositioner = function (elements, eventPosition) {
   const nearest = Tooltip.positioners.nearest.call(this, elements, eventPosition);
@@ -57,4 +61,11 @@ Tooltip.positioners.myCustomPositioner = function (elements, eventPosition) {
     };
   }
   return false;
+};
+
+export const initAlertsWidget: AlertsWidget = {
+  alertSeverity: 'low',
+  alertIndex: 0,
+  alerts: [],
+  changeAlertIndex: () => 1
 };

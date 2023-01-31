@@ -46,11 +46,12 @@ function AnalysisItemComponent({
     if (check.id) {
       refetchInfo();
     }
-  }, [check.id, refetchInfo])
+  }, [check.id, refetchInfo]);
 
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
-  const [data, setData] = useState<typeof chartData>(chartData);
+  const [data, setData] = useState(chartData);
+  const [perviousPeriodLabels, setPerviousPeriodLabels] = useState<number[]>([]);
 
   // {} as FilteredValues should be fixed !!!
   const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
@@ -120,6 +121,8 @@ function AnalysisItemComponent({
         const previousPeriodResponse = await runCheck(runCheckPreviousPeriodBody);
         const parsedPreviousPeriodChartData = parseDataForLineChart(previousPeriodResponse, true);
 
+        setPerviousPeriodLabels(parsedPreviousPeriodChartData.labels);
+
         const paired: IDataset[] = [];
         const single: IDataset[] = [];
 
@@ -157,6 +160,8 @@ function AnalysisItemComponent({
     }
 
     getData();
+
+    return () => setPerviousPeriodLabels([]);
   }, [
     additionalKwargs,
     isMostWorstActive,
@@ -204,6 +209,7 @@ function AnalysisItemComponent({
             onPointCLick={handlePointClick}
             timeFreq={frequency}
             analysis
+            previousPeriodLabels={perviousPeriodLabels}
             height={{ lg: graphHeight - 104, xl: graphHeight }}
           />
         </AnalysisChartItemWithFilters>
@@ -220,6 +226,7 @@ function AnalysisItemComponent({
             comparison={isComparisonModeOn}
             onPointCLick={handlePointClick}
             analysis
+            previousPeriodLabels={perviousPeriodLabels}
             height={{ lg: graphHeight - 104, xl: graphHeight }}
           />
         </AnalysisChartItem>

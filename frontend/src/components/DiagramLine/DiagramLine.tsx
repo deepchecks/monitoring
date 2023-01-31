@@ -34,8 +34,9 @@ function DiagramLine({
   timeFreq = 86400,
   isLoading,
   alertsWidget = initAlertsWidget,
-  tooltipCallbacks = defaultTooltipCallbacks(timeFreq),
-  analysis,
+  tooltipCallbacks,
+  analysis = false,
+  previousPeriodLabels = [],
   comparison,
   onPointCLick
 }: PropsWithChildren<DiagramLineProps>) {
@@ -44,7 +45,7 @@ function DiagramLine({
   const [legends, setLegends] = useState<LegendItem[]>([]);
 
   const { alerts, alertIndex, alertSeverity, changeAlertIndex } = alertsWidget;
-  const _tCallbacks = { ...defaultTooltipCallbacks(timeFreq), ...tooltipCallbacks };
+  const _tCallbacks = { ...defaultTooltipCallbacks(timeFreq, previousPeriodLabels), ...tooltipCallbacks };
 
   const chartRef = useRef<Chart<'line', number[], string>>();
   const range = useRef({ min: 0, max: 0 });
