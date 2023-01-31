@@ -76,7 +76,7 @@ def create_application(
         from deepchecks_monitoring.utils.other import sentry_send_hook  # pylint: disable=import-outside-toplevel
         sentry_sdk.init(
             dsn=settings.sentry_dsn,
-            traces_sample_rate=0.6,
+            traces_sampler=traces_sampler,
             environment=settings.sentry_env,
             before_send_transaction=sentry_send_hook
         )
@@ -160,3 +160,13 @@ def create_application(
     app.add_middleware(NoCacheMiddleware)
 
     return app
+
+
+def traces_sampler(sampling_context):
+    """Return trace sampling rate for given context."""
+    source = sampling_context["transaction_context"]["source"]
+    # Filtering out say-hello messages completely
+    if source == "route" and sampling_context["asgi_scope"]["path"] == "/api/v1/say-hello":
+        return 0
+    # For everything else return default rate
+    return 0.1

@@ -135,7 +135,7 @@ def execute_worker():
             import sentry_sdk  # pylint: disable=import-outside-toplevel
             sentry_sdk.init(
                 dsn=settings.sentry_dsn,
-                traces_sample_rate=1.0,
+                traces_sample_rate=0.1,
                 environment=settings.sentry_env,
             )
             telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
