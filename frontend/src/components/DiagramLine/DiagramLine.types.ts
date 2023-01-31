@@ -20,6 +20,9 @@ declare module 'chart.js' {
       changeAlertIndex: SetStateType<number>;
       severity: AlertSeverity;
     };
+    drawActiveBarEffect: {
+      activeIndex: number;
+    };
   }
   /* eslint-disable @typescript-eslint/no-unused-vars */
   interface Chart<

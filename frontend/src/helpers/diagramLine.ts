@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { AlertRuleSchema, AlertSchema, OperatorsEnum } from 'api/generated';
 
 import { colors } from 'theme/colors';
+import { ACTIVE_BAR_BG_COLOR } from '../components/SegmentsDrillDown/SegmentsDrillDown.helpers';
 
 export const zoomOptions: ZoomPluginOptions = {
   limits: {
@@ -126,6 +127,31 @@ function getMetaData(alerts: AlertSchema[], alertIndex: number, chart: ChartOpti
 
   return datasetIndex !== -1 ? chart.getDatasetMeta(datasetIndex) : chart.getDatasetMeta(0);
 }
+
+export const drawActiveBarEffect = {
+  id: 'drawActiveBarEffect',
+  beforeDatasetsDraw(
+    chart: Chart<'bar', number[], string>,
+    args: { cancelable: true },
+    { activeIndex }: { activeIndex: number }
+  ) {
+    const {
+      ctx,
+      chartArea: { top, bottom }
+    } = chart;
+
+    const barElement: any = chart.getDatasetMeta(0).data[activeIndex];
+    const { x, width } = barElement;
+    const left = x - width * 1.2;
+    const right = x + width * 1.2;
+
+    ctx.fillStyle = ACTIVE_BAR_BG_COLOR;
+    ctx.beginPath();
+    ctx.rect(left, top, right - left, bottom - top);
+    ctx.closePath();
+    ctx.fill();
+  }
+};
 
 export const drawAlerts = {
   id: 'drawAlerts',

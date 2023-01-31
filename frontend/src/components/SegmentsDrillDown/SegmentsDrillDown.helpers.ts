@@ -5,10 +5,16 @@ import { alpha } from '@mui/material';
 export const TITLE = 'Check Per Segment';
 export const ACTIVE_BAR_COLOR = alpha('#00CCFF', 1);
 export const BAR_COLOR = alpha(ACTIVE_BAR_COLOR, 0.3);
+export const ACTIVE_BAR_BG_COLOR = alpha(ACTIVE_BAR_COLOR, 0.1);
 
 export const barsColorArray = (length: number): string[] => Array(length).fill(BAR_COLOR);
 
-export const chartOptions = (data: number[], yTitle?: string, xTitle?: string): ChartOptions<'bar'> => {
+export const chartOptions = (
+  data: number[],
+  yTitle?: string,
+  xTitle?: string,
+  activeIndex?: number
+): ChartOptions<'bar'> => {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const stepSize = Math.max(...data.map(d => Math.abs(d))) / 3;
@@ -25,6 +31,9 @@ export const chartOptions = (data: number[], yTitle?: string, xTitle?: string): 
     plugins: {
       legend: {
         display: false
+      },
+      drawActiveBarEffect: {
+        activeIndex
       }
     },
     scales: {
@@ -54,17 +63,17 @@ export const chartOptions = (data: number[], yTitle?: string, xTitle?: string): 
   };
 };
 
-export const chartData = (labels: string[], data: number[]): ChartData<'bar'> => ({
+export const chartData = (labels: string[], data: number[], barsColors: string[]): ChartData<'bar'> => ({
   labels,
   datasets: [
     {
       label: TITLE,
       data,
       borderColor: 'transparent',
-      backgroundColor: barsColorArray(data.length),
+      backgroundColor: barsColors,
       hoverBackgroundColor: ACTIVE_BAR_COLOR,
       barPercentage: 0.5,
-      minBarLength: 10  // Used to show also values of 0.
+      minBarLength: 10 // Used to show also values of 0.
     }
   ]
 });

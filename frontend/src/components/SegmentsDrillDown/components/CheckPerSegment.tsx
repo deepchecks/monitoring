@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, InteractionItem } from 'chart.js';
 import { Bar, getElementAtEvent } from 'react-chartjs-2';
 
@@ -8,7 +8,7 @@ import { GraphLayout } from './GraphLayout';
 
 import { TITLE, ACTIVE_BAR_COLOR, chartData, chartOptions, barsColorArray } from '../SegmentsDrillDown.helpers';
 import { SetStateType } from 'helpers/types';
-
+import { drawActiveBarEffect } from 'helpers/diagramLine';
 
 interface CheckPerSegmentProps {
   dataSet: number[];
@@ -32,6 +32,7 @@ export const CheckPerSegment = ({
   xTitle
 }: CheckPerSegmentProps) => {
   const chartRef = useRef<ChartJS<'bar'>>();
+  const [barsColors, setBarsColors] = useState(barsColorArray(dataSet.length));
 
   const setActiveBar = useCallback(
     (element: InteractionItem[]) => {
@@ -61,12 +62,11 @@ export const CheckPerSegment = ({
 
     if (!chart) return;
 
-    chart.data.datasets[0].backgroundColor = [
+    setBarsColors([
       ...barsColorArray(activeBarIndex),
       ACTIVE_BAR_COLOR,
-      ...barsColorArray(dataSet.length - activeBarIndex)
-    ];
-    chart.update();
+      ...barsColorArray(dataSet.length - activeBarIndex - 1)
+    ]);
   }, [activeBarIndex, dataSet]);
 
   return (
@@ -74,9 +74,10 @@ export const CheckPerSegment = ({
       <Box sx={{ height: '344px' }}>
         <Bar
           ref={chartRef}
-          options={chartOptions(dataSet, yTitle, xTitle)}
-          data={chartData(labels, dataSet)}
+          options={chartOptions(dataSet, yTitle, xTitle, activeBarIndex)}
+          data={chartData(labels, dataSet, barsColors)}
           onClick={handleBarClick}
+          plugins={[drawActiveBarEffect]}
         />
       </Box>
     </GraphLayout>
