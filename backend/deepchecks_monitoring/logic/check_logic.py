@@ -205,7 +205,7 @@ def set_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
     for kwarg_type, kwarg_val in model_config.check_conf.items():
         kwarg_type = CheckParameterTypeEnum(kwarg_type)
         kwarg_name = kwarg_type.to_kwarg_name()
-        if kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
+        if kwarg_val is not None and kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
             kwarg_val = kwarg_val[0]
         if kwarg_type != CheckParameterTypeEnum.PROPERTY:
             check_conf["params"][kwarg_name] = kwarg_val
@@ -288,11 +288,11 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
 def get_feature_property_info(latest_version: ModelVersion, dp_check: BaseCheck) -> MonitorCheckConf:
     """Get check info for checks that are instance of ReduceFeatureMixin or ReducePropertyMixin."""
     feat_names = [] if latest_version is None else list(latest_version.get_top_features(1000)[0])
-    aggs_names = ["mean", "max", "none"]
+    aggs_names = ["mean", "max"]
     # FeatureMixin has additional aggregation options
     if isinstance(dp_check, ReduceFeatureMixin):
         aggs_names += ["weighted", "l2_weighted"]
-    aggs = [{"name": agg_name, "is_agg": agg_name != "none"} for agg_name in aggs_names]
+    aggs = [{"name": agg_name, "is_agg": True} for agg_name in aggs_names]
     check_parameter_conf = {"check_conf": [{"type": CheckParameterTypeEnum.AGGREGATION_METHOD.value,
                                             "values": aggs}], "res_conf": None}
     if isinstance(dp_check, ReduceFeatureMixin):

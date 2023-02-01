@@ -23,7 +23,7 @@ const SingleSelect = ({
 }: AnalysisItemSelectProps) => {
   const paramValue = useMemo(() => checkParams[TypeMap[type]], [checkParams, type]);
 
-  const [value, setValue] = useState((paramValue !== 'none' && paramValue) || '');
+  const [value, setValue] = useState(paramValue || '');
 
   const handleSetSelectValue = (value: string) => {
     setIsMostWorstActive(value ? false : !isMostWorstActive);
@@ -55,18 +55,15 @@ const SingleSelect = ({
   const handleClearSelectedValue = () => {
     setValue('');
 
-    const newFilteredValues = { ...filteredValues };
+    const newFilteredValues: any = { ...filteredValues };
 
-    newFilteredValues[type] = ['none'];
+    newFilteredValues[type] = null;
     setFilteredValues(newFilteredValues);
   };
 
   useEffect(() => {
     const val = filteredValues[type];
-
-    if (val) {
-      val[0] !== 'none' ? setValue(val[0]) : setValue('');
-    }
+    val === null ? setValue('') : val && setValue(val[0]);
   }, [filteredValues, type]);
 
   return (

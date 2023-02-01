@@ -53,22 +53,23 @@ export const SelectCheckComponent = ({
   }, [checkInfo, setCheckInfoDisabled]);
 
   function getSelectedVal(conf: MonitorTypeConf) {
-    let selectedVal = filteredValues?.[conf.type as AnalysisItemFilterTypes]?.[0]
-    if (!selectedVal) {
+    const filteredVals = filteredValues?.[conf.type as AnalysisItemFilterTypes]
+    let selectedVal = filteredVals === null ? null :filteredVals?.[0]
+    if (selectedVal === undefined) {
       const checkParamVal = monitor?.check.config?.params[TypeMap[conf.type as AnalysisItemFilterTypes]]
       if (checkParamVal) {
         selectedVal = typeof(checkParamVal) == 'string' ? checkParamVal : Object.values(checkParamVal)[0] as string;
       }
     }
-    return getNameFromData(selectedVal, conf.values) || ''
+    return selectedVal && getNameFromData(selectedVal, conf.values) || ''
   }
 
   function clearFilteredValue(type: string) {
     const newFilteredValues: any = { ...filteredValues };
-    newFilteredValues[type as AnalysisItemFilterTypes] = undefined;
+    newFilteredValues[type as AnalysisItemFilterTypes] = null;
     setFilteredValues(newFilteredValues);
     setResConf(undefined);
-    setIsAgg(true);
+    setIsAgg(type != AnalysisItemFilterTypes.AGGREGATION);
   }
 
   function isDisabled(conf: MonitorTypeConf) {

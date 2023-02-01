@@ -93,12 +93,12 @@ const MultiSelect = ({
       return;
     }
 
-    const newFilteredValues = { ...filteredValues };
+    const newFilteredValues: any = { ...filteredValues };
 
     newFilteredValues[type] = multiValue;
 
     if (!newFilteredValues[AnalysisItemFilterTypes.AGGREGATION]) {
-      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] = ['none'];
+      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] = null;
     }
 
     setFilteredValues(newFilteredValues);
