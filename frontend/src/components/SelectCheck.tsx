@@ -3,7 +3,8 @@ import React, { useMemo, useEffect, useState, memo } from 'react';
 import {
   useGetChecksApiV1ModelsModelIdChecksGet,
   MonitorSchema,
-  useGetCheckInfoApiV1ChecksCheckIdInfoGet
+  useGetCheckInfoApiV1ChecksCheckIdInfoGet,
+  MonitorTypeConf
 } from 'api/generated';
 
 import { Stack, MenuItem } from '@mui/material';
@@ -13,17 +14,18 @@ import { MarkedSelect } from 'components/MarkedSelect';
 import { Subcategory } from 'components/Subcategory';
 
 import { SetStateType, SelectValues } from 'helpers/types';
+import { AnalysisItemFilterTypes, FilteredValues, TypeMap } from './AnalysisItem/AnalysisItem.types';
+import { getNameFromData } from './AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
 
 interface SelectCheckProps {
   monitor: MonitorSchema | null;
   model: SelectValues;
   check: SelectValues;
   setCheck: SetStateType<SelectValues>;
-  checkInfoFirstLevel: SelectValues;
-  setCheckInfoFirstLevel: SetStateType<SelectValues>;
-  checkInfoSecondLevel: SelectValues;
-  setCheckInfoSecondLevel: SetStateType<SelectValues>;
-  setIsResConf: SetStateType<boolean | undefined>;
+  filteredValues: FilteredValues;
+  setFilteredValues: SetStateType<FilteredValues>;
+  resConf: string | undefined;
+  setResConf: SetStateType<string | undefined>;
   disabled: boolean;
 }
 
@@ -32,51 +34,46 @@ export const SelectCheckComponent = ({
   model = 0,
   check,
   setCheck,
-  checkInfoFirstLevel,
-  setCheckInfoFirstLevel,
-  checkInfoSecondLevel,
-  setCheckInfoSecondLevel,
-  setIsResConf,
+  filteredValues,
+  setFilteredValues,
+  resConf,
+  setResConf,
   disabled
 }: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor && !!monitor.check.id ? monitor.check.id : check ? +check : 0);
 
   const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id })), [checksList]);
-  const firstLevelValues = useMemo(
-    () => (checkInfo?.check_conf && checkInfo?.check_conf[0].values?.map(v => v.name)) || [],
-    [checkInfo?.check_conf]
-  );
-  const secondLevelValues = useMemo(
-    () =>
-      (checkInfo?.res_conf
-        ? checkInfo?.res_conf.values?.map(v => v.name)
-        : checkInfo?.check_conf?.[1].values?.map(v => v.name)) || [],
-    [checkInfo?.check_conf, checkInfo?.res_conf]
-  );
 
   const [checkInfoDisabled, setCheckInfoDisabled] = useState(false);
   const [isAgg, setIsAgg] = useState(true);
 
   useEffect(() => {
-    setCheckInfoFirstLevel(
-      monitor?.additional_kwargs?.check_conf?.['aggregation method']?.[0] ||
-        monitor?.additional_kwargs?.check_conf?.['scorer']?.[0] ||
-        ''
-    );
-    setCheckInfoSecondLevel(
-      monitor?.additional_kwargs?.res_conf?.[0] || monitor?.additional_kwargs?.check_conf?.['feature']?.[0] || ''
-    );
-  }, [setCheckInfoFirstLevel, setCheckInfoSecondLevel, monitor]);
-
-  useEffect(() => {
     setCheckInfoDisabled(!checkInfo?.check_conf && !checkInfo?.res_conf);
-    setIsResConf(!!checkInfo?.res_conf);
-  }, [checkInfo, setIsResConf]);
+  }, [checkInfo, setCheckInfoDisabled]);
 
-  useEffect(() => {
-    setIsAgg(!!checkInfo?.check_conf?.[0].values?.find(v => v.name === checkInfoFirstLevel)?.is_agg);
-  }, [checkInfo?.check_conf, checkInfoFirstLevel]);
+  function getSelectedVal(conf: MonitorTypeConf) {
+    let selectedVal = filteredValues?.[conf.type as AnalysisItemFilterTypes]?.[0]
+    if (!selectedVal) {
+      const checkParamVal = monitor?.check.config?.params[TypeMap[conf.type as AnalysisItemFilterTypes]]
+      if (checkParamVal) {
+        selectedVal = typeof(checkParamVal) == 'string' ? checkParamVal : Object.values(checkParamVal)[0] as string;
+      }
+    }
+    return getNameFromData(selectedVal, conf.values) || ''
+  }
+
+  function clearFilteredValue(type: string) {
+    const newFilteredValues: any = { ...filteredValues };
+    newFilteredValues[type as AnalysisItemFilterTypes] = undefined;
+    setFilteredValues(newFilteredValues);
+    setResConf(undefined);
+    setIsAgg(true);
+  }
+
+  function isDisabled(conf: MonitorTypeConf) {
+    return conf.is_agg_shown != null && conf.is_agg_shown != isAgg
+  }
 
   return (
     <Stack>
@@ -90,38 +87,68 @@ export const SelectCheckComponent = ({
       />
       {check && !checkInfoDisabled && (
         <>
-          <Subcategory>
-            <MarkedSelect
-              label={checkInfo?.check_conf?.[0].type}
-              value={checkInfoFirstLevel}
-              onChange={e => {
-                setCheckInfoFirstLevel(e.target.value as string);
-                setCheckInfoSecondLevel('');
-              }}
-              clearValue={() => {
-                setCheckInfoFirstLevel('');
-                setCheckInfoSecondLevel('');
-              }}
-              fullWidth
-            >
-              {firstLevelValues.map((value, index) => (
-                <MenuItem key={value + index} value={value}>
-                  {value}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-          </Subcategory>
-          <Subcategory>
-            <ControlledMarkedSelect
-              label={checkInfo?.res_conf ? checkInfo?.res_conf.type : checkInfo?.check_conf?.[1].type}
-              values={secondLevelValues}
-              value={checkInfoSecondLevel}
-              setValue={setCheckInfoSecondLevel}
-              clearValue={() => setCheckInfoSecondLevel('')}
-              fullWidth
-              disabled={isAgg || !checkInfoFirstLevel}
-            />
-          </Subcategory>
+          {checkInfo?.check_conf?.map((conf, confIndex) => (
+            <Subcategory key={confIndex}>
+              <MarkedSelect
+                label={conf.type}
+                value={isDisabled(conf) ? '' : getSelectedVal(conf)}
+                onChange={e => {
+                  const value = e.target.value as string;
+                  const newFilteredValues: any = { ...filteredValues };
+                  newFilteredValues[conf.type as AnalysisItemFilterTypes] = value ? [value] : null;
+                  if (value) {
+                    const confVal = conf.values?.filter(({ name }) => name == value)?.[0]
+                    const isSetAgg = confVal && confVal.is_agg != null
+                    if (isSetAgg) {
+                      setIsAgg( !!confVal.is_agg);
+                      confVal.is_agg && setResConf(undefined);
+                    }
+                  }
+                  setFilteredValues(newFilteredValues);
+                }}
+                clearValue={() => clearFilteredValue(conf.type)}
+                fullWidth
+                disabled={(() => {
+                  const isDisabledVal = isDisabled(conf);
+                  if (filteredValues?.[conf.type as AnalysisItemFilterTypes]?.[0] && isDisabledVal) {
+                    clearFilteredValue(conf.type);
+                  }
+                  return isDisabledVal;
+                })()}
+              >
+                {conf.values?.map((value, index) => (
+                  <MenuItem key={value.name + index + confIndex} value={value.name}>
+                    {value.name}
+                  </MenuItem>
+                ))}
+              </MarkedSelect>
+            </Subcategory>
+          ))
+          }
+          {checkInfo?.res_conf &&
+            <Subcategory>
+              <MarkedSelect
+                label={checkInfo?.res_conf.type}
+                value={resConf || undefined}
+                onChange={e => setResConf(e.target.value as string || undefined)}
+                clearValue={() => setResConf(undefined)}
+                fullWidth
+                disabled={(() => {
+                  if (isAgg) {
+                    setResConf(undefined);
+                  }
+                  return isAgg;
+                })()
+                }
+              >
+                {checkInfo?.res_conf.values?.map((value, index) => (
+                  <MenuItem key={value.name + index} value={value.name}>
+                    {value.name}
+                  </MenuItem>
+                ))}
+              </MarkedSelect>
+            </Subcategory>
+          }
         </>
       )}
     </Stack>

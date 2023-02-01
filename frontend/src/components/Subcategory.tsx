@@ -1,14 +1,14 @@
 import React, { ReactNode } from 'react';
 
-import { Box, styled } from '@mui/material';
+import { Box, BoxProps, styled } from '@mui/material';
 
-interface SubcategoryProps {
+interface SubcategoryProps extends BoxProps{
   children: ReactNode;
 }
 
-export function Subcategory({ children }: SubcategoryProps) {
+export function Subcategory({ children, sx, component, ref }: SubcategoryProps) {
   return (
-    <Box display="flex">
+    <Box display="flex" sx={sx} component={component} ref={ref}>
       <StyledSubCategory />
       <StyledChildrenContainer>{children}</StyledChildrenContainer>
     </Box>

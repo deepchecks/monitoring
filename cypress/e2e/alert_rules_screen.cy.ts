@@ -207,7 +207,7 @@ describe("Alert Rules Screen", () => {
             }
             if (monitorData.filterBy !== undefined) {
                 cy.wrap(form)
-                    .contains("label", "Filter by Column")
+                    .contains("label", "Filter by segment")
                     .next()
                     .click();
                 cy.get("div[role=presentation]#menu- li")

@@ -37,10 +37,12 @@ const MenuProps: Partial<IMenuProps> = {
   }
 };
 
-function getNameFromData(name: string, data: MonitorValueConf[] | undefined) {
-  const indexFromData = data?.map(val => val.name.toLowerCase()).lastIndexOf(name.replaceAll('_', ' ').toLowerCase());
-  if (indexFromData && indexFromData != -1) {
-    return data?.at(indexFromData)?.name;
+export function getNameFromData(name: string | undefined, data: MonitorValueConf[] | undefined) {
+  if (name != undefined) {
+    const indexFromData = data?.map(val => val.name.replaceAll('_', ' ').toLowerCase()).lastIndexOf(name.replaceAll('_', ' ').toLowerCase());
+    if (indexFromData != undefined && indexFromData != -1) {
+      return data?.at(indexFromData)?.name;
+    }
   }
   return undefined;
 }

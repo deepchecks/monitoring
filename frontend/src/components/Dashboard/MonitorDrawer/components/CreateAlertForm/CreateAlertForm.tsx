@@ -82,7 +82,7 @@ export function CreateAlertForm({ monitor, onClose, runCheckLookBack, setMonitor
   }, [monitor, updateGraph]);
 
   return (
-    <Stack justifyContent="space-between" width={{ xs: '147px', xl: '308px' }}>
+    <Stack justifyContent="space-between" width={{ xs: '200px', xl: '360px' }}>
       <Box sx={{height: 'calc(100% - 100px)', overflowY: 'auto'}}>
         <Stack spacing="15px">
           {monitorInfo(monitor, currentModel.name).map(({ label, value }) => (

@@ -3,14 +3,16 @@ import { SelectCheck } from 'components/SelectCheck';
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { MarkedSelect } from 'components/MarkedSelect';
 import useModels from 'hooks/useModels';
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SelectValues } from 'helpers/types';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
 
-import { timeWindow, buildKwargs, buildFilters } from 'helpers/monitorFields.helpers';
+import { timeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectColumn } from 'components/SelectColumn';
+import { FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
+import { MonitorCheckConfSchema } from 'api/generated';
 
 export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStepBaseProps) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
@@ -18,21 +20,44 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || '');
 
   const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
-  const [checkInfoFirstLevel, setCheckInfoFirstLevel] = useState<SelectValues>('');
-  const [checkInfoSecondLevel, setCheckInfoSecondLevel] = useState<SelectValues>('');
-  const [isResConf, setIsResConf] = useState<boolean | undefined>();
+
+  const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
+  const [resConf, setResConf] = useState<string | undefined>(undefined);
 
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
 
   const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
-  const [category, setCategory] = useState<SelectValues>('');
-  const [numericValue, setNumericValue] = useState<number[] | undefined>();
+  const [category, setCategory] = useState<SelectValues>(() => {
+    const filters = monitor?.data_filters?.filters;
+    if (filters?.length) {
+      return filters.length > 1
+        ? undefined
+        : filters[0].value as string;
+    }});
+  const [numericValue, setNumericValue] = useState<number[] | undefined>(() => {
+    const filters = monitor?.data_filters?.filters;
+    if (filters?.length) {
+      return filters.length > 1
+        ? [filters[0].value as number, filters[1].value as number]
+        : undefined;
+    }});
 
   const clearAggregationWindow = useCallback(() => {
     setAggregationWindow('');
     setFrequency('');
   }, []);
+
+  const additionalKwargs = useMemo(() => {
+    if (Object.keys(filteredValues).length) {
+      const additionalKwargs = {
+        check_conf: filteredValues,
+        res_conf: resConf ? [resConf] : undefined
+      };
+
+      return additionalKwargs;
+    }
+  }, [filteredValues, resConf]);
 
   const finish = () => {
     if (model && check && frequency && aggregationWindow) {
@@ -41,7 +66,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       monitor.check.id = +check;
       monitor.frequency = +frequency;
       monitor.aggregation_window = +aggregationWindow;
-      monitor.additional_kwargs = buildKwargs(isResConf, checkInfoFirstLevel, checkInfoSecondLevel) || undefined;
+      monitor.additional_kwargs = additionalKwargs as MonitorCheckConfSchema || undefined,
       monitor.data_filters = buildFilters(column, category, numericValue) || undefined;
       setMonitor(monitor);
       console.log(monitor);
@@ -78,11 +103,10 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
             model={model}
             check={check}
             setCheck={setCheck}
-            checkInfoFirstLevel={checkInfoFirstLevel}
-            setCheckInfoFirstLevel={setCheckInfoFirstLevel}
-            checkInfoSecondLevel={checkInfoSecondLevel}
-            setCheckInfoSecondLevel={setCheckInfoSecondLevel}
-            setIsResConf={setIsResConf}
+            filteredValues={filteredValues}
+            setFilteredValues={setFilteredValues}
+            resConf={resConf}
+            setResConf={setResConf}
             disabled={!!alertRule.id || !model}
           />
           <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">

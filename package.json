@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "cypress": "^10.7.0"
+    "cypress": "^10.11.0"
   },
   "dependencies": {
     "typescript": "^4.8.3"

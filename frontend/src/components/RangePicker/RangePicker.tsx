@@ -56,11 +56,10 @@ export const RangePicker = ({
     const input = +currentInputValue;
     const nonValidInput = input < min || input > max || isNaN(input);
 
-    setInputValues(prevState => {
-      const currentValues = [...prevState];
-      currentValues[index] = currentInputValue;
-      return currentValues;
-    });
+    const currentValues = [...inputValues];
+    currentValues[index] = currentInputValue;
+
+    setInputValues(currentValues);
 
     if (index === 1 && (input <= numericValue[0] || nonValidInput)) {
       setMaxInputError(true);
@@ -68,11 +67,8 @@ export const RangePicker = ({
       setMinInputError(true);
     } else {
       resetErrors();
+      setSliderValues([+currentValues[0], +currentValues[1]]);
     }
-  };
-
-  const handleApplyInputValues = () => {
-    setSliderValues([+inputValues[0], +inputValues[1]]);
   };
 
   return (
@@ -100,7 +96,6 @@ export const RangePicker = ({
               shrink: true
             }}
           />
-          {' - '}
           <StyledTextField
             name="max"
             value={inputValues[1]}
@@ -112,9 +107,6 @@ export const RangePicker = ({
               shrink: true
             }}
           />
-          <Button disabled={minInputError || maxInputError} onClick={handleApplyInputValues}>
-            Ok
-          </Button>
         </StyledInputsWrapper>
       </Stack>
     </Box>

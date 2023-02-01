@@ -25,13 +25,17 @@ import { DiagramLineProps } from './DiagramLine.types';
 
 Chart.register(...registerables, zoomPlugin);
 
+function handleTimeUnit(freq: number) {
+  return freq < 86400 ? 'hour' : 'day'
+}
+
 function DiagramLine({
   data,
   children,
   height,
   alert_rules = [],
-  minTimeUnit = 'day',
   timeFreq = 86400,
+  minTimeUnit = handleTimeUnit(timeFreq),
   isLoading,
   alertsWidget = initAlertsWidget,
   tooltipCallbacks,
@@ -232,18 +236,18 @@ function DiagramLine({
       },
       y: analysis
         ? {
-            ticks: {
-              stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
-              align: 'end'
-            },
-            grid: { drawBorder: false, drawTicks: false },
-            min: range.current.min,
-            max: range.current.max === 0 ? 1 : range.current.max * 1.2
-          }
+          ticks: {
+            stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
+            align: 'end'
+          },
+          grid: { drawBorder: false, drawTicks: false },
+          min: range.current.min,
+          max: range.current.max === 0 ? 1 : range.current.max * 1.2
+        }
         : {
-            min: range.current.min,
-            max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
-          }
+          min: range.current.min,
+          max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
+        }
     }
   };
 

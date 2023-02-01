@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, memo } from 'react';
+import React, { useMemo, memo } from 'react';
 
 import { MonitorSchema, useGetModelColumnsApiV1ModelsModelIdColumnsGet } from 'api/generated';
 
@@ -36,16 +36,6 @@ const SelectColumnComponent = ({
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
   const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
 
-  useEffect(() => {
-    const filters = monitor?.data_filters?.filters;
-
-    if (filters?.length) {
-      filters.length > 1
-        ? setNumericValue([filters[0].value as number, filters[1].value as number])
-        : setCategory(filters[0].value as string);
-    }
-  }, [monitor?.data_filters?.filters, setCategory, setNumericValue]);
-
   const resetSubcategory = () => {
     setCategory('');
     setNumericValue(undefined);
@@ -68,7 +58,7 @@ const SelectColumnComponent = ({
       {columns && !isLoading && (
         <>
           <MarkedSelect
-            label={monitor ? 'Filter by Column' : 'Segment'}
+            label={monitor ? 'Filter by segment' : 'Segment'}
             value={column}
             onChange={handleColumnChange}
             clearValue={() => {
@@ -83,7 +73,7 @@ const SelectColumnComponent = ({
               </MenuItem>
             ))}
           </MarkedSelect>
-          {column && 
+          {column &&
             (columns[column].type === ColumnType.categorical ? (
               <Subcategory>
                 <ControlledMarkedSelect
@@ -97,6 +87,7 @@ const SelectColumnComponent = ({
             ) : (
               numericValue && (
                 <RangePicker
+                  sx={{ width: '90%', margin: 'auto' }}
                   min={columns[column].stats.min || 0}
                   max={columns[column].stats.max || 0}
                   numericValue={numericValue}
