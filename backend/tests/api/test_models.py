@@ -14,7 +14,7 @@ import pytest
 import sqlalchemy as sa
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, has_key
+from hamcrest import assert_that, has_key, has_entries
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
@@ -280,16 +280,16 @@ async def test_connected_models_api_missing_all_version_data(
 
     # Assert
     assert response.status_code == 200
-    assert response.json() == [{
+    assert_that(response.json()[0], has_entries({
         "id": 1,
-        "latest_update": None,
         "name": "Classification Model",
         "description": "test",
         "task_type": "multiclass",
         "n_of_alerts": 0,
         "n_of_pending_rows": 0,
         "n_of_updating_versions": 0
-    }]
+    }))
+
 
 def test_get_models_ingestion_no_models(client: TestClient):
     # Act

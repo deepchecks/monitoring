@@ -83,9 +83,7 @@ class ModelVersion(Base):
     classes = Column(ARRAY(String), nullable=True)
     label_map = Column(JSONB, nullable=True)
     # Indicates the last time the data of this version was updated.
-    last_update_time = Column(DateTime(timezone=True), nullable=True)
-    # Indicates the timestamp for which statistics was calculated for.
-    last_statistics_update = Column(DateTime(timezone=True), nullable=True)
+    last_update_time = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     # Indicates the latest messages offset that was ingested
     ingestion_offset = Column(BigInteger, default=0)
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
