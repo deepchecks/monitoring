@@ -162,7 +162,7 @@ export function AnalysisPage() {
   return (
     <>
       <Box>
-        <Stack spacing="42px" mb="35px">
+        <Stack spacing="32px" mb="15px">
           <AnalysisHeader changeModel={setModelId} models={models} model={currentModel} />
           <AnalysisFilters model={currentModel} />
         </Stack>

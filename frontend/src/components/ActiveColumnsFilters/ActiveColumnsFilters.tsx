@@ -134,7 +134,7 @@ export function ActiveColumnsFilters() {
   return (
     <Stack
       direction="row"
-      height="70px"
+      height="50px"
       spacing="10px"
       ref={containerRef}
       sx={{ overflow: 'hidden', position: 'relative' }}
