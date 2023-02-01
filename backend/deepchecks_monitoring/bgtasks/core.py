@@ -454,41 +454,39 @@ class TasksBroker:
 
     async def next_task(self, session: AsyncSession) -> t.AsyncIterator[Task]:
         """Pop next task from the queue or wait for it."""
-        async with anyio.create_task_group() as g:
-            g.start_soon(self.listen_for_notifications)
-            queues_names: t.Optional[t.Sequence["QueueName"]] = None
-            actors_names: t.Optional[t.Sequence["ExecutorName"]] = None
-            organizations_schemas: t.Optional[t.Sequence[str]] = None
+        queues_names: t.Optional[t.Sequence["QueueName"]] = None
+        actors_names: t.Optional[t.Sequence["ExecutorName"]] = None
+        organizations_schemas: t.Optional[t.Sequence[str]] = None
 
-            while True:
-                if not organizations_schemas:
-                    q = sa.select(models.Organization.schema_name).order_by(sa.func.random())
-                    organizations_schemas = (await session.scalars(q)).all()
+        while True:
+            if not organizations_schemas:
+                q = sa.select(models.Organization.schema_name).order_by(sa.func.random())
+                organizations_schemas = (await session.scalars(q)).all()
 
-                if not organizations_schemas:
-                    self.logger.warning("No organizations to schedule tasks")
-                else:
-                    for schema in organizations_schemas:
-                        async for it in self._next_task(
-                            session=session,
-                            queue_names=queues_names,
-                            actor_names=actors_names,
-                            execution_options={"schema_translate_map": {None: schema}}
+            if not organizations_schemas:
+                self.logger.warning("No organizations to schedule tasks")
+            else:
+                for schema in organizations_schemas:
+                    async for it in self._next_task(
+                        session=session,
+                        queue_names=queues_names,
+                        actor_names=actors_names,
+                        execution_options={"schema_translate_map": {None: schema}}
+                    ):
+                        async with database.attach_schema_switcher(
+                            session,
+                            schema_search_path=[schema, "public"]
                         ):
-                            async with database.attach_schema_switcher(
-                                session,
-                                schema_search_path=[schema, "public"]
-                            ):
-                                yield it
+                            yield it
 
-                await session.rollback()  # closing any active transaction
+            await session.rollback()  # closing any active transaction
 
-                if notifications := await self.wait_for_notifications():
-                    queues_names, actors_names, organizations_schemas = self._process_notifications(notifications)
-                else:
-                    queues_names = None
-                    actors_names = None
-                    organizations_schemas = None
+            if notifications := await self.wait_for_notifications():
+                queues_names, actors_names, organizations_schemas = self._process_notifications(notifications)
+            else:
+                queues_names = None
+                actors_names = None
+                organizations_schemas = None
 
     def _process_notifications(self, notifications):
         queues = set()
@@ -767,16 +765,18 @@ class Worker:
 
     async def start(self):
         """Start processing tasks."""
-        async with self.create_database_session() as session:
-            async for task in self.tasks_broker.next_task(session):
-                try:
-                    await self.execute_task(session, task)
-                except StaleDataError:
-                    self.logger.warning(
-                        "Task execution failed. "
-                        "Task record was removed from the database during exeuction"
-                    )
-                    await session.rollback()
+        async with anyio.create_task_group() as g:
+            g.start_soon(self.tasks_broker.listen_for_notifications)
+            async with self.create_database_session() as session:
+                async for task in self.tasks_broker.next_task(session):
+                    try:
+                        await self.execute_task(session, task)
+                    except StaleDataError:
+                        self.logger.warning(
+                            "Task execution failed. "
+                            "Task record was removed from the database during exeuction"
+                        )
+                        await session.rollback()
 
     async def execute_task(self, session: AsyncSession, task: Task):
         """Execute task logic."""

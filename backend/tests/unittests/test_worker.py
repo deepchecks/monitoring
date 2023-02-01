@@ -523,6 +523,7 @@ class TestTasksBroker:
         async with AsyncSession(async_engine) as s:
             async with anyio.create_task_group() as g:
                 task = None
+                g.start_soon(broker.listen_for_notifications)
                 g.start_soon(loop, s)
                 await asyncio.sleep(1)  # give broker time to start listening for notifications
 
