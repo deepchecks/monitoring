@@ -57,12 +57,12 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
         # Delete all invalidation timestamps by range. if timestamps were updated while running,
         # then their score should be larger than max_score, and they won't be deleted
         pipe.zremrangebyscore(invalidation_set_key, min=0, max=max_score)
+        # Then takes count of the set, to know whether to reschedule the task
         pipe.zcount(invalidation_set_key, 0, -1)
         # Get result of count
-        count_left_ts = pipe.execute()[2]
-
+        timestamps_count = pipe.execute()[-1]
         # If more timestamps, insert task to make sure it runs again
-        if count_left_ts:
+        if timestamps_count > 0:
             await insert_model_version_cache_invalidation_task(org_id, model_version_id, session)
 
 
