@@ -142,7 +142,6 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
             </MarkedSelect>
           </TooltipInputWrapper>
           <SelectColumn
-            monitor={monitor}
             model={model}
             column={column}
             setColumn={setColumn}

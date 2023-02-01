@@ -7,8 +7,8 @@ export const timeWindow = [
   { label: '1 hour', value: timeValues.hour },
   { label: '1 day', value: timeValues.day },
   { label: '1 week', value: timeValues.week },
-  { label: '1 month', value: timeValues.mouth },
-  { label: '3 months', value: timeValues.threeMouths }
+  { label: '1 month', value: timeValues.month },
+  { label: '3 months', value: timeValues.threeMonths }
 ];
 
 export const buildKwargs = (

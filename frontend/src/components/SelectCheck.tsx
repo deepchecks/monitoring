@@ -91,7 +91,7 @@ export const SelectCheckComponent = ({
           {checkInfo?.check_conf?.map((conf, confIndex) => (
             <Subcategory key={confIndex}>
               <MarkedSelect
-                label={conf.type}
+                label={`Select ${conf.type}`}
                 value={isDisabled(conf) ? '' : getSelectedVal(conf)}
                 onChange={e => {
                   const value = e.target.value as string;
@@ -129,7 +129,7 @@ export const SelectCheckComponent = ({
           {checkInfo?.res_conf &&
             <Subcategory>
               <MarkedSelect
-                label={checkInfo?.res_conf.type}
+                label={`Select ${checkInfo?.res_conf.type}`}
                 value={resConf || undefined}
                 onChange={e => setResConf(e.target.value as string || undefined)}
                 clearValue={() => setResConf(undefined)}

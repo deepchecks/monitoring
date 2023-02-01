@@ -99,7 +99,7 @@ export const frequencyData = [
   { label: 'Hourly', value: timeValues.hour },
   { label: 'Daily', value: timeValues.day },
   { label: 'Weekly', value: timeValues.week },
-  { label: 'Monthly', value: timeValues.mouth }
+  { label: 'Monthly', value: timeValues.month }
 ];
 
 export const AnalysisContext = createContext<AnalysisContextValues>({

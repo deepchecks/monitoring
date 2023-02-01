@@ -25,6 +25,7 @@ import { SelectValues, SetStateType } from 'helpers/types';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
 import { FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
 import { Subcategory } from 'components/Subcategory';
+import { timeValues } from 'helpers/time';
 
 interface MonitorFormProps extends StackProps {
   monitor: MonitorSchema | null;
@@ -33,8 +34,7 @@ interface MonitorFormProps extends StackProps {
   handleCloseDrawer: () => void;
   isDrawerOpen: boolean;
   refetchMonitors(): void;
-  frequency: SelectValues;
-  setFrequency: SetStateType<SelectValues>;
+  setGraphFrequency: SetStateType<SelectValues>;
 }
 
 export const MonitorForm = ({
@@ -44,10 +44,12 @@ export const MonitorForm = ({
   handleCloseDrawer,
   isDrawerOpen,
   refetchMonitors,
-  frequency,
-  setFrequency,
+  setGraphFrequency,
   ...props
 }: MonitorFormProps) => {
+  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || timeValues.week);
+  useEffect(() => {setGraphFrequency(frequency)}, [frequency, setGraphFrequency]);
+
   const [monitorName, setMonitorName] = useState(monitor?.name || '');
   const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || '');
 
@@ -59,7 +61,7 @@ export const MonitorForm = ({
   const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 
   const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
-  const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || '');
+  const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || timeValues.month);
 
   const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
   const [category, setCategory] = useState<SelectValues>(() => {
@@ -257,7 +259,6 @@ export const MonitorForm = ({
         />
         <StyledDivider />
         <Column
-          monitor={monitor}
           model={model}
           column={column}
           setColumn={setColumn}
@@ -267,7 +268,6 @@ export const MonitorForm = ({
           setNumericValue={setNumericValue}
         />
         <StyledDivider />
-
         <TooltipInputWrapper title="The frequency of sampling the monitor data">
           <MarkedSelect
             label="Frequency"
@@ -321,6 +321,7 @@ export const MonitorForm = ({
               sx={{ display: 'flex' }}
               onClick={() => {
                 setAdvanced(false);
+                setAggregationWindow(frequency);
               }}
             >
               Reset to default

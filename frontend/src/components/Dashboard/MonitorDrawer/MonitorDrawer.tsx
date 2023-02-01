@@ -20,6 +20,7 @@ import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { DrawerNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
 import { SelectValues } from 'helpers/types';
+import { timeValues } from 'helpers/time';
 
 interface MonitorDrawerProps extends DrawerProps {
   monitor: MonitorSchema | null;
@@ -71,7 +72,7 @@ export const MonitorDrawer = ({
     closeDrawer();
   };
 
-  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
+  const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
 
   return (
     <CustomDrawer open={open} onClose={handleOnCloseDrawer} padding="40px 40px 0 40px" {...props}>
@@ -92,11 +93,10 @@ export const MonitorDrawer = ({
             handleCloseDrawer={closeDrawer}
             runCheckLookBack={handleGraphLookBack}
             isDrawerOpen={!!open}
-            frequency={frequency}
-            setFrequency={setFrequency}
+            setGraphFrequency={setGraphFrequency}
           />
         )}
-        <GraphView graphData={graphData} isLoading={isRunCheckLoading} timeFreq={frequency && +frequency || monitor?.frequency} />
+        <GraphView graphData={graphData} isLoading={isRunCheckLoading} timeFreq={graphFrequency && +graphFrequency || monitor?.frequency} />
       </Stack>
     </CustomDrawer>
   );
