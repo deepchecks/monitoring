@@ -166,7 +166,7 @@ def traces_sampler(sampling_context):
     """Return trace sampling rate for given context."""
     source = sampling_context["transaction_context"]["source"]
     # Filtering out say-hello messages completely
-    if source == "route" and sampling_context["asgi_scope"]["path"] == "/api/v1/say-hello":
+    if source == "route" and sampling_context["asgi_scope"].get("path") == "/api/v1/say-hello":
         return 0
     # For everything else return default rate
     return 0.1
