@@ -4,6 +4,7 @@ import { ColumnStatistics } from 'api/generated';
 import { AnalysisContext } from 'context/analysis-context';
 
 import { alpha, Box, Button, Slider, Stack, styled, TextField } from '@mui/material';
+import { RangePicker } from 'components/RangePicker/RangePicker';
 
 interface NumericFilterProps {
   data: ColumnStatistics;
@@ -27,7 +28,8 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
   const minValue = typeof data.min === 'number' ? (data.min === data.max ? -data.min : data.min) : -999;
   const maxValue = typeof data.max === 'number' ? data.max : 999;
 
-  const [values, setValues] = useState<(number | '')[]>(() => {
+
+  const [numericValue, setNumericValue] = useState<number[] | undefined>(() => {
     const filter = filters[column];
 
     if (filter && typeof filter[0] === 'number' && typeof filter[1] === 'number') {
@@ -36,103 +38,22 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
 
     const step = setStep(data);
     return [minValue + step * 4, maxValue - step * 4];
-  });
-
-  const handleValuesChange = (event: Event, newValue: number | number[], activeThumb: number) => {
-    if (!Array.isArray(newValue) || typeof values[0] !== 'number' || typeof values[1] !== 'number') {
-      return;
-    }
-
-    if (activeThumb === 0) {
-      setValues([Math.min(newValue[0], values[1] - setStep(data)), values[1]]);
-    } else {
-      setValues([values[0], Math.max(newValue[1], values[0] + setStep(data))]);
-    }
-  };
-
-  const handleInputChange = (index: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
-
-    if ((!index && value < values[1]) || (index && value > values[0])) {
-      setValues(prevState => {
-        const currentValues = [...prevState];
-        currentValues[index] = value === '' ? '' : Number(value);
-        return currentValues;
-      });
-    }
-  };
-
-  const handleInputBlur = (index: number) => () => {
-    if (!index && values[0] < minValue) {
-      setValues(prevState => {
-        const currentValues = [...prevState];
-        currentValues[index] = minValue;
-        return currentValues;
-      });
-
-      return;
-    }
-
-    if (index && values[1] > maxValue) {
-      setValues(prevState => {
-        const currentValues = [...prevState];
-        currentValues[index] = maxValue;
-        return currentValues;
-      });
-    }
-  };
+    });
 
   const onApply = () => {
-    setFilters(prevFilters => ({ ...prevFilters, [column]: [+values[0], +values[1]] }));
+    numericValue && setFilters(prevFilters => ({ ...prevFilters, [column]: [numericValue[0], numericValue[1]] }));
     onClose();
   };
 
   return (
     <Box width={380}>
-      <Box padding="19px 30px 20px">
-        <Slider
-          onChange={handleValuesChange}
-          getAriaLabel={() => 'Minimum distance'}
-          disableSwap
-          value={values.map(value => +value)}
-          marks
-          step={setStep(data)}
-          min={minValue}
-          max={maxValue}
-        />
-        <Stack direction="row" justifyContent="space-between">
-          <StyledNumericField
-            type="number"
-            size="small"
-            onChange={handleInputChange(0)}
-            onBlur={handleInputBlur(0)}
-            inputProps={{
-              min: minValue,
-              max: maxValue
-            }}
-            InputLabelProps={{
-              shrink: true
-            }}
-            value={values[0]}
-          />
-
-          <StyledNumericField
-            type="number"
-            size="small"
-            onChange={handleInputChange(1)}
-            onBlur={handleInputBlur(1)}
-            inputProps={{
-              min: minValue,
-              max: maxValue
-            }}
-            InputLabelProps={{
-              shrink: true
-            }}
-            value={values[1]}
-          />
-        </Stack>
-      </Box>
-
+      {numericValue && (<RangePicker
+        sx={{ width: '90%', margin: '1em auto' }}
+        min={minValue}
+        max={maxValue}
+        numericValue={numericValue}
+        setNumericValue={setNumericValue}
+      />)}
       <Box
         display="flex"
         alignItems="center"

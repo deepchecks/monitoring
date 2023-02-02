@@ -22,6 +22,7 @@ export const RangePicker = ({
   numericValue,
   setNumericValue,
   step = DEFAULT_STEP,
+  sx,
   ...props
 }: RangePickerProps) => {
   const [sliderValues, setSliderValues] = useState([numericValue[0], numericValue[1]]);
@@ -72,7 +73,7 @@ export const RangePicker = ({
   };
 
   return (
-    <Box mt="10px">
+    <Box mt="10px" sx={sx}>
       <StyledLabel>Select Value</StyledLabel>
       <Stack spacing="20px">
         <Slider
