@@ -1,9 +1,12 @@
-import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
-import { logoutApiV1AuthLogoutGet } from 'api/generated';
 import React from 'react';
+import { logoutApiV1AuthLogoutGet } from 'api/generated';
 import { cancelPendingRequests } from 'services/customAxios';
-import useUser from '../../../../hooks/useUser';
-import { StyledMenuItem } from '../../../Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
+
+import useUser from 'hooks/useUser';
+
+import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
+
+import { StyledMenuItem } from 'components/Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
 import { ReportModal } from './components/ReportModal';
 
 export const UserInfo = () => {
@@ -56,7 +59,6 @@ export const UserInfo = () => {
           sx={{
             lineHeight: '140%',
             textTransform: 'ellipsis',
-            fontFamily: 'Roboto',
             fontWeight: 400,
             fontSize: 12,
             marginLeft: '8px',
@@ -81,7 +83,6 @@ export const UserInfo = () => {
         sx={{
           lineHeight: '140%',
           textTransform: 'ellipsis',
-          fontFamily: 'Roboto',
           fontWeight: 400,
           fontSize: 12,
           marginTop: '20px',

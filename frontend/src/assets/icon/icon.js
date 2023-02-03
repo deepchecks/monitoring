@@ -65,6 +65,12 @@ import { ReactComponent as Check } from './check.svg';
 import { ReactComponent as Download } from './download.svg';
 import { ReactComponent as GraphReport } from './graphReport.svg';
 import { ReactComponent as Sync } from './sync.svg';
+import { ReactComponent as Rotate } from './rotate.svg';
+import { ReactComponent as NativePlus } from './nativePlus.svg';
+import { ReactComponent as Bell } from './bell.svg';
+import { ReactComponent as Edit } from './edit.svg';
+import { ReactComponent as Trash } from './trash.svg';
+import { ReactComponent as InfoIconFilled } from './infoIconFilled.svg';
 
 export {
   Alarm,
@@ -133,5 +139,11 @@ export {
   Check,
   Download,
   GraphReport,
-  Sync
+  Sync,
+  Rotate,
+  NativePlus,
+  Bell,
+  Edit,
+  Trash,
+  InfoIconFilled
 };

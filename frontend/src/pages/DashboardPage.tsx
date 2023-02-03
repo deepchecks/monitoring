@@ -2,17 +2,17 @@ import React, { useState, useCallback, useContext } from 'react';
 
 import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
 import useModels from 'hooks/useModels';
+import { GlobalStateContext } from 'context';
 
 import { Grid } from '@mui/material';
 
-import { DashboardHeader } from 'components/Dashboard/DashboardHeader';
 import { ModelList } from 'components/Dashboard/ModelList';
 import { DataIngestion } from 'components/Dashboard/DataIngestion';
+import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader';
 import { MonitorList } from 'components/Dashboard/MonitorList';
 import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { GlobalStateContext } from 'context';
 
 export const DashboardPage = () => {
   const { models, isLoading: isModelsLoading } = useModels();
@@ -50,20 +50,22 @@ export const DashboardPage = () => {
 
   return (
     <>
-      <DashboardHeader onOpen={handleOpenMonitorDrawer} />
       <Grid
         container
-        sx={{ maxWidth: { xs: 'calc(100vw - 196px - 65px)', xl: 'calc(100vw - 237px - 65px)' } }}
+        sx={{
+          padding: '30px 0',
+          maxWidth: { xs: 'calc(100vw - 196px - 65px)', xl: 'calc(100vw - 237px - 65px)' }
+        }}
         spacing={{ xs: 2.5, lg: 2.5, xl: 4 }}
       >
         <Grid item md={4}>
-          <ModelList
-            models={models}
-            isLoading={isModelsLoading}
-          />
+          <ModelList models={models} isLoading={isModelsLoading} />
         </Grid>
         <Grid item md={8}>
           <DataIngestion modelId={currentModelId} />
+        </Grid>
+        <Grid item md={12}>
+          <MonitorListHeader onClick={handleOpenMonitorDrawer} />
         </Grid>
         <Grid item md={12}>
           <MonitorList

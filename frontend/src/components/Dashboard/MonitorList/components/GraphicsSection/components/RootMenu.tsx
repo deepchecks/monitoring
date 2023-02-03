@@ -1,8 +1,10 @@
 import React from 'react';
 
-import { MenuProps, Typography } from '@mui/material';
+import { MenuProps, Typography, styled } from '@mui/material';
 
-import { StyledMenuItem, StyledRootMenu } from './GraphicsSection.style';
+import { StyledMenuItem, StyledRootMenu } from '../GraphicsSection.style';
+
+import { Bell, Edit, Trash } from 'assets/icon/icon';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
@@ -27,13 +29,23 @@ export const RootMenu = ({ handleOpenMonitor, handleOpenDeleteMonitor, ...props 
     {...props}
   >
     <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.CreateAlert)}>
-      <Typography variant="body2">Create alert</Typography>
+      <Bell />
+      <StyledTypography>Create alert</StyledTypography>
     </StyledMenuItem>
     <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.EditMonitor)}>
-      <Typography variant="body2">Edit Monitor</Typography>
+      <Edit />
+      <StyledTypography>Edit Monitor</StyledTypography>
     </StyledMenuItem>
     <StyledMenuItem onClick={handleOpenDeleteMonitor}>
-      <Typography variant="body2">Delete Monitor</Typography>
+      <Trash />
+      <StyledTypography sx={{ color: '#E7696A' }}>Delete Monitor</StyledTypography>
     </StyledMenuItem>
   </StyledRootMenu>
 );
+
+const StyledTypography = styled(Typography)({
+  fontWeight: 500,
+  fontSize: '14px',
+  lineHeight: '18px',
+  marginLeft: '14px'
+});

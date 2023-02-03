@@ -4,16 +4,15 @@ import mixpanel from 'mixpanel-browser';
 import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
 import useModels from 'hooks/useModels';
 
-import { Grid, GridProps } from '@mui/material';
-
 import { Loader } from 'components/Loader';
-import { Monitor } from './components/Monitor';
+import { MonitorsGroup } from './components/MonitorsGroup';
+
 import { DeleteMonitor } from './components/DeleteMonitor';
 
 import { DrawerNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
 
-interface MonitorsListProps extends GridProps {
+interface MonitorsListProps {
   dashboard: DashboardSchema | undefined;
   currentModelId: number | null;
   currentMonitor: MonitorSchema | null;
@@ -32,10 +31,9 @@ export const MonitorList = ({
   handleOpenMonitorDrawer,
   monitorToRefreshId,
   setMonitorToRefreshId,
-  isLoading,
-  ...props
+  isLoading
 }: MonitorsListProps) => {
-  const { getCurrentModel } = useModels();
+  const { models, getCurrentModel } = useModels();
   const { mutateAsync: DeleteMonitorById } = useDeleteMonitorApiV1MonitorsMonitorIdDelete();
 
   const dashboardMonitors = useMemo(
@@ -50,8 +48,11 @@ export const MonitorList = ({
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState(false);
 
   useEffect(() => {
-    setMonitors(dashboardMonitors);
-  }, [dashboardMonitors]);
+    const filtered = currentModelId
+      ? dashboardMonitors.filter(mon => mon.check.model_id === currentModelId)
+      : dashboardMonitors;
+    setMonitors(filtered);
+  }, [currentModelId, dashboardMonitors]);
 
   const handleDeleteMonitor = async (confirm: boolean) => {
     if (!currentMonitor) return;
@@ -70,20 +71,20 @@ export const MonitorList = ({
   };
 
   return (
-    <Grid container spacing={{ xs: 2.5, lg: 2.5, xl: 4 }} marginBottom="32px" {...props}>
+    <>
       {isLoading ? (
         <Loader sx={{ height: 'calc(100vh - 685px)' }} />
       ) : (
-        monitors.map(mon => (
-          <Monitor
-            key={mon.id}
-            initialMonitor={mon}
-            hidden={currentModelId ? mon.check.model_id !== currentModelId : false}
-            setCurrentMonitor={setCurrentMonitor}
-            setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
+        models.map(model => (
+          <MonitorsGroup
+            key={model.id}
+            model={model}
+            monitors={monitors.filter(mon => mon.check.model_id === model.id)}
             handleOpenMonitorDrawer={handleOpenMonitorDrawer}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
+            setCurrentMonitor={setCurrentMonitor}
+            setIsDeleteMonitorDialogOpen={setIsDeleteMonitorDialogOpen}
           />
         ))
       )}
@@ -95,6 +96,6 @@ export const MonitorList = ({
           onActionButtonClick={handleDeleteMonitor}
         />
       )}
-    </Grid>
+    </>
   );
 };

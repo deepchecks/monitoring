@@ -27,7 +27,6 @@ interface MonitorProps extends GridProps {
 
 const MonitorComponent = ({
   initialMonitor,
-  hidden,
   setCurrentMonitor,
   setIsDeleteMonitorDialogOpen,
   handleOpenMonitorDrawer,
@@ -84,11 +83,10 @@ const MonitorComponent = ({
   };
 
   return (
-    <Grid ref={observedContainerRef} item md={6} lg={6} xl={4} display={hidden ? 'none' : 'block'} {...props}>
+    <Grid ref={observedContainerRef} item md={6} lg={6} xl={4} {...props}>
       <GraphicsSection
         data={data}
         monitor={monitor}
-        modelName={currentModel?.name || '-'}
         isLoading={loading}
         onOpenMonitorDrawer={handleOpenMonitorDrawer}
         onDeleteMonitor={openDeleteMonitorDialog}

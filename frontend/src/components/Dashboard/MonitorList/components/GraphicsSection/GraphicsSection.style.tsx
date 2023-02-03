@@ -1,10 +1,9 @@
-import { Box, Divider, Menu, MenuItem, Select, styled, Typography } from '@mui/material';
-import { Arrow } from 'assets/icon/icon';
+import { Box, Menu, MenuItem, styled } from '@mui/material';
 import { colors } from 'theme/colors';
 
-export const StyledFlexContent = styled(Box)({
-  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
-  paddingBottom: '30px',
+export const StyledContainer = styled(Box)({
+  padding: '32px 24px',
+  border: `1px solid ${colors.neutral.grey.light}`,
   borderRadius: '10px',
   height: '429px',
   '@media (max-width: 1536px)': {
@@ -12,65 +11,18 @@ export const StyledFlexContent = styled(Box)({
   }
 });
 
-export const StyledTypographyTitle = styled(Typography)({
-  color: colors.neutral.darkText,
-  fontWeight: 500,
-  fontSize: 18,
-  lineHeight: '32px',
-  textAlign: 'left'
-});
+export const StyledRootMenu = styled(Menu)({
+  marginTop: '9px',
 
-export const StyledFlexWrapper = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '16px 20px 0',
-  justifyContent: 'space-between',
-  marginBottom: '6px'
-});
-
-export const StyledDiagramWrapper = styled(Box)({
-  padding: '0 20px'
+  '& .MuiPaper-root': {
+    overflow: 'visible',
+    padding: '6px 0',
+    borderRadius: '10px',
+    boxShadow: '2px 2px 30px -10px rgba(41, 53, 67, 0.25)'
+  }
 });
 
 export const StyledMenuItem = styled(MenuItem)({
-  minWidth: 244,
-  padding: '12px',
-  position: 'relative'
-});
-
-export const StyledSelect = styled(Select)(({ theme }) => ({
-  marginTop: '40px',
-  minWidth: 150,
-  '& .MuiSelect-icon': {
-    '& + .MuiOutlinedInput-notchedOutline': {
-      border: `1px solid ${theme.palette.grey[50]}`
-    }
-  }
-}));
-
-export const StyledRootMenu = styled(Menu)({
-  marginTop: '9px',
-  '& .MuiPaper-root': {
-    overflow: 'visible'
-  }
-});
-
-export const StyledArrow = styled(Arrow)(({ theme }) => ({
-  fill: theme.palette.text.disabled
-}));
-
-export const StyledInfo = styled(Box)({
-  display: 'flex',
-  flexWrap: 'wrap',
-  padding: '0 20px',
-  height: 40,
-  marginBottom: '7px',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap'
-});
-
-export const StyledDivider = styled(Divider)({
-  margin: '4px 6px',
-  height: '10px'
+  position: 'relative',
+  padding: '12px 17px'
 });

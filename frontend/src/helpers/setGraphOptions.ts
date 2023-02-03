@@ -5,6 +5,7 @@ import { colors } from '../theme/colors';
 export const PREVIOUS_PERIOD = '|previous_period';
 
 const GRAPH_COLORS = [
+  '#9D60FB',
   '#0044FF',
   '#C9AA99',
   '#4BCED7',

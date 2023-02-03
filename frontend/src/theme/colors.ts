@@ -19,10 +19,11 @@ export const colors = {
       70: alpha('#101F39', 0.7),
       100: '#101F39'
     },
-    darkText: '#3A474E',
-    lightText: '#94A4AD',
+    darkText: '#303245',
+    lightText: '#7D7E8E',
     grey: {
       disabled: '#E1E4E5',
+      light: '#E7E7E7',
       50: alpha('#F3F5F8', 0.5),
       100: '#F3F5F8',
       150: alpha('#D1D8DC', 0.5),

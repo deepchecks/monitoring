@@ -1,6 +1,9 @@
-import { InputAdornment, TextField, TextFieldProps, Typography } from '@mui/material';
 import React, { memo } from 'react';
+
+import { InputAdornment, TextField, TextFieldProps, Typography } from '@mui/material';
+
 import { SearchIcon } from '../assets/icon/icon';
+import { colors } from 'theme/colors';
 
 type SearchFieldComponentProps = {
   onReset?: () => void;
@@ -13,24 +16,32 @@ const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps &
     <TextField
       onChange={onChange}
       sx={{
-        borderRadius: '4px'
+        'input::placeholder': {
+          opacity: 1
+        },
+
+        '& .MuiOutlinedInput-root': {
+          color: colors.neutral.lightText,
+          borderRadius: '10px',
+
+          '& fieldset': {
+            borderColor: colors.neutral.grey.light,
+            transition: 'border-color 0.3s ease'
+          },
+
+          '&:hover fieldset, &.Mui-focused fieldset': {
+            borderColor: colors.neutral.darkText
+          }
+        }
       }}
-      placeholder="Search Model"
+      placeholder="Search Model..."
       variant="outlined"
       value={value}
       {...props}
       InputProps={{
         endAdornment:
           !value || !onReset ? (
-            <InputAdornment
-              position="end"
-              sx={{
-                cursor: 'pointer',
-                svg: {
-                  fill: theme => theme.palette.text.disabled
-                }
-              }}
-            >
+            <InputAdornment position="end">
               <SearchIcon />
             </InputAdornment>
           ) : (
@@ -41,7 +52,7 @@ const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps &
               }}
               onClick={onReset}
             >
-              <Typography variant="subtitle2" color="primary.main">
+              <Typography variant="subtitle2" color={colors.neutral.darkText}>
                 Reset
               </Typography>
             </InputAdornment>

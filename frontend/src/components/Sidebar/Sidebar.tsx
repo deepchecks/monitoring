@@ -109,7 +109,11 @@ export const Sidebar = () => {
                   lineHeight: '42px',
                   letterSpacing: '0.1px',
                   color: theme => theme.palette.common.white,
-                  height: '44px'
+                  height: '44px',
+
+                  '@media (max-width: 1536px)': {
+                    fontSize: 10
+                  }
                 }}
               >
                 Invite to workspace

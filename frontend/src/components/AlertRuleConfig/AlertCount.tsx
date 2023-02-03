@@ -65,7 +65,7 @@ const AlertCountComponent = ({ severity = AlertSeverity.high, setColor }: AlertC
           height: '45.5px'
         }}
       >
-        <Icon width={27} height={26} />
+        <Icon fill="white" width={27} height={26} />
       </Box>
       <Typography
         sx={{

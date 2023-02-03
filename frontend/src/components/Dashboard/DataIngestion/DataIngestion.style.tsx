@@ -1,66 +1,43 @@
 import { Box, Select, styled, Typography } from '@mui/material';
 import { colors } from 'theme/colors';
 
-export const StyledFlexContent = styled(Box)(({ theme }) => ({
-  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
+export const StyledContainer = styled(Box)({
+  height: '566px',
+  padding: '24px 32px',
   borderRadius: '10px',
-  borderLeft: `8px solid ${theme.palette.primary.light}`,
-  height: '558px',
+  border: `1px solid ${colors.neutral.grey.light}`,
+
   '@media (max-width: 1536px)': {
     height: '328px'
   }
-}));
+});
 
-export const StyledTypographyTitle = styled(Typography)({
+export const StyledHeader = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: '23px'
+});
+
+export const StyledTitle = styled(Typography)({
   color: colors.neutral.darkText,
-  fontWeight: 500,
-  fontSize: 18,
-  lineHeight: '32px',
+  fontWeight: 700,
+  fontSize: 20,
+  lineHeight: '18px',
   textAlign: 'left'
 });
 
-export const StyledFlexWrapper = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '16px 20px 16px',
-  justifyContent: 'space-between',
-  marginBottom: '6px',
-  '@media (max-width: 1536px)': {
-    padding: '10px 12px 10px'
-  }
-});
-
-export const StyledDiagramWrapper = styled(Box)({
-  padding: '0 20px 16px',
-  '@media (max-width: 1536px)': {
-    padding: '0 12px 10px'
-  }
-});
-
-export const StyledSelect = styled(Select)(({ theme }) => ({
-  marginTop: '40px',
+export const StyledSelect = styled(Select)({
+  fontWeight: 600,
   minWidth: 150,
-  alignSelf: 'end',
+  color: colors.neutral.darkText,
+  borderRadius: '10px',
+
   '& .MuiSelect-icon': {
     '& + .MuiOutlinedInput-notchedOutline': {
-      border: `1px solid ${theme.palette.grey[400]}`
+      border: `1px solid ${colors.neutral.grey.light}`
     }
-  },
-  '@media (max-width: 1536px)': {
-    marginTop: '10px'
   }
-}));
-
-export const StyledFooter = styled(Box)({
-  display: 'flex',
-  justifyContent: 'space-between',
-  width: '100%'
-});
-
-export const StyledGrid = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  width: 300
 });
 
 export const StyledModel = styled(Box)({

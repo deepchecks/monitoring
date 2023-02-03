@@ -1,13 +1,25 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 
 import { ModelManagmentSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
+import { GlobalStateContext } from 'context';
 
 import { Loader } from 'components/Loader';
-import { ModelItem } from './ModelItem';
+import { ModelItem } from './components/ModelItem';
 import { SearchField } from 'components/SearchField';
+import { AlertsCountWidget } from './components/AlertsCountWidget';
 
-import { StyledContainer, StyledHeading, StyledList, StyledSearchFieldContainer } from './ModelList.style';
-import { GlobalStateContext } from 'context';
+import {
+  StyledContainer,
+  StyledHeading,
+  StyledHeadingContainer,
+  StyledList,
+  StyledSearchFieldContainer,
+  StyledResetSelectionContainer,
+  StyledResetSelectionText,
+  StyledResetSelectionContent
+} from './ModelList.style';
+
+import { Rotate } from 'assets/icon/icon';
 
 interface ModelListProps {
   models: ModelManagmentSchema[];
@@ -17,18 +29,14 @@ interface ModelListProps {
 const SEVERITY = 'critical';
 
 export function ModelList({ models, isLoading }: ModelListProps) {
+  const { selectedModelId: activeModelId, changeSelectedModelId } = useContext(GlobalStateContext);
+
   const [filteredModels, setFilteredModels] = useState(models);
   const [modelName, setModelName] = useState('');
-  const { selectedModelId: activeModelId , changeSelectedModelId } = useContext(GlobalStateContext);
 
-  
   const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
     severity: [SEVERITY]
   });
-
-  useEffect(() => {
-    setFilteredModels(models);
-  }, [models]);
 
   const onReset = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
@@ -59,12 +67,7 @@ export function ModelList({ models, isLoading }: ModelListProps) {
 
     models.forEach(({ id }) => {
       const currentAlert = criticalAlerts.find(alert => alert.model_id === id);
-
-      if (currentAlert && currentAlert.alerts_count) {
-        map[id] = currentAlert.alerts_count;
-      } else {
-        map[id] = 0;
-      }
+      currentAlert && currentAlert.alerts_count ? (map[id] = currentAlert.alerts_count) : (map[id] = 0);
     });
 
     return map;
@@ -76,7 +79,10 @@ export function ModelList({ models, isLoading }: ModelListProps) {
         <Loader />
       ) : (
         <>
-          <StyledHeading variant="subtitle1">Models List</StyledHeading>
+          <StyledHeadingContainer>
+            <StyledHeading variant="subtitle1">Models</StyledHeading>
+            <AlertsCountWidget />
+          </StyledHeadingContainer>
           <StyledSearchFieldContainer>
             <SearchField size="small" fullWidth onChange={onSearch} value={modelName} onReset={clearSearchBar} />
           </StyledSearchFieldContainer>
@@ -95,6 +101,14 @@ export function ModelList({ models, isLoading }: ModelListProps) {
                   severity={SEVERITY}
                 />
               ))}
+              {activeModelId && (
+                <StyledResetSelectionContainer>
+                  <StyledResetSelectionContent onClick={onReset}>
+                    <Rotate />
+                    <StyledResetSelectionText>Reset selection</StyledResetSelectionText>
+                  </StyledResetSelectionContent>
+                </StyledResetSelectionContainer>
+              )}
             </StyledList>
           )}
         </>

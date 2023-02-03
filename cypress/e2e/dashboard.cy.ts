@@ -45,7 +45,7 @@ describe('test dashboard', () => {
   it('Add manual monitor - graphs appear', () => {
     
     cy.visit('/')
-    cy.contains('button', 'Add Monitor').click()
+    cy.contains('p', 'Monitors').siblings().eq(0).find('button').click();
     cy.contains('div[role="presentation"]', 'Create monitor').contains('label', 'Monitor name').parent().within(() => {
         cy.get('input').type('manual monitor')
     });

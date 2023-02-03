@@ -1,10 +1,5 @@
 import React, { PropsWithChildren, useEffect, useRef, useState, useCallback } from 'react';
 import { Chart, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js';
-declare module 'chart.js' {
-  interface TooltipPositionerMap {
-    myCustomPositioner: TooltipPositionerFunction<ChartType>;
-  }
-}
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -93,7 +88,7 @@ function DiagramLine({
             currentChart.ctx,
             currentChart.chartArea,
             alpha(el.borderColor as string, 0),
-            alpha(el.borderColor as string, 0)
+            alpha(el.borderColor as string, 0.25)
           )
         };
       })

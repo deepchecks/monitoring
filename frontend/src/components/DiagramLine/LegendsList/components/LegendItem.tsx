@@ -20,42 +20,44 @@ const LegendItem = ({ item, lineIndexMap, analysis, current, version, indexInVer
   const text = item?.text?.split('|');
   const color = item.strokeStyle ? item.strokeStyle.toString() : '#00F0FF';
   const legendLabel =
-    (text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT
-      ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...`
-      : text[0]) || '-';
+    (text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...` : text[0]) ||
+    '-';
 
-  return <>
-    {
-      indexInVersion == 0 && analysis && <StyledLegendHeaderContainer>
-        <StyledLegendsHeader>{`${version}:`}</StyledLegendsHeader>
-      </StyledLegendHeaderContainer>
-    }
-    <Tooltip title={text[1] ? text[0] + ' - ' + text[1] : text[0]} placement='top'>
-      <StyledLegendItem
-        onClick={onClick}
-        sx={{
-          opacity: lineIndexMap[typeof item.datasetIndex === 'number' ? item.datasetIndex : -2] ? 0.2 : 1
-        }}
-      >
-        {analysis ? (
-          current ? (
-            <GraphLegendCurrent width="20px" fill={color} stroke={color} />
+  return (
+    <>
+      {indexInVersion == 0 && analysis && (
+        <StyledLegendHeaderContainer>
+          <StyledLegendsHeader>{`${version}:`}</StyledLegendsHeader>
+        </StyledLegendHeaderContainer>
+      )}
+      <Tooltip title={text[1] ? text[0] + ' - ' + text[1] : text[0]} placement="top">
+        <StyledLegendItem
+          onClick={onClick}
+          sx={{
+            opacity: lineIndexMap[typeof item.datasetIndex === 'number' ? item.datasetIndex : -2] ? 0.2 : 1
+          }}
+        >
+          {analysis ? (
+            current ? (
+              <GraphLegendCurrent width="20px" fill={color} stroke={color} />
+            ) : (
+              <GraphLegendPrevious width="20px" fill={color} stroke={color} />
+            )
           ) : (
-            <GraphLegendPrevious width="20px" fill={color} stroke={color} />
-          )
-        ) : (
-          <StyledLegendItemPoint
-            sx={{
-              backgroundColor: color
-            }} />
-        )}
+            <StyledLegendItemPoint
+              sx={{
+                backgroundColor: color
+              }}
+            />
+          )}
 
-        <Typography variant="subtitle2" marginLeft="10px">
-          {legendLabel}
-        </Typography>
-      </StyledLegendItem>
-    </Tooltip>
-  </>;
+          <Typography variant="subtitle2" marginLeft="10px">
+            {legendLabel}
+          </Typography>
+        </StyledLegendItem>
+      </Tooltip>
+    </>
+  );
 };
 
 const StyledLegendItem = styled(Box)({
@@ -65,7 +67,7 @@ const StyledLegendItem = styled(Box)({
   minWidth: 'max-content',
   margin: '0 7px',
   padding: '3px 0',
-  transition: 'opacity 0.2s'
+  transition: 'opacity 0.3s ease'
 });
 
 const StyledLegendItemPoint = styled(Box)({

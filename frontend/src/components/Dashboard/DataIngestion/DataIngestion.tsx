@@ -11,14 +11,7 @@ import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
 import { Loader } from 'components/Loader';
 
-import {
-  StyledDiagramWrapper,
-  StyledFlexContent,
-  StyledFlexWrapper,
-  StyledLoaderBox,
-  StyledSelect,
-  StyledTypographyTitle
-} from './DataIngestion.style';
+import { StyledContainer, StyledHeader, StyledLoaderBox, StyledSelect, StyledTitle } from './DataIngestion.style';
 
 interface DataIngestionProps {
   modelId: number | null;
@@ -52,33 +45,31 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   };
 
   return (
-    <StyledFlexContent>
-      <StyledFlexWrapper>
-        <StyledTypographyTitle>Prediction Data Status</StyledTypographyTitle>
-      </StyledFlexWrapper>
+    <StyledContainer>
+      <StyledHeader>
+        <StyledTitle>Prediction Data Status</StyledTitle>
+        <StyledSelect value={currentTime.value.toString()} onChange={e => handleTime(e.target.value)} size="small">
+          {timeOptions.map(({ label, value }) => (
+            <MenuItem value={value.toString()} key={label}>
+              {label}
+            </MenuItem>
+          ))}
+        </StyledSelect>
+      </StyledHeader>
       {isLoading ? (
         <StyledLoaderBox>
           <Loader sx={{ mt: '150px' }} />
         </StyledLoaderBox>
       ) : (
-        <StyledDiagramWrapper>
-          <DiagramTutorialTooltip>
-            <DiagramLine data={graphData} minTimeUnit={minTimeUnit} timeFreq={timeValue} height={{ lg: 210, xl: 392 }}>
-              <StyledSelect
-                value={currentTime.value.toString()}
-                onChange={e => handleTime(e.target.value)}
-                size="small"
-              >
-                {timeOptions.map(({ label, value }) => (
-                  <MenuItem value={value.toString()} key={label}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </StyledSelect>
-            </DiagramLine>
-          </DiagramTutorialTooltip>
-        </StyledDiagramWrapper>
+        <DiagramTutorialTooltip>
+          <DiagramLine
+            data={graphData}
+            minTimeUnit={minTimeUnit}
+            timeFreq={timeValue}
+            height={{ lg: 180, xl: 415 }}
+          ></DiagramLine>
+        </DiagramTutorialTooltip>
       )}
-    </StyledFlexContent>
+    </StyledContainer>
   );
 };

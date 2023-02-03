@@ -2,20 +2,22 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-
 import mixpanel from 'mixpanel-browser';
 
 import { GlobalStateContext } from 'context';
 import { AlertSeverity, ModelManagmentSchema } from 'api/generated';
 
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 
 import {
   StyledContainer,
   StyledModelInfo,
-  StyledTypographyDate,
+  StyledDateContainer,
+  StyledDateTitle,
+  StyledDateValue,
   StyledAlertBadge,
-  StyledActiveModelResetButton
+  StyledModelName,
+  StyledAlertsCount
 } from './ModelItem.style';
 
 dayjs.extend(localizedFormat);
@@ -29,40 +31,35 @@ interface ModelItemProps {
   severity: AlertSeverity;
 }
 
-export function ModelItem({ activeModel, alertsCount, onModelClick, onReset, model, severity }: ModelItemProps) {
+export function ModelItem({ activeModel, alertsCount, onModelClick, model, severity }: ModelItemProps) {
   const navigate = useNavigate();
   const { changeAlertFilters } = useContext(GlobalStateContext);
 
-  const linkToAlerts = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [model.id] }));
     navigate({ pathname: '/alerts' });
   };
 
-  const handleClickModel = () => {
+  const handleModelClick = () => {
     mixpanel.track('Click on a model in the model list');
     onModelClick(model.id);
   };
 
   return (
-    <StyledContainer active={activeModel} onClick={handleClickModel}>
+    <StyledContainer active={activeModel} onClick={handleModelClick}>
       <StyledModelInfo>
         <Box>
-          <Typography variant="subtitle1">{model.name}</Typography>
-          <StyledTypographyDate variant="body2">
-            Last data update: {model.latest_time ? dayjs.unix(model.latest_time).format('L') : '-'}
-          </StyledTypographyDate>
+          <StyledModelName>{model.name}</StyledModelName>
+          <StyledDateContainer>
+            <StyledDateTitle>Last data update:&nbsp;</StyledDateTitle>
+            <StyledDateValue>{model.latest_time ? dayjs.unix(model.latest_time).format('L') : '-'}</StyledDateValue>
+          </StyledDateContainer>
         </Box>
-        <StyledAlertBadge severity={severity} onClick={linkToAlerts}>
-          <Typography variant="h4" sx={{ lineHeight: '25px' }}>
-            {alertsCount}
-          </Typography>
-          <Typography variant="caption" sx={{ lineHeight: '14px', letterSpacing: '0.1px' }}>
-            {`${severity[0].toUpperCase()}${severity.slice(1)}`}
-          </Typography>
+        <StyledAlertBadge severity={severity} alertsCount={alertsCount} onClick={handleAlertClick}>
+          <StyledAlertsCount>{alertsCount}</StyledAlertsCount>
         </StyledAlertBadge>
       </StyledModelInfo>
-      {activeModel && <StyledActiveModelResetButton onClick={onReset} />}
     </StyledContainer>
   );
 }

@@ -1,8 +1,11 @@
-import { alpha, Box, Typography, useTheme } from '@mui/material';
-import { AlertSeverity } from 'api/generated';
-import { GlobalStateContext } from 'context';
 import React, { FC, memo, useContext, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+import { AlertSeverity } from 'api/generated';
+import { GlobalStateContext } from 'context';
+
+import { alpha, Box, Typography, useTheme, styled, Stack } from '@mui/material';
+
 import { ReactComponent as CriticalSeverityIcon } from '../assets/icon/severity/critical.svg';
 import { ReactComponent as HighSeverityIcon } from '../assets/icon/severity/high.svg';
 import { ReactComponent as LowSeverityIcon } from '../assets/icon/severity/low.svg';
@@ -14,8 +17,6 @@ export enum SEVERITY {
   HIGH = 'high',
   CRITICAL = 'critical'
 }
-
-export type AlertsCount = Record<SEVERITY, number>;
 
 interface AlertCountComponentProps {
   severity: AlertSeverity;
@@ -69,53 +70,52 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
   ]);
 
   return (
-    <Box
-      className="severity-wrapper"
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        textAlign: 'center',
-        cursor: 'pointer',
-        padding: '6px 17px 6px 7px',
-        borderRadius: '1000px',
-        border: `1px solid ${alpha(color, 0.4)}`
-      }}
-    >
-      <Box
-        className="severity-svg-wrapper"
-        onClick={linkToAlerts}
-        sx={{
-          height: 38,
-          width: 38,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '50%',
-          backgroundColor: color
-        }}
-      >
-        <Icon width={18} height={16} />
-      </Box>
-      <Box
-        className="severity-value-wrapper"
-        sx={{
-          marginLeft: '9px',
-          color
-        }}
-      >
-        <Typography variant="h5">{count}</Typography>
-        <Typography
-          sx={{
-            fontSize: 12,
-            lineHeight: '12px',
-            letterSpacing: '0.4px'
-          }}
-        >
-          {severity}
-        </Typography>
-      </Box>
-    </Box>
+    <StyledContainer onClick={linkToAlerts}>
+      <StyledIcon>
+        <Icon fill={color} width={18} height={18} />
+      </StyledIcon>
+      <Stack direction="row">
+        <StyledCount color={color}>{count}&nbsp;</StyledCount>
+        <StyledSeverity color={color}>{severity}</StyledSeverity>
+      </Stack>
+    </StyledContainer>
   );
 };
+
+const StyledContainer = styled(Stack)({
+  flexDirection: 'row',
+  width: '78px',
+  height: '20px',
+  cursor: 'pointer',
+  transition: 'opacity 0.3s ease',
+
+  ':hover': {
+    opacity: 0.5
+  }
+});
+
+const StyledIcon = styled(Box)({
+  marginRight: '9px'
+});
+
+const StyledTypography = styled(Typography)({
+  fontWeight: 600,
+  lineHeight: '20px'
+});
+
+const StyledCount = styled(StyledTypography)({
+  fontSize: '16px'
+});
+
+interface ColorOptions {
+  color: string;
+}
+
+const StyledSeverity = styled(StyledTypography, {
+  shouldForwardProp: prop => prop !== 'color'
+})<ColorOptions>(({ color }) => ({
+  fontSize: '12px',
+  color: alpha(color, 0.5)
+}));
 
 export const AlertCount = memo(AlertCountComponent);

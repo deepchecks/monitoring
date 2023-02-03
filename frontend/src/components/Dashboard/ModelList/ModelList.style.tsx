@@ -1,40 +1,87 @@
-import { styled, Box, List, Typography } from '@mui/material';
+import { styled, Box, List, Typography, Stack } from '@mui/material';
 import { colors } from 'theme/colors';
 
 export const StyledContainer = styled(Box)({
-  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
-  borderRadius: '10px',
-  borderLeft: '8px solid rgba(239, 76, 54, 0.5)',
   overflow: 'hidden',
-  height: '558px',
+  height: '566px',
+  border: `1px solid ${colors.neutral.grey.light}`,
+  borderRadius: '10px',
+
   '@media (max-width: 1536px)': {
     height: '328px'
   }
 });
 
+export const StyledHeadingContainer = styled(Stack)({
+  flexDirection: 'row',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  padding: '32px 24px',
+
+  '@media (max-width: 1536px)': {
+    padding: '14px 10px'
+  }
+});
+
 export const StyledHeading = styled(Typography)({
   fontSize: 20,
-  fontWeight: 500,
-  lineHeight: '160%',
+  fontWeight: 700,
+  lineHeight: '20px',
   textAlign: 'left',
   color: colors.neutral.darkText,
-  padding: '20px 0 12px 20px',
+
   '@media (max-width: 1536px)': {
     padding: '10px 0 0 12px'
   }
 });
 
 export const StyledSearchFieldContainer = styled(Box)({
-  padding: '20px 30px 32px 20px',
+  padding: '0 24px 4px 24px',
+
   '@media (max-width: 1536px)': {
-    padding: '10px 18px 10px 12px'
+    padding: '0 10px 10px 10px'
   }
 });
 
 export const StyledList = styled(List)({
-  overflowY: 'scroll',
-  height: '410px',
+  overflow: 'overlay',
+  scrollbarWidth: 'thin',
+  height: '435px',
+  padding: 0,
+
   '@media (max-width: 1536px)': {
     height: '225px'
   }
+});
+
+const StyledStack = styled(Stack)({
+  flexDirection: 'row',
+  alignItems: 'center'
+});
+
+export const StyledResetSelectionContainer = styled(StyledStack)({
+  position: 'sticky',
+  bottom: 0.5,
+  height: '50px',
+  padding: '24px',
+  background: colors.neutral.white,
+  borderTop: `1px solid ${colors.neutral.grey.light}`,
+  backdropFilter: 'blur(5px)'
+});
+
+export const StyledResetSelectionContent = styled(StyledStack)({
+  cursor: 'pointer',
+  transition: 'opacity 0.3s ease',
+
+  '&:hover': {
+    opacity: 0.5
+  }
+});
+
+export const StyledResetSelectionText = styled(Typography)({
+  fontWeight: 600,
+  fontSize: '14px',
+  lineHeight: '17px',
+  marginLeft: '16px',
+  color: colors.primary.violet[400]
 });

@@ -33,6 +33,10 @@ declare module 'chart.js' {
     originalMinMax: OriginalMinMax;
   }
   /* eslint-enable @typescript-eslint/no-unused-vars */
+
+  interface TooltipPositionerMap {
+    myCustomPositioner: TooltipPositionerFunction<ChartType>;
+  }
 }
 
 export interface AlertsWidget {
