@@ -4,6 +4,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import {
   ConnectedModelSchema,
+  ConnectedModelVersionSchema,
   useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet
 } from 'api/generated';
 
@@ -20,9 +21,10 @@ dayjs.extend(localizedFormat);
 
 interface ModelDetailsProps {
   model: ConnectedModelSchema;
+  onVersionDetailsOpen: (version: ConnectedModelVersionSchema) => void;
 }
 
-const ModelDetails = ({ model }: ModelDetailsProps) => {
+const ModelDetailsList = ({ model, onVersionDetailsOpen }: ModelDetailsProps) => {
   const [value, setValue] = React.useState('1');
 
   const { data: versions, isLoading } = useRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet(
@@ -41,7 +43,6 @@ const ModelDetails = ({ model }: ModelDetailsProps) => {
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList value={value} onChange={handleChange} aria-label="basic tabs example">
               <Tab label={`All Versions (${versions?.length})`} value="1" />
-              <Tab label="Top Secret" value="2" />
             </TabList>
           </Box>
           <TabPanel value="1">
@@ -85,7 +86,11 @@ const ModelDetails = ({ model }: ModelDetailsProps) => {
                   </Grid>
                   <Grid item xs={1}>
                     <Box sx={{ justifyContent: 'end', display: 'flex' }}>
-                      <Button variant="outlined" sx={{ borderRadius: '5px', width: 'fit-content' }}>
+                      <Button
+                        onClick={() => onVersionDetailsOpen(version)}
+                        variant="outlined"
+                        sx={{ borderRadius: '5px', width: 'fit-content' }}
+                      >
                         <ViewDetails />
                       </Button>
                     </Box>
@@ -94,11 +99,10 @@ const ModelDetails = ({ model }: ModelDetailsProps) => {
               ))}
             </Grid>
           </TabPanel>
-          <TabPanel value="2">Congrats! You have found the first easter egg on Deepchecks. Keep looking :)</TabPanel>
         </TabContext>
       )}
     </Box>
   );
 };
 
-export default ModelDetails;
+export default ModelDetailsList;

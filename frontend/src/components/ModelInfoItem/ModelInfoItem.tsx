@@ -12,21 +12,12 @@ import {
   StyledModelInfoItemContainer,
   StyledModelInfoItemHeader,
   StyledModelInfoItemName,
-  StyledModelInfoVersionsTitle,
-  StyledNoVersionsTitle,
-  StyledModelInfoHandleRangeButton,
-  StyledModal,
-  StyledModalContent,
-  StyledModalTitle,
-  StyledModalTitleText,
-  StyledModalList,
-  StyledModalCloseButton,
   StyledHoverButtonContainer,
   StyledDeleteModelButton,
   StyledDeleteModelButtonText
 } from './ModelInfoItem.style';
-import { CloseIcon, DeleteIcon, ViewDetails } from 'assets/icon/icon';
-import ModelDetails from './ModelDetails';
+import { DeleteIcon, ViewDetails } from 'assets/icon/icon';
+import { ModalItemViewDetails } from './components/ModalItemViewDetails';
 
 dayjs.extend(localizedFormat);
 
@@ -48,8 +39,13 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const { name, latest_update: lastUpdate, n_of_pending_rows: nPendingRows, n_of_alerts: nAlerts, n_of_updating_versions: nVersions } = model;
-
+  const {
+    name,
+    latest_update: lastUpdate,
+    n_of_pending_rows: nPendingRows,
+    n_of_alerts: nAlerts,
+    n_of_updating_versions: nVersions
+  } = model;
 
   const modelNameRef = useRef<HTMLElement>(null);
   const isEllipsisActive = !isEllipsisActiveCheck(modelNameRef);
@@ -79,52 +75,35 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
           </Tooltip>
           <Typography>Last update: {lastUpdate ? dayjs(lastUpdate).format('L') : '-'}</Typography>
         </Stack>
-
       </StyledModelInfoItemHeader>
-      <Stack sx={{ p: '20px' , display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} style={isHovered ? {filter:'blur(5px)'} : {}}>
-        <ModelInfoBadge value={nAlerts} title="Critical Alerts" margin='0px 8px'/>
-        <ModelInfoBadge value={nVersions} title="Versions Updating"  margin='0px 8px'/>
-        <ModelInfoBadge value={nPendingRows} title="Pending Rows"  margin='0px 8px'/>
+      <Stack
+        sx={{ p: '20px', display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}
+        style={isHovered ? { filter: 'blur(5px)' } : {}}
+      >
+        <ModelInfoBadge value={nAlerts} title="Critical Alerts" margin="0px 8px" />
+        <ModelInfoBadge value={nVersions} title="Versions Updating" margin="0px 8px" />
+        <ModelInfoBadge value={nPendingRows} title="Pending Rows" margin="0px 8px" />
       </Stack>
-      
 
       {isHovered && (
         <>
-          <StyledHoverButtonContainer left='calc(50% - 77px)' bottom='30px'>
+          <StyledHoverButtonContainer left="calc(50% - 77px)" bottom="30px">
             <StyledDeleteModelButton onClick={handleOpen}>
-              <Stack sx={{alignItems: 'center'}}>
+              <Stack sx={{ alignItems: 'center' }}>
                 <ViewDetails />
                 <StyledDeleteModelButtonText>View Details</StyledDeleteModelButtonText>
               </Stack>
             </StyledDeleteModelButton>
-            <StyledDeleteModelButton sx={{marginLeft: '30px', paddingTop: '7px'}} onClick={onDelete}>
+            <StyledDeleteModelButton sx={{ marginLeft: '30px', paddingTop: '7px' }} onClick={onDelete}>
               <Stack>
                 <DeleteIcon />
-                <StyledDeleteModelButtonText marginTop='6px'>Delete</StyledDeleteModelButtonText>
+                <StyledDeleteModelButtonText marginTop="6px">Delete</StyledDeleteModelButtonText>
               </Stack>
             </StyledDeleteModelButton>
           </StyledHoverButtonContainer>
         </>
       )}
-
-      <StyledModal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="model-versions"
-        aria-describedby="model-all-versions"
-      >
-        <StyledModalContent>
-          <StyledModalTitle>
-            <StyledModalTitleText>{name} Details</StyledModalTitleText>
-            <StyledModalCloseButton onClick={handleClose}>
-              <CloseIcon />
-            </StyledModalCloseButton>
-          </StyledModalTitle>
-          <StyledModalList>
-            <ModelDetails model={model} />
-          </StyledModalList>
-        </StyledModalContent>
-      </StyledModal>
+      <ModalItemViewDetails open={open} onClose={handleClose} model={model} />
     </StyledModelInfoItemContainer>
   );
 };

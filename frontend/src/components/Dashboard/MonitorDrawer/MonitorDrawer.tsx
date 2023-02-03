@@ -77,7 +77,7 @@ export const MonitorDrawer = ({
   return (
     <CustomDrawer open={open} onClose={handleOnCloseDrawer} padding="40px 40px 0 40px" {...props}>
       <CustomDrawerHeader title={drawerName} onClick={handleOnCloseDrawer} marginBottom="32px" />
-      <Stack direction="row" justifyContent="space-between" height='calc(100vh - 120px)'>
+      <Stack direction="row" justifyContent="space-between" height="calc(100vh - 120px)">
         {drawerName === DrawerNames.CreateAlert && monitor ? (
           <CreateAlertForm
             monitor={monitor}
@@ -96,7 +96,11 @@ export const MonitorDrawer = ({
             setGraphFrequency={setGraphFrequency}
           />
         )}
-        <GraphView graphData={graphData} isLoading={isRunCheckLoading} timeFreq={graphFrequency && +graphFrequency || monitor?.frequency} />
+        <GraphView
+          graphData={graphData}
+          isLoading={isRunCheckLoading}
+          timeFreq={(graphFrequency && +graphFrequency) || monitor?.frequency}
+        />
       </Stack>
     </CustomDrawer>
   );

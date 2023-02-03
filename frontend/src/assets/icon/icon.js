@@ -36,7 +36,7 @@ import { ReactComponent as InfoIcon } from './infoIcon.svg';
 import { ReactComponent as LockIcon } from './lock.svg';
 import { ReactComponent as MenuVertical } from './menuVertical.svg';
 import { ReactComponent as NLPModel } from './NLPModel.svg';
-import { ReactComponent as NoDataToShow } from './noDataToShow.svg';
+import { NoDataToShow } from './NoDataToShow';
 import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as PauseIcon } from './pause.svg';
 import { ReactComponent as PencilDrawing } from './pencilDrawing.svg';

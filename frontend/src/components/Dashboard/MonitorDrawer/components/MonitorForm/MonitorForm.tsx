@@ -48,16 +48,20 @@ export const MonitorForm = ({
   ...props
 }: MonitorFormProps) => {
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || timeValues.week);
-  useEffect(() => {setGraphFrequency(frequency)}, [frequency, setGraphFrequency]);
+  useEffect(() => {
+    setGraphFrequency(frequency);
+  }, [frequency, setGraphFrequency]);
 
   const [monitorName, setMonitorName] = useState(monitor?.name || '');
   const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || '');
 
   const [advanced, setAdvanced] = useState<boolean>(false);
 
-  const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '')
+  const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
 
-  const [filteredValues, setFilteredValues] = useState<FilteredValues>(monitor?.additional_kwargs?.check_conf as FilteredValues || {});
+  const [filteredValues, setFilteredValues] = useState<FilteredValues>(
+    (monitor?.additional_kwargs?.check_conf as FilteredValues) || {}
+  );
   const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 
   const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
@@ -67,17 +71,13 @@ export const MonitorForm = ({
   const [category, setCategory] = useState<SelectValues>(() => {
     const filters = monitor?.data_filters?.filters;
     if (filters?.length) {
-      return filters.length > 1
-        ? undefined
-        : filters[0].value as string;
+      return filters.length > 1 ? undefined : (filters[0].value as string);
     }
   });
   const [numericValue, setNumericValue] = useState<number[] | undefined>(() => {
     const filters = monitor?.data_filters?.filters;
     if (filters?.length) {
-      return filters.length > 1
-        ? [filters[0].value as number, filters[1].value as number]
-        : undefined;
+      return filters.length > 1 ? [filters[0].value as number, filters[1].value as number] : undefined;
     }
   });
 
@@ -102,8 +102,6 @@ export const MonitorForm = ({
       return additionalKwargs;
     }
   }, [filteredValues, resConf]);
-
-
 
   useEffect(() => {
     if (frequency && !aggregationWindow) {
@@ -194,7 +192,7 @@ export const MonitorForm = ({
         const data: MonitorOptions = {
           start_time: new Date(endTime.getTime() - +lookBack * 1000).toISOString(),
           end_time: endTime.toISOString(),
-          additional_kwargs: additionalKwargs as MonitorCheckConfSchema || undefined,
+          additional_kwargs: (additionalKwargs as MonitorCheckConfSchema) || undefined,
           frequency: +frequency,
           aggregation_window: +aggregationWindow,
           filter: buildFilters(column, category, numericValue) || undefined
@@ -202,19 +200,19 @@ export const MonitorForm = ({
         runCheckLookBack(check, data);
       }
     }
-  },
-    [isDrawerOpen,
-      aggregationWindow,
-      category,
-      check,
-      column,
-      currentModel,
-      frequency,
-      additionalKwargs,
-      lookBack,
-      numericValue,
-      runCheckLookBack
-    ]);
+  }, [
+    isDrawerOpen,
+    aggregationWindow,
+    category,
+    check,
+    column,
+    currentModel,
+    frequency,
+    additionalKwargs,
+    lookBack,
+    numericValue,
+    runCheckLookBack
+  ]);
 
   return (
     <Stack width={{ xs: '200px', xl: '360px' }} {...props}>
@@ -273,10 +271,9 @@ export const MonitorForm = ({
             label="Frequency"
             value={frequency}
             onChange={event => {
-              setFrequency(event.target.value as number)
-              !advanced && setAggregationWindow(event.target.value as number)
-            }
-            }
+              setFrequency(event.target.value as number);
+              !advanced && setAggregationWindow(event.target.value as number);
+            }}
             clearValue={() => {
               setFrequency('');
               setAggregationWindow('');

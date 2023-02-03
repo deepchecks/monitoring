@@ -61,49 +61,6 @@ export const StyledModelInfoHandleRangeButton = styled(Button)({
   borderRadius: '4px'
 });
 
-export const StyledModal = styled(Modal)({
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center'
-});
-
-export const StyledModalContent = styled(Box)({
-  height: '660px',
-  width: '1000px',
-  background: '#fff',
-  padding: '30px'
-});
-
-export const StyledModalTitle = styled(Stack)({
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'bottom',
-  marginBottom: '30px'
-});
-
-export const StyledModalTitleText = styled(Typography)({
-  fontWeight: 700,
-  fontSize: '24px',
-  lineHeight: '140%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap'
-});
-
-export const StyledModalCloseButton = styled(IconButton)({
-  width: '26px',
-  height: '25px',
-  marginLeft: '5px',
-  padding: '2px',
-  background: 'transparent',
-  transform: 'translateY(5px)'
-});
-
-export const StyledModalList = styled(Box)({
-  overflowY: 'auto',
-  height: '350px'
-});
-
 export const StyledHoverButtonContainer = styled(Stack)({
   borderRadius: '10px',
   position: 'absolute',
@@ -115,7 +72,6 @@ export const StyledDeleteModelButton = styled(IconButton)({
   background: 'transparent',
   padding: '4px'
 });
-
 
 export const StyledDeleteModelButtonText = styled(Typography)({
   fontSize: '10px',

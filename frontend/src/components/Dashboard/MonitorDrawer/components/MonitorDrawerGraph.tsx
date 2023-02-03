@@ -24,7 +24,7 @@ export const MonitorDrawerGraph = ({ graphData, isLoading, timeFreq }: MonitorDr
       <DiagramLine data={graphData} height={{ lg: 350, xl: 440 }} timeFreq={timeFreq} />
     ) : (
       <>
-        <NoDataToShow />
+        <NoDataToShow width={'100%'} height={400} text="No data to show, try altering the filters" />
       </>
     )}
   </Box>
