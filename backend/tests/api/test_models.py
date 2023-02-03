@@ -14,7 +14,7 @@ import pytest
 import sqlalchemy as sa
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, has_key, has_entries
+from hamcrest import assert_that, has_entries, has_key
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
@@ -25,7 +25,8 @@ from tests.common import ModelIdentifiersPair, Payload, TestAPI, create_alert, u
 
 def test_model_creation(test_api: TestAPI):
     payload = test_api.data_generator.generate_random_model()
-    model = t.cast(Payload, test_api.create_model(model=payload))
+    notes = [{"title": "Super Important", "text": "something important about model"}]
+    model = t.cast(Payload, test_api.create_model(model={**payload, "notes": notes}))
     assert model == {"id": 1, **payload}
 
 
@@ -354,3 +355,24 @@ async def test_model_set_monitors_time(
     monitors = (await async_session.scalars(sa.select(Monitor))).all()
     for monitor in monitors:
         assert monitor.latest_schedule == floor_window_for_time(new_date, monitor.frequency)
+
+
+def test_model_note_creation(
+    test_api: TestAPI,
+    classification_model: Payload,
+):
+    note = {"title": "Super Important", "text": "BlaBlaBla"}
+    created_notes = test_api.create_model_notes(model_id=classification_model["id"], notes=[note])
+    created_notes = t.cast(t.List[Payload], created_notes)
+    assert len(created_notes) == 1
+    for k, v in note.items():
+        assert created_notes[0][k] == v
+
+
+def test_model_note_deletion(
+    test_api: TestAPI,
+    classification_model: Payload,
+):
+    created_notes = test_api.create_model_notes(model_id=classification_model["id"])
+    created_notes = t.cast(t.List[Payload], created_notes)
+    test_api.delete_model_note(model_id=classification_model["id"], note_id=created_notes[0]["id"])

@@ -153,6 +153,12 @@ class DataGenerator:
             ],
         }
 
+    def generate_random_model_note(self):
+        return {
+            "title": "Note Title",
+            "text": self.faker.text(),
+        }
+
 
 class ExpectedHttpStatus:
     """Utility class to assert response status."""
@@ -376,6 +382,92 @@ class TestAPI:
             assert "stats" in v
 
         return data
+
+    def fetch_model_notes(
+        self,
+        model_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        response = self.api.fetch_model_notes(model_id=model_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for note in data:
+            self._assert_model_note(note)
+
+        return data
+
+    def create_model_notes(
+        self,
+        model_id: int,
+        notes: t.Optional[t.List[Payload]] = None,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        if notes:
+            notes = [
+                {
+                    **self.data_generator.generate_random_model_note(),
+                    **note
+                }
+                for note in notes
+            ]
+        else:
+            notes = [
+                self.data_generator.generate_random_model_note(),
+            ]
+
+        response= self.api.create_model_notes(model_id=model_id, notes=notes, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        notes = response.json()
+        assert isinstance(notes, list)
+
+        for note in notes:
+            self._assert_model_note(note)
+
+        model_notes = self.fetch_model_notes(model_id=model_id)
+        model_notes = t.cast(t.List[Payload], model_notes)
+        model_notes_ids = {it["id"] for it in model_notes}
+        assert all(it["id"] in model_notes_ids for it in notes)
+        return notes
+
+    def delete_model_note(
+        self,
+        note_id: int,
+        model_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Optional[httpx.Response]:
+        response = self.api.delete_model_note(note_id=note_id, raise_on_status=False)
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        notes = self.fetch_model_notes(model_id=model_id)
+        notes = t.cast(t.List[Payload], notes)
+        assert note_id not in [it["id"] for it in notes]
+
+    def _assert_model_note(self, note):
+        assert isinstance(note, dict)
+        assert "id" in note
+        assert "title" in note
+        assert "text" in note
+        assert "created_at" in note
+        return note
 
     def create_check(
         self,

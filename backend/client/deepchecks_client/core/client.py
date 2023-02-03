@@ -659,3 +659,40 @@ class DeepchecksModelClient:
         checks_to_delete = [x for x in names if x not in checks_not_in_model]
         self.api.delete_model_checks_by_name(self.model['id'], checks_to_delete)
         pretty_print(f'The following checks were successfully deleted: {checks_to_delete}')
+
+    def add_notes(self, notes: t.List[t.Dict[str, str]]) -> t.List[t.Dict[str, t.Any]]:
+        """Add notes to the model.
+
+        Parameters
+        ----------
+        notes: List[Dict[str, Any]]
+            list of model notes to add.
+            Each dict expected to contain only two keys 'title' and 'text'
+
+        Returns
+        -------
+        List[Dict[str, Any]] :
+            list of created notes
+        """
+        created_notes = self.api.create_model_notes(model_id=self.model['id'], notes=notes)
+        return t.cast(t.List[t.Dict[str, t.Any]], created_notes)
+
+    def delete_note(self, note_id: int):
+        """Delete note.
+
+        Parameters
+        ----------
+        note_id: int
+            model note id
+        """
+        self.api.delete_model_note(note_id=note_id)
+
+    def get_notes(self) -> t.List[t.Dict[str, t.Any]]:
+        """Retrieve list of model notes.
+
+        Returns
+        -------
+        List[Dict[str, Any]]k
+        """
+        notes = self.api.fetch_model_notes(model_id=self.model['id'])
+        return t.cast(t.List[t.Dict[str, t.Any]], notes)

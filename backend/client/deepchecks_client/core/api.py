@@ -351,6 +351,88 @@ class API:
         else:
             return self.session.post('models', json=model)
 
+    def create_model_notes(
+        self,
+        model_id: int,
+        notes: t.List[t.Dict[str, str]],
+        raise_on_status: bool = True
+    ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
+        """Create model notes.
+
+        Parameters
+        ----------
+        model_id: int
+            numerical model identifier
+        notes : List[Dict[str, str]]
+            The model to create.
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[httpx.Response, List[Dict[str, Any]]]
+        """
+        response = self.session.post(f'models/{model_id}/notes', json=notes)
+        return (
+            response
+            if not raise_on_status
+            else maybe_raise(response, msg='Failed to create model notes.\n{error}').json()
+        )
+
+    def delete_model_note(
+        self,
+        note_id: int,
+        raise_on_status: bool = True
+    ) -> t.Optional[httpx.Response]:
+        """Delete model note.
+
+        Parameters
+        ----------
+        note_id : int
+            The model note id
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        httpx.Response
+            The response object.
+        """
+        response = self.session.delete(f'models-notes/{note_id}')
+        return (
+            response
+            if not raise_on_status
+            else maybe_raise(response, msg=f'Failed to delete ModelNote(id:{note_id}).\n{{error}}')
+        )
+
+    def fetch_model_notes(
+        self,
+        model_id: int,
+        raise_on_status: bool = True
+    ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
+        """Fetch list of model notes.
+
+        Parameters
+        ----------
+        model_id : int
+            The model id
+        raise_on_status : bool, optional
+            Raise exception if status code is not 200.
+
+        Returns
+        -------
+        Union[httpx.Response, List[Dict[str, Any]]]
+        """
+        response = self.session.get(f'models/{model_id}/notes')
+        return (
+            response
+            if not raise_on_status
+            else maybe_raise(
+                response,
+                msg=f'Failed to retrieve Model(id:{model_id}) notes.\n{{error}}'
+            ).json()
+        )
+
     def delete_model_by_id(
         self,
         model_id: int,

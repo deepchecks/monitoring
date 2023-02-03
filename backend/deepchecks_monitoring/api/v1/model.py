@@ -22,7 +22,7 @@ from fastapi import BackgroundTasks, Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import Integer as SQLInteger
-from sqlalchemy import case, delete, func, literal, select, text, union_all, update
+from sqlalchemy import case, delete, func, insert, literal, select, text, union_all, update
 from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
@@ -39,7 +39,7 @@ from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import Model
+from deepchecks_monitoring.schema_models import Model, ModelNote
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
 from deepchecks_monitoring.schema_models.check import Check
@@ -51,6 +51,33 @@ from deepchecks_monitoring.schema_models.monitor import Monitor
 from deepchecks_monitoring.utils import auth
 
 from .router import router
+
+
+class ModelNoteCreationSchema(BaseModel):
+    """Note schema."""
+
+    title: str
+    text: t.Optional[str] = None
+
+    class Config:
+        """Config."""
+
+        orm_mode = True
+
+
+class ModelNoteSchema(ModelNoteCreationSchema):
+    """Note schema."""
+
+    id: str
+    title: str
+    text: t.Optional[str] = None
+    created_at: datetime
+    model_id: int
+
+    class Config:
+        """Config."""
+
+        orm_mode = True
 
 
 class ModelSchema(BaseModel):
@@ -77,6 +104,7 @@ class ModelCreationSchema(BaseModel):
     task_type: TaskType
     alerts_delay_labels_ratio: float
     alerts_delay_seconds: int
+    notes: t.Optional[t.List[ModelNoteCreationSchema]] = None
 
     class Config:
         """Config for Model schema."""
@@ -120,7 +148,10 @@ async def get_create_model(
         SQLAlchemy session.
 
     """
-    model = (await session.execute(select(Model).where(Model.name == model_schema.name))).scalars().first()
+    model = await session.scalar(
+        select(Model)
+        .where(Model.name == model_schema.name)
+    )
     if model is not None:
         if model.task_type != model_schema.task_type:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
@@ -129,7 +160,9 @@ async def get_create_model(
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the description "
                              f"'{model_schema.description} and not the description '{model.description}'")
     else:
-        model = Model(**model_schema.dict(exclude_none=True))
+        data = model_schema.dict(exclude_none=True)
+        notes = [ModelNote(**it) for it in data.pop("notes", [])]
+        model = Model(notes=notes, **data)
         session.add(model)
         await session.flush()
     return {"id": model.id, "name": model.name}
@@ -895,3 +928,78 @@ async def set_schedule_time(
     await session.execute(update(Alert).where(AlertRule.monitor_id.in_(monitor_ids))
                           .values({Alert.resolved: True}),
                           execution_options=immutabledict({"synchronize_session": False}))
+
+
+@router.get(
+    "/models/{model_id}/notes",
+    tags=[Tags.MODELS],
+    summary="Retrieve model notes."
+)
+async def retrieve_model_notes(
+    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+    session: AsyncSession = AsyncSessionDep,
+) -> t.List[ModelNoteSchema]:
+    model = await fetch_or_404(
+        session,
+        Model,
+        options=joinedload(Model.notes),
+        **model_identifier.as_kwargs,
+    )
+    return [
+        ModelNoteSchema.from_orm(it)
+        for it in model.notes
+    ]
+
+
+@router.post(
+    "/models/{model_id}/notes",
+    tags=[Tags.MODELS],
+    summary="Create model notes."
+)
+async def create_model_notes(
+    notes: t.List[ModelNoteCreationSchema],
+    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+    session: AsyncSession = AsyncSessionDep,
+) -> t.List[ModelNoteSchema]:
+    if len(notes) == 0:
+        raise BadRequest("notes list cannot be empty")
+    model = await fetch_or_404(
+        session=session,
+        model=Model,
+        **model_identifier.as_kwargs
+    )
+    records = (await session.execute(
+        insert(ModelNote)
+        .values([{"model_id": model.id, **it.dict()} for it in notes])
+        .returning(ModelNote.id, ModelNote.created_at, ModelNote.model_id)
+    )).all()
+    return [
+        ModelNoteSchema(
+            title=note.title,
+            text=note.text,
+            created_at=record.created_at,
+            id=record.id,
+            model_id=record.model_id
+        )
+        for note, record in zip(notes, records)
+    ]
+
+
+@router.delete(
+    "/models-notes/{note_id}",
+    tags=[Tags.MODELS],
+    summary="Delete model note."
+)
+async def delete_model_note(
+    note_id: int = Path(...),
+    session: AsyncSession = AsyncSessionDep,
+):
+    await exists_or_404(
+        session=session,
+        model=ModelNote,
+        id=note_id
+    )
+    await session.execute(
+        delete(ModelNote)
+        .where(ModelNote.id == note_id)
+    )

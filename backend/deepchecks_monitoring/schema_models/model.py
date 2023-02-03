@@ -25,7 +25,7 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
 
 
-__all__ = ["TaskType", "Model"]
+__all__ = ["TaskType", "Model", "ModelNote"]
 
 
 class TaskType(enum.Enum):
@@ -75,6 +75,13 @@ class Model(Base):
         passive_deletes=True,
         passive_updates=True,
     )
+    notes: Mapped[t.List["ModelNote"]] = relationship(
+        "ModelNote",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamps."""
@@ -91,3 +98,24 @@ class Model(Base):
     def has_data(self) -> bool:
         """Check if model has data."""
         return self.start_time <= self.end_time
+
+
+class ModelNote(Base):
+    """ORM Model to represent model notes."""
+
+    __tablename__ = "model_notes"
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    title = sa.Column(sa.String, nullable=False)
+    text = sa.Column(sa.Text, nullable=True)
+    created_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
+
+    model_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False
+    )
+    model: Mapped["Model"] = relationship(
+        "Model",
+        back_populates="notes"
+    )

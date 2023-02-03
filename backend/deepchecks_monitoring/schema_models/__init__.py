@@ -14,7 +14,7 @@ from .check import Check
 from .column_type import ColumnType
 from .dashboard import Dashboard
 from .ingestion_errors import IngestionError
-from .model import Model, TaskType
+from .model import Model, ModelNote, TaskType
 from .model_version import ModelVersion
 from .monitor import Monitor
 from .slack import SlackInstallation, SlackInstallationState
@@ -22,6 +22,7 @@ from .slack import SlackInstallation, SlackInstallationState
 __all__ = [
     'Model',
     'ModelVersion',
+    'ModelNote',
     'TaskType',
     'Check',
     'AlertRule',

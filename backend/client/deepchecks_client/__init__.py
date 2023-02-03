@@ -74,7 +74,8 @@ class DeepchecksClient:
         description: t.Optional[str] = None,
         create_model_defaults: bool = True,
         alerts_delay_labels_ratio: float = 1.0,
-        alerts_delay_seconds: int = 3600 * 72  # 3 days
+        alerts_delay_seconds: int = 3600 * 72,  # 3 days
+        model_notes: t.Optional[t.List[t.Dict[str, str]]] = None
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -98,6 +99,9 @@ class DeepchecksClient:
         alerts_delay_seconds: int, default: 3 days
             For alerts which needs labels, set the minimum time since the data was sent, in order to trigger the
             alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
+        model_notes: Optional[List[Dict[str, str]]] , default None
+            list of model notes.
+            Each dictionary expected to contain only two keys 'title' and 'text'.
 
         Returns
         -------
@@ -140,7 +144,8 @@ class DeepchecksClient:
                 'task_type': task_type.value,
                 'description': description,
                 'alerts_delay_labels_ratio': alerts_delay_labels_ratio,
-                'alerts_delay_seconds': alerts_delay_seconds
+                'alerts_delay_seconds': alerts_delay_seconds,
+                'notes': model_notes
             })
 
             model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_name(name))
