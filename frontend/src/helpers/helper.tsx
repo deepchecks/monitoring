@@ -1,15 +1,6 @@
-import React, { FC, lazy } from 'react';
+import React, { ComponentType, FC, lazy } from 'react';
 
 import { AnalysisProvider } from 'context/analysis-context';
-
-const AlertRules = lazy(() => import('pages/AlertRules'));
-const AlertsPage = lazy(() => import('pages/AlertsPage'));
-const DashboardPage = lazy(() => import('pages/DashboardPage'));
-const IntegrationsPage = lazy(() => import('pages/IntegrationsPage'));
-const AnalysisPage = lazy(() => import('pages/AnalysisPage'));
-const NotificationsPage = lazy(() => import('pages/NotificationsPage'));
-const ModelsPage = lazy(() => import('pages/ModelsPage'));
-const APIKeyPage = lazy(() => import('pages/APIKeyPage'));
 
 import {
   Alarm,
@@ -35,6 +26,38 @@ export interface PathInfo {
   ActiveIcon: FC | null;
   children?: PathInfo[];
 }
+
+// a function to retry loading a chunk to avoid chunk load error for out of date code
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const lazyRetry = function(componentImport: () => Promise<any>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new Promise<{ default: ComponentType<any>}>((resolve, reject) => {
+      // check if the window has already been refreshed
+      const hasRefreshed = JSON.parse(
+          window.sessionStorage.getItem('retry-lazy-refreshed') || 'false'
+      );
+      // try to import the component
+      componentImport().then(component => {
+          window.sessionStorage.setItem('retry-lazy-refreshed', 'false'); // success so reset the refresh
+          resolve(component);
+      }).catch(error => {
+          if (!hasRefreshed) { // not been refreshed yet
+              window.sessionStorage.setItem('retry-lazy-refreshed', 'true'); // we are now going to refresh
+              return window.location.reload(); // refresh the page
+          }
+          reject(error); // Default error behaviour as already tried refresh
+      });
+  });
+};
+
+const AlertRules = lazy(() => lazyRetry(() => import('pages/AlertRules')));
+const AlertsPage = lazy(() => lazyRetry(() => import('pages/AlertsPage')));
+const DashboardPage = lazy(() => lazyRetry(() => import('pages/DashboardPage')));
+const IntegrationsPage = lazy(() => lazyRetry(() => import('pages/IntegrationsPage')));
+const AnalysisPage = lazy(() => lazyRetry(() => import('pages/AnalysisPage')));
+const NotificationsPage = lazy(() => lazyRetry(() => import('pages/NotificationsPage')));
+const ModelsPage = lazy(() => lazyRetry(() => import('pages/ModelsPage')));
+const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 
 export const pathsInfo: PathInfo[] = [
   {
