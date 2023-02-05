@@ -134,7 +134,7 @@ export const RunDownloadSuite = ({
         onClose={handleClose}
         downloadNotebook={handleDownloadNotebook}
       />
-      <Tooltip title="Run test" placement="top">
+      <Tooltip title="Run test suite" placement="top">
         <StyledLoadingButton loading={isSuiteLoading} variant="text" onClick={handleRunTestSuite}>
           <GraphReport opacity={isSuiteLoading ? 0 : 1} />
         </StyledLoadingButton>
