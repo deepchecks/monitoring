@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useRef, useState, useCallback } from 'react';
+import React, { PropsWithChildren, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Chart, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-dayjs-3';
@@ -39,7 +39,6 @@ function DiagramLine({
   comparison,
   onPointCLick
 }: PropsWithChildren<DiagramLineProps>) {
-  const [chartData, setChartData] = useState(data);
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
   const [legends, setLegends] = useState<LegendItem[]>([]);
 
@@ -47,52 +46,8 @@ function DiagramLine({
   const _tCallbacks = { ...defaultTooltipCallbacks(timeFreq, previousPeriodLabels), ...tooltipCallbacks };
 
   const chartRef = useRef<Chart<'line', number[], string>>();
-  const range = useRef({ min: 0, max: 0 });
-
-  const getNewData = useCallback(() => {
-    const currentChart = chartRef.current;
-
-    if (!currentChart) {
-      return data;
-    }
-
-    return {
-      ...data,
-      datasets: data.datasets.map(el => {
-        el.data.forEach(item => {
-          if (typeof item === 'number') {
-            if (item < range.current.min) {
-              range.current.min = item;
-            }
-
-            if (item > range.current.max) {
-              range.current.max = item;
-            }
-            return;
-          }
-
-          if (item && typeof item === 'object') {
-            if (item.y < range.current.min) {
-              range.current.min = item.y;
-            }
-
-            if (item.y > range.current.max) {
-              range.current.max = item.y;
-            }
-          }
-        });
-
-        return {
-          ...el,
-          backgroundColor: createGradient(
-            currentChart.ctx,
-            currentChart.chartArea,
-            alpha(el.borderColor as string, 0),
-            alpha(el.borderColor as string, 0.25)
-          )
-        };
-      })
-    };
+  const range = useMemo(() => {
+    return { min: 0, max: 0 };
   }, [data]);
 
   const getActivePlugins = useCallback(() => {
@@ -126,7 +81,53 @@ function DiagramLine({
     }
   }, []);
 
-  const options: ChartOptions<'line'> = {
+  const chartData = useMemo(() => {
+    const currentChart = chartRef.current;
+
+    if (!currentChart) {
+      return data;
+    }
+
+    return {
+      ...data,
+      datasets: data.datasets.map(el => {
+        el.data.forEach(item => {
+          if (typeof item === 'number') {
+            if (item < range.min) {
+              range.min = item;
+            }
+
+            if (item > range.max) {
+              range.max = item;
+            }
+            return;
+          }
+
+          if (item && typeof item === 'object') {
+            if (item.y < range.min) {
+              range.min = item.y;
+            }
+
+            if (item.y > range.max) {
+              range.max = item.y;
+            }
+          }
+        });
+
+        return {
+          ...el,
+          backgroundColor: createGradient(
+            currentChart.ctx,
+            currentChart.chartArea,
+            alpha(el.borderColor as string, 0),
+            alpha(el.borderColor as string, 0.25)
+          )
+        };
+      })
+    };
+  }, [data, chartRef.current]);
+
+  const options: ChartOptions<'line'> = useMemo(() => ({
     maintainAspectRatio: false,
     animation: false,
     responsive: true,
@@ -198,9 +199,9 @@ function DiagramLine({
             max: 'original'
           },
           y: {
-            min: range.current.min,
-            max: range.current.max * 2,
-            minRange: (range.current.max - range.current.min) / 2
+            min: range.min,
+            max: range.max * 2,
+            minRange: (range.max - range.min) / 2
           }
         },
         pan: {
@@ -227,30 +228,27 @@ function DiagramLine({
         time: {
           minUnit: minTimeUnit,
           unit: minTimeUnit
+        },
+        ticks: {
+          source: "data"
         }
       },
       y: analysis
         ? {
           ticks: {
-            stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
+            stepSize: range.max === 0 ? 1 / 3 : (range.max - range.min) * 0.3,
             align: 'end'
           },
           grid: { drawBorder: false, drawTicks: false },
-          min: range.current.min,
-          max: range.current.max === 0 ? 1 : range.current.max * 1.2
+          min: range.min,
+          max: range.max === 0 ? 1 : range.max * 1.2
         }
         : {
-          min: range.current.min,
-          max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
+          min: range.min,
+          max: Math.max(range.max + (range.max - range.min) * 0.3, 1)
         }
     }
-  };
-
-  useEffect(() => {
-    if (chartRef.current) {
-      setChartData(getNewData());
-    }
-  }, [getNewData]);
+  }), [chartData, range.max, range.min]);
 
   useEffect(() => {
     if (isLoading) {

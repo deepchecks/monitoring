@@ -19,7 +19,7 @@ interface LegendItemProps extends BoxProps {
 const LegendItem = ({ item, lineIndexMap, analysis, current, version, indexInVersion, onClick }: LegendItemProps) => {
   const text = item?.text?.split('|');
   const color = item.strokeStyle ? item.strokeStyle.toString() : '#00F0FF';
-  const legendLabel =
+  const legendLabel = text?.[0] &&
     (text[0].length > MAX_LENGTH_OF_TOOLTIP_TEXT ? `${text[0].slice(0, MAX_LENGTH_OF_TOOLTIP_TEXT)}...` : text[0]) ||
     '-';
 
@@ -30,7 +30,7 @@ const LegendItem = ({ item, lineIndexMap, analysis, current, version, indexInVer
           <StyledLegendsHeader>{`${version}:`}</StyledLegendsHeader>
         </StyledLegendHeaderContainer>
       )}
-      <Tooltip title={text[1] ? text[0] + ' - ' + text[1] : text[0]} placement="top">
+      <Tooltip title={text?.[1] ? text[0] + ' - ' + text[1] : text?.[0]} placement="top">
         <StyledLegendItem
           onClick={onClick}
           sx={{
