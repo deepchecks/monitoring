@@ -1,6 +1,3 @@
-import random
-import string
-
 import pendulum as pdl
 from kafka.errors import KafkaError, UnknownTopicOrPartitionError
 from sqlalchemy import delete, select
@@ -19,6 +16,7 @@ __all__ = ['ModelVersionTopicDeletionWorker', 'insert_model_version_topic_delete
 
 
 QUEUE_NAME = 'model version topic delete'
+DELAY = TimeUnit.HOUR.value * 3
 
 
 class ModelVersionTopicDeletionWorker(BackgroundWorker):
@@ -36,7 +34,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         return QUEUE_NAME
 
     def delay_seconds(self) -> int:
-        return TimeUnit.HOUR.value
+        return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider):
         model_version_id = task.params['model_version_id']
@@ -73,9 +71,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         else:
             reinsert_task = True
 
-        # If params changed from when we queried the task, reinsert it
-        params_from_db = await session.scalar(delete(Task).where(Task.id == task.id).returning(Task.params))
-        reinsert_task |= params_from_db['hash'] != task.params['hash']
+        await session.scalar(delete(Task).where(Task.id == task.id))
 
         if reinsert_task:
             await insert_model_version_topic_delete_task(org_id, model_version_id, session)
@@ -87,11 +83,15 @@ async def insert_model_version_topic_delete_task(organization_id, model_version_
     We do this when new topic is created in the data ingestion, and inside the worker itself if there was kafka error
     or conditions to delete was not met (data is still being sent)
     """
-    random_hash = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    params = {'organization_id': organization_id, 'model_version_id': model_version_id, 'hash': random_hash}
-    values = dict(name=f'{organization_id}:{model_version_id}', bg_worker_task=QUEUE_NAME,
-                  params=params)
+    now = pdl.now().int_timestamp
+    # To avoid edge case where we:
+    # 1. worker: delete topic
+    # 2. server: create the topic + create task
+    # 3. worker: delete task
+    # By adding the floored timestamp the "created task" in server will have different name than the task being deleted
+    # by the worker
+    floored_now = now - now % DELAY
+    params = {'organization_id': organization_id, 'model_version_id': model_version_id}
+    values = dict(name=f'{organization_id}:{model_version_id}:{floored_now}', bg_worker_task=QUEUE_NAME, params=params)
 
-    # In case of conflict update the params in order to update the random hash
-    await session.execute(insert(Task).values(values)
-                          .on_conflict_do_update(constraint=UNIQUE_NAME_TASK_CONSTRAINT, set_={Task.params: params}))
+    await session.execute(insert(Task).values(values).on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))

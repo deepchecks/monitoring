@@ -1,5 +1,6 @@
 import bisect
 
+import pendulum as pdl
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +9,7 @@ from deepchecks_monitoring.logic.keys import build_monitor_cache_key, get_invali
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 
 QUEUE_NAME = 'monitor cache invalidation'
+DELAY = 60
 
 
 class ModelVersionCacheInvalidation(BackgroundWorker):
@@ -17,9 +19,10 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
         return QUEUE_NAME
 
     def delay_seconds(self) -> int:
-        return 60
+        return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider):
+        # Delete task
         await session.execute(delete(Task).where(Task.id == task.id))
 
         model_version_id = task.params['model_version_id']
@@ -57,13 +60,7 @@ class ModelVersionCacheInvalidation(BackgroundWorker):
         # Delete all invalidation timestamps by range. if timestamps were updated while running,
         # then their score should be larger than max_score, and they won't be deleted
         pipe.zremrangebyscore(invalidation_set_key, min=0, max=max_score)
-        # Then takes count of the set, to know whether to reschedule the task
-        pipe.zcount(invalidation_set_key, 0, -1)
-        # Get result of count
-        timestamps_count = pipe.execute()[-1]
-        # If more timestamps, insert task to make sure it runs again
-        if timestamps_count > 0:
-            await insert_model_version_cache_invalidation_task(org_id, model_version_id, session)
+        pipe.execute()
 
 
 async def insert_model_version_cache_invalidation_task(organization_id, model_version_id, session):
@@ -71,8 +68,16 @@ async def insert_model_version_cache_invalidation_task(organization_id, model_ve
 
     We do this when new data is ingested, in order to update the monitor values.
     """
+    now = pdl.now().int_timestamp
+    # To avoid edge case where we:
+    # 1. worker: invalidate cache
+    # 2. server: insert more timestamps to invalidate + create task
+    # 3. worker: delete task
+    # By adding the floored timestamp the "created task" in server will have different name than the task being deleted
+    # by the worker
+    floored_now = now - now % DELAY
     params = {'organization_id': organization_id, 'model_version_id': model_version_id}
-    values = dict(name=f'{organization_id}:{model_version_id}', bg_worker_task=QUEUE_NAME, params=params)
+    values = dict(name=f'{organization_id}:{model_version_id}:{floored_now}', bg_worker_task=QUEUE_NAME, params=params)
 
     # In case of conflict update the params in order to update the random hash
     return await session.scalar(insert(Task).values(values)

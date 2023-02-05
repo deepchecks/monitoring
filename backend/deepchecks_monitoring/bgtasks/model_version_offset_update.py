@@ -1,9 +1,8 @@
-import random
-import string
 import threading
 from typing import Optional
 
 import aiokafka
+import pendulum as pdl
 from kafka.errors import KafkaError
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
@@ -19,6 +18,7 @@ __all__ = ['ModelVersionOffsetUpdate', 'insert_model_version_offset_update_task'
 
 
 QUEUE_NAME = 'model version offset update'
+DELAY = 30
 
 
 class ModelVersionOffsetUpdate(BackgroundWorker):
@@ -40,7 +40,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         return QUEUE_NAME
 
     def delay_seconds(self) -> int:
-        return 30
+        return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider):
         if self.consumer is None:
@@ -53,9 +53,9 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         org_id = task.params['organization_id']
         succeeded = await _read_offset_from_kafka(org_id, model_version_id, session, self.consumer)
         # Deleting the task
-        params_from_db = await session.scalar(delete(Task).where(Task.id == task.id).returning(Task.params))
-        # If params hash changed from when we queried the task, reinsert it
-        if not succeeded or params_from_db['hash'] != task.params['hash']:
+        await session.scalar(delete(Task).where(Task.id == task.id))
+        # If failed to read offset, scheduling task to run again
+        if not succeeded:
             await insert_model_version_offset_update_task(org_id, model_version_id, session)
 
 
@@ -104,10 +104,16 @@ async def insert_model_version_offset_update_task(organization_id, model_version
 
     We call this every time data is logged.
     """
-    random_hash = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    params = {'organization_id': organization_id, 'model_version_id': model_version_id, 'hash': random_hash}
-    values = dict(name=f'{organization_id}:{model_version_id}', bg_worker_task=QUEUE_NAME,
-                  params=params)
+    now = pdl.now().int_timestamp
+    # To avoid edge case where we:
+    # 1. worker: read offset
+    # 2. server: ingest data + create task
+    # 3. worker: delete task
+    # By adding the floored timestamp the "created task" in server will have different name than the task being deleted
+    # by the worker
+    floored_now = now - now % DELAY
+    params = {'organization_id': organization_id, 'model_version_id': model_version_id}
+    values = dict(name=f'{organization_id}:{model_version_id}:{floored_now}', bg_worker_task=QUEUE_NAME, params=params)
 
     # In case of conflict update the params in order to update the random hash
     await session.execute(insert(Task).values(values).
