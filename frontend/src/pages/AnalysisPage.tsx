@@ -24,12 +24,13 @@ import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType, CheckTypeOptions } from 'helpers/types/check';
 import { GlobalStateContext } from 'context';
+import { ReverseTypeMap, TypeMap } from 'components/AnalysisItem/AnalysisItem.types';
 
 export function AnalysisPage() {
   const location = useLocation();
   const { models, isLoading: isModelsLoading, getCurrentModel } = useModels();
   const { isComparisonModeOn, comparisonMode, period, frequency, activeFilters } = useContext(AnalysisContext);
-  const {selectedModelId} = useContext(GlobalStateContext);
+  const { selectedModelId } = useContext(GlobalStateContext);
   const [modelId, setModelId] = useState(+getParams()?.modelId || selectedModelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
   const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
@@ -86,7 +87,7 @@ export function AnalysisPage() {
               start_time: period[0].toISOString(),
               end_time: period[1].toISOString()
             },
-            params: {check_id: checksToLoad}
+            params: { check_id: checksToLoad }
           })
           setChecksInitialData(response)
         }
@@ -100,6 +101,23 @@ export function AnalysisPage() {
     }
   }, [frequency, period, checks, mutateLoadCheckData]);
 
+  function renameKeys(obj: any, newKeys: any) {
+    const keyValues = Object.keys(obj).map(key => {
+      const newKey = newKeys?.[key] || key;
+      return { [newKey]: obj[key] };
+    });
+    return Object.assign({}, ...keyValues);
+  }
+
+  function fixDict(obj: any, allowedKeys: any) {
+    const keyValues = Object.keys(obj).map(key => {
+      const vals = Object.values(allowedKeys)
+      if (Object.values(allowedKeys).includes(key)) return { [key]: typeof obj[key] == 'string' ? [obj[key]] : obj[key] };
+      return {}
+    });
+    return Object.assign({}, ...keyValues);
+  }
+
   const handleDrawerOpen = useCallback(
     (
       datasetName: string,
@@ -109,24 +127,32 @@ export function AnalysisPage() {
       checkInfo: MonitorCheckConf | undefined,
       check: CheckSchema
     ) => {
-      if (additionalKwargs) {
+      const checkMegaConf = fixDict({ ...renameKeys({ ...check.config.params }, ReverseTypeMap), ...additionalKwargs?.check_conf }, ReverseTypeMap)
+      if (checkMegaConf) {
         const type = checkInfo?.res_conf ? CheckTypeOptions.Class : CheckTypeOptions.Feature;
         setCurrentType(type);
 
-        if (additionalKwargs.check_conf['aggregation method'][0] == 'none') {
+        if (!checkMegaConf['aggregation method'] ||
+          ['none', undefined].includes(checkMegaConf['aggregation method']?.[0])) {
           if (type === CheckTypeOptions.Feature) {
             setCurrentAdditionalKwargs(
               // Filter only the feature that was clicked on
-              {check_conf: {...additionalKwargs.check_conf, feature: [datasetName]},
-              res_conf: additionalKwargs.res_conf}
+              {
+                check_conf: { ...checkMegaConf, feature: [datasetName] },
+                res_conf: additionalKwargs?.res_conf
+              }
             )
-          } else {
-            setCurrentAdditionalKwargs(
-              {check_conf: additionalKwargs.check_conf,
+          }  
+        } else if (type === CheckTypeOptions.Class) {
+          setCurrentAdditionalKwargs(
+            {
+              check_conf: checkMegaConf,
               // Filter only the class that was clicked on
-              res_conf: [datasetName.replace(additionalKwargs.check_conf.scorer[0], '').trim()]}
-            )
-          }
+              res_conf: [datasetName.replace(checkMegaConf.scorer[0], '').trim()]
+            }
+          )
+        } else {
+          setCurrentAdditionalKwargs({check_conf: checkMegaConf})
         }
       }
 

@@ -25,6 +25,12 @@ export const TypeMap = {
   [AnalysisItemFilterTypes.SCORER]: 'scorers'
 };
 
+export const ReverseTypeMap = {
+  'aggregation_method': AnalysisItemFilterTypes.AGGREGATION,
+  'features': AnalysisItemFilterTypes.FEATURE,
+  'scorers': AnalysisItemFilterTypes.SCORER 
+};
+
 export interface IDataset {
   id: string;
   label?: string;
