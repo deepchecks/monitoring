@@ -139,12 +139,16 @@ def execute_worker():
 
         if settings.sentry_dsn:
             import sentry_sdk  # pylint: disable=import-outside-toplevel
+            from sentry_sdk.integrations.logging import ignore_logger  # pylint: disable=import-outside-toplevel
+
             sentry_sdk.init(
                 dsn=settings.sentry_dsn,
                 traces_sample_rate=0.1,
                 environment=settings.sentry_env
             )
             telemetry.collect_telemetry(tasks_runner.TaskRunner)
+            # Ignoring this logger since it can spam sentry with errors
+            ignore_logger('aiokafka.cluster')
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
 
