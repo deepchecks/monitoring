@@ -341,7 +341,7 @@ env-setup: external-services-setup
 
 cypress: env-setup
 	@npm install
-	@npx cypress run
+	@TZ=UTC npx cypress run
 
 ### Documentation
 

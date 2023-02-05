@@ -20,7 +20,7 @@ describe('Alerts screen', () => {
 
         cy.contains('p', 'checky v1 Monitor'); // to wait for alert modal to load
         cy.contains('p', 'checky v1 Monitor').parent().parent().within(() => {
-            cy.contains('h6', 'Accuracy, Recall - Macro ...').should('exist');
+            cy.contains('h6', 'Check:').should('exist');
             cy.contains('h6', '< 0.5').should('exist');
             cy.contains('h6', 'alerts model').should('exist');
             cy.contains('h6', 'checky v1').should('exist');

@@ -9,8 +9,8 @@ describe('test dashboard', () => {
       model_info = response
       cy.visit('/')
       // Check for model name under models list
-      cy.contains('h6', 'Models List').parent().within(() => {
-        cy.contains('h6', modelName).should('exist')
+      cy.contains('h6', 'Models').parent().parent().within(() => {
+        cy.contains('p', modelName).should('exist')
       })
     })
   })
@@ -45,7 +45,10 @@ describe('test dashboard', () => {
   it('Add manual monitor - graphs appear', () => {
     
     cy.visit('/')
-    cy.contains('p', 'Monitors').siblings().eq(0).find('button').click();
+    cy.contains('p', 'Monitors').parent().within(() => {
+        cy.get('button').click();
+    });
+
     cy.contains('div[role="presentation"]', 'Create monitor').contains('label', 'Monitor name').parent().within(() => {
         cy.get('input').type('manual monitor')
     });

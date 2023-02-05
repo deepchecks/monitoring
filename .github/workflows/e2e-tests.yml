@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest-4-cores
     steps:
       -
         name: Checkout
@@ -154,7 +154,7 @@ jobs:
           service: mon-commercial
           cluster: DevMonitoring
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     needs: build
     steps:
       -
@@ -178,6 +178,16 @@ jobs:
       -
         name: Run e2e tests
         run: make cypress
+      -
+        name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cypress-artifacts
+          path: |
+            ./cypress/screenshots
+            ./cypress/videos
+          retention-days: 1
   docs:
     needs: build
     runs-on: ubuntu-latest

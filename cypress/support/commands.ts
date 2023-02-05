@@ -70,6 +70,7 @@ Cypress.Commands.add('resetState', () => {
         // Accept EULA
         cy.get('input[type="checkbox"]').click()
         cy.get('button[type="button"]').click()
+        cy.wait(200)
     })
 })
 
@@ -191,7 +192,7 @@ Cypress.Commands.add('addNullsCheck', (modelInfo: object) => {
         name: "nully checky v1",
         config: {
             class_name: "PercentOfNulls",
-            params: {},
+            params: { aggregation_method: "max" },
             module_name: "deepchecks.tabular.checks"
         }
     };

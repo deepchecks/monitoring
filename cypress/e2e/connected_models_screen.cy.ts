@@ -140,23 +140,16 @@ describe("Connected Models Screen", () => {
                 
                 cy.get("@detailsDialogContent")
                     .find("div[role=tablist] button[role=tab]")
-                    .should("have.length", 2)
+                    .should("have.length", 1)
                     .eq(0)
                     .click();
                 
                 cy.get("@detailsDialogContent")
                     .find("div[role=tabpanel]")
-                    .should("have.length", 2)
+                    .should("have.length", 1)
                     .eq(0)
                     .as("versionsList")
                     .should("not.have.attr", "hidden");
-                
-                cy.get("@detailsDialogContent")
-                    .find("div[role=tabpanel]")
-                    .should("have.length", 2)
-                    .eq(1)
-                    .as("topSecret")
-                    .should("have.attr", "hidden");
                 
                 cy.get("@versionsList")
                     .children()

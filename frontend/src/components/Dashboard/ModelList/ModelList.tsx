@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 
 import { ModelManagmentSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
 import { GlobalStateContext } from 'context';
@@ -31,9 +31,16 @@ const SEVERITY = 'critical';
 export function ModelList({ models, isLoading }: ModelListProps) {
   const { selectedModelId: activeModelId, changeSelectedModelId } = useContext(GlobalStateContext);
 
-  const [filteredModels, setFilteredModels] = useState(models);
   const [modelName, setModelName] = useState('');
 
+  const filteredModels = useMemo(() => {
+    if (!modelName) return models;
+
+    return models.filter(({ name }) => name.toLowerCase().includes(modelName.toLowerCase()));
+    
+  }, [models, modelName])
+
+  
   const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
     severity: [SEVERITY]
   });
@@ -47,15 +54,10 @@ export function ModelList({ models, isLoading }: ModelListProps) {
     const { value } = e.target;
 
     setModelName(value);
-    if (!value) setFilteredModels(models);
-
-    const filtered = models.filter(({ name }) => name.toLowerCase().includes(value.toLowerCase()));
-    setFilteredModels(filtered);
   };
 
   const clearSearchBar = () => {
     setModelName('');
-    setFilteredModels(models);
   };
 
   const handleModelClick = (modelId: number) => {

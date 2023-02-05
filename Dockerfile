@@ -67,14 +67,6 @@ USER root
 # RUN pip install deepchecks-monitoring --no-index --find-links file:///code/backend/
 RUN pip install -q -e backend/
 
-RUN apt-get update && apt-get install -y "npm" \
-    && npm install -g yarn \
-    && yarn install --frozen-lockfile --production=true \
-    && yarn cache clean \
-    && apt-get clean
-    # && apk del .build-deps
-
-
 COPY ./bin ./bin/
 
 RUN chown -R deepchecks.deepchecks /code
