@@ -55,6 +55,7 @@ class AlertRuleInfoSchema(AlertRuleSchema):
     model_id: int
     alerts_count: int = 0
     max_end_time: t.Optional[datetime] = None
+    start_time: t.Optional[datetime] = None
 
 
 class AlertRuleUpdateSchema(BaseModel):
@@ -169,6 +170,7 @@ async def get_alert_rules(
             AlertRule.alert_severity,
             AlertRule.monitor_id,
             AlertRule.is_active,
+            AlertRule.start_time,
             Check.model_id,
             alerts_info.c.alerts_count,
             alerts_info.c.max_end_time,

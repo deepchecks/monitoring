@@ -161,7 +161,8 @@ async def update_monitor(
         # Either continue from the latest schedule if it's early enough or take it back number of windows to start
         new_schedule_time = min(pdl.instance(model.end_time).subtract(seconds=frequency * NUM_WINDOWS_TO_START),
                                 pdl.instance(monitor.latest_schedule))
-        update_dict["latest_schedule"] = floor_window_for_time(new_schedule_time, frequency)
+        new_schedule_time = floor_window_for_time(new_schedule_time, frequency)
+        update_dict["latest_schedule"] = new_schedule_time
         # Delete monitor tasks
         await Task.delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
         # Resolving all alerts which are connected to this monitor
@@ -169,6 +170,9 @@ async def update_monitor(
         await session.execute(sa.update(Alert).where(Alert.alert_rule_id.in_(alert_rules_select))
                               .values({Alert.resolved: True}),
                               execution_options=immutabledict({"synchronize_session": False}))
+        # Reset the alert rules start time - it will be updated when the monitor will run again
+        await session.execute(sa.update(AlertRule).where(AlertRule.monitor_id == monitor_id)
+                              .values({AlertRule.start_time: None}))
         # Delete cache
         cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
 

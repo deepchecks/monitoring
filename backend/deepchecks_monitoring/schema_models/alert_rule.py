@@ -70,6 +70,7 @@ class AlertRule(Base):
     condition = sa.Column(PydanticType(pydantic_model=Condition))
     alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
+    start_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
     monitor_id = sa.Column(
         sa.Integer,

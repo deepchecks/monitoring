@@ -134,6 +134,9 @@ async def _execute_monitor(
     alerts = []
 
     for alert_rule in alert_rules:
+        if alert_rule.start_time is None:
+            # The first time we run the alert rule we want to set the start time as the end time of the current window
+            alert_rule.start_time = end_time
         if not alert_rule.is_active:
             logger.info("AlertRule(id:%s) is not active, skipping it", alert_rule.id)
         elif alert := assert_check_results(alert_rule, check_results):

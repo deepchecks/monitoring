@@ -160,7 +160,8 @@ async def test_get_alert_rules(
             "model_id": 1,
             "alerts_count": 2,
             "max_end_time": "1970-01-19T12:26:40+00:00",
-            "is_active": True
+            "is_active": True,
+            "start_time": None
         },
         {
             "id": 1,
@@ -170,7 +171,8 @@ async def test_get_alert_rules(
             "model_id": 1,
             "alerts_count": 5,
             "max_end_time": "1970-01-19T12:26:40+00:00",
-            "is_active": True
+            "is_active": True,
+            "start_time": None
         }
     ]
 
@@ -186,7 +188,8 @@ async def test_get_alert_rules(
             "model_id": 1,
             "alerts_count": 2,
             "max_end_time": "1970-01-19T12:26:40+00:00",
-            "is_active": True
+            "is_active": True,
+            "start_time": None
         },
         {
             "id": 1,
@@ -196,7 +199,8 @@ async def test_get_alert_rules(
             "model_id": 1,
             "alerts_count": 2,
             "max_end_time": "1970-01-19T12:26:40+00:00",
-            "is_active": True
+            "is_active": True,
+            "start_time": None
         }
     ]
 
@@ -212,7 +216,8 @@ async def test_get_alert_rules(
             "model_id": 1,
             "alerts_count": 3,
             "max_end_time": "1970-01-19T12:26:40+00:00",
-            "is_active": True
+            "is_active": True,
+            "start_time": None
         }
     ]
 
