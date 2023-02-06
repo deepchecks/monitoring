@@ -8,8 +8,10 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the ORM models."""
+from .base import Base, BaseClass  # isort:skip
 from .alert import Alert
 from .alert_rule import AlertRule, AlertSeverity
+from .alert_webhook import AlertWebhook
 from .check import Check
 from .column_type import ColumnType
 from .dashboard import Dashboard
@@ -20,6 +22,8 @@ from .monitor import Monitor
 from .slack import SlackInstallation, SlackInstallationState
 
 __all__ = [
+    'Base',
+    'BaseClass',
     'Model',
     'ModelVersion',
     'ModelNote',
@@ -33,5 +37,6 @@ __all__ = [
     'IngestionError',
     'AlertSeverity',
     'SlackInstallation',
-    'SlackInstallationState'
+    'SlackInstallationState',
+    'AlertWebhook'
 ]

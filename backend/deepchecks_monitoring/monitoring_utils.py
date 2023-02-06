@@ -32,7 +32,7 @@ from sqlalchemy.sql.expression import ColumnOperators
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 
 if TYPE_CHECKING:
-    from deepchecks_monitoring.public_models.base import Base
+    from deepchecks_monitoring.public_models import Base
 
 
 __all__ = [
@@ -428,7 +428,7 @@ def configure_logger(
 
 def fetch_unused_monitoring_tables(session: Session) -> t.List[str]:
     """Fetch names of unused monitoring tables."""
-    from deepchecks_monitoring.public_models import ModelVersion
+    from deepchecks_monitoring.schema_models import ModelVersion
 
     model_versions = session.scalars(sa.select(ModelVersion)).all()
     active_monitoring_tables = set()
@@ -591,7 +591,7 @@ class ModelIdentifier(EntityIdentifier):
     @property
     def entity(self):
         """Return the ORM entity."""
-        from deepchecks_monitoring.public_models import Model
+        from deepchecks_monitoring.schema_models import Model
         return Model
 
 
@@ -604,7 +604,7 @@ class ModelVersionIdentifier(EntityIdentifier):
     @property
     def entity(self):
         """Return the ORM entity."""
-        from deepchecks_monitoring.public_models import ModelVersion
+        from deepchecks_monitoring.schema_models import ModelVersion
         return ModelVersion
 
 
@@ -617,5 +617,5 @@ class CheckIdentifier(EntityIdentifier):
     @property
     def entity(self):
         """Return the ORM entity."""
-        from deepchecks_monitoring.public_models import Check
+        from deepchecks_monitoring.schema_models import Check
         return Check

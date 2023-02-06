@@ -12,8 +12,8 @@ from deepchecks_client.core.api import API
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
-from deepchecks_monitoring.public_models import Alert, AlertSeverity, ColumnType, Organization, User, UserOAuthDTO
-from deepchecks_monitoring.schema_models import TaskType
+from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
+from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 
 if t.TYPE_CHECKING:

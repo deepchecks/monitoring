@@ -37,10 +37,10 @@ def switch_func(to_name: bool):
 
     for row in rows:
         select_relevent_versions = f"""
-            SELECT 
-                model_versions.id, 
-                model_versions.name 
-            FROM model_versions 
+            SELECT
+                model_versions.id,
+                model_versions.name
+            FROM model_versions
                 join checks on checks.model_id = model_versions.model_id
                 join monitors on monitors.check_id = checks.id
                 join alert_rules on alert_rules.monitor_id = monitors.id

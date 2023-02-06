@@ -23,10 +23,10 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep, get
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.integrations.email import EmailMessage, EmailSender
 from deepchecks_monitoring.monitoring_utils import exists_or_404
-from deepchecks_monitoring.public_models import AlertSeverity, Organization
+from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.schema_models import SlackInstallation
+from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
 from deepchecks_monitoring.utils import auth
 
 from .global_router import router

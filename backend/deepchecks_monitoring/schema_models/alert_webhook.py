@@ -11,13 +11,12 @@ import sqlalchemy as sa
 from pydantic import AnyUrl, BaseModel, validator
 from sqlalchemy.dialects.postgresql import JSONB
 
-from deepchecks_monitoring.public_models import AlertSeverity
-from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models import AlertSeverity, Base
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
     from deepchecks_monitoring.config import EmailSettings
-    from deepchecks_monitoring.public_models import Alert, AlertRule, Check, Model, Monitor
+    from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Model, Monitor
 
 __all__ = ["AlertWebhook", "WebhookHttpMethod"]
 

@@ -17,6 +17,9 @@ from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
+# without this import Task model will not be defined,
+# alembic will not see it and will generate a drop command for it
+from deepchecks_monitoring.bgtasks.core import Task  # pylint: disable=unused-import
 from deepchecks_monitoring.schema_models.base import Base as MonitoringBase
 
 load_dotenv()

@@ -28,7 +28,11 @@ class IngestionError(Base):
     __tablename__ = "ingestion_errors"
 
     id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        index=True,
+    )
     sample = Column(String)
     sample_id = Column(String, nullable=True)
     error = Column(String, index=True)

@@ -4,7 +4,7 @@ import typing as t
 from furl import furl
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.public_models import Alert  # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models import Alert  # pylint: disable=unused-import
 
 __all__ = ["prepare_alert_link"]
 

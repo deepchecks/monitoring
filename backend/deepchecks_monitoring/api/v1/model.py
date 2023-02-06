@@ -759,8 +759,8 @@ class IngestionErrorSchema(BaseModel):
     id: int
     sample_id: t.Optional[str] = None
     error: t.Optional[str] = None
+    sample: t.Optional[str] = None
     created_at: datetime
-    sample: str
 
     class Config:
         """Config."""

@@ -11,8 +11,8 @@ from typing_extensions import Annotated
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, exists_or_404
-from deepchecks_monitoring.public_models import AlertSeverity
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models import AlertSeverity
 from deepchecks_monitoring.schema_models.alert_webhook import (AlertWebhook, PagerDutyWebhookProperties,
                                                                StandartWebhookProperties, WebhookHttpMethod,
                                                                WebhookKind)

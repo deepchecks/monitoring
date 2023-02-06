@@ -18,7 +18,8 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, relationship
 from typing_extensions import Self
 
-from deepchecks_monitoring.public_models import AlertSeverity, Base
+from deepchecks_monitoring.public_models import Base
+from deepchecks_monitoring.schema_models import AlertSeverity
 from deepchecks_monitoring.utils.database import SchemaBuilder
 from deepchecks_monitoring.utils.text import slugify
 
