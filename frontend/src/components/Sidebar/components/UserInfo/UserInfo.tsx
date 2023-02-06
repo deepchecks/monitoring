@@ -29,6 +29,7 @@ export const UserInfo = () => {
     cancelPendingRequests();
     logoutApiV1AuthLogoutGet().then(() => {
       handleClose();
+      window.location.reload();
     });
   };
 
