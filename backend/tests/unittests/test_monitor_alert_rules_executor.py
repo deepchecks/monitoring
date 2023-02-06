@@ -89,7 +89,7 @@ async def test_monitor_executor(
     assert isinstance(alert, Alert), alert
     assert alert.alert_rule_id == rule_that_should_raise["id"]
     assert isinstance(alert.failed_values, dict), alert.failed_values
-    assert alert.failed_values == {"v1": {"accuracy": 0.2}, "v2": {"accuracy": 0.2}}, alert.failed_values
+    assert alert.failed_values == {"1": {"accuracy": 0.2}, "2": {"accuracy": 0.2}}, alert.failed_values
 
     # Assert cache was saved
     window_end = floor_window_for_time(curr_time, TimeUnit.DAY)
@@ -194,10 +194,10 @@ async def test_alert_scheduling(
     assert len(alert_per_rule[rules[1]["id"]]) == 8
 
     for alert in alert_per_rule[rules[0]["id"]]:
-        assert alert.failed_values["v1"]["accuracy"] < 0.7
+        assert alert.failed_values["1"]["accuracy"] < 0.7
 
     for alert in alert_per_rule[rules[1]["id"]]:
-        assert alert.failed_values == {"v1": {"accuracy": 0.0}}, alert.failed_values
+        assert alert.failed_values == {"1": {"accuracy": 0.0}}, alert.failed_values
 
 
 @pytest.mark.asyncio
@@ -295,4 +295,4 @@ async def test_monitor_executor_is_using_cache(
     assert isinstance(alert, Alert), alert
     assert alert.alert_rule_id == rule_that_should_raise["id"]
     assert isinstance(alert.failed_values, dict), alert.failed_values
-    assert alert.failed_values == {"v1": {"my special key": 1}}, alert.failed_values
+    assert alert.failed_values == {"1": {"my special key": 1}}, alert.failed_values

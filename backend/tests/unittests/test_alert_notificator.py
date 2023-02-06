@@ -30,16 +30,16 @@ async def test_alert_email_notification(
     alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
-    alert_id = await async_session.scalar(sa.insert(Alert).values(
-        failed_values={"1":["accuracy"], "2":["accuracy"]},
+    alert = (await async_session.execute(sa.insert(Alert).values(
+        failed_values={"1": ["accuracy"], "2": ["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
         alert_rule_id=alert_rule["id"]
-    ).returning(Alert.id))
+    ).returning(Alert))).first()
 
     notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, user.organization_id),
-        alert_id=alert_id,
+        alert=alert,
         session=async_session,
         resources_provider=resources_provider
     )
@@ -91,23 +91,23 @@ async def test_that_email_notification_levels_config_is_respected(
     ]
 
     alerts = [
-        await async_session.scalar(sa.insert(Alert).values(
+        (await async_session.execute(sa.insert(Alert).values(
             failed_values={"1": ["accuracy"], "2":["accuracy"]},
             start_time=now,
             end_time=now + timedelta(hours=2),
             alert_rule_id=alert_rules[0]["id"]
-        ).returning(Alert.id)),
-        await async_session.scalar(sa.insert(Alert).values(
+        ).returning(Alert))).first(),
+        (await async_session.execute(sa.insert(Alert).values(
             failed_values={"1": ["accuracy"], "2":["accuracy"]},
             start_time=now,
             end_time=now + timedelta(hours=2),
             alert_rule_id=alert_rules[1]["id"]
-        ).returning(Alert.id))
+        ).returning(Alert))).first()
     ]
 
     notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, user.organization_id),
-        alert_id=alerts[0],
+        alert=alerts[0],
         session=async_session,
         resources_provider=resources_provider
     )
@@ -129,7 +129,7 @@ async def test_that_email_notification_levels_config_is_respected(
     # that is not within org notification levels config
     notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, user.organization_id),
-        alert_id=alerts[1],
+        alert=alerts[1],
         session=async_session,
         resources_provider=resources_provider
     )
@@ -169,16 +169,16 @@ async def test_that_emails_are_send_to_all_members_of_organization(
         monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
         alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
 
-    alert_id = await async_session.scalar(sa.insert(Alert).values(
-        failed_values={"1":["accuracy"], "2":["accuracy"]},
+    alert = (await async_session.execute(sa.insert(Alert).values(
+        failed_values={"1": ["accuracy"], "2": ["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
         alert_rule_id=alert_rule["id"]
-    ).returning(Alert.id))
+    ).returning(Alert))).first()
 
     notificator = await AlertNotificator.instantiate(
         organization_id=t.cast(int, users[0].organization_id),
-        alert_id=alert_id,
+        alert=alert,
         session=async_session,
         resources_provider=resources_provider
     )
@@ -211,12 +211,12 @@ async def test_alert_slack_notification(
     alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
-    alert_id = await async_session.scalar(sa.insert(Alert).values(
+    alert = (await async_session.execute(sa.insert(Alert).values(
         failed_values={"1": ["accuracy"], "2": ["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
         alert_rule_id=alert_rule["id"]
-    ).returning(Alert.id))
+    ).returning(Alert))).first()
 
     await async_session.execute(sa.insert(SlackInstallation).values(
         app_id="qwert",
@@ -240,7 +240,7 @@ async def test_alert_slack_notification(
     async with ResourcesProvider(settings) as rp:
         notificator = await AlertNotificator.instantiate(
             organization_id=t.cast(int, user.organization_id),
-            alert_id=alert_id,
+            alert=alert,
             session=async_session,
             resources_provider=rp
         )

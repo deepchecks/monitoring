@@ -1468,7 +1468,7 @@ def create_alert(alert_rule_id: int, async_session: AsyncSession, resolved: bool
     dt = pdl.from_timestamp(1600000)
 
     alert = Alert(
-        failed_values={"v1": {"Accuracy": 0.3}},
+        failed_values={"1": {"Accuracy": 0.3}},
         alert_rule_id=alert_rule_id,
         start_time=dt,
         end_time=dt,

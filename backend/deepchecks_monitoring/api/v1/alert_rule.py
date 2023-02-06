@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse, exists_or_404, fetch_or_404
-from deepchecks_monitoring.schema_models import Alert, Check, Monitor
+from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
 
 from .alert import AlertSchema
@@ -259,7 +259,15 @@ async def get_alerts_of_alert_rule(
     if resolved is not None:
         query = query.where(Alert.resolved.is_(resolved))
     query = await session.execute(query.order_by(Alert.start_time))
-    return [AlertSchema.from_orm(a) for a in query.scalars().all()]
+    alerts = [AlertSchema.from_orm(a) for a in query.scalars().all()]
+    model_versions = (await session.execute(select(ModelVersion.id, ModelVersion.name))).all()
+    model_versions_dict = {str(model_version.id): model_version.name for model_version in model_versions}
+    for alert in alerts:
+        for model_version_id, val in list(alert.failed_values.items()):
+            if model_versions_dict.get(model_version_id):
+                del alert.failed_values[model_version_id]
+                alert.failed_values[model_versions_dict[model_version_id]] = val
+    return alerts
 
 
 @router.post("/alert-rules/{alert_rule_id}/resolve-all", tags=[Tags.ALERTS])

@@ -98,7 +98,7 @@ async def _execute_monitor(
         cache_result = resources_provider.cache_functions.get_monitor_cache(
             organization_id, model_version.id, monitor_id, start_time, end_time)
         if cache_result.found:
-            cache_results[model_version.name] = cache_result.value
+            cache_results[model_version] = cache_result.value
         else:
             model_versions_without_cache.append(model_version)
         logger.debug("Cache result: %s", cache_results)
@@ -125,12 +125,11 @@ async def _execute_monitor(
             resources_provider.cache_functions.set_monitor_cache(
                 organization_id, version.id, monitor_id, start_time, end_time, result)
 
-        run_check_results = {version.name: val for version, val in result_per_version.items()}
-        logger.debug("Check execution result: %s", run_check_results)
+        logger.debug("Check execution result: %s", result_per_version)
     else:
-        run_check_results = {}
+        result_per_version = {}
 
-    check_results = {**cache_results, **run_check_results}
+    check_results = {**cache_results, **result_per_version}
     check_results = {k: v for k, v in check_results.items() if v is not None}
     alerts = []
 
@@ -178,7 +177,7 @@ async def execute_monitor(
     for alert in alerts:
         # TODO:
         notificator = await AlertNotificator.instantiate(
-            alert_id=t.cast(int, alert.id),
+            alert=alert,
             organization_id=organization_id,
             session=session,
             resources_provider=resources_provider,
@@ -200,7 +199,7 @@ class AlertNotificator:
     async def instantiate(
         cls: t.Type["AlertNotificator"],
         organization_id: int,
-        alert_id: int,
+        alert: Alert,
         session: AsyncSession,
         resources_provider: ResourcesProvider,
         logger: t.Optional[logging.Logger] = None
@@ -211,19 +210,19 @@ class AlertNotificator:
         )) is None:
             raise RuntimeError(f"Not existing organization id:{organization_id}")
 
-        if (alert := await session.scalar(
-            sa.select(Alert).where(Alert.id == alert_id).options(
-                joinedload(Alert.alert_rule)
-                .joinedload(AlertRule.monitor)
+        if (alert_rule := await session.scalar(
+            sa.select(AlertRule).where(AlertRule.id == alert.alert_rule_id).options(
+                joinedload(AlertRule.monitor)
                 .joinedload(Monitor.check)
                 .joinedload(Check.model)
             )
         )) is None:
-            raise RuntimeError(f"Not existing alert id:{alert_id}")
+            raise RuntimeError(f"Not existing alert id:{alert.id}")
 
         return cls(
             organization=org,
             alert=alert,
+            alert_rule=alert_rule,
             session=session,
             resources_provider=resources_provider,
             logger=logger
@@ -233,12 +232,14 @@ class AlertNotificator:
         self,
         organization: Organization,
         alert: Alert,
+        alert_rule: AlertRule,
         session: AsyncSession,
         resources_provider: ResourcesProvider,
         logger: t.Optional[logging.Logger] = None
     ):
         self.organization = organization
         self.alert = alert
+        self.alert_rule = alert_rule
         self.session = session
         self.resources_provider = resources_provider
         self.logger = logger or logging.getLogger("alert-notificator")
@@ -247,8 +248,8 @@ class AlertNotificator:
         """Send notification emails."""
         org = self.organization
         alert = self.alert
+        alert_rule = self.alert_rule
 
-        alert_rule = t.cast(AlertRule, alert.alert_rule)
         monitor = t.cast(Monitor, alert_rule.monitor)
         check = t.cast(Check, monitor.check)
         model = t.cast(Model, check.model)
@@ -277,6 +278,8 @@ class AlertNotificator:
         alert_link = (furl(settings.host) / "alert-rules")
         alert_link = alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
 
+        email_failed_values = alert.named_failed_values if \
+            hasattr(alert, "named_failed_values") else alert.failed_values
         self.resources_provider.email_sender.send(EmailMessage(
             subject=f"Alert. Model: {model.name}, Monitor: {monitor.name}",
             sender=settings.deepchecks_email,
@@ -285,7 +288,7 @@ class AlertNotificator:
             template_context={
                 "alert_link": str(alert_link),
                 "alert_title": f"New {alert_rule.alert_severity.value} alert: {monitor.name}",
-                "alert_check_value": "|".join([f"{key}: {value}" for key, value in alert.failed_values.items()]),
+                "alert_check_value": "|".join([f"{key}: {value}" for key, value in email_failed_values.items()]),
                 "alert_date": alert.created_at.strftime("%d/%m/%Y, %H:%M"),
                 "model": model.name,
                 "check": check.name,
@@ -401,7 +404,7 @@ class AlertNotificator:
 
 def assert_check_results(
         alert_rule: AlertRule,
-        results: t.Dict[int, t.Dict[str, t.Any]]
+        results: t.Dict[ModelVersion, t.Dict[str, t.Any]]
 ) -> t.Optional[Alert]:
     """Assert check result in accordance to alert rule."""
     alert_condition = t.cast(Condition, alert_rule.condition)
@@ -421,17 +424,20 @@ def assert_check_results(
         if assert_value(value)
     )
 
-    failed_values = defaultdict(dict)
+    failed_values: t.Dict[ModelVersion, t.Dict[str, float]] = defaultdict(dict)
 
-    for version_id, failed_value_name, failed_value_value in failures:
-        failed_values[version_id][failed_value_name] = failed_value_value
+    for version, failed_value_name, failed_value_value in failures:
+        failed_values[version][failed_value_name] = failed_value_value
 
+    failed_values_by_id = {str(version.id): val for version, val in failed_values.items()}
     if failed_values:
-        return Alert(
+        alert = Alert(
             alert_rule_id=alert_rule.id,
-            failed_values=dict(failed_values),
+            failed_values=failed_values_by_id,
             resolved=False
         )
+        alert.named_failed_values = {version.name: val for version, val in failed_values.items()}
+        return alert
 
 
 class WorkerSettings(
