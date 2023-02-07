@@ -14,13 +14,14 @@ import typing as t
 import warnings
 from datetime import datetime
 
+import fastjsonschema
 import pandas as pd
 import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
-from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder,
-                                          DeepchecksJsonValidator, TaskType, parse_timestamp, pretty_print)
+from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
+                                          parse_timestamp, pretty_print)
 
 from .api import API
 
@@ -73,20 +74,20 @@ class DeepchecksModelVersionClient:
         self.label_map = schemas['label_map']
         self.all_columns = {**self.features, **self.additional_data}
 
-        self.schema_validator = DeepchecksJsonValidator(self.schema)
-        self.ref_schema_validator = DeepchecksJsonValidator(self.ref_schema)
+        self.schema_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(self.schema))
+        self.ref_schema_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(self.ref_schema))
 
         sample_id_column = DeepchecksColumns.SAMPLE_ID_COL.value
         label_column = DeepchecksColumns.SAMPLE_LABEL_COL.value
 
-        self.update_record_validator = DeepchecksJsonValidator({
+        self.update_record_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile({
             'type': 'object',
             'required': [sample_id_column],
             'properties': {
                 sample_id_column: self.schema['properties'][sample_id_column],
                 label_column: self.schema['properties'][label_column]
-            },
-        })
+            }
+        }))
 
         self.features = schemas['features']
         self.additional_data = schemas['additional_data']
@@ -204,7 +205,7 @@ class DeepchecksModelVersionClient:
 
         sample = {DeepchecksColumns.SAMPLE_ID_COL: str(sample_id), DeepchecksColumns.SAMPLE_LABEL_COL: label}
         sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
-        self.update_record_validator.validate(sample)
+        self.update_record_validator(sample)
         self._update_samples.append(sample)
 
     def update_batch(

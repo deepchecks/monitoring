@@ -3,7 +3,7 @@ pandas
 deepchecks
 httpx>=0.23.0
 pendulum==2.1.2
-jsonschema==4.7.2
+fastjsonschema==2.16.2
 termcolor
 PyYAML
 importlib_metadata; python_version < '3.8'

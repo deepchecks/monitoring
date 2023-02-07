@@ -14,7 +14,7 @@ import typing as t
 
 import deepchecks
 import dotenv
-import jsonschema.exceptions
+# import jsonschema.exceptions
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -110,12 +110,12 @@ def create_application(
     if settings.debug_mode:
         app.add_middleware(ProfilingMiddleware)
 
-    @app.exception_handler(jsonschema.exceptions.ValidationError)
-    async def _(_: Request, exc: jsonschema.exceptions.ValidationError):
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": exc.message},
-        )
+    # @app.exception_handler(jsonschema.exceptions.ValidationError)
+    # async def _(_: Request, exc: jsonschema.exceptions.ValidationError):
+    #     return JSONResponse(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         content={"error": exc.message},
+    #     )
 
     @app.exception_handler(UnacceptedEULA)
     async def eula_exception_handler(*args, **kwargs):  # pylint: disable=unused-argument

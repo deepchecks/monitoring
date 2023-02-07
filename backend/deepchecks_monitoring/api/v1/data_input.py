@@ -11,14 +11,12 @@
 import typing as t
 from io import StringIO
 
+import fastjsonschema
 import numpy as np
 import pandas as pd
 import pendulum as pdl
 from fastapi import Body, Depends, Response, UploadFile, status
 from fastapi.responses import ORJSONResponse
-from jsonschema import FormatChecker
-from jsonschema.exceptions import ValidationError
-from jsonschema.validators import validator_for
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -129,22 +127,34 @@ async def save_reference(
         raise BadRequest(limit_exceeded_message)
 
     content = await batch.read()
-    reference_batch: pd.DataFrame = pd.read_json(StringIO(content.decode()), orient="split",
-                                                 convert_axes=False, dtype=False, convert_dates=False)
-    reference_batch = reference_batch.replace(np.NaN, pd.NA).where(reference_batch.notnull(), None)
 
+    reference_batch = t.cast(pd.DataFrame, pd.read_json(
+        StringIO(content.decode()),
+        orient="split",
+        convert_axes=False,
+        dtype=False,
+        convert_dates=False
+    ))
+
+    reference_batch = reference_batch.replace(np.NaN, pd.NA).where(reference_batch.notnull(), None)
     items = []
 
-    validator_class = validator_for(model_version.reference_json_schema)
-    val_instance = validator_class(model_version.reference_json_schema, format_checker=FormatChecker())
+    validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(model_version.reference_json_schema))
+
     for _, row in reference_batch.iterrows():
         item = row.to_dict()
         try:
-            val_instance.validate(item)
+            validator(item)
+        except fastjsonschema.JsonSchemaValueException as e:
+            raise BadRequest(f"Invalid reference data: {e}") from e
+        else:
+            # TODO:
+            # 'asyncpg' driver requires values for date columns to be passed as a datetime|date instances
+            # this fact is a limitation for us, date parsing takes a lot of time and we actually doing
+            # it twice here, first time it is done by the 'fastjsonschema' and second time by us with help of
+            # the 'datetime_sample_formatter' function.
             datetime_sample_formatter(item, model_version)
             items.append(item)
-        except ValidationError as e:
-            raise BadRequest(f"Invalid reference data: {e}") from e
 
     # lock will be released automatically at transaction commit/rollback
     await session.execute(select(func.pg_advisory_xact_lock(model_version_id)))

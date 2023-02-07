@@ -17,6 +17,7 @@ import warnings
 from datetime import datetime
 from numbers import Number
 
+import fastjsonschema
 import httpx
 import numpy as np
 import pandas as pd
@@ -28,9 +29,8 @@ from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
-from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder,
-                                          DeepchecksJsonValidator, TaskType, maybe_raise, parse_timestamp, pretty_print,
-                                          validate_additional_data_schema)
+from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
+                                          maybe_raise, parse_timestamp, pretty_print, validate_additional_data_schema)
 from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_input
 
 
@@ -365,11 +365,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             elif col in self.datetime_columns:
                 data[col] = data[col].apply(_datetime_formatter)
 
-        validator = DeepchecksJsonValidator(self.ref_schema)
+        validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(self.ref_schema))
+
         for _, row in data.iterrows():
             item = row.to_dict()
             item = DeepchecksEncoder.encode(item)
-            validator.validate(item)
+            validator(item)
 
         self._upload_reference(data, samples_per_request)
         pretty_print('Reference data uploaded.')
@@ -544,7 +545,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 def _process_batch(
     *,
     task_type: TaskType,
-    schema_validator: DeepchecksJsonValidator,
+    schema_validator: t.Callable[..., t.Any],
     data_columns: t.Dict[str, str],
     sample_ids: np.ndarray,
     data: t.Optional[pd.DataFrame] = None,
@@ -663,7 +664,7 @@ def _process_batch(
 def _process_sample(
     *,
     task_type: TaskType,
-    schema_validator: DeepchecksJsonValidator,
+    schema_validator: t.Callable[..., t.Any],
     data_columns: t.Dict[str, str],
     sample_id: str,
     values: t.Optional[t.Dict[str, t.Any]] = None,
@@ -723,7 +724,7 @@ def _process_sample(
             sample[name] = _datetime_formatter(sample[name])
 
     sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
-    schema_validator.validate(sample)
+    schema_validator(sample)
     return sample
 
 

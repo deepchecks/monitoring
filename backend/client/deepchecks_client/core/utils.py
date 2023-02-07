@@ -24,7 +24,6 @@ import pendulum as pdl
 import rfc3339_validator
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.utils.feature_inference import is_categorical
-from jsonschema import FormatChecker, validators
 from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_datetime64_dtype, is_integer_dtype,
                                        is_numeric_dtype, is_period_dtype)
 from pendulum.datetime import DateTime as PendulumDateTime
@@ -281,25 +280,6 @@ def parse_timestamp(timestamp: t.Union[int, datetime, str]) -> 'PendulumDateTime
             raise ValueError(f'Not supported timestamp format for: {timestamp}')
     else:
         raise ValueError(f'Not supported timestamp type: {type(timestamp)}')
-
-
-def _callable_validator(_, instance):
-    return isinstance(instance, t.Callable)
-
-
-def _array_validator(_, instance):
-    return isinstance(instance, (list, tuple))
-
-
-DeepchecksJsonValidator: t.Type[validators.Draft202012Validator] = validators.extend(
-    validators.Draft202012Validator,
-    format_checker=FormatChecker(),
-    type_checker=(
-        validators.Draft202012Validator.TYPE_CHECKER
-        .redefine('array', _array_validator)
-        .redefine('callable', _callable_validator)
-    )
-)
 
 
 def pretty_print(msg: str):

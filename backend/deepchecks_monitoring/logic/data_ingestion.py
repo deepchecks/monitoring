@@ -15,11 +15,9 @@ import json
 import typing as t
 
 import asyncpg.exceptions
-import jsonschema.exceptions
+import fastjsonschema
 import pendulum as pdl
 import sqlalchemy.exc
-from jsonschema import FormatChecker
-from jsonschema.validators import validator_for
 from sqlalchemy import select, update
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +45,7 @@ async def log_data(
         model_version: ModelVersion,
         data: t.List[t.Dict[t.Any, t.Any]],
         session: AsyncSession,
-        log_times: t.List[pdl.DateTime],
+        log_times: t.List["pdl.DateTime"],
         logger
 ):
     """Insert batch data samples.
@@ -63,17 +61,15 @@ async def log_data(
     now = pdl.now()
     valid_data = {}
     errors = []
-
-    validator_class = validator_for(model_version.monitor_json_schema)
-    val_instance = validator_class(model_version.monitor_json_schema, format_checker=FormatChecker())
+    validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(model_version.monitor_json_schema))
 
     for index, sample in enumerate(data):
         # Samples can have different optional fields sent on them, so in order to save them in multi-insert we need
         # to make sure all samples have same set of fields.
         model_version.fill_optional_fields(sample)
         try:
-            val_instance.validate(sample)
-        except jsonschema.exceptions.ValidationError as e:
+            validator(sample)
+        except fastjsonschema.JsonSchemaValueException as e:
             errors.append({
                 "sample": str(sample),
                 "sample_id": sample.get(SAMPLE_ID_COL),
@@ -82,7 +78,6 @@ async def log_data(
             })
         else:
             sample[SAMPLE_LOGGED_TIME_COL] = log_times[index]
-            # Timestamps are passed as string, convert it to datetime
             datetime_sample_formatter(sample, model_version)
             error = None
             # If got same index more than once, log it as error
@@ -184,17 +179,27 @@ async def update_data(
     results = []
     errors = []
     valid_data = {}
-    validator_class = validator_for(optional_columns_schema)
-    val_instance = validator_class(optional_columns_schema, format_checker=FormatChecker())
+    validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(optional_columns_schema))
 
     for sample in data:
         try:
-            val_instance.validate(sample)
-        except jsonschema.exceptions.ValidationError as e:
-            errors.append(dict(sample=str(sample), sample_id=sample.get(SAMPLE_ID_COL), error=str(e),
-                               model_version_id=model_version.id))
+            validator(sample)
+        except fastjsonschema.JsonSchemaValueException as e:
+            errors.append(dict(
+                sample=str(sample),
+                sample_id=sample.get(SAMPLE_ID_COL),
+                error=str(e),
+                model_version_id=model_version.id
+            ))
             continue
+
+        # TODO:
+        # 'asyncpg' driver requires values for date columns to be passed as a datetime|date instances
+        # this fact is a limitation for us, date parsing takes a lot of time and we actually doing
+        # it twice here, first time it is done by the 'fastjsonschema' and second time by us with help of
+        # the 'datetime_sample_formatter' function.
         datetime_sample_formatter(sample, model_version)
+
         valid_data[sample[SAMPLE_ID_COL]] = sample
         results.append(session.execute(
             update(table).where(table.c[SAMPLE_ID_COL] == sample[SAMPLE_ID_COL]).values(sample)
@@ -266,7 +271,7 @@ class DataIngestionBackend(object):
             session: AsyncSession,
             user: User,
             action: t.Literal["log", "update"],
-            log_time: pdl.DateTime,
+            log_time: "pdl.DateTime",
     ):
         """Log new data.
 
