@@ -43,12 +43,13 @@ function DiagramLine({
   const [legends, setLegends] = useState<LegendItem[]>([]);
 
   const { alerts, alertIndex, alertSeverity, changeAlertIndex } = alertsWidget;
-  const _tCallbacks = { ...defaultTooltipCallbacks(timeFreq, previousPeriodLabels), ...tooltipCallbacks };
+  const _tCallbacks = useMemo(
+    () => ({ ...defaultTooltipCallbacks(timeFreq, previousPeriodLabels), ...tooltipCallbacks }),
+    [previousPeriodLabels, timeFreq, tooltipCallbacks]
+  );
 
   const chartRef = useRef<Chart<'line', number[], string>>();
-  const range = useMemo(() => {
-    return { min: 0, max: 0 };
-  }, [data]);
+  const range = useRef({ min: 0, max: 0 });
 
   const getActivePlugins = useCallback(() => {
     const currentPlugins: Plugin[] = [drawCircle];
@@ -81,35 +82,38 @@ function DiagramLine({
     }
   }, []);
 
-  const chartData = useMemo(() => {
-    const currentChart = chartRef.current;
+  const currentChart = chartRef.current;
 
+  const chartData = useMemo(() => {
     if (!currentChart) {
       return data;
     }
+
+    range.current.min = 0;
+    range.current.max = 0;
 
     return {
       ...data,
       datasets: data.datasets.map(el => {
         el.data.forEach(item => {
           if (typeof item === 'number') {
-            if (item < range.min) {
-              range.min = item;
+            if (item < range.current.min) {
+              range.current.min = item;
             }
 
-            if (item > range.max) {
-              range.max = item;
+            if (item > range.current.max) {
+              range.current.max = item;
             }
             return;
           }
 
           if (item && typeof item === 'object') {
-            if (item.y < range.min) {
-              range.min = item.y;
+            if (item.y < range.current.min) {
+              range.current.min = item.y;
             }
 
-            if (item.y > range.max) {
-              range.max = item.y;
+            if (item.y > range.current.max) {
+              range.current.max = item.y;
             }
           }
         });
@@ -125,7 +129,7 @@ function DiagramLine({
         };
       })
     };
-  }, [data, chartRef.current]);
+  }, [data, currentChart]);
 
   const options: ChartOptions<'line'> = useMemo(
     () => ({
@@ -200,9 +204,9 @@ function DiagramLine({
               max: 'original'
             },
             y: {
-              min: range.min,
-              max: range.max * 2,
-              minRange: (range.max - range.min) / 2
+              min: range.current.min,
+              max: range.current.max * 2,
+              minRange: (range.current.max - range.current.min) / 2
             }
           },
           pan: {
@@ -237,20 +241,32 @@ function DiagramLine({
         y: analysis
           ? {
               ticks: {
-                stepSize: range.max === 0 ? 1 / 3 : (range.max - range.min) * 0.3,
+                stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
                 align: 'end'
               },
               grid: { drawBorder: false, drawTicks: false },
-              min: range.min,
-              max: range.max === 0 ? 1 : range.max * 1.2
+              min: range.current.min,
+              max: range.current.max === 0 ? 1 : range.current.max * 1.2
             }
           : {
-              min: range.min,
-              max: Math.max(range.max + (range.max - range.min) * 0.3, 1)
+              min: range.current.min,
+              max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
             }
       }
     }),
-    [chartData, range.max, range.min]
+    [
+      _tCallbacks,
+      alertIndex,
+      alertSeverity,
+      alert_rules.length,
+      alerts,
+      analysis,
+      changeAlertIndex,
+      chartData.datasets,
+      chartData.labels,
+      minTimeUnit,
+      onPointCLick
+    ]
   );
 
   useEffect(() => {

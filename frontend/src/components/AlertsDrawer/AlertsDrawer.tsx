@@ -44,8 +44,11 @@ const AlertsDrawerComponent = ({ onClose, alertRule, resolved, ...props }: Alert
 
   useEffect(() => {
     if (initialAlerts.length) {
-      setAlerts(initialAlerts);
-      setAlertIndex(initialAlerts.length - 1);
+      const sortedAlerts = [...initialAlerts].sort(
+        (a, b) => new Date(a.end_time).getTime() - new Date(b.end_time).getTime()
+      );
+      setAlerts(sortedAlerts);
+      setAlertIndex(sortedAlerts.length - 1);
     }
   }, [initialAlerts]);
 

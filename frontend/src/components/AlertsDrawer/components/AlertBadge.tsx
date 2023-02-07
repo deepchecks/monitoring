@@ -51,7 +51,7 @@ const AlertBadgeComponent = ({ severity = SEVERITY.HIGH, color }: AlertBadgeProp
     <StyledContainer color={color}>
       <Stack direction="row" spacing="5px">
         <StyledIconContainer color={color}>
-          <Icon width={11.2} height={11.2} />
+          <Icon width={11.2} height={11.2} fill="white" />
         </StyledIconContainer>
         <StyledTypography color={color}>{title}</StyledTypography>
       </Stack>
