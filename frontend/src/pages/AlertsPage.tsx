@@ -16,7 +16,7 @@ import { AlertsDrawer } from 'components/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import { AlertsHeader } from 'components/AlertsHeader';
 import { AlertsResolveDialog } from 'components/AlertsResolveDialog';
-import { AlertsRulesItem } from 'components/AlertsRulesItem';
+import { AlertsRulesItem } from 'components/AlertRulesItem';
 import { AlertsSnackbar } from 'components/AlertsSnackbar';
 import { Loader } from 'components/Loader';
 import NoResults from 'components/NoResults';

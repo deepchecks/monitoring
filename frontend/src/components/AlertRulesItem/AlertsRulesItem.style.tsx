@@ -1,5 +1,6 @@
+import { AlertSeverity } from 'api/generated';
+
 import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/material';
-import { Criticality } from '../../helpers/types/alert';
 
 export const StyledMainWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -7,37 +8,46 @@ export const StyledMainWrapper = styled(Box)(({ theme }) => ({
   borderRadius: '10px',
   boxShadow: '0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
   height: 100,
+  width: '100%',
   position: 'relative',
   ':hover': {
     backgroundColor: theme.palette.primary.light,
     cursor: 'pointer',
     outline: `6px solid ${theme.palette.primary.contrastText}`
+  },
+  '@media (max-width: 1536px)': {
+    height: 70
   }
 }));
 
-interface StyledCriticalityProps {
-  criticality: Criticality;
-}
+type StyledCriticalityProps = {
+  criticality?: AlertSeverity;
+  resolved?: boolean;
+};
+
+const RESOLVED_ALERT_COLOR_OPACITY = 0.7;
 
 export const StyledCriticality = styled(Box, {
   shouldForwardProp: prop => prop !== 'criticality'
-})<StyledCriticalityProps>(({ criticality, theme }) => {
-  const getColor = (filed: Criticality) => {
+})<StyledCriticalityProps>(({ criticality = 'low', resolved, theme }) => {
+  const getColor = (filed: AlertSeverity): string => {
     if (filed === 'low') {
-      return theme.palette.error.contrastText;
+      return alpha(theme.palette.error.contrastText, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'mid') {
-      return theme.palette.error.light;
+      return alpha(theme.palette.error.light, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'high') {
-      return theme.palette.error.dark;
+      return alpha(theme.palette.error.dark, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'critical') {
-      return theme.palette.error.main;
+      return alpha(theme.palette.error.main, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
+
+    return alpha(theme.palette.error.main, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
   };
 
   return {
@@ -48,17 +58,32 @@ export const StyledCriticality = styled(Box, {
     padding: '22px 11px 20px 11px',
     textAlign: 'center',
     borderRadius: '10px 0px 0px 10px',
-    color: theme.palette.common.white
+    color: theme.palette.common.white,
+    '@media (max-width: 1536px)': {
+      minWidth: 65,
+      padding: '10px 11px 10px 11px'
+    }
   };
 });
 
 export const StyledDescription = styled(Box)({
-  padding: '22px 90px 22px 30px',
+  padding: '22px 20px 22px 30px',
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  minWidth: 290
+  minWidth: 290,
+  '@media (max-width: 1536px)': {
+    padding: '10px 20px 10px 30px',
+    minWidth: 221
+  }
+});
+
+export const StyledMonitorName = styled(Typography)({
+  width: '240px',
+  '@media (max-width: 1536px)': {
+    width: '171px'
+  }
 });
 
 export const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -71,10 +96,12 @@ export const StyledInfo = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '31px 0',
+  padding: '31px 16px',
   width: '100%',
-  marginLeft: '16px',
-  height: '100%'
+  height: '100%',
+  '@media (max-width: 1536px)': {
+    padding: '16px 16px'
+  }
 });
 
 export const StyledProperty = styled(Box)({
@@ -82,7 +109,7 @@ export const StyledProperty = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  minWidth: 200
+  width: '22.5%'
 });
 
 export const StyledTitle = styled(Typography)(({ theme }) => ({
@@ -101,9 +128,12 @@ export const StyledBlur = styled(Box)({
   width: 262,
   background: 'linear-gradient(90deg, rgba(241, 233, 254, 0) -12.12%, #F1E9FE 28.76%)',
   borderRadius: '10px',
-  padding: '20px 25px  28px 87px',
+  padding: '21px 25px 21px 87px',
   display: 'flex',
-  justifyContent: 'space-between'
+  justifyContent: 'space-between',
+  '@media (max-width: 1536px)': {
+    padding: '5px 25px 5px 87px'
+  }
 });
 
 export const StyledIconButton = styled(IconButton)({
