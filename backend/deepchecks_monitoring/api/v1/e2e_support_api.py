@@ -44,11 +44,11 @@ async def wait_for_queue(
     consumer = KafkaConsumer(**resources_provider.kafka_settings.kafka_params)
     topic_partition = TopicPartition(get_data_topic_name(user.organization.id, model_version_id), 0)
     # The end_offset returned is the next offset (end + 1)
-    model_version.topic_end_offset = consumer.end_offsets([topic_partition])[topic_partition] - 1
+    topic_end_offset = consumer.end_offsets([topic_partition])[topic_partition] - 1
 
     start_time = perf_counter()
 
-    while model_version.topic_end_offset > model_version.ingestion_offset and perf_counter() - start_time < 30:
+    while topic_end_offset != model_version.ingestion_offset and perf_counter() - start_time < 30:
         # Commit before refresh save topic_offset and load ingestion_offset
         await session.commit()
         await session.refresh(model_version)

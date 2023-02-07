@@ -74,7 +74,7 @@ const ModelSelect = ({ model, onOpen, size }: ModelSelectProps) => {
           }
         }}
       >
-        {model.name} Analysis
+        {model.name}
       </StyledModelName>
       <ArrowDropDown />
     </StyledSelectWrapper>
