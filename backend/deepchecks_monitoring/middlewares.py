@@ -165,7 +165,7 @@ class NoCacheMiddleware:
 
         async def wrapped_send(message: Message):
             if message["type"] == "http.response.start":
-                message["headers"].append((b"cache-control",  b"no-cache"))
+                message["headers"].append((b"cache-control",  b"no-cache, stale-if-error=0"))
 
             await send(message)
 
