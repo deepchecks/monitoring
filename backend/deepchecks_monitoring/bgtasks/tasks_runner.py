@@ -81,7 +81,10 @@ class TaskRunner:
                 self.logger.debug(f'Got already removed task id: {task_id}')
                 return
             self.logger.info(f'Running task {task.bg_worker_task}: {task.name}')
-            await self.run_single_task(task, session, queued_time)
+            try:
+                await self.run_single_task(task, session, queued_time)
+            except Exception:  # pylint: disable=broad-except
+                self.logger.exception('Exception running task')
 
     async def run_single_task(self, task, session, queued_time):  # pylint: disable=unused-argument
         # queued_time is not used but logged in telemetry
