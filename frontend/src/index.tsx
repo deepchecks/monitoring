@@ -34,7 +34,7 @@ Sentry.init({
   ],
   tracesSampleRate: 1,
   environment: sentryEnv,
-  denyUrls: [new RegExp("https?://localhost*"), new RegExp("https?://127.0.0.1*")]
+  denyUrls: [new RegExp('https?://localhost*'), new RegExp('https?://127.0.0.1*')]
 });
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);

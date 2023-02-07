@@ -35,7 +35,6 @@ import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
 
 dayjs.extend(localizedFormat);
 
-
 export interface UserInviteDialogProps {
   open: boolean;
   onClose: () => void;

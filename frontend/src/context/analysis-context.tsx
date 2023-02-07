@@ -4,7 +4,7 @@ import { DataFilter, AutoFrequencyResponse, OperatorsEnum } from 'api/generated'
 
 import { timeMap, timeValues } from 'helpers/time';
 import { SetStateType } from 'helpers/types';
-import {  } from 'helpers/conditionOperator';
+import {} from 'helpers/conditionOperator';
 import dayjs from 'dayjs';
 
 export enum ComparisonModeOptions {
@@ -61,7 +61,9 @@ function calculateActiveFilters(filters: ColumnsFilters) {
       }
 
       if (typeof value === 'object') {
-        const cateogires = Object.entries(value).filter(([, is_marked]) => is_marked).map(entry => entry[0]);
+        const cateogires = Object.entries(value)
+          .filter(([, is_marked]) => is_marked)
+          .map(entry => entry[0]);
         if (cateogires.length > 0) {
           activeFilters.push({
             column,
@@ -155,10 +157,13 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   }, [filters]);
 
   useEffect(() => {
-    if (isComparisonModeOn || filtersLength > 0 ||
-       (frequency && defaultFrequency && frequency !== defaultFrequency.frequency) ||
-       (period && defaultFrequency && !dayjs(period[0]).isSame(dayjs.unix(defaultFrequency.start))) ||
-       (period && defaultFrequency && !dayjs(period[1]).isSame(dayjs.unix(defaultFrequency.end)))) {
+    if (
+      isComparisonModeOn ||
+      filtersLength > 0 ||
+      (frequency && defaultFrequency && frequency !== defaultFrequency.frequency) ||
+      (period && defaultFrequency && !dayjs(period[0]).isSame(dayjs.unix(defaultFrequency.start))) ||
+      (period && defaultFrequency && !dayjs(period[1]).isSame(dayjs.unix(defaultFrequency.end)))
+    ) {
       setReset(true);
     } else {
       setReset(false);

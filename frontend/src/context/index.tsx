@@ -1,7 +1,7 @@
 import { GetAlertRulesApiV1AlertRulesGetParams } from 'api/generated';
 import { PathInfo, pathsInfo as paths } from 'helpers/helper';
 import React, { createContext, Dispatch, FC, SetStateAction, useCallback, useContext, useState } from 'react';
-import { useFlags } from 'launchdarkly-react-client-sdk'
+import { useFlags } from 'launchdarkly-react-client-sdk';
 
 export interface IContext {
   dashboard_id: number;
@@ -14,7 +14,7 @@ export interface IContext {
   resetFilters: () => void;
   pathsInfo: PathInfo[];
   selectedModelId: number | null;
-  changeSelectedModelId: Dispatch<SetStateAction<number | null >>;
+  changeSelectedModelId: Dispatch<SetStateAction<number | null>>;
 }
 
 const initialFilters = {
@@ -37,7 +37,7 @@ export const GlobalStateContext = createContext<IContext>(initialValue);
 
 export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(initialFilters);
-  const [selectedModelId, setSelectedModelId] = useState<number|null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
 
   const resetFilters = useCallback(() => {
     setAlertFilters(initialFilters);
@@ -47,12 +47,20 @@ export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children })
 
   let pathsInfo = paths;
   if (!flags.analysisEnabled) {
-    pathsInfo = pathsInfo.filter(obj => obj.title !== 'Analysis')
+    pathsInfo = pathsInfo.filter(obj => obj.title !== 'Analysis');
   }
 
   return (
     <GlobalStateContext.Provider
-      value={{ ...initialValue, alertFilters, changeAlertFilters: setAlertFilters, resetFilters, pathsInfo, selectedModelId, changeSelectedModelId: setSelectedModelId }}
+      value={{
+        ...initialValue,
+        alertFilters,
+        changeAlertFilters: setAlertFilters,
+        resetFilters,
+        pathsInfo,
+        selectedModelId,
+        changeSelectedModelId: setSelectedModelId
+      }}
     >
       {children}
     </GlobalStateContext.Provider>

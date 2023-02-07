@@ -32,8 +32,11 @@ const SelectColumnComponent = ({
   setNumericValue
 }: SelectColumnProps) => {
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
-  const columns = useMemo(() => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)), [columnsMap]);
-  const disabled = useMemo(() => !model || !columns || isLoading, [model, columns, isLoading])
+  const columns = useMemo(
+    () => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)),
+    [columnsMap]
+  );
+  const disabled = useMemo(() => !model || !columns || isLoading, [model, columns, isLoading]);
 
   const resetSubcategory = () => {
     setCategory('');
@@ -70,7 +73,8 @@ const SelectColumnComponent = ({
           </MenuItem>
         ))}
       </MarkedSelect>
-      {column && !disabled &&
+      {column &&
+        !disabled &&
         (columns[column].type === ColumnType.categorical ? (
           <Subcategory>
             <ControlledMarkedSelect

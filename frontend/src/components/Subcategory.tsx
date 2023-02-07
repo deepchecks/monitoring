@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 
 import { Box, BoxProps, styled } from '@mui/material';
 
-interface SubcategoryProps extends BoxProps{
+interface SubcategoryProps extends BoxProps {
   children: ReactNode;
 }
 

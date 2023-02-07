@@ -27,7 +27,6 @@ export const postCompleteDetails = async (completeDetails: completeDetailsProps)
       'From invitation': false,
       'Org name': organization
     });
-
   } catch (e) {
     console.log('error occurred,', e);
   }

@@ -1,8 +1,27 @@
 import React, { useState, useEffect } from 'react';
 
-import { deleteModelApiV1ModelsModelIdDelete, useRetrieveConnectedModelsApiV1ConnectedModelsGet, ConnectedModelSchema } from 'api/generated';
+import {
+  deleteModelApiV1ModelsModelIdDelete,
+  useRetrieveConnectedModelsApiV1ConnectedModelsGet,
+  ConnectedModelSchema
+} from 'api/generated';
 
-import { Box, Menu, MenuItem, Stack, styled, TextField, Autocomplete, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import {
+  Box,
+  Menu,
+  MenuItem,
+  Stack,
+  styled,
+  TextField,
+  Autocomplete,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
+} from '@mui/material';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { Loader } from 'components/Loader';
@@ -36,7 +55,9 @@ const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVaria
 export const ModelsPage = () => {
   const { data: models, isLoading, refetch: refetchModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
   const [modelsList, setModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
-  const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
+  const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ConnectedModelSchema[] | undefined>(
+    models
+  );
   const [modelNamesArray, setModelNamesArray] = useState<string[]>([]);
   const [modelIdToDelete, setModelIdToDelete] = useState<number | null>(null);
   const [searchInputValue, setSearchInputValue] = useState('');
@@ -73,7 +94,7 @@ export const ModelsPage = () => {
     if (!modelsList) {
       return;
     }
-    
+
     if (!searchValue && !searchInputValue) {
       const m = sort ? sortModels(modelsList, sort) : modelsList;
       setFilteredAndSortedModelsList(m);
@@ -118,7 +139,7 @@ export const ModelsPage = () => {
 
   const handleModalClose = () => {
     setModelIdToDelete(null);
-  }
+  };
 
   const handleOpenModal = (modelId: number) => {
     setModelIdToDelete(modelId);
@@ -205,22 +226,19 @@ export const ModelsPage = () => {
         </StyledModelsContainer>
       </Box>
 
-      <Dialog
-        open={modelIdToDelete!==null}
-        onClose={handleModalClose}
-      >
+      <Dialog open={modelIdToDelete !== null} onClose={handleModalClose}>
         <Box>
-          <DialogTitle>
-            { "Delete Model" }
-          </DialogTitle>
+          <DialogTitle>{'Delete Model'}</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this model?
-            </DialogContentText>
+            <DialogContentText>Are you sure you want to delete this model?</DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleModalClose} autoFocus>No</Button>
-            <Button onClick={handleDeleteModel} variant="outlined">Yes</Button>
+            <Button onClick={handleModalClose} autoFocus>
+              No
+            </Button>
+            <Button onClick={handleDeleteModel} variant="outlined">
+              Yes
+            </Button>
           </DialogActions>
         </Box>
       </Dialog>

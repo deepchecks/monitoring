@@ -52,7 +52,8 @@
     "codegen": "env-cmd -f .env.development nodemon --exec orval",
     "lint": "eslint . --fix",
     "format": "npx prettier --write .",
-    "prepare": "cd .. && husky install frontend/.husky"
+    "prepare": "cd .. && husky install frontend/.husky",
+    "tsc": "node_modules/typescript/bin/tsc"
   },
   "eslintConfig": {
     "extends": [

@@ -110,7 +110,6 @@ export const AlertRules = () => {
       <AlertRuleDialogProvider>
         <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
       </AlertRuleDialogProvider>
-
     </Box>
   );
 };

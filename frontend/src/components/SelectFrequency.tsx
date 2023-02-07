@@ -39,14 +39,14 @@ export const SelectFrequency = ({ timeWindows = timeWindow, setFieldValue, ...pr
         ))}
       </SelectPrimary>
       <Subcategory>
-          <SelectPrimary label="Aggregation Window" onChange={handleAggWindowChange} value={aggWindow}>
-            {timeWindows.map(({ label, value }) => (
-              <SelectPrimaryItem value={value} key={label}>
-                {label}
-              </SelectPrimaryItem>
-            ))}
-          </SelectPrimary>
-        </Subcategory>
+        <SelectPrimary label="Aggregation Window" onChange={handleAggWindowChange} value={aggWindow}>
+          {timeWindows.map(({ label, value }) => (
+            <SelectPrimaryItem value={value} key={label}>
+              {label}
+            </SelectPrimaryItem>
+          ))}
+        </SelectPrimary>
+      </Subcategory>
     </Box>
   );
 };

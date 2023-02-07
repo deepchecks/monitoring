@@ -23,7 +23,6 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
   dayjs.extend(relativeTime);
   dayjs.extend(localizedFormat);
 
-
   const [isHovered, setIsHovered] = useState(false);
 
   const {

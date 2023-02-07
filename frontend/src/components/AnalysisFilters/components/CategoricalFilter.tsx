@@ -32,7 +32,7 @@ export function CategoricalFilter({ column, data, onClose }: CategoricalFilterPr
     });
   };
 
-  const sortedData = data.sort()
+  const sortedData = data.sort();
   const [filteredData, setFilteredData] = useState(sortedData);
   const [searchValue, setSearchValue] = useState('');
 
@@ -47,17 +47,17 @@ export function CategoricalFilter({ column, data, onClose }: CategoricalFilterPr
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const { value } = event.target;
+    const { value } = event.target;
 
-      setSearchValue(value);
+    setSearchValue(value);
 
-      if (!value.trim()) {
-        setFilteredData(sortedData);
-        return;
-      }
+    if (!value.trim()) {
+      setFilteredData(sortedData);
+      return;
+    }
 
-      setFilteredData(sortedData.filter(val => val.toLowerCase().includes(value.toLowerCase())));
-  }
+    setFilteredData(sortedData.filter(val => val.toLowerCase().includes(value.toLowerCase())));
+  };
 
   return (
     <Box>

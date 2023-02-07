@@ -21,7 +21,7 @@ import { DiagramLineProps } from './DiagramLine.types';
 Chart.register(...registerables, zoomPlugin);
 
 function handleTimeUnit(freq: number) {
-  return freq < 86400 ? 'hour' : 'day'
+  return freq < 86400 ? 'hour' : 'day';
 }
 
 function DiagramLine({
@@ -127,128 +127,131 @@ function DiagramLine({
     };
   }, [data, chartRef.current]);
 
-  const options: ChartOptions<'line'> = useMemo(() => ({
-    maintainAspectRatio: false,
-    animation: false,
-    responsive: true,
-    onClick: (event, elements) => {
-      if (elements.length && onPointCLick) {
-        const { index, datasetIndex } = elements[0];
+  const options: ChartOptions<'line'> = useMemo(
+    () => ({
+      maintainAspectRatio: false,
+      animation: false,
+      responsive: true,
+      onClick: (event, elements) => {
+        if (elements.length && onPointCLick) {
+          const { index, datasetIndex } = elements[0];
 
-        const dataset = chartData.datasets[datasetIndex];
-        const [datasetName, versionName] = dataset.label?.split('|') || [null, null];
-        const timeLabel = chartData.labels?.[index] as number;
+          const dataset = chartData.datasets[datasetIndex];
+          const [datasetName, versionName] = dataset.label?.split('|') || [null, null];
+          const timeLabel = chartData.labels?.[index] as number;
 
-        if (datasetName && versionName && timeLabel) {
-          onPointCLick(datasetName, versionName, timeLabel);
-        }
-      }
-    },
-    onResize: chart => {
-      chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
-    },
-    interaction: {
-      intersect: false
-    },
-    layout: {
-      padding: {
-        right: alert_rules.length ? 15 : 0,
-        top: alerts.length ? 40 : 0
-      }
-    },
-    elements: {
-      point: {
-        borderWidth: 0,
-        radius: 2,
-        hoverRadius: 4,
-        hitRadius: 6,
-        hoverBorderWidth: 0
-      },
-      line: {
-        borderWidth: 2,
-        tension: 0,
-        fill: true
-      }
-    },
-    plugins: {
-      drawAlerts: {
-        alerts,
-        activeIndex: alertIndex,
-        changeAlertIndex,
-        severity: alertSeverity
-      },
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: colors.neutral.blue[100],
-        padding: {
-          bottom: 4,
-          left: 16,
-          right: 16,
-          top: 4
-        },
-        boxPadding: 5,
-        callbacks: _tCallbacks,
-        position: 'myCustomPositioner'
-      },
-      zoom: {
-        limits: {
-          x: {
-            min: 'original',
-            max: 'original'
-          },
-          y: {
-            min: range.min,
-            max: range.max * 2,
-            minRange: (range.max - range.min) / 2
+          if (datasetName && versionName && timeLabel) {
+            onPointCLick(datasetName, versionName, timeLabel);
           }
-        },
-        pan: {
-          enabled: false,
-          mode: 'xy'
-        },
-        zoom: {
-          wheel: {
-            enabled: false
-          },
-          pinch: {
-            enabled: false
-          },
-          mode: 'x'
         }
-      }
-    },
-    scales: {
-      x: {
-        grid: {
+      },
+      onResize: chart => {
+        chart.resize(chart.canvas.parentElement?.clientWidth, chart.canvas.parentElement?.clientHeight);
+      },
+      interaction: {
+        intersect: false
+      },
+      layout: {
+        padding: {
+          right: alert_rules.length ? 15 : 0,
+          top: alerts.length ? 40 : 0
+        }
+      },
+      elements: {
+        point: {
+          borderWidth: 0,
+          radius: 2,
+          hoverRadius: 4,
+          hitRadius: 6,
+          hoverBorderWidth: 0
+        },
+        line: {
+          borderWidth: 2,
+          tension: 0,
+          fill: true
+        }
+      },
+      plugins: {
+        drawAlerts: {
+          alerts,
+          activeIndex: alertIndex,
+          changeAlertIndex,
+          severity: alertSeverity
+        },
+        legend: {
           display: false
         },
-        type: 'timeseries',
-        time: {
-          minUnit: minTimeUnit,
-          unit: minTimeUnit
+        tooltip: {
+          backgroundColor: colors.neutral.blue[100],
+          padding: {
+            bottom: 4,
+            left: 16,
+            right: 16,
+            top: 4
+          },
+          boxPadding: 5,
+          callbacks: _tCallbacks,
+          position: 'myCustomPositioner'
         },
-        ticks: {
-          source: "data"
+        zoom: {
+          limits: {
+            x: {
+              min: 'original',
+              max: 'original'
+            },
+            y: {
+              min: range.min,
+              max: range.max * 2,
+              minRange: (range.max - range.min) / 2
+            }
+          },
+          pan: {
+            enabled: false,
+            mode: 'xy'
+          },
+          zoom: {
+            wheel: {
+              enabled: false
+            },
+            pinch: {
+              enabled: false
+            },
+            mode: 'x'
+          }
         }
       },
-      y: analysis
-        ? {
-          ticks: {
-            stepSize: range.max === 0 ? 1 / 3 : (range.max - range.min) * 0.3,
-            align: 'end'
+      scales: {
+        x: {
+          grid: {
+            display: false
           },
-          grid: { drawBorder: false, drawTicks: false },
-          min: range.min,
-          max: range.max === 0 ? 1 : range.max * 1.2
-        }
-        : {
-          min: range.min,
-          max: Math.max(range.max + (range.max - range.min) * 0.3, 1)
-        }
-    }
-  }), [chartData, range.max, range.min]);
+          type: 'timeseries',
+          time: {
+            minUnit: minTimeUnit,
+            unit: minTimeUnit
+          },
+          ticks: {
+            source: 'data'
+          }
+        },
+        y: analysis
+          ? {
+              ticks: {
+                stepSize: range.max === 0 ? 1 / 3 : (range.max - range.min) * 0.3,
+                align: 'end'
+              },
+              grid: { drawBorder: false, drawTicks: false },
+              min: range.min,
+              max: range.max === 0 ? 1 : range.max * 1.2
+            }
+          : {
+              min: range.min,
+              max: Math.max(range.max + (range.max - range.min) * 0.3, 1)
+            }
+      }
+    }),
+    [chartData, range.max, range.min]
+  );
 
   useEffect(() => {
     if (isLoading) {

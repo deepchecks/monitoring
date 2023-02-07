@@ -44,13 +44,18 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   const ldClient = useLDClient();
 
   if (user) {
-    ldClient?.identify({ key: user.email, email: user.email, name: user.full_name, custom: { organization: user.organization ? user.organization.id : ''} });
+    ldClient?.identify({
+      key: user.email,
+      email: user.email,
+      name: user.full_name,
+      custom: { organization: user.organization ? user.organization.id : '' }
+    });
 
     if (isUserDetailsComplete) {
       if (hotjar.initialized()) {
         hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
       }
-      
+
       mixpanel.identify(user.email);
     }
   }

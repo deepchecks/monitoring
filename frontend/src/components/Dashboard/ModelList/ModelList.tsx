@@ -37,10 +37,8 @@ export function ModelList({ models, isLoading }: ModelListProps) {
     if (!modelName) return models;
 
     return models.filter(({ name }) => name.toLowerCase().includes(modelName.toLowerCase()));
-    
-  }, [models, modelName])
+  }, [models, modelName]);
 
-  
   const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
     severity: [SEVERITY]
   });

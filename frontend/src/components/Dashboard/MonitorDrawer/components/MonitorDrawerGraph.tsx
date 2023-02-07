@@ -17,7 +17,7 @@ interface MonitorDrawerGraphViewGraphProps {
 }
 
 export const MonitorDrawerGraph = ({ graphData, isLoading, timeFreq }: MonitorDrawerGraphViewGraphProps) => (
-  <Box width={{ xs: '520px', xl: '650px' }} sx={{padding: '1em 2em'}}>
+  <Box width={{ xs: '520px', xl: '650px' }} sx={{ padding: '1em 2em' }}>
     {isLoading ? (
       <Loader />
     ) : graphData?.datasets.length ? (

@@ -39,7 +39,9 @@ const MenuProps: Partial<IMenuProps> = {
 
 export function getNameFromData(name: string | undefined, data: MonitorValueConf[] | undefined) {
   if (name != undefined) {
-    const indexFromData = data?.map(val => val.name.replaceAll('_', ' ').toLowerCase()).lastIndexOf(name.replaceAll('_', ' ').toLowerCase());
+    const indexFromData = data
+      ?.map(val => val.name.replaceAll('_', ' ').toLowerCase())
+      .lastIndexOf(name.replaceAll('_', ' ').toLowerCase());
     if (indexFromData != undefined && indexFromData != -1) {
       return data?.at(indexFromData)?.name;
     }
@@ -97,8 +99,10 @@ const MultiSelect = ({
 
     newFilteredValues[type] = multiValue;
 
-    if (!newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] ||
-      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION]?.[0] == 'none') {
+    if (
+      !newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] ||
+      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION]?.[0] == 'none'
+    ) {
       newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] = null;
     }
 

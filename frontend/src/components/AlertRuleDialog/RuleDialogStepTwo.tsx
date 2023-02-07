@@ -31,17 +31,15 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   const [category, setCategory] = useState<SelectValues>(() => {
     const filters = monitor?.data_filters?.filters;
     if (filters?.length) {
-      return filters.length > 1
-        ? undefined
-        : filters[0].value as string;
-    }});
+      return filters.length > 1 ? undefined : (filters[0].value as string);
+    }
+  });
   const [numericValue, setNumericValue] = useState<number[] | undefined>(() => {
     const filters = monitor?.data_filters?.filters;
     if (filters?.length) {
-      return filters.length > 1
-        ? [filters[0].value as number, filters[1].value as number]
-        : undefined;
-    }});
+      return filters.length > 1 ? [filters[0].value as number, filters[1].value as number] : undefined;
+    }
+  });
 
   const clearAggregationWindow = useCallback(() => {
     setAggregationWindow('');
@@ -66,8 +64,8 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       monitor.check.id = +check;
       monitor.frequency = +frequency;
       monitor.aggregation_window = +aggregationWindow;
-      monitor.additional_kwargs = additionalKwargs as MonitorCheckConfSchema || undefined,
-      monitor.data_filters = buildFilters(column, category, numericValue) || undefined;
+      (monitor.additional_kwargs = (additionalKwargs as MonitorCheckConfSchema) || undefined),
+        (monitor.data_filters = buildFilters(column, category, numericValue) || undefined);
       setMonitor(monitor);
       console.log(monitor);
 

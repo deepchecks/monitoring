@@ -30,15 +30,18 @@ interface AlertsPageProps {
   resolved?: boolean;
 }
 
-export const AlertsPage = ({ resolved=false }: AlertsPageProps) => {
+export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const { alertFilters, resetFilters } = useContext(GlobalStateContext);
 
   const [resolveAlertRule, setResolveAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [isNotification, setIsNotification] = useState(false);
 
-
-  const { data: alertRules, isLoading: alertRulesIsLoading, isError: isAlertRulesError } = useGetAlertRulesApiV1AlertRulesGet({...alertFilters, resolved: resolved});
+  const {
+    data: alertRules,
+    isLoading: alertRulesIsLoading,
+    isError: isAlertRulesError
+  } = useGetAlertRulesApiV1AlertRulesGet({ ...alertFilters, resolved: resolved });
   const {
     mutateAsync: resolveAllAlerts,
     isError: resolveAllAlertsError,

@@ -41,7 +41,9 @@ export const SelectCheckComponent = ({
   disabled
 }: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
-  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(monitor && !!monitor.check.id ? monitor.check.id : check ? +check : 0);
+  const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(
+    monitor && !!monitor.check.id ? monitor.check.id : check ? +check : 0
+  );
 
   const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id })), [checksList]);
 
@@ -53,15 +55,15 @@ export const SelectCheckComponent = ({
   }, [checkInfo, setCheckInfoDisabled]);
 
   function getSelectedVal(conf: MonitorTypeConf) {
-    const filteredVals = filteredValues?.[conf.type as AnalysisItemFilterTypes]
-    let selectedVal = filteredVals === null ? null :filteredVals?.[0]
+    const filteredVals = filteredValues?.[conf.type as AnalysisItemFilterTypes];
+    let selectedVal = filteredVals === null ? null : filteredVals?.[0];
     if (selectedVal === undefined) {
-      const checkParamVal = monitor?.check.config?.params[TypeMap[conf.type as AnalysisItemFilterTypes]]
+      const checkParamVal = monitor?.check.config?.params[TypeMap[conf.type as AnalysisItemFilterTypes]];
       if (checkParamVal) {
-        selectedVal = typeof(checkParamVal) == 'string' ? checkParamVal : Object.values(checkParamVal)[0] as string;
+        selectedVal = typeof checkParamVal == 'string' ? checkParamVal : (Object.values(checkParamVal)[0] as string);
       }
     }
-    return selectedVal && getNameFromData(selectedVal, conf.values) || ''
+    return (selectedVal && getNameFromData(selectedVal, conf.values)) || '';
   }
 
   function clearFilteredValue(type: string) {
@@ -73,7 +75,7 @@ export const SelectCheckComponent = ({
   }
 
   function isDisabled(conf: MonitorTypeConf) {
-    return conf.is_agg_shown != null && conf.is_agg_shown != isAgg
+    return conf.is_agg_shown != null && conf.is_agg_shown != isAgg;
   }
 
   return (
@@ -98,10 +100,10 @@ export const SelectCheckComponent = ({
                   const newFilteredValues: any = { ...filteredValues };
                   newFilteredValues[conf.type as AnalysisItemFilterTypes] = value ? [value] : null;
                   if (value) {
-                    const confVal = conf.values?.filter(({ name }) => name == value)?.[0]
-                    const isSetAgg = confVal && confVal.is_agg != null
+                    const confVal = conf.values?.filter(({ name }) => name == value)?.[0];
+                    const isSetAgg = confVal && confVal.is_agg != null;
                     if (isSetAgg) {
-                      setIsAgg( !!confVal.is_agg);
+                      setIsAgg(!!confVal.is_agg);
                       confVal.is_agg && setResConf(undefined);
                     }
                   }
@@ -124,14 +126,13 @@ export const SelectCheckComponent = ({
                 ))}
               </MarkedSelect>
             </Subcategory>
-          ))
-          }
-          {checkInfo?.res_conf &&
+          ))}
+          {checkInfo?.res_conf && (
             <Subcategory>
               <MarkedSelect
                 label={`Select ${checkInfo?.res_conf.type}`}
                 value={resConf || undefined}
-                onChange={e => setResConf(e.target.value as string || undefined)}
+                onChange={e => setResConf((e.target.value as string) || undefined)}
                 clearValue={() => setResConf(undefined)}
                 fullWidth
                 disabled={(() => {
@@ -139,8 +140,7 @@ export const SelectCheckComponent = ({
                     setResConf(undefined);
                   }
                   return isAgg;
-                })()
-                }
+                })()}
               >
                 {checkInfo?.res_conf.values?.map((value, index) => (
                   <MenuItem key={value.name + index} value={value.name}>
@@ -149,7 +149,7 @@ export const SelectCheckComponent = ({
                 ))}
               </MarkedSelect>
             </Subcategory>
-          }
+          )}
         </>
       )}
     </Stack>

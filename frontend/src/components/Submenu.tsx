@@ -11,9 +11,9 @@ export const Submenu = ({ children, open, position = 'left' }: SubmenuProps) => 
   if (!open) {
     return null;
   }
-  
+
   const style = position === 'left' ? { marginLeft: 'calc(-100% - 10px)' } : { marginleft: '10px' };
-  
+
   return (
     <Paper
       sx={{
@@ -28,7 +28,9 @@ export const Submenu = ({ children, open, position = 'left' }: SubmenuProps) => 
         sx={{
           padding: '6px 0 10px'
         }}
-      >{children}</List>
+      >
+        {children}
+      </List>
     </Paper>
   );
-}
+};

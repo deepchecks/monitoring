@@ -28,7 +28,6 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
   const minValue = typeof data.min === 'number' ? (data.min === data.max ? -data.min : data.min) : -999;
   const maxValue = typeof data.max === 'number' ? data.max : 999;
 
-
   const [numericValue, setNumericValue] = useState<number[] | undefined>(() => {
     const filter = filters[column];
 
@@ -38,7 +37,7 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
 
     const step = setStep(data);
     return [minValue + step * 4, maxValue - step * 4];
-    });
+  });
 
   const onApply = () => {
     numericValue && setFilters(prevFilters => ({ ...prevFilters, [column]: [numericValue[0], numericValue[1]] }));
@@ -47,13 +46,15 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
 
   return (
     <Box width={380}>
-      {numericValue && (<RangePicker
-        sx={{ width: '90%', margin: '1em auto' }}
-        min={minValue}
-        max={maxValue}
-        numericValue={numericValue}
-        setNumericValue={setNumericValue}
-      />)}
+      {numericValue && (
+        <RangePicker
+          sx={{ width: '90%', margin: '1em auto' }}
+          min={minValue}
+          max={maxValue}
+          numericValue={numericValue}
+          setNumericValue={setNumericValue}
+        />
+      )}
       <Box
         display="flex"
         alignItems="center"

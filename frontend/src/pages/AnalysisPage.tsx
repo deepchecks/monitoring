@@ -39,7 +39,9 @@ export function AnalysisPage() {
   const [currentModelVersionId, setCurrentModelVersionId] = useState<number | null>(null);
   const [currentTimeLabel, setCurrentTimeLabel] = useState<number | null>(null);
   const [currentType, setCurrentType] = useState<CheckType>(null);
-  const [checksInitialData, setChecksInitialData] = useState<RunManyChecksTogetherApiV1ChecksRunManyPost200 | undefined>(undefined);
+  const [checksInitialData, setChecksInitialData] = useState<
+    RunManyChecksTogetherApiV1ChecksRunManyPost200 | undefined
+  >(undefined);
   const checksWithCustomProps = useRef(new Set<number>());
 
   const {
@@ -52,10 +54,7 @@ export function AnalysisPage() {
     }
   });
 
-
-  const {
-    mutateAsync: mutateLoadCheckData
-  } = useRunManyChecksTogetherApiV1ChecksRunManyPost();
+  const { mutateAsync: mutateLoadCheckData } = useRunManyChecksTogetherApiV1ChecksRunManyPost();
 
   const currentModel = useMemo(() => getCurrentModel(modelId), [getCurrentModel, modelId]);
 
@@ -68,19 +67,21 @@ export function AnalysisPage() {
   // If modelId has changed refetch the checks
   useEffect(() => {
     if (modelId) {
-      setChecksInitialData(undefined)
-      refetch()
+      setChecksInitialData(undefined);
+      refetch();
     }
-  }, [modelId, refetch])
+  }, [modelId, refetch]);
 
   useEffect(() => {
     if (checks && frequency && period) {
       // We load in a single request all the checks that doesn't have a custom properties defined on them.
       const fetchData = async () => {
-        const checksToLoad = checks?.filter(check => !checksWithCustomProps.current.has(check.id)).map(check => check.id)
+        const checksToLoad = checks
+          ?.filter(check => !checksWithCustomProps.current.has(check.id))
+          .map(check => check.id);
         if (checksToLoad.length > 1) {
           // Removing current initial data in order to show loader
-          setChecksInitialData(undefined)
+          setChecksInitialData(undefined);
           const response = await mutateLoadCheckData({
             data: {
               frequency,
@@ -88,16 +89,15 @@ export function AnalysisPage() {
               end_time: period[1].toISOString()
             },
             params: { check_id: checksToLoad }
-          })
-          setChecksInitialData(response)
-        }
-        else {
+          });
+          setChecksInitialData(response);
+        } else {
           // If checks initial data is empty each check will load his own data
-          setChecksInitialData({})
+          setChecksInitialData({});
         }
-      }
+      };
 
-      fetchData()
+      fetchData();
     }
   }, [frequency, period, checks, mutateLoadCheckData]);
 
@@ -111,9 +111,10 @@ export function AnalysisPage() {
 
   function fixDict(obj: any, allowedKeys: any) {
     const keyValues = Object.keys(obj).map(key => {
-      const vals = Object.values(allowedKeys)
-      if (Object.values(allowedKeys).includes(key)) return { [key]: typeof obj[key] == 'string' ? [obj[key]] : obj[key] };
-      return {}
+      const vals = Object.values(allowedKeys);
+      if (Object.values(allowedKeys).includes(key))
+        return { [key]: typeof obj[key] == 'string' ? [obj[key]] : obj[key] };
+      return {};
     });
     return Object.assign({}, ...keyValues);
   }
@@ -127,13 +128,18 @@ export function AnalysisPage() {
       checkInfo: MonitorCheckConf | undefined,
       check: CheckSchema
     ) => {
-      const checkMegaConf = fixDict({ ...renameKeys({ ...check.config.params }, ReverseTypeMap), ...additionalKwargs?.check_conf }, ReverseTypeMap)
+      const checkMegaConf = fixDict(
+        { ...renameKeys({ ...check.config.params }, ReverseTypeMap), ...additionalKwargs?.check_conf },
+        ReverseTypeMap
+      );
       if (checkMegaConf) {
         const type = checkInfo?.res_conf ? CheckTypeOptions.Class : CheckTypeOptions.Feature;
         setCurrentType(type);
 
-        if (!checkMegaConf['aggregation method'] ||
-          ['none', undefined].includes(checkMegaConf['aggregation method']?.[0])) {
+        if (
+          !checkMegaConf['aggregation method'] ||
+          ['none', undefined].includes(checkMegaConf['aggregation method']?.[0])
+        ) {
           if (type === CheckTypeOptions.Feature) {
             setCurrentAdditionalKwargs(
               // Filter only the feature that was clicked on
@@ -141,18 +147,16 @@ export function AnalysisPage() {
                 check_conf: { ...checkMegaConf, feature: [datasetName] },
                 res_conf: additionalKwargs?.res_conf
               }
-            )
-          }  
+            );
+          }
         } else if (type === CheckTypeOptions.Class) {
-          setCurrentAdditionalKwargs(
-            {
-              check_conf: checkMegaConf,
-              // Filter only the class that was clicked on
-              res_conf: [datasetName.replace(checkMegaConf.scorer[0], '').trim()]
-            }
-          )
+          setCurrentAdditionalKwargs({
+            check_conf: checkMegaConf,
+            // Filter only the class that was clicked on
+            res_conf: [datasetName.replace(checkMegaConf.scorer[0], '').trim()]
+          });
         } else {
-          setCurrentAdditionalKwargs({check_conf: checkMegaConf})
+          setCurrentAdditionalKwargs({ check_conf: checkMegaConf });
         }
       }
 
@@ -183,7 +187,12 @@ export function AnalysisPage() {
     setCurrentType(null);
   }, []);
 
-  const isLoading = isModelsLoading || isChecksLoading || checksInitialData == undefined || frequency == undefined || period == undefined;
+  const isLoading =
+    isModelsLoading ||
+    isChecksLoading ||
+    checksInitialData == undefined ||
+    frequency == undefined ||
+    period == undefined;
 
   return (
     <>

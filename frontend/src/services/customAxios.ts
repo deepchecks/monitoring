@@ -31,7 +31,7 @@ AXIOS_INSTANCE.interceptors.response.use(
 let cancelTokenSource = Axios.CancelToken.source();
 
 export const cancelPendingRequests = () => {
-  cancelTokenSource.cancel()
+  cancelTokenSource.cancel();
   cancelTokenSource = Axios.CancelToken.source();
 };
 

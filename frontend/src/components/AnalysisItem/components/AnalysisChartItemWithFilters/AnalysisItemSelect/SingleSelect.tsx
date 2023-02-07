@@ -23,7 +23,7 @@ const SingleSelect = ({
 }: AnalysisItemSelectProps) => {
   const paramValue = useMemo(() => checkParams[TypeMap[type]], [checkParams, type]);
 
-  const [value, setValue] = useState(paramValue != 'none' && paramValue || '');
+  const [value, setValue] = useState((paramValue != 'none' && paramValue) || '');
 
   const handleSetSelectValue = (value: string) => {
     setIsMostWorstActive(value ? false : !isMostWorstActive);

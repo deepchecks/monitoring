@@ -111,7 +111,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
           ))}
         </StyledAnalysisHeaderList>
       </Popover>
-      <ShareButton/>
+      <ShareButton />
     </StyledAnalysisHeader>
   );
 }

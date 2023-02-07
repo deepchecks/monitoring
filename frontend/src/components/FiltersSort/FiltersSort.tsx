@@ -303,10 +303,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
             key={sort}
             onClick={() => onSort(sortMethodMap[sort], sort)}
           >
-            <Typography 
-              variant="subtitle2"
-              sx={{fontSize: 14}}
-            >
+            <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
               {sort}
             </Typography>
           </StyledSortMenuItem>

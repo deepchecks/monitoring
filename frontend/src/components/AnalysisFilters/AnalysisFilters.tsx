@@ -88,7 +88,12 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     const value = event.target.value as number;
     setFrequency(value);
     if (period) {
-      setPeriod([dayjs(period[1]).subtract(value * maxWindowsCount, 'second').toDate(), period[1]]);
+      setPeriod([
+        dayjs(period[1])
+          .subtract(value * maxWindowsCount, 'second')
+          .toDate(),
+        period[1]
+      ]);
     }
   };
 

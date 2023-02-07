@@ -83,7 +83,7 @@ export function CreateAlertForm({ monitor, onClose, runCheckLookBack, setMonitor
 
   return (
     <Stack justifyContent="space-between" width={{ xs: '200px', xl: '360px' }}>
-      <Box sx={{height: 'calc(100% - 100px)', overflowY: 'auto'}}>
+      <Box sx={{ height: 'calc(100% - 100px)', overflowY: 'auto' }}>
         <Stack spacing="15px">
           {monitorInfo(monitor, currentModel.name).map(({ label, value }) => (
             <Typography variant="subtitle2" key={label} sx={{ color: theme => theme.palette.text.disabled }}>
@@ -131,7 +131,8 @@ export function CreateAlertForm({ monitor, onClose, runCheckLookBack, setMonitor
         onClick={handleCreateAlert}
         size="large"
         disabled={!operator || !severity}
-        sx={{ width: 1, margin: 'auto auto 20px auto' }}>
+        sx={{ width: 1, margin: 'auto auto 20px auto' }}
+      >
         Save & Activate
       </Button>
     </Stack>

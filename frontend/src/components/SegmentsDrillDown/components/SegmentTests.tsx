@@ -21,7 +21,7 @@ export const SegmentTests = ({ title, plots }: SegmentTestsProps) =>
           layout={{ ...p.layout }}
           style={{ height: PLOT_HEIGHT, width: '100%' }}
           useResizeHandler={true}
-          config={{displayModeBar: false}}
+          config={{ displayModeBar: false }}
         />
       ))}
     </GraphLayout>
