@@ -300,12 +300,26 @@ async def test_monitor_update_with_data(
     monitor = await async_session.get(Monitor, monitor["id"])
     model_version = await async_session.get(ModelVersion, classification_model_version["id"])
 
-    # Taking latest schedule forward to last schedule
-    latest_schedule = monitor.latest_schedule = floor_window_for_time(pdl.instance(model_version.end_time),
-                                                                      monitor.frequency)
+    # Act - Update only monitor name, and rest of the fields should be the same
+    latest_schedule_before_update = monitor.latest_schedule
+    test_api.update_monitor(
+        monitor_id=monitor.id,
+        monitor={
+            "name": "new name",
+            "frequency": monitor.frequency,
+            "aggregation_window": monitor.aggregation_window,
+        }
+    )
+    # Assert - should not change the last schedule
+    await async_session.refresh(monitor)
+    assert monitor.latest_schedule == latest_schedule_before_update
+
+    # Arrange - Forward latest schedule to latest data time
+    latest_schedule_before_update = monitor.latest_schedule = floor_window_for_time(
+        pdl.instance(model_version.end_time), monitor.frequency)
     await async_session.commit()
 
-    # Act
+    # Act - Should update the latest schedule
     test_api.update_monitor(
         monitor_id=monitor.id,
         monitor={
@@ -317,9 +331,10 @@ async def test_monitor_update_with_data(
         }
     )
 
+    # Assert
     await async_session.refresh(monitor)
     # assert latest_schedule after update is "num windows to start" windows earlier
-    assert latest_schedule - pdl.instance(monitor.latest_schedule) == \
+    assert latest_schedule_before_update - pdl.instance(monitor.latest_schedule) == \
         pdl.duration(seconds=monitor.frequency * NUM_WINDOWS_TO_START)
 
 

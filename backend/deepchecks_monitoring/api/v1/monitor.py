@@ -151,13 +151,18 @@ async def update_monitor(
     options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
     monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
     model = monitor.check.model
-    update_dict = body.dict(exclude_unset=True)
+    # Remove from body all the fields which hasn't changed
+    update_dict = {k: v for k, v in body.dict(exclude_unset=True).items() if v != getattr(monitor, k)}
 
-    frequency = monitor.frequency if body.frequency is None else body.frequency
-    requires_recalculate_columns = ["frequency", "aggregation_window", "additional_kwargs", "data_filters"]
+    # If nothing changed returns
+    if not update_dict:
+        return Response(status_code=status.HTTP_200_OK)
+
+    fields_require_alerts_recalc = ["frequency", "aggregation_window", "additional_kwargs", "data_filters"]
 
     # If still no data, the monitor would not have run yet anyway so no need to update schedule/remove tasks.
-    if model.has_data() and any(key in update_dict for key in requires_recalculate_columns):
+    if model.has_data() and any(key in update_dict for key in fields_require_alerts_recalc):
+        frequency = update_dict.get("frequency", monitor.frequency)
         # Either continue from the latest schedule if it's early enough or take it back number of windows to start
         new_schedule_time = min(pdl.instance(model.end_time).subtract(seconds=frequency * NUM_WINDOWS_TO_START),
                                 pdl.instance(monitor.latest_schedule))
