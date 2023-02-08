@@ -23,8 +23,8 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular import Dataset
-from deepchecks.tabular.checks import (CategoryMismatchTrainTest, SingleDatasetPerformance, TrainTestFeatureDrift,
-                                       TrainTestLabelDrift, TrainTestPredictionDrift)
+from deepchecks.tabular.checks import (SingleDatasetPerformance, TrainTestFeatureDrift,
+                                       TrainTestLabelDrift, TrainTestPredictionDrift, NewCategoryTrainTest)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
@@ -518,7 +518,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             'Feature Drift': TrainTestFeatureDrift(),
             'Prediction Drift': TrainTestPredictionDrift(),
             'Label Drift': TrainTestLabelDrift(ignore_na=True),
-            'Train-Test Category Mismatch': CategoryMismatchTrainTest(),
+            'New Category Train-Test': NewCategoryTrainTest(),
             'Percent Of Nulls': PercentOfNulls()
         }
 
@@ -529,15 +529,20 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         self.add_checks(checks=checks)
 
         self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=24 * 60 * 60, alert_severity='high',
-                            monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True)
-        self.add_alert_rule(check_name='Feature Drift', threshold=0.3, frequency=24 * 60 * 60,
-                            monitor_name='Top 5 Feature Drift',
-                            kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['top_5']}})
+                            monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True,
+                            kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['l2_weighted']}})
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.3, frequency=24 * 60 * 60, alert_severity='mid',
+                            monitor_name='Individual Feature Drift', add_monitor_to_dashboard=True,
+                            kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['none']}})
 
         self.add_alert_rule(check_name='Prediction Drift', threshold=0.25, frequency=24 * 60 * 60,
                             monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
         self.add_alert_rule(check_name='Label Drift', threshold=0.25, frequency=24 * 60 * 60,
                             monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='high')
+
+        self.add_alert_rule(check_name='New Category Train-Test', threshold=0.1, frequency=24 * 60 * 60,
+                            monitor_name='New Category Train-Test', add_monitor_to_dashboard=True,
+                            alert_severity='high')
 
         self.add_monitor(check_name='Performance', frequency=24 * 60 * 60, name='Performance')
 
