@@ -34,7 +34,7 @@ export const MonitorsGroup = ({
   if (!monitors.length) return <></>;
 
   return (
-    <StyledContainer key={model.id}>
+    <StyledContainer>
       <StyledHeadingContainer>
         <StyledModelName>{model.name}</StyledModelName>
         <StyledModelLatestTime>
@@ -76,15 +76,15 @@ const StyledHeadingContainer = styled(Stack)({
   marginBottom: '20px'
 });
 
-const StyledTypography = styled(Typography)({
-  color: colors.neutral.lightText
-});
-
-const StyledModelName = styled(StyledTypography)({
+const StyledModelName = styled(Typography)({
   fontWeight: 600,
   fontSize: '16px',
   lineHeight: '19px',
   marginRight: '8px'
+});
+
+const StyledTypography = styled(Typography)({
+  color: colors.neutral.lightText
 });
 
 const StyledModelLatestTime = styled(StyledTypography)({

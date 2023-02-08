@@ -1,4 +1,5 @@
-import { styled, Typography, Stack, Button } from '@mui/material';
+import { styled, Typography, Stack, Button, Box } from '@mui/material';
+import { colors } from 'theme/colors';
 
 export const StyledContainer = styled(Stack)({
   flexDirection: 'row',
@@ -12,11 +13,14 @@ export const StyledHeading = styled(Typography)({
   lineHeight: '18px'
 });
 
+export const StyledLine = styled(Box)({
+  flex: 1,
+  margin: '0 24px',
+  borderTop: `1px solid ${colors.neutral.grey.light}`
+});
+
 export const StyledButton = styled(Button)({
-  minWidth: '32px',
-  width: '32px',
-  minHeight: '32px',
-  height: '32px',
-  borderRadius: '5px',
-  padding: 0
+  fontWeight: 600,
+  minHeight: '42px',
+  borderRadius: '5px'
 });

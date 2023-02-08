@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { StyledContainer, StyledHeading, StyledButton } from './MonitorListHeader.style';
+import { StyledContainer, StyledHeading, StyledButton, StyledLine } from './MonitorListHeader.style';
 
 import { NativePlus } from 'assets/icon/icon';
 
@@ -16,8 +16,9 @@ export const MonitorListHeader = ({ onClick }: MonitorListHeaderProps) => {
   return (
     <StyledContainer>
       <StyledHeading>Monitors</StyledHeading>
-      <StyledButton onClick={handleClick}>
-        <NativePlus width={16} height={16} />
+      <StyledLine />
+      <StyledButton onClick={handleClick} startIcon={<NativePlus width={16} height={16} />}>
+        Add monitor
       </StyledButton>
     </StyledContainer>
   );
