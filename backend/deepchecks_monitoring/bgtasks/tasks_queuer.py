@@ -104,7 +104,6 @@ class WorkerSettings(DatabaseSettings, RedisSettings, TelemetrySettings):
     loglevel: str = 'INFO'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
-    uptrace_dsn: t.Optional[str] = None
 
     class Config:
         """Model config."""

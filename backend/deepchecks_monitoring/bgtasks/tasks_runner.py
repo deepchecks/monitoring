@@ -102,7 +102,6 @@ class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, TelemetrySe
     loglevel: str = 'INFO'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
-    uptrace_dsn: t.Optional[str] = None
     num_workers: int = 10
 
     class Config:

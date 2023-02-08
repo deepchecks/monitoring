@@ -69,7 +69,7 @@ def create_application(
 
     settings = settings or Settings()
 
-    # Configure telemetry with uptrace
+    # Configure telemetry
     if settings.sentry_dsn:
         import sentry_sdk  # pylint: disable=import-outside-toplevel
 
