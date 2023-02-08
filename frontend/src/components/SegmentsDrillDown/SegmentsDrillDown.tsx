@@ -34,7 +34,6 @@ const SegmentsDrillDownComponent = ({
   );
 
   const labels = useMemo(() => (data.length ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
-  const allDataIsZeros = useMemo(() => dataSet.every(d => d === 0), [dataSet]);
 
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
@@ -52,7 +51,7 @@ const SegmentsDrillDownComponent = ({
 
   return (
     <StyledContainer>
-      {allDataIsZeros || !dataSet.length ? (
+      {!dataSet.length ? (
         <NoGraphDataToShow />
       ) : (
         <>
