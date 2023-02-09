@@ -32,12 +32,14 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
   beforeDatasetsDraw(chart: Chart<'line', number[], string>) {
     const {
       ctx,
-      chartArea: { left, right },
-      scales: { y }
+      chartArea: { right },
+      scales: { x, y }
     } = chart;
 
-    if (!y) return;
+    if (!x || !y || !alert_rule.start_time) return;
+
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
+    const xOffset = x.getPixelForValue(new Date(alert_rule.start_time).getTime());
 
     ctx.save();
 
@@ -45,7 +47,7 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     ctx.strokeStyle = colors.neutral.darkText;
 
     ctx.beginPath();
-    ctx.moveTo(left, yOffset);
+    ctx.moveTo(xOffset, yOffset);
     ctx.lineTo(right, yOffset);
     ctx.setLineDash([5, 5]);
     ctx.stroke();

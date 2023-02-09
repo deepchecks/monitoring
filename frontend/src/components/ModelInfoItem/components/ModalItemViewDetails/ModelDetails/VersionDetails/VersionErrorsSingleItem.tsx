@@ -21,7 +21,7 @@ const VersionErrorsSingleItem: FC<VersionErrorsSingleItemProps> = ({ error, isHe
       <StyledTypography sx={{ width: '80px', color: isHeader ? 'inherit' : '#EF4C36' }}>
         {error.sample_id}
       </StyledTypography>
-      <Tooltip title={error.sample}>
+      <Tooltip title={error.sample || ''}>
         <StyledTypography noWrap={true} sx={{ width: '270px' }}>
           {error.sample}
         </StyledTypography>

@@ -48,8 +48,8 @@ export const MonitorInfoWidget = ({ monitor, hover, openRootMenu, handleOpenRoot
               disableHoverListener
               disableTouchListener
             >
-              <IconButton size="small">
-                <InfoIcon width="20px" height="20px" fill={colors.primary.violet[400]} onClick={handleTooltipOpen} />
+              <IconButton onClick={handleTooltipOpen} size="small">
+                <InfoIcon width="20px" height="20px" fill={colors.primary.violet[400]} />
               </IconButton>
             </StyledTooltip>
             <IconButton onClick={handleOpenRootMenu} size="small" sx={{ marginLeft: '8px' }}>

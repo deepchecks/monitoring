@@ -39,7 +39,7 @@ export const MonitorsGroup = ({
         <StyledModelName>{model.name}</StyledModelName>
         <StyledModelLatestTime>
           (last data update:{' '}
-          <StyledModelDate>
+          <StyledModelDate component="span">
             {model.latest_time ? dayjs.unix(model.latest_time).format('MMM DD, YYYY') : '-'}
           </StyledModelDate>
           )
@@ -93,7 +93,7 @@ const StyledModelLatestTime = styled(StyledTypography)({
   lineHeight: '15px'
 });
 
-const StyledModelDate = styled(StyledTypography)({
+const StyledModelDate = styled(Box)({
   display: 'inline-block',
   fontWeight: 600,
   fontSize: '12px',

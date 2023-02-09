@@ -19,6 +19,10 @@ export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string
 
 export type GetOrCreateVersionApiV1ModelsModelIdVersionPostParams = { identifier_kind?: IdentifierKind };
 
+export type CreateModelNotesApiV1ModelsModelIdNotesPostParams = { identifier_kind?: IdentifierKind };
+
+export type RetrieveModelNotesApiV1ModelsModelIdNotesGetParams = { identifier_kind?: IdentifierKind };
+
 export type SetScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePostParams = { identifier_kind?: IdentifierKind };
 
 export type AddScorerApiV1ConnectedModelsModelIdScorersPostBody = { [key: string]: any };
@@ -427,18 +431,6 @@ export interface MonitorNotebookSchema {
 
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
 
-export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
-
-/**
- * List of data filters.
- */
-export interface MonitorCheckConfSchema {
-  check_conf: MonitorCheckConfSchemaCheckConf;
-  res_conf?: string[];
-}
-
-export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
-
 /**
  * Schema defines the parameters for creating new monitor.
  */
@@ -452,6 +444,18 @@ export interface MonitorCreationSchema {
   data_filters?: MonitorCreationSchemaDataFilters;
   additional_kwargs?: MonitorCreationSchemaAdditionalKwargs;
 }
+
+export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
+
+/**
+ * List of data filters.
+ */
+export interface MonitorCheckConfSchema {
+  check_conf: MonitorCheckConfSchemaCheckConf;
+  res_conf?: string[];
+}
+
+export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
 
 /**
  * List of data filters.
@@ -569,6 +573,25 @@ export interface ModelScheduleTimeSchema {
 }
 
 /**
+ * Note schema.
+ */
+export interface ModelNoteSchema {
+  title: string;
+  text?: string;
+  id: string;
+  created_at: string;
+  model_id: number;
+}
+
+/**
+ * Note schema.
+ */
+export interface ModelNoteCreationSchema {
+  title: string;
+  text?: string;
+}
+
+/**
  * Model schema for the "Model managment" screen.
  */
 export interface ModelManagmentSchema {
@@ -597,6 +620,7 @@ export interface ModelCreationSchema {
   task_type: TaskType;
   alerts_delay_labels_ratio: number;
   alerts_delay_seconds: number;
+  notes?: ModelNoteCreationSchema[];
 }
 
 /**
@@ -647,8 +671,8 @@ export interface IngestionErrorSchema {
   id: number;
   sample_id?: string;
   error?: string;
+  sample?: string;
   created_at: string;
-  sample: string;
 }
 
 /**
@@ -932,6 +956,7 @@ export interface AlertRuleSchema {
   condition: Condition;
   alert_severity?: AlertSeverity;
   is_active: boolean;
+  start_time?: string;
 }
 
 /**
@@ -943,6 +968,7 @@ export interface AlertRuleInfoSchema {
   condition: Condition;
   alert_severity?: AlertSeverity;
   is_active: boolean;
+  start_time?: string;
   model_id: number;
   alerts_count?: number;
   max_end_time?: string;
@@ -974,8 +1000,9 @@ export interface AlertRuleConfigSchema {
 /**
  * @summary Hello World
  */
-export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) =>
-  customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
+export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) => {
+  return customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
+};
 
 export const getHelloWorldApiV1SayHelloGetQueryKey = () => [`/api/v1/say-hello`];
 
@@ -1009,8 +1036,9 @@ export const useHelloWorldApiV1SayHelloGet = <
 /**
  * @summary Retrieve Backend Version
  */
-export const retrieveBackendVersionApiV1BackendVersionGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/backend-version`, method: 'get', signal });
+export const retrieveBackendVersionApiV1BackendVersionGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/backend-version`, method: 'get', signal });
+};
 
 export const getRetrieveBackendVersionApiV1BackendVersionGetQueryKey = () => [`/api/v1/backend-version`];
 
@@ -1048,12 +1076,13 @@ export const useRetrieveBackendVersionApiV1BackendVersionGet = <
  * Count alerts.
  * @summary Count Alerts
  */
-export const countAlertsApiV1AlertsCountActiveGet = (signal?: AbortSignal) =>
-  customInstance<CountAlertsApiV1AlertsCountActiveGet200>({
+export const countAlertsApiV1AlertsCountActiveGet = (signal?: AbortSignal) => {
+  return customInstance<CountAlertsApiV1AlertsCountActiveGet200>({
     url: `/api/v1/alerts/count_active`,
     method: 'get',
     signal
   });
+};
 
 export const getCountAlertsApiV1AlertsCountActiveGetQueryKey = () => [`/api/v1/alerts/count_active`];
 
@@ -1090,8 +1119,9 @@ export const useCountAlertsApiV1AlertsCountActiveGet = <
  * Resolve alert by id.
  * @summary Resolve Alert
  */
-export const resolveAlertApiV1AlertsAlertIdResolvePost = (alertId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alerts/${alertId}/resolve`, method: 'post' });
+export const resolveAlertApiV1AlertsAlertIdResolvePost = (alertId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/alerts/${alertId}/resolve`, method: 'post' });
+};
 
 export type ResolveAlertApiV1AlertsAlertIdResolvePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof resolveAlertApiV1AlertsAlertIdResolvePost>>
@@ -1133,8 +1163,9 @@ export const useResolveAlertApiV1AlertsAlertIdResolvePost = <
  * Reactivate resolved alert.
  * @summary Reactivate Alert
  */
-export const reactivateAlertApiV1AlertsAlertIdReactivatePost = (alertId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alerts/${alertId}/reactivate`, method: 'post' });
+export const reactivateAlertApiV1AlertsAlertIdReactivatePost = (alertId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/alerts/${alertId}/reactivate`, method: 'post' });
+};
 
 export type ReactivateAlertApiV1AlertsAlertIdReactivatePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof reactivateAlertApiV1AlertsAlertIdReactivatePost>>
@@ -1176,8 +1207,9 @@ export const useReactivateAlertApiV1AlertsAlertIdReactivatePost = <
  * Get alert by id.
  * @summary Get Alert
  */
-export const getAlertApiV1AlertsAlertIdGet = (alertId: number, signal?: AbortSignal) =>
-  customInstance<AlertSchema>({ url: `/api/v1/alerts/${alertId}`, method: 'get', signal });
+export const getAlertApiV1AlertsAlertIdGet = (alertId: number, signal?: AbortSignal) => {
+  return customInstance<AlertSchema>({ url: `/api/v1/alerts/${alertId}`, method: 'get', signal });
+};
 
 export const getGetAlertApiV1AlertsAlertIdGetQueryKey = (alertId: number) => [`/api/v1/alerts/${alertId}`];
 
@@ -1214,8 +1246,9 @@ export const useGetAlertApiV1AlertsAlertIdGet = <
  * Delete alert by id.
  * @summary Delete Alert
  */
-export const deleteAlertApiV1AlertsAlertIdDelete = (alertId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alerts/${alertId}`, method: 'delete' });
+export const deleteAlertApiV1AlertsAlertIdDelete = (alertId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/alerts/${alertId}`, method: 'delete' });
+};
 
 export type DeleteAlertApiV1AlertsAlertIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteAlertApiV1AlertsAlertIdDelete>>
@@ -1260,13 +1293,14 @@ export const useDeleteAlertApiV1AlertsAlertIdDelete = <
 export const createAlertRuleApiV1MonitorsMonitorIdAlertRulesPost = (
   monitorId: number,
   alertRuleCreationSchema: AlertRuleCreationSchema
-) =>
-  customInstance<IdResponse>({
+) => {
+  return customInstance<IdResponse>({
     url: `/api/v1/monitors/${monitorId}/alert-rules`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: alertRuleCreationSchema
   });
+};
 
 export type CreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof createAlertRuleApiV1MonitorsMonitorIdAlertRulesPost>>
@@ -1329,13 +1363,14 @@ export const getAlertRulesApiV1MonitorsMonitorIdAlertRulesGet = (
   monitorId: number,
   params?: GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams,
   signal?: AbortSignal
-) =>
-  customInstance<AlertRuleInfoSchema[]>({
+) => {
+  return customInstance<AlertRuleInfoSchema[]>({
     url: `/api/v1/monitors/${monitorId}/alert-rules`,
     method: 'get',
     params,
     signal
   });
+};
 
 export const getGetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetQueryKey = (
   monitorId: number,
@@ -1385,12 +1420,13 @@ export const useGetAlertRulesApiV1MonitorsMonitorIdAlertRulesGet = <
  * Count alerts.
  * @summary Count Alert Rules
  */
-export const countAlertRulesApiV1ModelsModelIdAlertRulesCountGet = (modelId: number, signal?: AbortSignal) =>
-  customInstance<CountAlertRulesApiV1ModelsModelIdAlertRulesCountGet200>({
+export const countAlertRulesApiV1ModelsModelIdAlertRulesCountGet = (modelId: number, signal?: AbortSignal) => {
+  return customInstance<CountAlertRulesApiV1ModelsModelIdAlertRulesCountGet200>({
     url: `/api/v1/models/${modelId}/alert-rules/count`,
     method: 'get',
     signal
   });
+};
 
 export const getCountAlertRulesApiV1ModelsModelIdAlertRulesCountGetQueryKey = (modelId: number) => [
   `/api/v1/models/${modelId}/alert-rules/count`
@@ -1442,13 +1478,14 @@ export const useCountAlertRulesApiV1ModelsModelIdAlertRulesCountGet = <
 export const countAlertRulesApiV1AlertRulesCountGet = (
   params?: CountAlertRulesApiV1AlertRulesCountGetParams,
   signal?: AbortSignal
-) =>
-  customInstance<CountAlertRulesApiV1AlertRulesCountGet200>({
+) => {
+  return customInstance<CountAlertRulesApiV1AlertRulesCountGet200>({
     url: `/api/v1/alert-rules/count`,
     method: 'get',
     params,
     signal
   });
+};
 
 export const getCountAlertRulesApiV1AlertRulesCountGetQueryKey = (
   params?: CountAlertRulesApiV1AlertRulesCountGetParams
@@ -1507,8 +1544,12 @@ List[AlertSchema]
     All the alerts for a given monitor.
  * @summary Get Alert Rules
  */
-export const getAlertRulesApiV1AlertRulesGet = (params?: GetAlertRulesApiV1AlertRulesGetParams, signal?: AbortSignal) =>
-  customInstance<AlertRuleInfoSchema[]>({ url: `/api/v1/alert-rules`, method: 'get', params, signal });
+export const getAlertRulesApiV1AlertRulesGet = (
+  params?: GetAlertRulesApiV1AlertRulesGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<AlertRuleInfoSchema[]>({ url: `/api/v1/alert-rules`, method: 'get', params, signal });
+};
 
 export const getGetAlertRulesApiV1AlertRulesGetQueryKey = (params?: GetAlertRulesApiV1AlertRulesGetParams) => [
   `/api/v1/alert-rules`,
@@ -1549,8 +1590,9 @@ export const useGetAlertRulesApiV1AlertRulesGet = <
  * Get alert by id.
  * @summary Get Alert Rule
  */
-export const getAlertRuleApiV1AlertRulesAlertRuleIdGet = (alertRuleId: number, signal?: AbortSignal) =>
-  customInstance<AlertRuleSchema>({ url: `/api/v1/alert-rules/${alertRuleId}`, method: 'get', signal });
+export const getAlertRuleApiV1AlertRulesAlertRuleIdGet = (alertRuleId: number, signal?: AbortSignal) => {
+  return customInstance<AlertRuleSchema>({ url: `/api/v1/alert-rules/${alertRuleId}`, method: 'get', signal });
+};
 
 export const getGetAlertRuleApiV1AlertRulesAlertRuleIdGetQueryKey = (alertRuleId: number) => [
   `/api/v1/alert-rules/${alertRuleId}`
@@ -1595,13 +1637,14 @@ export const useGetAlertRuleApiV1AlertRulesAlertRuleIdGet = <
 export const updateAlertApiV1AlertRulesAlertRuleIdPut = (
   alertRuleId: number,
   alertRuleUpdateSchema: AlertRuleUpdateSchema
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/alert-rules/${alertRuleId}`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: alertRuleUpdateSchema
   });
+};
 
 export type UpdateAlertApiV1AlertRulesAlertRuleIdPutMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateAlertApiV1AlertRulesAlertRuleIdPut>>
@@ -1643,8 +1686,9 @@ export const useUpdateAlertApiV1AlertRulesAlertRuleIdPut = <
  * Delete alert by id.
  * @summary Delete Alert Rule
  */
-export const deleteAlertRuleApiV1AlertRulesAlertRuleIdDelete = (alertRuleId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alert-rules/${alertRuleId}`, method: 'delete' });
+export const deleteAlertRuleApiV1AlertRulesAlertRuleIdDelete = (alertRuleId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/alert-rules/${alertRuleId}`, method: 'delete' });
+};
 
 export type DeleteAlertRuleApiV1AlertRulesAlertRuleIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteAlertRuleApiV1AlertRulesAlertRuleIdDelete>>
@@ -1690,7 +1734,14 @@ export const getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = (
   alertRuleId: number,
   params?: GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams,
   signal?: AbortSignal
-) => customInstance<AlertSchema[]>({ url: `/api/v1/alert-rules/${alertRuleId}/alerts`, method: 'get', params, signal });
+) => {
+  return customInstance<AlertSchema[]>({
+    url: `/api/v1/alert-rules/${alertRuleId}/alerts`,
+    method: 'get',
+    params,
+    signal
+  });
+};
 
 export const getGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetQueryKey = (
   alertRuleId: number,
@@ -1742,8 +1793,9 @@ export const useGetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet = <
  * Resolve all alerts of alert rule.
  * @summary Resolve All Alerts Of Alert Rule
  */
-export const resolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost = (alertRuleId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alert-rules/${alertRuleId}/resolve-all`, method: 'post' });
+export const resolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost = (alertRuleId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/alert-rules/${alertRuleId}/resolve-all`, method: 'post' });
+};
 
 export type ResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof resolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost>>
@@ -1786,8 +1838,12 @@ export const useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllP
  * Reactivate all resolved alerts
  * @summary Reactivate Resolved Alerts
  */
-export const reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost = (alertRuleId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alert-rules/${alertRuleId}/alerts/reactivate-resolved`, method: 'post' });
+export const reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost = (alertRuleId: number) => {
+  return customInstance<unknown>({
+    url: `/api/v1/alert-rules/${alertRuleId}/alerts/reactivate-resolved`,
+    method: 'post'
+  });
+};
 
 export type ReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof reactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost>>
@@ -1830,8 +1886,9 @@ export const useReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactiva
  * Retrieve all available alert webhooks
  * @summary List Webhooks
  */
-export const listWebhooksApiV1AlertWebhooksGet = (signal?: AbortSignal) =>
-  customInstance<AlertWebhookSchema[]>({ url: `/api/v1/alert-webhooks`, method: 'get', signal });
+export const listWebhooksApiV1AlertWebhooksGet = (signal?: AbortSignal) => {
+  return customInstance<AlertWebhookSchema[]>({ url: `/api/v1/alert-webhooks`, method: 'get', signal });
+};
 
 export const getListWebhooksApiV1AlertWebhooksGetQueryKey = () => [`/api/v1/alert-webhooks`];
 
@@ -1870,13 +1927,14 @@ export const useListWebhooksApiV1AlertWebhooksGet = <
  */
 export const createWebhookApiV1AlertWebhooksPost = (
   createWebhookApiV1AlertWebhooksPostBody: CreateWebhookApiV1AlertWebhooksPostBody
-) =>
-  customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
+) => {
+  return customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
     url: `/api/v1/alert-webhooks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: createWebhookApiV1AlertWebhooksPostBody
   });
+};
 
 export type CreateWebhookApiV1AlertWebhooksPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof createWebhookApiV1AlertWebhooksPost>>
@@ -1918,8 +1976,9 @@ export const useCreateWebhookApiV1AlertWebhooksPost = <
  * Retrieve alert webhook
  * @summary Retrive Webhook
  */
-export const retriveWebhookApiV1AlertWebhooksWebhookIdGet = (webhookId: number, signal?: AbortSignal) =>
-  customInstance<AlertWebhookSchema>({ url: `/api/v1/alert-webhooks/${webhookId}`, method: 'get', signal });
+export const retriveWebhookApiV1AlertWebhooksWebhookIdGet = (webhookId: number, signal?: AbortSignal) => {
+  return customInstance<AlertWebhookSchema>({ url: `/api/v1/alert-webhooks/${webhookId}`, method: 'get', signal });
+};
 
 export const getRetriveWebhookApiV1AlertWebhooksWebhookIdGetQueryKey = (webhookId: number) => [
   `/api/v1/alert-webhooks/${webhookId}`
@@ -1962,8 +2021,9 @@ export const useRetriveWebhookApiV1AlertWebhooksWebhookIdGet = <
  * Delete alert webhook
  * @summary Delete Webhook
  */
-export const deleteWebhookApiV1AlertWebhooksWebhookIdDelete = (webhookId: number) =>
-  customInstance<unknown>({ url: `/api/v1/alert-webhooks/${webhookId}`, method: 'delete' });
+export const deleteWebhookApiV1AlertWebhooksWebhookIdDelete = (webhookId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/alert-webhooks/${webhookId}`, method: 'delete' });
+};
 
 export type DeleteWebhookApiV1AlertWebhooksWebhookIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteWebhookApiV1AlertWebhooksWebhookIdDelete>>
@@ -2023,14 +2083,15 @@ export const addChecksApiV1ModelsModelIdChecksPost = (
   modelId: string | number,
   addChecksApiV1ModelsModelIdChecksPostBody: AddChecksApiV1ModelsModelIdChecksPostBody,
   params?: AddChecksApiV1ModelsModelIdChecksPostParams
-) =>
-  customInstance<NameIdResponse[]>({
+) => {
+  return customInstance<NameIdResponse[]>({
     url: `/api/v1/models/${modelId}/checks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: addChecksApiV1ModelsModelIdChecksPostBody,
     params
   });
+};
 
 export type AddChecksApiV1ModelsModelIdChecksPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof addChecksApiV1ModelsModelIdChecksPost>>
@@ -2087,7 +2148,9 @@ export const useAddChecksApiV1ModelsModelIdChecksPost = <
 export const deleteChecksByNameApiV1ModelsModelIdChecksDelete = (
   modelId: string | number,
   params: DeleteChecksByNameApiV1ModelsModelIdChecksDeleteParams
-) => customInstance<unknown>({ url: `/api/v1/models/${modelId}/checks`, method: 'delete', params });
+) => {
+  return customInstance<unknown>({ url: `/api/v1/models/${modelId}/checks`, method: 'delete', params });
+};
 
 export type DeleteChecksByNameApiV1ModelsModelIdChecksDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteChecksByNameApiV1ModelsModelIdChecksDelete>>
@@ -2145,7 +2208,9 @@ export const getChecksApiV1ModelsModelIdChecksGet = (
   modelId: string | number,
   params?: GetChecksApiV1ModelsModelIdChecksGetParams,
   signal?: AbortSignal
-) => customInstance<CheckSchema[]>({ url: `/api/v1/models/${modelId}/checks`, method: 'get', params, signal });
+) => {
+  return customInstance<CheckSchema[]>({ url: `/api/v1/models/${modelId}/checks`, method: 'get', params, signal });
+};
 
 export const getGetChecksApiV1ModelsModelIdChecksGetQueryKey = (
   modelId: string | number,
@@ -2191,7 +2256,9 @@ export const deleteCheckByIdApiV1ModelsModelIdChecksCheckIdDelete = (
   modelId: string | number,
   checkId: string | number,
   params?: DeleteCheckByIdApiV1ModelsModelIdChecksCheckIdDeleteParams
-) => customInstance<unknown>({ url: `/api/v1/models/${modelId}/checks/${checkId}`, method: 'delete', params });
+) => {
+  return customInstance<unknown>({ url: `/api/v1/models/${modelId}/checks/${checkId}`, method: 'delete', params });
+};
 
 export type DeleteCheckByIdApiV1ModelsModelIdChecksCheckIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteCheckByIdApiV1ModelsModelIdChecksCheckIdDelete>>
@@ -2249,13 +2316,14 @@ export const getModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet = (
   modelId: string | number,
   params?: GetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGetParams,
   signal?: AbortSignal
-) =>
-  customInstance<AutoFrequencyResponse>({
+) => {
+  return customInstance<AutoFrequencyResponse>({
     url: `/api/v1/models/${modelId}/auto-frequency`,
     method: 'get',
     params,
     signal
   });
+};
 
 export const getGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGetQueryKey = (
   modelId: string | number,
@@ -2324,14 +2392,15 @@ CheckResultSchema
 export const runManyChecksTogetherApiV1ChecksRunManyPost = (
   monitorOptions: MonitorOptions,
   params: RunManyChecksTogetherApiV1ChecksRunManyPostParams
-) =>
-  customInstance<RunManyChecksTogetherApiV1ChecksRunManyPost200>({
+) => {
+  return customInstance<RunManyChecksTogetherApiV1ChecksRunManyPost200>({
     url: `/api/v1/checks/run-many`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: monitorOptions,
     params
   });
+};
 
 export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>
@@ -2390,13 +2459,14 @@ CheckResultSchema
 export const runStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost = (
   checkId: number,
   monitorOptions: MonitorOptions
-) =>
-  customInstance<CheckResultSchema>({
+) => {
+  return customInstance<CheckResultSchema>({
     url: `/api/v1/checks/${checkId}/run/lookback`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: monitorOptions
   });
+};
 
 export type RunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof runStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost>>
@@ -2456,13 +2526,14 @@ dict
 export const getCheckWindowApiV1ChecksCheckIdRunWindowPost = (
   checkId: number,
   singleCheckRunOptions: SingleCheckRunOptions
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/checks/${checkId}/run/window`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: singleCheckRunOptions
   });
+};
 
 export type GetCheckWindowApiV1ChecksCheckIdRunWindowPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getCheckWindowApiV1ChecksCheckIdRunWindowPost>>
@@ -2521,13 +2592,14 @@ dict
 export const getCheckReferenceApiV1ChecksCheckIdRunReferencePost = (
   checkId: number,
   checkRunOptions: CheckRunOptions
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/checks/${checkId}/run/reference`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: checkRunOptions
   });
+};
 
 export type GetCheckReferenceApiV1ChecksCheckIdRunReferencePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getCheckReferenceApiV1ChecksCheckIdRunReferencePost>>
@@ -2588,13 +2660,14 @@ PlainTextResponse
 export const getNotebookApiV1ChecksCheckIdGetNotebookPost = (
   checkId: number,
   checkNotebookSchema: CheckNotebookSchema
-) =>
-  customInstance<string>({
+) => {
+  return customInstance<string>({
     url: `/api/v1/checks/${checkId}/get-notebook`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: checkNotebookSchema
   });
+};
 
 export type GetNotebookApiV1ChecksCheckIdGetNotebookPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getNotebookApiV1ChecksCheckIdGetNotebookPost>>
@@ -2648,8 +2721,9 @@ MonitorCheckConf
     the check configuration info and the possible values for the parameters.
  * @summary Get Check Info
  */
-export const getCheckInfoApiV1ChecksCheckIdInfoGet = (checkId: number, signal?: AbortSignal) =>
-  customInstance<MonitorCheckConf>({ url: `/api/v1/checks/${checkId}/info`, method: 'get', signal });
+export const getCheckInfoApiV1ChecksCheckIdInfoGet = (checkId: number, signal?: AbortSignal) => {
+  return customInstance<MonitorCheckConf>({ url: `/api/v1/checks/${checkId}/info`, method: 'get', signal });
+};
 
 export const getGetCheckInfoApiV1ChecksCheckIdInfoGetQueryKey = (checkId: number) => [`/api/v1/checks/${checkId}/info`];
 
@@ -2710,13 +2784,14 @@ export const runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeatur
   modelVersionId: number,
   feature: string,
   singleCheckRunOptions: SingleCheckRunOptions
-) =>
-  customInstance<CheckGroupBySchema[]>({
+) => {
+  return customInstance<CheckGroupBySchema[]>({
     url: `/api/v1/checks/${checkId}/group-by/${modelVersionId}/${feature}`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: singleCheckRunOptions
   });
+};
 
 export type RunCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost>>
@@ -2784,7 +2859,9 @@ list
 export const getAllAlertRulesApiV1ConfigAlertRulesGet = (
   params?: GetAllAlertRulesApiV1ConfigAlertRulesGetParams,
   signal?: AbortSignal
-) => customInstance<AlertRuleConfigSchema[]>({ url: `/api/v1/config/alert-rules`, method: 'get', params, signal });
+) => {
+  return customInstance<AlertRuleConfigSchema[]>({ url: `/api/v1/config/alert-rules`, method: 'get', params, signal });
+};
 
 export const getGetAllAlertRulesApiV1ConfigAlertRulesGetQueryKey = (
   params?: GetAllAlertRulesApiV1ConfigAlertRulesGetParams
@@ -2829,13 +2906,14 @@ export const useGetAllAlertRulesApiV1ConfigAlertRulesGet = <
 export const createMonitorApiV1ChecksCheckIdMonitorsPost = (
   checkId: number,
   monitorCreationSchema: MonitorCreationSchema
-) =>
-  customInstance<IdResponse>({
+) => {
+  return customInstance<IdResponse>({
     url: `/api/v1/checks/${checkId}/monitors`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: monitorCreationSchema
   });
+};
 
 export type CreateMonitorApiV1ChecksCheckIdMonitorsPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof createMonitorApiV1ChecksCheckIdMonitorsPost>>
@@ -2877,8 +2955,9 @@ export const useCreateMonitorApiV1ChecksCheckIdMonitorsPost = <
  * Get monitor by id.
  * @summary Get Monitor
  */
-export const getMonitorApiV1MonitorsMonitorIdGet = (monitorId: number, signal?: AbortSignal) =>
-  customInstance<MonitorSchema>({ url: `/api/v1/monitors/${monitorId}`, method: 'get', signal });
+export const getMonitorApiV1MonitorsMonitorIdGet = (monitorId: number, signal?: AbortSignal) => {
+  return customInstance<MonitorSchema>({ url: `/api/v1/monitors/${monitorId}`, method: 'get', signal });
+};
 
 export const getGetMonitorApiV1MonitorsMonitorIdGetQueryKey = (monitorId: number) => [`/api/v1/monitors/${monitorId}`];
 
@@ -2916,13 +2995,14 @@ export const useGetMonitorApiV1MonitorsMonitorIdGet = <
  * Update monitor by id.
  * @summary Update Monitor
  */
-export const updateMonitorApiV1MonitorsMonitorIdPut = (monitorId: number, monitorUpdateSchema: MonitorUpdateSchema) =>
-  customInstance<unknown>({
+export const updateMonitorApiV1MonitorsMonitorIdPut = (monitorId: number, monitorUpdateSchema: MonitorUpdateSchema) => {
+  return customInstance<unknown>({
     url: `/api/v1/monitors/${monitorId}`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: monitorUpdateSchema
   });
+};
 
 export type UpdateMonitorApiV1MonitorsMonitorIdPutMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateMonitorApiV1MonitorsMonitorIdPut>>
@@ -2964,8 +3044,9 @@ export const useUpdateMonitorApiV1MonitorsMonitorIdPut = <
  * Delete monitor by id.
  * @summary Delete Monitor
  */
-export const deleteMonitorApiV1MonitorsMonitorIdDelete = (monitorId: number) =>
-  customInstance<unknown>({ url: `/api/v1/monitors/${monitorId}`, method: 'delete' });
+export const deleteMonitorApiV1MonitorsMonitorIdDelete = (monitorId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/monitors/${monitorId}`, method: 'delete' });
+};
 
 export type DeleteMonitorApiV1MonitorsMonitorIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteMonitorApiV1MonitorsMonitorIdDelete>>
@@ -3026,13 +3107,14 @@ PlainTextResponse
 export const getNotebookApiV1MonitorsMonitorIdGetNotebookPost = (
   monitorId: number,
   monitorNotebookSchema: MonitorNotebookSchema
-) =>
-  customInstance<string>({
+) => {
+  return customInstance<string>({
     url: `/api/v1/monitors/${monitorId}/get-notebook`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: monitorNotebookSchema
   });
+};
 
 export type GetNotebookApiV1MonitorsMonitorIdGetNotebookPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getNotebookApiV1MonitorsMonitorIdGetNotebookPost>>
@@ -3092,13 +3174,14 @@ CheckResultSchema
 export const runMonitorLookbackApiV1MonitorsMonitorIdRunPost = (
   monitorId: number,
   monitorRunSchema: MonitorRunSchema
-) =>
-  customInstance<CheckResultSchema>({
+) => {
+  return customInstance<CheckResultSchema>({
     url: `/api/v1/monitors/${monitorId}/run`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: monitorRunSchema
   });
+};
 
 export type RunMonitorLookbackApiV1MonitorsMonitorIdRunPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof runMonitorLookbackApiV1MonitorsMonitorIdRunPost>>
@@ -3140,8 +3223,9 @@ export const useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost = <
  * Get dashboard by if exists, if not then create it. Add top 5 unassigned monitors to the dashboard if empty.
  * @summary Get Or Create Dashboard
  */
-export const getOrCreateDashboardApiV1DashboardsGet = (signal?: AbortSignal) =>
-  customInstance<DashboardSchema>({ url: `/api/v1/dashboards`, method: 'get', signal });
+export const getOrCreateDashboardApiV1DashboardsGet = (signal?: AbortSignal) => {
+  return customInstance<DashboardSchema>({ url: `/api/v1/dashboards`, method: 'get', signal });
+};
 
 export const getGetOrCreateDashboardApiV1DashboardsGetQueryKey = () => [`/api/v1/dashboards`];
 
@@ -3181,13 +3265,14 @@ export const useGetOrCreateDashboardApiV1DashboardsGet = <
 export const updateDashboardApiV1DashboardsDashboardIdPut = (
   dashboardId: number,
   dashboardUpdateSchema: DashboardUpdateSchema
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/dashboards/${dashboardId}`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: dashboardUpdateSchema
   });
+};
 
 export type UpdateDashboardApiV1DashboardsDashboardIdPutMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateDashboardApiV1DashboardsDashboardIdPut>>
@@ -3229,8 +3314,9 @@ export const useUpdateDashboardApiV1DashboardsDashboardIdPut = <
  * Delete dashboard by id.
  * @summary Delete Dashboard
  */
-export const deleteDashboardApiV1DashboardsDashboardIdDelete = (dashboardId: number) =>
-  customInstance<unknown>({ url: `/api/v1/dashboards/${dashboardId}`, method: 'delete' });
+export const deleteDashboardApiV1DashboardsDashboardIdDelete = (dashboardId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/dashboards/${dashboardId}`, method: 'delete' });
+};
 
 export type DeleteDashboardApiV1DashboardsDashboardIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteDashboardApiV1DashboardsDashboardIdDelete>>
@@ -3275,13 +3361,14 @@ export const useDeleteDashboardApiV1DashboardsDashboardIdDelete = <
 export const logDataBatchApiV1ModelVersionsModelVersionIdDataPost = (
   modelVersionId: number,
   logDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem: LogDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem[]
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/model-versions/${modelVersionId}/data`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: logDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem
   });
+};
 
 export type LogDataBatchApiV1ModelVersionsModelVersionIdDataPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof logDataBatchApiV1ModelVersionsModelVersionIdDataPost>>
@@ -3327,13 +3414,14 @@ export const useLogDataBatchApiV1ModelVersionsModelVersionIdDataPost = <
 export const updateDataBatchApiV1ModelVersionsModelVersionIdDataPut = (
   modelVersionId: number,
   updateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem: UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem[]
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/model-versions/${modelVersionId}/data`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: updateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem
   });
+};
 
 export type UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateDataBatchApiV1ModelVersionsModelVersionIdDataPut>>
@@ -3432,13 +3520,14 @@ export const useSaveReferenceApiV1ModelVersionsModelVersionIdReferencePost = <
  * Create a new model with its name, task type, and description. Returns the ID of the model. If the model already exists, returns the ID of the existing model.
  * @summary Create a new model if does not exist.
  */
-export const getCreateModelApiV1ModelsPost = (modelCreationSchema: ModelCreationSchema) =>
-  customInstance<IdResponse>({
+export const getCreateModelApiV1ModelsPost = (modelCreationSchema: ModelCreationSchema) => {
+  return customInstance<IdResponse>({
     url: `/api/v1/models`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: modelCreationSchema
   });
+};
 
 export type GetCreateModelApiV1ModelsPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getCreateModelApiV1ModelsPost>>
@@ -3490,8 +3579,9 @@ List[ModelsInfoSchema]
     List of models.
  * @summary Get Models
  */
-export const getModelsApiV1ModelsGet = (signal?: AbortSignal) =>
-  customInstance<ModelsInfoSchema[]>({ url: `/api/v1/models`, method: 'get', signal });
+export const getModelsApiV1ModelsGet = (signal?: AbortSignal) => {
+  return customInstance<ModelsInfoSchema[]>({ url: `/api/v1/models`, method: 'get', signal });
+};
 
 export const getGetModelsApiV1ModelsGetQueryKey = () => [`/api/v1/models`];
 
@@ -3529,13 +3619,14 @@ export const useGetModelsApiV1ModelsGet = <
 export const retrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet = (
   params?: RetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGetParams,
   signal?: AbortSignal
-) =>
-  customInstance<RetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet200>({
+) => {
+  return customInstance<RetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet200>({
     url: `/api/v1/models/data-ingestion`,
     method: 'get',
     params,
     signal
   });
+};
 
 export const getRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGetQueryKey = (
   params?: RetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGetParams
@@ -3587,13 +3678,14 @@ export const retrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet = (
   modelId: string | number,
   params?: RetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGetParams,
   signal?: AbortSignal
-) =>
-  customInstance<RetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet200>({
+) => {
+  return customInstance<RetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet200>({
     url: `/api/v1/models/${modelId}/data-ingestion`,
     method: 'get',
     params,
     signal
   });
+};
 
 export const getRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGetQueryKey = (
   modelId: string | number,
@@ -3661,7 +3753,9 @@ export const getModelApiV1ModelsModelIdGet = (
   modelId: string | number,
   params?: GetModelApiV1ModelsModelIdGetParams,
   signal?: AbortSignal
-) => customInstance<ModelSchema>({ url: `/api/v1/models/${modelId}`, method: 'get', params, signal });
+) => {
+  return customInstance<ModelSchema>({ url: `/api/v1/models/${modelId}`, method: 'get', params, signal });
+};
 
 export const getGetModelApiV1ModelsModelIdGetQueryKey = (
   modelId: string | number,
@@ -3705,7 +3799,9 @@ export const useGetModelApiV1ModelsModelIdGet = <
 export const deleteModelApiV1ModelsModelIdDelete = (
   modelId: string | number,
   params?: DeleteModelApiV1ModelsModelIdDeleteParams
-) => customInstance<unknown>({ url: `/api/v1/models/${modelId}`, method: 'delete', params });
+) => {
+  return customInstance<unknown>({ url: `/api/v1/models/${modelId}`, method: 'delete', params });
+};
 
 export type DeleteModelApiV1ModelsModelIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteModelApiV1ModelsModelIdDelete>>
@@ -3763,7 +3859,9 @@ export const getVersionsPerModelApiV1ModelsModelIdVersionsGet = (
   modelId: string | number,
   params?: GetVersionsPerModelApiV1ModelsModelIdVersionsGetParams,
   signal?: AbortSignal
-) => customInstance<NameIdResponse[]>({ url: `/api/v1/models/${modelId}/versions`, method: 'get', params, signal });
+) => {
+  return customInstance<NameIdResponse[]>({ url: `/api/v1/models/${modelId}/versions`, method: 'get', params, signal });
+};
 
 export const getGetVersionsPerModelApiV1ModelsModelIdVersionsGetQueryKey = (
   modelId: string | number,
@@ -3813,8 +3911,9 @@ export const useGetVersionsPerModelApiV1ModelsModelIdVersionsGet = <
  * Retrieve list of available models.
  * @summary Retrieve Available Models
  */
-export const retrieveAvailableModelsApiV1AvailableModelsGet = (signal?: AbortSignal) =>
-  customInstance<ModelManagmentSchema[]>({ url: `/api/v1/available-models`, method: 'get', signal });
+export const retrieveAvailableModelsApiV1AvailableModelsGet = (signal?: AbortSignal) => {
+  return customInstance<ModelManagmentSchema[]>({ url: `/api/v1/available-models`, method: 'get', signal });
+};
 
 export const getRetrieveAvailableModelsApiV1AvailableModelsGetQueryKey = () => [`/api/v1/available-models`];
 
@@ -3868,13 +3967,14 @@ export const getModelColumnsApiV1ModelsModelIdColumnsGet = (
   modelId: string | number,
   params?: GetModelColumnsApiV1ModelsModelIdColumnsGetParams,
   signal?: AbortSignal
-) =>
-  customInstance<GetModelColumnsApiV1ModelsModelIdColumnsGet200>({
+) => {
+  return customInstance<GetModelColumnsApiV1ModelsModelIdColumnsGet200>({
     url: `/api/v1/models/${modelId}/columns`,
     method: 'get',
     params,
     signal
   });
+};
 
 export const getGetModelColumnsApiV1ModelsModelIdColumnsGetQueryKey = (
   modelId: string | number,
@@ -3919,8 +4019,9 @@ export const useGetModelColumnsApiV1ModelsModelIdColumnsGet = <
  * Retrieve list of connected models.
  * @summary Retrieve Connected Models
  */
-export const retrieveConnectedModelsApiV1ConnectedModelsGet = (signal?: AbortSignal) =>
-  customInstance<ConnectedModelSchema[]>({ url: `/api/v1/connected-models`, method: 'get', signal });
+export const retrieveConnectedModelsApiV1ConnectedModelsGet = (signal?: AbortSignal) => {
+  return customInstance<ConnectedModelSchema[]>({ url: `/api/v1/connected-models`, method: 'get', signal });
+};
 
 export const getRetrieveConnectedModelsApiV1ConnectedModelsGetQueryKey = () => [`/api/v1/connected-models`];
 
@@ -3961,12 +4062,13 @@ export const useRetrieveConnectedModelsApiV1ConnectedModelsGet = <
 export const retriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGet = (
   modelId: number,
   signal?: AbortSignal
-) =>
-  customInstance<ConnectedModelVersionSchema[]>({
+) => {
+  return customInstance<ConnectedModelVersionSchema[]>({
     url: `/api/v1/connected-models/${modelId}/versions`,
     method: 'get',
     signal
   });
+};
 
 export const getRetriveConnectedModelVersionsApiV1ConnectedModelsModelIdVersionsGetQueryKey = (modelId: number) => [
   `/api/v1/connected-models/${modelId}/versions`
@@ -4023,13 +4125,14 @@ export const retrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsMod
     versionId: number,
     params?: RetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetParams,
     signal?: AbortSignal
-  ) =>
-    customInstance<IngestionErrorSchema[]>({
+  ) => {
+    return customInstance<IngestionErrorSchema[]>({
       url: `/api/v1/connected-models/${modelId}/versions/${versionId}/ingestion-errors`,
       method: 'get',
       params,
       signal
     });
+  };
 
 export const getRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGetQueryKey =
   (
@@ -4118,8 +4221,9 @@ export const useRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModels
  * Retrieve list of all available scorers.
  * @summary Retrieve Scorers
  */
-export const retrieveScorersApiV1ScorersGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/scorers`, method: 'get', signal });
+export const retrieveScorersApiV1ScorersGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/scorers`, method: 'get', signal });
+};
 
 export const getRetrieveScorersApiV1ScorersGetQueryKey = () => [`/api/v1/scorers`];
 
@@ -4156,8 +4260,9 @@ export const useRetrieveScorersApiV1ScorersGet = <
  * Retrieve list of model scorers.
  * @summary Retrieve Model Scorers
  */
-export const retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet = (modelId: number, signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/connected-models/${modelId}/scorers`, method: 'get', signal });
+export const retrieveModelScorersApiV1ConnectedModelsModelIdScorersGet = (modelId: number, signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/connected-models/${modelId}/scorers`, method: 'get', signal });
+};
 
 export const getRetrieveModelScorersApiV1ConnectedModelsModelIdScorersGetQueryKey = (modelId: number) => [
   `/api/v1/connected-models/${modelId}/scorers`
@@ -4210,13 +4315,14 @@ export const useRetrieveModelScorersApiV1ConnectedModelsModelIdScorersGet = <
 export const addScorerApiV1ConnectedModelsModelIdScorersPost = (
   modelId: number,
   addScorerApiV1ConnectedModelsModelIdScorersPostBody: AddScorerApiV1ConnectedModelsModelIdScorersPostBody
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/connected-models/${modelId}/scorers`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: addScorerApiV1ConnectedModelsModelIdScorersPostBody
   });
+};
 
 export type AddScorerApiV1ConnectedModelsModelIdScorersPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof addScorerApiV1ConnectedModelsModelIdScorersPost>>
@@ -4263,14 +4369,15 @@ export const setScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePost = (
   modelId: string | number,
   modelScheduleTimeSchema: ModelScheduleTimeSchema,
   params?: SetScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePostParams
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/models/${modelId}/monitors-set-schedule-time`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: modelScheduleTimeSchema,
     params
   });
+};
 
 export type SetScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof setScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePost>>
@@ -4321,6 +4428,164 @@ export const useSetScheduleTimeApiV1ModelsModelIdMonitorsSetScheduleTimePost = <
 };
 
 /**
+ * @summary Retrieve model notes.
+ */
+export const retrieveModelNotesApiV1ModelsModelIdNotesGet = (
+  modelId: string | number,
+  params?: RetrieveModelNotesApiV1ModelsModelIdNotesGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<ModelNoteSchema[]>({ url: `/api/v1/models/${modelId}/notes`, method: 'get', params, signal });
+};
+
+export const getRetrieveModelNotesApiV1ModelsModelIdNotesGetQueryKey = (
+  modelId: string | number,
+  params?: RetrieveModelNotesApiV1ModelsModelIdNotesGetParams
+) => [`/api/v1/models/${modelId}/notes`, ...(params ? [params] : [])];
+
+export type RetrieveModelNotesApiV1ModelsModelIdNotesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveModelNotesApiV1ModelsModelIdNotesGet>>
+>;
+export type RetrieveModelNotesApiV1ModelsModelIdNotesGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useRetrieveModelNotesApiV1ModelsModelIdNotesGet = <
+  TData = Awaited<ReturnType<typeof retrieveModelNotesApiV1ModelsModelIdNotesGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  modelId: string | number,
+  params?: RetrieveModelNotesApiV1ModelsModelIdNotesGetParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveModelNotesApiV1ModelsModelIdNotesGet>>, TError, TData>;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetrieveModelNotesApiV1ModelsModelIdNotesGetQueryKey(modelId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveModelNotesApiV1ModelsModelIdNotesGet>>> = ({
+    signal
+  }) => retrieveModelNotesApiV1ModelsModelIdNotesGet(modelId, params, signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof retrieveModelNotesApiV1ModelsModelIdNotesGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    { enabled: !!modelId, ...queryOptions }
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * @summary Create model notes.
+ */
+export const createModelNotesApiV1ModelsModelIdNotesPost = (
+  modelId: string | number,
+  modelNoteCreationSchema: ModelNoteCreationSchema[],
+  params?: CreateModelNotesApiV1ModelsModelIdNotesPostParams
+) => {
+  return customInstance<ModelNoteSchema[]>({
+    url: `/api/v1/models/${modelId}/notes`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: modelNoteCreationSchema,
+    params
+  });
+};
+
+export type CreateModelNotesApiV1ModelsModelIdNotesPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createModelNotesApiV1ModelsModelIdNotesPost>>
+>;
+export type CreateModelNotesApiV1ModelsModelIdNotesPostMutationBody = ModelNoteCreationSchema[];
+export type CreateModelNotesApiV1ModelsModelIdNotesPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useCreateModelNotesApiV1ModelsModelIdNotesPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createModelNotesApiV1ModelsModelIdNotesPost>>,
+    TError,
+    {
+      modelId: string | number;
+      data: ModelNoteCreationSchema[];
+      params?: CreateModelNotesApiV1ModelsModelIdNotesPostParams;
+    },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createModelNotesApiV1ModelsModelIdNotesPost>>,
+    {
+      modelId: string | number;
+      data: ModelNoteCreationSchema[];
+      params?: CreateModelNotesApiV1ModelsModelIdNotesPostParams;
+    }
+  > = props => {
+    const { modelId, data, params } = props ?? {};
+
+    return createModelNotesApiV1ModelsModelIdNotesPost(modelId, data, params);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof createModelNotesApiV1ModelsModelIdNotesPost>>,
+    TError,
+    {
+      modelId: string | number;
+      data: ModelNoteCreationSchema[];
+      params?: CreateModelNotesApiV1ModelsModelIdNotesPostParams;
+    },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * @summary Delete model note.
+ */
+export const deleteModelNoteApiV1ModelsNotesNoteIdDelete = (noteId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/models-notes/${noteId}`, method: 'delete' });
+};
+
+export type DeleteModelNoteApiV1ModelsNotesNoteIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteModelNoteApiV1ModelsNotesNoteIdDelete>>
+>;
+
+export type DeleteModelNoteApiV1ModelsNotesNoteIdDeleteMutationError = ErrorType<HTTPValidationError>;
+
+export const useDeleteModelNoteApiV1ModelsNotesNoteIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteModelNoteApiV1ModelsNotesNoteIdDelete>>,
+    TError,
+    { noteId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteModelNoteApiV1ModelsNotesNoteIdDelete>>,
+    { noteId: number }
+  > = props => {
+    const { noteId } = props ?? {};
+
+    return deleteModelNoteApiV1ModelsNotesNoteIdDelete(noteId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof deleteModelNoteApiV1ModelsNotesNoteIdDelete>>,
+    TError,
+    { noteId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
  * Create a new model version.
 
 Parameters
@@ -4337,14 +4602,15 @@ export const getOrCreateVersionApiV1ModelsModelIdVersionPost = (
   modelId: string | number,
   modelVersionCreationSchema: ModelVersionCreationSchema,
   params?: GetOrCreateVersionApiV1ModelsModelIdVersionPostParams
-) =>
-  customInstance<IdResponse>({
+) => {
+  return customInstance<IdResponse>({
     url: `/api/v1/models/${modelId}/version`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: modelVersionCreationSchema,
     params
   });
+};
 
 export type GetOrCreateVersionApiV1ModelsModelIdVersionPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getOrCreateVersionApiV1ModelsModelIdVersionPost>>
@@ -4401,13 +4667,14 @@ export const useGetOrCreateVersionApiV1ModelsModelIdVersionPost = <
 export const updateModelVersionApiV1ModelVersionsModelVersionIdPut = (
   modelVersionId: number,
   modelVersionUpdateSchema: ModelVersionUpdateSchema
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/model-versions/${modelVersionId}`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: modelVersionUpdateSchema
   });
+};
 
 export type UpdateModelVersionApiV1ModelVersionsModelVersionIdPutMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateModelVersionApiV1ModelVersionsModelVersionIdPut>>
@@ -4452,7 +4719,9 @@ export const useUpdateModelVersionApiV1ModelVersionsModelVersionIdPut = <
 export const retrieveModelVersionByIdApiV1ModelVersionsModelVersionIdGet = (
   modelVersionId: number,
   signal?: AbortSignal
-) => customInstance<ModelVersionSchema>({ url: `/api/v1/model-versions/${modelVersionId}`, method: 'get', signal });
+) => {
+  return customInstance<ModelVersionSchema>({ url: `/api/v1/model-versions/${modelVersionId}`, method: 'get', signal });
+};
 
 export const getRetrieveModelVersionByIdApiV1ModelVersionsModelVersionIdGetQueryKey = (modelVersionId: number) => [
   `/api/v1/model-versions/${modelVersionId}`
@@ -4502,8 +4771,9 @@ export const useRetrieveModelVersionByIdApiV1ModelVersionsModelVersionIdGet = <
  * Delete model version by unique numerical identifier
  * @summary Delete Model Version By Id
  */
-export const deleteModelVersionByIdApiV1ModelVersionsModelVersionIdDelete = (modelVersionId: number) =>
-  customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}`, method: 'delete' });
+export const deleteModelVersionByIdApiV1ModelVersionsModelVersionIdDelete = (modelVersionId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}`, method: 'delete' });
+};
 
 export type DeleteModelVersionByIdApiV1ModelVersionsModelVersionIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteModelVersionByIdApiV1ModelVersionsModelVersionIdDelete>>
@@ -4549,12 +4819,13 @@ export const retrieveModelVersionByNameApiV1ModelsModelNameModelVersionsVersionN
   modelName: string,
   versionName: string,
   signal?: AbortSignal
-) =>
-  customInstance<ModelVersionSchema>({
+) => {
+  return customInstance<ModelVersionSchema>({
     url: `/api/v1/models/${modelName}/model-versions/${versionName}`,
     method: 'get',
     signal
   });
+};
 
 export const getRetrieveModelVersionByNameApiV1ModelsModelNameModelVersionsVersionNameGetQueryKey = (
   modelName: string,
@@ -4612,7 +4883,12 @@ export const useRetrieveModelVersionByNameApiV1ModelsModelNameModelVersionsVersi
 export const deleteModelVersionByNameApiV1ModelsModelNameModelVersionsVersionNameDelete = (
   modelName: string,
   versionName: string
-) => customInstance<unknown>({ url: `/api/v1/models/${modelName}/model-versions/${versionName}`, method: 'delete' });
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/models/${modelName}/model-versions/${versionName}`,
+    method: 'delete'
+  });
+};
 
 export type DeleteModelVersionByNameApiV1ModelsModelNameModelVersionsVersionNameDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteModelVersionByNameApiV1ModelsModelNameModelVersionsVersionNameDelete>>
@@ -4670,8 +4946,9 @@ dictionary containing:
     non-feature columns schema
  * @summary Get Schema
  */
-export const getSchemaApiV1ModelVersionsModelVersionIdSchemaGet = (modelVersionId: number, signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}/schema`, method: 'get', signal });
+export const getSchemaApiV1ModelVersionsModelVersionIdSchemaGet = (modelVersionId: number, signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}/schema`, method: 'get', signal });
+};
 
 export const getGetSchemaApiV1ModelVersionsModelVersionIdSchemaGetQueryKey = (modelVersionId: number) => [
   `/api/v1/model-versions/${modelVersionId}/schema`
@@ -4734,13 +5011,14 @@ HTML of the suite result.
 export const runSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost = (
   modelVersionId: number,
   singleCheckRunOptions: SingleCheckRunOptions
-) =>
-  customInstance<string>({
+) => {
+  return customInstance<string>({
     url: `/api/v1/model-versions/${modelVersionId}/suite-run`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: singleCheckRunOptions
   });
+};
 
 export type RunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof runSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost>>
@@ -4800,13 +5078,14 @@ ORJSONResponse
 export const getModelVersionRefDataApiV1ModelVersionsModelVersionIdGetRefDataPost = (
   modelVersionId: number,
   tableDataSchema: TableDataSchema
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/model-versions/${modelVersionId}/get-ref-data`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: tableDataSchema
   });
+};
 
 export type GetModelVersionRefDataApiV1ModelVersionsModelVersionIdGetRefDataPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getModelVersionRefDataApiV1ModelVersionsModelVersionIdGetRefDataPost>>
@@ -4866,13 +5145,14 @@ ORJSONResponse
 export const getModelVersionProdDataApiV1ModelVersionsModelVersionIdGetProdDataPost = (
   modelVersionId: number,
   windowDataSchema: WindowDataSchema
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/model-versions/${modelVersionId}/get-prod-data`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: windowDataSchema
   });
+};
 
 export type GetModelVersionProdDataApiV1ModelVersionsModelVersionIdGetProdDataPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof getModelVersionProdDataApiV1ModelVersionsModelVersionIdGetProdDataPost>>
@@ -4932,13 +5212,14 @@ export const getTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowSt
   modelVersionId: number,
   timeWindowSchema: TimeWindowSchema,
   signal?: AbortSignal
-) =>
-  customInstance<TimeWindowOutputStatsSchema>({
+) => {
+  return customInstance<TimeWindowOutputStatsSchema>({
     url: `/api/v1/model-versions/${modelVersionId}/time-window-statistics`,
     method: 'get',
     headers: { 'Content-Type': 'application/json' },
     signal
   });
+};
 
 export const getGetTimeWindowStatisticsApiV1ModelVersionsModelVersionIdTimeWindowStatisticsGetQueryKey = (
   modelVersionId: number,
@@ -5014,7 +5295,13 @@ json schema of the model version
 export const getCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet = (
   modelVersionId: number,
   signal?: AbortSignal
-) => customInstance<unknown>({ url: `/api/v1/model-versions/${modelVersionId}/count-samples`, method: 'get', signal });
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/model-versions/${modelVersionId}/count-samples`,
+    method: 'get',
+    signal
+  });
+};
 
 export const getGetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGetQueryKey = (modelVersionId: number) => [
   `/api/v1/model-versions/${modelVersionId}/count-samples`
@@ -5079,8 +5366,9 @@ scope - list of bot permissions
 user_scope -
  * @summary Slack-Authorization-Redirect
  */
-export const slackAuthorizationRedirectApiV1SlackAuthorizeGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/slack.authorize`, method: 'get', signal });
+export const slackAuthorizationRedirectApiV1SlackAuthorizeGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/slack.authorize`, method: 'get', signal });
+};
 
 export const getSlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryKey = () => [`/api/v1/slack.authorize`];
 
@@ -5130,7 +5418,9 @@ state - installation state token that was passed with an authorization request.
 export const slackInstallationCallbackApiV1SlackInstallGet = (
   params: SlackInstallationCallbackApiV1SlackInstallGetParams,
   signal?: AbortSignal
-) => customInstance<unknown>({ url: `/api/v1/slack.install`, method: 'get', params, signal });
+) => {
+  return customInstance<unknown>({ url: `/api/v1/slack.install`, method: 'get', params, signal });
+};
 
 export const getSlackInstallationCallbackApiV1SlackInstallGetQueryKey = (
   params: SlackInstallationCallbackApiV1SlackInstallGetParams
@@ -5173,8 +5463,9 @@ export const useSlackInstallationCallbackApiV1SlackInstallGet = <
  * Return list of slack installations.
  * @summary Retrieve Instalations
  */
-export const retrieveInstalationsApiV1SlackAppsGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/slack/apps`, method: 'get', signal });
+export const retrieveInstalationsApiV1SlackAppsGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/slack/apps`, method: 'get', signal });
+};
 
 export const getRetrieveInstalationsApiV1SlackAppsGetQueryKey = () => [`/api/v1/slack/apps`];
 
@@ -5211,8 +5502,9 @@ export const useRetrieveInstalationsApiV1SlackAppsGet = <
  * Remove slack installation.
  * @summary Remove Installation
  */
-export const removeInstallationApiV1SlackAppsAppIdDelete = (appId: number) =>
-  customInstance<unknown>({ url: `/api/v1/slack/apps/${appId}`, method: 'delete' });
+export const removeInstallationApiV1SlackAppsAppIdDelete = (appId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/slack/apps/${appId}`, method: 'delete' });
+};
 
 export type RemoveInstallationApiV1SlackAppsAppIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>
@@ -5254,8 +5546,9 @@ export const useRemoveInstallationApiV1SlackAppsAppIdDelete = <
  * Redirect to the Auth0 login page.
  * @summary Auth0 Login
  */
-export const auth0LoginApiV1AuthLoginAuth0Get = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/auth/login/auth0`, method: 'get', signal });
+export const auth0LoginApiV1AuthLoginAuth0Get = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/auth/login/auth0`, method: 'get', signal });
+};
 
 export const getAuth0LoginApiV1AuthLoginAuth0GetQueryKey = () => [`/api/v1/auth/login/auth0`];
 
@@ -5292,8 +5585,9 @@ export const useAuth0LoginApiV1AuthLoginAuth0Get = <
  * Get the user details from the Auth0 callback.
  * @summary Auth0 Callback
  */
-export const auth0CallbackApiV1AuthLoginAuth0CallbackGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/auth/login/auth0/callback`, method: 'get', signal });
+export const auth0CallbackApiV1AuthLoginAuth0CallbackGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/auth/login/auth0/callback`, method: 'get', signal });
+};
 
 export const getAuth0CallbackApiV1AuthLoginAuth0CallbackGetQueryKey = () => [`/api/v1/auth/login/auth0/callback`];
 
@@ -5331,8 +5625,9 @@ export const useAuth0CallbackApiV1AuthLoginAuth0CallbackGet = <
  * Logout the user.
  * @summary Logout
  */
-export const logoutApiV1AuthLogoutGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/auth/logout`, method: 'get', signal });
+export const logoutApiV1AuthLogoutGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/auth/logout`, method: 'get', signal });
+};
 
 export const getLogoutApiV1AuthLogoutGetQueryKey = () => [`/api/v1/auth/logout`];
 
@@ -5371,8 +5666,9 @@ Returns
     Response: A 200 OK response.
  * @summary Health Check
  */
-export const healthCheckApiV1HealthCheckGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/health-check`, method: 'get', signal });
+export const healthCheckApiV1HealthCheckGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/health-check`, method: 'get', signal });
+};
 
 export const getHealthCheckApiV1HealthCheckGetQueryKey = () => [`/api/v1/health-check`];
 
@@ -5409,13 +5705,14 @@ export const useHealthCheckApiV1HealthCheckGet = <
  * Create invite between organization and a user.
  * @summary Create Invite
  */
-export const createInviteApiV1OrganizationInvitePut = (invitationCreationSchema: InvitationCreationSchema) =>
-  customInstance<unknown>({
+export const createInviteApiV1OrganizationInvitePut = (invitationCreationSchema: InvitationCreationSchema) => {
+  return customInstance<unknown>({
     url: `/api/v1/organization/invite`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: invitationCreationSchema
   });
+};
 
 export type CreateInviteApiV1OrganizationInvitePutMutationResult = NonNullable<
   Awaited<ReturnType<typeof createInviteApiV1OrganizationInvitePut>>
@@ -5457,12 +5754,13 @@ export const useCreateInviteApiV1OrganizationInvitePut = <
  * Retrive an organization.
  * @summary Retrive Organization
  */
-export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) =>
-  customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
+export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) => {
+  return customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
     url: `/api/v1/organization`,
     method: 'get',
     signal
   });
+};
 
 export const getRetriveOrganizationApiV1OrganizationGetQueryKey = () => [`/api/v1/organization`];
 
@@ -5499,13 +5797,14 @@ export const useRetriveOrganizationApiV1OrganizationGet = <
  * Update an organization.
  * @summary Update Organization
  */
-export const updateOrganizationApiV1OrganizationPut = (organizationUpdateSchema: OrganizationUpdateSchema) =>
-  customInstance<unknown>({
+export const updateOrganizationApiV1OrganizationPut = (organizationUpdateSchema: OrganizationUpdateSchema) => {
+  return customInstance<unknown>({
     url: `/api/v1/organization`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
     data: organizationUpdateSchema
   });
+};
 
 export type UpdateOrganizationApiV1OrganizationPutMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateOrganizationApiV1OrganizationPut>>
@@ -5547,8 +5846,9 @@ export const useUpdateOrganizationApiV1OrganizationPut = <
  * Retrieve organization members
  * @summary Retrieve Organization Members
  */
-export const retrieveOrganizationMembersApiV1OrganizationMembersGet = (signal?: AbortSignal) =>
-  customInstance<MemberSchema[]>({ url: `/api/v1/organization/members`, method: 'get', signal });
+export const retrieveOrganizationMembersApiV1OrganizationMembersGet = (signal?: AbortSignal) => {
+  return customInstance<MemberSchema[]>({ url: `/api/v1/organization/members`, method: 'get', signal });
+};
 
 export const getRetrieveOrganizationMembersApiV1OrganizationMembersGetQueryKey = () => [`/api/v1/organization/members`];
 
@@ -5590,8 +5890,9 @@ export const useRetrieveOrganizationMembersApiV1OrganizationMembersGet = <
  * Remove member from an organization
  * @summary Remove Organization Member
  */
-export const removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete = (memberId: number) =>
-  customInstance<unknown>({ url: `/api/v1/organization/members/${memberId}`, method: 'delete' });
+export const removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete = (memberId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/organization/members/${memberId}`, method: 'delete' });
+};
 
 export type RemoveOrganizationMemberApiV1OrganizationMembersMemberIdDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof removeOrganizationMemberApiV1OrganizationMembersMemberIdDelete>>
@@ -5634,8 +5935,9 @@ export const useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete =
  * Leave the organization
  * @summary Leave Organization
  */
-export const leaveOrganizationApiV1OrganizationLeavePost = () =>
-  customInstance<unknown>({ url: `/api/v1/organization/leave`, method: 'post' });
+export const leaveOrganizationApiV1OrganizationLeavePost = () => {
+  return customInstance<unknown>({ url: `/api/v1/organization/leave`, method: 'post' });
+};
 
 export type LeaveOrganizationApiV1OrganizationLeavePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof leaveOrganizationApiV1OrganizationLeavePost>>
@@ -5660,7 +5962,9 @@ export const useLeaveOrganizationApiV1OrganizationLeavePost = <
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof leaveOrganizationApiV1OrganizationLeavePost>>,
     TVariables
-  > = () => leaveOrganizationApiV1OrganizationLeavePost();
+  > = () => {
+    return leaveOrganizationApiV1OrganizationLeavePost();
+  };
 
   return useMutation<
     Awaited<ReturnType<typeof leaveOrganizationApiV1OrganizationLeavePost>>,
@@ -5674,8 +5978,9 @@ export const useLeaveOrganizationApiV1OrganizationLeavePost = <
  * Get info needed for the complete details page.
  * @summary Get Complete Details
  */
-export const getCompleteDetailsApiV1UsersCompleteDetailsGet = (signal?: AbortSignal) =>
-  customInstance<CompleteDetailsSchema>({ url: `/api/v1/users/complete-details`, method: 'get', signal });
+export const getCompleteDetailsApiV1UsersCompleteDetailsGet = (signal?: AbortSignal) => {
+  return customInstance<CompleteDetailsSchema>({ url: `/api/v1/users/complete-details`, method: 'get', signal });
+};
 
 export const getGetCompleteDetailsApiV1UsersCompleteDetailsGetQueryKey = () => [`/api/v1/users/complete-details`];
 
@@ -5715,13 +6020,14 @@ export const useGetCompleteDetailsApiV1UsersCompleteDetailsGet = <
  */
 export const updateCompleteDetailsApiV1UsersCompleteDetailsPost = (
   completeDetailsUpdateSchema: CompleteDetailsUpdateSchema
-) =>
-  customInstance<unknown>({
+) => {
+  return customInstance<unknown>({
     url: `/api/v1/users/complete-details`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     data: completeDetailsUpdateSchema
   });
+};
 
 export type UpdateCompleteDetailsApiV1UsersCompleteDetailsPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateCompleteDetailsApiV1UsersCompleteDetailsPost>>
@@ -5763,8 +6069,9 @@ export const useUpdateCompleteDetailsApiV1UsersCompleteDetailsPost = <
  * Leave organization.
  * @summary Leave Organization
  */
-export const leaveOrganizationApiV1UsersLeaveOrganizationPost = () =>
-  customInstance<unknown>({ url: `/api/v1/users/leave-organization`, method: 'post' });
+export const leaveOrganizationApiV1UsersLeaveOrganizationPost = () => {
+  return customInstance<unknown>({ url: `/api/v1/users/leave-organization`, method: 'post' });
+};
 
 export type LeaveOrganizationApiV1UsersLeaveOrganizationPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>
@@ -5789,7 +6096,9 @@ export const useLeaveOrganizationApiV1UsersLeaveOrganizationPost = <
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
     TVariables
-  > = () => leaveOrganizationApiV1UsersLeaveOrganizationPost();
+  > = () => {
+    return leaveOrganizationApiV1UsersLeaveOrganizationPost();
+  };
 
   return useMutation<
     Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
@@ -5803,7 +6112,9 @@ export const useLeaveOrganizationApiV1UsersLeaveOrganizationPost = <
  * Delete the user.
  * @summary Delete User
  */
-export const deleteUserApiV1UsersDelete = () => customInstance<unknown>({ url: `/api/v1/users`, method: 'delete' });
+export const deleteUserApiV1UsersDelete = () => {
+  return customInstance<unknown>({ url: `/api/v1/users`, method: 'delete' });
+};
 
 export type DeleteUserApiV1UsersDeleteMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteUserApiV1UsersDelete>>
@@ -5820,8 +6131,9 @@ export const useDeleteUserApiV1UsersDelete = <
 }) => {
   const { mutation: mutationOptions } = options ?? {};
 
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteUserApiV1UsersDelete>>, TVariables> = () =>
-    deleteUserApiV1UsersDelete();
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteUserApiV1UsersDelete>>, TVariables> = () => {
+    return deleteUserApiV1UsersDelete();
+  };
 
   return useMutation<Awaited<ReturnType<typeof deleteUserApiV1UsersDelete>>, TError, TVariables, TContext>(
     mutationFn,
@@ -5833,8 +6145,9 @@ export const useDeleteUserApiV1UsersDelete = <
  * Retrieve user details
  * @summary Retrieve User Info
  */
-export const retrieveUserInfoApiV1UsersMeGet = (signal?: AbortSignal) =>
-  customInstance<UserSchema>({ url: `/api/v1/users/me`, method: 'get', signal });
+export const retrieveUserInfoApiV1UsersMeGet = (signal?: AbortSignal) => {
+  return customInstance<UserSchema>({ url: `/api/v1/users/me`, method: 'get', signal });
+};
 
 export const getRetrieveUserInfoApiV1UsersMeGetQueryKey = () => [`/api/v1/users/me`];
 
@@ -5871,8 +6184,9 @@ export const useRetrieveUserInfoApiV1UsersMeGet = <
  * Regenerate user token
  * @summary Regenerate Api Token
  */
-export const regenerateApiTokenApiV1UsersRegenerateApiTokenGet = (signal?: AbortSignal) =>
-  customInstance<string>({ url: `/api/v1/users/regenerate-api-token`, method: 'get', signal });
+export const regenerateApiTokenApiV1UsersRegenerateApiTokenGet = (signal?: AbortSignal) => {
+  return customInstance<string>({ url: `/api/v1/users/regenerate-api-token`, method: 'get', signal });
+};
 
 export const getRegenerateApiTokenApiV1UsersRegenerateApiTokenGetQueryKey = () => [
   `/api/v1/users/regenerate-api-token`
@@ -5912,8 +6226,9 @@ export const useRegenerateApiTokenApiV1UsersRegenerateApiTokenGet = <
  * Accept End-User License Aggrement
  * @summary Eula-Acceptance
  */
-export const eulaAcceptanceApiV1UsersAcceptEulaGet = (signal?: AbortSignal) =>
-  customInstance<unknown>({ url: `/api/v1/users/accept-eula`, method: 'get', signal });
+export const eulaAcceptanceApiV1UsersAcceptEulaGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/users/accept-eula`, method: 'get', signal });
+};
 
 export const getEulaAcceptanceApiV1UsersAcceptEulaGetQueryKey = () => [`/api/v1/users/accept-eula`];
 
