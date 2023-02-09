@@ -65,24 +65,23 @@ function DiagramLine({
     return currentPlugins;
   }, [alert_rules, alerts]);
 
+  const currentChart = chartRef.current;
+
   const hideLine = useCallback((item: LegendItem) => {
     mixpanel.track('Click on a legend on the graph');
 
-    const chart = chartRef.current;
+    if (currentChart && typeof item.datasetIndex === 'number') {
+      const isDatasetVisible = currentChart.isDatasetVisible(item.datasetIndex);
 
-    if (chart && typeof item.datasetIndex === 'number') {
-      const isDatasetVisible = chart.isDatasetVisible(item.datasetIndex);
-
-      chart.setDatasetVisibility(item.datasetIndex, !isDatasetVisible);
+      currentChart.setDatasetVisibility(item.datasetIndex, !isDatasetVisible);
 
       setLineIndexMap(prevState => ({
         ...prevState,
         [typeof item.datasetIndex === 'number' ? item.datasetIndex : -1]: isDatasetVisible
       }));
     }
-  }, []);
+  }, [currentChart]);
 
-  const currentChart = chartRef.current;
 
   const chartData = useMemo(() => {
     if (!currentChart) {
@@ -235,7 +234,7 @@ function DiagramLine({
             unit: minTimeUnit
           },
           ticks: {
-            source: 'data'
+            source: Object.values(lineIndexMap).filter(val => !val).length ? 'data' : 'labels'
           }
         },
         y: analysis
@@ -265,7 +264,8 @@ function DiagramLine({
       chartData.datasets,
       chartData.labels,
       minTimeUnit,
-      onPointCLick
+      onPointCLick,
+      lineIndexMap
     ]
   );
 
