@@ -34,8 +34,8 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
       reader.onloadend = function () {
         const result = reader.result as string;
         const [imageData, path] = result.split(';');
-        const [data, type] = imageData.split(':');
-        const [pathType, currentPath] = path.split(',');
+        const [type] = imageData.split(':');
+        const [currentPath] = path.split(',');
         Sentry.configureScope(scope => {
           scope.addAttachment({ filename: 'screenshot', data: currentPath, contentType: type });
         });

@@ -7,32 +7,30 @@ interface VersionErrorsListProps {
   errors: IngestionErrorSchema[] | undefined;
 }
 
-const VersionErrorsList: FC<VersionErrorsListProps> = ({ errors }) => {
-  return (
-    <>
-      {errors ? (
-        <Box sx={{ height: '440px' }}>
-          <VersionErrorsSingleItem
-            isHeader={true}
-            error={{
-              id: 1,
-              sample_id: 'Sample ID',
-              sample: 'Sample',
-              created_at: 'Timestamp',
-              error: 'Reason of error'
-            }}
-          />
-          <Box sx={{ overflowY: 'auto', height: 'calc(100% - 56px)' }}>
-            {errors.map(error => (
-              <VersionErrorsSingleItem isHeader={false} error={error} />
-            ))}
-          </Box>
+const VersionErrorsList: FC<VersionErrorsListProps> = ({ errors }) => (
+  <>
+    {errors ? (
+      <Box sx={{ height: '440px' }}>
+        <VersionErrorsSingleItem
+          isHeader={true}
+          error={{
+            id: 1,
+            sample_id: 'Sample ID',
+            sample: 'Sample',
+            created_at: 'Timestamp',
+            error: 'Reason of error'
+          }}
+        />
+        <Box sx={{ overflowY: 'auto', height: 'calc(100% - 56px)' }}>
+          {errors.map((error, i) => (
+            <VersionErrorsSingleItem key={i} isHeader={false} error={error} />
+          ))}
         </Box>
-      ) : (
-        <div></div>
-      )}
-    </>
-  );
-};
+      </Box>
+    ) : (
+      <div></div>
+    )}
+  </>
+);
 
 export default VersionErrorsList;

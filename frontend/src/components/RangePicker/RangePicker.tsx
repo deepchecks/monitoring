@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { useDebounce } from 'hooks/useDebounce';
 
-import { Stack, Slider, SliderProps, Button, Box } from '@mui/material';
+import { Stack, Slider, SliderProps, Box } from '@mui/material';
 
 import { StyledInputsWrapper, StyledLabel, StyledTextField } from './RangePicker.style';
 

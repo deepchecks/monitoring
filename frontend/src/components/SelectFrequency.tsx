@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Box, Link } from '@mui/material';
+import { Box } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
 
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';

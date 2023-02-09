@@ -3,7 +3,7 @@ import React, { useContext, useState } from 'react';
 import { ColumnStatistics } from 'api/generated';
 import { AnalysisContext } from 'context/analysis-context';
 
-import { alpha, Box, Button, Slider, Stack, styled, TextField } from '@mui/material';
+import { alpha, Box, Button } from '@mui/material';
 import { RangePicker } from 'components/RangePicker/RangePicker';
 
 interface NumericFilterProps {
@@ -69,20 +69,3 @@ export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
     </Box>
   );
 }
-
-const StyledNumericField = styled(TextField)(({ theme }) => ({
-  width: 65,
-
-  '.MuiInputBase-input': {
-    padding: '8px',
-
-    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-      WebkitAppearance: 'none',
-      margin: 0
-    }
-  },
-
-  '.MuiOutlinedInput-notchedOutline': {
-    borderColor: theme.palette.grey[200]
-  }
-}));

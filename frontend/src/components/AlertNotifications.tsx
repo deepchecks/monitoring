@@ -220,7 +220,7 @@ export function AlertNotifications() {
       </Box>
       {!data?.is_slack_connected && (
         <Box
-          sx={theme => ({
+          sx={() => ({
             padding: '20px 30px',
             background: `url(${connectSlackBG}) no-repeat right`,
             backgroundColor: colors.primary.violet[100],

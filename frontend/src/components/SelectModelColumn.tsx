@@ -39,7 +39,7 @@ export const SelectModelColumn = ({
   const columns = useMemo(
     () =>
       Object.entries(columnsMap)
-        .filter(([key, value]) => value.type in ColumnType)
+        .filter(([, value]) => value.type in ColumnType)
         .map(([key, value]) => ({ key, value })),
     [columnsMap]
   );
@@ -79,7 +79,7 @@ interface SelectModelColumnSub extends BaseSelectProps {
 
 const SelectModelColumnSub = ({ columnMetadata, setFieldValue, ...props }: SelectModelColumnSub) => {
   const handleInputChange = useCallback((val: number[]) => setFieldValue('value', val), [setFieldValue]);
-  const handleSliderChange = (event: Event) => props.onChange!(event as SelectChangeEvent, null);
+  const handleSliderChange = (event: Event) => props.onChange && props.onChange(event as SelectChangeEvent, null);
 
   if (!columnMetadata) return null;
 

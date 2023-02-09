@@ -10,7 +10,7 @@ import {
   useGetAllAlertRulesApiV1ConfigAlertRulesGet
 } from '../api/generated';
 
-import { Button, Box, useTheme } from '@mui/material';
+import { Button, Box } from '@mui/material';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
@@ -23,7 +23,6 @@ import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
 import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
 
 export const AlertRules = () => {
-  const theme = useTheme();
   const { alertFilters: filters, resetFilters } = useContext(GlobalStateContext);
 
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);

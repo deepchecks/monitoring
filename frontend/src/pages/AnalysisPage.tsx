@@ -24,7 +24,7 @@ import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType, CheckTypeOptions } from 'helpers/types/check';
 import { GlobalStateContext } from 'context';
-import { ReverseTypeMap, TypeMap } from 'components/AnalysisItem/AnalysisItem.types';
+import { ReverseTypeMap } from 'components/AnalysisItem/AnalysisItem.types';
 
 export function AnalysisPage() {
   const location = useLocation();
@@ -111,7 +111,6 @@ export function AnalysisPage() {
 
   function fixDict(obj: any, allowedKeys: any) {
     const keyValues = Object.keys(obj).map(key => {
-      const vals = Object.values(allowedKeys);
       if (Object.values(allowedKeys).includes(key))
         return { [key]: typeof obj[key] == 'string' ? [obj[key]] : obj[key] };
       return {};

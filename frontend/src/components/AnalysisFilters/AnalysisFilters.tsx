@@ -60,7 +60,7 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     }
   });
   const columns = useMemo(
-    () => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)),
+    () => Object.fromEntries(Object.entries(columnsMap).filter(([, value]) => value.type in ColumnType)),
     [columnsMap]
   );
 

@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-name: FE Unit Testing
+name: FE Tests & Code Quality
 
 on:
   push:
@@ -22,6 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Run Linter
+        run: |
+          npm install 
+          npm run lint
+        working-directory: ./frontend
+
       - name: Run TS Checker
         run: |
           npm install 

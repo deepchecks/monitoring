@@ -1,4 +1,4 @@
-import { styled, Stack, Typography, Button, Modal, Box, IconButton } from '@mui/material';
+import { styled, Stack, Typography, Button, IconButton } from '@mui/material';
 
 import { colors } from 'theme/colors';
 

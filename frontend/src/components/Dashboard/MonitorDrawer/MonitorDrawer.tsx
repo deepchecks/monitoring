@@ -20,7 +20,6 @@ import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { DrawerNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
 import { SelectValues } from 'helpers/types';
-import { timeValues } from 'helpers/time';
 
 interface MonitorDrawerProps extends DrawerProps {
   monitor: MonitorSchema | null;

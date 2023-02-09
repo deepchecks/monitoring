@@ -4,7 +4,7 @@ import {
   IngestionErrorSchema,
   useRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
 } from 'api/generated';
-import { Autocomplete, Box, Button, Divider, Stack, styled, TextField, Typography } from '@mui/material';
+import { Autocomplete, Button, Divider, Stack, styled, TextField, Typography } from '@mui/material';
 import { CollapseArrowLeft, NoDataToShow } from 'assets/icon/icon';
 import VersionErrorsList from './VersionErrorsList';
 import { Loader } from '../../../../../Loader';
@@ -46,9 +46,10 @@ export const VersionDetails: FC<VersionDetailsProps> = ({ version, modelId, onCl
     setFilteredData(filteredData);
   }, [searchInputValue, data]);
 
-  const AutoCompleteOptionsArray = useMemo(() => {
-    return data ? data.map(el => `${el.error} (id: ${el.id}; sample id: ${el.sample_id})`) : [];
-  }, [version.id, data?.length]);
+  const AutoCompleteOptionsArray = useMemo(
+    () => (data ? data.map(el => `${el.error} (id: ${el.id}; sample id: ${el.sample_id})`) : []),
+    [version.id, data?.length]
+  );
 
   const handleReset = () => {
     setSearchInputValue('');

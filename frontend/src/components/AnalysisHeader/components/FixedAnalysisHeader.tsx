@@ -6,7 +6,6 @@ import { Stack, Box } from '@mui/system';
 
 import ModelSelect from './ModelSelect';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
-import { theme } from '../../../theme';
 import { styled } from '@mui/material';
 
 interface FixedAnalysisHeaderProps {

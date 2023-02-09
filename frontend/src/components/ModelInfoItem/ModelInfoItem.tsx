@@ -1,8 +1,8 @@
-import React, { useState, useRef, RefObject, useEffect } from 'react';
+import React, { useState, useRef, RefObject } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { ConnectedModelSchema, ModelVersionManagmentSchema } from 'api/generated';
+import { ConnectedModelSchema } from 'api/generated';
 
 import { Stack, Typography, Tooltip } from '@mui/material';
 
@@ -27,15 +27,10 @@ interface ModelInfoItemProps {
 }
 
 const MAX_MODEL_NAME_WIDTH = 275;
-const RANGE = 3;
 
 const isEllipsisActiveCheck = (e: RefObject<HTMLElement>) => e.current && e.current.offsetWidth >= MAX_MODEL_NAME_WIDTH;
 
-const sortVersionsByEndDate = (versions: ModelVersionManagmentSchema[]) =>
-  versions.sort((a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime());
-
 const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
-  const [sortedVersions, setSortedVersions] = useState<ModelVersionManagmentSchema[]>([]);
   const [isHovered, setIsHovered] = useState(false);
   const [open, setOpen] = useState(false);
 

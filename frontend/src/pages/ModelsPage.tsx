@@ -246,7 +246,7 @@ export const ModelsPage = () => {
   );
 };
 
-const StyledModelsContainer = styled(Box)(({ theme }) => ({
+const StyledModelsContainer = styled(Box)(() => ({
   padding: '40px 0 ',
   width: '100%'
 }));

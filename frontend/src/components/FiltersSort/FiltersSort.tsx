@@ -7,8 +7,7 @@ import { GlobalStateContext } from 'context';
 import {
   AlertSeverity,
   GetAlertRulesApiV1AlertRulesGetParams,
-  GetAlertRulesApiV1AlertRulesGetSortbyItem,
-  useGetModelsApiV1ModelsGet
+  GetAlertRulesApiV1AlertRulesGetSortbyItem
 } from 'api/generated';
 
 import { Box, Divider, Menu, MenuItem, SelectChangeEvent, Stack, styled, TextField, Typography } from '@mui/material';

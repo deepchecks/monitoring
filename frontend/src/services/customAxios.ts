@@ -14,7 +14,7 @@ AXIOS_INSTANCE.interceptors.response.use(
     if (response.status === 401) {
       let redirectLocation = `${process.env.REACT_APP_BASE_API}/api/v1/auth/login/auth0`;
       if (process.env.REACT_APP_LOCAL_URL) {
-        redirectLocation += `?return_uri=${encodeURIComponent(process.env.REACT_APP_LOCAL_URL!)}`;
+        redirectLocation += `?return_uri=${encodeURIComponent(process.env.REACT_APP_LOCAL_URL)}`;
       }
       window.location.href = redirectLocation;
     } else if (response.status === 403 && response.headers['x-substatus'] === '10') {

@@ -1,6 +1,6 @@
 import React, { useMemo, memo } from 'react';
 
-import { MonitorSchema, useGetModelColumnsApiV1ModelsModelIdColumnsGet } from 'api/generated';
+import { useGetModelColumnsApiV1ModelsModelIdColumnsGet } from 'api/generated';
 
 import { Stack, MenuItem, SelectChangeEvent } from '@mui/material';
 
@@ -33,7 +33,7 @@ const SelectColumnComponent = ({
 }: SelectColumnProps) => {
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
   const columns = useMemo(
-    () => Object.fromEntries(Object.entries(columnsMap).filter(([key, value]) => value.type in ColumnType)),
+    () => Object.fromEntries(Object.entries(columnsMap).filter(([, value]) => value.type in ColumnType)),
     [columnsMap]
   );
   const disabled = useMemo(() => !model || !columns || isLoading, [model, columns, isLoading]);

@@ -8,14 +8,12 @@ interface NoDataToShowProps {
   height: number | string;
 }
 
-export const NoDataToShow: FC<NoDataToShowProps> = ({ text, height, width }) => {
-  return (
-    <Box sx={{ width, height, margin: '0 auto', position: 'relative' }}>
-      <NoDataToShowIcon />
-      <StyledTypography>{text}</StyledTypography>
-    </Box>
-  );
-};
+export const NoDataToShow: FC<NoDataToShowProps> = ({ text, height, width }) => (
+  <Box sx={{ width, height, margin: '0 auto', position: 'relative' }}>
+    <NoDataToShowIcon />
+    <StyledTypography>{text}</StyledTypography>
+  </Box>
+);
 
 const StyledTypography = styled(Typography)({
   color: '#B3BEC4',
