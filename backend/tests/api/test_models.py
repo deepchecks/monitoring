@@ -19,8 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
-from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
-from tests.common import ModelIdentifiersPair, Payload, TestAPI, create_alert, upload_classification_data
+from tests.common import ModelIdentifiersPair, Payload, TestAPI, upload_classification_data
 
 
 def test_model_creation(test_api: TestAPI):
@@ -65,96 +64,6 @@ def test_model_columns_retrieval_with_model_that_does_not_have_versions(
         identifier_kind=identifier_kind
     )
     assert len(t.cast(Payload, columns)) == 0
-
-
-@pytest.mark.asyncio
-async def test_models_retrieval(
-    test_api: TestAPI,
-    classification_model_check: Payload,
-    regression_model_check: Payload,
-    async_session: AsyncSession
-):
-    # Arrange
-    monitors = t.cast(t.List[Payload], [
-        test_api.create_monitor(check_id=classification_model_check["id"]),
-        test_api.create_monitor(check_id=regression_model_check["id"])
-    ])
-    alert_rules = t.cast(t.List[Payload], [
-        test_api.create_alert_rule(monitor_id=monitors[0]["id"]),
-        test_api.create_alert_rule(monitor_id=monitors[1]["id"]),
-        test_api.create_alert_rule(
-            monitor_id=monitors[1]["id"],
-            alert_rule={"alert_severity": AlertSeverity.HIGH.value}
-        ),
-    ])
-
-    create_alert(alert_rules[0]["id"], async_session)
-    create_alert(alert_rules[0]["id"], async_session)
-    create_alert(alert_rules[0]["id"], async_session, resolved=False)
-    #
-    create_alert(alert_rules[1]["id"], async_session, resolved=False)
-    create_alert(alert_rules[1]["id"], async_session, resolved=False)
-    #
-    create_alert(alert_rules[2]["id"], async_session, resolved=False)
-
-    await async_session.commit()
-
-    # Act
-    models = t.cast(t.List[Payload], test_api.fetch_models())
-
-    # Assert
-    assert models == [
-        {
-            "id": 1,
-            "name": "Classification Model",
-            "description": "test",
-            "task_type": "multiclass",
-            "alerts_count": 1,
-            "latest_time": None,
-            "alerts_delay_labels_ratio": 0.0,
-            "alerts_delay_seconds": 0
-        },
-        {
-            "id": 2,
-            "name": "Regression Model",
-            "description": "test",
-            "task_type": "regression",
-            "alerts_count": 3,
-            "latest_time": None,
-            "alerts_delay_labels_ratio": 0.0,
-            "alerts_delay_seconds": 0
-        }
-    ]
-
-
-@pytest.mark.asyncio
-async def test_models_retrieval_output_correctness(
-    test_api: TestAPI,
-    classification_model: Payload,
-    async_session: AsyncSession
-):
-    """Verify that 'model-retrieval' endpoint returns correct 'latest_time' value."""
-    # Arrange
-    time = pdl.now()
-    async_session.add(ModelVersion(name="a", end_time=time.subtract(days=1), model_id=classification_model["id"]))
-    async_session.add(ModelVersion(name="b", end_time=time, model_id=classification_model["id"]))
-    async_session.add(ModelVersion(name="c", end_time=time.subtract(days=2), model_id=classification_model["id"]))
-    await async_session.commit()
-
-    # Act
-    models = t.cast(t.List[Payload], test_api.fetch_models())
-
-    # Assert
-    assert models == [{
-        "id": 1,
-        "name": "Classification Model",
-        "description": "test",
-        "task_type": "multiclass",
-        "alerts_count": 0,
-        "latest_time": time.int_timestamp,
-        "alerts_delay_labels_ratio": 0.0,
-        "alerts_delay_seconds": 0
-    }]
 
 
 @pytest.mark.asyncio

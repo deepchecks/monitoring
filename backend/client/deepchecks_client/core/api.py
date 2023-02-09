@@ -487,30 +487,6 @@ class API:
         else:
             return self.session.delete(f'models/{model_name}', params={'identifier_kind': 'name'})
 
-    def fetch_models(
-        self,
-        raise_on_status: bool = True
-    ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
-        """Fetch all available models.
-
-        Parameters
-        ----------
-        raise_on_status : bool, optional
-            Raise exception if status code is not 200.
-
-        Returns
-        -------
-        Union[httpx.Response, list]
-            The response object.
-        """
-        if raise_on_status:
-            return maybe_raise(
-                self.session.get('models'),
-                msg='Failed to retrieve existing models from session.\n{error}'
-            ).json()
-        else:
-            return self.session.get('models')
-
     def fetch_model_by_name(
         self,
         model_name: str,

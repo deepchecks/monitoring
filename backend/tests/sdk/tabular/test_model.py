@@ -7,8 +7,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-import typing as t
-
 import pytest
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepchecks_client import DeepchecksClient
@@ -48,17 +46,13 @@ def test_model_creation(deepchecks_sdk: DeepchecksClient):
     assert model_client.model["id"] == 1
     assert model_client.model["name"] == "classification model 2"
 
-    models = deepchecks_sdk.api.fetch_models()
-    models = t.cast(t.List[t.Dict[str, t.Any]], models)
+    model = deepchecks_sdk.api.fetch_model_by_name("classification model 2")
 
-    assert len(models) == 1
-    assert models[0] == {
+    assert model == {
         "id": 1,
         "name": "classification model 2",
         "task_type": "multiclass",
         "description": None,
-        "alerts_count": 0,
-        "latest_time": None,
         "alerts_delay_labels_ratio": 1.0,
         "alerts_delay_seconds": 259200
     }

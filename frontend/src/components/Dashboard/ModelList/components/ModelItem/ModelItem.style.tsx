@@ -68,7 +68,7 @@ interface StyledAlertBadgeProps {
 export const StyledAlertBadge = styled(Box, {
   shouldForwardProp: prop => prop !== 'severity' && prop !== 'alertsCount'
 })<StyledAlertBadgeProps>(({ severity, alertsCount, theme }) => {
-  const severityColor = theme.palette.severity[alertsCount === 0 ? 'low' : severity];
+  const severityColor = theme.palette.severity[alertsCount === 0 || severity == null ? 'low' : severity];
 
   return {
     padding: '0 10px',

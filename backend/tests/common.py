@@ -331,22 +331,6 @@ class TestAPI:
         assert "task_type" in data
         return data
 
-    def fetch_models(
-        self,
-        expected_status: ExpectedStatus = (200, 299)
-    ) -> t.Union[httpx.Response, t.List[Payload]]:
-        expected_status = ExpectedHttpStatus.create(expected_status)
-        response = self.api.fetch_models(raise_on_status=False)
-        response = t.cast(httpx.Response, response)
-        expected_status.assert_response_status(response)
-
-        if expected_status.is_negative():
-            return response
-
-        data = response.json()
-        assert isinstance(data, list)
-        return [self.assert_model_record(it) for it in data]
-
     def fetch_model_columns(
         self,
         model_identifier: t.Union[str, int, ModelIdentifiersPair],

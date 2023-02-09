@@ -214,21 +214,20 @@ class DeepchecksClient:
         DeepchecksModelVersionClient
             Client to interact with the model version.
         """
-        available_models = self.api.fetch_models()
-        available_models = t.cast(t.List[t.Dict[str, t.Any]], available_models)
-
-        if model_name not in [model['name'] for model in available_models]:
+        response = self.api.fetch_model_by_name(model_name, raise_on_status=False)
+        if response.status_code != 200:
             raise ValueError(f'Model with name {model_name} does not exist.')
 
-        model = self.get_or_create_model(model_name)
-        existing_version_id = model._get_existing_version_id_or_none(  # pylint: disable=protected-access
+        model = response.json()
+        client = self._get_model_client(model['task_type'], model)
+        existing_version_id = client._get_existing_version_id_or_none(  # pylint: disable=protected-access
             version_name=version_name
         )
 
         if existing_version_id is None:
             raise ValueError(f'Model {model_name} does not have a version with name {version_name}.')
         else:
-            return model.version(version_name)
+            return client.version(version_name)
 
     @docstrings
     def create_tabular_model_version(

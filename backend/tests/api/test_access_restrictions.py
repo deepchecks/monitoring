@@ -22,7 +22,7 @@ async def test_end_user_license_aggrement_access_restriction(
     client.headers["Authorization"] = f"Bearer {user.access_token}"
 
     # == Act
-    response = client.get("/api/v1/models")
+    response = client.get("/api/v1/say-hello")
 
     # == Assert
     assert response.status_code == 451
@@ -36,7 +36,7 @@ async def test_end_user_license_aggrement_access_restriction(
     response = client.get("/api/v1/users/accept-eula")
     assert response.status_code == 200
 
-    response = client.get("/api/v1/models")
+    response = client.get("/api/v1/say-hello")
     assert response.status_code == 200
 
 

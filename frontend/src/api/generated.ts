@@ -604,6 +604,7 @@ export interface ModelManagmentSchema {
   task_type?: TaskType;
   has_data?: boolean;
   versions: ModelVersionManagmentSchema[];
+  max_severity: AlertSeverity;
 }
 
 export interface ModelDailyIngestion {

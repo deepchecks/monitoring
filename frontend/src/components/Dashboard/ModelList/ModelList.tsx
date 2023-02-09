@@ -26,8 +26,6 @@ interface ModelListProps {
   isLoading?: boolean;
 }
 
-const SEVERITY = 'critical';
-
 export function ModelList({ models, isLoading }: ModelListProps) {
   const { selectedModelId: activeModelId, changeSelectedModelId } = useContext(GlobalStateContext);
 
@@ -38,10 +36,6 @@ export function ModelList({ models, isLoading }: ModelListProps) {
 
     return models.filter(({ name }) => name.toLowerCase().includes(modelName.toLowerCase()));
   }, [models, modelName]);
-
-  const { data: criticalAlerts = [], isLoading: isCriticalAlertsLoading } = useGetAlertRulesApiV1AlertRulesGet({
-    severity: [SEVERITY]
-  });
 
   const onReset = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
@@ -62,17 +56,6 @@ export function ModelList({ models, isLoading }: ModelListProps) {
     changeSelectedModelId(modelId);
   };
 
-  const alertsCountMap = useMemo(() => {
-    const map: Record<number, number> = {};
-
-    models.forEach(({ id }) => {
-      const currentAlert = criticalAlerts.find(alert => alert.model_id === id);
-      currentAlert && currentAlert.alerts_count ? (map[id] = currentAlert.alerts_count) : (map[id] = 0);
-    });
-
-    return map;
-  }, [criticalAlerts, models]);
-
   return (
     <StyledContainer>
       {isLoading ? (
@@ -86,31 +69,25 @@ export function ModelList({ models, isLoading }: ModelListProps) {
           <StyledSearchFieldContainer>
             <SearchField size="small" fullWidth onChange={onSearch} value={modelName} onReset={clearSearchBar} />
           </StyledSearchFieldContainer>
-          {isCriticalAlertsLoading ? (
-            <Loader />
-          ) : (
-            <StyledList>
-              {filteredModels.map((model, index) => (
-                <ModelItem
-                  key={index}
-                  activeModel={activeModelId === model.id}
-                  alertsCount={alertsCountMap[model.id]}
-                  onModelClick={handleModelClick}
-                  onReset={onReset}
-                  model={model}
-                  severity={SEVERITY}
-                />
-              ))}
-              {activeModelId && (
-                <StyledResetSelectionContainer>
-                  <StyledResetSelectionContent onClick={onReset}>
-                    <Rotate />
-                    <StyledResetSelectionText>Reset selection</StyledResetSelectionText>
-                  </StyledResetSelectionContent>
-                </StyledResetSelectionContainer>
-              )}
-            </StyledList>
-          )}
+          <StyledList>
+            {filteredModels.map((model, index) => (
+              <ModelItem
+                key={index}
+                activeModel={activeModelId === model.id}
+                onModelClick={handleModelClick}
+                onReset={onReset}
+                model={model}
+              />
+            ))}
+            {activeModelId && (
+              <StyledResetSelectionContainer>
+                <StyledResetSelectionContent onClick={onReset}>
+                  <Rotate />
+                  <StyledResetSelectionText>Reset selection</StyledResetSelectionText>
+                </StyledResetSelectionContent>
+              </StyledResetSelectionContainer>
+            )}
+          </StyledList>
         </>
       )}
     </StyledContainer>

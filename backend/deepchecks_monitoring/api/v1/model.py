@@ -31,9 +31,8 @@ from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, CriticalAlertsCountPerModel,
-                                                             MonitorsCountPerModel, floor_window_for_time,
-                                                             get_alerts_per_model)
+from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, AlertSeverityMap,
+                                                             MonitorsCountPerModel, floor_window_for_time)
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
@@ -353,31 +352,6 @@ async def get_versions_per_model(
     ]
 
 
-@router.get("/models", response_model=t.List[ModelsInfoSchema], tags=[Tags.MODELS])
-async def get_models(session: AsyncSession = AsyncSessionDep):
-    """Create a new model.
-
-    Parameters
-    ----------
-    session : AsyncSession, optional
-        SQLAlchemy session.
-
-    Returns
-    -------
-    List[ModelsInfoSchema]
-        List of models.
-    """
-    query = await session.execute(select(Model).options(selectinload(Model.versions).load_only(ModelVersion.end_time)))
-    alerts_counts = await get_alerts_per_model(session)
-    models = []
-    for db_model in query.scalars().all():
-        model = ModelsInfoSchema.from_orm(db_model)
-        model.alerts_count = alerts_counts.get(model.id, 0)
-        model.latest_time = int(db_model.versions[0].end_time.timestamp()) if db_model.versions else None
-        models.append(model)
-    return models
-
-
 class ModelVersionManagmentSchema(BaseModel):
     """ModelVersion schema for the "Model managment" screen."""
 
@@ -405,6 +379,7 @@ class ModelManagmentSchema(BaseModel):
     task_type: t.Optional[TaskType] = None
     has_data: bool = False
     versions: t.List[ModelVersionManagmentSchema]
+    max_severity: t.Optional[AlertSeverity] = None
 
     class Config:
         """Schema config."""
@@ -427,6 +402,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
         select(
             Model,
             alerts_count.c.count.label("n_of_alerts"),
+            alerts_count.c.max.label("max_severity"),
             monitors_count.c.count.label("n_of_monitors"),
         )
         .select_from(Model)
@@ -452,6 +428,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
             alerts_count=record.n_of_alerts or 0,
             monitors_count=record.n_of_monitors or 0,
             has_data=record.Model.has_data(),
+            max_severity=AlertSeverityMap.get(record.max_severity),
             latest_time=(
                 # versions relationship is ordered by desc(end_time) during load
                 record.Model.versions[0].end_time.timestamp()
@@ -609,7 +586,7 @@ class ConnectedModelSchema(BaseModel):
 )
 async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> t.List[ConnectedModelSchema]:
     """Retrieve list of models for the "Models management" screen."""
-    alerts_count = CriticalAlertsCountPerModel.cte()
+    alerts_count = AlertsCountPerModel.where(AlertRule.alert_severity == AlertSeverity.CRITICAL).cte()
 
     latest_update = func.max(ModelVersion.last_update_time)
     # We update the end_offset in the background so it's possible ingestion offset will be larger than it. In this case

@@ -11,27 +11,26 @@
 from datetime import datetime
 
 import pendulum as pdl
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor
 
+AlertSeverityMap = {
+    0: AlertSeverity.LOW.value,
+    1: AlertSeverity.MID.value,
+    2: AlertSeverity.HIGH.value,
+    3: AlertSeverity.CRITICAL.value,
+}
+
+AlertSeverityCase = case(*((AlertRule.alert_severity == text, num) for num, text in AlertSeverityMap.items()),
+                         else_=0)
+
 AlertsCountPerModel = (
-    select(Check.model_id, func.count(Alert.id))
+    select(Check.model_id, func.count(Alert.id), func.max(AlertSeverityCase))
     .join(Check.monitors)
     .join(Monitor.alert_rules)
     .join(AlertRule.alerts)
     .where(Alert.resolved.is_(False))
-    .group_by(Check.model_id)
-)
-
-
-CriticalAlertsCountPerModel = (
-    select(Check.model_id, func.count(Alert.id))
-    .join(Check.monitors)
-    .join(Monitor.alert_rules)
-    .join(AlertRule.alerts)
-    .where(Alert.resolved.is_(False))
-    .where(AlertRule.alert_severity == AlertSeverity.CRITICAL)
     .group_by(Check.model_id)
 )
 
@@ -41,21 +40,6 @@ MonitorsCountPerModel = (
     .join(Check.monitors)
     .group_by(Check.model_id)
 )
-
-
-async def get_alerts_per_model(session) -> dict:
-    """Get count of active alerts per model id.
-
-    Parameters
-    ----------
-    session
-
-    Returns
-    -------
-    dict
-    """
-    results = (await session.execute(AlertsCountPerModel)).all()
-    return dict(results)
 
 
 def floor_window_for_time(time: datetime, frequency: int) -> pdl.DateTime:
