@@ -32,7 +32,7 @@ def test_alert_rule_creation(
     rule = as_dict(test_api.create_alert_rule(monitor_id=monitor["id"], alert_rule=payload))
 
     # Assert
-    assert rule == {"id": 1, "monitor_id": monitor["id"], **payload}
+    assert rule == {"id": 1, "monitor_id": monitor["id"], "start_time": None, **payload}
 
 
 def test_alert_rule_deletion(

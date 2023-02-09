@@ -42,6 +42,7 @@ class AlertRuleSchema(BaseModel):
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
     is_active: bool
+    start_time: t.Optional[datetime]
 
     class Config:
         """Config for Alert schema."""
