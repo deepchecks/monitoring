@@ -15,6 +15,7 @@ export const chartOptions = (
   xTitle?: string,
   activeIndex?: number
 ): ChartOptions<'bar'> => {
+  const allZeros = data.every(d => d === 0);
   const max = Math.max(...data);
   const min = Math.min(...data);
   const stepSize = Math.max(...data.map(d => Math.abs(d))) / 3;
@@ -48,7 +49,7 @@ export const chartOptions = (
         }
       },
       y: {
-        max: max <= 0 ? 0 : max + stepSize,
+        max: allZeros ? 0.1 : max <= 0 ? 0 : max + stepSize,
         min: min >= 0 ? 0 : min - stepSize,
         ticks: {
           stepSize
