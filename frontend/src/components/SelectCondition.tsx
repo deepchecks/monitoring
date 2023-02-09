@@ -16,7 +16,7 @@ interface SelectConditionProps {
   setFieldValue: (fieldName: string, value: any, shouldValidate?: boolean | undefined) => any;
 }
 
-const OPERATORS = mapToOptionsList(OperatorsEnum);
+const OPERATORS = mapToOptionsList(OperatorsEnum, [OperatorsEnum.in, OperatorsEnum.equals, OperatorsEnum.not_equals]);
 
 export const SelectCondition = ({
   title = 'Activate alert when check value is:',

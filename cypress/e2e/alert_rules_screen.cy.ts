@@ -26,9 +26,6 @@ describe("Alert Rules Screen", () => {
         GT: "Greater than",
         LTE: "Less than equals",
         LT: "Less than",
-        EQ: "Equals",
-        NEQ: "Not equals",
-        IN: "In",
     };
 
     const availableModels = [
@@ -62,7 +59,7 @@ describe("Alert Rules Screen", () => {
                 filterBy: availableModels[0].features[0],
             },
             alertLogic: {
-                operator: AlertRuleOperator.EQ,
+                operator: AlertRuleOperator.LT,
                 value: 100,
             },
         },
