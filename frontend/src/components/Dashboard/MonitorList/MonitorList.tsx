@@ -44,7 +44,7 @@ export const MonitorList = ({
     [dashboard?.monitors, getCurrentModel]
   );
 
-  const [monitors, setMonitors] = useState(dashboardMonitors);
+  const [monitors, setMonitors] = useState<MonitorSchema[]>([]);
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState(false);
 
   useEffect(() => {
