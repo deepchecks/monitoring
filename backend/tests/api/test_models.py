@@ -258,7 +258,7 @@ async def test_connected_models_api_missing_version_data(
         "description": "test",
         "task_type": "multiclass",
         "n_of_alerts": 0,
-        "n_of_pending_rows": 300,
+        "n_of_pending_rows": 301,
         "n_of_updating_versions": 2
     }]
 

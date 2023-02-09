@@ -85,9 +85,9 @@ class ModelVersion(Base):
     # Indicates the last time the data of this version was updated.
     last_update_time = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     # Indicates the latest messages offset that was ingested
-    ingestion_offset = Column(BigInteger, default=0)
+    ingestion_offset = Column(BigInteger, default=-1)
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
-    topic_end_offset = Column(BigInteger, default=0)
+    topic_end_offset = Column(BigInteger, default=-1)
 
     model_id = Column(
         Integer,
