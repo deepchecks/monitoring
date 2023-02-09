@@ -3,12 +3,12 @@ import { colors } from 'theme/colors';
 
 export const StyledContainer = styled(Box)({
   overflow: 'hidden',
-  height: '566px',
+  height: '502px',
   border: `1px solid ${colors.neutral.grey.light}`,
   borderRadius: '10px',
 
   '@media (max-width: 1536px)': {
-    height: '328px'
+    height: '370px'
   }
 });
 
@@ -19,7 +19,7 @@ export const StyledHeadingContainer = styled(Stack)({
   padding: '32px 24px',
 
   '@media (max-width: 1536px)': {
-    padding: '14px 10px'
+    padding: '20px 16px'
   }
 });
 
@@ -28,15 +28,11 @@ export const StyledHeading = styled(Typography)({
   fontWeight: 700,
   lineHeight: '20px',
   textAlign: 'left',
-  color: colors.neutral.darkText,
-
-  '@media (max-width: 1536px)': {
-    padding: '10px 0 0 12px'
-  }
+  color: colors.neutral.darkText
 });
 
 export const StyledSearchFieldContainer = styled(Box)({
-  padding: '0 24px 4px 24px',
+  padding: '0 20px 4px 20px',
 
   '@media (max-width: 1536px)': {
     padding: '0 10px 10px 10px'
@@ -46,11 +42,11 @@ export const StyledSearchFieldContainer = styled(Box)({
 export const StyledList = styled(List)({
   overflow: 'overlay',
   scrollbarWidth: 'thin',
-  height: '435px',
+  height: '373px',
   padding: 0,
 
   '@media (max-width: 1536px)': {
-    height: '225px'
+    height: '259px'
   }
 });
 
@@ -61,12 +57,17 @@ const StyledStack = styled(Stack)({
 
 export const StyledResetSelectionContainer = styled(StyledStack)({
   position: 'sticky',
-  bottom: 0.5,
+  bottom: 0,
   height: '50px',
-  padding: '24px',
+  padding: '0 24px',
   background: colors.neutral.white,
   borderTop: `1px solid ${colors.neutral.grey.light}`,
-  backdropFilter: 'blur(5px)'
+  backdropFilter: 'blur(5px)',
+
+  '@media (max-width: 1536px)': {
+    height: '42px',
+    padding: '0 16px'
+  }
 });
 
 export const StyledResetSelectionContent = styled(StyledStack)({

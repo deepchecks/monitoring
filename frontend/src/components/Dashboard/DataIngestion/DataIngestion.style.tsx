@@ -2,13 +2,14 @@ import { Box, Select, styled, Typography } from '@mui/material';
 import { colors } from 'theme/colors';
 
 export const StyledContainer = styled(Box)({
-  height: '566px',
-  padding: '24px 32px',
+  height: '502px',
+  padding: '32px 24px',
   borderRadius: '10px',
   border: `1px solid ${colors.neutral.grey.light}`,
 
   '@media (max-width: 1536px)': {
-    height: '328px'
+    height: '370px',
+    padding: '20px 16px'
   }
 });
 
@@ -16,7 +17,12 @@ export const StyledHeader = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  marginBottom: '23px'
+  marginBottom: '23px',
+  height: 18,
+
+  '@media (max-width: 1536px)': {
+    marginBottom: '16px'
+  }
 });
 
 export const StyledTitle = styled(Typography)({
@@ -32,6 +38,10 @@ export const StyledSelect = styled(Select)({
   minWidth: 150,
   color: colors.neutral.darkText,
   borderRadius: '10px',
+
+  '@media (max-width: 1536px)': {
+    fontSize: '13px'
+  },
 
   '& .MuiSelect-icon': {
     '& + .MuiOutlinedInput-notchedOutline': {

@@ -9,9 +9,9 @@ interface StyledContainerProps {
 
 export const StyledContainer = styled(ListItem, { shouldForwardProp: prop => prop !== 'active' })<StyledContainerProps>(
   ({ active, theme }) => ({
-    padding: '24px 25px',
+    padding: '24px',
     '@media (max-width: 1536px)': {
-      padding: '12px 25px 12px 16px'
+      padding: '16px'
     },
     cursor: 'pointer',
     position: 'relative',

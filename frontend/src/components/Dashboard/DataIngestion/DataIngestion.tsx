@@ -66,7 +66,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
             data={graphData}
             minTimeUnit={minTimeUnit}
             timeFreq={timeValue}
-            height={{ lg: 180, xl: 415 }}
+            height={{ lg: 259, xl: 362 }}
           ></DiagramLine>
         </DiagramTutorialTooltip>
       )}

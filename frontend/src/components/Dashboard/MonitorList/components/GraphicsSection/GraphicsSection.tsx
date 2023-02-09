@@ -81,7 +81,7 @@ export function GraphicsSection({
             <DiagramLine
               data={data}
               alert_rules={monitor.alert_rules}
-              height={{ lg: 215, xl: 290 }}
+              height={{ lg: 203, xl: 215 }}
               minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'}
               timeFreq={monitor.frequency}
             />

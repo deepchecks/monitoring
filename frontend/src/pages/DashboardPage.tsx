@@ -56,12 +56,12 @@ export const DashboardPage = () => {
           padding: '30px 0',
           maxWidth: { xs: 'calc(100vw - 196px - 65px)', xl: 'calc(100vw - 237px - 65px)' }
         }}
-        spacing={{ xs: 2.5, lg: 2.5, xl: 4 }}
+        spacing={{ md: 2.5, xl: 4 }}
       >
-        <Grid item md={4}>
+        <Grid item md={6} lg={6} xl={4}>
           <ModelList models={models} isLoading={isModelsLoading} />
         </Grid>
-        <Grid item md={8}>
+        <Grid item md={6} lg={6} xl={8}>
           <DataIngestion modelId={currentModelId} />
         </Grid>
         <Grid item md={12}>

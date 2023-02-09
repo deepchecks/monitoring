@@ -326,7 +326,7 @@ function DiagramLine({
     <>
       <DiagramTutorialTooltip>
         <Box height={{ xs: height.lg, lg: height.lg, xl: height.xl }} position="relative">
-          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} height={0} />
+          <Line data={chartData} ref={chartRef} options={options} plugins={getActivePlugins()} />
         </Box>
       </DiagramTutorialTooltip>
       <LegendsList

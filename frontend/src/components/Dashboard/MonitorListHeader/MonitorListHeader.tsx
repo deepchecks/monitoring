@@ -17,7 +17,7 @@ export const MonitorListHeader = ({ onClick }: MonitorListHeaderProps) => {
     <StyledContainer>
       <StyledHeading>Monitors</StyledHeading>
       <StyledLine />
-      <StyledButton onClick={handleClick} startIcon={<NativePlus width={16} height={16} />}>
+      <StyledButton onClick={handleClick} startIcon={<NativePlus />}>
         Add monitor
       </StyledButton>
     </StyledContainer>

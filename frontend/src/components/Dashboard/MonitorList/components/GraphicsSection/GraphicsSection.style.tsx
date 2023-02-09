@@ -5,9 +5,11 @@ export const StyledContainer = styled(Box)({
   padding: '32px 24px',
   border: `1px solid ${colors.neutral.grey.light}`,
   borderRadius: '10px',
-  height: '429px',
+  height: '351px',
+
   '@media (max-width: 1536px)': {
-    height: '354px'
+    height: '317px',
+    padding: '20px 16px'
   }
 });
 
