@@ -12,19 +12,21 @@ import {
 
 import useModels from 'hooks/useModels';
 
-import { TextField, StackProps, Stack, Button, MenuItem, styled, Divider, Link } from '@mui/material';
+import { TextField, StackProps, Stack, MenuItem } from '@mui/material';
 
 import { MarkedSelect } from 'components/MarkedSelect';
 import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
-import { SelectCheck as Check } from '../../../../SelectCheck';
-import { SelectColumn as Column } from '../../../../SelectColumn';
+import { SelectCheck as Check } from 'components/SelectCheck';
+import { SelectColumn as Column } from 'components/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-
-import { timeWindow, buildFilters } from '../../../../../helpers/monitorFields.helpers';
-import { SelectValues, SetStateType } from 'helpers/types';
-import { ActiveAlertsModal } from '../ActiveAlertsModal';
 import { FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
 import { Subcategory } from 'components/Subcategory';
+import { ActiveAlertsModal } from '../ActiveAlertsModal';
+
+import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
+
+import { timeWindow, buildFilters } from 'helpers/monitorFields.helpers';
+import { SelectValues, SetStateType } from 'helpers/types';
 import { timeValues } from 'helpers/time';
 
 interface MonitorFormProps extends StackProps {
@@ -216,7 +218,7 @@ export const MonitorForm = ({
 
   return (
     <Stack width={{ xs: '200px', xl: '360px' }} {...props}>
-      <Stack spacing="30px" sx={{ height: 'calc(100% - 100px)', overflowY: 'auto', overflowX: 'hidden' }}>
+      <StyledFormContainer spacing="30px">
         <TextField
           sx={{ marginTop: '10px' }}
           label="Monitor name"
@@ -335,7 +337,7 @@ export const MonitorForm = ({
             fullWidth
           />
         </TooltipInputWrapper>
-      </Stack>
+      </StyledFormContainer>
       <StyledButton
         onClick={handleMonitorSave}
         disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack}
@@ -351,21 +353,3 @@ export const MonitorForm = ({
     </Stack>
   );
 };
-
-const StyledButton = styled(Button)({
-  width: '143px',
-  margin: '0 auto'
-});
-
-const StyledDivider = styled(Divider)({
-  border: '1px dashed #94A4AD'
-});
-
-const StyledLink = styled(Link)({
-  cursor: 'pointer',
-  width: 'fit-content',
-  marginTop: '5px !important',
-  '&:hover': {
-    textDecoration: 'none'
-  }
-});

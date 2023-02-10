@@ -88,7 +88,7 @@ const SelectColumnComponent = ({
         ) : (
           numericValue && (
             <RangePicker
-              sx={{ width: '90%', margin: 'auto' }}
+              sx={{ width: '90%', margin: '30px auto 0' }}
               min={columns[column].stats.min || 0}
               max={columns[column].stats.max || 0}
               numericValue={numericValue}

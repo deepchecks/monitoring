@@ -42,6 +42,7 @@ export const MonitorDrawer = ({
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
+  const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
 
   const handleGraphLookBack = useCallback(
     async (checkId: SelectValues, data: MonitorOptions) => {
@@ -70,8 +71,6 @@ export const MonitorDrawer = ({
     mixpanel.track('Exited add/edit monitor window without saving');
     closeDrawer();
   };
-
-  const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
 
   return (
     <CustomDrawer open={open} onClose={handleOnCloseDrawer} padding="40px 40px 0 40px" {...props}>

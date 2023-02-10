@@ -5,10 +5,11 @@ import {
   useRetrieveConnectedModelVersionIngestionErrorsApiV1ConnectedModelsModelIdVersionsVersionIdIngestionErrorsGet
 } from 'api/generated';
 import { Autocomplete, Button, Divider, Stack, styled, TextField, Typography } from '@mui/material';
-import { CollapseArrowLeft, NoDataToShow } from 'assets/icon/icon';
+import { CollapseArrowLeft } from 'assets/icon/icon';
 import VersionErrorsList from './VersionErrorsList';
 import { Loader } from '../../../../../Loader';
 import NoResults from '../../../../../NoResults';
+import { NoDataToShow } from 'components/NoDataToShow';
 
 interface VersionDetailsProps {
   version: ConnectedModelVersionSchema;
@@ -87,7 +88,7 @@ export const VersionDetails: FC<VersionDetailsProps> = ({ version, modelId, onCl
           {filteredData && filteredData.length === 0 && data.length > 0 && (
             <NoResults marginTop="50px" handleReset={handleReset} />
           )}
-          {filteredData && data.length === 0 && <NoDataToShow width={'100%'} height={250} text={'No data to show'} />}
+          {filteredData && data.length === 0 && <NoDataToShow width={'100%'} height={250} title="No data to show" />}
         </Stack>
       ) : (
         <Typography>Something went wrong. Try again.</Typography>

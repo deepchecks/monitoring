@@ -36,7 +36,6 @@ import { ReactComponent as InfoIcon } from './infoIcon.svg';
 import { ReactComponent as LockIcon } from './lock.svg';
 import { ReactComponent as MenuVertical } from './menuVertical.svg';
 import { ReactComponent as NLPModel } from './NLPModel.svg';
-import { NoDataToShow } from './NoDataToShow';
 import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as PauseIcon } from './pause.svg';
 import { ReactComponent as PencilDrawing } from './pencilDrawing.svg';
@@ -71,6 +70,7 @@ import { ReactComponent as Bell } from './bell.svg';
 import { ReactComponent as Edit } from './edit.svg';
 import { ReactComponent as Trash } from './trash.svg';
 import { ReactComponent as InfoIconFilled } from './infoIconFilled.svg';
+import { ReactComponent as NoDataToShowIcon } from './noDataToShowIcon.svg';
 
 export {
   Alarm,
@@ -123,7 +123,6 @@ export {
   Settings,
   LockIcon,
   OpenLockIcon,
-  NoDataToShow,
   TableChart,
   TestTube,
   VisualModel,
@@ -145,5 +144,6 @@ export {
   Bell,
   Edit,
   Trash,
-  InfoIconFilled
+  InfoIconFilled,
+  NoDataToShowIcon
 };

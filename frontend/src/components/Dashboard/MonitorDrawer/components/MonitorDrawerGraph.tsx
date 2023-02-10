@@ -5,8 +5,7 @@ import { Box } from '@mui/material';
 
 import { Loader } from 'components/Loader';
 import DiagramLine from 'components/DiagramLine/DiagramLine';
-
-import { NoDataToShow } from 'assets/icon/icon';
+import { NoDataToShow } from 'components/NoDataToShow';
 
 import { GraphData } from 'helpers/types';
 
@@ -17,15 +16,13 @@ interface MonitorDrawerGraphViewGraphProps {
 }
 
 export const MonitorDrawerGraph = ({ graphData, isLoading, timeFreq }: MonitorDrawerGraphViewGraphProps) => (
-  <Box width={{ xs: '520px', xl: '650px' }} sx={{ padding: '1em 2em' }}>
+  <Box width={{ xs: '520px', xl: '630px' }} height="350px" marginLeft="25px">
     {isLoading ? (
       <Loader />
     ) : graphData?.datasets.length ? (
-      <DiagramLine data={graphData} height={{ lg: 350, xl: 440 }} timeFreq={timeFreq} />
+      <DiagramLine data={graphData} height={{ lg: 350, xl: 350 }} timeFreq={timeFreq} />
     ) : (
-      <>
-        <NoDataToShow width={'100%'} height={400} text="No data to show, try altering the filters" />
-      </>
+      <NoDataToShow title="No data to show, try altering the filters" />
     )}
   </Box>
 );
