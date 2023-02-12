@@ -67,21 +67,23 @@ function DiagramLine({
 
   const currentChart = chartRef.current;
 
-  const hideLine = useCallback((item: LegendItem) => {
-    mixpanel.track('Click on a legend on the graph');
+  const hideLine = useCallback(
+    (item: LegendItem) => {
+      mixpanel.track('Click on a legend on the graph');
 
-    if (currentChart && typeof item.datasetIndex === 'number') {
-      const isDatasetVisible = currentChart.isDatasetVisible(item.datasetIndex);
+      if (currentChart && typeof item.datasetIndex === 'number') {
+        const isDatasetVisible = currentChart.isDatasetVisible(item.datasetIndex);
 
-      currentChart.setDatasetVisibility(item.datasetIndex, !isDatasetVisible);
+        currentChart.setDatasetVisibility(item.datasetIndex, !isDatasetVisible);
 
-      setLineIndexMap(prevState => ({
-        ...prevState,
-        [typeof item.datasetIndex === 'number' ? item.datasetIndex : -1]: isDatasetVisible
-      }));
-    }
-  }, [currentChart]);
-
+        setLineIndexMap(prevState => ({
+          ...prevState,
+          [typeof item.datasetIndex === 'number' ? item.datasetIndex : -1]: isDatasetVisible
+        }));
+      }
+    },
+    [currentChart]
+  );
 
   const chartData = useMemo(() => {
     if (!currentChart) {

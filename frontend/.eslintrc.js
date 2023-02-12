@@ -8,7 +8,8 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'plugin:@typescript-eslint/recommended',
-    'prettier'
+    'prettier',
+    'plugin:storybook/recommended'
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -23,19 +24,43 @@ module.exports = {
     'react/jsx-key': 1,
     'react/static-property-placement': ['error', 'static public field'],
     'react/jsx-first-prop-new-line': ['error', 'multiline-multiprop'],
-    'react/forbid-prop-types': ['error', { forbid: ['any'] }],
-    'spaced-comment': ['warn', 'always', { markers: ['/'] }],
+    'react/forbid-prop-types': [
+      'error',
+      {
+        forbid: ['any']
+      }
+    ],
+    'spaced-comment': [
+      'warn',
+      'always',
+      {
+        markers: ['/']
+      }
+    ],
     'arrow-parens': ['error', 'as-needed'],
     'arrow-body-style': ['warn', 'as-needed'],
-    'no-param-reassign': ['error', { props: true, ignorePropertyModificationsFor: ['state', 'req', 'res'] }],
-    'default-case': ['error', { commentPattern: '^skip\\sdefault' }],
+    'no-param-reassign': [
+      'error',
+      {
+        props: true,
+        ignorePropertyModificationsFor: ['state', 'req', 'res']
+      }
+    ],
+    'default-case': [
+      'error',
+      {
+        commentPattern: '^skip\\sdefault'
+      }
+    ],
     'comma-dangle': ['error', 'never'],
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': ['warn'],
     'react/react-in-jsx-scope': ['warn'],
     'react-hooks/exhaustive-deps': 0,
-    '@typescript-eslint/no-explicit-any': 0, // Todo - remove all any types from the code and than remove this line!
+    '@typescript-eslint/no-explicit-any': 0,
+    // Todo - remove all any types from the code and than remove this line!
     'no-console': 0 // Todo - implement logger, remove console.* all over the code and than remove this line!
   },
+
   ignorePatterns: ['generated.ts']
 };

@@ -2,5 +2,5 @@
 import React from 'react';
 
 test('True', () => {
-  expect(true).toBe(true)
+  expect(true).toBe(true);
 });

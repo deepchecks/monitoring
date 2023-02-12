@@ -10,7 +10,7 @@ import { Calendar } from 'assets/icon/icon';
 
 dayjs.extend(localizedFormat);
 
-interface DateRangeProps {
+export interface DateRangeProps {
   onApply?: (startTime: Date | undefined, endTime: Date | undefined) => void;
   onChange?: (startTime: Date | undefined, endTime: Date | undefined) => void;
   startTime?: Date;

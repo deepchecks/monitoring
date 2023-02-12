@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled, FormControlLabel, Switch, SwitchProps } from '@mui/material';
 
-interface SwitchButtonProps extends SwitchProps {
+export interface SwitchButtonProps extends SwitchProps {
   label?: string;
   checked: boolean;
   setChecked: React.Dispatch<React.SetStateAction<boolean>>;
