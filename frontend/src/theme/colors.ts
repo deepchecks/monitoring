@@ -24,6 +24,7 @@ export const colors = {
     grey: {
       disabled: '#E1E4E5',
       light: '#E7E7E7',
+      semiLight: '#F9F9F9',
       50: alpha('#F3F5F8', 0.5),
       100: '#F3F5F8',
       150: alpha('#D1D8DC', 0.5),
@@ -44,6 +45,7 @@ export const colors = {
   },
   semantic: {
     orange: '#FF833D',
+    salmon: '#DD5841',
     red: '#EF4C36',
     yellow: {
       50: '#FFC400',

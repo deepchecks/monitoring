@@ -1,4 +1,5 @@
 import { Box, IconButton, Modal, Stack, styled, Typography } from '@mui/material';
+import { colors } from 'theme/colors';
 
 export const StyledModal = styled(Modal)({
   display: 'flex',
@@ -8,17 +9,19 @@ export const StyledModal = styled(Modal)({
 
 export const StyledModalContent = styled(Box)({
   position: 'relative',
-  height: '660px',
-  width: '1000px',
-  background: '#fff',
-  padding: '22px 36px 42px'
+  height: '738px',
+  width: '1200px',
+  background: colors.neutral.white,
+  padding: '40px 32px 0',
+  borderRadius: '20px'
 });
 
 export const StyledModalTitle = styled(Stack)({
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'bottom',
-  marginBottom: '30px'
+  marginBottom: '30px',
+  fontSize: '24px'
 });
 
 export const StyledModalTitleText = styled(Typography)({
@@ -32,13 +35,9 @@ export const StyledModalTitleText = styled(Typography)({
 
 export const StyledModalCloseButton = styled(IconButton)({
   position: 'absolute',
-  top: '22px',
-  right: '12px',
+  top: '44px',
+  right: '32px',
   width: '36px',
   height: '36px',
   background: 'transparent'
-});
-
-export const StyledModalList = styled(Box)({
-  overflowY: 'auto'
 });

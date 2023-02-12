@@ -6,8 +6,6 @@ import { ConnectedModelSchema } from 'api/generated';
 
 import { Stack, Typography, Tooltip } from '@mui/material';
 
-import ModelInfoBadge from './ModelInfoBadge';
-
 import {
   StyledModelInfoItemContainer,
   StyledModelInfoItemHeader,
@@ -18,6 +16,7 @@ import {
 } from './ModelInfoItem.style';
 import { DeleteIcon, ViewDetails } from 'assets/icon/icon';
 import { ModalItemViewDetails } from './components/ModalItemViewDetails';
+import { ModelInfoBadge } from './components/ModelInfoBadge';
 
 dayjs.extend(localizedFormat);
 
@@ -30,7 +29,7 @@ const MAX_MODEL_NAME_WIDTH = 275;
 
 const isEllipsisActiveCheck = (e: RefObject<HTMLElement>) => e.current && e.current.offsetWidth >= MAX_MODEL_NAME_WIDTH;
 
-const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
+export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -102,5 +101,3 @@ const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
     </StyledModelInfoItemContainer>
   );
 };
-
-export default ModelInfoItem;

@@ -140,13 +140,13 @@ describe("Connected Models Screen", () => {
                 
                 cy.get("@detailsDialogContent")
                     .find("div[role=tablist] button[role=tab]")
-                    .should("have.length", 1)
+                    .should("have.length", 2)
                     .eq(0)
                     .click();
                 
                 cy.get("@detailsDialogContent")
                     .find("div[role=tabpanel]")
-                    .should("have.length", 1)
+                    .should("have.length", 2)
                     .eq(0)
                     .as("versionsList")
                     .should("not.have.attr", "hidden");
@@ -155,7 +155,8 @@ describe("Connected Models Screen", () => {
                     .children()
                     .should("have.length", 1)
                     .first()
-                    .children()
+                    .get('tbody')
+                    .get('td')
                     .then(it => {
                         const elements = it.get();
                         const grid = chunckArray(elements, 4);
@@ -267,7 +268,7 @@ describe("Connected Models Screen", () => {
                 expect(versions).to.be.an("array");
                 expect(versions).to.have.length(1);
                 expect(versions[0]).to.have.property("name").that.equals(models[1].versionName);
-                expect(versions[0]).to.have.property("pendingRows").that.equals("Pending rows: 0");
+                expect(versions[0]).to.have.property("pendingRows").that.equals("0");
                 
                 // TODO:
                 // const lastUpdate = dayjs(new Date()).format('MM/DD/YYYY');

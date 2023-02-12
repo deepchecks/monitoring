@@ -1,8 +1,8 @@
-import React, { FC } from 'react';
+import React from 'react';
 import { StyledModal, StyledModalCloseButton, StyledModalContent } from './ModalItemViewDetails.style';
 import { CloseIcon } from 'assets/icon/icon';
 import { ConnectedModelSchema } from 'api/generated';
-import { ModelDetails } from './ModelDetails';
+import { ModelDetails } from './components/ModelDetails';
 
 interface ModalItemDetailsProps {
   open: boolean;
@@ -10,13 +10,15 @@ interface ModalItemDetailsProps {
   model: ConnectedModelSchema;
 }
 
-export const ModalItemViewDetails: FC<ModalItemDetailsProps> = ({ open, onClose, model }) => (
-  <StyledModal open={open} onClose={onClose} aria-labelledby="model-versions" aria-describedby="model-all-versions">
-    <StyledModalContent>
-      <StyledModalCloseButton onClick={onClose}>
-        <CloseIcon />
-      </StyledModalCloseButton>
-      <ModelDetails model={model} />
-    </StyledModalContent>
-  </StyledModal>
-);
+export const ModalItemViewDetails = ({ open, onClose, model }: ModalItemDetailsProps) => {
+  return (
+    <StyledModal open={open} onClose={onClose} aria-labelledby="model-versions" aria-describedby="model-all-versions">
+      <StyledModalContent>
+        <StyledModalCloseButton onClick={onClose}>
+          <CloseIcon />
+        </StyledModalCloseButton>
+        <ModelDetails model={model} />
+      </StyledModalContent>
+    </StyledModal>
+  );
+};

@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ConnectedModelVersionSchema,
   IngestionErrorSchema,
@@ -6,9 +6,10 @@ import {
 } from 'api/generated';
 import { Autocomplete, Button, Divider, Stack, styled, TextField, Typography } from '@mui/material';
 import { CollapseArrowLeft } from 'assets/icon/icon';
-import VersionErrorsList from './VersionErrorsList';
-import { Loader } from '../../../../../Loader';
-import NoResults from '../../../../../NoResults';
+import { Loader } from 'components/Loader';
+import NoResults from 'components/NoResults';
+import { VersionErrorsTable } from './components/VersionErrorsTable';
+import { colors } from 'theme/colors';
 import { NoDataToShow } from 'components/NoDataToShow';
 
 interface VersionDetailsProps {
@@ -17,7 +18,7 @@ interface VersionDetailsProps {
   onClose: () => void;
 }
 
-export const VersionDetails: FC<VersionDetailsProps> = ({ version, modelId, onClose }) => {
+export const VersionDetails = ({ version, modelId, onClose }: VersionDetailsProps) => {
   const [searchInputValue, setSearchInputValue] = useState('');
   const [searchValue, setSearchValue] = useState<string | null>(null);
   const { data, isLoading } =
@@ -84,7 +85,7 @@ export const VersionDetails: FC<VersionDetailsProps> = ({ version, modelId, onCl
               setSearchInputValue(newInputValue);
             }}
           />
-          {filteredData && filteredData.length > 0 && <VersionErrorsList errors={filteredData} />}
+          {filteredData && filteredData.length > 0 && <VersionErrorsTable errors={filteredData} />}
           {filteredData && filteredData.length === 0 && data.length > 0 && (
             <NoResults marginTop="50px" handleReset={handleReset} />
           )}
@@ -101,7 +102,7 @@ const StyledTitle = styled(Typography)({
   fontWeight: 700,
   fontSize: '24px',
   letterSpacing: '0.1px',
-  color: '#3A474E',
+  color: colors.neutral.darkText,
   padding: '5px 18px',
   textAlign: 'center'
 });

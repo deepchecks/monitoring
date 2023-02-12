@@ -25,7 +25,7 @@ import {
 
 import HeaderLayout from 'components/HeaderLayout';
 import { Loader } from 'components/Loader';
-import ModelInfoItem from 'components/ModelInfoItem/ModelInfoItem';
+import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
 import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';

@@ -51,6 +51,7 @@ import { ReactComponent as TestTube } from './testTube.svg';
 import { ReactComponent as Undo } from './undo.svg';
 import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as VisualModel } from './visualModel.svg';
+import { ReactComponent as WarningIcon } from './warning.svg';
 import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
 import { ReactComponent as Notebook } from './notebook.svg';
 import { ReactComponent as Checks } from './checks.svg';
@@ -118,6 +119,7 @@ export {
   ExpandIcon,
   PauseIcon,
   DeleteIcon,
+  WarningIcon,
   WhitePlusIcon,
   RightArrow,
   Settings,
