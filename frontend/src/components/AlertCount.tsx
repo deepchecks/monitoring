@@ -21,11 +21,13 @@ export enum SEVERITY {
 interface AlertCountComponentProps {
   severity: AlertSeverity;
   count: number;
+  showText?: boolean;
 }
 
 const AlertCountComponent: FC<AlertCountComponentProps> = ({
   severity = SEVERITY.HIGH,
-  count
+  count,
+  showText = true
 }: AlertCountComponentProps) => {
   const theme = useTheme();
   const { changeAlertFilters } = useContext(GlobalStateContext);
@@ -76,7 +78,7 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
       </StyledIcon>
       <Stack direction="row">
         <StyledCount color={color}>{count}&nbsp;</StyledCount>
-        <StyledSeverity color={color}>{severity}</StyledSeverity>
+        {showText && (<StyledSeverity color={color}>{severity}</StyledSeverity>)}
       </Stack>
     </StyledContainer>
   );
@@ -88,6 +90,7 @@ const StyledContainer = styled(Stack)({
   height: '20px',
   cursor: 'pointer',
   transition: 'opacity 0.3s ease',
+  marginLeft: '5px',
 
   ':hover': {
     opacity: 0.5

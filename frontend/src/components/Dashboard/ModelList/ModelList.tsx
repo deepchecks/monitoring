@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useState } from 'react';
 
-import { ModelManagmentSchema, useGetAlertRulesApiV1AlertRulesGet } from 'api/generated';
+import { ModelManagmentSchema } from 'api/generated';
 import { GlobalStateContext } from 'context';
 
 import { Loader } from 'components/Loader';
