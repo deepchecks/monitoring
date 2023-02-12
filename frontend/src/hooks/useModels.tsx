@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 
 import { ModelManagmentSchema, useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
 
-const emptyModel = {
+export const emptyModel = {
   id: -1,
   name: 'Empty'
 } as ModelManagmentSchema;

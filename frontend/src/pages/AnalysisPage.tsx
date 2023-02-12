@@ -9,7 +9,7 @@ import {
   useRunManyChecksTogetherApiV1ChecksRunManyPost,
   RunManyChecksTogetherApiV1ChecksRunManyPost200
 } from 'api/generated';
-import useModels from 'hooks/useModels';
+import useModels, { emptyModel } from 'hooks/useModels';
 import { AnalysisContext } from 'context/analysis-context';
 
 import { Box, Stack } from '@mui/material';
@@ -21,7 +21,7 @@ import { AnalysisHeader } from 'components/AnalysisHeader/AnalysisHeader';
 import { AnalysisItem } from 'components/AnalysisItem';
 import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
 
-import { getParams } from 'helpers/utils/getParams';
+import { getParams, setParams } from 'helpers/utils/getParams';
 import { CheckType, CheckTypeOptions } from 'helpers/types/check';
 import { GlobalStateContext } from 'context';
 import { ReverseTypeMap } from 'components/AnalysisItem/AnalysisItem.types';
@@ -57,6 +57,18 @@ export function AnalysisPage() {
   const { mutateAsync: mutateLoadCheckData } = useRunManyChecksTogetherApiV1ChecksRunManyPost();
 
   const currentModel = useMemo(() => getCurrentModel(modelId), [getCurrentModel, modelId]);
+
+  useEffect(() => {
+    if (currentModel === emptyModel && +getParams()?.modelId > 0) {
+      setParams('modelId');
+    }
+  }, [location.search])
+
+  useEffect(() => {
+    if (models) {
+      setModelId(+getParams()?.modelId || selectedModelId || models[0]?.id);
+    }
+  }, [models, selectedModelId, location.search]);
 
   useEffect(() => {
     if (models) {
@@ -156,7 +168,7 @@ export function AnalysisPage() {
               if (class_name != datasetName) break;
             }
           }
-          
+
           setCurrentAdditionalKwargs({
             check_conf: checkMegaConf,
             // Filter only the class that was clicked on
