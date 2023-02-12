@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.logic.check_logic import TimeWindowOption, load_data_for_check
 from deepchecks_monitoring.logic.model_logic import dataframe_to_dataset_and_pred
-from deepchecks_monitoring.schema_models import ModelVersion, TaskType
+from deepchecks_monitoring.schema_models import Model, ModelVersion, TaskType
 
 
 def _create_tabular_suite(suite_name: str, task_type: TaskType, has_reference: bool) -> TabularSuite:
@@ -47,6 +47,7 @@ async def run_suite_for_model_version(model_version: ModelVersion, window_option
         SQLAlchemy session.
     """
     top_feat, feat_imp = model_version.get_top_features()
+    model: Model = model_version.model
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options)
     if test_session:
         test_session = await test_session
@@ -62,13 +63,14 @@ async def run_suite_for_model_version(model_version: ModelVersion, window_option
     await session.commit()
 
     suite_name = f"Test Suite - Model {model_version.name} - Window {window_options.end_time_dt().date()}"
-    task_type = model_version.model.task_type
+    task_type = model.task_type
     if task_type not in [TaskType.MULTICLASS, TaskType.BINARY, TaskType.REGRESSION]:
         raise Exception(f"Unsupported task type {task_type}")
 
     suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
-    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version, top_feat)
-    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(ref_df, model_version, top_feat)
+    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version, model, top_feat)
+    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(ref_df, model_version,
+                                                                                       model, top_feat)
 
     if len(ref_df) == 0:  # if no reference is available, must pass test data as reference (as train)
         reference_dataset, reference_pred, reference_proba = test_dataset, test_pred, test_proba

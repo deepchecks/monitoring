@@ -18,6 +18,7 @@ import pendulum as pdl
 from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
+from joblib import Parallel, delayed
 from sqlalchemy import VARCHAR, Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -67,6 +68,7 @@ def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000)
 def dataframe_to_dataset_and_pred(
     df: t.Union[pd.DataFrame, None],
     model_version: ModelVersion,
+    model: Model,
     top_feat: t.List[str]
 ) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
@@ -99,7 +101,7 @@ def dataframe_to_dataset_and_pred(
     dataset_params = {
         'features': available_features,
         'cat_features': cat_features,
-        'label_type': model_version.model.task_type.value
+        'label_type': model.task_type.value
     }
 
     if df[SAMPLE_LABEL_COL].isna().all():
@@ -149,82 +151,91 @@ def get_results_for_model_versions_per_window(
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
+    jobs = []
     model_results = {}
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
         # If this is a train test check then we require reference data in order to run
         missing_reference = isinstance(dp_check, tabular_base_checks.TrainTestCheck) and \
                             (reference_table_dataframe is None or reference_table_dataframe.empty)
 
-        check_results = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference_table_dataframe, model_version, top_feat)
+            reference_table_dataframe, model_version, model, top_feat)
 
+        model_results[model_version] = []
         for curr_test_info in test_infos:
-            from_cache = False
+            result = {'start': curr_test_info['start'], 'end': curr_test_info['end'], 'from_cache': False,
+                      'result': None}
+            model_results[model_version].append(result)
             # If we already loaded result from the cache, then no need to run the check again
             if 'result' in curr_test_info:
-                from_cache = True
-                curr_result = curr_test_info['result']
-            # If the check needs reference to run, but it is missing then skip the check and put none result
-            elif missing_reference:
-                curr_result = None
+                result['from_cache'] = True
+                result['result'] = curr_test_info['result']
+            # If the check needs reference to run, but it is missing then skip the check and put none result.
             # If there is no result then must have a dataframe data. If the dataframe is empty, skipping the
             # run and putting none result
-            elif curr_test_info['data'].empty:
-                curr_result = None
+            elif missing_reference or curr_test_info['data'].empty:
+                continue
             else:
-                test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(curr_test_info['data'],
-                                                                               model_version,
-                                                                               top_feat)
-                shared_args = dict(
-                    feature_importance=feat_imp,
-                    with_display=with_display,
-                    model_classes=model_version.classes
-                )
-                single_dataset_args = dict(
-                    y_pred_train=test_pred,
-                    y_proba_train=test_proba,
-                    **shared_args
-                )
-                train_test_args = dict(
-                    train_dataset=reference_table_ds,
-                    test_dataset=test_ds,
-                    y_pred_train=reference_table_pred,
-                    y_proba_train=reference_table_proba,
-                    y_pred_test=test_pred,
-                    y_proba_test=test_proba,
-                    **shared_args
-                )
-                try:
-                    if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
-                        curr_result = dp_check.run(test_ds, **single_dataset_args)
-                    elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
-                        curr_result = dp_check.run(**train_test_args)
-                    elif isinstance(dp_check, Suite):
-                        if reference_table_dataframe is None:
-                            curr_result = dp_check.run(test_ds, **single_dataset_args)
-                        else:
-                            curr_result = dp_check.run(**train_test_args, run_single_dataset='Test')
-                    else:
-                        raise ValueError(f'incompatible check type {type(dp_check)}')
+                jobs.append(delayed(run_deepchecks)(curr_test_info['data'], model_version, model, top_feat, dp_check,
+                                                    feat_imp, with_display, reference_table_ds, reference_table_pred,
+                                                    reference_table_proba))
+                # Map index of the job to location in dict
+                result['job_index'] = len(jobs) - 1
 
-                # For not enough samples does not log the error
-                except errors.NotEnoughSamplesError:
-                    # In case of exception in the run putting none result
-                    curr_result = None
-                # For rest of the errors logs them
-                except errors.DeepchecksBaseError as e:
-                    message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
-                              f'got exception: {e.message}'
-                    logging.getLogger('monitor_run_logger').exception(message)
-                    curr_result = None
-
-            check_results.append({'result': curr_result, 'start': curr_test_info['start'],
-                                  'end': curr_test_info['end'], 'from_cache': from_cache})
-
-        model_results[model_version] = check_results
-
+    if jobs:
+        job_results = Parallel(n_jobs=-1)(jobs)
+        for model_version, version_results in model_results.items():
+            for result in version_results:
+                if 'job_index' in result:
+                    result['result'] = job_results[result.pop('job_index')]
     return model_results
+
+
+def run_deepchecks(test_data, model_version, model, top_feat, dp_check, feat_imp, with_display,
+                   reference_table_ds, reference_table_pred, reference_table_proba):
+
+    test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(test_data, model_version, model, top_feat)
+    shared_args = dict(
+        feature_importance=feat_imp,
+        with_display=with_display,
+        model_classes=model_version.classes
+    )
+    single_dataset_args = dict(
+        y_pred_train=test_pred,
+        y_proba_train=test_proba,
+        **shared_args
+    )
+    train_test_args = dict(
+        train_dataset=reference_table_ds,
+        test_dataset=test_ds,
+        y_pred_train=reference_table_pred,
+        y_proba_train=reference_table_proba,
+        y_pred_test=test_pred,
+        y_proba_test=test_proba,
+        **shared_args
+    )
+    try:
+        if isinstance(dp_check, tabular_base_checks.SingleDatasetCheck):
+            return dp_check.run(test_ds, **single_dataset_args)
+        elif isinstance(dp_check, tabular_base_checks.TrainTestCheck):
+            return dp_check.run(**train_test_args)
+        elif isinstance(dp_check, Suite):
+            if reference_table_ds is None:
+                return dp_check.run(test_ds, **single_dataset_args)
+            else:
+                return dp_check.run(**train_test_args, run_single_dataset='Test')
+        else:
+            raise ValueError(f'incompatible check type {type(dp_check)}')
+
+    # For not enough samples does not log the error
+    except errors.NotEnoughSamplesError:
+        # In case of exception in the run putting none result
+        return
+    # For rest of the errors logs them
+    except errors.DeepchecksBaseError as e:
+        message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
+                  f'got exception: {e.message}'
+        logging.getLogger('monitor_run_logger').exception(message)
 
 
 def get_results_for_model_versions_for_reference(
@@ -246,7 +257,7 @@ def get_results_for_model_versions_for_reference(
 
         reduced_outs = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference_table_dataframe, model_version, top_feat)
+            reference_table_dataframe, model_version, model, top_feat)
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,

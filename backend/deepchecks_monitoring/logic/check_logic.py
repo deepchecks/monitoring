@@ -376,7 +376,7 @@ async def run_check_per_window_in_range(
             if model_version.is_in_range(window_start, window_end):
                 filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
                 filtered_select_obj = filtered_select_obj.filter(monitor_options.sql_columns_filter())
-                filtered_select_obj = random_sample(filtered_select_obj, test_table, n_samples=10_000)
+                filtered_select_obj = random_sample(filtered_select_obj, test_table)
                 curr_test_info["query"] = session.execute(filtered_select_obj)
             else:
                 curr_test_info["data"] = pd.DataFrame()
@@ -461,16 +461,17 @@ async def run_suite_per_window_in_range(
         raise ValueError(f"Checks {check_ids} belong to different models")
     model_id = checks[0].model_id
 
-    dp_checks = {}
+    dp_checks = []
     uses_reference_data = False
     for check in checks:
         dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
+        # HACK to connect between the check to check id
+        dp_check.check_id = check.id
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
             raise ValueError(f"incompatible check type {type(dp_check)}")
         uses_reference_data |= isinstance(dp_check, TrainTestBaseCheck)
-        # Saves a mapping between the deepchecks' check object and check id
-        dp_checks[dp_check] = check.id
-    suite = Suite("", *dp_checks.keys())
+        dp_checks.append(dp_check)
+    suite = Suite("", *dp_checks)
 
     all_windows = monitor_options.calculate_windows()[-30:]
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
@@ -502,7 +503,7 @@ async def run_suite_per_window_in_range(
             test_info.append(curr_test_info)
             if model_version.is_in_range(window_start, window_end):
                 filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
-                filtered_select_obj = random_sample(filtered_select_obj, test_table, n_samples=10_000)
+                filtered_select_obj = random_sample(filtered_select_obj, test_table)
                 curr_test_info["query"] = session.execute(filtered_select_obj)
             else:
                 curr_test_info["data"] = pd.DataFrame()
@@ -545,8 +546,7 @@ async def run_suite_per_window_in_range(
                         result_value = reduce_check_result(check_result, monitor_options.additional_kwargs)
                     else:
                         result_value = None
-                    check_id = dp_checks[check_result.check]
-                    all_checks_results[check_id]["output"][model_version.name].append(result_value)
+                    all_checks_results[check_result.check.check_id]["output"][model_version.name].append(result_value)
             else:
                 for check in checks:
                     all_checks_results[check.id]["output"][model_version.name].append(None)
