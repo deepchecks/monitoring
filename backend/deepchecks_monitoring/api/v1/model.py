@@ -429,12 +429,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
             monitors_count=record.n_of_monitors or 0,
             has_data=record.Model.has_data(),
             max_severity=AlertSeverityMap.get(record.max_severity),
-            latest_time=(
-                # versions relationship is ordered by desc(end_time) during load
-                record.Model.versions[0].end_time.timestamp()
-                if record.Model.versions
-                else None
-            ),
+            latest_time=record.Model.end_time,
             versions=[
                 ModelVersionManagmentSchema.from_orm(version)
                 for version in record.Model.versions

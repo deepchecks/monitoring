@@ -8,6 +8,7 @@ import { styled, Box } from '@mui/material';
 import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
+import { ClassOrFeature } from 'components/AnalysisGroupBy/AnalysisGroupBy.types';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 
@@ -17,6 +18,7 @@ interface SegmentsDrillDownProps {
   checkName: ControlledMarkedSelectSelectValues;
   setActiveBarFilters?: React.Dispatch<React.SetStateAction<DataFilter[]>>;
   feature?: string;
+  classOrFeature?: ClassOrFeature | null;
 }
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
@@ -26,7 +28,8 @@ const SegmentsDrillDownComponent = ({
   datasetName,
   checkName,
   setActiveBarFilters,
-  feature
+  feature,
+  classOrFeature
 }: SegmentsDrillDownProps) => {
   const dataSet: number[] = useMemo(
     () => (data.length && datasetName ? data.map(d => (d.value ? d.value[datasetName] : 0)) : []),
@@ -34,6 +37,9 @@ const SegmentsDrillDownComponent = ({
   );
 
   const labels = useMemo(() => (data.length ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
+  const yTitle = useMemo(() => classOrFeature?.type === 'Feature' ? `${checkName} - ${datasetName}` : `${datasetName}`,
+    [checkName, datasetName, classOrFeature]
+  );
 
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
@@ -61,7 +67,7 @@ const SegmentsDrillDownComponent = ({
             setActiveBarName={setActiveBarName}
             activeBarIndex={activeBarIndex}
             setActiveBarIndex={setActiveBarIndex}
-            yTitle={`${checkName} ${datasetName}`}
+            yTitle={yTitle}
             xTitle={feature}
           />
           <SegmentTests title={title} plots={plots.map(plot => JSON.parse(plot))} />

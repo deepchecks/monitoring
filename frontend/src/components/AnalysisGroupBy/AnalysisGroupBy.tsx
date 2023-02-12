@@ -165,6 +165,7 @@ const AnalysisGroupByComponent = ({
                 datasetName={datasetName}
                 setActiveBarFilters={setActiveBarFilters}
                 feature={selectedFeature?.toString() || ''}
+                classOrFeature={classOrFeature}
               />
               {testSuitePropsAreNotNull && (
                 <StyledRunDownloadSuiteContainer>
