@@ -5,7 +5,8 @@ describe('Analysis screen drilldown', () => {
         cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21])
         cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21], 86400)
         cy.addReferenceToVersion(modelInfo)
-        return cy.addPerformanceCheck(modelInfo)
+        cy.addPerformanceCheck(modelInfo)
+        cy.wait(3000)
       }).then(() => {
         cy.visit('/analysis')
         // toggle comparison mode

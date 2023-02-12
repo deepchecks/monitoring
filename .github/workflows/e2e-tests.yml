@@ -154,7 +154,7 @@ jobs:
           service: mon-commercial
           cluster: DevMonitoring
   e2e:
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest-4-cores
     needs: build
     steps:
       -
