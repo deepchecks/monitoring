@@ -4,6 +4,15 @@
 Concepts
 ========
 
+Deepchecks is a platform for monitoring all your models. A model represents an ML pipeline
+performing a single task in production. That could be for example multiple retrained version, all predicting the
+Lifetime Value of a customer on your platform.
+The model groups together all the model versions that are performing the same task, where the model's versions,
+type and the structure of the data may change over time.
+
+A specific version for the model object itself, and the structure of the data it is trained on, is called a
+Model Version. A single model can contain multiple versions.
+
 Deepchecks Monitoring monitors your ML system by computing and displaying the results of `Checks <#checks>`__ over time
 in the Dashboard screen. `Alert Rules <#alert-rules>`__ can be defined on these results, raising `Alerts <#alerts>`__
 when the rules are met.
@@ -15,6 +24,9 @@ different checks run on that time frame.
 Several core concepts, such as Checks and the Test Suite are in fact elements of the
 `Deepchecks Testing Package <https://docs.deepchecks.com/>`__, used by Deepchecks Monitoring to test ML system over
 time.
+
+All of these monitoring components - Checks, Monitors, Alert Rules and Alerts - are defined on a per-model basis, and
+apply for all model versions that belong to a given model.
 
 Checks
 ======
