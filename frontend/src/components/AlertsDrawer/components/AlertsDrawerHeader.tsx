@@ -55,7 +55,6 @@ const MAX_CHARACTERS = 27;
 const LABEL_VALUE_TITLE_MAX_CHARACTERS = 25;
 
 const DEFAULT_INFO_TITLES = ['Check:', 'Model:', 'Feature:', 'Segment:', 'Frequency:'];
-let INFO_TITLES = DEFAULT_INFO_TITLES;
 
 export const AlertsDrawerHeader = ({
   alerts,
@@ -86,6 +85,7 @@ export const AlertsDrawerHeader = ({
   const { refetch: refetchAlertRule } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
 
   const [isNotification, setIsNotification] = useState(false);
+  const [infoTitles, setInfoTitles] = useState(DEFAULT_INFO_TITLES);
 
   const handleAlert = async () => {
     const alertId = alert.id;
@@ -121,9 +121,9 @@ export const AlertsDrawerHeader = ({
 
       const infoTitle = [...new Set(valuesArr)].join(', ');
 
-      INFO_TITLES = [infoTitle, ...DEFAULT_INFO_TITLES];
+      setInfoTitles([infoTitle, ...DEFAULT_INFO_TITLES]);
     }
-  }, [alert?.failed_values]);
+  }, [alert?.failed_values, setInfoTitles]);
 
   const info: string[] = useMemo(
     () => [
@@ -189,7 +189,7 @@ export const AlertsDrawerHeader = ({
       <StyledBottomSection>
         <StyledFlexWrapper>
           <AlertsBadge severity={alert_severity} color={color} />
-          {INFO_TITLES.map((title, index) => (
+          {infoTitles.map((title, index) => (
             <StyledInfoTitlesContainer key={title}>
               {index === 0 && title.length > LABEL_VALUE_TITLE_MAX_CHARACTERS ? (
                 <FullLengthTooltip title={title}>
@@ -201,7 +201,7 @@ export const AlertsDrawerHeader = ({
                 <Typography variant="subtitle2">{title}</Typography>
               )}
               <StyledInfoTitle variant="subtitle2">{info[index]}</StyledInfoTitle>
-              {INFO_TITLES.length - 1 !== index && <StyledDivider orientation="vertical" flexItem />}
+              {infoTitles.length - 1 !== index && <StyledDivider orientation="vertical" flexItem />}
             </StyledInfoTitlesContainer>
           ))}
         </StyledFlexWrapper>
