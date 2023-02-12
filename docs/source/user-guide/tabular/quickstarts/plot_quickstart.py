@@ -5,7 +5,7 @@
 Quickstart - Get Deepchecks Monitoring Up and Running
 *****************************************************
 
-This quickstart is the perfect starting point for monitoring your tabular model using Deepchecks Monitoring. We'll
+This is a good starting point for monitoring your tabular model using Deepchecks Monitoring. We'll
 quickly walk you through setting up a model to represent your task in the system, uploading data, setting the
 computed checks and alerts in the system and seeing some results for your effort. We'll be using the
 `Airbnb rent regression dataset <https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data>`__, in which
