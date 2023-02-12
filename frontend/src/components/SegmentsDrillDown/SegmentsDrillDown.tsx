@@ -62,6 +62,7 @@ const SegmentsDrillDownComponent = ({
       ) : (
         <>
           <CheckPerSegment
+            segmentData={data}
             dataSet={dataSet}
             labels={labels}
             setActiveBarName={setActiveBarName}

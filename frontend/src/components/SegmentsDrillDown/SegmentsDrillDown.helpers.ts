@@ -1,6 +1,7 @@
 import { ChartOptions, ChartData } from 'chart.js';
 
 import { alpha } from '@mui/material';
+import { CheckGroupBySchema } from 'api/generated';
 
 export const TITLE = 'Check Per Segment';
 export const ACTIVE_BAR_COLOR = alpha('#00CCFF', 1);
@@ -10,6 +11,7 @@ export const ACTIVE_BAR_BG_COLOR = alpha(ACTIVE_BAR_COLOR, 0.1);
 export const barsColorArray = (length: number): string[] => Array(length).fill(BAR_COLOR);
 
 export const chartOptions = (
+  segmentData: CheckGroupBySchema[],
   data: number[],
   yTitle?: string,
   xTitle?: string,
@@ -30,6 +32,18 @@ export const chartOptions = (
       }
     },
     plugins: {
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const totalCount = segmentData[0].count;
+            const thisCount = segmentData[context.dataIndex].count;
+            const percent = new Intl.NumberFormat('default', { style: 'percent', maximumFractionDigits: 2 })
+              .format(thisCount / totalCount)
+            return [' ' + (yTitle || context.dataset.label || '') + ': ' + context.formattedValue,
+            ' Segment Size: ' + thisCount + ' (' + percent + ')'];
+          }
+        }
+      },
       legend: {
         display: false
       },
