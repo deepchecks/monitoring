@@ -72,12 +72,14 @@ const AnalysisGroupByComponent = ({
 
         if (additionalKwargs && type) {
           const value =
-            type === CheckTypeOptions.Class
-              ? datasetName.replace(additionalKwargs.check_conf.scorer[0], '').trim()
-              : datasetName;
+            type === CheckTypeOptions.Class ? additionalKwargs.res_conf?.[0] : datasetName;
 
           if (value) {
-            setClassOrFeature({ type, value });
+            // if the type is feature we want to only show dataset name if a feature is selected
+            if (type != CheckTypeOptions.Feature ||
+              additionalKwargs.check_conf?.['feature']?.length) {
+              setClassOrFeature({ type, value });
+            }
             // Filter selected feature from feature list
             if (type === CheckTypeOptions.Feature) {
               featuresNames = featuresNames.filter(feature => feature != value);

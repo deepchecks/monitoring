@@ -132,27 +132,35 @@ export function AnalysisPage() {
         ReverseTypeMap
       );
       if (checkMegaConf) {
-        const type = checkInfo?.res_conf ? CheckTypeOptions.Class : CheckTypeOptions.Feature;
+        // if the info doesn't contains a selection of features there is no specific check type
+        const type = checkInfo?.res_conf ? CheckTypeOptions.Class : (
+          checkInfo?.check_conf?.filter(val => val.type == 'feature').length ? CheckTypeOptions.Feature : null
+        );
         setCurrentType(type);
 
-        if (
-          !checkMegaConf['aggregation method'] ||
-          ['none', undefined].includes(checkMegaConf['aggregation method']?.[0])
+        if (type === CheckTypeOptions.Feature && !checkMegaConf['aggregation method'] ||
+          ['none', null].includes(checkMegaConf['aggregation method']?.[0])
         ) {
-          if (type === CheckTypeOptions.Feature) {
-            setCurrentAdditionalKwargs(
-              // Filter only the feature that was clicked on
-              {
-                check_conf: { ...checkMegaConf, feature: [datasetName] },
-                res_conf: additionalKwargs?.res_conf
-              }
-            );
+          setCurrentAdditionalKwargs(
+            // Filter only the feature that was clicked on
+            {
+              check_conf: { ...checkMegaConf, feature: [datasetName] },
+              res_conf: additionalKwargs?.res_conf
+            }
+          );
+        } else if (type === CheckTypeOptions.Class && additionalKwargs?.check_conf?.scorer != undefined) {
+          let class_name = undefined;
+          for (let i = 0; i < checkMegaConf?.scorer?.length || 0; i++) {
+            if (datasetName.startsWith(checkMegaConf.scorer[i])) {
+              class_name = datasetName.replace(checkMegaConf.scorer[i], '').trim();
+              if (class_name != datasetName) break;
+            }
           }
-        } else if (type === CheckTypeOptions.Class) {
+          
           setCurrentAdditionalKwargs({
             check_conf: checkMegaConf,
             // Filter only the class that was clicked on
-            res_conf: [datasetName.replace(checkMegaConf.scorer[0], '').trim()]
+            res_conf: class_name ? [class_name] : undefined
           });
         } else {
           setCurrentAdditionalKwargs({ check_conf: checkMegaConf });
