@@ -11,7 +11,7 @@
 import math
 import typing as t
 
-from sqlalchemy import Column, case, func, select, text
+from sqlalchemy import Column, case, desc, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions
@@ -72,7 +72,7 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
             feature_column.label('value'),
             func.count().label('count')
         ]).select_from(table).where(monitor_options.sql_all_filters()).group_by(feature_column)\
-            .order_by(text('count')).limit(num_bins)
+            .order_by(desc(text('count'))).limit(num_bins)
         bins = (await session.execute(query)).all()
         return feature_type, bins
     else:
