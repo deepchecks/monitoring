@@ -55,7 +55,7 @@ def create_model_version_select_object(mon_table: Table, columns: t.List[str], f
     return s
 
 
-def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 10_000) -> Select:
+def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 5_000) -> Select:
     """Sample randomly on a select object by id/row number md5."""
     sampled_select_obj = select_obj
     if SAMPLE_ID_COL in mon_table.c:
