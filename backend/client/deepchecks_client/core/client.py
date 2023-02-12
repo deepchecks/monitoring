@@ -620,7 +620,7 @@ class DeepchecksModelClient:
             check_id=check_id,
             monitor={
                 'name': name if name is not None else f'{check_name} Monitor',
-                'lookback': frequency * 12 if lookback is None else lookback,
+                'lookback': (86400*7 if frequency <= 86400 else 86400*30) if lookback is None else lookback,
                 'frequency': frequency,
                 'aggregation_window': frequency if aggregation_window is None else aggregation_window,
                 'dashboard_id': dashboard_id,

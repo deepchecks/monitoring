@@ -3,11 +3,13 @@ export const timeValues = {
   day: 60 * 60 * 24,
   week: 60 * 60 * 24 * 7,
   month: 60 * 60 * 24 * 30,
-  threeMonths: 60 * 60 * 24 * 30 * 3
+  threeMonths: 60 * 60 * 24 * 30 * 3,
+  year: 60 * 60 * 24 * 30 * 12
 };
 
 export const timeMap = {
   day: timeValues.day * 1000,
   week: timeValues.week * 1000,
-  month: timeValues.month * 1000
+  month: timeValues.month * 1000,
+  year: timeValues.year * 1000
 };

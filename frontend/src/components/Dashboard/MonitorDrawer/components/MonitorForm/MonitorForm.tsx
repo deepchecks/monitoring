@@ -25,7 +25,7 @@ import { ActiveAlertsModal } from '../ActiveAlertsModal';
 
 import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
 
-import { timeWindow, buildFilters } from 'helpers/monitorFields.helpers';
+import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { timeValues } from 'helpers/time';
 
@@ -282,7 +282,7 @@ export const MonitorForm = ({
             }}
             fullWidth
           >
-            {timeWindow.map(({ label, value }, index) => (
+            {freqTimeWindow.map(({ label, value }, index) => (
               <MenuItem
                 key={value + index}
                 value={value}
@@ -308,7 +308,7 @@ export const MonitorForm = ({
             <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">
               <ControlledMarkedSelect
                 label="Aggregation window"
-                values={timeWindow}
+                values={freqTimeWindow}
                 value={aggregationWindow}
                 setValue={setAggregationWindow}
                 clearValue={clearAggregationWindow}
@@ -330,7 +330,7 @@ export const MonitorForm = ({
         <TooltipInputWrapper title="The range of viewing the monitor: e.g. from <date> to <date>">
           <ControlledMarkedSelect
             label="Display range"
-            values={timeWindow}
+            values={lookbackTimeWindow}
             value={lookBack}
             setValue={setLookBack}
             clearValue={clearLookBack}

@@ -3,13 +3,16 @@ import { DataFilter, MonitorCreationSchemaAdditionalKwargs, OperatorsEnum } from
 import { timeValues } from 'helpers/time';
 import { SelectValues } from 'helpers/types';
 
-export const timeWindow = [
+export const freqTimeWindow = [
   { label: '1 hour', value: timeValues.hour },
   { label: '1 day', value: timeValues.day },
   { label: '1 week', value: timeValues.week },
   { label: '1 month', value: timeValues.month },
   { label: '3 months', value: timeValues.threeMonths }
 ];
+
+export const lookbackTimeWindow = freqTimeWindow.filter(obj => obj.value != timeValues.hour)
+lookbackTimeWindow.push(({ label: '1 year', value: timeValues.year }))
 
 export const buildKwargs = (
   isResConf: boolean | undefined,

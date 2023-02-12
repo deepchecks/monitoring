@@ -9,7 +9,7 @@ import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
 
-import { timeWindow, buildFilters } from 'helpers/monitorFields.helpers';
+import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectColumn } from 'components/SelectColumn';
 import { FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
 import { MonitorCheckConfSchema } from 'api/generated';
@@ -110,7 +110,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
           <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">
             <ControlledMarkedSelect
               label="Aggregation window"
-              values={timeWindow}
+              values={freqTimeWindow}
               value={aggregationWindow}
               setValue={setAggregationWindow}
               clearValue={clearAggregationWindow}
@@ -128,7 +128,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
               }}
               fullWidth
             >
-              {timeWindow.map(({ label, value }, index) => (
+              {freqTimeWindow.map(({ label, value }, index) => (
                 <MenuItem
                   key={value + index}
                   value={value}

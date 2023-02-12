@@ -6,7 +6,7 @@ import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
 import { Subcategory } from 'components/Subcategory';
 
-import { timeWindow } from '../helpers/monitorFields.helpers';
+import { freqTimeWindow } from '../helpers/monitorFields.helpers';
 
 interface SelectFrequencyProps {
   timeWindows?: { label: string; value: number }[];
@@ -15,7 +15,7 @@ interface SelectFrequencyProps {
   setFieldValue: (fieldName: string, value: any, shouldValidate?: boolean | undefined) => any;
 }
 
-export const SelectFrequency = ({ timeWindows = timeWindow, setFieldValue, ...props }: SelectFrequencyProps) => {
+export const SelectFrequency = ({ timeWindows = freqTimeWindow, setFieldValue, ...props }: SelectFrequencyProps) => {
   const [aggWindow, setAggWindow] = useState<number>(props.aggregation_window);
   const [frequency, setFrequency] = useState<number>(props.frequency);
 
