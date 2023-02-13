@@ -44,6 +44,7 @@ export const MonitorsGroup = ({
           </StyledModelDate>
           )
         </StyledModelLatestTime>
+        <StyledLine />
       </StyledHeadingContainer>
       <Grid container spacing={{ xs: 2.5, lg: 2.5, xl: 4 }}>
         {monitors.map(mon => (
@@ -91,6 +92,12 @@ const StyledModelLatestTime = styled(StyledTypography)({
   fontWeight: 400,
   fontSize: '12px',
   lineHeight: '15px'
+});
+
+const StyledLine = styled(Box)({
+  flex: 1,
+  marginLeft: '24px',
+  borderTop: `solid 1px ${colors.neutral.grey.light}`
 });
 
 const StyledModelDate = styled(Box)({
