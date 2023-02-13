@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { Box, Button, Typography } from '@mui/material';
+import logger from 'helpers/logger';
 
 export function APIKey() {
   const [apiToken, setApiToken] = useState<string | undefined>(undefined);
@@ -13,7 +14,7 @@ export function APIKey() {
         setApiToken(value);
       },
       reason => {
-        console.log(reason);
+        logger.info(reason);
       }
     );
   };

@@ -44,20 +44,11 @@ export const CompleteDetails = () => {
     event.preventDefault();
 
     if (acceptInvite && fullName) {
-      // if acceptInvite remains true, send only full_name & accept_invite: true
-      const res = await postCompleteDetailsAndAcceptInvite({
-        fullName,
-        acceptInvite
-      });
-      console.log('accepted invite res:~~~~', res);
-      return;
+      await postCompleteDetailsAndAcceptInvite({ fullName, acceptInvite });
     }
 
     if (fullName && organization) {
-      // else send fullName & organization
-      const res = await postCompleteDetails({ fullName, organization });
-      console.log('new organization res:~~~', res);
-      return;
+      await postCompleteDetails({ fullName, organization });
     }
   };
 

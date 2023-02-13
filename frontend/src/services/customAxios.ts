@@ -1,4 +1,5 @@
 import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import logger from 'helpers/logger';
 import qs from 'qs';
 
 export const AXIOS_INSTANCE = Axios.create({ baseURL: process.env.REACT_APP_BASE_API, withCredentials: true });
@@ -38,7 +39,7 @@ export const cancelPendingRequests = () => {
 export const customInstance = <T>(config: AxiosRequestConfig): Promise<T> => {
   const promise = AXIOS_INSTANCE({ ...config, cancelToken: cancelTokenSource.token })
     .then(({ data }) => data)
-    .catch(e => console.log('Error occurred in Axios -', e));
+    .catch(e => logger.error('Error occurred in Axios -', e));
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   promise.cancel = () => {

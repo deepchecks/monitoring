@@ -67,7 +67,6 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       (monitor.additional_kwargs = (additionalKwargs as MonitorCheckConfSchema) || undefined),
         (monitor.data_filters = buildFilters(column, category, numericValue) || undefined);
       setMonitor(monitor);
-      console.log(monitor);
 
       handleNext();
     }

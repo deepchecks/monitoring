@@ -32,6 +32,7 @@ import {
 import { Loader } from '../../../Loader';
 
 import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
+import logger from 'helpers/logger';
 
 dayjs.extend(localizedFormat);
 
@@ -100,7 +101,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
           handleClose();
         })
         .catch(reason => {
-          console.log(reason);
+          logger.info(reason);
           setErrorMsg(`User ${emailValue} already exists or invited to the system`);
         });
     }

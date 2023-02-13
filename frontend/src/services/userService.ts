@@ -13,41 +13,36 @@ interface completeDetailsAndAcceptInvite {
 
 export const postCompleteDetails = async (completeDetails: completeDetailsProps) => {
   const { organization, fullName } = completeDetails;
-  // TODO: use react query here.
-  try {
-    const res = await customInstance({
-      method: 'POST',
-      data: { user_full_name: fullName, new_organization_name: organization },
-      url: '/api/v1/users/complete-details'
-    });
-    window.location.href = '/';
-    console.log('res inside userService', res);
 
-    mixpanel.track('Sign Up', {
-      'From invitation': false,
-      'Org name': organization
-    });
-  } catch (e) {
-    console.log('error occurred,', e);
-  }
+  await customInstance({
+    method: 'POST',
+    data: { user_full_name: fullName, new_organization_name: organization },
+    url: '/api/v1/users/complete-details'
+  });
+
+  mixpanel.track('Sign Up', {
+    'From invitation': false,
+    'Org name': organization,
+    'Full name': fullName
+  });
+
+  window.location.href = '/';
 };
 
 export const postCompleteDetailsAndAcceptInvite = async (completeDetails: completeDetailsAndAcceptInvite) => {
   const { fullName, acceptInvite } = completeDetails;
-  try {
-    const res = await customInstance({
-      method: 'POST',
-      data: { user_full_name: fullName, accept_invite: acceptInvite },
-      url: '/api/v1/users/complete-details'
-    });
-    console.log('res inside userService', res);
 
-    mixpanel.track('Sign Up', {
-      'From invitation': true
-    });
+  await customInstance({
+    method: 'POST',
+    data: { user_full_name: fullName, accept_invite: acceptInvite },
+    url: '/api/v1/users/complete-details'
+  });
 
-    window.location.href = '/';
-  } catch (e) {
-    console.log('error occurred,', e);
-  }
+  mixpanel.track('Sign Up', {
+    'From invitation': true,
+    'Full name': fullName,
+    'Accept Invite': acceptInvite
+  });
+
+  window.location.href = '/';
 };

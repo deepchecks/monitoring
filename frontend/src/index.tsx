@@ -29,7 +29,7 @@ Sentry.init({
       )
     }),
     new CaptureConsole({
-      levels: ['warn', 'error']
+      levels: ['warn', 'error', 'info']
     })
   ],
   tracesSampleRate: 1,
