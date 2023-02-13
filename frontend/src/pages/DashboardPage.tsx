@@ -1,8 +1,7 @@
-import React, { useState, useCallback, useContext } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
 import useModels from 'hooks/useModels';
-import { GlobalStateContext } from 'context';
 
 import { Grid } from '@mui/material';
 
@@ -13,6 +12,7 @@ import { MonitorList } from 'components/Dashboard/MonitorList';
 import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { getParams } from 'helpers/utils/getParams';
 
 export const DashboardPage = () => {
   const { models, isLoading: isModelsLoading } = useModels();
@@ -32,7 +32,7 @@ export const DashboardPage = () => {
   }
 
   const [currentMonitor, setCurrentMonitor] = useState<MonitorSchema | null>(null);
-  const { selectedModelId: currentModelId } = useContext(GlobalStateContext);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(+getParams()?.modelId || null);
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
@@ -59,10 +59,14 @@ export const DashboardPage = () => {
         spacing={{ md: 2.5, xl: 4 }}
       >
         <Grid item md={6} lg={6} xl={4}>
-          <ModelList models={models} isLoading={isModelsLoading} />
+          <ModelList
+            models={models}
+            isLoading={isModelsLoading}
+            selectedModelId={selectedModelId}
+            setSelectedModelId={setSelectedModelId} />
         </Grid>
         <Grid item md={6} lg={6} xl={8}>
-          <DataIngestion modelId={currentModelId} />
+          <DataIngestion modelId={selectedModelId} />
         </Grid>
         <Grid item md={12}>
           <MonitorListHeader onClick={handleOpenMonitorDrawer} />
@@ -70,7 +74,7 @@ export const DashboardPage = () => {
         <Grid item md={12}>
           <MonitorList
             dashboard={dashboard}
-            currentModelId={currentModelId}
+            currentModelId={selectedModelId}
             currentMonitor={currentMonitor}
             setCurrentMonitor={setCurrentMonitor}
             handleOpenMonitorDrawer={handleOpenMonitorDrawer}

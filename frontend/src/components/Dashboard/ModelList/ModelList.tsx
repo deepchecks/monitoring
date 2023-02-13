@@ -1,7 +1,6 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { ModelManagmentSchema } from 'api/generated';
-import { GlobalStateContext } from 'context';
 
 import { Loader } from 'components/Loader';
 import { ModelItem } from './components/ModelItem';
@@ -20,15 +19,16 @@ import {
 } from './ModelList.style';
 
 import { Rotate } from 'assets/icon/icon';
+import { setParams } from 'helpers/utils/getParams';
 
 interface ModelListProps {
+  setSelectedModelId: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedModelId: number | null;
   models: ModelManagmentSchema[];
   isLoading?: boolean;
 }
 
-export function ModelList({ models, isLoading }: ModelListProps) {
-  const { selectedModelId: activeModelId, changeSelectedModelId } = useContext(GlobalStateContext);
-
+export function ModelList({ selectedModelId, setSelectedModelId, models, isLoading }: ModelListProps) {
   const [modelName, setModelName] = useState('');
 
   const filteredModels = useMemo(() => {
@@ -39,7 +39,8 @@ export function ModelList({ models, isLoading }: ModelListProps) {
 
   const onReset = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    changeSelectedModelId(null);
+    setSelectedModelId(null);
+    setParams('modelId');
   };
 
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +54,8 @@ export function ModelList({ models, isLoading }: ModelListProps) {
   };
 
   const handleModelClick = (modelId: number) => {
-    changeSelectedModelId(modelId);
+    setSelectedModelId(modelId);
+    setParams('modelId', modelId);
   };
 
   return (
@@ -73,13 +75,13 @@ export function ModelList({ models, isLoading }: ModelListProps) {
             {filteredModels.map((model, index) => (
               <ModelItem
                 key={index}
-                activeModel={activeModelId === model.id}
+                activeModel={selectedModelId === model.id}
                 onModelClick={handleModelClick}
                 onReset={onReset}
                 model={model}
               />
             ))}
-            {activeModelId && (
+            {selectedModelId && (
               <StyledResetSelectionContainer>
                 <StyledResetSelectionContent onClick={onReset}>
                   <Rotate />

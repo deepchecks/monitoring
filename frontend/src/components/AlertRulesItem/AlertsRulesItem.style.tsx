@@ -22,7 +22,7 @@ export const StyledMainWrapper = styled(Box)(({ theme }) => ({
 
 type StyledCriticalityProps = {
   criticality?: AlertSeverity;
-  resolved?: boolean;
+  resolved?: number;
 };
 
 const RESOLVED_ALERT_COLOR_OPACITY = 0.7;

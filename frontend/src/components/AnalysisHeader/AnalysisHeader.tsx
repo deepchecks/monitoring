@@ -11,6 +11,7 @@ import { SearchField } from '../SearchField';
 import StaticAnalysisHeader from './components/StaticAnalysisHeader';
 import FixedAnalysisHeader from './components/FixedAnalysisHeader';
 import { ShareButton } from '../ShareButton';
+import { setParams } from 'helpers/utils/getParams';
 
 interface AnalysisHeaderProps {
   changeModel: Dispatch<SetStateAction<number>>;
@@ -104,7 +105,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
         <StyledAnalysisHeaderList>
           {filteredModels.map(({ id, name }) => (
             <MenuItem key={id} sx={{ padding: 0 }}>
-              <StyledAnalysisHeaderLink to={{ pathname: '/analysis', search: `modelId=${id}` }}>
+              <StyledAnalysisHeaderLink to={{ pathname: '/analysis', search: setParams('modelId', id, false) }}>
                 <Typography variant="subtitle2">{name}</Typography>
               </StyledAnalysisHeaderLink>
             </MenuItem>

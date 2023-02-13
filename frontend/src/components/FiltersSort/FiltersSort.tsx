@@ -1,8 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import mixpanel from 'mixpanel-browser';
-
-import { GlobalStateContext } from 'context';
 
 import {
   AlertSeverity,
@@ -20,9 +18,13 @@ import FiltersSortButton from './components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
 import useModels from 'hooks/useModels';
+import { resetAlertFilters } from 'context';
+import { setParams } from 'helpers/utils/getParams';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
+  alertFilters: GetAlertRulesApiV1AlertRulesGetParams;
+  setAlertFilters: React.Dispatch<React.SetStateAction<GetAlertRulesApiV1AlertRulesGetParams>>
 };
 
 export enum sortOptionsVariants {
@@ -45,10 +47,8 @@ export const sortOptions = [sortOptionsVariants.AZ, sortOptionsVariants.ZA] as c
 const trackFiltersAndSortChange = (path: string) =>
   mixpanel.track(`${path === '/alerts' ? 'Alerts' : 'Alerts Rules'}: changed filters & sort`);
 
-export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) => {
+export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine = true }: AlertsFiltersProps) => {
   const { pathname } = useLocation();
-  const { alertFilters, changeAlertFilters, resetFilters } = useContext(GlobalStateContext);
-
   const [startDate, setStartDate] = useState<Date | null>(initStartDate);
   const [endDate, setEndDate] = useState<Date | null>(initEndDate);
   const [model, setModel] = useState<number>(-1);
@@ -76,15 +76,16 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
     setModel(currentModel);
 
     if (currentModel === -1 && alertFilters.models) {
-      changeAlertFilters(prevAlertFilters => {
+      setAlertFilters(prevAlertFilters => {
         const currentParams = { ...prevAlertFilters };
         delete currentParams.models;
         return currentParams;
       });
+      setParams('modelId');
       return;
     }
-
-    changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [currentModel] }));
+    setParams('modelId', currentModel);
+    setAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [currentModel] }));
   };
 
   const handleSeverityChange = (event: SelectChangeEvent<unknown>) => {
@@ -94,27 +95,29 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
     setSeverity(currentSeverity);
 
     if (currentSeverity === severityAll && alertFilters.severity) {
-      changeAlertFilters(prevAlertFilters => {
+      setAlertFilters(prevAlertFilters => {
         const currentParams = { ...prevAlertFilters };
         delete currentParams.severity;
         return currentParams;
       });
+      setParams('severity');
       return;
     }
 
-    changeAlertFilters(
+    setAlertFilters(
       prevAlertFilters =>
         ({
           ...prevAlertFilters,
           severity: [currentSeverity]
         } as GetAlertRulesApiV1AlertRulesGetParams)
     );
+    setParams('severity', currentSeverity);
   };
 
   const handleStartDateChange = (currentStartDate: Date | null) => {
     if (currentStartDate && endDate && currentStartDate < endDate) {
       setStartDate(currentStartDate);
-      changeAlertFilters(prevAlertFilters => ({
+      setAlertFilters(prevAlertFilters => ({
         ...prevAlertFilters,
         start: currentStartDate.toISOString()
       }));
@@ -126,7 +129,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
   const handleEndDateChange = (currentEndDate: Date | null) => {
     if (currentEndDate && startDate && currentEndDate > startDate) {
       setEndDate(currentEndDate);
-      changeAlertFilters(prevAlertFilters => ({
+      setAlertFilters(prevAlertFilters => ({
         ...prevAlertFilters,
         end: currentEndDate.toISOString()
       }));
@@ -138,7 +141,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
   const onSort = (sortMethod: GetAlertRulesApiV1AlertRulesGetSortbyItem, sort: sortOptionsVariants) => {
     setSelectedSortVariant(sort);
 
-    changeAlertFilters(prevAlertFilters => {
+    setAlertFilters(prevAlertFilters => {
       const currentAlertFilters = { ...prevAlertFilters };
 
       if (prevAlertFilters.sortby) {
@@ -159,7 +162,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
 
   const handleReset = () => {
     trackFiltersAndSortChange(pathname);
-    resetFilters();
+    resetAlertFilters(setAlertFilters);
   };
 
   useEffect(() => {
@@ -208,7 +211,7 @@ export const FiltersSort = ({ isFilterByTimeLine = true }: AlertsFiltersProps) =
 
   useEffect(() => {
     if (isFilterByTimeLine) return;
-    changeAlertFilters(prevAlertFilters => {
+    setAlertFilters(prevAlertFilters => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { start, end, ...newFilters } = prevAlertFilters;
       return newFilters;

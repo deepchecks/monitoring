@@ -1,10 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from 'context';
 import { ModelManagmentSchema } from 'api/generated';
 
 import { Box } from '@mui/material';
@@ -19,6 +18,7 @@ import {
   StyledModelName,
   StyledAlertsCount
 } from './ModelItem.style';
+import { setParams } from 'helpers/utils/getParams';
 
 dayjs.extend(localizedFormat);
 
@@ -31,12 +31,10 @@ interface ModelItemProps {
 
 export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) {
   const navigate = useNavigate();
-  const { changeAlertFilters } = useContext(GlobalStateContext);
 
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [model.id] }));
-    navigate({ pathname: '/alerts' });
+    navigate({ pathname: '/alerts', search: setParams('modelId', model.id, false)});
   };
 
   const handleModelClick = () => {

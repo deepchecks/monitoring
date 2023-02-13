@@ -23,15 +23,13 @@ import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
 
 import { getParams, setParams } from 'helpers/utils/getParams';
 import { CheckType, CheckTypeOptions } from 'helpers/types/check';
-import { GlobalStateContext } from 'context';
 import { ReverseTypeMap } from 'components/AnalysisItem/AnalysisItem.types';
 
 export function AnalysisPage() {
   const location = useLocation();
   const { models, isLoading: isModelsLoading, getCurrentModel } = useModels();
   const { isComparisonModeOn, comparisonMode, period, frequency, activeFilters } = useContext(AnalysisContext);
-  const { selectedModelId } = useContext(GlobalStateContext);
-  const [modelId, setModelId] = useState(+getParams()?.modelId || selectedModelId || models[0]?.id || -1);
+  const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
   const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
   const [currentDatasetName, setCurrentDatasetName] = useState<string | null>(null);
@@ -66,15 +64,15 @@ export function AnalysisPage() {
 
   useEffect(() => {
     if (models) {
-      setModelId(+getParams()?.modelId || selectedModelId || models[0]?.id);
+      setModelId(+getParams()?.modelId || models[0]?.id);
     }
-  }, [models, selectedModelId, location.search]);
+  }, [models, location.search]);
 
   useEffect(() => {
     if (models) {
-      setModelId(+getParams()?.modelId || selectedModelId || models[0]?.id);
+      setModelId(+getParams()?.modelId || models[0]?.id);
     }
-  }, [models, selectedModelId, location.search]);
+  }, [models, location.search]);
 
   // If modelId has changed refetch the checks
   useEffect(() => {

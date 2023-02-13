@@ -1,8 +1,7 @@
-import React, { FC, memo, useContext, useMemo } from 'react';
+import React, { FC, memo, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AlertSeverity } from 'api/generated';
-import { GlobalStateContext } from 'context';
 
 import { alpha, Box, Typography, useTheme, styled, Stack } from '@mui/material';
 
@@ -10,6 +9,7 @@ import { ReactComponent as CriticalSeverityIcon } from '../assets/icon/severity/
 import { ReactComponent as HighSeverityIcon } from '../assets/icon/severity/high.svg';
 import { ReactComponent as LowSeverityIcon } from '../assets/icon/severity/low.svg';
 import { ReactComponent as MediumSeverityIcon } from '../assets/icon/severity/medium.svg';
+import { setParams } from 'helpers/utils/getParams';
 
 export enum SEVERITY {
   LOW = 'low',
@@ -30,14 +30,12 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
   showText = true
 }: AlertCountComponentProps) => {
   const theme = useTheme();
-  const { changeAlertFilters } = useContext(GlobalStateContext);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const linkToAlerts = () => {
-    navigate({ pathname: '/alerts' }, { replace: location.pathname === '/alerts' });
-    changeAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, severity: [severity] }));
+    navigate({ pathname: '/alerts', search: setParams('severity', severity, false) }, { replace: location.pathname === '/alerts' });
   };
 
   const { color, Icon } = useMemo(() => {

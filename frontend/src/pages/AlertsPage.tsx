@@ -1,14 +1,15 @@
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
 import {
   AlertRuleInfoSchema,
   useGetAlertRulesApiV1AlertRulesGet,
   useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost,
-  useReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost
+  useReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost,
+  GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
-import { GlobalStateContext } from 'context';
+import { getAlertFilters, resetAlertFilters } from 'context';
 
 import { Box, List, ListItem, styled } from '@mui/material';
 
@@ -31,7 +32,7 @@ interface AlertsPageProps {
 }
 
 export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
-  const { alertFilters, resetFilters } = useContext(GlobalStateContext);
+  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams);
 
   const [resolveAlertRule, setResolveAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
@@ -75,9 +76,9 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
 
   return (
     <>
-      <AlertsHeader resolved={resolved} />
+      <AlertsHeader resolved={resolved ? 1 : 0} />
       <Box>
-        <FiltersSort />
+        <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters}/>
         <StyledList>
           {alertRulesIsLoading ? (
             <Loader />
@@ -88,12 +89,12 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
                   alertRule={alertRule}
                   onResolveOpen={() => setResolveAlertRule(alertRule)}
                   onDrawerOpen={() => setDrawerAlertRule(alertRule)}
-                  resolved={resolved}
+                  resolved={resolved ? 1 : 0}
                 />
               </StyledListItem>
             ))
           ) : (
-            <NoResults marginTop="207" handleReset={resetFilters} />
+            <NoResults marginTop="207" handleReset={() => resetAlertFilters(setAlertFilters)} />
           )}
         </StyledList>
       </Box>

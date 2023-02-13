@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useMemo, useEffect, useState, useContext } from 'react';
+import React, { Dispatch, SetStateAction, useMemo, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
@@ -10,9 +10,10 @@ import {
   SingleCheckRunOptions,
   useResolveAlertApiV1AlertsAlertIdResolvePost,
   useGetAlertRulesApiV1AlertRulesGet,
-  useReactivateAlertApiV1AlertsAlertIdReactivatePost
+  useReactivateAlertApiV1AlertsAlertIdReactivatePost,
+  GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
-import { GlobalStateContext } from 'context';
+import { getAlertFilters } from 'context';
 
 import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, Tooltip } from '@mui/material';
 
@@ -28,6 +29,7 @@ import processFrequency from 'helpers/utils/processFrequency';
 
 import { CloseIcon, Check, Sync } from 'assets/icon/icon';
 import { colors } from 'theme/colors';
+import { useLocation } from 'react-router-dom';
 
 dayjs.extend(localizedFormat);
 
@@ -71,7 +73,10 @@ export const AlertsDrawerHeader = ({
   resolved
 }: AlertsDrawerHeaderProps) => {
   const theme = useTheme();
-  const { alertFilters } = useContext(GlobalStateContext);
+  const location = useLocation();
+
+  const alertFilters = useMemo(() => getAlertFilters(), [location.search]);
+
   const {
     mutateAsync: resolve,
     isError: resolveAlertError,
@@ -82,7 +87,7 @@ export const AlertsDrawerHeader = ({
     isError: reactivateAlertError,
     isLoading: reactivateAlertIsLoading
   } = useReactivateAlertApiV1AlertsAlertIdReactivatePost();
-  const { refetch: refetchAlertRule } = useGetAlertRulesApiV1AlertRulesGet(alertFilters);
+  const { refetch: refetchAlertRule } = useGetAlertRulesApiV1AlertRulesGet(alertFilters as GetAlertRulesApiV1AlertRulesGetParams);
 
   const [isNotification, setIsNotification] = useState(false);
   const [infoTitles, setInfoTitles] = useState(DEFAULT_INFO_TITLES);

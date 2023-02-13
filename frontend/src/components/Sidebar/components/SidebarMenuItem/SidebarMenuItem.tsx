@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { Link, LinkProps, useLocation } from 'react-router-dom';
+import { Link, LinkProps, useLocation, useNavigate } from 'react-router-dom';
 import mixpanel from 'mixpanel-browser';
 
 import { Box, styled, Typography } from '@mui/material';
@@ -17,6 +17,7 @@ interface SidebarMenuItemProps {
 
 function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [hover, setHover] = useState(false);
   const [submenuIsOpen, setSubmenuIsOpen] = useState(false);
@@ -68,6 +69,11 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
       default:
         break;
     }
+  };
+
+  const goToLink = (e: React.SyntheticEvent<Element, Event>, link: string) => {
+    e.preventDefault();
+    navigate({ pathname: link, search: window.location.search });
   };
 
   const MenuItem = (
@@ -187,7 +193,8 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
         </Box>
       ) : (
         <StyledLinkWrapper
-          to={link}
+          onClick={e => goToLink(e, link)}
+          to='#'
           active={active}
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}
@@ -202,7 +209,8 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
       {submenuIsOpen &&
         info.children?.map(childInfo => (
           <StyledLinkWrapper
-            to={childInfo.link}
+            onClick={e => goToLink(e, childInfo.link)}
+            to='#'
             key={childInfo.link}
             active={location.pathname === childInfo.link}
             sx={{

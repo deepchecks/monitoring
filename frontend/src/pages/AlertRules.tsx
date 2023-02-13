@@ -1,10 +1,11 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import mixpanel from 'mixpanel-browser';
 
-import { GlobalStateContext } from '../context';
+import { getAlertFilters, resetAlertFilters } from '../context';
 
 import {
   AlertRuleConfigSchema,
+  GetAlertRulesApiV1AlertRulesGetParams,
   GetAllAlertRulesApiV1ConfigAlertRulesGetParams,
   useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete,
   useGetAllAlertRulesApiV1ConfigAlertRulesGet
@@ -23,8 +24,7 @@ import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
 import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
 
 export const AlertRules = () => {
-  const { alertFilters: filters, resetFilters } = useContext(GlobalStateContext);
-
+  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editableAlertRuleId, setEditableAlertRuleId] = useState<AlertRuleConfigSchema['id'] | undefined>(undefined);
 
@@ -32,7 +32,7 @@ export const AlertRules = () => {
     data: alertRules = [],
     isLoading: isAlertRulesLoading,
     refetch: refetchAlertRules
-  } = useGetAllAlertRulesApiV1ConfigAlertRulesGet(filters as GetAllAlertRulesApiV1ConfigAlertRulesGetParams);
+  } = useGetAllAlertRulesApiV1ConfigAlertRulesGet(alertFilters as GetAllAlertRulesApiV1ConfigAlertRulesGetParams);
 
   const { mutateAsync: deleteAlertRuleById, isLoading: isDeleteAlertRuleLoading } =
     useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete();
@@ -79,7 +79,7 @@ export const AlertRules = () => {
           width: '100%'
         }}
       >
-        <FiltersSort isFilterByTimeLine={false} />
+        <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
         <Box
           sx={{
             padding: 0,
@@ -101,7 +101,7 @@ export const AlertRules = () => {
               />
             ))
           ) : (
-            <NoResults marginTop="184px" handleReset={resetFilters} />
+            <NoResults marginTop="184px" handleReset={() => resetAlertFilters(setAlertFilters)} />
           )}
         </Box>
       </Box>

@@ -41,7 +41,7 @@ interface AlertsRulesItemProps {
   alertRule: AlertRuleInfoSchema;
   onResolveOpen: () => void;
   onDrawerOpen: () => void;
-  resolved?: boolean;
+  resolved?: number;
 }
 
 const titles = ['Model', 'Check', 'Condition', 'Check Frequency'];

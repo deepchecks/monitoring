@@ -8,14 +8,14 @@ import { ShareButton } from './ShareButton';
 import { Settings } from 'assets/icon/icon';
 
 interface AlertsHeaderProps {
-  resolved?: boolean;
+  resolved?: number;
 }
 
 export const AlertsHeader = ({ resolved }: AlertsHeaderProps) => {
   const navigate = useNavigate();
 
   const linkToSettings = () => {
-    navigate({ pathname: '/configuration/alert-rules' });
+    navigate({ pathname: '/configuration/alert-rules', search: window.location.search });
   };
 
   return (

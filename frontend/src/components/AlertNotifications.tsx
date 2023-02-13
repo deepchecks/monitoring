@@ -95,7 +95,7 @@ export function AlertNotifications() {
 
   const linkToConnectSlack = () => {
     if (!data?.is_slack_connected) {
-      navigate('/configuration/integrations');
+      navigate({ pathname: '/configuration/integrations', search: window.location.search });
     }
   };
 

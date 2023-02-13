@@ -33,6 +33,7 @@ import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButt
 import { colors } from 'theme/colors';
 
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
+import { getParams, setParams } from 'helpers/utils/getParams';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
@@ -65,6 +66,14 @@ export const ModelsPage = () => {
 
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
+
+  useEffect(() => {
+    const paramModelId = +getParams()?.modelId;
+    if (paramModelId) {
+      const model = models?.filter(val => val.id == paramModelId)?.[0];
+      model && setSearchValue(model.name);
+    }
+  }, [models]);
 
   useEffect(() => {
     if (!models) {
@@ -149,8 +158,19 @@ export const ModelsPage = () => {
     setModelsList(models);
     setFilteredAndSortedModelsList(models);
     setSearchValue(null);
+    setParams('modelId');
     setSearchInputValue('');
     setSort('');
+  };
+
+  const updateSearch = (_e: React.SyntheticEvent<Element, Event>, newValue: string | null) => {
+    setSearchValue(newValue);
+    const model = models?.filter(val => val.name == newValue)?.[0];
+    if (model) {
+      setParams('modelId', model.id);
+    } else {
+      setParams('modelId');
+    }
   };
 
   return (
@@ -162,9 +182,7 @@ export const ModelsPage = () => {
             <Autocomplete
               freeSolo
               value={searchValue}
-              onChange={(event, newValue: string | null) => {
-                setSearchValue(newValue);
-              }}
+              onChange={updateSearch}
               inputValue={searchInputValue}
               onInputChange={(event, newInputValue) => {
                 setSearchInputValue(newInputValue);
