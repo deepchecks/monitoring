@@ -75,7 +75,8 @@ class DeepchecksClient:
         create_model_defaults: bool = True,
         alerts_delay_labels_ratio: float = 1.0,
         alerts_delay_seconds: int = 3600 * 72,  # 3 days
-        model_notes: t.Optional[t.List[t.Dict[str, str]]] = None
+        model_notes: t.Optional[t.List[t.Dict[str, str]]] = None,
+        monitoring_frequency: str = 'day'
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -102,6 +103,8 @@ class DeepchecksClient:
         model_notes: Optional[List[Dict[str, str]]] , default None
             list of model notes.
             Each dictionary expected to contain only two keys 'title' and 'text'.
+        monitoring_frequency : str, default 'day'
+            The frequency & aggregation window for the default monitors and alerts. One of 'hour', 'day', 'week'.
 
         Returns
         -------
@@ -153,7 +156,7 @@ class DeepchecksClient:
             msg = f'Model {name} was successfully created!.'
 
             if create_model_defaults:
-                model_client._add_defaults()  # pylint: disable=protected-access
+                model_client._add_defaults(monitoring_frequency)  # pylint: disable=protected-access
                 msg += ' Default checks, monitors and alerts added.'
 
             pretty_print(msg)
@@ -244,7 +247,8 @@ class DeepchecksClient:
         model_classes: t.Optional[t.Sequence[str]] = None,
         create_model_defaults: bool = True,
         alerts_delay_labels_ratio: float = 1.0,
-        alerts_delay_seconds: int = 3600 * 72  # 3 days
+        alerts_delay_seconds: int = 3600 * 72,  # 3 days
+        monitoring_frequency: str = 'day',
     ) -> TabularModelVersionClient:
         """
         Create a tabular model version and uploads the reference data if provided.
@@ -285,6 +289,8 @@ class DeepchecksClient:
         alerts_delay_seconds: int, default: 3 days
             For alerts which needs labels, set the minimum time since the data was sent, in order to trigger the
             alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
+        monitoring_frequency : str, default 'day'
+            The frequency & aggregation window for the default monitors and alerts. One of 'hour', 'day', 'week'.
 
         Returns
         -------
@@ -342,7 +348,8 @@ class DeepchecksClient:
 
         version_client = self.get_or_create_model(
             model_name, task_type, description, create_model_defaults,
-            alerts_delay_labels_ratio=alerts_delay_labels_ratio, alerts_delay_seconds=alerts_delay_seconds
+            alerts_delay_labels_ratio=alerts_delay_labels_ratio, alerts_delay_seconds=alerts_delay_seconds,
+            monitoring_frequency=monitoring_frequency
         ).version(
             version_name,
             schema=schema,

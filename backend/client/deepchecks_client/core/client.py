@@ -437,7 +437,7 @@ class DeepchecksModelClient:
         """Get client to interact with a given version of the model."""
         raise NotImplementedError
 
-    def _add_defaults(self) -> t.Dict[str, int]:
+    def _add_defaults(self, monitoring_frequency: str) -> t.Dict[str, int]:
         """Add default checks, monitors and alerts to the model based on its task type."""
         raise NotImplementedError
 

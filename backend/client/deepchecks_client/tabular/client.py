@@ -515,7 +515,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             self._model_version_clients[model_version_id] = version_client
         return self._model_version_clients[model_version_id]
 
-    def _add_defaults(self):
+    def _add_defaults(self, monitoring_frequency: str):
         """Add default checks, monitors and alerts to a tabular model."""
         checks = {
             'Feature Drift': TrainTestFeatureDrift(),
@@ -525,29 +525,38 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             'Percent Of Nulls': PercentOfNulls()
         }
 
+        intervals = {
+            'hour': 60 * 60,
+            'day': 24 * 60 * 60,
+            'week': 7 * 24 * 60 * 60,
+        }
+        if monitoring_frequency not in intervals:
+            raise ValueError(f'monitoring_frequency must be one of {list(intervals.keys())}')
+        frequency = intervals[monitoring_frequency]
+
         if TaskType(self.model['task_type']) in [TaskType.BINARY, TaskType.MULTICLASS]:
             checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
         else:
             checks['Performance'] = SingleDatasetPerformance(scorers={'RMSE': 'rmse'})
         self.add_checks(checks=checks)
 
-        self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=24 * 60 * 60, alert_severity='high',
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=frequency, alert_severity='high',
                             monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True,
                             kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['l2_weighted']}})
-        self.add_alert_rule(check_name='Feature Drift', threshold=0.3, frequency=24 * 60 * 60, alert_severity='mid',
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.3, frequency=frequency, alert_severity='mid',
                             monitor_name='Individual Feature Drift', add_monitor_to_dashboard=True,
                             kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['none']}})
 
-        self.add_alert_rule(check_name='Prediction Drift', threshold=0.25, frequency=24 * 60 * 60,
+        self.add_alert_rule(check_name='Prediction Drift', threshold=0.25, frequency=frequency,
                             monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
-        self.add_alert_rule(check_name='Label Drift', threshold=0.25, frequency=24 * 60 * 60,
+        self.add_alert_rule(check_name='Label Drift', threshold=0.25, frequency=frequency,
                             monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='high')
 
-        self.add_alert_rule(check_name='New Category Train-Test', threshold=0.1, frequency=24 * 60 * 60,
+        self.add_alert_rule(check_name='New Category Train-Test', threshold=0.1, frequency=frequency,
                             monitor_name='New Category Train-Test', add_monitor_to_dashboard=True,
                             alert_severity='high')
 
-        self.add_monitor(check_name='Performance', frequency=24 * 60 * 60, name='Performance')
+        self.add_monitor(check_name='Performance', frequency=frequency, name='Performance')
 
 
 def _process_batch(
