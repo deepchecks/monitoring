@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import mixpanel from 'mixpanel-browser';
 import { TimeUnit } from 'chart.js';
 
 import useStatsTime from 'hooks/useStatsTime';
 import useDataIngestion from 'hooks/useDataIngestion';
 
 import { MenuItem } from '@mui/material';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
@@ -39,7 +40,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
     }
     setCurrentTime(timeOptions[newTimeIndex].id);
 
-    mixpanel.track('Change of time filter for Prediction Data status', {
+    reportEvent(events.changedTimerFilterProdData, {
       'Filter value': newTimeValue
     });
   };

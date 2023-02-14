@@ -2,11 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import mixpanel from 'mixpanel-browser';
 
 import { ModelManagmentSchema } from 'api/generated';
 
 import { Box } from '@mui/material';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import {
   StyledContainer,
@@ -38,7 +39,7 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
   };
 
   const handleModelClick = () => {
-    mixpanel.track('Click on a model in the model list');
+    reportEvent(events.clickedModelInModelList);
     onModelClick(model.id);
   };
 

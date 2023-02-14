@@ -2,10 +2,10 @@ import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
 import { UserInvite } from 'assets/icon/icon';
 import { GlobalStateContext } from 'context';
 import { useScrollBar } from 'hooks/useScrollBar';
-import mixpanel from 'mixpanel-browser';
 import React, { useContext, useRef, useState } from 'react';
 import { colors } from 'theme/colors';
 import { PathInfo } from '../../helpers/helper';
+import { events, reportEvent } from 'helpers/mixPanel';
 import useWindowResize from '../../hooks/windowResize';
 import { AnalysisSubMenu } from './components/AnalysisSubMenu';
 import { Logo } from '../Logo';
@@ -32,7 +32,7 @@ export const Sidebar = () => {
   const style = useScrollBar(contentRef);
 
   const handleInviteToOrgClick = () => {
-    mixpanel.track('Click on the Invite to workspace');
+    reportEvent(events.clickedInviteWorkspace);
 
     setUserInviteOpen(true);
   };

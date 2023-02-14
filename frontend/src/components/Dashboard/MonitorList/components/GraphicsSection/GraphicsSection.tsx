@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ChartData } from 'chart.js';
-import mixpanel from 'mixpanel-browser';
 
 import { MonitorSchema } from 'api/generated';
 
@@ -15,6 +14,7 @@ import { StyledContainer } from './GraphicsSection.style';
 
 import { GraphData } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
@@ -51,7 +51,7 @@ export function GraphicsSection({
 
   const handleOpenMonitor = (drawerName: DrawerNames) => {
     if (drawerName === DrawerNames.EditMonitor) {
-      mixpanel.track('Click on Edit monitor');
+      reportEvent(events.clickedEditMonitor);
     }
 
     onOpenMonitorDrawer(drawerName, monitor);
@@ -59,7 +59,7 @@ export function GraphicsSection({
   };
 
   const handleOpenDeleteMonitor = () => {
-    mixpanel.track('Click on Delete monitor');
+    reportEvent(events.clickedDeleteMonitor);
 
     onDeleteMonitor(monitor);
     setAnchorElRootMenu(null);

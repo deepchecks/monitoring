@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import mixpanel from 'mixpanel-browser';
 
 import {
   AlertSeverity,
@@ -18,6 +17,7 @@ import FiltersSortButton from './components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
 import useModels from 'hooks/useModels';
+import { reportEvent } from 'helpers/mixPanel';
 import { resetAlertFilters } from 'context';
 import { setParams } from 'helpers/utils/getParams';
 
@@ -45,7 +45,7 @@ const sortMethodMap = {
 export const sortOptions = [sortOptionsVariants.AZ, sortOptionsVariants.ZA] as const;
 
 const trackFiltersAndSortChange = (path: string) =>
-  mixpanel.track(`${path === '/alerts' ? 'Alerts' : 'Alerts Rules'}: changed filters & sort`);
+  reportEvent(`${path === '/alerts' ? 'Alerts' : 'Alerts Rules'}: changed filters & sort`);
 
 export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine = true }: AlertsFiltersProps) => {
   const { pathname } = useLocation();

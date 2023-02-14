@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import mixpanel from 'mixpanel-browser';
 
 import {
   useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost,
@@ -11,6 +10,8 @@ import {
 
 import { styled, Tooltip } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { DownloadSuiteDropdown } from './DownloadSuiteDropdown';
 
@@ -60,7 +61,7 @@ export const RunDownloadSuite = ({
   };
 
   const handleRunTestSuite = async () => {
-    mixpanel.track('Run test suite click');
+    reportEvent(events.clickedRunTest);
 
     if (modelVersionId) {
       const dataToSend: SingleCheckRunOptions = prepareData();

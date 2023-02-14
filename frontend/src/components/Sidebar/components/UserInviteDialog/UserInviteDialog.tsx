@@ -1,7 +1,6 @@
 import React, { PropsWithChildren, useState } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import mixpanel from 'mixpanel-browser';
 
 import {
   createInviteApiV1OrganizationInvitePut,
@@ -29,10 +28,12 @@ import {
   useTheme
 } from '@mui/material';
 
+import logger from 'helpers/logger';
+import { events, reportEvent } from 'helpers/mixPanel';
+
 import { Loader } from '../../../Loader';
 
 import { CloseIcon, EmailIcon, PlusIcon } from 'assets/icon/icon';
-import logger from 'helpers/logger';
 
 dayjs.extend(localizedFormat);
 
@@ -79,8 +80,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
 
   const handleDeleteMember = (memberId: number, email: string) => {
     deleteMember({ memberId });
-
-    mixpanel.track('Remove User', {
+    reportEvent(events.removeUser, {
       'Removed user email': email
     });
   };
@@ -93,7 +93,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
 
       createInviteApiV1OrganizationInvitePut(inviteSchema)
         .then(() => {
-          mixpanel.track('Invite User', {
+          reportEvent(events.inviteUser, {
             'Invited user email': emailValue
           });
 

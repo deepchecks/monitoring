@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import mixpanel from 'mixpanel-browser';
 
 import {
   MonitorSchema,
@@ -28,6 +27,7 @@ import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './
 import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { timeValues } from 'helpers/time';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 interface MonitorFormProps extends StackProps {
   monitor: MonitorSchema | null;
@@ -141,7 +141,7 @@ export const MonitorForm = ({
       }
 
       refetchMonitors();
-      mixpanel.track('Saved successfully', { 'The monitor details': data });
+      reportEvent(events.savedSuccessfully, { 'Monitor name': data.name });
     }
 
     handleCloseDrawer();

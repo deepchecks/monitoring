@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import mixpanel from 'mixpanel-browser';
+import React, { useContext, useState } from 'react';
 
 import { getAlertFilters, resetAlertFilters } from '../context';
 
@@ -12,6 +11,8 @@ import {
 } from '../api/generated';
 
 import { Button, Box } from '@mui/material';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
@@ -44,14 +45,14 @@ export const AlertRules = () => {
   };
 
   const onDialogOpen = (alertRule?: AlertRuleConfigSchema) => {
-    mixpanel.track(`Click on the ${alertRule ? 'Edit' : 'Add'} rule`);
+    reportEvent(`Click on the ${alertRule ? 'Edit' : 'Add'} rule`);
 
     setIsDialogOpen(true);
     setEditableAlertRuleId(alertRule?.id);
   };
 
   const onAlertRuleDelete = async (alertRule: AlertRuleConfigSchema) => {
-    mixpanel.track('Click on delete rule');
+    reportEvent(events.clickedDeleteRule);
 
     await deleteAlertRuleById({ alertRuleId: alertRule.id });
     refetchAlertRules();

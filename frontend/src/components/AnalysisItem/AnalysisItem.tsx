@@ -12,6 +12,7 @@ import DiagramLine from 'components/DiagramLine/DiagramLine';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { showDatasets } from './AnalysisItem.helpers';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { AnalysisItemFilterTypes, IDataset } from './AnalysisItem.types';
 
@@ -181,6 +182,7 @@ function AnalysisItemComponent({
     (datasetName: string, versionName: string, timeLabel: number) => {
       if (onPointCLick) {
         onPointCLick(datasetName, versionName, timeLabel, additionalKwargs, checkInfo, check);
+        reportEvent(events.analysisPage.clickedPointOnTheGraph);
       }
     },
     [additionalKwargs, check, checkInfo, onPointCLick]

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import mixpanel from 'mixpanel-browser';
 
 import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
 import useModels from 'hooks/useModels';
@@ -11,6 +10,7 @@ import { DeleteMonitor } from './components/DeleteMonitor';
 
 import { DrawerNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 interface MonitorsListProps {
   dashboard: DashboardSchema | undefined;
@@ -58,7 +58,7 @@ export const MonitorList = ({
     if (!currentMonitor) return;
 
     if (confirm) {
-      mixpanel.track('Click on confirm deletion of monitor');
+      reportEvent(events.clickedConfirmDeletion);
 
       await DeleteMonitorById({ monitorId: currentMonitor.id });
 

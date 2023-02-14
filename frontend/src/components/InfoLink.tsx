@@ -2,6 +2,7 @@ import React, { PropsWithChildren, useState } from 'react';
 import { Link } from '@mui/material';
 import { InfoIcon } from 'assets/icon/icon';
 import { colors } from 'theme/colors';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 interface InfoLinkItemProps {
   docsLink: string;
@@ -10,6 +11,12 @@ interface InfoLinkItemProps {
 export function InfoLink({ docsLink }: PropsWithChildren<InfoLinkItemProps>) {
   const [isHovered, setIsHovered] = useState(false);
   const getColor = isHovered ? colors.primary.violet[400] : colors.neutral.lightText;
+
+  const onMouseEnter = () => {
+    setIsHovered(true);
+    reportEvent(events.analysisPage.clickedInfoButton);
+  };
+
   return (
     <Link
       title="link to deepchecks' documentation about the check"
@@ -22,7 +29,7 @@ export function InfoLink({ docsLink }: PropsWithChildren<InfoLinkItemProps>) {
         marginLeft: '0.6em'
       }}
       rel="noreferrer"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={onMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
     >
       info

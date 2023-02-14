@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import mixpanel from 'mixpanel-browser';
 
 import { AlertSchema } from 'api/generated';
 
 import { Button, Stack, styled, Typography, StackProps } from '@mui/material';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { FastForward as Next, Rewind as Prev } from 'assets/icon/icon';
 import { colors } from 'theme/colors';
@@ -28,7 +29,7 @@ export const DiagramAlertCountWidget = ({
   ...props
 }: DiagramAlertCountWidgetProps) => {
   useEffect(() => {
-    mixpanel.track('Navigation between alerts');
+    reportEvent(events.navigationBetweenAlerts);
   }, [alertIndex]);
 
   const isPrevDisabled = !alertIndex;

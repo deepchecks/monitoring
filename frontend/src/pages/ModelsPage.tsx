@@ -34,6 +34,7 @@ import { colors } from 'theme/colors';
 
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
 import { getParams, setParams } from 'helpers/utils/getParams';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
@@ -66,6 +67,10 @@ export const ModelsPage = () => {
 
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
+
+  useEffect(() => {
+    reportEvent(events.modelsPage.modelsPageView);
+  }, []);
 
   useEffect(() => {
     const paramModelId = +getParams()?.modelId;
@@ -143,6 +148,7 @@ export const ModelsPage = () => {
       await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
       await refetchModels();
       handleModalClose();
+      reportEvent(events.modelsPage.clickedDeleteModel);
     }
   };
 

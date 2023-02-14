@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { ChartData } from 'chart.js';
-import mixpanel from 'mixpanel-browser';
 
 import {
   MonitorSchema,
@@ -16,6 +15,7 @@ import { MonitorForm } from './components/MonitorForm';
 import { CreateAlertForm } from './components/CreateAlertForm';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { DrawerNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
@@ -68,7 +68,7 @@ export const MonitorDrawer = ({
   };
 
   const handleOnCloseDrawer = () => {
-    mixpanel.track('Exited add/edit monitor window without saving');
+    reportEvent(events.exitedEditMonitorWithoutSaving);
     closeDrawer();
   };
 

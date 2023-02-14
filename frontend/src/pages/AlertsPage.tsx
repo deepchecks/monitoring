@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react';
-import mixpanel from 'mixpanel-browser';
 
 import {
   AlertRuleInfoSchema,
@@ -12,6 +11,8 @@ import {
 import { getAlertFilters, resetAlertFilters } from 'context';
 
 import { Box, List, ListItem, styled } from '@mui/material';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { AlertsDrawer } from 'components/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
@@ -64,7 +65,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
       setIsNotification(true);
       setResolveAlertRule(null);
 
-      mixpanel.track('Resolve alerts');
+      reportEvent(events.resolveAlerts);
     },
     [reactivateAllAlerts, resolveAllAlerts, resolved]
   );

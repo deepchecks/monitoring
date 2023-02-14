@@ -1,11 +1,12 @@
 import React, { memo, useState } from 'react';
 import { Link, LinkProps, useLocation, useNavigate } from 'react-router-dom';
-import mixpanel from 'mixpanel-browser';
+
 
 import { Box, styled, Typography } from '@mui/material';
 
 import { colors } from 'theme/colors';
 import { PathInfo } from 'helpers/helper';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { Arrow } from 'assets/icon/icon';
 
@@ -43,27 +44,27 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
   const handleClick = (infoPath: string) => {
     switch (infoPath) {
       case '/dashboard':
-        mixpanel.track('Click on the Dashboard');
+        reportEvent(events.clickedDashboard);
         break;
 
       case '/alerts':
-        mixpanel.track('Click on the Alerts');
+        reportEvent(events.clickedAlerts);
         break;
 
       case '/configuration/alert-rules':
-        mixpanel.track('Click on the Alert Rules');
+        reportEvent(events.clickedAlertsRules);
         break;
 
       case '/configuration/notifications':
-        mixpanel.track('Click on the Notification');
+        reportEvent(events.clickedNotification);
         break;
 
       case '/configuration/integrations':
-        mixpanel.track('Click on the Integrations');
+        reportEvent(events.clickedIntegrations);
         break;
 
       case '/configuration/api-key':
-        mixpanel.track('Click on the API Key');
+        reportEvent(events.clickedAPIKey);
         break;
 
       default:

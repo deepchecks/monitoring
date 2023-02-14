@@ -56,7 +56,8 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
         hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
       }
 
-      mixpanel.identify(user.email);
+      mixpanel.identify(`${user.id}`);
+      mixpanel.set_group('organization', `${user.organization?.id}`);
     }
   }
 

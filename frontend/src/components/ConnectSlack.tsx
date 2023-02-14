@@ -1,5 +1,4 @@
 import React from 'react';
-import mixpanel from 'mixpanel-browser';
 
 import {
   useRemoveInstallationApiV1SlackAppsAppIdDelete,
@@ -9,6 +8,8 @@ import {
 } from 'api/generated';
 
 import { alpha, Box, Button, Stack, Typography } from '@mui/material';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
 import { Loader } from './Loader';
@@ -41,7 +42,7 @@ export function ConnectSlack() {
     isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
   const connectSlack = () => {
-    mixpanel.track('Clicked on integration with Slack');
+    reportEvent(events.clickedSlackInstagramIntegration);
 
     window.open(
       `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,

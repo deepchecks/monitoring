@@ -3,10 +3,10 @@ import { Chart, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import mixpanel from 'mixpanel-browser';
 
 import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { alpha, Box, Typography, styled } from '@mui/material';
 
@@ -69,7 +69,7 @@ function DiagramLine({
 
   const hideLine = useCallback(
     (item: LegendItem) => {
-      mixpanel.track('Click on a legend on the graph');
+      reportEvent(events.clickedGraphLegend);
 
       if (currentChart && typeof item.datasetIndex === 'number') {
         const isDatasetVisible = currentChart.isDatasetVisible(item.datasetIndex);

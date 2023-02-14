@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import mixpanel from 'mixpanel-browser';
 
 import {
   AlertSeverity,
@@ -10,6 +9,8 @@ import {
 
 import { Box, Button, Checkbox, styled, Typography } from '@mui/material';
 import { Stack } from '@mui/system';
+
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { Loader } from './Loader';
 
@@ -130,7 +131,7 @@ export function AlertNotifications() {
       return currentNotifications;
     });
 
-    mixpanel.track('Changed notification');
+    reportEvent(events.changedNotification);
   };
 
   useEffect(() => {

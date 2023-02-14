@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import mixpanel from 'mixpanel-browser';
 
 import { AlertRuleInfoSchema, useGetMonitorApiV1MonitorsMonitorIdGet } from 'api/generated';
 import useModels from 'hooks/useModels';
@@ -16,6 +15,7 @@ import { Loader } from '../Loader';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import {
   StyledBlur,
@@ -67,13 +67,13 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    mixpanel.track('Click on the Resolve All');
+    reportEvent(events.clickedResolveAll);
     return onResolveOpen();
   };
 
   const handleEditRuleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    mixpanel.track('Click on Edit Rule button');
+    reportEvent(events.clickedEditRule);
     return setEditedAlertRule(alertRule.id);
   };
 
@@ -83,7 +83,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
 
   const handleOpenDrawer = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    mixpanel.track('Click on the alert');
+    reportEvent(events.clickedAlertsRules);
     return onDrawerOpen();
   };
 

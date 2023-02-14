@@ -18,6 +18,7 @@ import FiltersResetButton from 'components/FiltersSort/components/FiltersResetBu
 
 import { ColumnType } from 'helpers/types/model';
 import { comparisonModeData } from './AnalysisFilters.helpers';
+import { events, reportEvent } from 'helpers/mixPanel';
 
 import { FilterIcon } from 'assets/icon/icon';
 import { DateRange } from 'components/DateRange/DateRange';
@@ -77,11 +78,13 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
 
   const handleFiltersOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
+    reportEvent(events.analysisPage.clickedOnFilter);
   };
 
   const handleComparisonModeChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as ComparisonModeOptions;
     setComparisonMode(value);
+    reportEvent(events.analysisPage.clickedComparisonToggle);
   };
 
   const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {

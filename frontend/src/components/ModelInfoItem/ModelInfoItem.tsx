@@ -6,6 +6,8 @@ import { ConnectedModelSchema } from 'api/generated';
 
 import { Stack, Typography, Tooltip } from '@mui/material';
 
+import { events, reportEvent } from 'helpers/mixPanel';
+
 import {
   StyledModelInfoItemContainer,
   StyledModelInfoItemHeader,
@@ -44,7 +46,10 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
   const modelNameRef = useRef<HTMLElement>(null);
   const isEllipsisActive = !isEllipsisActiveCheck(modelNameRef);
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setOpen(true);
+    reportEvent(events.modelsPage.clickedViewDetails);
+  };
 
   const handleClose = () => setOpen(false);
 
