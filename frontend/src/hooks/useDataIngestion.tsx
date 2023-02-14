@@ -13,7 +13,7 @@ const useDataIngestion = (modelId: number | null = null) => {
   const { modelsMap } = useModels();
 
   const latestTime = modelId
-    ? modelsMap[modelId].latest_time ?? 0
+    ? modelsMap?.[modelId]?.latest_time ?? 0
     : Math.max(...Object.values(modelsMap).map(o => (o.latest_time ? o.latest_time : 0)));
   const { data: singleModelData = [], isLoading: singleLoading } =
     useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet(

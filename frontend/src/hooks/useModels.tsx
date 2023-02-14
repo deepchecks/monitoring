@@ -27,7 +27,7 @@ export const useModels = () => {
   }, [sortedModels]);
 
   const getCurrentModel = useCallback(
-    (modelId: number | undefined) => (modelId && modelsMap[modelId] ? modelsMap[modelId] : emptyModel),
+    (modelId: number | undefined) => (modelId && modelsMap?.[modelId] ? modelsMap[modelId] : emptyModel),
     [modelsMap]
   );
 
