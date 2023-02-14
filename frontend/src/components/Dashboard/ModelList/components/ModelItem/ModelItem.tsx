@@ -44,7 +44,7 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
   };
 
   return (
-    <StyledContainer active={activeModel} onClick={handleModelClick}>
+    <StyledContainer active={activeModel} onClick={handleModelClick} autoFocus={activeModel}>
       <StyledModelInfo>
         <Box>
           <StyledModelName>{model.name}</StyledModelName>

@@ -1,5 +1,5 @@
 import { AlertSeverity } from 'api/generated';
-import { alpha, Box, ListItem, styled, Typography, Stack } from '@mui/material';
+import { alpha, Box, ListItemButton, styled, Typography, Stack } from '@mui/material';
 
 import { colors } from 'theme/colors';
 
@@ -7,7 +7,7 @@ interface StyledContainerProps {
   active: boolean;
 }
 
-export const StyledContainer = styled(ListItem, { shouldForwardProp: prop => prop !== 'active' })<StyledContainerProps>(
+export const StyledContainer = styled(ListItemButton, { shouldForwardProp: prop => prop !== 'active' })<StyledContainerProps>(
   ({ active, theme }) => ({
     padding: '24px',
     '@media (max-width: 1536px)': {
