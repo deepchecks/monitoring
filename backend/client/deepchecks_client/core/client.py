@@ -145,7 +145,7 @@ class DeepchecksModelVersionClient:
                     self._log_samples[i: i+samples_per_send]
                 )
 
-            pretty_print(f'{len(self._log_samples)} new samples were successfully logged.')
+            pretty_print(f'{len(self._log_samples)} new samples sent.')
             self._log_samples.clear()
 
         if len(self._update_samples) > 0:
@@ -155,7 +155,7 @@ class DeepchecksModelVersionClient:
                     self._update_samples[i: i+samples_per_send]
                 )
 
-            pretty_print(f'{len(self._update_samples)} samples were successfully updated.')
+            pretty_print(f'{len(self._update_samples)} updated samples sent.')
             self._update_samples.clear()
 
     def upload_reference(self, *args, **kwargs):

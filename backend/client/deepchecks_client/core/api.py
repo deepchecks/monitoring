@@ -20,6 +20,7 @@ import httpx
 import packaging.version
 import pandas as pd
 from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
+from httpx import URL
 
 __all__ = ['API']
 
@@ -40,6 +41,7 @@ class API:
     """
 
     session: httpx.Client
+    original_host: URL
 
     @classmethod
     def instantiate(cls: t.Type[TAPI], host: str, token: t.Optional[str] = None) -> TAPI:
@@ -57,6 +59,7 @@ class API:
 
     def __init__(self, session: httpx.Client):
         self.session = copy(session)
+        self.original_host = self.session.base_url
         self.session.base_url = self.session.base_url.join('/api/v1')
 
         try:

@@ -130,6 +130,8 @@ serving as the timestamp, and the 'price' column serving as the label. Predictio
 As this is a regression model, we do not provide the ``prediction_probas`` argument.
 
 .. doctest::
+  :hide:
+  :options: +ELLIPSIS
 
     >>> model_version = dc_client.get_model_version('my_model', 'v1')
     >>> model_version.log_batch(
@@ -138,11 +140,12 @@ As this is a regression model, we do not provide the ``prediction_probas`` argum
     ...     timestamps=prod_data['datestamp'],
     ...     predictions=prod_predictions
     ... )
-    10000 new samples were successfully logged.
-    10000 new samples were successfully logged.
-    10000 new samples were successfully logged.
-    10000 new samples were successfully logged.
-    2225 new samples were successfully logged.
+    10000 new samples sent.
+    10000 new samples sent.
+    10000 new samples sent.
+    10000 new samples sent.
+    2225 new samples sent.
+    Upload finished successfully but might take time to ingest into the system, see http://.../configuration/models for status.
 
 
 Sample Upload

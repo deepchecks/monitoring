@@ -253,6 +253,9 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 self._log_samples.append(record)
             self.send()
 
+        pretty_print('Upload finished successfully but might take time to ingest into the system, see'
+                     f' {self.api.original_host.join("/configuration/models")} for status.')
+
     def log_sample(
             self,
             values: t.Dict[str, t.Any],
