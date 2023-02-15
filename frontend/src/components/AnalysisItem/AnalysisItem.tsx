@@ -5,6 +5,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
 import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
 import { ComparisonModeOptions } from 'context/analysis-context';
+import { useElementOnScreen } from 'hooks/useElementOnScreen';
 
 import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters';
 import { AnalysisChartItem } from './components/AnalysisChartItem';
@@ -49,6 +50,8 @@ function AnalysisItemComponent({
     }
   }, [check.id, refetchInfo]);
 
+  const { observedContainerRef, isVisible } = useElementOnScreen();
+
   const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
 
   const [data, setData] = useState(chartData);
@@ -57,6 +60,11 @@ function AnalysisItemComponent({
   // {} as FilteredValues should be fixed !!!
   const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
   const [isMostWorstActive, setIsMostWorstActive] = useState(false);
+
+  // Todo - delete all of this part when refactor this component!
+  const [runLookBack, setRunLookBack] = useState(false);
+  setTimeout(() => setRunLookBack(true), 500);
+  const loading = !runLookBack ? true : isLoading;
 
   const checkConf = useMemo(() => checkInfo?.check_conf, [checkInfo?.check_conf]);
 
@@ -77,6 +85,10 @@ function AnalysisItemComponent({
   }, [filteredValues]);
 
   useEffect(() => {
+    if (!isVisible || !runLookBack) {
+      return;
+    }
+
     const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0;
     // Update the checksWithCustomProps set which indicates to the parent component if it needs to load this check data
     hasCustomProps ? checksWithCustomProps?.current.add(check.id) : checksWithCustomProps?.current.delete(check.id);
@@ -175,7 +187,9 @@ function AnalysisItemComponent({
     period,
     runCheck,
     initialData,
-    checksWithCustomProps
+    checksWithCustomProps,
+    isVisible,
+    runLookBack
   ]);
 
   const handlePointClick = useCallback(
@@ -189,7 +203,7 @@ function AnalysisItemComponent({
   );
 
   return (
-    <>
+    <div ref={observedContainerRef}>
       {checkConf && checkConf.length ? (
         <AnalysisChartItemWithFilters
           title={check?.name || '-'}
@@ -206,7 +220,7 @@ function AnalysisItemComponent({
         >
           <DiagramLine
             data={data}
-            isLoading={isLoading}
+            isLoading={loading}
             comparison={isComparisonModeOn}
             onPointCLick={handlePointClick}
             timeFreq={frequency}
@@ -224,7 +238,7 @@ function AnalysisItemComponent({
         >
           <DiagramLine
             data={data}
-            isLoading={isLoading}
+            isLoading={loading}
             comparison={isComparisonModeOn}
             onPointCLick={handlePointClick}
             analysis
@@ -233,7 +247,7 @@ function AnalysisItemComponent({
           />
         </AnalysisChartItem>
       )}
-    </>
+    </div>
   );
 }
 
