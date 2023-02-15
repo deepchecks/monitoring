@@ -13,24 +13,6 @@ import { ComparisonModeOptions } from 'context/analysis-context';
 
 export const AGGREGATION_NONE = 'none';
 
-export enum AnalysisItemFilterTypes {
-  AGGREGATION = 'aggregation method',
-  FEATURE = 'feature',
-  SCORER = 'scorer'
-}
-
-export const TypeMap = {
-  [AnalysisItemFilterTypes.AGGREGATION]: 'aggregation_method',
-  [AnalysisItemFilterTypes.FEATURE]: 'features',
-  [AnalysisItemFilterTypes.SCORER]: 'scorers'
-};
-
-export const ReverseTypeMap = {
-  aggregation_method: AnalysisItemFilterTypes.AGGREGATION,
-  features: AnalysisItemFilterTypes.FEATURE,
-  scorers: AnalysisItemFilterTypes.SCORER
-};
-
 export interface IDataset {
   id: string;
   label?: string;
@@ -43,8 +25,6 @@ export interface IDataset {
   dashed?: boolean;
   data: (number | null)[];
 }
-
-export type FilteredValues = Record<AnalysisItemFilterTypes, string[]>;
 
 export interface AnalysisItemProps {
   check: CheckSchema;

@@ -11,17 +11,19 @@ import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarked
 
 import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectColumn } from 'components/SelectColumn';
-import { FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
+import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
 import { MonitorCheckConfSchema } from 'api/generated';
 
 export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStepBaseProps) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
   const { models: modelsList } = useModels();
   const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || '');
-
   const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
+  const [isValidConfig, setIsValidConfig] = useState(true);
 
-  const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
+  const [filteredValues, setFilteredValues] = useState<FilteredValues>(
+    (unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf) as FilteredValues) || {}
+  );
   const [resConf, setResConf] = useState<string | undefined>(undefined);
 
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
@@ -104,6 +106,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
             setFilteredValues={setFilteredValues}
             resConf={resConf}
             setResConf={setResConf}
+            setIsValidConfig={setIsValidConfig}
             disabled={!!alertRule.id || !model}
           />
           <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">
@@ -153,7 +156,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
           <Button onClick={handleBack} sx={{ mr: '20px' }} variant="outlined">
             {'Back'}
           </Button>
-          <Button onClick={finish} sx={{ mr: 0 }} disabled={!model || !check || !frequency || !aggregationWindow}>
+          <Button onClick={finish} sx={{ mr: 0 }} disabled={!model || !check || !frequency || !aggregationWindow || !isValidConfig}>
             {'Next'}
           </Button>
         </Box>

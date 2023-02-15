@@ -14,8 +14,9 @@ import { MarkedSelect } from 'components/MarkedSelect';
 import { Subcategory } from 'components/Subcategory';
 
 import { SetStateType, SelectValues } from 'helpers/types';
-import { AnalysisItemFilterTypes, FilteredValues, TypeMap } from './AnalysisItem/AnalysisItem.types';
+import { CheckFilterTypes, FilteredValues, TypeMap } from 'helpers/utils/checkUtil';
 import { getNameFromData } from './AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
+import { CheckTypeOptions } from 'helpers/types/check';
 
 interface SelectCheckProps {
   monitor: MonitorSchema | null;
@@ -26,8 +27,12 @@ interface SelectCheckProps {
   setFilteredValues: SetStateType<FilteredValues>;
   resConf: string | undefined;
   setResConf: SetStateType<string | undefined>;
+  setIsValidConfig: SetStateType<boolean>;
   disabled: boolean;
+  error?: boolean | undefined;
 }
+
+const PER_FEATURE = 'none';
 
 export const SelectCheckComponent = ({
   monitor,
@@ -38,12 +43,17 @@ export const SelectCheckComponent = ({
   setFilteredValues,
   resConf,
   setResConf,
-  disabled
+  setIsValidConfig,
+  disabled,
+  error
 }: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(
     monitor && !!monitor.check.id ? monitor.check.id : check ? +check : 0
   );
+  const type = useMemo(() => (checkInfo?.res_conf ? CheckTypeOptions.Class : (
+    checkInfo?.check_conf?.filter(val => val.type == 'feature').length ? CheckTypeOptions.Feature : null
+  )), [checkInfo]);
 
   const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id })), [checksList]);
 
@@ -51,36 +61,77 @@ export const SelectCheckComponent = ({
   const [isAgg, setIsAgg] = useState(true);
 
   useEffect(() => {
+    if (type !== CheckTypeOptions.Feature) {
+      setIsAgg(true);
+    } else if (filteredValues?.['aggregation method']?.[0]) {
+      setIsAgg(filteredValues?.['aggregation method']?.[0] != 'none');
+    } else {
+      setIsAgg(false);
+    }
+  }, [type, checkInfo]);
+
+  useEffect(() => {
     setCheckInfoDisabled(!checkInfo?.check_conf && !checkInfo?.res_conf);
   }, [checkInfo, setCheckInfoDisabled]);
 
+  const updateFilteredValue = (valueName: string | null, conf: MonitorTypeConf) => {
+    const confType = conf.type as CheckFilterTypes;
+    const value = (confType != CheckFilterTypes.AGGREGATION || valueName != PER_FEATURE) ? valueName : null;
+    const newFilteredValues: any = { ...filteredValues };
+    newFilteredValues[confType] = value ? [value] : null;
+    if (value) {
+      const confVal = conf.values?.filter(({ name }) => name == value)?.[0];
+      const isSetAgg = confVal && confVal.is_agg != null;
+      if (isSetAgg) {
+        setIsAgg(!!confVal.is_agg);
+        confVal.is_agg && setResConf(undefined);
+      }
+    } else if (confType == CheckFilterTypes.AGGREGATION) {
+      setIsAgg(false);
+    }
+    setFilteredValues(newFilteredValues);
+  };
+
   function getSelectedVal(conf: MonitorTypeConf) {
-    const filteredVals = filteredValues?.[conf.type as AnalysisItemFilterTypes];
+    const confType = conf.type as CheckFilterTypes;
+    const filteredVals = filteredValues?.[confType];
     let selectedVal = filteredVals === null ? null : filteredVals?.[0];
     if (selectedVal === undefined) {
-      const checkParamVal = monitor?.check.config?.params[TypeMap[conf.type as AnalysisItemFilterTypes]];
+      const checkParamVal = monitor?.check.config?.params[TypeMap[confType]];
       if (checkParamVal) {
         selectedVal = typeof checkParamVal == 'string' ? checkParamVal : (Object.values(checkParamVal)[0] as string);
       }
     }
-    return (selectedVal && getNameFromData(selectedVal, conf.values)) || '';
+    return (selectedVal && getNameFromData(selectedVal, conf.values)) ||
+      (confType == CheckFilterTypes.AGGREGATION ? PER_FEATURE : '');
   }
 
-  function clearFilteredValue(type: string) {
+  function clearFilteredValue(type: string, setAgg = false) {
     const newFilteredValues: any = { ...filteredValues };
-    newFilteredValues[type as AnalysisItemFilterTypes] = null;
+    newFilteredValues[type as CheckFilterTypes] = null;
     setFilteredValues(newFilteredValues);
     setResConf(undefined);
-    setIsAgg(type != AnalysisItemFilterTypes.AGGREGATION);
+    if (isAgg && setAgg) setIsAgg(type != CheckFilterTypes.AGGREGATION);
   }
 
   function isDisabled(conf: MonitorTypeConf) {
     return conf.is_agg_shown != null && conf.is_agg_shown != isAgg;
   }
 
+  useMemo(() => {
+    if (checkInfo === undefined || (type === CheckTypeOptions.Class && !filteredValues?.scorer?.[0])) {
+      setIsValidConfig(false);
+    }
+    else {
+      setIsValidConfig(isAgg || (!!filteredValues?.feature?.[0] || !!resConf));
+    }
+  }, [filteredValues?.feature?.[0], filteredValues?.scorer?.[0], resConf, isAgg, type]);
+
   return (
     <Stack>
       <ControlledMarkedSelect
+        required
+        error={error && !check}
         label="Check"
         values={checkSelectValues}
         value={check}
@@ -95,30 +146,21 @@ export const SelectCheckComponent = ({
               <MarkedSelect
                 label={`Select ${conf.type}`}
                 value={isDisabled(conf) ? '' : getSelectedVal(conf)}
-                onChange={e => {
-                  const value = e.target.value as string;
-                  const newFilteredValues: any = { ...filteredValues };
-                  newFilteredValues[conf.type as AnalysisItemFilterTypes] = value ? [value] : null;
-                  if (value) {
-                    const confVal = conf.values?.filter(({ name }) => name == value)?.[0];
-                    const isSetAgg = confVal && confVal.is_agg != null;
-                    if (isSetAgg) {
-                      setIsAgg(!!confVal.is_agg);
-                      confVal.is_agg && setResConf(undefined);
-                    }
-                  }
-                  setFilteredValues(newFilteredValues);
-                }}
-                clearValue={() => clearFilteredValue(conf.type)}
+                onChange={e => updateFilteredValue(e.target.value as string, conf)}
+                clearValue={() => clearFilteredValue(conf.type, true)}
                 fullWidth
                 disabled={(() => {
                   const isDisabledVal = isDisabled(conf);
-                  if (filteredValues?.[conf.type as AnalysisItemFilterTypes]?.[0] && isDisabledVal) {
+                  if (filteredValues?.[conf.type as CheckFilterTypes]?.[0] && isDisabledVal) {
                     clearFilteredValue(conf.type);
                   }
                   return isDisabledVal;
                 })()}
+                required={!isDisabled(conf)}
+                error={error && !isDisabled(conf) && !getSelectedVal(conf)}
               >
+                {(conf.type as CheckFilterTypes) == CheckFilterTypes.AGGREGATION &&
+                  <MenuItem value={PER_FEATURE}>Per feature</MenuItem>}
                 {conf.values?.map((value, index) => (
                   <MenuItem key={value.name + index + confIndex} value={value.name}>
                     {value.name}
@@ -131,7 +173,6 @@ export const SelectCheckComponent = ({
             <Subcategory>
               <MarkedSelect
                 label={`Select ${checkInfo?.res_conf.type}`}
-                value={resConf || undefined}
                 onChange={e => setResConf((e.target.value as string) || undefined)}
                 clearValue={() => setResConf(undefined)}
                 fullWidth
@@ -141,6 +182,9 @@ export const SelectCheckComponent = ({
                   }
                   return isAgg;
                 })()}
+                value={resConf || ''}
+                required={!isAgg}
+                error={error && !isAgg && !resConf}
               >
                 {checkInfo?.res_conf.values?.map((value, index) => (
                   <MenuItem key={value.name + index} value={value.name}>

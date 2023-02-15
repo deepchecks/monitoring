@@ -26,6 +26,7 @@ function MarkedSelectComponent({
   disabled,
   formHelper,
   width,
+  required,
   ...props
 }: MarkedSelectProps) {
   const handleClearClick = () => {
@@ -33,7 +34,7 @@ function MarkedSelectComponent({
   };
 
   return (
-    <FormControl fullWidth={fullWidth} disabled={disabled}>
+    <FormControl fullWidth={fullWidth} disabled={disabled} required={required}>
       <StyledInputLabel size={sizeMap[size]}>{label}</StyledInputLabel>
       <StyledSelect
         width={width}

@@ -4,7 +4,7 @@ import { SelectChangeEvent, MenuItem } from '@mui/material';
 
 import { StyledRoundedSelectContainer, StyledRoundedSelect, StyledMostWorstButton } from './AnalysisItemSelect.style';
 import { AnalysisItemSelectProps } from './AnalysisItemSelect.types';
-import { TypeMap } from 'components/AnalysisItem/AnalysisItem.types';
+import { TypeMap } from 'helpers/utils/checkUtil';
 
 const PER_FEATURE = 'none';
 

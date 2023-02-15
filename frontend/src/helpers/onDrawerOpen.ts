@@ -1,6 +1,6 @@
 import { CheckSchema, MonitorCheckConf, MonitorCheckConfSchema } from 'api/generated';
 import { CheckType, CheckTypeOptions } from './types/check';
-import { ReverseTypeMap } from 'components/AnalysisItem/AnalysisItem.types';
+import { unionCheckConf } from 'helpers/utils/checkUtil';
 
 export const onDrawerOpen = (
   datasetName: string,
@@ -18,33 +18,15 @@ export const onDrawerOpen = (
   setCurrentCheck: (arg: CheckSchema | null) => void,
   currentModel: any
 ) => {
-  function fixDict(obj: any, allowedKeys: any) {
-    const keyValues = Object.keys(obj).map(key => {
-      if (Object.values(allowedKeys).includes(key))
-        return { [key]: typeof obj[key] == 'string' ? [obj[key]] : obj[key] };
-      return {};
-    });
-    return Object.assign({}, ...keyValues);
-  }
 
-  function renameKeys(obj: any, newKeys: any) {
-    const keyValues = Object.keys(obj).map(key => {
-      const newKey = newKeys?.[key] || key;
-      return { [newKey]: obj[key] };
-    });
-    return Object.assign({}, ...keyValues);
-  }
-  const checkMegaConf = fixDict(
-    { ...renameKeys({ ...check.config.params }, ReverseTypeMap), ...additionalKwargs?.check_conf },
-    ReverseTypeMap
-  );
+  const checkMegaConf = unionCheckConf(check.config.params, additionalKwargs?.check_conf);
   if (checkMegaConf) {
     // if the info doesn't contains a selection of features there is no specific check type
     const type = checkInfo?.res_conf
       ? CheckTypeOptions.Class
       : checkInfo?.check_conf?.filter(val => val.type == 'feature').length
-      ? CheckTypeOptions.Feature
-      : null;
+        ? CheckTypeOptions.Feature
+        : null;
     setCurrentType(type);
 
     if (

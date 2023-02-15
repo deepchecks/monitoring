@@ -13,11 +13,9 @@ import DiagramLine from 'components/DiagramLine/DiagramLine';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { showDatasets } from './AnalysisItem.helpers';
+import { AnalysisItemProps, RunCheckBody, IDataset } from './AnalysisItem.types';
+import { CheckFilterTypes, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/mixPanel';
-
-import { AnalysisItemFilterTypes, IDataset } from './AnalysisItem.types';
-
-import { AnalysisItemProps, RunCheckBody, FilteredValues } from './AnalysisItem.types';
 
 dayjs.extend(localizedFormat);
 
@@ -69,7 +67,7 @@ function AnalysisItemComponent({
   const checkConf = useMemo(() => checkInfo?.check_conf, [checkInfo?.check_conf]);
 
   const ascending = useMemo(
-    () => checkConf && checkConf.find(e => e.type === AnalysisItemFilterTypes.AGGREGATION),
+    () => checkConf && checkConf.find(e => e.type === CheckFilterTypes.AGGREGATION),
     [checkConf]
   );
 

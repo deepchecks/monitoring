@@ -18,7 +18,7 @@ import {
 } from './AnalysisItemSelect.style';
 
 import { AnalysisItemSelectProps, MultiSelectValuesType } from './AnalysisItemSelect.types';
-import { AnalysisItemFilterTypes, TypeMap } from 'components/AnalysisItem/AnalysisItem.types';
+import { CheckFilterTypes, TypeMap } from 'helpers/utils/checkUtil';
 import { MonitorValueConf } from 'api/generated';
 
 const MAX_MENU_ITEM_TEXT_LENGTH = 21;
@@ -100,10 +100,10 @@ const MultiSelect = ({
     newFilteredValues[type] = multiValue;
 
     if (
-      !newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] ||
-      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION]?.[0] == 'none'
+      !newFilteredValues[CheckFilterTypes.AGGREGATION] ||
+      newFilteredValues[CheckFilterTypes.AGGREGATION]?.[0] == 'none'
     ) {
-      newFilteredValues[AnalysisItemFilterTypes.AGGREGATION] = null;
+      newFilteredValues[CheckFilterTypes.AGGREGATION] = null;
     }
 
     setFilteredValues(newFilteredValues);
@@ -168,7 +168,7 @@ const MultiSelect = ({
 
   return (
     <>
-      {type === AnalysisItemFilterTypes.SCORER && data && data.filter(val => !val.is_agg).length > 0 && (
+      {type === CheckFilterTypes.SCORER && data && data.filter(val => !val.is_agg).length > 0 && (
         <StyledMostWorstButton
           disabled={!(multiValue.length == 1 && multiValue[0].includes(' '))}
           title={'Only available if 1 scorer is selected and supports a per class metric'}

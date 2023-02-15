@@ -18,7 +18,7 @@ import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarked
 import { SelectCheck as Check } from 'components/SelectCheck';
 import { SelectColumn as Column } from 'components/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-import { FilteredValues } from 'components/AnalysisItem/AnalysisItem.types';
+import { FilteredValues } from 'helpers/utils/checkUtil';
 import { Subcategory } from 'components/Subcategory';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
 
@@ -27,6 +27,7 @@ import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './
 import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { timeValues } from 'helpers/time';
+import { unionCheckConf } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/mixPanel';
 
 interface MonitorFormProps extends StackProps {
@@ -54,6 +55,8 @@ export const MonitorForm = ({
     setGraphFrequency(frequency);
   }, [frequency, setGraphFrequency]);
 
+  const [isValidConfig, setIsValidConfig] = useState(true);
+  const [error, setError] = useState(false);
   const [monitorName, setMonitorName] = useState(monitor?.name || '');
   const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || '');
 
@@ -62,7 +65,7 @@ export const MonitorForm = ({
   const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
 
   const [filteredValues, setFilteredValues] = useState<FilteredValues>(
-    (monitor?.additional_kwargs?.check_conf as FilteredValues) || {}
+    (unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf) as FilteredValues) || {}
   );
   const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 
@@ -226,6 +229,7 @@ export const MonitorForm = ({
           value={monitorName}
           onChange={event => setMonitorName(event.target.value)}
           required={!monitor}
+          error={error && !monitorName}
         />
         <MarkedSelect
           label="Model"
@@ -255,7 +259,9 @@ export const MonitorForm = ({
           setFilteredValues={setFilteredValues}
           resConf={resConf}
           setResConf={setResConf}
+          setIsValidConfig={setIsValidConfig}
           disabled={!!monitor || !model}
+          error={error}
         />
         <StyledDivider />
         <Column
@@ -272,6 +278,8 @@ export const MonitorForm = ({
           <MarkedSelect
             label="Frequency"
             value={frequency}
+            required
+            error={error && !frequency}
             onChange={event => {
               setFrequency(event.target.value as number);
               !advanced && setAggregationWindow(event.target.value as number);
@@ -312,6 +320,8 @@ export const MonitorForm = ({
                 value={aggregationWindow}
                 setValue={setAggregationWindow}
                 clearValue={clearAggregationWindow}
+                required
+                error={error && !aggregationWindow}
                 fullWidth
               />
             </TooltipInputWrapper>
@@ -334,17 +344,25 @@ export const MonitorForm = ({
             value={lookBack}
             setValue={setLookBack}
             clearValue={clearLookBack}
+            required
+            error={error && !lookBack}
             fullWidth
           />
         </TooltipInputWrapper>
       </StyledFormContainer>
-      <StyledButton
-        onClick={handleMonitorSave}
-        disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack}
-        sx={{ margin: 'auto auto 20px auto' }}
+      <span
+        onMouseEnter={() => setError(true)}
+        onMouseLeave={() => setError(false)}
+        style={{ margin: 'auto' }}
       >
-        Save
-      </StyledButton>
+        <StyledButton
+          onClick={handleMonitorSave}
+          disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack || !isValidConfig}
+          sx={{ margin: 'auto auto 20px auto' }}
+        >
+          Save
+        </StyledButton>
+      </span>
       <ActiveAlertsModal
         open={activeAlertsModalOpen}
         setActiveAlertsModalOpen={setActiveAlertsModalOpen}
