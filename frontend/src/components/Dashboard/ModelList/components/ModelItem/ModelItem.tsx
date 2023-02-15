@@ -35,11 +35,11 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
 
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    navigate({ pathname: '/alerts', search: setParams('modelId', model.id, false)});
+    navigate({ pathname: '/alerts', search: setParams('modelId', model.id, false) });
   };
 
   const handleModelClick = () => {
-    reportEvent(events.clickedModelInModelList);
+    reportEvent(events.dashboardPage.clickedModelInModelList);
     onModelClick(model.id);
   };
 

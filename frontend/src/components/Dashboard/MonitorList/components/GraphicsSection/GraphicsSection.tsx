@@ -51,7 +51,7 @@ export function GraphicsSection({
 
   const handleOpenMonitor = (drawerName: DrawerNames) => {
     if (drawerName === DrawerNames.EditMonitor) {
-      reportEvent(events.clickedEditMonitor);
+      reportEvent(events.dashboardPage.clickedEditMonitor);
     }
 
     onOpenMonitorDrawer(drawerName, monitor);
@@ -59,7 +59,7 @@ export function GraphicsSection({
   };
 
   const handleOpenDeleteMonitor = () => {
-    reportEvent(events.clickedDeleteMonitor);
+    reportEvent(events.dashboardPage.clickedDeleteMonitor);
 
     onDeleteMonitor(monitor);
     setAnchorElRootMenu(null);

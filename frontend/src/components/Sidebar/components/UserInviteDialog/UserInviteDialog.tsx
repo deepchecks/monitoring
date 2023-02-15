@@ -80,7 +80,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
 
   const handleDeleteMember = (memberId: number, email: string) => {
     deleteMember({ memberId });
-    reportEvent(events.removeUser, {
+    reportEvent(events.authentication.removeUser, {
       'Removed user email': email
     });
   };
@@ -93,7 +93,7 @@ export const UserInviteDialog = ({ open, onClose }: PropsWithChildren<UserInvite
 
       createInviteApiV1OrganizationInvitePut(inviteSchema)
         .then(() => {
-          reportEvent(events.inviteUser, {
+          reportEvent(events.authentication.inviteUser, {
             'Invited user email': emailValue
           });
 

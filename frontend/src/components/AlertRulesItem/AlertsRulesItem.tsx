@@ -67,13 +67,13 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    reportEvent(events.clickedResolveAll);
+    reportEvent(events.alertsPage.clickedResolveAll);
     return onResolveOpen();
   };
 
   const handleEditRuleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    reportEvent(events.clickedEditRule);
+    reportEvent(events.alertRulesPage.clickedEditRule);
     return setEditedAlertRule(alertRule.id);
   };
 
@@ -83,7 +83,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
 
   const handleOpenDrawer = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    reportEvent(events.clickedAlertsRules);
+    reportEvent(events.sidebar.clickedAlertsRules);
     return onDrawerOpen();
   };
 

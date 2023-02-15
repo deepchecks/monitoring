@@ -68,7 +68,7 @@ export const MonitorDrawer = ({
   };
 
   const handleOnCloseDrawer = () => {
-    reportEvent(events.exitedEditMonitorWithoutSaving);
+    reportEvent(events.dashboardPage.exitedEditMonitorWithoutSaving);
     closeDrawer();
   };
 

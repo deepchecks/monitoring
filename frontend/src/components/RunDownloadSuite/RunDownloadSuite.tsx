@@ -61,7 +61,7 @@ export const RunDownloadSuite = ({
   };
 
   const handleRunTestSuite = async () => {
-    reportEvent(events.clickedRunTest);
+    reportEvent(events.alertsPage.clickedRunTest);
 
     if (modelVersionId) {
       const dataToSend: SingleCheckRunOptions = prepareData();

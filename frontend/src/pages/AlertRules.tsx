@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 
 import { getAlertFilters, resetAlertFilters } from '../context';
 
@@ -25,7 +25,9 @@ import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
 import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
 
 export const AlertRules = () => {
-  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams);
+  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
+    getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams
+  );
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editableAlertRuleId, setEditableAlertRuleId] = useState<AlertRuleConfigSchema['id'] | undefined>(undefined);
 
@@ -52,7 +54,7 @@ export const AlertRules = () => {
   };
 
   const onAlertRuleDelete = async (alertRule: AlertRuleConfigSchema) => {
-    reportEvent(events.clickedDeleteRule);
+    reportEvent(events.alertRulesPage.clickedDeleteRule);
 
     await deleteAlertRuleById({ alertRuleId: alertRule.id });
     refetchAlertRules();

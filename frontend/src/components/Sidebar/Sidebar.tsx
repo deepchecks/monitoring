@@ -32,7 +32,7 @@ export const Sidebar = () => {
   const style = useScrollBar(contentRef);
 
   const handleInviteToOrgClick = () => {
-    reportEvent(events.clickedInviteWorkspace);
+    reportEvent(events.sidebar.clickedInviteWorkspace);
 
     setUserInviteOpen(true);
   };

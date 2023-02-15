@@ -58,7 +58,7 @@ export const MonitorList = ({
     if (!currentMonitor) return;
 
     if (confirm) {
-      reportEvent(events.clickedConfirmDeletion);
+      reportEvent(events.dashboardPage.clickedConfirmDeletion);
 
       await DeleteMonitorById({ monitorId: currentMonitor.id });
 

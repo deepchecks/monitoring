@@ -40,7 +40,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
     }
     setCurrentTime(timeOptions[newTimeIndex].id);
 
-    reportEvent(events.changedTimerFilterProdData, {
+    reportEvent(events.dashboardPage.changedTimerFilterProdData, {
       'Filter value': newTimeValue
     });
   };

@@ -29,7 +29,7 @@ export const DiagramAlertCountWidget = ({
   ...props
 }: DiagramAlertCountWidgetProps) => {
   useEffect(() => {
-    reportEvent(events.navigationBetweenAlerts);
+    reportEvent(events.alertsPage.navigationBetweenAlerts);
   }, [alertIndex]);
 
   const isPrevDisabled = !alertIndex;

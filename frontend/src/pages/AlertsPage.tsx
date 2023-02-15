@@ -33,7 +33,9 @@ interface AlertsPageProps {
 }
 
 export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
-  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams);
+  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
+    getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams
+  );
 
   const [resolveAlertRule, setResolveAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
@@ -65,7 +67,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
       setIsNotification(true);
       setResolveAlertRule(null);
 
-      reportEvent(events.resolveAlerts);
+      reportEvent(events.alertsPage.resolveAlerts);
     },
     [reactivateAllAlerts, resolveAllAlerts, resolved]
   );
@@ -79,7 +81,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     <>
       <AlertsHeader resolved={resolved ? 1 : 0} />
       <Box>
-        <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters}/>
+        <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} />
         <StyledList>
           {alertRulesIsLoading ? (
             <Loader />

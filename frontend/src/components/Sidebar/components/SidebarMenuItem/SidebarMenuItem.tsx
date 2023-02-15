@@ -1,7 +1,6 @@
 import React, { memo, useState } from 'react';
 import { Link, LinkProps, useLocation, useNavigate } from 'react-router-dom';
 
-
 import { Box, styled, Typography } from '@mui/material';
 
 import { colors } from 'theme/colors';
@@ -44,27 +43,27 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
   const handleClick = (infoPath: string) => {
     switch (infoPath) {
       case '/dashboard':
-        reportEvent(events.clickedDashboard);
+        reportEvent(events.sidebar.clickedDashboard);
         break;
 
       case '/alerts':
-        reportEvent(events.clickedAlerts);
+        reportEvent(events.sidebar.clickedAlerts);
         break;
 
       case '/configuration/alert-rules':
-        reportEvent(events.clickedAlertsRules);
+        reportEvent(events.sidebar.clickedAlertsRules);
         break;
 
       case '/configuration/notifications':
-        reportEvent(events.clickedNotification);
+        reportEvent(events.sidebar.clickedNotification);
         break;
 
       case '/configuration/integrations':
-        reportEvent(events.clickedIntegrations);
+        reportEvent(events.sidebar.clickedIntegrations);
         break;
 
       case '/configuration/api-key':
-        reportEvent(events.clickedAPIKey);
+        reportEvent(events.sidebar.clickedAPIKey);
         break;
 
       default:
@@ -195,7 +194,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
       ) : (
         <StyledLinkWrapper
           onClick={e => goToLink(e, link)}
-          to='#'
+          to="#"
           active={active}
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}
@@ -211,7 +210,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
         info.children?.map(childInfo => (
           <StyledLinkWrapper
             onClick={e => goToLink(e, childInfo.link)}
-            to='#'
+            to="#"
             key={childInfo.link}
             active={location.pathname === childInfo.link}
             sx={{

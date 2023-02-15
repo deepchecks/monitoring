@@ -42,7 +42,7 @@ export function ConnectSlack() {
     isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
   const connectSlack = () => {
-    reportEvent(events.clickedSlackInstagramIntegration);
+    reportEvent(events.integrationsPage.clickedSlackInstagramIntegration);
 
     window.open(
       `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,

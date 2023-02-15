@@ -141,7 +141,7 @@ export const MonitorForm = ({
       }
 
       refetchMonitors();
-      reportEvent(events.savedSuccessfully, { 'Monitor name': data.name });
+      reportEvent(events.dashboardPage.savedSuccessfully, { 'Monitor name': data.name });
     }
 
     handleCloseDrawer();

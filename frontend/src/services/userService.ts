@@ -20,7 +20,7 @@ export const postCompleteDetails = async (completeDetails: completeDetailsProps)
     url: '/api/v1/users/complete-details'
   });
 
-  reportEvent(events.signup, {
+  reportEvent(events.authentication.signup, {
     'From invitation': false,
     'Org name': organization,
     'Full name': fullName
@@ -38,7 +38,7 @@ export const postCompleteDetailsAndAcceptInvite = async (completeDetails: comple
     url: '/api/v1/users/complete-details'
   });
 
-  reportEvent(events.signup, {
+  reportEvent(events.authentication.signup, {
     'From invitation': true,
     'Full name': fullName,
     'Accept Invite': acceptInvite

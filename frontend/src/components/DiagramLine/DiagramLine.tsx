@@ -69,7 +69,7 @@ function DiagramLine({
 
   const hideLine = useCallback(
     (item: LegendItem) => {
-      reportEvent(events.clickedGraphLegend);
+      reportEvent(events.analysisPage.clickedGraphLegend);
 
       if (currentChart && typeof item.datasetIndex === 'number') {
         const isDatasetVisible = currentChart.isDatasetVisible(item.datasetIndex);

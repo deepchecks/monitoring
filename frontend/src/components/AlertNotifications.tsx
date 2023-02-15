@@ -131,7 +131,7 @@ export function AlertNotifications() {
       return currentNotifications;
     });
 
-    reportEvent(events.changedNotification);
+    reportEvent(events.notificationPage.changedNotification);
   };
 
   useEffect(() => {
