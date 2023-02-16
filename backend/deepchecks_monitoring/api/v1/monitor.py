@@ -45,7 +45,7 @@ class MonitorCreationSchema(BaseModel):
     lookback: int = Field(ge=0)
     aggregation_window: int = Field(ge=0)
     frequency: int = Field(ge=0)
-    dashboard_id: t.Optional[int]
+    dashboard_id: t.Optional[int] = Field(nullable=True)
     description: t.Optional[str] = Field(max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList] = Field(nullable=True)
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = Field(nullable=True)
@@ -57,7 +57,7 @@ class MonitorSchema(BaseModel):
     id: int
     name: str = Field(max_length=field_length(Monitor.name))
     check: CheckSchema
-    dashboard_id: t.Optional[int]
+    dashboard_id: t.Optional[int] = Field(nullable=True)
     lookback: int
     aggregation_window: int
     description: t.Optional[str] = Field(default=None, max_length=field_length(Monitor.description))
@@ -79,7 +79,7 @@ class MonitorUpdateSchema(BaseModel):
     lookback: t.Optional[int]
     description: t.Optional[str] = Field(max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList] = Field(nullable=True)
-    dashboard_id: t.Optional[int]
+    dashboard_id: t.Optional[int] = Field(nullable=True)
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = Field(nullable=True)
     frequency: t.Optional[int]
     aggregation_window: t.Optional[int]

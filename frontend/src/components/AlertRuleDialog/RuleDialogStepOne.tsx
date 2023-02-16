@@ -37,12 +37,11 @@ export const AlertRuleDialogStepOne = ({ handleNext }: AlertRuleStepBaseProps) =
           <TextField
             sx={{ flex: '0 1 100%' }}
             required
-            label="Alert name"
+            label="Alert rule name"
             size="medium"
             value={name}
             onChange={event => setName(event.target.value)}
           />
-
           <SelectSeverity
             sx={{ flex: '0 1 100%' }}
             onChange={event => {

@@ -95,7 +95,7 @@ const MultiSelect = ({
       return;
     }
 
-    const newFilteredValues: any = { ...filteredValues };
+    const newFilteredValues = { ...filteredValues };
 
     newFilteredValues[type] = multiValue;
 
@@ -153,8 +153,7 @@ const MultiSelect = ({
     setMultiValue([]);
     setSavedMultiValue([]);
 
-    // need to be any to set as null
-    const newFilteredValues: any = { ...filteredValues };
+    const newFilteredValues = { ...filteredValues };
 
     newFilteredValues[type] = null;
     setFilteredValues(newFilteredValues);

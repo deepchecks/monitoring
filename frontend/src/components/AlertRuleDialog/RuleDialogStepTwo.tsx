@@ -1,4 +1,4 @@
-import { Box, Button, MenuItem, Stack } from '@mui/material';
+import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack } from '@mui/material';
 import { SelectCheck } from 'components/SelectCheck';
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { MarkedSelect } from 'components/MarkedSelect';
@@ -26,6 +26,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   );
   const [resConf, setResConf] = useState<string | undefined>(undefined);
 
+  const [dashboardId, setDashboardId] = useState<number | null>(monitor?.dashboard_id === undefined ? 1 : monitor?.dashboard_id);
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
 
@@ -49,6 +50,9 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   }, []);
 
   const additionalKwargs = useMemo(() => {
+    if (filteredValues.feature?.[0] && filteredValues['aggregation method'] === undefined) {
+      filteredValues['aggregation method'] = null;
+    }
     if (Object.keys(filteredValues).length) {
       const additionalKwargs = {
         check_conf: filteredValues,
@@ -65,6 +69,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       monitor.check.model_id = +model;
       monitor.check.id = +check;
       monitor.frequency = +frequency;
+      monitor.dashboard_id = dashboardId;
       monitor.aggregation_window = +aggregationWindow;
       (monitor.additional_kwargs = (additionalKwargs as MonitorCheckConfSchema) || undefined),
         (monitor.data_filters = buildFilters(column, category, numericValue) || undefined);
@@ -149,6 +154,16 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
             setCategory={setCategory}
             numericValue={numericValue}
             setNumericValue={setNumericValue}
+          />
+          <FormControlLabel
+            style={{ width: 'fit-content' }}
+            control={
+              <Checkbox
+                checked={dashboardId != undefined}
+                onChange={e => setDashboardId(e.target.checked ? 1 : null)}
+              />
+            }
+            label='Show in dashboard'
           />
         </Stack>
 

@@ -77,7 +77,7 @@ export const SelectCheckComponent = ({
   const updateFilteredValue = (valueName: string | null, conf: MonitorTypeConf) => {
     const confType = conf.type as CheckFilterTypes;
     const value = (confType != CheckFilterTypes.AGGREGATION || valueName != PER_FEATURE) ? valueName : null;
-    const newFilteredValues: any = { ...filteredValues };
+    const newFilteredValues = { ...filteredValues };
     newFilteredValues[confType] = value ? [value] : null;
     if (value) {
       const confVal = conf.values?.filter(({ name }) => name == value)?.[0];
@@ -107,7 +107,7 @@ export const SelectCheckComponent = ({
   }
 
   function clearFilteredValue(type: string, setAgg = false) {
-    const newFilteredValues: any = { ...filteredValues };
+    const newFilteredValues = { ...filteredValues };
     newFilteredValues[type as CheckFilterTypes] = null;
     setFilteredValues(newFilteredValues);
     setResConf(undefined);

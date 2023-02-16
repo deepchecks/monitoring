@@ -6,7 +6,7 @@ export enum CheckFilterTypes {
   SCORER = 'scorer'
 }
 
-export type FilteredValues = Record<CheckFilterTypes, string[]>;
+export type FilteredValues = Record<CheckFilterTypes, string[] | null | undefined>;
 
 export const TypeMap = {
   [CheckFilterTypes.AGGREGATION]: 'aggregation_method',
@@ -30,8 +30,12 @@ function renameKeys(obj: { [param: string]: unknown }, newKeys: { [param: string
 
 function fixDict(obj: { [param: string]: unknown }, allowedKeys: { [param: string]: unknown }) {
   const keyValues = Object.keys(obj).map(key => {
-    if (Object.values(allowedKeys).includes(key))
-      return { [key]: typeof obj[key] == 'string' ? [obj[key]] : Object.values(obj[key] as {[param: string]: unknown | string[]}) };
+    if (Object.values(allowedKeys).includes(key)) {
+      if (obj[key])
+        return { [key]: typeof obj[key] == 'string' ? [obj[key]] : Object.values(obj[key] as { [param: string]: unknown | string[] }) };
+      if (obj[key] === null)
+        return { [key]: null }
+    }
     return {};
   });
   return Object.assign({}, ...keyValues);

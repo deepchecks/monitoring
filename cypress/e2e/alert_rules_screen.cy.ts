@@ -114,7 +114,7 @@ describe("Alert Rules Screen", () => {
             
             if (details.name !== undefined) {
                 cy.wrap(form)
-                    .contains("label", "Alert name")
+                    .contains("label", "Alert rule name")
                     .should("exist")
                     .next()
                     .find("input")
@@ -212,7 +212,14 @@ describe("Alert Rules Screen", () => {
                     .then(findOption(monitorData.filterBy))
                     .click();
             }
-            
+            cy.wrap(form)
+                    .contains("label", "Select aggregation method")
+                    .next()
+                    .click();
+                cy.get("div[role=presentation]#menu- li")
+                    .should("contain", "mean")
+                    .then(findOption("mean"))
+                    .click();
             cy.get("@monitorDataSubmit").should("not.have.attr", "disabled");
 
             if (submit === true)

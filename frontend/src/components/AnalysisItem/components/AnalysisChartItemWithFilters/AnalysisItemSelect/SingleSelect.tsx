@@ -54,7 +54,7 @@ const SingleSelect = ({
   const clearSelectedValue = () => {
     setValue(PER_FEATURE);
 
-    const newFilteredValues: any = { ...filteredValues };
+    const newFilteredValues = { ...filteredValues };
 
     newFilteredValues[type] = null;
     setFilteredValues(newFilteredValues);

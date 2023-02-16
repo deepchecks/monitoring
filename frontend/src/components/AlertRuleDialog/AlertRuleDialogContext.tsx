@@ -40,7 +40,8 @@ const initialMonitor = {
         value: ''
       }
     ]
-  }
+  },
+  dashboard_id: 1
 } as MonitorSchema;
 
 export const AlertRuleDialogContext = createContext<AlertRuleContextValues>({

@@ -368,7 +368,7 @@ export interface MonitorUpdateSchema {
   lookback?: number;
   description?: string;
   data_filters?: MonitorUpdateSchemaDataFilters;
-  dashboard_id?: number;
+  dashboard_id?: number | null;
   additional_kwargs?: MonitorUpdateSchemaAdditionalKwargs;
   frequency?: number;
   aggregation_window?: number;
@@ -390,7 +390,7 @@ export interface MonitorSchema {
   id: number;
   name: string;
   check: CheckSchema;
-  dashboard_id?: number;
+  dashboard_id?: number | null;
   lookback: number;
   aggregation_window: number;
   description?: string;
@@ -439,7 +439,7 @@ export interface MonitorCreationSchema {
   lookback: number;
   aggregation_window: number;
   frequency: number;
-  dashboard_id?: number;
+  dashboard_id?: number | null;
   description?: string;
   data_filters?: MonitorCreationSchemaDataFilters;
   additional_kwargs?: MonitorCreationSchemaAdditionalKwargs;

@@ -31,7 +31,7 @@ export const DialogTopBar = ({ handleClose }: DialogTopBarProps) => {
           }}
           component="h1"
         >
-          {monitor?.name ? `Edit Alert Rule: ${monitor?.name}` : 'Create New Alert'}
+          {monitor?.name ? `Edit Alert Rule: ${monitor?.name}` : 'Create New Alert Rule'}
         </Typography>
         <IconButton
           sx={{

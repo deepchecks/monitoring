@@ -2,7 +2,7 @@ import React, { memo, useEffect, useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
+import { MonitorCheckConfSchema, useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
 import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
 import { ComparisonModeOptions } from 'context/analysis-context';
 import { useElementOnScreen } from 'hooks/useElementOnScreen';
@@ -111,7 +111,7 @@ function AnalysisItemComponent({
           runCheckBody.data.filter = { filters: activeFilters };
         }
 
-        runCheckBody.data.additional_kwargs = additionalKwargs;
+        runCheckBody.data.additional_kwargs = additionalKwargs as MonitorCheckConfSchema;
 
         response = await runCheck(runCheckBody);
       }
@@ -193,7 +193,7 @@ function AnalysisItemComponent({
   const handlePointClick = useCallback(
     (datasetName: string, versionName: string, timeLabel: number) => {
       if (onPointCLick) {
-        onPointCLick(datasetName, versionName, timeLabel, additionalKwargs, checkInfo, check);
+        onPointCLick(datasetName, versionName, timeLabel, additionalKwargs as MonitorCheckConfSchema, checkInfo, check);
         reportEvent(events.analysisPage.clickedPointOnTheGraph);
       }
     },
