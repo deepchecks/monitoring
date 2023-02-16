@@ -529,6 +529,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             'hour': 60 * 60,
             'day': 24 * 60 * 60,
             'week': 7 * 24 * 60 * 60,
+            'month': 30 * 24 * 60 * 60
         }
         if monitoring_frequency not in intervals:
             raise ValueError(f'monitoring_frequency must be one of {list(intervals.keys())}')
