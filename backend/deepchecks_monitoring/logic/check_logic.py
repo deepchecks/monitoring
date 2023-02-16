@@ -16,9 +16,8 @@ from numbers import Number
 
 import pandas as pd
 import pendulum as pdl
-from deepchecks import BaseCheck, CheckResult, SingleDatasetBaseCheck, TrainTestBaseCheck
+from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
-from deepchecks.tabular import Suite
 from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
                                                      regression_scorers_higher_is_better_dict,
                                                      regression_scorers_lower_is_better_dict)
@@ -191,52 +190,6 @@ class FilterWindowOptions(MonitorOptions):
     model_version_ids: t.Optional[t.Union[t.List[int], None]] = None
 
 
-def set_kwarg_filter(check_conf, model_config: MonitorCheckConfSchema):
-    """Filter the check_conf dictionary to only include the parameters that are relevant to the check type.
-
-    Parameters
-    ----------
-    check_conf : dict
-        The dictionary containing the check configuration.
-    model_config : MonitorCheckConfSchema
-        The model configuration.
-
-    """
-    for kwarg_type, kwarg_val in model_config.check_conf.items():
-        kwarg_type = CheckParameterTypeEnum(kwarg_type)
-        kwarg_name = kwarg_type.to_kwarg_name()
-        if kwarg_val is not None and kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
-            kwarg_val = kwarg_val[0]
-        if kwarg_type != CheckParameterTypeEnum.PROPERTY:
-            check_conf["params"][kwarg_name] = kwarg_val
-
-
-def init_check_by_kwargs(check: t.Union[Check, BaseCheck], additional_kwargs: MonitorCheckConfSchema) -> BaseCheck:
-    """Initialize a check with additional kwargs.
-
-    Parameters
-    ----------
-    check : Union[Check, BaseCheck]
-        The check to initialize.
-    additional_kwargs : MonitorCheckConfSchema
-        Additional kwargs to pass to the check.
-
-    Returns
-    -------
-    dp_check : BaseCheck
-        The initialized check.
-    """
-    if isinstance(check, Check):
-        check = check.initialize_check()
-    if additional_kwargs is not None:
-        check_conf = check.config()
-        set_kwarg_filter(check_conf, additional_kwargs)
-        # Manually set deepchecks to not do sampling on the data inside the checks
-        check_conf["params"]["n_samples"] = None
-        return BaseCheck.from_config(check_conf)
-    return check
-
-
 def _metric_name_pretify(metric_name: str) -> str:
     return str.title(metric_name.replace("_", " "))
 
@@ -334,10 +287,6 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
-
-    if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
-        raise ValueError("incompatible check type")
 
     all_windows = monitor_options.calculate_windows()[-30:]
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
@@ -381,7 +330,7 @@ async def run_check_per_window_in_range(
             else:
                 curr_test_info["data"] = pd.DataFrame()
         # Query reference if the check use it, and there are results not from cache
-        if isinstance(dp_check, TrainTestBaseCheck) and any(("query" in x for x in test_info)):
+        if check.is_reference_required and any(("query" in x for x in test_info)):
             reference_table = model_version.get_reference_table(session)
             reference_query = create_model_version_select_object(reference_table, top_feat + model_columns,
                                                                  check.is_label_required)
@@ -401,7 +350,7 @@ async def run_check_per_window_in_range(
     check_results = get_results_for_model_versions_per_window(model_version_dataframes,
                                                               model_versions,
                                                               model,
-                                                              dp_check,
+                                                              check,
                                                               monitor_options.additional_kwargs)
 
     # Reduce the check results
@@ -461,17 +410,7 @@ async def run_suite_per_window_in_range(
         raise ValueError(f"Checks {check_ids} belong to different models")
     model_id = checks[0].model_id
 
-    dp_checks = []
-    uses_reference_data = False
-    for check in checks:
-        dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
-        # HACK to connect between the check to check id
-        dp_check.check_id = check.id
-        if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
-            raise ValueError(f"incompatible check type {type(dp_check)}")
-        uses_reference_data |= isinstance(dp_check, TrainTestBaseCheck)
-        dp_checks.append(dp_check)
-    suite = Suite("", *dp_checks)
+    uses_reference_data = any((check.is_reference_required for check in checks))
 
     all_windows = monitor_options.calculate_windows()[-30:]
     aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
@@ -528,7 +467,7 @@ async def run_suite_per_window_in_range(
     windows_results = get_results_for_model_versions_per_window(model_version_dataframes,
                                                                 model_versions,
                                                                 model,
-                                                                suite,
+                                                                checks,
                                                                 monitor_options.additional_kwargs)
 
     all_checks_results = {}
@@ -546,6 +485,8 @@ async def run_suite_per_window_in_range(
                         result_value = reduce_check_result(check_result, monitor_options.additional_kwargs)
                     else:
                         result_value = None
+                    # HACK: check_id is assigned manually in `get_results_for_model_versions_per_window` in order to
+                    # reserve the relation between the dp check and the check entity
                     all_checks_results[check_result.check.check_id]["output"][model_version.name].append(result_value)
             else:
                 for check in checks:
@@ -593,15 +534,12 @@ async def run_check_window(
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
-    # get the relevant objects from the db
-    dp_check = init_check_by_kwargs(check, monitor_options.additional_kwargs)
-
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
 
-    is_train_test_check = isinstance(dp_check, TrainTestBaseCheck)
+    is_train_test_check = check.is_reference_required
     if reference_only and is_train_test_check:
         raise BadRequest("Running a check on reference data only relevant "
-                         f"for single dataset checks, received {type(dp_check)}")
+                         f"for single dataset checks, received {check.name}")
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
@@ -629,7 +567,7 @@ async def run_check_window(
             model_version_dataframes,
             model_versions,
             model,
-            dp_check,
+            check,
             monitor_options.additional_kwargs,
             with_display
         )
@@ -638,7 +576,7 @@ async def run_check_window(
             model_version_dataframes,
             model_versions,
             model,
-            dp_check,
+            check,
             monitor_options.additional_kwargs,
         )
 

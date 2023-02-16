@@ -37,6 +37,7 @@ class Check(Base):
     name = Column(String(50))
     config = Column(JSONB)
     is_label_required = Column(Boolean, nullable=False)
+    is_reference_required = Column(Boolean, nullable=False)
 
     model_id = Column(
         Integer,
@@ -58,19 +59,11 @@ class Check(Base):
 
     @property
     def docs_link(self) -> t.Optional[str]:
-        check = self.initialize_check()
+        # We need to init the check since the module in the config is shortened and does not include check_type
+        check = BaseCheck.from_config(self.config)
         package_module, data_type, checks_submodule, check_type, check_name = \
             check.__module__.split(".")  # pylint: disable=unused-variable
         # for future custom checks
         if package_module != "deepchecks":
             return None
         return _DOCS_LINK_FORMAT.format(data_type=data_type, check_type=check_type, check_name=check_name)
-
-    def initialize_check(self):
-        """Initialize an instance of Deepchecks' check.
-
-        Returns
-        -------
-        Deepchecks' check.
-        """
-        return BaseCheck.from_config(self.config)

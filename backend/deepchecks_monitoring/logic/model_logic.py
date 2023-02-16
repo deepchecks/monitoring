@@ -25,7 +25,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
 
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
-from deepchecks_monitoring.schema_models import Model, ModelVersion
+from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                              SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
 
@@ -117,11 +117,6 @@ def dataframe_to_dataset_and_pred(
     return dataset, y_pred, y_proba
 
 
-def _batch_collate(batch):
-    imgs, labels = zip(*batch)
-    return list(imgs), list(labels)
-
-
 def get_top_features_or_from_conf(model_version: ModelVersion,
                                   additional_kwargs: MonitorCheckConfSchema,
                                   n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
@@ -140,11 +135,34 @@ def get_top_features_or_from_conf(model_version: ModelVersion,
     return model_version.get_top_features(n_top)
 
 
+def initialize_check(check: Check, model_version, additional_kwargs=None) -> BaseCheck:
+    """Initialize an instance of Deepchecks' check. also filter the extra parameters to only include the parameters \
+    that are relevant to the check type.
+
+    Returns
+    -------
+    Deepchecks' check.
+    """
+    new_config = check.config.copy()
+    extra_kwargs = additional_kwargs.check_conf if additional_kwargs is not None else {}
+    for kwarg_type, kwarg_val in extra_kwargs.items():
+        kwarg_type = CheckParameterTypeEnum(kwarg_type)
+        kwarg_name = kwarg_type.to_kwarg_name()
+        if kwarg_val is not None and kwarg_type == CheckParameterTypeEnum.AGGREGATION_METHOD:
+            kwarg_val = kwarg_val[0]
+        if kwarg_type != CheckParameterTypeEnum.PROPERTY:
+            new_config['params'][kwarg_name] = kwarg_val
+
+    new_config['params']['n_samples'] = None
+    new_config['params']['balance_classes'] = model_version.balance_classes
+    return BaseCheck.from_config(new_config)
+
+
 def get_results_for_model_versions_per_window(
         model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
         model_versions: t.List[ModelVersion],
         model: Model,
-        dp_check: t.Union[BaseCheck, Suite],
+        check: t.Union[Check, t.List[Check]],
         additional_kwargs: MonitorCheckConfSchema,
         with_display: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
@@ -153,10 +171,22 @@ def get_results_for_model_versions_per_window(
 
     jobs = []
     model_results = {}
+    need_ref = check.is_reference_required if isinstance(check, Check) else \
+        any((c.is_reference_required for c in check))
+
     for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
         # If this is a train test check then we require reference data in order to run
-        missing_reference = isinstance(dp_check, tabular_base_checks.TrainTestCheck) and \
-                            (reference_table_dataframe is None or reference_table_dataframe.empty)
+        missing_reference = need_ref and (reference_table_dataframe is None or reference_table_dataframe.empty)
+
+        if isinstance(check, Check):
+            dp_check = initialize_check(check, model_version, additional_kwargs)
+        else:
+            all_checks = []
+            for c in check:
+                init_check = initialize_check(c, model_version, additional_kwargs)
+                init_check.check_id = c.id
+                all_checks.append(init_check)
+            dp_check = Suite('', *all_checks)
 
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
             reference_table_dataframe, model_version, model, top_feat)

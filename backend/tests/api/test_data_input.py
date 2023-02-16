@@ -251,6 +251,40 @@ def test_send_reference_features_and_labels(
     )
 
 
+def test_send_reference_balance_classes(
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
+    # Assert balance classes on model version is false at start
+    model_version = test_api.fetch_model_version(classification_model_version["id"])
+    assert model_version["balance_classes"] is False
+    # First upload single label
+    test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[{
+            "_dc_label": "2",
+            "a": 11.1,
+            "b": "ppppp",
+            "_dc_prediction": "1",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
+        }] * 100
+    )
+    # Upload reference with different labels
+    test_api.upload_reference(
+        model_version_id=classification_model_version["id"],
+        data=[{
+            "_dc_label": "0",
+            "a": 11.1,
+            "b": "ppppp",
+            "_dc_prediction": "1",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
+        }]
+    )
+    # Assert balance classes on model version was updated
+    model_version = test_api.fetch_model_version(classification_model_version["id"])
+    assert model_version["balance_classes"] is True
+
+
 def test_send_reference_features_and_additional_data(
     test_api: TestAPI,
     classification_model_version: Payload

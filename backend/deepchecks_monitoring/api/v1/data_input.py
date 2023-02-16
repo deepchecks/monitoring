@@ -30,6 +30,7 @@ from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
@@ -168,6 +169,14 @@ async def save_reference(
     # trim received data to ensure the limit of 100_000 records
     if (len(items) + n_of_samples) > max_samples:
         items = items[:max_samples - n_of_samples]
+
+    # calculate balance_classes and set on model version
+    existing_labels = (await session.execute(select(ref_table.c[SAMPLE_LABEL_COL]))).scalars().all()
+    new_labels = pd.Series([x.get(SAMPLE_LABEL_COL) for x in items])
+    all_labels = pd.concat([new_labels, pd.Series(existing_labels)], axis=0)
+    label_counts = all_labels.dropna().value_counts(normalize=True)
+    # Only for binary now
+    model_version.balance_classes = label_counts.shape[0] == 2 and label_counts.iloc[0] >= 0.95
 
     await session.execute(ref_table.insert(), items)
     return Response(status_code=status.HTTP_200_OK)

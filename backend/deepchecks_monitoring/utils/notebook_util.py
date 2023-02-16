@@ -20,8 +20,8 @@ from nbformat.v4.nbbase import new_code_cell, new_notebook
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
-from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, init_check_by_kwargs
-from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
+from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema
+from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range, initialize_check
 from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.schema_models import Check
 
@@ -78,14 +78,7 @@ async def get_check_notebook(
 
     model_version = model_versions[0]
 
-    dp_check = check.initialize_check()
-
-    if not isinstance(dp_check, (tabular_base_checks.SingleDatasetCheck, tabular_base_checks.TrainTestCheck)):
-        raise BadRequest('Unsupported check type specified. Only tabular checks are supported.')
-
-    if notebook_options.additional_kwargs is not None:
-        dp_check = init_check_by_kwargs(check, notebook_options.additional_kwargs)
-
+    dp_check = initialize_check(check, model_version, notebook_options.additional_kwargs)
     check_config = dp_check.config(include_version=False, include_defaults=False)
 
     filters = str(notebook_options.filter.filters).replace('), ',

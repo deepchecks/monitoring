@@ -17,7 +17,7 @@ import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
 from pydantic.main import BaseModel
-from sqlalchemy import (ARRAY, BigInteger, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
+from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, MetaData, String, Table,
                         UniqueConstraint, func, select, update)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,6 +88,7 @@ class ModelVersion(Base):
     ingestion_offset = Column(BigInteger, default=-1)
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
     topic_end_offset = Column(BigInteger, default=-1)
+    balance_classes = Column(Boolean, nullable=False, default=False)
 
     model_id = Column(
         Integer,

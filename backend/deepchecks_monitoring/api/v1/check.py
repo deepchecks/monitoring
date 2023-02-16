@@ -15,7 +15,7 @@ from deepchecks import SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import (ReduceFeatureMixin, ReduceLabelMixin, ReduceMetricClassMixin,
                                             ReducePropertyMixin)
-from deepchecks.tabular.checks import SingleDatasetPerformance, TrainTestPerformance
+from deepchecks.tabular.checks import TrainTestPerformance
 from fastapi import Query
 from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
@@ -31,9 +31,9 @@ from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
                                                      SingleCheckRunOptions, complete_sessions_for_check,
                                                      get_feature_property_info, get_metric_class_info,
-                                                     init_check_by_kwargs, load_data_for_check, reduce_check_result,
-                                                     reduce_check_window, run_check_per_window_in_range,
-                                                     run_check_window, run_suite_per_window_in_range)
+                                                     load_data_for_check, reduce_check_result, reduce_check_window,
+                                                     run_check_per_window_in_range, run_check_window,
+                                                     run_suite_per_window_in_range)
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
@@ -151,13 +151,14 @@ async def add_checks(
     for check_creation_schema in checks:
         if check_creation_schema.name in existing_check_names:
             raise BadRequest(f'Model already contains a check named {check_creation_schema.name}')
-        is_vision_check = str(check_creation_schema.config['module_name']).startswith('deepchecks.vision')
-        if is_vision_check:
+        is_tabular = str(check_creation_schema.config['module_name']).startswith('deepchecks.tabular')
+        if not is_tabular:
             raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
         dp_check = BaseCheck.from_config(check_creation_schema.config)
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
             raise ValueError('incompatible check type')
         check_object = Check(model_id=model.id, is_label_required=isinstance(dp_check, ReduceLabelMixin),
+                             is_reference_required=isinstance(dp_check, TrainTestBaseCheck),
                              **check_creation_schema.dict(exclude_none=True))
         check_entities.append(check_object)
         session.add(check_object)
@@ -575,15 +576,15 @@ async def run_check_group_by_feature(
                 'count': curr_bin['count']
             })
 
-    # init check
-    check_to_run = init_check_by_kwargs(check, monitor_options.additional_kwargs)
     # Ugly hack to show different display instead of the one of single dataset performance
-    if isinstance(check_to_run, SingleDatasetPerformance):
-        check_for_display = init_check_by_kwargs(TrainTestPerformance(), monitor_options.additional_kwargs)
+    if check.config['class_name'] == 'SingleDatasetPerformance':
+        check_for_display = Check(config=TrainTestPerformance().config(), is_reference_required=True,
+                                  is_label_required=True)
+        load_reference = True
     else:
-        check_for_display = check_to_run
+        check_for_display = None
+        load_reference = check.is_reference_required
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
-    load_reference = isinstance(check_to_run, (TrainTestBaseCheck, SingleDatasetPerformance))
 
     for f in filters:
         test_session, ref_session = load_data_for_check(model_version, session, top_feat,
@@ -595,8 +596,8 @@ async def run_check_group_by_feature(
         model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
-            model_version_dataframes, [model_version], model_version.model, check_to_run,
-            monitor_options.additional_kwargs, with_display=check_for_display == check_to_run)
+            model_version_dataframes, [model_version], model_version.model, check,
+            monitor_options.additional_kwargs, with_display=check_for_display is None)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
         if result['result'] is not None:
@@ -607,7 +608,7 @@ async def run_check_group_by_feature(
             f['value'] = None
             f['display'] = []
 
-        if check_for_display != check_to_run:
+        if check_for_display is not None:
             model_results_per_window = get_results_for_model_versions_per_window(
                 model_version_dataframes, [model_version], model_version.model, check_for_display,
                 monitor_options.additional_kwargs, with_display=True)

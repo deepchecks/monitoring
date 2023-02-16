@@ -305,6 +305,7 @@ class ModelVersionSchema(BaseModel):
     statistics: t.Optional[t.Dict[str, t.Any]]
     classes: t.Optional[t.List[str]]
     label_map: t.Optional[t.Dict[int, str]]
+    balance_classes: bool
 
     class Config:
         """Schema config."""
