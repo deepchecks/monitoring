@@ -616,11 +616,21 @@ class DeepchecksModelClient:
         if check_id is None:
             raise ValueError(f'Check(id:{check_id}) does not exist')
 
+        if lookback is None:
+            if frequency >= 86400 * 30:
+                lookback = 86400 * 365  # 1 year
+            elif frequency >= 86400 * 7:
+                lookback = 86400 * 90  # 3 months
+            elif frequency >= 86400:
+                lookback = 86400 * 30  # 1 month
+            else:
+                lookback = 86400 * 7  # 1 week
+
         monitor = self.api.create_monitor(
             check_id=check_id,
             monitor={
                 'name': name if name is not None else f'{check_name} Monitor',
-                'lookback': (86400*7 if frequency <= 86400 else 86400*30) if lookback is None else lookback,
+                'lookback': lookback,
                 'frequency': frequency,
                 'aggregation_window': frequency if aggregation_window is None else aggregation_window,
                 'dashboard_id': dashboard_id,

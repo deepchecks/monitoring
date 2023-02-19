@@ -282,13 +282,14 @@ async def get_model_auto_frequency(
     options = [
         {'frequency': 3600 * 24, 'days': 30},
         {'frequency': 3600, 'days': 3},
-        {'frequency': 3600 * 24 * 7, 'days': 90}
+        {'frequency': 3600 * 24 * 7, 'days': 90},
+        {'frequency': 3600 * 24 * 30, 'days': 365}
     ]
     for option in options:
         num_windows = int(option['days'] * 24 * 3600 / option['frequency'])
         # Convert timestamps to windows and count number of unique windows
         num_windows_exists = len(set((floor_window_for_time(x, option['frequency']) for x in timestamps
-                                      if x >= end_time.subtract(days=option['frequency']))))
+                                      if x >= end_time.subtract(days=option['days']))))
         option['percent_windows_exists'] = num_windows_exists / num_windows
         # Return the first option that has at least 80% of the windows
         if option['percent_windows_exists'] >= 0.8:
