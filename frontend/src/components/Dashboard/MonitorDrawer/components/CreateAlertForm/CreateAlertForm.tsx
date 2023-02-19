@@ -16,6 +16,7 @@ import { MarkedSelect } from 'components/MarkedSelect';
 import { SelectCondition } from './SelectCondition';
 
 import { checkInfoInitValue, monitorInfo } from './CreateAlertForm.helpers';
+import { colors } from 'theme/colors';
 
 interface EditMonitorProps {
   monitor: MonitorSchema;
@@ -86,7 +87,7 @@ export function CreateAlertForm({ monitor, onClose, runCheckLookBack, setMonitor
       <Box sx={{ height: 'calc(100% - 100px)', overflowY: 'auto' }}>
         <Stack spacing="15px">
           {monitorInfo(monitor, currentModel.name).map(({ label, value }) => (
-            <Typography variant="subtitle2" key={label} sx={{ color: theme => theme.palette.text.disabled }}>
+            <Typography variant="subtitle2" key={label} sx={{ color: colors.neutral.darkText }}>
               {label}: {value}
             </Typography>
           ))}
