@@ -16,6 +16,7 @@ import { AlertsDrawerHeader } from './components/AlertsDrawerHeader';
 import { CustomDrawer } from '../CustomDrawer';
 import { AlertsDrillDownToAnalysis } from './components/AlertsDrillDownToAnalysis';
 import { AlertsDrawerDiagram } from './components/AlertsDrawerDiagram';
+import { unionCheckConf } from 'helpers/utils/checkUtil';
 
 interface AlertsDrawerProps extends DrawerProps {
   alertRule: AlertRuleInfoSchema | null;
@@ -70,7 +71,11 @@ const AlertsDrawerComponent = ({ onClose, alertRule, resolved, ...props }: Alert
     () => ({
       start_time: alert?.start_time,
       end_time: alert?.end_time,
-      filter: monitor?.data_filters || { filters: [] }
+      filter: monitor?.data_filters || { filters: [] },
+      additional_kwargs: {
+        check_conf: unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf),
+        res_conf: monitor?.additional_kwargs?.res_conf
+      }
     }),
     [alert?.end_time, alert?.start_time, monitor?.data_filters]
   );
