@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-name: FE Tests
+name: Deploy StoryBook
 
 on:
   push:
@@ -18,24 +18,24 @@ on:
     branches: [main]
 
 jobs:
-  Jest-TSC-ESLint:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Run Linter
+      - name: Checkout
+        uses: actions/checkout@v2.3.1
+        with:
+          persist-credentials: false
+      - name: Install and Build
         run: |
-          npm install 
-          npm run lint
+          npm install
+          npm run build-storybook
         working-directory: ./frontend
-
-      - name: Run TS Checker
-        run: |
-          npm install 
-          npm run tsc
-        working-directory: ./frontend
-
-      - name: Run Tests
-        run: |
-          npm install 
-          npm test
-        working-directory: ./frontend
+      - name: Deploy
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@3.6.2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: frontend/storybook-static
+          CLEAN: true
+          TARGET_FOLDER: docs

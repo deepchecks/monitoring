@@ -2,6 +2,7 @@
   "name": "deepchecks-mon",
   "version": "0.1.0",
   "private": true,
+  "homepage": "http://deepchecks.github.io/mon",
   "dependencies": {
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
@@ -58,7 +59,9 @@
     "tsc": "node_modules/typescript/bin/tsc",
     "precommit": "lint-staged",
     "storybook": "start-storybook -p 6006 -s public",
-    "build-storybook": "build-storybook -s public"
+    "predeploy": "npm run build-storybook",
+    "deploy-storybook": "gh-pages -d storybook-static",
+    "build-storybook": "build-storybook"
   },
   "eslintConfig": {
     "extends": [
@@ -129,6 +132,7 @@
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-storybook": "^0.6.10",
+    "gh-pages": "^5.0.0",
     "husky": "^8.0.0",
     "license-checker": "^25.0.1",
     "lint-staged": "^13.1.1",
