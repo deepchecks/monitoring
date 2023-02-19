@@ -48,7 +48,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   return (
     <StyledContainer>
       <StyledHeader>
-        <StyledTitle>Prediction Data Status</StyledTitle>
+        <StyledTitle>Samples status</StyledTitle>
         <StyledSelect value={currentTime.value.toString()} onChange={e => handleTime(e.target.value)} size="small">
           {timeOptions.map(({ label, value }) => (
             <MenuItem value={value.toString()} key={label}>
