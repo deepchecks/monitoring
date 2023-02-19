@@ -33,6 +33,7 @@ import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButt
 import { colors } from 'theme/colors';
 
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
+import useModels from '../hooks/useModels';
 import { getParams, setParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/mixPanel';
 
@@ -56,6 +57,7 @@ const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVaria
 
 export const ModelsPage = () => {
   const { data: models, isLoading, refetch: refetchModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const { refetchModels: refetchAvailableModels } = useModels();
   const [modelsList, setModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
   const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ConnectedModelSchema[] | undefined>(
     models
@@ -147,6 +149,7 @@ export const ModelsPage = () => {
     if (modelIdToDelete) {
       await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
       await refetchModels();
+      await refetchAvailableModels();
       handleModalClose();
       reportEvent(events.modelsPage.clickedDeleteModel);
     }

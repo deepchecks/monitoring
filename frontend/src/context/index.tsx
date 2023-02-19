@@ -1,6 +1,8 @@
+import { useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
 import { PathInfo, pathsInfo as paths } from 'helpers/helper';
 import React, { createContext, FC, useContext } from 'react';
 import { useFlags } from 'launchdarkly-react-client-sdk';
+import { ModelsManagement } from 'hooks/useModels';
 import { setParams } from 'helpers/utils/getParams';
 
 export interface IContext {
@@ -10,12 +12,20 @@ export interface IContext {
   currMonitor?: null;
   isLoggedIn: boolean;
   pathsInfo: PathInfo[];
+  modelsManagement: ModelsManagement;
 }
+
+const initialModelsManagement: ModelsManagement = {
+  models: [],
+  isLoading: false,
+  refetch: () => 1
+};
 
 const initialValue: IContext = {
   dashboard_id: 1,
   isLoggedIn: false,
-  pathsInfo: []
+  pathsInfo: [],
+  modelsManagement: initialModelsManagement
 };
 
 export function getAlertFilters() {
@@ -23,14 +33,14 @@ export function getAlertFilters() {
   const params = Object.fromEntries(urlSearchParams.entries());
   const modelId = +params?.modelId;
   const severity = params?.severity;
-  const alertFilters = {models: [] as number[], severity: [] as string[]}
-  if (severity) alertFilters['severity'] = [severity]
-  if (modelId) alertFilters['models'] = [modelId]
+  const alertFilters = { models: [] as number[], severity: [] as string[] };
+  if (severity) alertFilters['severity'] = [severity];
+  if (modelId) alertFilters['models'] = [modelId];
   return alertFilters;
-};
+}
 
 export function resetAlertFilters(setAlertFilters: any) {
-  setAlertFilters({models: [], severity: []});
+  setAlertFilters({ models: [], severity: [] });
   setParams('modelId');
   setParams('severity');
 }
@@ -38,6 +48,18 @@ export function resetAlertFilters(setAlertFilters: any) {
 export const GlobalStateContext = createContext<IContext>(initialValue);
 
 export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => {
+  const retrieveModelsResponse = useRetrieveAvailableModelsApiV1AvailableModelsGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
+
+  const modelsManagement: ModelsManagement = {
+    models: retrieveModelsResponse.data || [],
+    isLoading: retrieveModelsResponse.isLoading,
+    refetch: retrieveModelsResponse.refetch
+  };
+
   const flags = useFlags();
 
   let pathsInfo = paths;
@@ -49,7 +71,8 @@ export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children })
     <GlobalStateContext.Provider
       value={{
         ...initialValue,
-        pathsInfo
+        pathsInfo,
+        modelsManagement
       }}
     >
       {children}
