@@ -55,11 +55,16 @@ const AnalysisGroupByComponent = ({
       if (propValuesAreNotNull && frequency) {
         setGlobalLoading(true);
 
-        const { features } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
+        const { features, feature_importance } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
           modelVersionId
         )) as FeaturesResponse;
 
-        let featuresNames = Object.keys(features);
+        let featuresNames;
+        if (feature_importance != null && feature_importance.length > 0) {
+          featuresNames = Object.keys(feature_importance).sort((a, b) => feature_importance[b] - feature_importance[a]);
+        } else {
+          featuresNames = Object.keys(features).sort();
+        }
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
