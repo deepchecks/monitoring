@@ -35,7 +35,10 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
   const location = useLocation();
 
   const linkToAlerts = () => {
-    navigate({ pathname: '/alerts', search: setParams('severity', severity, false) }, { replace: location.pathname === '/alerts' });
+    navigate(
+      { pathname: '/alerts', search: setParams('severity', severity, false) },
+      { replace: location.pathname === '/alerts' }
+    );
   };
 
   const { color, Icon } = useMemo(() => {
@@ -76,7 +79,7 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
       </StyledIcon>
       <Stack direction="row">
         <StyledCount color={color}>{count}&nbsp;</StyledCount>
-        {showText && (<StyledSeverity color={color}>{severity}</StyledSeverity>)}
+        {showText && <StyledSeverity color={color}>{severity}</StyledSeverity>}
       </Stack>
     </StyledContainer>
   );
@@ -84,11 +87,9 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
 
 const StyledContainer = styled(Stack)({
   flexDirection: 'row',
-  width: '78px',
   height: '20px',
   cursor: 'pointer',
   transition: 'opacity 0.3s ease',
-  marginLeft: '5px',
 
   ':hover': {
     opacity: 0.5
