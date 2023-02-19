@@ -239,6 +239,7 @@ function AnalysisItemComponent({
             isLoading={loading}
             comparison={isComparisonModeOn}
             onPointCLick={handlePointClick}
+            timeFreq={frequency}
             analysis
             previousPeriodLabels={perviousPeriodLabels}
             height={{ lg: graphHeight - 104, xl: graphHeight }}
