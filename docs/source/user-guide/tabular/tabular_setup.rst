@@ -138,6 +138,7 @@ An example of creating a model version (for a regression model, so ``model_class
     >>> model_version = model.version('v1', schema=schema, feature_importance=feature_importance)
     Model version v1 was successfully created.
 
+.. _tabular_setup__schema_file:
 Schema File
 -----------
 

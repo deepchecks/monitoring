@@ -27,3 +27,13 @@ Tabular
     tabular/auto_quickstarts/index
     tabular/tabular_setup.rst
     tabular/tabular_production.rst
+
+Examples
+--------
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Examples
+
+    auto_examples/index
+

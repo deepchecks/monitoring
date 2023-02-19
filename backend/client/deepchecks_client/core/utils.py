@@ -126,7 +126,7 @@ class DataFilter(TypedDict):
     Data filter to filter out values smaller or equal to 5 on the column 'feature1'
 
     >>> from deepchecks_client import DataFilter, OperatorsEnum
-    >>> filter = DataFilter('feature1', OperatorsEnum.GE, 5)
+    >>> filter = DataFilter(column='feature1', operator=OperatorsEnum.GE, value=5)
 
     """
     column: str

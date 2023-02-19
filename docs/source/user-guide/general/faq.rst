@@ -85,7 +85,7 @@ Supported Use-Cases & Terminology
       extra information regarding the sample which is not used by the model, for example the data source the sample
       originated from.
     * For tabular data, additional data columns can be explicitly defined within the model schema
-      (see :doc:`tabular setup guide </user-guide/tabular/tabular_setup#schema-file`).
+      (see :ref:`tabular setup guide <tabular_setup__schema_file>`).
     * Both data and additional data are used by deepchecks monitoring and it is recommended to provide them both for
       maximal value.
 

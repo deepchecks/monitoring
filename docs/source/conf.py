@@ -54,10 +54,12 @@ intersphinx_mapping = {
 
 sphinx_gallery_conf = {
     "examples_dirs": [
-        "user-guide/tabular/quickstarts"
+        "user-guide/tabular/quickstarts",
+        "user-guide/examples"
     ],
     "gallery_dirs": [
-        "user-guide/tabular/auto_quickstarts"
+        "user-guide/tabular/auto_quickstarts",
+        "user-guide/auto_examples"
     ],
     "default_thumb_file": os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                        "_static/images/general/sphx_glr_deepchecks_icon.png"),

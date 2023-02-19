@@ -145,7 +145,7 @@ As this is a regression model, we do not provide the ``prediction_probas`` argum
     10000 new samples sent.
     10000 new samples sent.
     2225 new samples sent.
-    Upload finished successfully but might take time to ingest into the system, see http://.../configuration/models for status.
+    Upload finished successfully but might take time to ingest into the system, see http...
 
 
 Sample Upload
@@ -194,7 +194,7 @@ not provide the ``prediction_proba`` argument.
     ...     label=sample_label
     ... )
 
-
+.. _tabular_production__validating_your_data_has_arrived:
 Validating Your Data has Arrived
 ================================
 
