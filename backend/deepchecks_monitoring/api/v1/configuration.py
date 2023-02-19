@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
-from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
+from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
 
 from .router import router
 
@@ -31,6 +31,7 @@ class AlertRuleConfigSchema(BaseModel):
     name: str
     check_name: str
     frequency: int
+    condition: Condition
     alert_severity: t.Optional[AlertSeverity]
     total_alerts: t.Optional[int] = 0
     non_resolved_alerts: t.Optional[int] = 0
@@ -100,6 +101,7 @@ async def get_all_alert_rules(
     q = (
         select(
             AlertRule.id,
+            AlertRule.condition,
             Monitor.name,
             AlertRule.alert_severity,
             Monitor.frequency,
