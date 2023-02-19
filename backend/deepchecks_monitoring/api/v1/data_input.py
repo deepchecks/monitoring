@@ -17,7 +17,7 @@ import pandas as pd
 import pendulum as pdl
 from fastapi import Body, Depends, Response, UploadFile, status
 from fastapi.responses import ORJSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
@@ -158,7 +158,9 @@ async def save_reference(
             items.append(item)
 
     # lock will be released automatically at transaction commit/rollback
-    await session.execute(select(func.pg_advisory_xact_lock(model_version_id)))
+    reference_table_name = model_version.get_reference_table_name()
+    reference_table_id = text(f"'{reference_table_name}'::regclass::oid::integer")
+    await session.execute(select(func.pg_advisory_xact_lock(reference_table_id)))
 
     # check available reference samples number after a lock acquire
     # to ensure the limit of 100_000 records
