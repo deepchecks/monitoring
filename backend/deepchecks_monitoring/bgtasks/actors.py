@@ -138,7 +138,7 @@ async def _execute_monitor(
         if alert_rule.start_time is None:
             # The first time we run the alert rule we want to set the start time as the end time of the current window
             await session.execute(update(AlertRule).where(AlertRule.id == alert_rule.id)
-                                  .values({AlertRule.start_time: func.min(AlertRule.start_time, end_time)}))
+                                  .values({AlertRule.start_time: func.least(AlertRule.start_time, end_time)}))
         if not alert_rule.is_active:
             logger.info("AlertRule(id:%s) is not active, skipping it", alert_rule.id)
         elif alert := assert_check_results(alert_rule, check_results):

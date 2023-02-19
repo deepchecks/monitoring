@@ -110,12 +110,16 @@ def create_application(
     if settings.debug_mode:
         app.add_middleware(ProfilingMiddleware)
 
-    # @app.exception_handler(jsonschema.exceptions.ValidationError)
-    # async def _(_: Request, exc: jsonschema.exceptions.ValidationError):
-    #     return JSONResponse(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         content={"error": exc.message},
-    #     )
+    # Set deepchecks testing library logging verbosity to error to not spam the logs
+    deepchecks.set_verbosity(logging.ERROR)
+
+    if settings.access_audit:
+        app.add_middleware(SecurityAuditMiddleware)
+
+    app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
+    app.add_middleware(NoCacheMiddleware)
+
+    app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 
     @app.exception_handler(UnacceptedEULA)
     async def eula_exception_handler(*args, **kwargs):  # pylint: disable=unused-argument
@@ -143,21 +147,15 @@ def create_application(
                 return FileResponse(path)
             return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
 
-    app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
-
     @app.on_event("startup")
     async def app_startup():
         if app.state.data_ingestion_backend.use_kafka:
-            asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
+            app.state.ingestion_task = asyncio.create_task(app.state.data_ingestion_backend.run_data_consumer())
 
-    # Set deepchecks testing library logging verbosity to error to not spam the logs
-    deepchecks.set_verbosity(logging.ERROR)
+            def auto_removal(task):  # pylint: disable=unused-argument
+                app.state.ingestion_task = None
 
-    if settings.access_audit:
-        app.add_middleware(SecurityAuditMiddleware)
-
-    app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
-    app.add_middleware(NoCacheMiddleware)
+            app.state.ingestion_task.add_done_callback(auto_removal)
 
     return app
 
