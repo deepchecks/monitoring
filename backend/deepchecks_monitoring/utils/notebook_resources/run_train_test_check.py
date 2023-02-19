@@ -26,7 +26,7 @@ from {check_module} import {check_class}
 check = {check_class}({check_params})
 
 check_result = check.run(train_dataset=train_dataset, test_dataset=test_dataset,
-                         feature_importance=pd.Series(model_version_client.feature_importance),
+                         feature_importance=model_version_client.get_feature_importance(),
                          y_pred_test=y_pred_test, y_proba_test=y_proba_test,
                          y_pred_train=y_pred_train, y_proba_train=y_proba_train,
                          model_classes=model_version_client.model_classes)

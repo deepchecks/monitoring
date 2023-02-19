@@ -21,8 +21,7 @@ dataset, y_pred, y_proba = \
 from {check_module} import {check_class}
 
 check = {check_class}({check_params})
-
-check_result = check.run(dataset, feature_importance=pd.Series(model_version_client.feature_importance),
+check_result = check.run(dataset, feature_importance=model_version_client.get_feature_importance(),
                          y_pred=y_pred, y_proba=y_proba,
                          model_classes=model_version_client.model_classes)
 check_result.show()

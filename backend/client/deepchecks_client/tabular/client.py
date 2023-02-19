@@ -79,6 +79,19 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         dataset = Dataset(df, **dataset_params)
         return dataset, y_pred, y_proba
 
+    def get_feature_importance(self) -> t.Optional[pd.Series]:
+        """Get the feature importance as a pandas Series.
+
+        Returns
+        -------
+        feature_importance : pd.Series
+            The feature importance as a pandas Series.
+            If the feature importance is None, then None is returned.
+        """
+        if self.feature_importance is None:
+            return None
+        return pd.Series(self.feature_importance)
+
     def get_deepchecks_reference_dataset(
         self,
         rows_count: int = 10_000,
@@ -536,17 +549,14 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         frequency = intervals[monitoring_frequency]
 
         if TaskType(self.model['task_type']) in [TaskType.BINARY, TaskType.MULTICLASS]:
-            checks['Performance'] = SingleDatasetPerformance(scorers={'Accuracy': 'accuracy'})
+            checks['Performance'] = SingleDatasetPerformance(scorers=['Accuracy'])
         else:
-            checks['Performance'] = SingleDatasetPerformance(scorers={'RMSE': 'rmse'})
+            checks['Performance'] = SingleDatasetPerformance(scorers=['RMSE'])
         self.add_checks(checks=checks)
 
         self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=frequency, alert_severity='high',
                             monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True,
                             kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['l2_weighted']}})
-        self.add_alert_rule(check_name='Feature Drift', threshold=0.3, frequency=frequency, alert_severity='mid',
-                            monitor_name='Individual Feature Drift', add_monitor_to_dashboard=True,
-                            kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['none']}})
 
         self.add_alert_rule(check_name='Prediction Drift', threshold=0.25, frequency=frequency,
                             monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
