@@ -59,6 +59,7 @@ const AnalysisPage = lazy(() => lazyRetry(() => import('pages/AnalysisPage')));
 const NotificationsPage = lazy(() => lazyRetry(() => import('pages/NotificationsPage')));
 const ModelsPage = lazy(() => lazyRetry(() => import('pages/ModelsPage')));
 const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
+const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
 
 export const pathsInfo: PathInfo[] = [
   {
@@ -144,6 +145,14 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/api-key',
         Icon: null,
         element: () => <APIKeyPage />,
+        IconHover: null,
+        ActiveIcon: null
+      },
+      {
+        title: 'Suite View',
+        link: '/suite-view',
+        element: () => <SuiteViewPage />,
+        Icon: null,
         IconHover: null,
         ActiveIcon: null
       }

@@ -36,8 +36,7 @@ export const RunDownloadSuite = ({
   activeBarFilters,
   singleCheckRunOptions
 }: RunDownloadSuiteProps) => {
-  const { mutateAsync: mutateRunSuit, isLoading: isSuiteLoading } =
-    useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
+  const { isLoading: isSuiteLoading } = useRunSuiteOnModelVersionApiV1ModelVersionsModelVersionIdSuiteRunPost();
   const { mutateAsync: mutateDownloadChecksNotebook, isLoading: isChecksNotebookLoading } =
     useGetNotebookApiV1ChecksCheckIdGetNotebookPost();
   const { mutateAsync: mutateDownloadMonitorsNotebook, isLoading: isMonitorsNotebookLoading } =
@@ -61,18 +60,18 @@ export const RunDownloadSuite = ({
   };
 
   const handleRunTestSuite = async () => {
-    reportEvent(events.alertsPage.clickedRunTest);
+    const runSuitePayload = prepareData();
+    const formattedDataToSend = JSON.stringify({
+      ...runSuitePayload,
+      start_time: runSuitePayload.start_time.replace('+', 'plus'),
+      end_time: runSuitePayload.end_time.replace('+', 'plus')
+    });
+    const urlToRedirect = `/suite-view?modelVersionId=${modelVersionId}&dataToSend=${formattedDataToSend}`;
 
     if (modelVersionId) {
-      const dataToSend: SingleCheckRunOptions = prepareData();
+      reportEvent(events.alertsPage.clickedRunTest);
 
-      const response = await mutateRunSuit({
-        modelVersionId,
-        data: dataToSend
-      });
-
-      const winUrl = URL.createObjectURL(new Blob([response], { type: 'text/html' }));
-      window.open(winUrl);
+      window.open(urlToRedirect);
     } else {
       alert(ALERT_MESSAGE);
     }
