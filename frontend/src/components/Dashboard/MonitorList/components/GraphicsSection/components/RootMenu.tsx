@@ -34,11 +34,11 @@ export const RootMenu = ({ handleOpenMonitor, handleOpenDeleteMonitor, ...props 
     </StyledMenuItem>
     <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.EditMonitor)}>
       <Edit />
-      <StyledTypography>Edit Monitor</StyledTypography>
+      <StyledTypography>Edit monitor</StyledTypography>
     </StyledMenuItem>
     <StyledMenuItem onClick={handleOpenDeleteMonitor}>
       <Trash />
-      <StyledTypography sx={{ color: '#E7696A' }}>Delete Monitor</StyledTypography>
+      <StyledTypography sx={{ color: '#E7696A' }}>Delete monitor</StyledTypography>
     </StyledMenuItem>
   </StyledRootMenu>
 );
