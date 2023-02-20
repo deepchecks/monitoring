@@ -207,7 +207,7 @@ card for the selected model, in which you can see both the date for the latest s
 number of samples (rows) being processed (pending). Pending rows means that the data has been sent to Deepchecks, but
 has not yet been processed, so the data won't show up in the dashboard and analysis screen yet.
 
-.. image:: /_static/images/user-guides/models_screen.png
+.. image:: /_static/images/user-guide/models_screen.png
     :width: 600
 
 

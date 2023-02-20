@@ -1,8 +1,6 @@
-.. _concepts:
-
-========
+==========
 Concepts
-========
+==========
 
 Deepchecks is a platform for monitoring all your models. A model represents an ML pipeline
 performing a single task in production. That could be for example multiple retrained version, all predicting the
@@ -27,6 +25,9 @@ time.
 
 All of these monitoring components - Checks, Monitors, Alert Rules and Alerts - are defined on a per-model basis, and
 apply for all model versions that belong to a given model.
+
+
+.. _concepts__checks:
 
 Checks
 ======
@@ -91,6 +92,10 @@ alerts and edit or delete Alert Rules.
 
 `Alert Rules <#alert-rules>`__ can also be configured so that when an Alert is triggered, a notification is also sent
 by Slack or Email to the selected contacts.
+
+For more info about understanding alerts and drilling down to their root cause, 
+see the :doc:`Alerts Screen </user-guide/user_interface/alerts>` documentation.
+
 
 Test Suite
 ==========

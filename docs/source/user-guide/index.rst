@@ -14,8 +14,10 @@ General
     :maxdepth: 2
     :caption: General
 
+    general/workspace_and_users
     general/concepts
     general/faq
+    
 
 Tabular
 -------
@@ -25,8 +27,21 @@ Tabular
     :caption: Tabular
 
     tabular/auto_quickstarts/index
-    tabular/tabular_setup.rst
-    tabular/tabular_production.rst
+    tabular/tabular_setup
+    tabular/tabular_production
+
+
+User Interface
+----------------
+
+.. toctree::
+    :maxdepth: 2
+    :caption: User Interface
+
+    user_interface/dashboard
+    user_interface/alerts
+    user_interface/analysis
+    user_interface/configuration
 
 Examples
 --------
