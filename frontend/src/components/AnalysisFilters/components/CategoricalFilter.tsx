@@ -1,5 +1,8 @@
+import React, { useContext, useState } from 'react';
+
+import { AnalysisContext } from 'context/analysis-context';
+
 import {
-  alpha,
   Box,
   Button,
   Checkbox,
@@ -7,11 +10,13 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  MenuItem
+  MenuItem,
+  styled
 } from '@mui/material';
-import { AnalysisContext } from 'context/analysis-context';
-import React, { useContext, useState } from 'react';
+
 import { SearchField } from 'components/SearchField';
+
+import { colors } from 'theme/colors';
 
 interface CategoricalFilterProps {
   column: string;
@@ -60,38 +65,24 @@ export function CategoricalFilter({ column, data, onClose }: CategoricalFilterPr
   };
 
   return (
-    <Box>
-      <SearchField
-        size="small"
-        fullWidth
-        placeholder="Search..."
-        onChange={handleSearch}
-        onReset={handleReset}
-        value={searchValue}
-        sx={{ padding: '10px 10px 4px 10px', fontSize: 14, lineHeight: '17px' }}
-      />
-      <List disablePadding sx={{ maxHeight: 250, overflow: 'auto' }}>
+    <>
+      <StyledSearchFieldContainer>
+        <SearchField
+          size="small"
+          fullWidth
+          placeholder="Search..."
+          onChange={handleSearch}
+          onReset={handleReset}
+          value={searchValue}
+        />
+      </StyledSearchFieldContainer>
+      <StyledList disablePadding>
         {filteredData.map((label, index) => {
           const labelId = `${label}-${index}`;
           return (
             <MenuItem key={index} sx={{ padding: 0 }}>
-              <ListItemButton
-                role={undefined}
-                onClick={() => checkFilter(label)}
-                dense
-                sx={theme => ({
-                  minWidth: 220,
-                  padding: '10px 12px',
-                  '&:hover': { background: theme.palette.grey[100] }
-                })}
-              >
-                <ListItemIcon
-                  sx={{
-                    '&.MuiListItemIcon-root': {
-                      minWidth: '29px'
-                    }
-                  }}
-                >
+              <StyledListItemButton role={undefined} onClick={() => checkFilter(label)} dense>
+                <StyledListItemIcon>
                   <Checkbox
                     edge="start"
                     checked={!!currentFilters[column][label]}
@@ -100,24 +91,47 @@ export function CategoricalFilter({ column, data, onClose }: CategoricalFilterPr
                     inputProps={{ 'aria-labelledby': labelId }}
                     sx={{ ml: 0 }}
                   />
-                </ListItemIcon>
+                </StyledListItemIcon>
                 <ListItemText id={labelId} primary={label} sx={{ flexGrow: 0 }} />
-              </ListItemButton>
+              </StyledListItemButton>
             </MenuItem>
           );
         })}
-      </List>
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        padding="10px 0"
-        borderTop={theme => `1px solid ${alpha(theme.palette.grey[200], 0.5)}`}
-      >
+      </StyledList>
+      <StyledButtonContainer>
         <Button onClick={onApply} variant="text">
           Apply
         </Button>
-      </Box>
-    </Box>
+      </StyledButtonContainer>
+    </>
   );
 }
+
+const StyledSearchFieldContainer = styled(Box)({
+  padding: '10px 10px 4px 10px'
+});
+
+const StyledList = styled(List)({
+  maxHeight: '250px',
+  overflow: 'auto'
+});
+
+const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
+  minWidth: '220px',
+  padding: '10px 12px',
+  '&:hover': { background: theme.palette.grey[100] }
+}));
+
+const StyledListItemIcon = styled(ListItemIcon)({
+  '&.MuiListItemIcon-root': {
+    minWidth: '29px'
+  }
+});
+
+const StyledButtonContainer = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '5px 0',
+  borderTop: `1px solid ${colors.neutral.grey.light}`
+});

@@ -27,7 +27,7 @@ import HeaderLayout from 'components/HeaderLayout';
 import { Loader } from 'components/Loader';
 import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
-import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
+import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 
 import { colors } from 'theme/colors';

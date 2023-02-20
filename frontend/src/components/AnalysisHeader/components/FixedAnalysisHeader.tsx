@@ -2,11 +2,14 @@ import React from 'react';
 
 import { ModelManagmentSchema } from 'api/generated';
 
-import { Stack, Box } from '@mui/system';
+import { styled, Stack } from '@mui/material';
 
-import ModelSelect from './ModelSelect';
-import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
-import { styled } from '@mui/material';
+import { ModelSelect } from './ModelSelect';
+import { AnalysisHeaderOptions } from './AnalysisHeaderOptions';
+import { StyledDivider } from '../AnalysisHeader.style';
+import { AnalysisFilters } from 'components/AnalysisFilters';
+
+import { colors } from 'theme/colors';
 
 interface FixedAnalysisHeaderProps {
   model: ModelManagmentSchema;
@@ -14,37 +17,42 @@ interface FixedAnalysisHeaderProps {
   onOpenModelsMenu: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-const FixedAnalysisHeader = ({ model, open, onOpenModelsMenu }: FixedAnalysisHeaderProps) => (
-  <StyledHeaderWrapper
-    sx={{
-      transform: open ? 'translateY(0)' : 'translateY(-100%)'
-    }}
-  >
-    <Stack direction="row" alignItems="center" sx={{ transform: 'translateY(12.5px)' }}>
-      <Box sx={{ mr: 'auto' }}>
-        <ModelSelect model={model} onOpen={onOpenModelsMenu} size="small" />
-      </Box>
-      <Box sx={{ flex: 1 }}>
-        <AnalysisFilters model={model} fixedHeader />
-      </Box>
-    </Stack>
+export const FixedAnalysisHeader = ({ model, open, onOpenModelsMenu }: FixedAnalysisHeaderProps) => (
+  <StyledHeaderWrapper isOpen={open}>
+    <StyledSelectContainer>
+      <ModelSelect model={model} onOpen={onOpenModelsMenu} sx={{ marginRight: '20px' }} />
+      <AnalysisHeaderOptions modelId={model.id} />
+      <StyledDivider orientation="vertical" flexItem sx={{ marginLeft: '18px' }} />
+      <AnalysisFilters model={model} fixedHeader sx={{ flexGrow: 1 }} />
+    </StyledSelectContainer>
   </StyledHeaderWrapper>
 );
 
-export default FixedAnalysisHeader;
+interface StyledHeaderWrapperProps {
+  isOpen: boolean;
+}
 
-const StyledHeaderWrapper = styled(Stack)(({ theme }) => ({
+const StyledHeaderWrapper = styled(Stack, {
+  shouldForwardProp: prop => prop !== 'isOpen'
+})<StyledHeaderWrapperProps>(({ isOpen, theme }) => ({
+  transform: isOpen ? 'translateY(0)' : 'translateY(-100%)',
   position: 'fixed',
+  alignItems: 'center',
+  flexDirection: 'row',
   top: 0,
   left: '236px',
   width: 'calc(100% - 236px)',
-  height: 75,
-  padding: '1px 17px 1px 19px',
+  height: '76px',
+  padding: '0 38px',
   background: theme.palette.grey[100],
   transition: 'all 0.35s ease-in-out',
   zIndex: 10,
-  '@media (max-width: 1536px)': {
-    left: '195px',
-    width: 'calc(100% - 195px)'
-  }
+  borderBottom: `1px solid ${colors.neutral.grey.light}`
 }));
+
+const StyledSelectContainer = styled(Stack)({
+  flexDirection: 'row',
+  alignItems: 'center',
+  height: '36px',
+  width: '100%'
+});

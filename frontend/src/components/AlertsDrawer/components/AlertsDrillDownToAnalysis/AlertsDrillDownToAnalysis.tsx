@@ -9,7 +9,6 @@ import {
   CheckGroupBySchema,
   MonitorSchema
 } from 'api/generated';
-import { ComparisonModeOptions } from 'context/analysis-context';
 import { useModels } from 'hooks/useModels';
 
 import { Box, Stack, styled } from '@mui/material';
@@ -183,8 +182,7 @@ const AlertsDrillDownToAnalysisComponent = ({
                     key={check.id}
                     check={check}
                     lastUpdate={NOW}
-                    isComparisonModeOn={prevPeriod}
-                    comparisonMode={ComparisonModeOptions.previousPeriod}
+                    compareWithPreviousPeriod={prevPeriod}
                     period={period}
                     frequency={frequency}
                     activeFilters={activeFilters}

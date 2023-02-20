@@ -2,6 +2,8 @@ import React from 'react';
 
 import { styled, FormControlLabel, Switch, SwitchProps } from '@mui/material';
 
+import { colors } from 'theme/colors';
+
 export interface SwitchButtonProps extends SwitchProps {
   label?: string;
   checked: boolean;
@@ -9,14 +11,7 @@ export interface SwitchButtonProps extends SwitchProps {
   labelPlacement?: 'bottom' | 'top' | 'start' | 'end';
 }
 
-export function SwitchButton({
-  checked,
-  setChecked,
-  label,
-  labelPlacement = 'start',
-  sx,
-  ...props
-}: SwitchButtonProps) {
+export function SwitchButton({ checked, setChecked, label, labelPlacement = 'end', sx, ...props }: SwitchButtonProps) {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked);
   };
@@ -31,15 +26,14 @@ export function SwitchButton({
 }
 
 const StyledFormControlLabel = styled(FormControlLabel)({
-  margin: 0,
+  marginRight: 0,
 
   '& .MuiFormControlLabel-label': {
     marginRight: '9px',
-    '@media (max-width: 1536px)': {
-      fontSize: '12px',
-      width: '70px',
-      marginRight: 0
-    },
+    fontSize: '14px',
+    fontWeight: 600,
+    lineHeight: '17px',
+    transform: 'translateY(-1px)',
 
     '&.Mui-disabled': {
       opacity: 0.3
@@ -47,17 +41,44 @@ const StyledFormControlLabel = styled(FormControlLabel)({
   }
 });
 
-const StyledSwitch = styled(Switch)({
-  height: 'max-content',
-  width: 'max-content',
-
-  '& .MuiSwitch-thumb': {
-    height: 20,
-    width: 20
+const StyledSwitch = styled(Switch)(({ theme }) => ({
+  width: 40,
+  height: 20,
+  padding: 0,
+  marginRight: 12,
+  display: 'flex',
+  '&:active': {
+    '& .MuiSwitch-thumb': {
+      width: 20
+    },
+    '& .MuiSwitch-switchBase.Mui-checked': {
+      transform: 'translateX(16.5px)'
+    }
   },
-
+  '& .MuiSwitch-switchBase': {
+    padding: 2,
+    '&.Mui-checked': {
+      transform: 'translateX(19.5px)',
+      color: colors.neutral.white,
+      '& + .MuiSwitch-track': {
+        opacity: 1,
+        backgroundColor: colors.primary.violet[400]
+      }
+    }
+  },
+  '& .MuiSwitch-thumb': {
+    boxShadow: '0 2px 4px 0 rgb(0 35 11 / 20%)',
+    width: 16,
+    height: 16,
+    borderRadius: 16 / 2,
+    transition: theme.transitions.create(['width'], {
+      duration: 200
+    })
+  },
   '& .MuiSwitch-track': {
-    width: 34,
-    height: 14
+    borderRadius: '16px',
+    opacity: 1,
+    backgroundColor: colors.neutral.lightText,
+    boxSizing: 'border-box'
   }
-});
+}));

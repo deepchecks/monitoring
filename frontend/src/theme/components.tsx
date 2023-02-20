@@ -146,24 +146,6 @@ export const componentOptions: Components<Theme> = {
       })
     }
   },
-  MuiSelect: {
-    styleOverrides: {
-      select: ({ theme }) => ({
-        '&.Mui-focused': {
-          color: theme.palette.primary.main
-        },
-        '&:hover .MuiOutlinedInput-notchedOutline': {
-          borderColor: `${theme.palette.primary.main} !important`
-        }
-      }),
-      icon: ({ theme }) => ({
-        color: theme.palette.text.secondary,
-        '& + .MuiOutlinedInput-notchedOutline': {
-          border: `1px solid ${theme.palette.grey[200]}`
-        }
-      })
-    }
-  },
   MuiMenu: {
     styleOverrides: {
       list: {

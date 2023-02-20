@@ -34,7 +34,6 @@ const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps &
           }
         }
       }}
-      placeholder="Search Model..."
       variant="outlined"
       value={value}
       {...props}

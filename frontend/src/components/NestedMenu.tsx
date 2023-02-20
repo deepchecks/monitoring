@@ -1,6 +1,6 @@
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { Box, MenuItem, Popover, Stack, Typography } from '@mui/material';
 import { CollapseArrowRight } from 'assets/icon/icon';
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
 
 interface NestedMenuProps {
   children: ReactNode;
@@ -47,10 +47,8 @@ export function NestedMenu({ children, label }: NestedMenuProps) {
         })}
       >
         <Stack sx={{ width: 1 }} direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="subtitle2">{label}</Typography>
-          <Box sx={{ path: { fill: theme => theme.palette.text.disabled } }}>
-            <CollapseArrowRight />
-          </Box>
+          <Typography sx={{ fontWeight: 500, fontSize: '14px' }}>{label}</Typography>
+          <CollapseArrowRight />
         </Stack>
       </MenuItem>
       <Popover
@@ -59,8 +57,11 @@ export function NestedMenu({ children, label }: NestedMenuProps) {
         onClose={handleClose}
         sx={{
           pointerEvents: 'none',
+
           '& .MuiPopover-paper': {
-            margin: `0 5px`
+            marginLeft: '5px',
+            boxShadow: '2px 2px 30px -10px rgba(41, 53, 67, 0.25)',
+            borderRadius: '10px'
           }
         }}
         anchorOrigin={{

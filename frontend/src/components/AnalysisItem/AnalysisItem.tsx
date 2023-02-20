@@ -4,7 +4,6 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { MonitorCheckConfSchema, useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
 import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
-import { ComparisonModeOptions } from 'context/analysis-context';
 import { useElementOnScreen } from 'hooks/useElementOnScreen';
 
 import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters';
@@ -28,8 +27,7 @@ function AnalysisItemComponent({
   checksWithCustomProps,
   lastUpdate,
   onPointCLick,
-  isComparisonModeOn,
-  comparisonMode,
+  compareWithPreviousPeriod,
   period,
   frequency,
   activeFilters,
@@ -118,7 +116,7 @@ function AnalysisItemComponent({
 
       const parsedChartData = parseDataForLineChart(response);
 
-      if (isComparisonModeOn && comparisonMode === ComparisonModeOptions.previousPeriod) {
+      if (compareWithPreviousPeriod) {
         const periodsTimeDifference = period[1].getTime() - period[0].getTime();
         const runCheckPreviousPeriodBody: RunCheckBody = {
           ...runCheckBody,
@@ -179,9 +177,8 @@ function AnalysisItemComponent({
     ascending,
     activeFilters,
     check.id,
-    comparisonMode,
     frequency,
-    isComparisonModeOn,
+    compareWithPreviousPeriod,
     period,
     runCheck,
     initialData,
@@ -218,8 +215,8 @@ function AnalysisItemComponent({
         >
           <DiagramLine
             data={data}
-            isLoading={loading}
-            comparison={isComparisonModeOn}
+            isLoading={isLoading || loading}
+            comparison={compareWithPreviousPeriod}
             onPointCLick={handlePointClick}
             timeFreq={frequency}
             analysis
@@ -236,8 +233,8 @@ function AnalysisItemComponent({
         >
           <DiagramLine
             data={data}
-            isLoading={loading}
-            comparison={isComparisonModeOn}
+            isLoading={isLoading || loading}
+            comparison={compareWithPreviousPeriod}
             onPointCLick={handlePointClick}
             timeFreq={frequency}
             analysis

@@ -11,8 +11,9 @@ import { events, reportEvent } from 'helpers/mixPanel';
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
 import { Loader } from 'components/Loader';
+import { CustomStyledSelect } from 'components/CustomStyledSelect';
 
-import { StyledContainer, StyledHeader, StyledLoaderBox, StyledSelect, StyledTitle } from './DataIngestion.style';
+import { StyledContainer, StyledHeader, StyledLoaderBox, StyledTitle } from './DataIngestion.style';
 
 interface DataIngestionProps {
   modelId: number | null;
@@ -49,13 +50,13 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
     <StyledContainer>
       <StyledHeader>
         <StyledTitle>Samples status</StyledTitle>
-        <StyledSelect value={currentTime.value.toString()} onChange={e => handleTime(e.target.value)} size="small">
+        <CustomStyledSelect value={currentTime.value.toString()} onChange={e => handleTime(e.target.value)} size="small">
           {timeOptions.map(({ label, value }) => (
             <MenuItem value={value.toString()} key={label}>
               {label}
             </MenuItem>
           ))}
-        </StyledSelect>
+        </CustomStyledSelect>
       </StyledHeader>
       {isLoading ? (
         <StyledLoaderBox>

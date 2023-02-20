@@ -1,4 +1,4 @@
-import { Box, Select, styled, Typography } from '@mui/material';
+import { Box, styled, Typography } from '@mui/material';
 import { colors } from 'theme/colors';
 
 export const StyledContainer = styled(Box)({
@@ -31,23 +31,6 @@ export const StyledTitle = styled(Typography)({
   fontSize: 20,
   lineHeight: '18px',
   textAlign: 'left'
-});
-
-export const StyledSelect = styled(Select)({
-  fontWeight: 600,
-  minWidth: 150,
-  color: colors.neutral.darkText,
-  borderRadius: '10px',
-
-  '@media (max-width: 1536px)': {
-    fontSize: '13px'
-  },
-
-  '& .MuiSelect-icon': {
-    '& + .MuiOutlinedInput-notchedOutline': {
-      border: `1px solid ${colors.neutral.grey.light}`
-    }
-  }
 });
 
 export const StyledModel = styled(Box)({

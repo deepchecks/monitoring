@@ -9,8 +9,6 @@ import {
   CheckResultSchema
 } from 'api/generated';
 
-import { ComparisonModeOptions } from 'context/analysis-context';
-
 export const AGGREGATION_NONE = 'none';
 
 export interface IDataset {
@@ -31,8 +29,7 @@ export interface AnalysisItemProps {
   initialData?: CheckResultSchema;
   checksWithCustomProps?: MutableRefObject<Set<number>>;
   lastUpdate: Date;
-  isComparisonModeOn: boolean;
-  comparisonMode: ComparisonModeOptions;
+  compareWithPreviousPeriod: boolean;
   period: [Date, Date];
   frequency: number;
   activeFilters: DataFilter[];

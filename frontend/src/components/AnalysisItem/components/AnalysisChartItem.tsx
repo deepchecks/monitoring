@@ -1,7 +1,10 @@
 import React, { ReactNode, PropsWithChildren } from 'react';
 
 import { styled, Box, Stack, Typography, BoxProps } from '@mui/material';
+
 import { InfoLink } from 'components/InfoLink';
+
+import { colors } from 'theme/colors';
 
 interface AnalysisChartItemProps extends BoxProps {
   title: string;
@@ -14,16 +17,12 @@ export function AnalysisChartItem({
   children,
   headerChildren,
   subtitle,
-  sx,
   title,
-  docsLink
+  docsLink,
+  ...props
 }: PropsWithChildren<AnalysisChartItemProps>) {
   return (
-    <StyledAnalysisChartItem
-      sx={{
-        ...sx
-      }}
-    >
+    <StyledAnalysisChartItem {...props}>
       <Stack direction="row" pb="16px" justifyContent="space-between" alignItems="center">
         <Box>
           <StyledTitle>{title}</StyledTitle>
@@ -44,7 +43,7 @@ export function AnalysisChartItem({
 const StyledAnalysisChartItem = styled(Box)({
   padding: '16px 40px',
   borderRadius: '10px',
-  boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
+  border: `1px solid ${colors.neutral.grey.light}`,
 
   '& .legend_icon': {
     width: 22,

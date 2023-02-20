@@ -12,7 +12,6 @@ import useModels from 'hooks/useModels';
 import { AnalysisContext } from 'context/analysis-context';
 
 import { Loader } from 'components/Loader';
-import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters/ActiveColumnsFilters';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/AnalysisHeader/AnalysisHeader';
 import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
@@ -25,7 +24,8 @@ import { onDrawerOpen } from 'helpers/onDrawerOpen';
 const AnalysisPage = () => {
   const location = useLocation();
   const { models, getCurrentModel } = useModels();
-  const { period, frequency, comparisonMode, isComparisonModeOn, activeFilters } = useContext(AnalysisContext);
+  const { period, frequency, compareWithPreviousPeriod, activeFilters } = useContext(AnalysisContext);
+
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
   const [currentCheck, setCurrentCheck] = useState<CheckSchema | null>(null);
@@ -96,11 +96,10 @@ const AnalysisPage = () => {
   return (
     <>
       <Box>
-        <Stack spacing="32px" mb="15px">
+        <Stack sx={{ marginBottom: '20px' }}>
           <AnalysisHeader changeModel={setModelId} models={models} model={currentModel} />
           <AnalysisFilters model={currentModel} />
         </Stack>
-        <ActiveColumnsFilters />
         <Stack spacing="30px" mb="30px">
           {isLoading ? (
             <Loader />
@@ -111,8 +110,7 @@ const AnalysisPage = () => {
                 check={check}
                 lastUpdate={new Date()}
                 onPointCLick={handleDrawerOpen}
-                isComparisonModeOn={isComparisonModeOn}
-                comparisonMode={comparisonMode}
+                compareWithPreviousPeriod={compareWithPreviousPeriod}
                 period={period}
                 frequency={frequency}
                 activeFilters={activeFilters}

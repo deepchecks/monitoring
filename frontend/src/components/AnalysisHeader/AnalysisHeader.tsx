@@ -1,17 +1,24 @@
 import React, { Dispatch, memo, SetStateAction, useEffect, useRef, useState, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import { ModelManagmentSchema } from 'api/generated';
 
-import { WindowTimeout } from 'helpers/types/index';
+import { MenuItem, Popover, Typography, Stack } from '@mui/material';
 
-import { styled, alpha, Box, List, MenuItem, Popover, Typography } from '@mui/material';
-
-import { SearchField } from '../SearchField';
-import StaticAnalysisHeader from './components/StaticAnalysisHeader';
-import FixedAnalysisHeader from './components/FixedAnalysisHeader';
+import { FixedAnalysisHeader } from './components/FixedAnalysisHeader';
+import { AnalysisHeaderOptions } from './components/AnalysisHeaderOptions';
 import { ShareButton } from '../ShareButton';
+import { ModelSelect } from './components/ModelSelect';
+
+import { WindowTimeout } from 'helpers/types/index';
 import { setParams } from 'helpers/utils/getParams';
+
+import {
+  StyledAnalysisHeader,
+  StyledAnalysisHeaderLink,
+  StyledAnalysisHeaderList,
+  StyledAnalysisHeaderSearchField
+} from './AnalysisHeader.style';
 
 interface AnalysisHeaderProps {
   changeModel: Dispatch<SetStateAction<number>>;
@@ -83,7 +90,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
 
   return (
     <StyledAnalysisHeader>
-      <StaticAnalysisHeader onOpenModelsMenu={handleOpenModelsMenu} model={model} />
+      <ModelSelect model={model} onOpen={handleOpenModelsMenu} />
       <FixedAnalysisHeader open={isScrolling} onOpenModelsMenu={handleOpenModelsMenu} model={model} />
       <Popover
         anchorEl={anchorElModelsMenu}
@@ -112,49 +119,12 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
           ))}
         </StyledAnalysisHeaderList>
       </Popover>
-      <ShareButton />
+      <Stack direction="row" alignItems="center" marginLeft="auto">
+        <AnalysisHeaderOptions modelId={model.id} />
+        <ShareButton />
+      </Stack>
     </StyledAnalysisHeader>
   );
 }
-
-const StyledAnalysisHeader = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  zIndex: 6,
-  display: 'flex',
-  alignItems: 'center',
-  borderBottom: `1px dashed ${theme.palette.text.disabled}`
-}));
-
-const StyledAnalysisHeaderSearchField = styled(SearchField)(({ theme }) => ({
-  minHeight: 40,
-  padding: '10px 10px 4px 10px',
-  '& .MuiInputBase-input': {
-    padding: '11.5px 2px 11.5px 12px',
-    fontSize: 12
-  },
-  '& .MuiOutlinedInput-notchedOutline': {
-    borderColor: theme.palette.grey[200]
-  },
-  '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': {
-    borderColor: alpha(theme.palette.primary.main, 0.5)
-  },
-  '& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-    borderColor: theme.palette.primary.main
-  }
-}));
-
-const StyledAnalysisHeaderLink = styled(Link)({
-  color: 'inherit',
-  textDecoration: 'none',
-  width: '100%',
-  height: '100%',
-  padding: '11.5px 12px'
-});
-
-const StyledAnalysisHeaderList = styled(List)({
-  overflow: 'auto',
-  maxHeight: '300px',
-  padding: 0
-});
 
 export const AnalysisHeader = memo(AnalysisHeaderComponent);

@@ -69,7 +69,14 @@ export function ModelList({ selectedModelId, setSelectedModelId, models, isLoadi
             <AlertsCountWidget />
           </StyledHeadingContainer>
           <StyledSearchFieldContainer>
-            <SearchField size="small" fullWidth onChange={onSearch} value={modelName} onReset={clearSearchBar} />
+            <SearchField
+              size="small"
+              fullWidth
+              onChange={onSearch}
+              value={modelName}
+              onReset={clearSearchBar}
+              placeholder="Search Model..."
+            />
           </StyledSearchFieldContainer>
           <StyledList>
             {filteredModels.map((model, index) => (

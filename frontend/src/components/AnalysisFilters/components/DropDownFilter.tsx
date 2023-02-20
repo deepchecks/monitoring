@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ColumnType, GetModelColumnsApiV1ModelsModelIdColumnsGet200 } from 'api/generated';
 
-import { List, Popover, PopoverProps } from '@mui/material';
+import { List, Popover, PopoverProps, Box, styled } from '@mui/material';
 
-import { NestedMenu } from 'components/NestedMenu/NestedMenu';
+import { NestedMenu } from 'components/NestedMenu';
 import { SearchField } from 'components/SearchField';
 import { CategoricalFilter } from './CategoricalFilter';
 import { NumericFilter } from './NumericFilter';
@@ -61,29 +61,26 @@ export function DropDownFilter({ columns, onClose, ...props }: DropDownFilterPro
   }, [columns]);
 
   return (
-    <Popover
+    <StyledPopover
       {...props}
       onClose={onClose}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'left'
       }}
-      sx={{
-        '.MuiPopover-paper': {
-          paddingBottom: '10px'
-        }
-      }}
     >
-      <SearchField
-        size="small"
-        fullWidth
-        placeholder="Search..."
-        onChange={filterColumns}
-        onReset={handleReset}
-        value={searchColumnName}
-        sx={{ padding: '10px 10px 4px 10px', fontSize: 14, lineHeight: '17px' }}
-      />
-      <List disablePadding sx={{ maxHeight: 300, overflow: 'auto' }}>
+      <StyledSearchFieldContainer>
+        <SearchField
+          size="small"
+          fullWidth
+          placeholder="Search..."
+          onChange={filterColumns}
+          onReset={handleReset}
+          value={searchColumnName}
+        />
+      </StyledSearchFieldContainer>
+
+      <StyledList disablePadding>
         {Object.entries(currentColumns).map(([column, value]) => (
           <NestedMenu key={column} label={column}>
             {value.type === ColumnType.categorical ? (
@@ -93,7 +90,24 @@ export function DropDownFilter({ columns, onClose, ...props }: DropDownFilterPro
             )}
           </NestedMenu>
         ))}
-      </List>
-    </Popover>
+      </StyledList>
+    </StyledPopover>
   );
 }
+
+const StyledPopover = styled(Popover)({
+  '.MuiPopover-paper': {
+    marginTop: '5px',
+    boxShadow: '2px 2px 30px -10px rgba(41, 53, 67, 0.25)',
+    borderRadius: '10px'
+  }
+});
+
+const StyledSearchFieldContainer = styled(Box)({
+  padding: '10px 10px 4px 10px'
+});
+
+const StyledList = styled(List)({
+  maxHeight: '300px',
+  overflow: 'auto'
+});

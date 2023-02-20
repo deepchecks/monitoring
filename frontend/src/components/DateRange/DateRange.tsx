@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DateRangePicker, RangeKeyDict, Range } from 'react-date-range';
 import 'react-date-range/dist/theme/default.css';
 import 'react-date-range/dist/styles.css';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { Box, Button, Popover, styled, TextField } from '@mui/material';
-import { Calendar } from 'assets/icon/icon';
+import { Box, Button, Popover } from '@mui/material';
+
+import { DropdownTextField } from 'components/DropdownTextField';
+
+import { StyledButtonContainer } from './DateRange.style';
 
 dayjs.extend(localizedFormat);
 
@@ -27,28 +30,26 @@ export const DateRange = ({
   maxDate,
   minDate
 }: DateRangeProps) => {
-  const initialRange: Range = {
+  const [range, setRange] = useState<Range>({
     startDate: startTime,
     endDate: endTime,
     key: 'selection'
-  };
-  const [range, setRange] = React.useState<Range>(initialRange);
-  const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null);
+  });
+  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
-  React.useEffect(() => {
+  const selectRef = useRef<HTMLDivElement>();
+  const openDatePicker = Boolean(anchorEl);
+
+  useEffect(() => {
     setRange({
       startDate: startTime,
       endDate: endTime,
       key: 'selection'
     });
   }, [startTime, endTime]);
-  const selectRef = React.useRef<HTMLDivElement>();
-  const openDatePicker = Boolean(anchorEl);
 
   const handleDatePickerOpen = () => {
-    if (selectRef.current) {
-      setAnchorEl(selectRef.current);
-    }
+    if (selectRef.current) setAnchorEl(selectRef.current);
   };
 
   const handleDatePickerClose = () => {
@@ -67,22 +68,12 @@ export const DateRange = ({
 
   return (
     <Box ref={selectRef}>
-      <StyledTextField
+      <DropdownTextField
         onClick={handleDatePickerOpen}
-        variant="outlined"
-        label="Time Range"
         value={`${dayjs(range.startDate).format('L')} - ${dayjs(range.endDate).format('L')}`}
-        size="small"
-        sx={{ cursor: 'pointer', width: { xs: '205px', xl: '260px' } }}
-        InputProps={{
-          endAdornment: (
-            <Button variant="text" sx={{ minWidth: '24px', pl: '5px' }}>
-              <Calendar />
-            </Button>
-          ),
-          readOnly: true
-        }}
-      ></StyledTextField>
+        isDropdownOpen={!!anchorEl}
+        sx={{ width: '233px' }}
+      />
       <Popover
         anchorEl={anchorEl}
         anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
@@ -90,30 +81,12 @@ export const DateRange = ({
         onClose={handleDatePickerClose}
       >
         <DateRangePicker maxDate={maxDate} minDate={minDate} ranges={[range]} onChange={handleSelect} />
-        <Box
-          sx={{
-            padding: '20px 0',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderTop: theme => `1px solid ${theme.palette.grey[200]}`
-          }}
-        >
+        <StyledButtonContainer>
           <Button variant="text" onClick={onApply}>
             Apply
           </Button>
-        </Box>
+        </StyledButtonContainer>
       </Popover>
     </Box>
   );
 };
-
-const StyledTextField = styled(TextField)({
-  '.MuiOutlinedInput-input': {
-    cursor: 'pointer',
-    fontSize: '16px',
-    '@media (max-width: 1536px)': {
-      fontSize: '12px'
-    }
-  }
-});

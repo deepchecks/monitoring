@@ -4,16 +4,19 @@ import { Chip, ChipProps, styled } from '@mui/material';
 
 import { colors } from 'theme/colors';
 
-export function ColumnChip(props: ChipProps) {
-  return <StyledChip {...props} />;
-}
+export const ColumnChip = (props: ChipProps) => <StyledChip {...props} />;
 
 const StyledChip = styled(Chip)({
-  color: colors.neutral.blue[100],
-  background: colors.neutral.grey[150],
+  fontSize: '14px',
+  color: colors.neutral.darkText,
+  background: colors.neutral.grey.light,
+  height: '36px',
+  padding: '8px 14px 8px 16px',
+  borderRadius: '10px',
 
   '.MuiChip-label': {
-    paddingRight: '6px'
+    fontWeight: 600,
+    padding: '0 6px 0 0'
   },
 
   '.MuiChip-deleteIcon': {
@@ -26,6 +29,6 @@ const StyledChip = styled(Chip)({
   },
 
   '.MuiSvgIcon-root': {
-    marginRight: '4px'
+    margin: 0
   }
 });

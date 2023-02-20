@@ -4,23 +4,14 @@ import { DataFilter, AutoFrequencyResponse, OperatorsEnum } from 'api/generated'
 
 import { timeMap, timeValues } from 'helpers/time';
 import { SetStateType } from 'helpers/types';
-import {} from 'helpers/conditionOperator';
-import dayjs from 'dayjs';
-
-export enum ComparisonModeOptions {
-  previousPeriod = 'PREVIOUS_PERIOD',
-  reference = 'REFERENCE'
-}
 
 export type FilterValue = Record<string, boolean> | [number, number] | null;
 
 export type ColumnsFilters = Record<string, FilterValue>;
 
 export interface AnalysisContextValues {
-  isComparisonModeOn: boolean;
-  setIsComparisonModeOn: SetStateType<boolean>;
-  comparisonMode: ComparisonModeOptions;
-  setComparisonMode: SetStateType<ComparisonModeOptions>;
+  compareWithPreviousPeriod: boolean;
+  setCompareWithPreviousPeriod: SetStateType<boolean>;
   period: [Date, Date] | null;
   setPeriod: SetStateType<[Date, Date] | null>;
   frequency: number | null;
@@ -105,10 +96,8 @@ export const frequencyData = [
 ];
 
 export const AnalysisContext = createContext<AnalysisContextValues>({
-  isComparisonModeOn: true,
-  setIsComparisonModeOn: () => 1,
-  comparisonMode: ComparisonModeOptions.previousPeriod,
-  setComparisonMode: () => 1,
+  compareWithPreviousPeriod: false,
+  setCompareWithPreviousPeriod: () => 1,
   period: null,
   setPeriod: () => 1,
   frequency: timeValues.day,
@@ -126,8 +115,7 @@ export const AnalysisContext = createContext<AnalysisContextValues>({
 });
 
 export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
-  const [isComparisonModeOn, setIsComparisonModeOn] = useState(false);
-  const [comparisonMode, setComparisonMode] = useState(ComparisonModeOptions.previousPeriod);
+  const [compareWithPreviousPeriod, setCompareWithPreviousPeriod] = useState(false);
 
   const [period, setPeriod] = useState<[Date, Date] | null>(null);
 
@@ -157,29 +145,10 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   }, [filters]);
 
   useEffect(() => {
-    if (
-      isComparisonModeOn ||
-      filtersLength > 0 ||
-      (frequency && defaultFrequency && frequency !== defaultFrequency.frequency) ||
-      (period && defaultFrequency && !dayjs(period[0]).isSame(dayjs.unix(defaultFrequency.start))) ||
-      (period && defaultFrequency && !dayjs(period[1]).isSame(dayjs.unix(defaultFrequency.end)))
-    ) {
-      setReset(true);
-    } else {
-      setReset(false);
-    }
-  }, [isComparisonModeOn, period, frequency, filtersLength, defaultFrequency]);
+    filtersLength > 0 ? setReset(true) : setReset(false);
+  }, [filtersLength]);
 
   const resetAll = useCallback(() => {
-    setIsComparisonModeOn(false);
-    setComparisonMode(ComparisonModeOptions.previousPeriod);
-    if (defaultFrequency) {
-      setFrequency(defaultFrequency.frequency);
-      setPeriod([dayjs.unix(defaultFrequency.start).toDate(), dayjs.unix(defaultFrequency.end).toDate()]);
-    } else {
-      setFrequency(null);
-      setPeriod(null);
-    }
     setFiltersLength(0);
     setFilters(initialFilters);
     setReset(false);
@@ -187,10 +156,8 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
 
   const value = useMemo(
     () => ({
-      isComparisonModeOn,
-      setIsComparisonModeOn,
-      comparisonMode,
-      setComparisonMode,
+      compareWithPreviousPeriod,
+      setCompareWithPreviousPeriod,
       period,
       setPeriod,
       frequency,
@@ -207,12 +174,11 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       setDefaultFrequency
     }),
     [
-      comparisonMode,
       filters,
       filtersLength,
       frequency,
       frequencyLabel,
-      isComparisonModeOn,
+      compareWithPreviousPeriod,
       activeFilters,
       period,
       reset,

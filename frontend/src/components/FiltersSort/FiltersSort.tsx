@@ -12,7 +12,7 @@ import { Box, Divider, Menu, MenuItem, SelectChangeEvent, Stack, styled, TextFie
 import { DatePicker } from '../DatePicker/DatePicker';
 import { SelectPrimary } from '../SelectPrimary/SelectPrimary';
 import { SelectSeverity, SeverityAll, severityAll } from '../SelectSeverity';
-import FiltersResetButton from './components/FiltersResetButton';
+import { FiltersResetButton } from './components/FiltersResetButton';
 import FiltersSortButton from './components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
@@ -24,7 +24,7 @@ import { setParams } from 'helpers/utils/getParams';
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
   alertFilters: GetAlertRulesApiV1AlertRulesGetParams;
-  setAlertFilters: React.Dispatch<React.SetStateAction<GetAlertRulesApiV1AlertRulesGetParams>>
+  setAlertFilters: React.Dispatch<React.SetStateAction<GetAlertRulesApiV1AlertRulesGetParams>>;
 };
 
 export enum sortOptionsVariants {

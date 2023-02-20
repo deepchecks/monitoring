@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 
 import {
   GetModelColumnsApiV1ModelsModelIdColumnsGet200,
@@ -7,37 +7,28 @@ import {
   useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet
 } from 'api/generated';
 
-import { AnalysisContext, ColumnsFilters, ComparisonModeOptions, frequencyData } from 'context/analysis-context';
+import { AnalysisContext, ColumnsFilters } from 'context/analysis-context';
 
-import { styled, alpha, Button, Divider, Stack, MenuItem, SelectChangeEvent, Box, Typography } from '@mui/material';
+import { styled, Stack, StackProps } from '@mui/material';
 
-import { MarkedSelect } from 'components/MarkedSelect';
-import { SwitchButton } from 'components/SwitchButton';
 import { DropDownFilter } from './components/DropDownFilter';
-import FiltersResetButton from 'components/FiltersSort/components/FiltersResetButton';
+import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
+import { DropdownTextField } from 'components/DropdownTextField';
+import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 
 import { ColumnType } from 'helpers/types/model';
-import { comparisonModeData } from './AnalysisFilters.helpers';
 import { events, reportEvent } from 'helpers/mixPanel';
 
-import { FilterIcon } from 'assets/icon/icon';
-import { DateRange } from 'components/DateRange/DateRange';
-import dayjs from 'dayjs';
+import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 
-interface AnalysisFiltersProps {
+interface AnalysisFiltersProps extends StackProps {
   model: ModelManagmentSchema;
   fixedHeader?: boolean;
 }
 
-export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
+export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFiltersProps) {
   const {
-    isComparisonModeOn,
-    setIsComparisonModeOn,
-    comparisonMode,
-    setComparisonMode,
-    period,
     setPeriod,
-    frequency,
     setFrequency,
     setFilters,
     setInitialFilters,
@@ -46,10 +37,9 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     resetAll,
     setDefaultFrequency
   } = useContext(AnalysisContext);
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [minDate, setMinDate] = useState<Date | null>(null);
-  const [maxDate, setMaxDate] = useState<Date | null>(null);
-  const maxWindowsCount = 30;
+
+  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
+  const selectRef = useRef<HTMLDivElement>();
 
   const {
     data: columnsMap = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
@@ -76,28 +66,9 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     setAnchorEl(null);
   };
 
-  const handleFiltersOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleFiltersOpen = () => {
+    if (selectRef.current) setAnchorEl(selectRef.current);
     reportEvent(events.analysisPage.clickedOnFilter);
-  };
-
-  const handleComparisonModeChange = (event: SelectChangeEvent<unknown>) => {
-    const value = event.target.value as ComparisonModeOptions;
-    setComparisonMode(value);
-    reportEvent(events.analysisPage.clickedComparisonToggle);
-  };
-
-  const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {
-    const value = event.target.value as number;
-    setFrequency(value);
-    if (period) {
-      setPeriod([
-        dayjs(period[1])
-          .subtract(value * maxWindowsCount, 'second')
-          .toDate(),
-        period[1]
-      ]);
-    }
   };
 
   useEffect(() => {
@@ -142,129 +113,46 @@ export function AnalysisFilters({ model, fixedHeader }: AnalysisFiltersProps) {
     }
   }, [columns, setFilters, setInitialFilters]);
 
-  const handleDateSet = (startTime: Date | undefined, endTime: Date | undefined) => {
-    if (startTime && endTime) {
-      setPeriod([startTime, endTime]);
-    }
-  };
-
-  const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
-    if (frequency && dayjs(startTime).isSame(dayjs(endTime))) {
-      setMaxDate(
-        dayjs(startTime)
-          .add(frequency * maxWindowsCount, 'second')
-          .toDate()
-      );
-      setMinDate(
-        dayjs(startTime)
-          .subtract(frequency * maxWindowsCount, 'second')
-          .toDate()
-      );
-    } else {
-      setMaxDate(null);
-      setMinDate(null);
-    }
-  };
-
   return (
     <>
-      <Stack direction="row" alignItems="center">
-        {fixedHeader && <StyledAnalysisFiltersDivider orientation="vertical" flexItem sx={{ ml: '5px' }} />}
+      <StyledContainer {...props}>
         <Stack
           direction="row"
           alignItems="center"
-          spacing={{ xs: '5px', xl: '14px' }}
-          marginRight={fixedHeader ? 'auto' : ''}
+          spacing="10px"
+          justifyContent={fixedHeader ? 'space-between' : 'start'}
+          flex={1}
+          ref={selectRef}
         >
-          <SwitchButton checked={isComparisonModeOn} setChecked={setIsComparisonModeOn} label="Data comparison" />
-          <MarkedSelect
-            label="Comparison Mode"
-            size="small"
-            value={comparisonMode}
-            onChange={handleComparisonModeChange}
-            disabled={!isComparisonModeOn}
-            sx={{ width: '178px' }}
-            width={{ xs: 150, xl: null }}
-          >
-            {comparisonModeData.map(({ label, value }, index) => (
-              <MenuItem key={`${value}${index}`} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </MarkedSelect>
-          {defaultFrequency ? (
-            <>
-              <DateRange
-                onApply={handleDateSet}
-                onChange={handleDateChange}
-                startTime={period ? period[0] : undefined}
-                endTime={period ? period[1] : undefined}
-                minDate={minDate ? minDate : undefined}
-                maxDate={maxDate ? maxDate : undefined}
-              />
-              <MarkedSelect
-                label="Frequency"
-                size="small"
-                value={frequency ? frequency : ''}
-                onChange={handleFrequencyChange}
-                sx={{ width: '176px' }}
-                width={{ xs: 160, xl: null }}
-              >
-                {frequencyData.map(({ label, value }, index) => (
-                  <MenuItem key={`${value}${index}`} value={value}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </MarkedSelect>
-            </>
-          ) : (
-            ''
-          )}
-          <StyledAnalysisFiltersDivider orientation="vertical" flexItem sx={{ ml: fixedHeader ? '27px' : '' }} />
-          <StyledFiltersButton
-            startIcon={<FilterIcon />}
-            variant="text"
+          <StyledDropdownTextField
             onClick={handleFiltersOpen}
-            sx={{
-              padding: `10px ${filtersLength ? '40px' : '16px'} 10px 15px`
+            value="Filter"
+            InputProps={{
+              endAdornment: <DropdownEndAdornment filtersLength={filtersLength} isDropdownOpen={!!anchorEl} />,
+              readOnly: true
             }}
-          >
-            Filter
-            {!!filtersLength && <StyledFiltersCount>({filtersLength})</StyledFiltersCount>}
-          </StyledFiltersButton>
+          />
+          {!fixedHeader && <ActiveColumnsFilters />}
+          {reset && (
+            <FiltersResetButton
+              title="Reset all filters"
+              handleReset={resetAll}
+              isLoading={isLoading}
+              divider={false}
+            />
+          )}
         </Stack>
-        <Box sx={{ ml: 'auto' }}>
-          {reset &&
-            (fixedHeader ? (
-              <FiltersResetButton title="Reset all" handleReset={resetAll} isLoading={isLoading} divider={false} />
-            ) : (
-              <Stack direction="row" spacing="11px">
-                <FiltersResetButton title="Reset all" handleReset={resetAll} isLoading={isLoading} divider={false} />
-                <StyledAnalysisFiltersDivider orientation="vertical" flexItem />
-              </Stack>
-            ))}
-        </Box>
-      </Stack>
+      </StyledContainer>
       <DropDownFilter anchorEl={anchorEl} columns={columns} open={!!anchorEl} onClose={handleFiltersClose} />
     </>
   );
 }
 
-const StyledAnalysisFiltersDivider = styled(Divider)(({ theme }) => ({
-  margin: '0 14px',
-  borderColor: alpha(theme.palette.grey[200], 0.5)
-}));
-
-const StyledFiltersButton = styled(Button)({
-  position: 'relative',
-  transform: 'translateX(-15px)',
-
-  '& .MuiButton-startIcon': {
-    marginRight: '4px'
-  }
+const StyledContainer = styled(Stack)({
+  flexDirection: 'row',
+  alignItems: 'center'
 });
 
-const StyledFiltersCount = styled(Typography)({
-  position: 'absolute',
-  left: '77px'
+const StyledDropdownTextField = styled(DropdownTextField)({
+  width: '122px'
 });
