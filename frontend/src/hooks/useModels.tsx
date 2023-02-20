@@ -1,23 +1,21 @@
-import { useMemo, useCallback, useContext } from 'react';
-
-import { ModelManagmentSchema } from 'api/generated';
-import { GlobalStateContext } from '../context';
+import { useMemo, useCallback } from 'react';
+import { ModelManagmentSchema, useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
 
 export const emptyModel = {
   id: -1,
   name: 'Empty'
 } as ModelManagmentSchema;
 
-export interface ModelsManagement {
-  models: ModelManagmentSchema[];
-  isLoading: boolean;
-  refetch: () => void;
-}
-
 export const useModels = () => {
-  const { modelsManagement } = useContext(GlobalStateContext);
-
-  const { models, isLoading, refetch: refetchModels } = modelsManagement;
+  const {
+    data: models = [],
+    isLoading,
+    refetch: refetchModels
+  } = useRetrieveAvailableModelsApiV1AvailableModelsGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
 
   const sortedModels = useMemo(() => [...models].sort((a, b) => a.name.localeCompare(b.name)), [models]);
 

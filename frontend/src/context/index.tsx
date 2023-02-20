@@ -1,8 +1,6 @@
-import { useRetrieveAvailableModelsApiV1AvailableModelsGet } from 'api/generated';
 import { PathInfo, pathsInfo as paths } from 'helpers/helper';
 import React, { createContext, FC, useContext } from 'react';
 import { useFlags } from 'launchdarkly-react-client-sdk';
-import { ModelsManagement } from 'hooks/useModels';
 import { setParams } from 'helpers/utils/getParams';
 
 export interface IContext {
@@ -12,20 +10,12 @@ export interface IContext {
   currMonitor?: null;
   isLoggedIn: boolean;
   pathsInfo: PathInfo[];
-  modelsManagement: ModelsManagement;
 }
-
-const initialModelsManagement: ModelsManagement = {
-  models: [],
-  isLoading: false,
-  refetch: () => 1
-};
 
 const initialValue: IContext = {
   dashboard_id: 1,
   isLoggedIn: false,
-  pathsInfo: [],
-  modelsManagement: initialModelsManagement
+  pathsInfo: []
 };
 
 export function getAlertFilters() {
@@ -48,18 +38,6 @@ export function resetAlertFilters(setAlertFilters: any) {
 export const GlobalStateContext = createContext<IContext>(initialValue);
 
 export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children }) => {
-  const retrieveModelsResponse = useRetrieveAvailableModelsApiV1AvailableModelsGet({
-    query: {
-      refetchOnWindowFocus: false
-    }
-  });
-
-  const modelsManagement: ModelsManagement = {
-    models: retrieveModelsResponse.data || [],
-    isLoading: retrieveModelsResponse.isLoading,
-    refetch: retrieveModelsResponse.refetch
-  };
-
   const flags = useFlags();
 
   let pathsInfo = paths;
@@ -71,8 +49,7 @@ export const GlobalStateProvider: FC<{ children: JSX.Element }> = ({ children })
     <GlobalStateContext.Provider
       value={{
         ...initialValue,
-        pathsInfo,
-        modelsManagement
+        pathsInfo
       }}
     >
       {children}
