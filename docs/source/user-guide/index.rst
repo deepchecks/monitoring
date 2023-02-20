@@ -17,7 +17,7 @@ General
     general/workspace_and_users
     general/concepts
     general/faq
-    
+    general/aggregation_methods
 
 Tabular
 -------
