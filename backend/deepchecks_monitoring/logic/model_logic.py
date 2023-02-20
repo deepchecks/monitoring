@@ -19,7 +19,7 @@ from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
 from joblib import Parallel, delayed
-from sqlalchemy import VARCHAR, Table, func, select
+from sqlalchemy import Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
@@ -61,7 +61,7 @@ def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 5_000) 
     if SAMPLE_ID_COL in mon_table.c:
         order_func = func.md5(mon_table.c[SAMPLE_ID_COL])
     else:
-        order_func = func.md5(func.cast(func.row_number().over(), VARCHAR))
+        order_func = func.random()
     return sampled_select_obj.order_by(order_func).limit(n_samples)
 
 
