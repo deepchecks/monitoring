@@ -578,13 +578,18 @@ async def run_check_group_by_feature(
 
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
+    # First create all session for the db to start simultaneously
+    sessions = []
     for f in filters:
         test_session, ref_session = load_data_for_check(model_version, session, top_feat,
                                                         monitor_options.add_filters(f['filters']),
                                                         with_reference=check.is_reference_required, with_test=True)
         # The test info is used for caching purposes so need to fill it here
         test_session_info = {'start': None, 'end': None, 'query': test_session}
-        model_versions_sessions = [(ref_session, [test_session_info])]
+        sessions.append([(ref_session, [test_session_info])])
+
+    # Now wait for sessions and run the check
+    for f, model_versions_sessions in zip(filters, sessions):
         model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
