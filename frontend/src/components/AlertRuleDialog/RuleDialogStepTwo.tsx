@@ -22,7 +22,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   const [isValidConfig, setIsValidConfig] = useState(true);
 
   const [filteredValues, setFilteredValues] = useState<FilteredValues>(
-    (unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf) as FilteredValues) || {}
+    unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf)
   );
   const [resConf, setResConf] = useState<string | undefined>(undefined);
 
@@ -50,9 +50,6 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   }, []);
 
   const additionalKwargs = useMemo(() => {
-    if (filteredValues.feature?.[0] && filteredValues['aggregation method'] === undefined) {
-      filteredValues['aggregation method'] = null;
-    }
     if (Object.keys(filteredValues).length) {
       const additionalKwargs = {
         check_conf: filteredValues,

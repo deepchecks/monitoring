@@ -18,7 +18,6 @@ import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarked
 import { SelectCheck as Check } from 'components/SelectCheck';
 import { SelectColumn as Column } from 'components/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-import { FilteredValues } from 'helpers/utils/checkUtil';
 import { Subcategory } from 'components/Subcategory';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
 
@@ -27,7 +26,7 @@ import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './
 import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectValues, SetStateType } from 'helpers/types';
 import { timeValues } from 'helpers/time';
-import { unionCheckConf } from 'helpers/utils/checkUtil';
+import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/mixPanel';
 
 interface MonitorFormProps extends StackProps {
@@ -65,7 +64,7 @@ export const MonitorForm = ({
   const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
 
   const [filteredValues, setFilteredValues] = useState<FilteredValues>(
-    (unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf) as FilteredValues) || {}
+    unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf)
   );
   const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 

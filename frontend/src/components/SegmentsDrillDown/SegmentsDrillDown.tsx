@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, memo } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
 
-import { CheckGroupBySchema, DataFilter } from 'api/generated';
+import { CheckGroupBySchema, CheckGroupBySchemaValue, DataFilter } from 'api/generated';
 
 import { styled, Box } from '@mui/material';
 
@@ -23,6 +23,14 @@ interface SegmentsDrillDownProps {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
+function stringNameFix(str: string) {
+  return str.replaceAll('_', ' ').toLowerCase();
+}
+
+function getKeyByDatasetname(obj: CheckGroupBySchemaValue, name: string) {
+  return Object.keys(obj).find(key => stringNameFix(key) == stringNameFix(name));
+}
+
 const SegmentsDrillDownComponent = ({
   data,
   datasetName,
@@ -32,7 +40,9 @@ const SegmentsDrillDownComponent = ({
   classOrFeature
 }: SegmentsDrillDownProps) => {
   const dataSet: number[] = useMemo(
-    () => (data.length && datasetName ? data.map(d => (d.value ? d.value[datasetName] : 0)) : []),
+    () => (data.length && datasetName ? data.map(d => (
+      d.value ? d.value[getKeyByDatasetname(d.value, '' + datasetName) || ''] : 0)) : []
+    ),
     [data, datasetName]
   );
 

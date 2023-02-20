@@ -1,6 +1,6 @@
-import { CheckSchema, MonitorCheckConf, MonitorCheckConfSchema } from 'api/generated';
+import { CheckSchema, MonitorCheckConf, MonitorCheckConfSchema, MonitorCheckConfSchemaCheckConf } from 'api/generated';
 import { CheckType, CheckTypeOptions } from './types/check';
-import { unionCheckConf } from 'helpers/utils/checkUtil';
+import { unionCheckConf } from './utils/checkUtil';
 
 export const onDrawerOpen = (
   datasetName: string,
@@ -19,7 +19,7 @@ export const onDrawerOpen = (
   currentModel: any
 ) => {
 
-  const checkMegaConf = unionCheckConf(check.config.params, additionalKwargs?.check_conf);
+  const checkMegaConf = unionCheckConf(check.config.params, additionalKwargs?.check_conf) as MonitorCheckConfSchemaCheckConf;
   if (checkMegaConf) {
     // if the info doesn't contains a selection of features there is no specific check type
     const type = checkInfo?.res_conf

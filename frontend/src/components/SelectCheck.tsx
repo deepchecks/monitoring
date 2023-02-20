@@ -14,7 +14,7 @@ import { MarkedSelect } from 'components/MarkedSelect';
 import { Subcategory } from 'components/Subcategory';
 
 import { SetStateType, SelectValues } from 'helpers/types';
-import { CheckFilterTypes, FilteredValues, TypeMap } from 'helpers/utils/checkUtil';
+import { CheckFilterTypes, FilteredValues, initFilteredValues, TypeMap, unionCheckConf } from 'helpers/utils/checkUtil';
 import { getNameFromData } from './AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
 import { CheckTypeOptions } from 'helpers/types/check';
 
@@ -55,31 +55,16 @@ export const SelectCheckComponent = ({
     checkInfo?.check_conf?.filter(val => val.type == 'feature').length ? CheckTypeOptions.Feature : null
   )), [checkInfo]);
 
-  const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id })), [checksList]);
+  const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id, params: c.config.params })), [checksList]);
 
   const [checkInfoDisabled, setCheckInfoDisabled] = useState(false);
-  const [isAgg, setIsAgg] = useState(true);
+  const [isAgg, setIsAgg] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (type !== CheckTypeOptions.Feature) {
-      setIsAgg(true);
-    } else if (filteredValues?.['aggregation method']?.[0]) {
-      setIsAgg(filteredValues?.['aggregation method']?.[0] != 'none');
-    } else {
-      setIsAgg(false);
-    }
-  }, [type, checkInfo]);
-
-  useEffect(() => {
-    setCheckInfoDisabled(!checkInfo?.check_conf && !checkInfo?.res_conf);
-  }, [checkInfo, setCheckInfoDisabled]);
-
-  const updateFilteredValue = (valueName: string | null, conf: MonitorTypeConf) => {
+  function getFilteredValue(valueName: string | null, conf: MonitorTypeConf) {
     const confType = conf.type as CheckFilterTypes;
-    const value = (confType != CheckFilterTypes.AGGREGATION || valueName != PER_FEATURE) ? valueName : null;
-    const newFilteredValues = { ...filteredValues };
-    newFilteredValues[confType] = value ? [value] : null;
+    let value = (confType != CheckFilterTypes.AGGREGATION || valueName != PER_FEATURE) ? valueName : null;
     if (value) {
+      value = getNameFromData(value, conf.values) || value;
       const confVal = conf.values?.filter(({ name }) => name == value)?.[0];
       const isSetAgg = confVal && confVal.is_agg != null;
       if (isSetAgg) {
@@ -89,6 +74,25 @@ export const SelectCheckComponent = ({
     } else if (confType == CheckFilterTypes.AGGREGATION) {
       setIsAgg(false);
     }
+    return value;
+  }
+
+  useEffect(() => {
+    checkInfo?.check_conf?.map(conf => {
+      const confType = conf.type as CheckFilterTypes;
+      getFilteredValue(filteredValues[confType]?.[0] || null, conf);
+    });
+  }, [type, checkInfo])
+
+
+  useEffect(() => {
+    setCheckInfoDisabled(!checkInfo?.check_conf && !checkInfo?.res_conf);
+  }, [checkInfo, setCheckInfoDisabled]);
+
+  const updateFilteredValue = (valueName: string | null, conf: MonitorTypeConf) => {
+    const value = getFilteredValue(valueName, conf);
+    const newFilteredValues = { ...filteredValues };
+    newFilteredValues[conf.type as CheckFilterTypes] = value ? [value] : null;
     setFilteredValues(newFilteredValues);
   };
 
@@ -125,7 +129,7 @@ export const SelectCheckComponent = ({
     else {
       setIsValidConfig(isAgg || (!!filteredValues?.feature?.[0] || !!resConf));
     }
-  }, [filteredValues?.feature?.[0], filteredValues?.scorer?.[0], resConf, isAgg, type]);
+  }, [filteredValues?.feature?.[0], filteredValues?.scorer?.[0], resConf, isAgg, type, checkInfo]);
 
   return (
     <Stack>
@@ -135,8 +139,19 @@ export const SelectCheckComponent = ({
         label="Check"
         values={checkSelectValues}
         value={check}
-        setValue={setCheck}
-        clearValue={() => setCheck('')}
+        setValue={id => {
+          setCheck(id);
+          const checkIndx = checkSelectValues.findIndex(val => val.value == id);
+          if (checkIndx != -1) {
+            setFilteredValues(unionCheckConf(checkSelectValues[checkIndx].params, undefined));
+          } else {
+            setFilteredValues(initFilteredValues({} as FilteredValues));
+          }
+        }}
+        clearValue={() => {
+          setFilteredValues(initFilteredValues({} as FilteredValues));
+          setCheck('');
+        }}
         disabled={disabled}
       />
       {check && !checkInfoDisabled && (
@@ -180,7 +195,7 @@ export const SelectCheckComponent = ({
                   if (isAgg) {
                     setResConf(undefined);
                   }
-                  return isAgg;
+                  return !!isAgg;
                 })()}
                 value={resConf || ''}
                 required={!isAgg}
