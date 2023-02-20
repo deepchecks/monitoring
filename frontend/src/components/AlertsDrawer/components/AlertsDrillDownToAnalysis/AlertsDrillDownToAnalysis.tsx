@@ -163,7 +163,13 @@ const AlertsDrillDownToAnalysisComponent = ({
         ) : (
           <>
             <TabPanel value={tabIndex} index={0}>
-              <SegmentsDrillDown data={groupBySchema} checkName={selectedCheck} datasetName={selectedDatasetName} />
+              {currentCheck && modelVersionId &&
+              <SegmentsDrillDown
+                data={groupBySchema}
+                check={currentCheck}
+                datasetName={selectedDatasetName}
+                singleCheckRunOptions={singleCheckRunOptions}
+                modelVersionId={modelVersionId}/>}
             </TabPanel>
             <TabPanel value={tabIndex} index={1}>
               <Stack

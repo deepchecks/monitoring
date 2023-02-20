@@ -213,7 +213,11 @@ def get_results_for_model_versions_per_window(
                 result['job_index'] = len(jobs) - 1
 
     if jobs:
-        job_results = Parallel(n_jobs=-1)(jobs)
+        # Do not want to use parallel for less than 3 jobs
+        if len(jobs) <= 2:
+            job_results = [job[0](*job[1], **job[2]) for job in jobs]
+        else:
+            job_results = Parallel(n_jobs=-1)(jobs)
         for model_version, version_results in model_results.items():
             for result in version_results:
                 if 'job_index' in result:

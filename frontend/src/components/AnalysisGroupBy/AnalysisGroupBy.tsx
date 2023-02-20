@@ -166,11 +166,13 @@ const AnalysisGroupByComponent = ({
             <>
               <SegmentsDrillDown
                 data={groupBySchema}
-                checkName={check.name}
+                check={check}
                 datasetName={datasetName}
                 setActiveBarFilters={setActiveBarFilters}
                 feature={selectedFeature?.toString() || ''}
                 classOrFeature={classOrFeature}
+                singleCheckRunOptions={singleCheckRunOptions}
+                modelVersionId={modelVersionId}
               />
               {testSuitePropsAreNotNull && (
                 <StyledRunDownloadSuiteContainer>

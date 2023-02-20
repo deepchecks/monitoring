@@ -465,20 +465,6 @@ export interface MonitorCheckConf {
   res_conf?: MonitorTypeConf;
 }
 
-/**
- * Model ingestion record.
- */
-export interface ModelsInfoSchema {
-  id: number;
-  name: string;
-  description?: string;
-  task_type?: TaskType;
-  alerts_delay_labels_ratio: number;
-  alerts_delay_seconds: number;
-  alerts_count?: number;
-  latest_time?: number;
-}
-
 export type ModelVersionUpdateSchemaFeatureImportance = { [key: string]: number };
 
 /**
@@ -520,6 +506,7 @@ export interface ModelVersionSchema {
   statistics?: ModelVersionSchemaStatistics;
   classes?: string[];
   label_map?: ModelVersionSchemaLabelMap;
+  balance_classes: boolean;
 }
 
 /**
@@ -604,7 +591,7 @@ export interface ModelManagmentSchema {
   task_type?: TaskType;
   has_data?: boolean;
   versions: ModelVersionManagmentSchema[];
-  max_severity: AlertSeverity;
+  max_severity?: AlertSeverity;
 }
 
 export interface ModelDailyIngestion {
@@ -858,7 +845,6 @@ export type CheckGroupBySchemaValue = { [key: string]: any };
 export interface CheckGroupBySchema {
   name?: string | null;
   value?: CheckGroupBySchemaValue;
-  display: unknown[];
   count: number;
   filters: DataFilterList;
 }
@@ -992,6 +978,7 @@ export interface AlertRuleConfigSchema {
   name: string;
   check_name: string;
   frequency: number;
+  condition: Condition;
   alert_severity?: AlertSeverity;
   total_alerts?: number;
   non_resolved_alerts?: number;
@@ -2838,6 +2825,58 @@ export const useRunCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFea
 };
 
 /**
+ * @summary Get Check Display
+ */
+export const getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost = (
+  checkId: number,
+  modelVersionId: number,
+  singleCheckRunOptions: SingleCheckRunOptions
+) => {
+  return customInstance<string[]>({
+    url: `/api/v1/checks/${checkId}/display/${modelVersionId}`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: singleCheckRunOptions
+  });
+};
+
+export type GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost>>
+>;
+export type GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPostMutationBody = SingleCheckRunOptions;
+export type GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useGetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost>>,
+    TError,
+    { checkId: number; modelVersionId: number; data: SingleCheckRunOptions },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost>>,
+    { checkId: number; modelVersionId: number; data: SingleCheckRunOptions }
+  > = props => {
+    const { checkId, modelVersionId, data } = props ?? {};
+
+    return getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost(checkId, modelVersionId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost>>,
+    TError,
+    { checkId: number; modelVersionId: number; data: SingleCheckRunOptions },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
  * Return all alert rules for the configuration screen.
 
 Parameters
@@ -3564,53 +3603,6 @@ export const useGetCreateModelApiV1ModelsPost = <
     { data: ModelCreationSchema },
     TContext
   >(mutationFn, mutationOptions);
-};
-
-/**
- * Create a new model.
-
-Parameters
-----------
-session : AsyncSession, optional
-    SQLAlchemy session.
-
-Returns
--------
-List[ModelsInfoSchema]
-    List of models.
- * @summary Get Models
- */
-export const getModelsApiV1ModelsGet = (signal?: AbortSignal) => {
-  return customInstance<ModelsInfoSchema[]>({ url: `/api/v1/models`, method: 'get', signal });
-};
-
-export const getGetModelsApiV1ModelsGetQueryKey = () => [`/api/v1/models`];
-
-export type GetModelsApiV1ModelsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getModelsApiV1ModelsGet>>>;
-export type GetModelsApiV1ModelsGetQueryError = ErrorType<unknown>;
-
-export const useGetModelsApiV1ModelsGet = <
-  TData = Awaited<ReturnType<typeof getModelsApiV1ModelsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getModelsApiV1ModelsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetModelsApiV1ModelsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getModelsApiV1ModelsGet>>> = ({ signal }) =>
-    getModelsApiV1ModelsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof getModelsApiV1ModelsGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
 };
 
 /**

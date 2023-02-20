@@ -53,7 +53,7 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
             <StyledDateValue>{model.latest_time ? dayjs.unix(model.latest_time).format('L') : '-'}</StyledDateValue>
           </StyledDateContainer>
         </Box>
-        <StyledAlertBadge severity={model?.max_severity} alertsCount={model.alerts_count} onClick={handleAlertClick}>
+        <StyledAlertBadge severity={model.max_severity} alertsCount={model.alerts_count} onClick={handleAlertClick}>
           <StyledAlertsCount>{model.alerts_count}</StyledAlertsCount>
         </StyledAlertBadge>
       </StyledModelInfo>

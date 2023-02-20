@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useEffect, memo } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
 
-import { CheckGroupBySchema, CheckGroupBySchemaValue, DataFilter } from 'api/generated';
+import { CheckGroupBySchema, CheckSchema, CheckGroupBySchemaValue, DataFilter,
+  getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost,SingleCheckRunOptions } from 'api/generated';
+
 
 import { styled, Box } from '@mui/material';
 
@@ -9,16 +11,19 @@ import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
 import { ClassOrFeature } from 'components/AnalysisGroupBy/AnalysisGroupBy.types';
+import { Loader } from 'components/Loader';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 
 interface SegmentsDrillDownProps {
   data: CheckGroupBySchema[];
   datasetName: ControlledMarkedSelectSelectValues;
-  checkName: ControlledMarkedSelectSelectValues;
+  check: CheckSchema;
   setActiveBarFilters?: React.Dispatch<React.SetStateAction<DataFilter[]>>;
   feature?: string;
   classOrFeature?: ClassOrFeature | null;
+  modelVersionId: number;
+  singleCheckRunOptions: SingleCheckRunOptions;
 }
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
@@ -34,10 +39,12 @@ function getKeyByDatasetname(obj: CheckGroupBySchemaValue, name: string) {
 const SegmentsDrillDownComponent = ({
   data,
   datasetName,
-  checkName,
+  check,
   setActiveBarFilters,
   feature,
-  classOrFeature
+  classOrFeature,
+  modelVersionId,
+  singleCheckRunOptions
 }: SegmentsDrillDownProps) => {
   const dataSet: number[] = useMemo(
     () => (data.length && datasetName ? data.map(d => (
@@ -47,23 +54,40 @@ const SegmentsDrillDownComponent = ({
   );
 
   const labels = useMemo(() => (data.length ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
-  const yTitle = useMemo(() => classOrFeature?.type === 'Feature' ? `${checkName} - ${datasetName}` : `${datasetName}`,
-    [checkName, datasetName, classOrFeature]
+  const yTitle = useMemo(() => classOrFeature?.type === 'Feature' ? `${check.name} - ${datasetName}` : `${datasetName}`,
+    [check, datasetName, classOrFeature]
   );
 
+  const [allPlots, setAllPlots] = useState<Record<number, string[]>>({});
+  const [plots, setPlots] = useState<string[] | null>(null);
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
   const [title, setTitle] = useState<string>();
 
-  const plots = data ? (data[activeBarIndex]?.display as string[]) : [];
-
   useEffect(() => {
+    async function loadDisplay(data: CheckGroupBySchema) {
+      const options = {...singleCheckRunOptions, filter: data.filters};
+      const resp = await getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost(check.id, modelVersionId, options)
+      setAllPlots(prevState => ({...prevState, [activeBarIndex]: resp}))
+      setPlots(resp);
+    }
+
     if (setActiveBarFilters && data && data[activeBarIndex] && data[activeBarIndex].filters) {
       setActiveBarFilters(data[activeBarIndex].filters.filters);
     }
 
-    setTitle(`${checkName} On Segment: ${activeBarName}`);
-  }, [activeBarIndex, data, setActiveBarFilters, activeBarName, checkName]);
+    setTitle(`${check.name} On Segment: ${activeBarName}`);
+
+    // Load display
+    if (allPlots[activeBarIndex]) {
+      setPlots(allPlots[activeBarIndex]);
+    }
+    else {
+      setPlots(null)
+      loadDisplay(data[activeBarIndex])
+    }
+
+  }, [activeBarIndex, data, setActiveBarFilters, activeBarName, check]);
 
   return (
     <StyledContainer>
@@ -81,7 +105,7 @@ const SegmentsDrillDownComponent = ({
             yTitle={yTitle}
             xTitle={feature}
           />
-          <SegmentTests title={title} plots={plots.map(plot => JSON.parse(plot))} />
+          {plots ? <SegmentTests title={title} plots={plots.map(plot => JSON.parse(plot))} /> : <Loader />}
         </>
       )}
     </StyledContainer>

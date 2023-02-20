@@ -840,15 +840,16 @@ def test_categorical_feature_drill_down(
         classification_model_version=classification_model_version
     )
 
+    options = {
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat()
+    }
     # == Act
     result = test_api.feature_drill_down(
         feature="b",
         check_id=classification_model_check["id"],
         model_version_id=classification_model_version["id"],
-        options={
-            "start_time": start_time.isoformat(),
-            "end_time": end_time.isoformat()
-        }
+        options=options
     )
 
     # == Assert
@@ -858,18 +859,26 @@ def test_categorical_feature_drill_down(
         has_entries({
             "name": "All Data",
             "value": has_length(3),
-            "display": has_length(1),
             "count": 4,
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
             "name": "ppppp",
             "value": has_length(3),
-            "display": has_length(1),
             "count": 4,
             "filters": has_entries({"filters": has_length(1)})
         })
     ))
+
+    # == Act - display
+    options["filters"] = result[1]["filters"]
+    result = test_api.check_display(
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        options=options
+    )
+    # == Assert - display
+    assert_that(result, has_length(1))
 
 
 def test_numerical_feature_drill_down_with_single_value_in_bin(
@@ -890,15 +899,16 @@ def test_numerical_feature_drill_down_with_single_value_in_bin(
         daterange=daterange
     )
 
+    options = {
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.add(minutes=1).isoformat()
+    }
     # == Act
     result = test_api.feature_drill_down(
         check_id=classification_model_check["id"],
         model_version_id=classification_model_version["id"],
         feature="a",
-        options={
-            "start_time": start_time.isoformat(),
-            "end_time": end_time.add(minutes=1).isoformat()
-        }
+        options=options
     )
 
     # Assert
@@ -908,32 +918,38 @@ def test_numerical_feature_drill_down_with_single_value_in_bin(
         has_entries({
             "name": "All Data",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 6,
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
             "name": "10",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 4,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
             "name": "11",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 1,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
             "name": "12",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 1,
             "filters": has_entries({"filters": has_length(2)})
         })
     ))
+
+    # == Act - display
+    options["filters"] = result[0]["filters"]
+    result = test_api.check_display(
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        options=options
+    )
+    # == Assert - display
+    assert_that(result, has_length(0))
 
 
 def test_numerical_feature_drill_down(
@@ -947,16 +963,17 @@ def test_numerical_feature_drill_down(
         model_version_id=classification_model_version["id"],
         samples_per_date=30
     )
+    options = {
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.add(minutes=1).isoformat()
+    }
 
     # == Act
     result = test_api.feature_drill_down(
         check_id=classification_model_check["id"],
         model_version_id=classification_model_version["id"],
         feature="a",
-        options={
-            "start_time": start_time.isoformat(),
-            "end_time": end_time.add(minutes=1).isoformat()
-        }
+        options=options
     )
 
     # == Assert
@@ -967,25 +984,32 @@ def test_numerical_feature_drill_down(
         has_entries({
             "name": "All Data",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 150,
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
             "name": "[10, 16)",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 43,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
             "name": "[85, 126]",
             "value": has_length(3),
-            "display": has_length(0),
             "count": 16,
             "filters": has_entries({"filters": has_length(2)})
         })
     ))
+
+    # == Act - display
+    options["filters"] = result[0]["filters"]
+    result = test_api.check_display(
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        options=options
+    )
+    # == Assert - display
+    assert_that(result, has_length(0))
 
 
 async def test_get_notebook(

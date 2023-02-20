@@ -1280,8 +1280,30 @@ class TestAPI:
 
         for it in data:
             assert isinstance(it, dict)
-            for k in ("name", "filters", "count", "value", "display"):
+            for k in ("name", "filters", "count", "value"):
                 assert k in it
+
+        return data
+
+    def check_display(
+        self,
+        model_version_id: int,
+        check_id: int,
+        options: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.post(f"checks/{check_id}/display/{model_version_id}", json=options)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            assert isinstance(it, str)
 
         return data
 

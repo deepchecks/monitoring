@@ -61,7 +61,7 @@ export const StyledDateValue = styled(StyledDate)({
 });
 
 interface StyledAlertBadgeProps {
-  severity: AlertSeverity;
+  severity?: AlertSeverity;
   alertsCount: number;
 }
 

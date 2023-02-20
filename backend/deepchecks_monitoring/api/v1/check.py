@@ -98,7 +98,6 @@ class CheckGroupBySchema(BaseModel):
 
     name: t.Optional[str] = Field(nullable=True)
     value: t.Optional[t.Dict]
-    display: t.List
     count: int
     filters: DataFilterList
 
@@ -537,7 +536,7 @@ async def run_check_group_by_feature(
     # Get all data count
     data_table = model_version.get_monitor_table(session)
     count = (await session.execute(select(func.count()).where(monitor_options.sql_all_filters())
-                                   .select_from(model_version.get_monitor_table(session)))).scalar()
+                                   .select_from(data_table))).scalar()
     if count == 0:
         raise NotFound('No data was found for given filters and dates')
 
@@ -577,20 +576,12 @@ async def run_check_group_by_feature(
                 'count': curr_bin['count']
             })
 
-    # Ugly hack to show different display instead of the one of single dataset performance
-    if check.config['class_name'] == 'SingleDatasetPerformance':
-        check_for_display = Check(config=TrainTestPerformance().config(), is_reference_required=True,
-                                  is_label_required=True)
-        load_reference = True
-    else:
-        check_for_display = None
-        load_reference = check.is_reference_required
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
     for f in filters:
         test_session, ref_session = load_data_for_check(model_version, session, top_feat,
                                                         monitor_options.add_filters(f['filters']),
-                                                        with_reference=load_reference, with_test=True)
+                                                        with_reference=check.is_reference_required, with_test=True)
         # The test info is used for caching purposes so need to fill it here
         test_session_info = {'start': None, 'end': None, 'query': test_session}
         model_versions_sessions = [(ref_session, [test_session_info])]
@@ -598,24 +589,52 @@ async def run_check_group_by_feature(
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
             model_version_dataframes, [model_version], model_version.model, check,
-            monitor_options.additional_kwargs, with_display=check_for_display is None)
+            monitor_options.additional_kwargs, with_display=False)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
         if result['result'] is not None:
             check_result = result['result']
             f['value'] = reduce_check_result(check_result, monitor_options.additional_kwargs)
-            f['display'] = [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
         else:
             f['value'] = None
-            f['display'] = []
-
-        if check_for_display is not None:
-            model_results_per_window = get_results_for_model_versions_per_window(
-                model_version_dataframes, [model_version], model_version.model, check_for_display,
-                monitor_options.additional_kwargs, with_display=True)
-            # The function we called is more general, but we know here we have single version and window
-            result = model_results_per_window[model_version][0]
-            if result['result'] is not None:
-                f['display'] = [d.to_json() for d in result['result'].display if isinstance(d, BaseFigure)]
 
     return filters
+
+
+@router.post('/checks/{check_id}/display/{model_version_id}',
+             response_model=t.List[str], tags=[Tags.CHECKS])
+async def get_check_display(
+        check_id: int,
+        model_version_id: int,
+        monitor_options: SingleCheckRunOptions,
+        session: AsyncSession = AsyncSessionDep,
+):
+    check: Check = await fetch_or_404(session, Check, id=check_id)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
+                                                     options=joinedload(ModelVersion.model))
+
+    # Ugly hack to show different display instead of the one of single dataset performance
+    if check.config['class_name'] == 'SingleDatasetPerformance':
+        # TODO: needs to copy kwargs from the original check? are they the same?
+        check = Check(config=TrainTestPerformance().config(), is_reference_required=True,
+                      is_label_required=True)
+
+    top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
+
+    test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
+                                                    with_reference=check.is_reference_required, with_test=True)
+    # The test info is used for caching purposes so need to fill it here
+    test_session_info = {'start': None, 'end': None, 'query': test_session}
+    model_versions_sessions = [(ref_session, [test_session_info])]
+    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    # Get value from check to run
+    model_results_per_window = get_results_for_model_versions_per_window(
+        model_version_dataframes, [model_version], model_version.model, check,
+        monitor_options.additional_kwargs, with_display=True)
+
+    # The function we called is more general, but we know here we have single version and window
+    result = model_results_per_window[model_version][0]
+    if result['result'] is not None:
+        check_result = result['result']
+        return [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
+    return []
