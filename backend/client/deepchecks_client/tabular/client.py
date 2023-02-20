@@ -649,7 +649,7 @@ def _process_batch(
             # TODO: replace this with link to docs when they are ready
             warnings.warn(
                 'Index of provided "data" dataframe completely matches "sample_ids" array, '
-                'are you sure that "samples_ids" array is correct and contains correct '
+                'are you sure that "samples_ids" array is correct and contains unique sample '
                 'identifiers?',
                 category=UserWarning
             )

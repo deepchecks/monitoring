@@ -2,17 +2,25 @@
 """
 .. _lending_defaults:
 
-Use Case: Predicting Loan Defaults
-**********************************************
+Predicting Loan Defaults (Classification)
+*****************************************
 
-We are using an adaptation of the `Lending Club loan data
+In this Demo e are using an adaptation of the `Lending Club loan data
 <https://www.kaggle.com/datasets/wordsforthewise/lending-club>`__ dataset to show how you can use Deepchecks to
 monitor and identify issues in a Loan Default prediction task.
 
-In this use case you are a Data Scientist in a renowned bank, and you are tasked with identifying customers that are
+You are a Data Scientist in a renowned bank, and you are tasked with identifying customers that are
 likely to default on their mortgage loan. In this example we'll use Deepchecks to quickly detect some data integrity
 issues that occur over the lifetime of the model, and we'll see how Deepchecks can alert us about potential model
 deterioration that can be caused by increasing interest rates, even while labels are not yet available.
+
+1. `Setting You Up on Deepchecks`_
+2. `Creating a Model & Model Version`_
+3. `Uploading Production Data`_
+4. `Analyzing Using Deepchecks`_
+
+..  tip::
+    To see how Deepchecks Monitoring is used, you can skip right to `Analyzing Using Deepchecks`_
 
 Setting You Up on Deepchecks
 ============================
@@ -20,10 +28,10 @@ Setting You Up on Deepchecks
 Installation & API key
 ----------------------
 
-In order to work with Deepchecks Pro, you need to:
+In order to work with Deepchecks Monitoring, you need to:
 
 1. Install with ``pip`` the deepchecks-client SDK
-2. Log in to the Deepchecks Pro app and create an organization
+2. Log in to the Deepchecks Monitoring app and create an organization
 3. Obtain an API key from the app
 
 For more details, please refer to the :doc:`Quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`.
@@ -31,16 +39,20 @@ For more details, please refer to the :doc:`Quickstart </user-guide/tabular/auto
 Creating a Client
 -----------------
 
-To work with Deepchecks Pro we first instantiate a client object.
+To work with Deepchecks Monitoring we first instantiate a client object.
 """
 
 import os
 from deepchecks_client import DeepchecksClient
-# Point the host to deepchecks app
-host = os.environ.get('DEEPCHECKS_API_HOST')  # Replace this with the deepchecks host url (e.g. https://app.deepchecks.com) or set it as an environment variable
-# note to put the API token in your environment variables. Or alternatively (less recommended):
-# os.environ['DEEPCHECKS_API_TOKEN'] = 'uncomment-this-line-and-insert-your-api-token-here'
-dc_client = DeepchecksClient(host=host, token=os.getenv('DEEPCHECKS_API_TOKEN'))
+# Note:  add an environment variable DEEPCHECKS_API_TOKEN and set it to your API token's value. Alternatively (not
+# recommended for security reasons) copy-paste your token string here, instead of retrieving it from the environment
+# variable.
+token = os.getenv('DEEPCHECKS_API_TOKEN')
+# Point the host to deepchecks host url (e.g. https://app.deepchecks.com. Save it to an environment variable,
+# or alternatively copy-paste it here directly)
+host = os.getenv('DEEPCHECKS_API_HOST')
+# Create a DeepchecksClient with relevant credentials
+dc_client = DeepchecksClient(host=host, token=token)
 
 # %%
 # We'll use this object during the remainder of this example.
@@ -153,7 +165,7 @@ feature_importance = pd.Series(model.feature_importances_, index=model.feature_n
 ref_predictions = model.predict(train_df[features])
 ref_predictions_proba = model.predict_proba(train_df[features])
 
-model_name = 'tmp-lending-club'
+model_name = 'Loan Defaults - Example-tmp'
 
 # %%
 # It is also recommended to explicitly tell deepchecks about the classes in your task using the

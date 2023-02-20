@@ -50,5 +50,5 @@ Examples
     :maxdepth: 2
     :caption: Examples
 
-    auto_examples/index
+    auto_demos/index
 
