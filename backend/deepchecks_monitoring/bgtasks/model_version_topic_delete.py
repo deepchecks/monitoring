@@ -71,7 +71,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         else:
             reinsert_task = True
 
-        await session.scalar(delete(Task).where(Task.id == task.id))
+        await session.execute(delete(Task).where(Task.id == task.id))
 
         if reinsert_task:
             await insert_model_version_topic_delete_task(org_id, model_version_id, session)
