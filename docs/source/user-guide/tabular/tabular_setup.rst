@@ -78,7 +78,7 @@ Additional optional parameters for the model creation are:
 - ``create_defaults`` - Whether to add default checks, monitors and alerts to the model. Default is ``True``, but you can
   set it to ``False`` if you want to later manually add only the checks, monitors and alerts relevant to your use case.
 - ``alerts_delay_labels_ratio`` and ``alerts_delay_seconds`` - See the
-  :doc:`Handling Delayed Labels in Alerts </user-guide/tabular/tabular_production#updating-labels>` section of the
+  :ref:`Handling Delayed Labels in Alerts <tabular_production__updating_labels>` section of the
   production data guide for more details.
 
 Deleting a Model

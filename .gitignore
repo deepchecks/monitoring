@@ -171,7 +171,7 @@ docs/build
 schema_file.yaml
 docs/source/api/generated
 docs/source/**/auto_quickstarts/
-docs/source/**/auto_examples/
+docs/source/**/auto_demos/
 
 # cypress test outputs
 cypress/videos

@@ -53,7 +53,7 @@ customer, or by the type of device used. If this data is not used by the model, 
 
     The data you upload must match the data schema used when creating the model version, which is a definition
     of the data columns and their roles. To learn more about defining your version schema, see the
-    :doc:`tabular setup guide </user-guide/tabular/tabular_setup#schema-file>`.
+    :ref:`tabular setup guide <tabular_setup__schema_file>`.
 
 Data can be uploaded in two ways:
     1. `By batch <#batch-upload>`__ - upload a batch of data at once. Useful for uploading historical data, or when
@@ -210,7 +210,7 @@ has not yet been processed, so the data won't show up in the dashboard and analy
 .. image:: /_static/images/user-guide/models_screen.png
     :width: 600
 
-
+.. _tabular_production__updating_labels:
 Updating Labels
 ===============
 

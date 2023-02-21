@@ -5,7 +5,7 @@
 Predicting Loan Defaults (Classification)
 *****************************************
 
-In this Demo e are using an adaptation of the `Lending Club loan data
+In this Demo we are using an adaptation of the `Lending Club loan data
 <https://www.kaggle.com/datasets/wordsforthewise/lending-club>`__ dataset to show how you can use Deepchecks to
 monitor and identify issues in a Loan Default prediction task.
 
@@ -140,14 +140,14 @@ read_schema(schema_file_path)
 # In order to provide the best analysis and alerts, we should let Deepchecks know about the relative importance of the
 # features to the model's prediction. In this example we'll load our model and get its feature importance, but these can
 # be easily :doc:`calculated using deepchecks <deepchecks:user-guide/tabular/feature_importance>`, or other methods
-# (such as SHAP).
+# (such as SHAP). Note that the feature importance values should be normalized to sum to 1.
 
 import joblib
 from urllib.request import urlopen
 with urlopen('https://figshare.com/ndownloader/files/39316172') as f:
     model = joblib.load(f)
 
-feature_importance = pd.Series(model.feature_importances_, index=model.feature_names_)
+feature_importance = pd.Series(model.feature_importances_ / sum(model.feature_importances_), index=model.feature_names_)
 
 # %%
 # Creating a Model Version
@@ -165,7 +165,7 @@ feature_importance = pd.Series(model.feature_importances_, index=model.feature_n
 ref_predictions = model.predict(train_df[features])
 ref_predictions_proba = model.predict_proba(train_df[features])
 
-model_name = 'Loan Defaults - Example-tmp'
+model_name = 'Loan Defaults - Example'
 
 # %%
 # It is also recommended to explicitly tell deepchecks about the classes in your task using the
@@ -314,3 +314,5 @@ model_version.update_batch(sample_ids=labels_to_update, labels=[0] * len(labels_
 # CAUTION: This will delete the model, all model versions, and all associated datasets.
 
 dc_client.delete_model(model_name)
+
+# sphinx_gallery_thumbnail_path = '_static/images/examples/lending/money.png'

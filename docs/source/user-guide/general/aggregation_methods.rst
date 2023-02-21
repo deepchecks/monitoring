@@ -23,6 +23,8 @@ L2 norm of feature importance alone, specifically:
 
 ``||FEATURE_IMPORTANCE + PER_FEATURE_VALUES|| - ||FEATURE_IMPORTANCE||``
 
+Note that for this method, the feature importance values are normalized to sum to 1.
+
 The main benefits of this method are:
 
 * Values for features with high importance are given more weight yet it does not cancel out the

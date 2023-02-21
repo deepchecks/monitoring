@@ -71,7 +71,7 @@ export const CompleteDetails = () => {
         >
           <Logo isColored={true} />
           <Typography sx={{ fontWeight: 700, my: 8 }}>
-            At this point, Deepchecks Pro will only be available by invitation. Please contact us at info@deepchecks.com
+            At this point, Deepchecks Hub will only be available by invitation. Please contact us at info@deepchecks.com
             to get an invite.
           </Typography>
         </Box>

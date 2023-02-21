@@ -139,7 +139,7 @@ read_schema(schema_file_path)
 # In order to provide the best analysis and alerts, we should let Deepchecks know about the relative importance of
 # the features to the model's prediction. In this example we'll load pre-calculated features importnaces,
 # but these can be easily calculated using :doc:`deepchecks <deepchecks:user-guide/tabular/feature_importance>`,
-# or other methods (such as SHAP).
+# or other methods (such as SHAP). Note that the feature importance values should be normalized to sum to 1.
 
 from deepchecks.tabular.datasets.regression.airbnb import load_pre_calculated_feature_importance
 feature_importance = load_pre_calculated_feature_importance()
@@ -158,7 +158,7 @@ feature_importance = load_pre_calculated_feature_importance()
 from deepchecks.tabular.datasets.regression.airbnb import load_pre_calculated_prediction
 ref_predictions, _ = load_pre_calculated_prediction()
 
-model_name = 'Rent Prediction - Example-tmp'
+model_name = 'Rent Prediction - Example'
 
 model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name='ver_1',
                                                        schema=schema_file_path,
@@ -340,3 +340,5 @@ model_version.log_batch(sample_ids=first_half_df.index,
 # CAUTION: This will delete the model, all model versions, and all associated datasets.
 
 dc_client.delete_model(model_name)
+
+# sphinx_gallery_thumbnail_path = '_static/images/examples/rent/manhattan.png'
