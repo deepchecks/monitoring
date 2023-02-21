@@ -18,6 +18,7 @@ General
     general/concepts
     general/faq
     general/aggregation_methods
+    general/scorers
 
 Tabular
 -------
