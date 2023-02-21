@@ -13,7 +13,7 @@ import { CheckGroupBySchema } from 'api/generated';
 
 interface CheckPerSegmentProps {
   segmentData: CheckGroupBySchema[];
-  dataSet: number[];
+  dataSet: Array<number|null>;
   labels: string[];
   setActiveBarName: SetStateType<string>;
   activeBarIndex: number;

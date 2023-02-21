@@ -46,9 +46,9 @@ const SegmentsDrillDownComponent = ({
   modelVersionId,
   singleCheckRunOptions
 }: SegmentsDrillDownProps) => {
-  const dataSet: number[] = useMemo(
+  const dataSet: Array<number|null> = useMemo(
     () => (data.length && datasetName ? data.map(d => (
-      d.value ? d.value[getKeyByDatasetname(d.value, '' + datasetName) || ''] : 0)) : []
+      d.value ? d.value[getKeyByDatasetname(d.value, '' + datasetName) || ''] : null)) : []
     ),
     [data, datasetName]
   );

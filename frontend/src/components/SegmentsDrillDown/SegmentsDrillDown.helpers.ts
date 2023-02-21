@@ -12,15 +12,16 @@ export const barsColorArray = (length: number): string[] => Array(length).fill(B
 
 export const chartOptions = (
   segmentData: CheckGroupBySchema[],
-  data: number[],
+  data: Array<number|null>,
   yTitle?: string,
   xTitle?: string,
   activeIndex?: number
 ): ChartOptions<'bar'> => {
   const allZeros = data.every(d => d === 0);
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const stepSize = Math.max(...data.map(d => Math.abs(d))) / 3;
+  const nonNulls : number[] = data.filter(f => f!==null) as number[];
+  const max = Math.max(...nonNulls);
+  const min = Math.min(...nonNulls);
+  const stepSize = Math.max(...nonNulls.map(d => Math.abs(d))) / 3;
 
   return {
     indexAxis: 'x' as const,
@@ -78,12 +79,12 @@ export const chartOptions = (
   };
 };
 
-export const chartData = (labels: string[], data: number[], barsColors: string[]): ChartData<'bar'> => ({
+export const chartData = (labels: string[], data: Array<number|null>, barsColors: string[]): ChartData<'bar'> => ({
   labels,
   datasets: [
     {
       label: TITLE,
-      data,
+      data: data as number[],
       borderColor: 'transparent',
       backgroundColor: barsColors,
       hoverBackgroundColor: ACTIVE_BAR_COLOR,
