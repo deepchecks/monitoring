@@ -58,7 +58,7 @@ class ColumnType(str, enum.Enum):
         """Return the json type of the column type."""
         types_map = {
             ColumnType.NUMERIC: {"type": "number"},
-            ColumnType.INTEGER: {"type": "integer"},
+            ColumnType.INTEGER: {"type": "integer", "maximum": 2147483647, "minimum": -2147483648},
             ColumnType.CATEGORICAL: {"type": "string"},
             ColumnType.BOOLEAN: {"type": "boolean"},
             ColumnType.TEXT: {"type": "string"},
@@ -138,5 +138,12 @@ def column_types_to_table_columns(column_types: t.Dict[str, ColumnType], primary
     -------
     List[sqlalchemy.Column]
     """
-    return [Column(name, data_type.to_sqlalchemy_type(), index=True, primary_key=(name == primary_key))
-            for name, data_type in column_types.items()]
+    return [
+        Column(
+            name,
+            data_type.to_sqlalchemy_type(),
+            index=True,
+            primary_key=(name == primary_key)
+        )
+        for name, data_type in column_types.items()
+    ]

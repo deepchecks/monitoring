@@ -7,6 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+import typing as t
+
 import pendulum as pdl
 import pytest
 from deepdiff import DeepDiff
@@ -138,6 +140,46 @@ async def test_log_data_different_columns_in_samples(
         ]
     )
     await assert_ingestion_errors_count(0, async_session)
+
+
+@pytest.mark.asyncio
+async def test_samples_upload_with_integer_value_overflow(
+    test_api: TestAPI,
+    classification_model: Payload,
+    async_session: AsyncSession
+):
+    version = t.cast(Payload, test_api.create_model_version(
+        model_id=classification_model["id"],
+        model_version={
+            "name": "v1",
+            "features": {"a": "integer", "b": "categorical"},
+            "feature_importance": {"a": 0.1, "b": 0.5},
+            "classes": ["0", "1", "2"]
+        }
+    ))
+    test_api.upload_samples(
+        model_version_id=version["id"],
+        samples=[
+            {
+                "_dc_sample_id": "a000",
+                "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+                "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+                "_dc_prediction": "2",
+                "a": 2147483648,
+                "b": "ppppp",
+            },
+            {
+                "_dc_sample_id": "a001",
+                "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
+                "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
+                "_dc_prediction": "2",
+                "a": -2147483649,
+                "b": "ppppp",
+            },
+
+        ]
+    )
+    await assert_ingestion_errors_count(2, async_session)
 
 
 @pytest.mark.asyncio
