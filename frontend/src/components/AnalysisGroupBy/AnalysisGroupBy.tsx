@@ -61,7 +61,8 @@ const AnalysisGroupByComponent = ({
 
         let featuresNames;
         if (feature_importance != null && feature_importance.length > 0) {
-          featuresNames = Object.keys(feature_importance).sort((a, b) => feature_importance[b] - feature_importance[a]);
+          // Sort first by importance, then by name
+          featuresNames = Object.keys(feature_importance).sort((a, b) => feature_importance[b] - feature_importance[a] || a.localeCompare(b));
         } else {
           featuresNames = Object.keys(features).sort();
         }
