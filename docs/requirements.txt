@@ -5,3 +5,5 @@ sphinx-copybutton>=0.4.0
 sphinx-gallery>=0.10.1
 sphinx_toolbox>=0.3.0
 catboost==1.1.1
+sphinx-reredirects>=0.0.1
+sphinx-design>=0.3.0

@@ -39,6 +39,8 @@ extensions = [
     'sphinx_copybutton',
     'sphinx.ext.intersphinx',
     'sphinx_toolbox.collapse',
+    'sphinx_reredirects',
+    'sphinx_design',
 ]
 
 intersphinx_mapping = {
@@ -52,7 +54,15 @@ intersphinx_mapping = {
     'datetime':  ('https://docs.python.org/3', None),
 }
 
+redirects = {
+    "index": "getting-started/welcome.html",
+    "getting-started/index": "welcome.html",
+}
+
 sphinx_gallery_conf = {
+    "remove_config_comments": True, # for enabling to overide the default thumb_file aesthetically
+    "default_thumb_file": os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "_static/images/general/sphx_glr_deepchecks_icon.png"),
     "examples_dirs": [
         "user-guide/tabular/quickstarts",
         "user-guide/demos"
@@ -61,8 +71,7 @@ sphinx_gallery_conf = {
         "user-guide/tabular/auto_quickstarts",
         "user-guide/auto_demos"
     ],
-    "default_thumb_file": os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                       "_static/images/general/sphx_glr_deepchecks_icon.png"),
+
 }
 
 # Add any paths that contain templates here, relative to this directory.
