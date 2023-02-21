@@ -11,6 +11,7 @@ import { alpha, Button, Stack, Typography, useTheme } from '@mui/material';
 import { AlertCount } from './AlertCount';
 
 import { DeleteIcon, PencilDrawing } from 'assets/icon/icon';
+import { OperatorsEnumMap } from 'helpers/conditionOperator';
 
 interface AlertRuleConfigItemProps {
   alertRule: AlertRuleConfigSchema;
@@ -39,6 +40,9 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
   const [headerColor, setHeaderColor] = useState(theme.palette.error.dark);
 
   const checkFrequencyFormatted = dayjs.duration(frequency, 'seconds').humanize();
+
+  const { operator, value } = alertRule.condition;
+  const condition = `${OperatorsEnumMap[operator]} ${value}`;
 
   return (
     <Stack
@@ -90,8 +94,10 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
         }}
       >
         <Stack direction="row">
-          <Typography sx={{ fontSize: '16px', fontWeight: 600, lineHeight: '24px', mr: '10px' }}>Check:</Typography>
-          <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px' }}>{checkName}</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 600, lineHeight: '24px', mr: '10px' }}>Condition:</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 400, lineHeight: '24px' }}>
+            {checkName} {condition}
+          </Typography>
         </Stack>
         <Stack direction="row">
           <Typography sx={{ fontSize: '16px', fontWeight: 600, lineHeight: '24px', mr: '10px' }}>
