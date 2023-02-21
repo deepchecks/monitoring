@@ -184,8 +184,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             else feature_importance
         )
 
-        if not all(isinstance(it, float) for it in feature_importance.values()):
-            raise ValueError('feature_importance must contain only values of type float')
+        _feature_importance_validate(feature_importance, self.features)
 
         self.api.update_model_version(
             model_version_id=self.model_version_id,
@@ -473,10 +472,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                     raise ValueError(f'value of features must be one of {ColumnType.values()} but got {value}')
 
             if feature_importance is not None:
-                if not isinstance(feature_importance, dict):
-                    raise ValueError('feature_importance must be a dict')
-                if any((not isinstance(v, float) for v in feature_importance.values())):
-                    raise ValueError('feature_importance must contain only values of type float')
+                _feature_importance_validate(feature_importance, features)
             else:
                 warnings.warn(
                     'It is recommended to provide feature importance for more insightful results.\n'
@@ -799,3 +795,14 @@ def _string_formatter(some_obj):
     if pd.isna(some_obj):
         return None
     return str(some_obj)
+
+
+def _feature_importance_validate(feature_importance: dict, features: dict):
+    if not isinstance(feature_importance, dict):
+        raise ValueError('feature_importance must be a dict')
+    if any((not isinstance(v, Number) for v in feature_importance.values())):
+        raise ValueError('feature_importance must contain only numeric values')
+    if any(v < 0 for v in feature_importance.values()):
+        raise ValueError('feature_importance must contain only non-negative values')
+    if set(feature_importance.keys()) != set(features):
+        raise ValueError('feature_importance must contain all features')

@@ -113,6 +113,8 @@ async def get_or_create_version(
         if mutual_exclusive_keys:
             raise BadRequest('feature_importance must contain exactly same features as specified in "features". '
                              f'Missing features: {mutual_exclusive_keys}')
+        if any(val < 0 for val in info.feature_importance.values()):
+            raise BadRequest('feature_importance values must be non-negative')
 
     # Validate features and additional data doesn't intersect
     intersects_names = set(info.features.keys()).intersection(info.additional_data.keys())
