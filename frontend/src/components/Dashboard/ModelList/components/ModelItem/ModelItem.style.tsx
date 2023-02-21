@@ -62,12 +62,13 @@ export const StyledDateValue = styled(StyledDate)({
 
 interface StyledAlertBadgeProps {
   severity?: AlertSeverity;
-  alertsCount: number;
+  alertsCount?: number;
+  disableHover?: boolean;
 }
 
 export const StyledAlertBadge = styled(Box, {
   shouldForwardProp: prop => prop !== 'severity' && prop !== 'alertsCount'
-})<StyledAlertBadgeProps>(({ severity, alertsCount, theme }) => {
+})<StyledAlertBadgeProps>(({ severity, alertsCount, disableHover, theme }) => {
   const severityColor = theme.palette.severity[alertsCount === 0 || severity == null ? 'low' : severity];
 
   return {
@@ -83,12 +84,12 @@ export const StyledAlertBadge = styled(Box, {
     justifyContent: 'center',
     backgroundColor: alpha(severityColor, 0.1),
     border: `1px solid ${alpha(severityColor, 0.2)}`,
-    borderRadius: '10px',
+    borderRadius: '16px',
     color: severityColor,
     transition: 'all 0.3s ease',
 
     ':hover': {
-      backgroundColor: severityColor,
+      backgroundColor: disableHover ? 'none' : severityColor,
       color: theme.palette.common.white
     }
   };

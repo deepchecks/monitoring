@@ -52,6 +52,7 @@ import { ReactComponent as Undo } from './undo.svg';
 import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as VisualModel } from './visualModel.svg';
 import { ReactComponent as WarningIcon } from './warning.svg';
+import { ReactComponent as RedWarningIcon } from './red-warning.svg';
 import { ReactComponent as WhitePlusIcon } from './white-plus.svg';
 import { ReactComponent as Notebook } from './notebook.svg';
 import { ReactComponent as Checks } from './checks.svg';
@@ -120,6 +121,7 @@ export {
   PauseIcon,
   DeleteIcon,
   WarningIcon,
+  RedWarningIcon,
   WhitePlusIcon,
   RightArrow,
   Settings,

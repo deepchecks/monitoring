@@ -9,6 +9,8 @@ import { Box } from '@mui/material';
 
 import { events, reportEvent } from 'helpers/mixPanel';
 
+import NoDataError from './NoDataError/NoDataError';
+
 import {
   StyledContainer,
   StyledModelInfo,
@@ -33,6 +35,8 @@ interface ModelItemProps {
 export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) {
   const navigate = useNavigate();
 
+  const predictionData = !!model.has_data;
+
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     navigate({ pathname: '/alerts', search: setParams('modelId', model.id, false) });
@@ -53,6 +57,7 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
             <StyledDateValue>{model.latest_time ? dayjs.unix(model.latest_time).format('L') : '-'}</StyledDateValue>
           </StyledDateContainer>
         </Box>
+        <NoDataError predictionData={predictionData} />
         <StyledAlertBadge severity={model.max_severity} alertsCount={model.alerts_count} onClick={handleAlertClick}>
           <StyledAlertsCount>{model.alerts_count}</StyledAlertsCount>
         </StyledAlertBadge>
