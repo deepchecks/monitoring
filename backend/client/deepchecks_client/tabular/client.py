@@ -531,9 +531,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def _add_defaults(self, monitoring_frequency: str):
         """Add default checks, monitors and alerts to a tabular model."""
         checks = {
-            'Feature Drift': TrainTestFeatureDrift(),
-            'Prediction Drift': TrainTestPredictionDrift(),
-            'Label Drift': TrainTestLabelDrift(ignore_na=True),
+            'Feature Drift': TrainTestFeatureDrift(min_samples=100),
+            'Prediction Drift': TrainTestPredictionDrift(min_samples=100),
+            'Label Drift': TrainTestLabelDrift(ignore_na=True, min_samples=100),
             'New Category Train-Test': NewCategoryTrainTest(),
             'Percent Of Nulls': PercentOfNulls()
         }
