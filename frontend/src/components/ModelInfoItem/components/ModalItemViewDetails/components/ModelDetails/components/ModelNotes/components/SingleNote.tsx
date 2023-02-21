@@ -49,13 +49,22 @@ const StyledNoteTitle = styled(Typography)({
 });
 
 const StyledNoteText = styled(Typography)({
-  height: '45px',
   color: 'inherit',
   fontSize: '16px',
   fontWeight: 400,
   overflow: 'hidden',
-  wordBreak: 'break-all',
-  margin: 0
+  whiteSpace: 'nowrap',
+  textOverflow: 'ellipsis',
+  margin: 0,
+  '@supports (-webkit-line-clamp: 2)': {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'initial',
+    wordBreak: 'break-all',
+    display: '-webkit-box',
+    '-webkit-line-clamp': '2',
+    '-webkit-box-orient': 'vertical'
+  }
 });
 
 const StyledNoteDate = styled(Typography)({
