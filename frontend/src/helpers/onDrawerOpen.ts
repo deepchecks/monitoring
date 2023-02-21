@@ -18,15 +18,17 @@ export const onDrawerOpen = (
   setCurrentCheck: (arg: CheckSchema | null) => void,
   currentModel: any
 ) => {
-
-  const checkMegaConf = unionCheckConf(check.config.params, additionalKwargs?.check_conf) as MonitorCheckConfSchemaCheckConf;
+  const checkMegaConf = unionCheckConf(
+    check.config.params,
+    additionalKwargs?.check_conf
+  ) as MonitorCheckConfSchemaCheckConf;
   if (checkMegaConf) {
     // if the info doesn't contains a selection of features there is no specific check type
     const type = checkInfo?.res_conf
       ? CheckTypeOptions.Class
       : checkInfo?.check_conf?.filter(val => val.type == 'feature').length
-        ? CheckTypeOptions.Feature
-        : null;
+      ? CheckTypeOptions.Feature
+      : null;
     setCurrentType(type);
 
     if (

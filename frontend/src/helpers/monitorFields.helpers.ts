@@ -11,8 +11,8 @@ export const freqTimeWindow = [
   { label: '3 months', value: timeValues.threeMonths }
 ];
 
-export const lookbackTimeWindow = freqTimeWindow.filter(obj => obj.value != timeValues.hour)
-lookbackTimeWindow.push(({ label: '1 year', value: timeValues.year }))
+export const lookbackTimeWindow = freqTimeWindow.filter(obj => obj.value != timeValues.hour);
+lookbackTimeWindow.push({ label: '1 year', value: timeValues.year });
 
 export const buildKwargs = (
   isResConf: boolean | undefined,

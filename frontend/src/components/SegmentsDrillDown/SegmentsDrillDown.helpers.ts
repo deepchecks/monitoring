@@ -12,13 +12,13 @@ export const barsColorArray = (length: number): string[] => Array(length).fill(B
 
 export const chartOptions = (
   segmentData: CheckGroupBySchema[],
-  data: Array<number|null>,
+  data: Array<number | null>,
   yTitle?: string,
   xTitle?: string,
   activeIndex?: number
 ): ChartOptions<'bar'> => {
   const allZeros = data.every(d => d === 0);
-  const nonNulls : number[] = data.filter(f => f!==null) as number[];
+  const nonNulls: number[] = data.filter(f => f !== null) as number[];
   const max = Math.max(...nonNulls);
   const min = Math.min(...nonNulls);
   const stepSize = Math.max(...nonNulls.map(d => Math.abs(d))) / 3;
@@ -38,10 +38,13 @@ export const chartOptions = (
           label: function (context) {
             const totalCount = segmentData[0].count;
             const thisCount = segmentData[context.dataIndex].count;
-            const percent = new Intl.NumberFormat('default', { style: 'percent', maximumFractionDigits: 2 })
-              .format(thisCount / totalCount)
-            return [' ' + (yTitle || context.dataset.label || '') + ': ' + context.formattedValue,
-            ' Segment Size: ' + thisCount + ' (' + percent + ')'];
+            const percent = new Intl.NumberFormat('default', { style: 'percent', maximumFractionDigits: 2 }).format(
+              thisCount / totalCount
+            );
+            return [
+              ' ' + (yTitle || context.dataset.label || '') + ': ' + context.formattedValue,
+              ' Segment Size: ' + thisCount + ' (' + percent + ')'
+            ];
           }
         }
       },
@@ -79,7 +82,7 @@ export const chartOptions = (
   };
 };
 
-export const chartData = (labels: string[], data: Array<number|null>, barsColors: string[]): ChartData<'bar'> => ({
+export const chartData = (labels: string[], data: Array<number | null>, barsColors: string[]): ChartData<'bar'> => ({
   labels,
   datasets: [
     {

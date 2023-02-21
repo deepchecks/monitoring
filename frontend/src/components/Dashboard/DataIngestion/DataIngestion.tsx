@@ -50,7 +50,11 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
     <StyledContainer>
       <StyledHeader>
         <StyledTitle>Samples status</StyledTitle>
-        <CustomStyledSelect value={currentTime.value.toString()} onChange={e => handleTime(e.target.value)} size="small">
+        <CustomStyledSelect
+          value={currentTime.value.toString()}
+          onChange={e => handleTime(e.target.value)}
+          size="small"
+        >
           {timeOptions.map(({ label, value }) => (
             <MenuItem value={value.toString()} key={label}>
               {label}

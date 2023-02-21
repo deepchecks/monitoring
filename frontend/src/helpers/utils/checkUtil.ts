@@ -1,4 +1,4 @@
-import { CheckConfigSchemaParams, MonitorCheckConfSchemaCheckConf } from "api/generated";
+import { CheckConfigSchemaParams, MonitorCheckConfSchemaCheckConf } from 'api/generated';
 
 export enum CheckFilterTypes {
   AGGREGATION = 'aggregation method',
@@ -32,9 +32,13 @@ function fixDict(obj: { [param: string]: unknown }, allowedKeys: { [param: strin
   const keyValues = Object.keys(obj).map(key => {
     if (Object.values(allowedKeys).includes(key)) {
       if (obj[key])
-        return { [key]: typeof obj[key] == 'string' ? [obj[key]] : Object.values(obj[key] as { [param: string]: unknown | string[] }) };
-      if (obj[key] === null || key in CheckFilterTypes)
-        return { [key]: null }
+        return {
+          [key]:
+            typeof obj[key] == 'string'
+              ? [obj[key]]
+              : Object.values(obj[key] as { [param: string]: unknown | string[] })
+        };
+      if (obj[key] === null || key in CheckFilterTypes) return { [key]: null };
     }
     return {};
   });
@@ -43,14 +47,17 @@ function fixDict(obj: { [param: string]: unknown }, allowedKeys: { [param: strin
 
 export function initFilteredValues(params: FilteredValues) {
   const newParams = { ...params };
-  const defaultValues = Object.values(CheckFilterTypes)
+  const defaultValues = Object.values(CheckFilterTypes);
   for (let i = 0; i < defaultValues.length; i++) {
     if (newParams?.[defaultValues[i]] === undefined) newParams[defaultValues[i]] = null;
   }
   return newParams;
 }
 
-export function unionCheckConf(checkParams: CheckConfigSchemaParams | undefined, checkConf: MonitorCheckConfSchemaCheckConf | undefined) {
+export function unionCheckConf(
+  checkParams: CheckConfigSchemaParams | undefined,
+  checkConf: MonitorCheckConfSchemaCheckConf | undefined
+) {
   const params = fixDict(
     { ...renameKeys({ ...checkParams }, ReverseTypeMap), ...checkConf },
     ReverseTypeMap

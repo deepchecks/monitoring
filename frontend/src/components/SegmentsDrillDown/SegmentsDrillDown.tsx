@@ -1,9 +1,14 @@
 import React, { useMemo, useState, useEffect, memo } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
 
-import { CheckGroupBySchema, CheckSchema, CheckGroupBySchemaValue, DataFilter,
-  getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost,SingleCheckRunOptions } from 'api/generated';
-
+import {
+  CheckGroupBySchema,
+  CheckSchema,
+  CheckGroupBySchemaValue,
+  DataFilter,
+  getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost,
+  SingleCheckRunOptions
+} from 'api/generated';
 
 import { styled, Box } from '@mui/material';
 
@@ -46,15 +51,17 @@ const SegmentsDrillDownComponent = ({
   modelVersionId,
   singleCheckRunOptions
 }: SegmentsDrillDownProps) => {
-  const dataSet: Array<number|null> = useMemo(
-    () => (data.length && datasetName ? data.map(d => (
-      d.value ? d.value[getKeyByDatasetname(d.value, '' + datasetName) || ''] : null)) : []
-    ),
+  const dataSet: Array<number | null> = useMemo(
+    () =>
+      data.length && datasetName
+        ? data.map(d => (d.value ? d.value[getKeyByDatasetname(d.value, '' + datasetName) || ''] : null))
+        : [],
     [data, datasetName]
   );
 
   const labels = useMemo(() => (data.length ? data.map(d => d.name || JSON.stringify(d.name)) : []), [data]);
-  const yTitle = useMemo(() => classOrFeature?.type === 'Feature' ? `${check.name} - ${datasetName}` : `${datasetName}`,
+  const yTitle = useMemo(
+    () => (classOrFeature?.type === 'Feature' ? `${check.name} - ${datasetName}` : `${datasetName}`),
     [check, datasetName, classOrFeature]
   );
 
@@ -66,9 +73,9 @@ const SegmentsDrillDownComponent = ({
 
   useEffect(() => {
     async function loadDisplay(data: CheckGroupBySchema) {
-      const options = {...singleCheckRunOptions, filter: data.filters};
-      const resp = await getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost(check.id, modelVersionId, options)
-      setAllPlots(prevState => ({...prevState, [activeBarIndex]: resp}))
+      const options = { ...singleCheckRunOptions, filter: data.filters };
+      const resp = await getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost(check.id, modelVersionId, options);
+      setAllPlots(prevState => ({ ...prevState, [activeBarIndex]: resp }));
       setPlots(resp);
     }
 
@@ -81,12 +88,10 @@ const SegmentsDrillDownComponent = ({
     // Load display
     if (allPlots[activeBarIndex]) {
       setPlots(allPlots[activeBarIndex]);
+    } else {
+      setPlots(null);
+      loadDisplay(data[activeBarIndex]);
     }
-    else {
-      setPlots(null)
-      loadDisplay(data[activeBarIndex])
-    }
-
   }, [activeBarIndex, data, setActiveBarFilters, activeBarName, check]);
 
   return (

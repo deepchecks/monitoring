@@ -68,15 +68,16 @@ const AlertsDrawerComponent = ({ onClose, alertRule, resolved, ...props }: Alert
 
   const alert = useMemo(() => alerts[alertIndex], [alertIndex, alerts]);
   const singleCheckRunOptions = useMemo(
-    () => ({
-      start_time: alert?.start_time,
-      end_time: alert?.end_time,
-      filter: monitor?.data_filters || { filters: [] },
-      additional_kwargs: {
-        check_conf: unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf),
-        res_conf: monitor?.additional_kwargs?.res_conf
-      }
-    } as SingleCheckRunOptions),
+    () =>
+      ({
+        start_time: alert?.start_time,
+        end_time: alert?.end_time,
+        filter: monitor?.data_filters || { filters: [] },
+        additional_kwargs: {
+          check_conf: unionCheckConf(monitor?.check?.config?.params, monitor?.additional_kwargs?.check_conf),
+          res_conf: monitor?.additional_kwargs?.res_conf
+        }
+      } as SingleCheckRunOptions),
     [alert?.end_time, alert?.start_time, monitor?.data_filters]
   );
 

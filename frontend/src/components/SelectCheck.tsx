@@ -51,18 +51,27 @@ export const SelectCheckComponent = ({
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(
     monitor && !!monitor.check.id ? monitor.check.id : check ? +check : 0
   );
-  const type = useMemo(() => (checkInfo?.res_conf ? CheckTypeOptions.Class : (
-    checkInfo?.check_conf?.filter(val => val.type == 'feature').length ? CheckTypeOptions.Feature : null
-  )), [checkInfo]);
+  const type = useMemo(
+    () =>
+      checkInfo?.res_conf
+        ? CheckTypeOptions.Class
+        : checkInfo?.check_conf?.filter(val => val.type == 'feature').length
+        ? CheckTypeOptions.Feature
+        : null,
+    [checkInfo]
+  );
 
-  const checkSelectValues = useMemo(() => checksList.map(c => ({ label: c.name || '', value: c.id, params: c.config.params })), [checksList]);
+  const checkSelectValues = useMemo(
+    () => checksList.map(c => ({ label: c.name || '', value: c.id, params: c.config.params })),
+    [checksList]
+  );
 
   const [checkInfoDisabled, setCheckInfoDisabled] = useState(false);
   const [isAgg, setIsAgg] = useState<boolean>(false);
 
   function getFilteredValue(valueName: string | null, conf: MonitorTypeConf) {
     const confType = conf.type as CheckFilterTypes;
-    let value = (confType != CheckFilterTypes.AGGREGATION || valueName != PER_FEATURE) ? valueName : null;
+    let value = confType != CheckFilterTypes.AGGREGATION || valueName != PER_FEATURE ? valueName : null;
     if (value) {
       value = getNameFromData(value, conf.values) || value;
       const confVal = conf.values?.filter(({ name }) => name == value)?.[0];
@@ -83,8 +92,7 @@ export const SelectCheckComponent = ({
       getFilteredValue(filteredValues[confType]?.[0] || null, conf);
     });
     if (type === null) setIsAgg(true);
-  }, [type, checkInfo])
-
+  }, [type, checkInfo]);
 
   useEffect(() => {
     setCheckInfoDisabled(!checkInfo?.check_conf && !checkInfo?.res_conf);
@@ -107,8 +115,10 @@ export const SelectCheckComponent = ({
         selectedVal = typeof checkParamVal == 'string' ? checkParamVal : (Object.values(checkParamVal)[0] as string);
       }
     }
-    return (selectedVal && getNameFromData(selectedVal, conf.values)) ||
-      (confType == CheckFilterTypes.AGGREGATION ? PER_FEATURE : '');
+    return (
+      (selectedVal && getNameFromData(selectedVal, conf.values)) ||
+      (confType == CheckFilterTypes.AGGREGATION ? PER_FEATURE : '')
+    );
   }
 
   function clearFilteredValue(type: string, setAgg = false) {
@@ -126,9 +136,8 @@ export const SelectCheckComponent = ({
   useMemo(() => {
     if (checkInfo === undefined || (type === CheckTypeOptions.Class && !filteredValues?.scorer?.[0])) {
       setIsValidConfig(false);
-    }
-    else {
-      setIsValidConfig(isAgg || (!!filteredValues?.feature?.[0] || !!resConf));
+    } else {
+      setIsValidConfig(isAgg || !!filteredValues?.feature?.[0] || !!resConf);
     }
   }, [filteredValues?.feature?.[0], filteredValues?.scorer?.[0], resConf, isAgg, type, checkInfo]);
 
@@ -175,8 +184,9 @@ export const SelectCheckComponent = ({
                 required={!isDisabled(conf)}
                 error={error && !isDisabled(conf) && !getSelectedVal(conf)}
               >
-                {(conf.type as CheckFilterTypes) == CheckFilterTypes.AGGREGATION &&
-                  <MenuItem value={PER_FEATURE}>Per feature</MenuItem>}
+                {(conf.type as CheckFilterTypes) == CheckFilterTypes.AGGREGATION && (
+                  <MenuItem value={PER_FEATURE}>Per feature</MenuItem>
+                )}
                 {conf.values?.map((value, index) => (
                   <MenuItem key={value.name + index + confIndex} value={value.name}>
                     {value.name}

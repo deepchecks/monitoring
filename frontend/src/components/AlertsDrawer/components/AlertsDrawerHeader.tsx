@@ -87,7 +87,9 @@ export const AlertsDrawerHeader = ({
     isError: reactivateAlertError,
     isLoading: reactivateAlertIsLoading
   } = useReactivateAlertApiV1AlertsAlertIdReactivatePost();
-  const { refetch: refetchAlertRule } = useGetAlertRulesApiV1AlertRulesGet(alertFilters as GetAlertRulesApiV1AlertRulesGetParams);
+  const { refetch: refetchAlertRule } = useGetAlertRulesApiV1AlertRulesGet(
+    alertFilters as GetAlertRulesApiV1AlertRulesGetParams
+  );
 
   const [isNotification, setIsNotification] = useState(false);
   const [infoTitles, setInfoTitles] = useState(DEFAULT_INFO_TITLES);

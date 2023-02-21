@@ -25,6 +25,7 @@ export interface PathInfo {
   IconHover: FC | null;
   ActiveIcon: FC | null;
   children?: PathInfo[];
+  ignoreLink?: boolean;
 }
 
 // a function to retry loading a chunk to avoid chunk load error for out of date code
@@ -69,6 +70,15 @@ export const pathsInfo: PathInfo[] = [
     Icon: Dashboard,
     IconHover: DashboardHover,
     ActiveIcon: DashboardActive
+  },
+  {
+    title: 'Suite View',
+    link: '/suite-view',
+    element: () => <SuiteViewPage />,
+    Icon: null,
+    IconHover: null,
+    ActiveIcon: null,
+    ignoreLink: true
   },
   {
     title: 'Alerts',
@@ -145,14 +155,6 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/api-key',
         Icon: null,
         element: () => <APIKeyPage />,
-        IconHover: null,
-        ActiveIcon: null
-      },
-      {
-        title: 'Suite View',
-        link: '/suite-view',
-        element: () => <SuiteViewPage />,
-        Icon: null,
         IconHover: null,
         ActiveIcon: null
       }

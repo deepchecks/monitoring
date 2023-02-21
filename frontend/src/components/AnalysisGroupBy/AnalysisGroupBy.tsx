@@ -76,13 +76,11 @@ const AnalysisGroupByComponent = ({
         setSingleCheckRunOptions(SingleCheckRunOptions);
 
         if (additionalKwargs && type) {
-          const value =
-            type === CheckTypeOptions.Class ? additionalKwargs.res_conf?.[0] : datasetName;
+          const value = type === CheckTypeOptions.Class ? additionalKwargs.res_conf?.[0] : datasetName;
 
           if (value) {
             // if the type is feature we want to only show dataset name if a feature is selected
-            if (type != CheckTypeOptions.Feature ||
-              additionalKwargs.check_conf?.['feature']?.length) {
+            if (type != CheckTypeOptions.Feature || additionalKwargs.check_conf?.['feature']?.length) {
               setClassOrFeature({ type, value });
             }
             // Filter selected feature from feature list

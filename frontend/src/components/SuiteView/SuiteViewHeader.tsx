@@ -35,7 +35,7 @@ const SuiteViewHeader = (props: SuiteViewHeaderProps) => {
           </SuiteViewHeaderDatesText>
         </SuiteViewHeaderDatesContainer>
       </SuiteViewHeaderInnerFlex>
-      <SuiteViewHeaderInnerFlex>
+      <SuiteViewHeaderInnerFlex wrap>
         {runSuitePayload.filter?.filters.map((filter, i) => (
           <SuiteViewHeaderTag key={i}>
             <SuiteViewHeaderText bold>

@@ -63,14 +63,19 @@ const SuiteViewHeaderText = styled.p<SuiteViewHeaderTextProps>`
   font-weight: ${p => p.bold && '700'};
 `;
 
-const SuiteViewHeaderInnerFlex = styled.span`
+interface SuiteViewHeaderInnerFlexProps {
+  wrap?: boolean;
+}
+
+const SuiteViewHeaderInnerFlex = styled.span<SuiteViewHeaderInnerFlexProps>`
   display: flex;
+  flex-wrap: ${p => p.wrap && 'wrap'};
   width: 100%;
   align-items: center;
 `;
 
 const SuiteViewHeaderTag = styled.span`
-  margin-right: 12px;
+  margin: 0 6px 6px 0;
   background: lightgray;
   border-radius: 8px;
   padding: 4px 16px;

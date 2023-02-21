@@ -26,7 +26,9 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   );
   const [resConf, setResConf] = useState<string | undefined>(undefined);
 
-  const [dashboardId, setDashboardId] = useState<number | null>(monitor?.dashboard_id === undefined ? 1 : monitor?.dashboard_id);
+  const [dashboardId, setDashboardId] = useState<number | null>(
+    monitor?.dashboard_id === undefined ? 1 : monitor?.dashboard_id
+  );
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
 
@@ -160,7 +162,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
                 onChange={e => setDashboardId(e.target.checked ? 1 : null)}
               />
             }
-            label='Show in dashboard'
+            label="Show in dashboard"
           />
         </Stack>
 
@@ -168,7 +170,11 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
           <Button onClick={handleBack} sx={{ mr: '20px' }} variant="outlined">
             {'Back'}
           </Button>
-          <Button onClick={finish} sx={{ mr: 0 }} disabled={!model || !check || !frequency || !aggregationWindow || !isValidConfig}>
+          <Button
+            onClick={finish}
+            sx={{ mr: 0 }}
+            disabled={!model || !check || !frequency || !aggregationWindow || !isValidConfig}
+          >
             {'Next'}
           </Button>
         </Box>

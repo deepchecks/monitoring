@@ -14,10 +14,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Sidebar } from './components/Sidebar';
 import { Loader } from 'components/Loader';
 
+import 'overlayscrollbars/overlayscrollbars.css';
+
 import { lazyRetry, pathsInfo } from 'helpers/helper';
 import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
-
-import 'overlayscrollbars/overlayscrollbars.css';
 
 const DashboardPage = lazy(() => lazyRetry(() => import('./pages/DashboardPage')));
 const CompleteDetails = lazy(() => lazyRetry(() => import('./pages/CompleteDetails')));

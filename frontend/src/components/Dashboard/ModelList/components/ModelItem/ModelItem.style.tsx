@@ -7,25 +7,25 @@ interface StyledContainerProps {
   active: boolean;
 }
 
-export const StyledContainer = styled(ListItemButton, { shouldForwardProp: prop => prop !== 'active' })<StyledContainerProps>(
-  ({ active, theme }) => ({
-    padding: '24px',
-    '@media (max-width: 1536px)': {
-      padding: '16px'
-    },
-    cursor: 'pointer',
-    position: 'relative',
-    backgroundColor: active ? 'rgba(209, 216, 220, 0.5)' : theme.palette.common.white,
-    ':hover': {
-      backgroundColor: theme.palette.grey[100]
-    },
-    transition: 'background-color 0.3s ease',
-    borderBottom: `1px solid ${colors.neutral.grey.light}`,
-    ':last-of-type': {
-      border: 'none'
-    }
-  })
-);
+export const StyledContainer = styled(ListItemButton, {
+  shouldForwardProp: prop => prop !== 'active'
+})<StyledContainerProps>(({ active, theme }) => ({
+  padding: '24px',
+  '@media (max-width: 1536px)': {
+    padding: '16px'
+  },
+  cursor: 'pointer',
+  position: 'relative',
+  backgroundColor: active ? 'rgba(209, 216, 220, 0.5)' : theme.palette.common.white,
+  ':hover': {
+    backgroundColor: theme.palette.grey[100]
+  },
+  transition: 'background-color 0.3s ease',
+  borderBottom: `1px solid ${colors.neutral.grey.light}`,
+  ':last-of-type': {
+    border: 'none'
+  }
+}));
 
 export const StyledModelInfo = styled(Box)({
   display: 'flex',

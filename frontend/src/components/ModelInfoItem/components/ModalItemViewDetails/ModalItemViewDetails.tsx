@@ -10,15 +10,13 @@ interface ModalItemDetailsProps {
   model: ConnectedModelSchema;
 }
 
-export const ModalItemViewDetails = ({ open, onClose, model }: ModalItemDetailsProps) => {
-  return (
-    <StyledModal open={open} onClose={onClose} aria-labelledby="model-versions" aria-describedby="model-all-versions">
-      <StyledModalContent>
-        <StyledModalCloseButton onClick={onClose}>
-          <CloseIcon />
-        </StyledModalCloseButton>
-        <ModelDetails model={model} />
-      </StyledModalContent>
-    </StyledModal>
-  );
-};
+export const ModalItemViewDetails = ({ open, onClose, model }: ModalItemDetailsProps) => (
+  <StyledModal open={open} onClose={onClose} aria-labelledby="model-versions" aria-describedby="model-all-versions">
+    <StyledModalContent>
+      <StyledModalCloseButton onClick={onClose}>
+        <CloseIcon />
+      </StyledModalCloseButton>
+      <ModelDetails model={model} />
+    </StyledModalContent>
+  </StyledModal>
+);

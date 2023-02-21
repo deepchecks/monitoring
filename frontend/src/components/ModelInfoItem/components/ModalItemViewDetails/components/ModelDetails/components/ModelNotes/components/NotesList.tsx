@@ -8,15 +8,13 @@ interface NotesListProps {
   onDeleteNote: (noteId: string) => void;
 }
 
-export const NotesList = ({ notes, onDeleteNote }: NotesListProps) => {
-  return (
-    <StyledList component="ul">
-      {notes.map(note => (
-        <SingleNote key={`${note.model_id}-${note.id}-${note.title}`} onDeleteNote={onDeleteNote} note={note} />
-      ))}
-    </StyledList>
-  );
-};
+export const NotesList = ({ notes, onDeleteNote }: NotesListProps) => (
+  <StyledList component="ul">
+    {notes.map(note => (
+      <SingleNote key={`${note.model_id}-${note.id}-${note.title}`} onDeleteNote={onDeleteNote} note={note} />
+    ))}
+  </StyledList>
+);
 
 const StyledList = styled(Box)({
   height: '100%',

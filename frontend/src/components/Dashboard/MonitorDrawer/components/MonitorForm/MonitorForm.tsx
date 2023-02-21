@@ -349,11 +349,7 @@ export const MonitorForm = ({
           />
         </TooltipInputWrapper>
       </StyledFormContainer>
-      <span
-        onMouseEnter={() => setError(true)}
-        onMouseLeave={() => setError(false)}
-        style={{ margin: 'auto' }}
-      >
+      <span onMouseEnter={() => setError(true)} onMouseLeave={() => setError(false)} style={{ margin: 'auto' }}>
         <StyledButton
           onClick={handleMonitorSave}
           disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack || !isValidConfig}

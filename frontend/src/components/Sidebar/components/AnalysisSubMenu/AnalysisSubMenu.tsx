@@ -111,7 +111,10 @@ export function AnalysisSubMenu({ onClose, open }: AnalysisSubMenuProps) {
                   margin: '16px 0'
                 }}
               >
-                <StyledLink active={+modelId === id} to={{ pathname: '/analysis', search: setParams('modelId', id, false) }}>
+                <StyledLink
+                  active={+modelId === id}
+                  to={{ pathname: '/analysis', search: setParams('modelId', id, false) }}
+                >
                   <Typography variant="subtitle2">{name}</Typography>
                 </StyledLink>
               </ListItem>

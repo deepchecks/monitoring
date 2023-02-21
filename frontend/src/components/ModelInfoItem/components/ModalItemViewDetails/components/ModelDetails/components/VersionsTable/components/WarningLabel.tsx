@@ -7,16 +7,14 @@ interface WarningLabelProps {
   numberOfAlerts: number;
 }
 
-export const WarningLabel = ({ numberOfAlerts }: WarningLabelProps) => {
-  return (
-    <StyledWarningLabel spacing="5px" direction="row" alignItems="center" justifyContent="center">
-      <WarningIcon />
-      <Typography sx={{ fontSize: '14px' }} component="span">
-        {numberOfAlerts}
-      </Typography>
-    </StyledWarningLabel>
-  );
-};
+export const WarningLabel = ({ numberOfAlerts }: WarningLabelProps) => (
+  <StyledWarningLabel spacing="5px" direction="row" alignItems="center" justifyContent="center">
+    <WarningIcon />
+    <Typography sx={{ fontSize: '14px' }} component="span">
+      {numberOfAlerts}
+    </Typography>
+  </StyledWarningLabel>
+);
 
 const StyledWarningLabel = styled(Stack)({
   color: colors.neutral.white,

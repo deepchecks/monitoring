@@ -18,6 +18,7 @@ interface AnalysisHeaderOptions {
   modelId: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const AnalysisHeaderOptions = ({ modelId }: AnalysisHeaderOptions) => {
   const { compareWithPreviousPeriod, setCompareWithPreviousPeriod, period, setPeriod, frequency, setFrequency } =
     useContext(AnalysisContext);

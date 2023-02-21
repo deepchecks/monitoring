@@ -94,9 +94,18 @@ export const Sidebar = () => {
             </Box>
 
             <Box sx={{ mt: '40px', pl: { xs: '11px', lg: '11px', xl: '14px' } }}>
-              {pathsInfo.map((info: PathInfo) => (
-                <SidebarMenuItem key={info.link} onOpenSubMenu={handleOpenAnalysisSubMenu} info={info} width={width} />
-              ))}
+              {pathsInfo.map((info: PathInfo) =>
+                info.ignoreLink ? (
+                  <></>
+                ) : (
+                  <SidebarMenuItem
+                    key={info.link}
+                    onOpenSubMenu={handleOpenAnalysisSubMenu}
+                    info={info}
+                    width={width}
+                  />
+                )
+              )}
             </Box>
           </Box>
 

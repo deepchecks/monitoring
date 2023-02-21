@@ -63,7 +63,8 @@ export const DashboardPage = () => {
             models={models}
             isLoading={isModelsLoading}
             selectedModelId={selectedModelId}
-            setSelectedModelId={setSelectedModelId} />
+            setSelectedModelId={setSelectedModelId}
+          />
         </Grid>
         <Grid item md={6} lg={6} xl={8}>
           <DataIngestion modelId={selectedModelId} />
