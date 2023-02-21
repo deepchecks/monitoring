@@ -73,7 +73,8 @@ const SegmentsDrillDownComponent = ({
 
   useEffect(() => {
     async function loadDisplay(data: CheckGroupBySchema) {
-      const options = { ...singleCheckRunOptions, filter: data.filters };
+      const newfilters = data.filters.filters.concat(singleCheckRunOptions?.filter?.filters || []);
+      const options = { ...singleCheckRunOptions, filter: { filters: newfilters}};
       const resp = await getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost(check.id, modelVersionId, options);
       setAllPlots(prevState => ({ ...prevState, [activeBarIndex]: resp }));
       setPlots(resp);
