@@ -4,7 +4,7 @@ Scorers for Metric Evaluation
 
 Scorers are the deepchecks way of computing metrics for the model's performance. For each model type there are various
 scorers that can be used to evaluate the model's performance. To see the list of available scorers for a specific model
-type, please refer to the :docs:`Deepchecks Metrics Guide <deepchecks:user-guide/general/metrics_guide>`.
+type, please refer to the :doc:`Deepchecks Metrics Guide <deepchecks:user-guide/general/metrics_guide>`.
 
 Default Scorers
 ===============
