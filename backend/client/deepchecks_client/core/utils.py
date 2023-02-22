@@ -57,7 +57,10 @@ class TaskType(enum.Enum):
         if isinstance(task_type, cls):
             return task_type
         if isinstance(task_type, str):
-            return cls(task_type)
+            if task_type in cls.values():
+                return cls(task_type)
+            else:
+                raise ValueError(f'Unknown task type - {task_type}. Possible values are {cls.values()}')
 
         from deepchecks_client.tabular import DeepchecksTaskType as TabularTaskType
 
