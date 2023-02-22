@@ -78,6 +78,7 @@ class ModelVersion(Base):
     model_columns = Column(JSONB)
     meta_columns = Column(JSONB)
     private_columns = Column(JSONB, nullable=False, default={})
+    private_reference_columns = Column(JSONB, nullable=False, default={}, server_default=sa.text("'{}'::jsonb"))
     feature_importance = Column(JSONB, nullable=True)
     statistics = Column(JSONB)
     classes = Column(ARRAY(String), nullable=True)
@@ -146,7 +147,12 @@ class ModelVersion(Base):
     def get_reference_table(self, connection) -> Table:
         """Get table object of the reference table."""
         metadata = MetaData(bind=connection)
-        columns_in_ref = {**self.features_columns, **self.additional_data_columns, **self.model_columns}
+        columns_in_ref = {
+            **self.features_columns,
+            **self.additional_data_columns,
+            **self.model_columns,
+            **self.private_reference_columns
+        }
         columns = {name: ColumnType(col_type) for name, col_type in columns_in_ref.items()}
         columns_sqlalchemy = column_types_to_table_columns(columns)
         return Table(self.get_reference_table_name(), metadata, *columns_sqlalchemy)

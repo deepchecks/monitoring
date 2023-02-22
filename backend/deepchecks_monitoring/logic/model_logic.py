@@ -11,6 +11,7 @@
 """Module defining utility functions for specific db objects."""
 import logging
 import typing as t
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -26,8 +27,9 @@ from sqlalchemy.sql.selectable import Select
 
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
+from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
+                                                             SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL,
+                                                             ColumnType)
 
 
 async def get_model_versions_for_time_range(session: AsyncSession,
@@ -58,10 +60,23 @@ def create_model_version_select_object(mon_table: Table, columns: t.List[str], f
 def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 5_000) -> Select:
     """Sample randomly on a select object by id/row number md5."""
     sampled_select_obj = select_obj
+
     if SAMPLE_ID_COL in mon_table.c:
         order_func = func.md5(mon_table.c[SAMPLE_ID_COL])
+    elif REFERENCE_SAMPLE_ID_COL in mon_table.c:
+        order_func = func.md5(func.cast(mon_table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR))
     else:
+        name = (
+            mon_table.name
+            if not mon_table.schema
+            else f'{mon_table.schema}.{mon_table.name}'
+        )
+        warnings.warn(
+            f'Table "{name}" does not contain neither "{SAMPLE_ID_COL}" '
+            f'column nor "{REFERENCE_SAMPLE_ID_COL}" column'
+        )
         order_func = func.md5(func.cast(func.row_number().over(), VARCHAR))
+
     return sampled_select_obj.order_by(order_func).limit(n_samples)
 
 

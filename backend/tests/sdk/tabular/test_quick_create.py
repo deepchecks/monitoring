@@ -20,6 +20,7 @@ from hamcrest import assert_that, calling, contains_exactly, has_property, is_, 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
@@ -57,7 +58,16 @@ async def test_quick_version(deepchecks_sdk: DeepchecksClient, async_session: As
 
     model_version: ModelVersion = await async_session.get(ModelVersion, 1)
     ref_table = model_version.get_reference_table(async_session)
-    ref_data = (await async_session.execute(select(ref_table))).all()
+
+    ref_data = (await async_session.execute(select(
+        ref_table.c.a,
+        ref_table.c.b,
+        ref_table.c.c,
+        ref_table.c[SAMPLE_LABEL_COL],
+        ref_table.c[SAMPLE_PRED_COL],
+        ref_table.c[SAMPLE_PRED_PROBA_COL],
+    ))).all()
+
     assert len(ref_data) == 2
     assert len(ref_data[0]) == 6
     assert len(ref_data[0][5]) == 3

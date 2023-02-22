@@ -37,9 +37,10 @@ from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, Identi
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
-                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType,
-                                                             column_types_to_table_columns, get_model_columns_by_type)
+from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
+                                                             SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_PROBA_COL,
+                                                             SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
+                                                             get_model_columns_by_type)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
@@ -136,16 +137,14 @@ async def get_or_create_version(
         if sorted(classes) != classes:
             raise BadRequest('Classes list must be sorted alphabetically')
 
-    # TODO: all this logic must be implemented (encapsulated) within Model type
     # Create meta columns
-    meta_columns = {
-        SAMPLE_ID_COL: ColumnType.TEXT,
-        SAMPLE_TS_COL: ColumnType.DATETIME
-    }
+    meta_columns = {SAMPLE_ID_COL: ColumnType.TEXT, SAMPLE_TS_COL: ColumnType.DATETIME}
     model_related_cols, required_model_cols = get_model_columns_by_type(model.task_type, have_classes)
+
     # Validate no intersections between user columns and dc columns
     saved_keys = set(meta_columns.keys()) | set(model_related_cols.keys())
     intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.additional_data.keys()))
+
     if intersects_columns:
         raise BadRequest(f'Can\'t use the following names for columns: {intersects_columns}')
 
@@ -155,26 +154,33 @@ async def get_or_create_version(
     # Create json schema
     not_null_columns = list(meta_columns.keys()) + required_model_cols
     # Define the length of the array for probabilities column
-    length_columns = {SAMPLE_PRED_PROBA_COL: len(classes) if have_classes else None}
+    length_columns = {
+        SAMPLE_PRED_PROBA_COL: len(classes)
+        if have_classes else None
+    }
     monitor_table_schema = {
         'type': 'object',
-        'properties': {name: data_type.to_json_schema_type(
-            nullable=name not in not_null_columns,
-            min_items=length_columns.get(name),
-            max_items=length_columns.get(name),
-        )
-            for name, data_type in monitor_table_columns.items()},
+        'properties': {
+            name: data_type.to_json_schema_type(
+                nullable=name not in not_null_columns,
+                min_items=length_columns.get(name),
+                max_items=length_columns.get(name),
+            )
+            for name, data_type in monitor_table_columns.items()
+        },
         'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols,
         'additionalProperties': False
     }
     reference_table_schema = {
         'type': 'object',
-        'properties': {name: data_type.to_json_schema_type(
-            nullable=name not in not_null_columns,
-            min_items=length_columns.get(name),
-            max_items=length_columns.get(name),
-        )
-            for name, data_type in ref_table_columns.items()},
+        'properties': {
+            name: data_type.to_json_schema_type(
+                nullable=name not in not_null_columns,
+                min_items=length_columns.get(name),
+                max_items=length_columns.get(name),
+            )
+            for name, data_type in ref_table_columns.items()
+        },
         'required': list(info.features.keys()) + required_model_cols,
         'additionalProperties': False
     }
@@ -187,36 +193,69 @@ async def get_or_create_version(
     label_map = {str(key): val for key, val in info.label_map.items()} if info.label_map else None
 
     # Private columns are handled by us and are not exposed to the user
-    private_columns = {
-        SAMPLE_LOGGED_TIME_COL: ColumnType.DATETIME,
-    }
+    private_columns = {SAMPLE_LOGGED_TIME_COL: ColumnType.DATETIME}
+    private_reference_columns = {REFERENCE_SAMPLE_ID_COL: ColumnType.INTEGER}
 
     # Save version entity
     model_version = ModelVersion(
-        name=info.name, model_id=model.id, monitor_json_schema=monitor_table_schema,
-        reference_json_schema=reference_table_schema, features_columns=info.features,
-        additional_data_columns=info.additional_data, meta_columns=meta_columns, model_columns=model_related_cols,
-        feature_importance=info.feature_importance, statistics=empty_statistics,
-        classes=info.classes, label_map=label_map, private_columns=private_columns
+        name=info.name,
+        model_id=model.id,
+        monitor_json_schema=monitor_table_schema,
+        reference_json_schema=reference_table_schema,
+        features_columns=info.features,
+        additional_data_columns=info.additional_data,
+        meta_columns=meta_columns,
+        model_columns=model_related_cols,
+        feature_importance=info.feature_importance,
+        statistics=empty_statistics,
+        classes=info.classes,
+        label_map=label_map,
+        private_columns=private_columns,
+        private_reference_columns=private_reference_columns
     )
+
     session.add(model_version)
     # flushing to get an id for the model version, used to create the monitor + reference table names.
     await session.flush()
 
     # Monitor data table
     monitor_table_columns_sqlalchemy = column_types_to_table_columns({**monitor_table_columns, **private_columns})
+    monitor_table_name = model_version.get_monitor_table_name()
+
     # using md5 hash index in queries to get random order of samples, so adding index for it
-    monitor_table = Table(model_version.get_monitor_table_name(), MetaData(), *monitor_table_columns_sqlalchemy,
-                          Index(f'_{model_version.get_monitor_table_name()}_md5_index', text(f'md5({SAMPLE_ID_COL})')))
+    monitor_table = Table(
+        monitor_table_name,
+        MetaData(),
+        *monitor_table_columns_sqlalchemy,
+        Index(f'_{monitor_table_name}_md5_index', text(f'md5({SAMPLE_ID_COL})'))
+    )
     await session.execute(CreateTable(monitor_table))
+
     # Create indices
     for index in monitor_table.indexes:
         await session.execute(CreateIndex(index))
 
     # Reference data table
-    reference_table_columns_sqlalchemy = column_types_to_table_columns(ref_table_columns)
-    reference_table = Table(model_version.get_reference_table_name(), MetaData(), *reference_table_columns_sqlalchemy)
+    reference_table_name = model_version.get_reference_table_name()
+    reference_schema = {**ref_table_columns, **private_reference_columns}
+
+    reference_table_columns_sqlalchemy = column_types_to_table_columns(
+        reference_schema,
+        primary_key=REFERENCE_SAMPLE_ID_COL
+    )
+
+    reference_table = Table(
+        reference_table_name,
+        MetaData(),
+        *reference_table_columns_sqlalchemy,
+        # TODO:
+        # another possible solution is to use UUID type
+        # with reference table 'SAMPLE_ID_COL' column
+        Index(f'_{reference_table_name}_md5_index', text(f'md5({REFERENCE_SAMPLE_ID_COL}::varchar)'))
+    )
+
     await session.execute(CreateTable(reference_table))
+
     # Create indices
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))

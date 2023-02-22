@@ -15,12 +15,17 @@ from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, Text
 
 from deepchecks_monitoring.schema_models.model import TaskType
 
-__all__ = ["SAMPLE_ID_COL", "SAMPLE_TS_COL", "SAMPLE_LABEL_COL", "SAMPLE_PRED_PROBA_COL", "SAMPLE_PRED_COL",
-           "SAMPLE_LOGGED_TIME_COL", "ColumnType", "get_model_columns_by_type",
-           "column_types_to_table_columns"]
+__all__ = [
+    "SAMPLE_ID_COL", "SAMPLE_TS_COL",
+    "SAMPLE_LABEL_COL", "SAMPLE_PRED_PROBA_COL",
+    "SAMPLE_PRED_COL", "SAMPLE_LOGGED_TIME_COL",
+    "REFERENCE_SAMPLE_ID_COL", "ColumnType",
+    "get_model_columns_by_type", "column_types_to_table_columns"
+]
 
 
 SAMPLE_ID_COL = "_dc_sample_id"
+REFERENCE_SAMPLE_ID_COL = "_dc_ref_sample_id"
 SAMPLE_TS_COL = "_dc_time"
 SAMPLE_LABEL_COL = "_dc_label"
 SAMPLE_PRED_PROBA_COL = "_dc_prediction_probabilities"

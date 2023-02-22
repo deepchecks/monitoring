@@ -21,6 +21,7 @@ from hamcrest import assert_that, calling, raises
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from tests.common import Payload, TestAPI
 
@@ -45,7 +46,15 @@ async def test_classification_upload(
         multiclass_model_version_client.model_version_id
     )
     ref_table = model_version.get_reference_table(async_session)
-    ref_dict = (await async_session.execute(select(ref_table))).all()
+
+    ref_dict = (await async_session.execute(select(
+        ref_table.c.a,
+        ref_table.c.b,
+        ref_table.c.c,
+        ref_table.c[SAMPLE_LABEL_COL],
+        ref_table.c[SAMPLE_PRED_COL],
+        ref_table.c[SAMPLE_PRED_PROBA_COL],
+    ))).all()
 
     assert ref_dict == [
         (2.0, '2', 1, '2', '2', [0.1, 0.30000000000000004, 0.6000000000000001]),
@@ -79,7 +88,14 @@ async def test_classification_upload_without_classes(
     # Assert
     model_version = await async_session.get(ModelVersion, version['id'])
     ref_table = model_version.get_reference_table(async_session)
-    ref_dict = (await async_session.execute(select(ref_table))).all()
+
+    ref_dict = (await async_session.execute(select(
+        ref_table.c.a,
+        ref_table.c.b,
+        ref_table.c.c,
+        ref_table.c[SAMPLE_LABEL_COL],
+        ref_table.c[SAMPLE_PRED_COL],
+    ))).all()
 
     assert ref_dict == [
         (2.0, '2', 1, '2', '2'),
@@ -101,7 +117,16 @@ async def test_regression_upload(
 
     model_version = await async_session.get(ModelVersion, regression_model_version_client.model_version_id)
     ref_table = model_version.get_reference_table(async_session)
-    ref_dict = (await async_session.execute(select(ref_table))).all()
+
+    ref_dict = (await async_session.execute(
+        select(
+            ref_table.c.a,
+            ref_table.c.b,
+            ref_table.c.c,
+            ref_table.c[SAMPLE_LABEL_COL],
+            ref_table.c[SAMPLE_PRED_COL]
+        )
+    )).all()
 
     assert ref_dict == [
         (2.0, '2', 1, 2, 2),
@@ -135,7 +160,14 @@ async def test_regression_upload_w_date(regression_model: Payload,
     )
     model_version = await async_session.get(ModelVersion, version_client.model_version_id)
     ref_table = model_version.get_reference_table(async_session)
-    ref_dict = (await async_session.execute(select(ref_table))).all()
+
+    ref_dict = (await async_session.execute(select(
+        ref_table.c.a,
+        ref_table.c.b,
+        ref_table.c.d,
+        ref_table.c[SAMPLE_LABEL_COL],
+        ref_table.c[SAMPLE_PRED_COL]
+    ))).all()
 
     assert ref_dict == [
         (2.0, '2', curr_time, 2, 2),
