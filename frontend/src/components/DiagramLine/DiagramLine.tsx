@@ -121,12 +121,16 @@ function DiagramLine({
 
         return {
           ...el,
-          backgroundColor: createGradient(
-            currentChart.ctx,
-            currentChart.chartArea,
-            alpha(el.borderColor as string, 0),
-            alpha(el.borderColor as string, 0.25)
-          )
+          fill: {
+            target: 'origin',
+            above: createGradient(
+              currentChart.ctx,
+              currentChart.chartArea,
+              alpha(el.borderColor as string, 0),
+              alpha(el.borderColor as string, 0.25)
+            ),
+            below: 'transparent'
+          }
         };
       })
     };
