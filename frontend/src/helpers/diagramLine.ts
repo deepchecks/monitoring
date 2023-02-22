@@ -38,8 +38,12 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
 
     if (!x || !y || !alert_rule.start_time) return;
 
+    const minTime = x.min;
+    const alertRuleStartTime = new Date(alert_rule.start_time).getTime();
+    const alertRuleStartTimeOnTheGraph = alertRuleStartTime < minTime ? minTime : alertRuleStartTime;
+
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
-    const xOffset = x.getPixelForValue(new Date(alert_rule.start_time).getTime());
+    const xOffset = x.getPixelForValue(alertRuleStartTimeOnTheGraph);
 
     ctx.save();
 
