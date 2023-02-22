@@ -230,13 +230,11 @@ function DiagramLine({
           grid: {
             display: false
           },
-          type: 'timeseries',
+          type: 'time',
+          distribution: 'series',
           time: {
             minUnit: minTimeUnit,
             unit: minTimeUnit
-          },
-          ticks: {
-            source: Object.values(lineIndexMap).filter(val => !val).length ? 'data' : 'labels'
           }
         },
         y: analysis
