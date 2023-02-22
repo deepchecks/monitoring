@@ -24,7 +24,7 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (NewCategoryTrainTest, SingleDatasetPerformance, TrainTestFeatureDrift,
-                                       TrainTestLabelDrift, TrainTestPredictionDrift)
+                                       TrainTestLabelDrift, TrainTestPredictionDrift, NewLabelTrainTest)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
@@ -526,14 +526,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
     def _add_defaults(self, monitoring_frequency: str):
         """Add default checks, monitors and alerts to a tabular model."""
-        checks = {
-            'Feature Drift': TrainTestFeatureDrift(min_samples=100),
-            'Prediction Drift': TrainTestPredictionDrift(min_samples=100),
-            'Label Drift': TrainTestLabelDrift(ignore_na=True, min_samples=100),
-            'New Category Train-Test': NewCategoryTrainTest(),
-            'Percent Of Nulls': PercentOfNulls()
-        }
-
+        task_type = TaskType(self.model['task_type'])
         intervals = {
             'hour': 60 * 60,
             'day': 24 * 60 * 60,
@@ -544,10 +537,20 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             raise ValueError(f'monitoring_frequency must be one of {list(intervals.keys())}')
         frequency = intervals[monitoring_frequency]
 
-        if TaskType(self.model['task_type']) in [TaskType.BINARY, TaskType.MULTICLASS]:
+        checks = {
+            'Feature Drift': TrainTestFeatureDrift(min_samples=100),
+            'Prediction Drift': TrainTestPredictionDrift(min_samples=100),
+            'Label Drift': TrainTestLabelDrift(ignore_na=True, min_samples=100),
+            'Percent Of Nulls': PercentOfNulls(),
+            'New Category Train-Test': NewCategoryTrainTest()
+        }
+
+        if task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
             checks['Performance'] = SingleDatasetPerformance(scorers=['Accuracy'])
+            checks['New Label Train-Test'] = NewLabelTrainTest()
         else:
             checks['Performance'] = SingleDatasetPerformance(scorers=['RMSE'])
+
         self.add_checks(checks=checks)
 
         self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=frequency, alert_severity='high',
@@ -558,10 +561,14 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                             monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
         self.add_alert_rule(check_name='Label Drift', threshold=0.15, frequency=frequency,
                             monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='high')
-
         self.add_alert_rule(check_name='New Category Train-Test', threshold=0.01, frequency=frequency,
                             monitor_name='New Category Train-Test', add_monitor_to_dashboard=True,
                             alert_severity='high')
+
+        if task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
+            self.add_alert_rule(check_name='New Label Train-Test', threshold=0.01, frequency=frequency,
+                                monitor_name='New Label Train-Test', add_monitor_to_dashboard=True,
+                                alert_severity='high')
 
         self.add_monitor(check_name='Performance', frequency=frequency, name='Performance')
 
