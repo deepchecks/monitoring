@@ -363,11 +363,13 @@ class DataIngestionBackend(object):
                     # In case of connection error does not commit the kafka messages, in order to try
                     # again
                     self.logger.info("Got %s, does not commit kafka messages", " ".join(exception.args))
+                    await session.rollback()
                     return False
                 if isinstance(pg_exception, (asyncpg.exceptions.UndefinedTableError,
                                              sqlalchemy.orm.exc.StaleDataError)):
                     self.logger.info("Got %s probably due to model version being removed, "
                                      "committing kafka messages anyway", " ".join(exception.args))
+                    await session.rollback()
                     return True
 
             self.logger.exception("Got unexpected error, saving errors and committing kafka messages anyway")
