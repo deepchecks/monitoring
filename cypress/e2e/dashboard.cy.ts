@@ -36,7 +36,7 @@ describe('test dashboard', () => {
         cy.contains('h6', 'R2').should('exist')
       })
       // Check for label with model name under data status
-      cy.contains('p', 'Prediction Data Status').parent().parent().within(() => {
+      cy.contains('p', 'Samples status').parent().parent().within(() => {
         cy.contains('h6', modelName).should('exist')
       })
     })

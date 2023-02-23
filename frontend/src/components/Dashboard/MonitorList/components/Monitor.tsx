@@ -47,6 +47,10 @@ const MonitorComponent = ({
   );
 
   const fetchGraphicSectionData = useCallback(async () => {
+    if (!currentModel?.latest_time) {
+      setLoading(false);
+    }
+    
     if (typeof currentModel?.latest_time === 'number' && isVisible) {
       const graphicSectionData = await runMonitorLookbackApiV1MonitorsMonitorIdRunPost(monitor.id, {
         end_time: new Date(currentModel?.latest_time * 1000).toISOString()

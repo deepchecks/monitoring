@@ -28,9 +28,8 @@ describe('Analysis screen drilldown', () => {
         cy.contains('li', 'Hourly').click();
         cy.get('canvas').should('exist');
         // select aggregation method none
-        cy.contains('div', 'max').parent().within(() => {
-            cy.get('button').click();
-        });
+        cy.contains('div', 'max').trigger('mouseover', {force: true}).click({force: true});
+        cy.contains('li', 'Per feature').trigger('mouseover', {force: true}).click({force: true});
         cy.contains('h6', 'numeric_feature').should('exist');
         cy.contains('h6', 'categorical_feature').should('exist');
         // canvas aggregation method none click

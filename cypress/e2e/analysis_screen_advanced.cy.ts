@@ -10,21 +10,21 @@ describe('Analysis screen drilldown', () => {
       }).then(() => {
         cy.visit('/analysis')
         // toggle comparison mode
-        cy.contains('span', 'Data comparison').click({ force: true });
+        cy.contains('span', 'Compare data with previous period').click({ force: true });
         // select frequency hourly
         // cy.contains('div', 'Daily').trigger('mouseover', { force: true }).click({ force: true });
         // cy.contains('li', 'Hourly').click();
         // Select time range
-        cy.contains('label', 'Time Range').parent().trigger('mouseover', { force: true }).click({ force: true });
+        cy.get('input[value="11/05/2022 - 11/08/2022"]').parent().first().trigger('mouseover', { force: true }).click({ force: true });
         cy.contains('span.rdrDayNumber > span', '8').click();
         cy.contains('span.rdrDayNumber > span', '9').click();
         cy.contains('button', 'Apply').click({ force: true });
         // filter some values
-        cy.contains('button', 'Filter').click({ force: true });
+        cy.get('input[value="Filter"]').parent().first().click({ force: true });
         cy.contains('div', 'categorical_feature').click();
         cy.contains('li', 'ppppp').click();
         cy.contains('button', 'Apply').click({ force: true });
-        cy.contains('button', 'Filter').click({ force: true });
+        cy.get('input[value="Filter"]').parent().first().click({ force: true });
         cy.contains('div', 'numeric_feature').click();
         cy.get('input[value="41.6"]').last().type('10');
         cy.contains('button', 'Apply').click({ force: true });
