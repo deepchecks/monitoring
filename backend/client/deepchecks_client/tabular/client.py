@@ -23,8 +23,8 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular import Dataset
-from deepchecks.tabular.checks import (NewCategoryTrainTest, SingleDatasetPerformance, TrainTestFeatureDrift,
-                                       TrainTestLabelDrift, TrainTestPredictionDrift, NewLabelTrainTest)
+from deepchecks.tabular.checks import (NewCategoryTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
+                                       TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
 from deepchecks.tabular.checks.data_integrity import PercentOfNulls
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings

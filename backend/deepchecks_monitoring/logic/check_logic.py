@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.model_logic import (create_model_version_select_object,
+from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, create_model_version_select_object,
                                                      get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
@@ -502,7 +502,7 @@ async def run_check_window(
         model: Model,
         model_versions: t.List[ModelVersion],
         reference_only: bool = False,
-        n_samples: int = 10_000,
+        n_samples: int = DEFAULT_N_SAMPLES,
         with_display: bool = False,
 ) -> t.Dict[ModelVersion, t.Optional[t.Dict]]:
     """Run a check for each time window by lookback or for reference only.
@@ -593,7 +593,7 @@ def create_execution_data_query(
         session: AsyncSession,
         options: TableFiltersSchema,
         columns: t.List[str] = None,
-        n_samples: int = 10_000,
+        n_samples: int = DEFAULT_N_SAMPLES,
         all_columns: bool = False,
         filter_labels_exist: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
@@ -605,7 +605,7 @@ def create_execution_data_query(
     session
     columns
     options
-    n_samples: int, default: 10,000
+    n_samples: int
         The number of samples to collect
     all_columns: bool, default False
         Whether to load all the columns instead of just the top features
@@ -633,7 +633,7 @@ def load_data_for_check(
         options: TimeWindowOption,
         with_reference: bool = True,
         with_test: bool = True,
-        n_samples: int = 10_000,
+        n_samples: int = DEFAULT_N_SAMPLES,
         all_columns: bool = False,
         filter_labels_exist: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
@@ -649,7 +649,7 @@ def load_data_for_check(
         Whether to load reference
     with_test: bool
         Whether to load test
-    n_samples: int, default: 10,000
+    n_samples: int
         The number of samples to collect
     all_columns: bool, default False
         Whether to load all the columns instead of just the top features

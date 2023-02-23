@@ -31,6 +31,8 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
                                                              SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL,
                                                              ColumnType)
 
+DEFAULT_N_SAMPLES = 5000
+
 
 async def get_model_versions_for_time_range(session: AsyncSession,
                                             model_id: int,
@@ -57,7 +59,7 @@ def create_model_version_select_object(mon_table: Table, columns: t.List[str], f
     return s
 
 
-def random_sample(select_obj: Select, mon_table: Table, n_samples: int = 5_000) -> Select:
+def random_sample(select_obj: Select, mon_table: Table, n_samples: int = DEFAULT_N_SAMPLES) -> Select:
     """Sample randomly on a select object by id/row number md5."""
     sampled_select_obj = select_obj
 
