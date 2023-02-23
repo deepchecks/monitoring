@@ -475,7 +475,6 @@ async def test_statistics(
     assert not diff
 
 
-
 @pytest.mark.asyncio
 async def test_log_data_exceeding_rate(
     test_api: TestAPI,
@@ -506,7 +505,7 @@ async def test_log_data_exceeding_rate(
         "num_saved": ROWS_PER_MINUTE_LIMIT,
         "detail": (
             f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute. "
-            "1000 first rows were received"
+            "5000 first rows were received"
         )
     }
 

@@ -292,11 +292,11 @@ async def get_model_auto_frequency(
         option['percent_windows_exists'] = num_windows_exists / num_windows
         # Return the first option that has at least 80% of the windows
         if option['percent_windows_exists'] >= 0.8:
-            return option_to_response({'frequency': option['frequency'], 'days': option['days']})
+            return option_to_response(option)
 
     # If no option has at least 80% of the windows, return the option with the highest percentage
     max_option = max(options, key=lambda x: x['percent_windows_exists'])
-    return option_to_response({'frequency': max_option['frequency'], 'days': max_option['days']})
+    return option_to_response(max_option)
 
 
 @router.post('/checks/run-many', response_model=t.Dict[int, CheckResultSchema], tags=[Tags.CHECKS])
@@ -543,12 +543,17 @@ async def run_check_group_by_feature(
     # Start with all data filter
     filters = [{
         'name': 'All Data',
+        # This is additional data filter (which is added to the monitor options filters), so for "all data" it is empty
         'filters': DataFilterList(filters=[]),
         'count': count
     }]
 
-    # Get bins
-    feature_type, bins = await bins_for_feature(model_version, data_table, feature, session, monitor_options)
+    # Heuristically we found the minimal number of samples for drift on numerical features with small enough bias
+    magic_numeric_min_samples = 200
+    # Get number of bins between 2 and 10, depends on the count
+    numeric_bins_count = min(max(2, count // magic_numeric_min_samples), 10)
+    feature_type, bins = await bins_for_feature(model_version, data_table, feature, session, monitor_options,
+                                                numeric_bins=numeric_bins_count)
 
     if feature_type == ColumnType.CATEGORICAL:
         for curr_bin in bins:

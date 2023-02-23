@@ -18,7 +18,7 @@ import pendulum as pdl
 import pytest
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepdiff import DeepDiff
-from hamcrest import assert_that, contains_exactly, has_entries, has_items, has_length
+from hamcrest import assert_that, contains_exactly, has_entries, has_length
 from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models import TaskType
@@ -888,20 +888,26 @@ def test_numerical_feature_drill_down_with_single_value_in_bin(
 ):
     # Arrange
     now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
-    day_before = t.cast("PendulumDateTime", now - pdl.duration(days=1))
+    now_str = now.isoformat()
 
-    daterange = [day_before.add(hours=hours) for hours in [1, 3, 7]]
+    data = []
+    for i in range(1500):
+        sample = {
+            "_dc_sample_id": str(i),
+            "_dc_time": now_str,
+            "_dc_prediction": "1",
+            "_dc_label": "1",
+            "a": i // 500,
+            "b": "ppppp",
+            "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
+        }
+        data.append(sample)
 
-    _, start_time, end_time = upload_classification_data(
-        api=test_api,
-        model_version_id=classification_model_version["id"],
-        samples_per_date=2,
-        daterange=daterange
-    )
+    test_api.upload_samples(model_version_id=classification_model_version["id"], samples=data)
 
     options = {
-        "start_time": start_time.isoformat(),
-        "end_time": end_time.add(minutes=1).isoformat()
+        "start_time": now_str,
+        "end_time": now.add(hours=1).isoformat()
     }
     # == Act
     result = test_api.feature_drill_down(
@@ -918,25 +924,25 @@ def test_numerical_feature_drill_down_with_single_value_in_bin(
         has_entries({
             "name": "All Data",
             "value": has_length(3),
-            "count": 6,
+            "count": 1500,
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
-            "name": "10",
+            "name": "0",
             "value": has_length(3),
-            "count": 4,
+            "count": 500,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "11",
+            "name": "1",
             "value": has_length(3),
-            "count": 1,
+            "count": 500,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "12",
+            "name": "2",
             "value": has_length(3),
-            "count": 1,
+            "count": 500,
             "filters": has_entries({"filters": has_length(2)})
         })
     ))
@@ -978,9 +984,7 @@ def test_numerical_feature_drill_down(
 
     # == Assert
     result = t.cast(t.List[Payload], result)
-
-    # Checking first and last bin and all data
-    assert_that(result, has_items(
+    assert_that(result, contains_exactly(
         has_entries({
             "name": "All Data",
             "value": has_length(3),
@@ -988,15 +992,15 @@ def test_numerical_feature_drill_down(
             "filters": has_entries({"filters": has_length(0)})
         }),
         has_entries({
-            "name": "[10, 16)",
+            "name": "[10, 30)",
             "value": has_length(3),
-            "count": 43,
+            "count": 72,
             "filters": has_entries({"filters": has_length(2)})
         }),
         has_entries({
-            "name": "[85, 126]",
+            "name": "[30, 126]",
             "value": has_length(3),
-            "count": 16,
+            "count": 78,
             "filters": has_entries({"filters": has_length(2)})
         })
     ))

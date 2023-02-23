@@ -45,7 +45,7 @@ from tests.utils import TestDatabaseGenerator, create_dummy_smtp_server
 dotenv.load_dotenv()
 
 
-ROWS_PER_MINUTE_LIMIT = 1000
+ROWS_PER_MINUTE_LIMIT = 5_000
 
 
 @pytest.fixture(scope="session")
