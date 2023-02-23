@@ -81,5 +81,6 @@ You're ready to go!
 
 Congratulations, you're ready to start monitoring your models with deepchecks!
 
-Head over to our :doc:`quickstart </user-guide/tabular/quickstarts/plot_quickstart>` or see the full :doc:`User Guide </user-guide>`
-to get your models monnitoring up and running.
+Head over to our :doc:`Quickstart </user-guide/tabular/auto_quickstarts/plot_quickstart>`
+or see the full :doc:`User Guide </user-guide/index>`
+to get your model monitoring up and running.
