@@ -56,7 +56,7 @@ const SNACKBAR_POSITION = {
 const MAX_CHARACTERS = 27;
 const LABEL_VALUE_TITLE_MAX_CHARACTERS = 25;
 
-const DEFAULT_INFO_TITLES = ['Check:', 'Model:', 'Feature:', 'Segment:', 'Frequency:'];
+const DEFAULT_INFO_TITLES = ['Check:', 'Model:', 'Feature:', 'Segment:', 'Frequency:', 'Aggregation Window:'];
 
 export const AlertsDrawerHeader = ({
   alerts,
@@ -139,7 +139,8 @@ export const AlertsDrawerHeader = ({
       currentModel?.name || '',
       monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : 'N/A',
       monitor?.data_filters ? `${monitor?.data_filters.filters[0].column}` : 'N/A',
-      monitor?.frequency ? processFrequency(dayjs.duration(monitor?.frequency, 'seconds')) : 'N/A'
+      monitor?.frequency ? processFrequency(dayjs.duration(monitor.frequency, 'seconds')) : 'N/A',
+      monitor?.aggregation_window ? processFrequency(dayjs.duration(monitor.aggregation_window, 'seconds')) : 'N/A'
     ],
     [
       condition.operator,
@@ -148,7 +149,8 @@ export const AlertsDrawerHeader = ({
       monitor?.additional_kwargs?.res_conf,
       monitor?.check?.name,
       monitor?.data_filters,
-      monitor?.frequency
+      monitor?.frequency,
+      monitor?.aggregation_window
     ]
   );
 
