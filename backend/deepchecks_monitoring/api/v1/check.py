@@ -588,7 +588,8 @@ async def run_check_group_by_feature(
     for f in filters:
         test_session, ref_session = load_data_for_check(model_version, session, top_feat,
                                                         monitor_options.add_filters(f['filters']),
-                                                        with_reference=check.is_reference_required, with_test=True)
+                                                        with_reference=check.is_reference_required, with_test=True,
+                                                        filter_labels_exist=check.is_label_required)
         # The test info is used for caching purposes so need to fill it here
         test_session_info = {'start': None, 'end': None, 'query': test_session}
         sessions.append([(ref_session, [test_session_info])])
@@ -632,7 +633,8 @@ async def get_check_display(
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
-                                                    with_reference=check.is_reference_required, with_test=True)
+                                                    with_reference=check.is_reference_required, with_test=True,
+                                                    filter_labels_exist=check.is_label_required)
     # The test info is used for caching purposes so need to fill it here
     test_session_info = {'start': None, 'end': None, 'query': test_session}
     model_versions_sessions = [(ref_session, [test_session_info])]

@@ -281,7 +281,7 @@ def run_deepchecks(test_data, model_version, model, top_feat, dp_check, feat_imp
     # For not enough samples does not log the error
     except errors.NotEnoughSamplesError:
         # In case of exception in the run putting none result
-        return
+        pass
     # For rest of the errors logs them
     except errors.DeepchecksBaseError as e:
         message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
