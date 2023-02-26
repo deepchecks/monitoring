@@ -97,7 +97,8 @@ export const RunDownloadSuite = ({
               data: payload
             });
 
-      const url = window.URL.createObjectURL(new Blob([JSON.stringify(response)]));
+      const blobParts = [asScript ? response : JSON.stringify(response)];
+      const url = window.URL.createObjectURL(new Blob(blobParts));
 
       const link = document.createElement('a');
       link.href = url;
