@@ -45,7 +45,7 @@ class ColumnStatistics(BaseModel):
 
 
 class ColumnMetadata(BaseModel):
-    """TypedDict containing relavant column metadata."""
+    """TypedDict containing relevant column metadata."""
 
     type: ColumnType
     stats: ColumnStatistics
@@ -139,10 +139,11 @@ class ModelVersion(Base):
     def get_top_features(self, n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
         """Get top n features sorted by feature importance and the feature_importance."""
         if self.feature_importance:
+            # Sort by descending feature importance and then by ascending feature name
             most_important_features = sorted(self.feature_importance.items(),
-                                             key=lambda item: item[1], reverse=True)[:n_top]
+                                             key=lambda item: (-item[1], item[0]))[:n_top]
             return [feat[0] for feat in most_important_features], pd.Series(dict(most_important_features))
-        return list(self.features_columns.keys())[:n_top], None
+        return list(sorted(self.features_columns.keys()))[:n_top], None
 
     def get_reference_table(self, connection) -> Table:
         """Get table object of the reference table."""

@@ -31,6 +31,7 @@ from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
 from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, AlertSeverityMap,
                                                              MonitorsCountPerModel, floor_window_for_time)
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
@@ -528,12 +529,12 @@ async def get_model_columns(
     latest_version: ModelVersion = model.versions[0]
     column_dict: t.Dict[str, ColumnMetadata] = {}
 
-    feat_imp_dict = latest_version.feature_importance or {}
-    return_columns = list(sorted(latest_version.features_columns.items(),
-                                 key=lambda item: feat_imp_dict.get(item[0], 0), reverse=True)) + \
-        list(latest_version.additional_data_columns.items())
-    for (col_name, col_type) in return_columns:
-        column_dict[col_name] = ColumnMetadata(type=col_type, stats=latest_version.statistics.get(col_name, {}))
+    sorted_features = latest_version.get_top_features(MAX_FEATURES_TO_RETURN)[0]
+    for col_name in sorted_features:
+        column_dict[col_name] = ColumnMetadata(type=latest_version.features_columns[col_name],
+                                               stats=latest_version.statistics.get(col_name, {}))
+    for (col_name, col_type) in latest_version.additional_data_columns.items():
+        column_dict[col_name] = ColumnMetadata(type=col_type, stats={})
     return column_dict
 
 

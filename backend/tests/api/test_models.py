@@ -41,7 +41,7 @@ def test_model_columns_retrieval_with_model_that_has_versions(
         identifier_kind=identifier_kind
     )
     diff = DeepDiff(
-        ignore_order=True,
+        ignore_order=False,
         t1=t.cast(Payload, columns),
         t2={
             "a": {"type": "numeric", "stats": {"max": None, "min": None, "values": None}},
