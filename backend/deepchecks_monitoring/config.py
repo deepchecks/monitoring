@@ -109,13 +109,21 @@ class TelemetrySettings(BaseDeepchecksSettings):
     sentry_env: str = 'dev'
 
 
+class StripeSettings(BaseDeepchecksSettings):
+    """Stripe settings."""
+
+    stripe_api_key: str = ''
+    stripe_webhook_secret: str = ''
+
+
 class Settings(
     DatabaseSettings,
     KafkaSettings,
     RedisSettings,
     EmailSettings,
     SlackSettings,
-    TelemetrySettings
+    TelemetrySettings,
+    StripeSettings
 ):
     """Settings for the deepchecks_monitoring package."""
 

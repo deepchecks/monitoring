@@ -9,12 +9,14 @@
 # ----------------------------------------------------------------------------
 """Organiztaion entity model."""
 import enum
+import logging
 import time
 import typing as t
 from random import choice
 from string import ascii_lowercase
 
 import sqlalchemy as sa
+import stripe
 from sqlalchemy.orm import Mapped, relationship
 from typing_extensions import Self
 
@@ -46,6 +48,7 @@ class Organization(Base):
     name = sa.Column(sa.String(100), unique=False, nullable=False)
     schema_name = sa.Column(sa.String(100), unique=True, nullable=False)
     tier = sa.Column(sa.Enum(OrgTier), nullable=False, default=OrgTier.FREE)
+    stripe_customer_id = sa.Column(sa.String(100), unique=True, nullable=True)
 
     slack_notification_levels = sa.Column(
         sa.ARRAY(sa.Enum(AlertSeverity)),
@@ -76,7 +79,10 @@ class Organization(Base):
         name: str
     ) -> Self:
         """Create a new organization for a user."""
-        org = Organization(name=name, schema_name=cls.generate_schema_name(name))
+
+        org = Organization(name=name,
+                           schema_name=cls.generate_schema_name(name),
+                           stripe_customer_id=cls.generate_stripe_customer_id(name))
         owner.organization = org
         owner.is_admin = True
         return org
@@ -87,6 +93,17 @@ class Organization(Base):
         value = slugify(org_name, separator="_")
         value = value if value else "".join(choice(ascii_lowercase) for _ in range(10))
         return f"org_{value}_ts_{int(time.time_ns())}"
+
+    @classmethod
+    def generate_stripe_customer_id(cls, org_name: str) -> str:
+        """Generate a customer ID on stripe"""
+        if stripe.api_key:
+            return stripe.Customer.create(
+                name=org_name
+            ).stripe_id
+        else:
+            logging.warning("Stripe API key wasn't provided. %s won't have a stripe customer ID", org_name)
+            return ""
 
     # Instance Properties
     # ===================

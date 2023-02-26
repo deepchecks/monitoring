@@ -906,7 +906,8 @@ async def set_schedule_time(
 @router.get(
     "/models/{model_id}/notes",
     tags=[Tags.MODELS],
-    summary="Retrieve model notes."
+    summary="Retrieve model notes.",
+    response_model=t.List[ModelNoteSchema]
 )
 async def retrieve_model_notes(
     model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
@@ -927,7 +928,8 @@ async def retrieve_model_notes(
 @router.post(
     "/models/{model_id}/notes",
     tags=[Tags.MODELS],
-    summary="Create model notes."
+    summary="Create model notes.",
+    response_model=t.List[ModelNoteSchema]
 )
 async def create_model_notes(
     notes: t.List[ModelNoteCreationSchema],

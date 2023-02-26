@@ -82,6 +82,10 @@ def create_application(
         )
         telemetry.collect_telemetry(DataIngestionBackend)
 
+    if settings.stripe_api_key:
+        import stripe  # pylint: disable=import-outside-toplevel
+        stripe.api_key = settings.stripe_api_key
+
     app = FastAPI(
         title=title,
         openapi_url=openapi_url,

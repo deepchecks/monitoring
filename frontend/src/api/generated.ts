@@ -95,8 +95,6 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
-export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
-
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
@@ -153,24 +151,6 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
 /**
- * Schema for organization.
- */
-export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
-  id: number;
-  name: string;
-}
-
-/**
- * Schema for the organization.
- */
-export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
-  name: string;
-  is_slack_connected: boolean;
-  slack_notification_levels: AlertSeverity[];
-  email_notification_levels: AlertSeverity[];
-}
-
-/**
  * Schema for getting rows in a specific window.
  */
 export interface WindowDataSchema {
@@ -208,18 +188,6 @@ export interface ValidationError {
   loc: ValidationErrorLocItem[];
   msg: string;
   type: string;
-}
-
-/**
- * Schema for user.
- */
-export interface UserSchema {
-  id: number;
-  email: string;
-  created_at: string;
-  full_name?: string;
-  picture_url?: string;
-  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
 }
 
 /**
@@ -295,6 +263,13 @@ export interface SingleCheckRunOptions {
   additional_kwargs?: MonitorCheckConfSchema;
 }
 
+/**
+ * Schema for the payment method update endpoint.
+ */
+export interface PaymentMethodSchema {
+  payment_method_id: string;
+}
+
 export type PagerDutyWebhookPropertiesKind =
   typeof PagerDutyWebhookPropertiesKind[keyof typeof PagerDutyWebhookPropertiesKind];
 
@@ -324,6 +299,26 @@ export interface PagerDutyWebhookProperties {
 export interface OrganizationUpdateSchema {
   slack_notification_levels?: AlertSeverity[];
   email_notification_levels?: AlertSeverity[];
+}
+
+/**
+ * Schema for organization.
+ */
+export interface OrganizationSchema {
+  id: number;
+  name: string;
+}
+
+/**
+ * Schema for user.
+ */
+export interface UserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: OrganizationSchema;
 }
 
 /**
@@ -799,6 +794,14 @@ export interface ColumnMetadata {
 }
 
 /**
+ * Schema for the create subscription endpoint.
+ */
+export interface CheckoutSchema {
+  price_id: string;
+  quantity: number;
+}
+
+/**
  * Schema for the check.
  */
 export interface CheckSchema {
@@ -991,7 +994,7 @@ export interface AlertRuleConfigSchema {
  * @summary Hello World
  */
 export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) => {
-  return customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
+  return customInstance<unknown>({ url: `/api/v1/say-hello`, method: 'get', signal });
 };
 
 export const getHelloWorldApiV1SayHelloGetQueryKey = () => [`/api/v1/say-hello`];
@@ -1918,7 +1921,7 @@ export const useListWebhooksApiV1AlertWebhooksGet = <
 export const createWebhookApiV1AlertWebhooksPost = (
   createWebhookApiV1AlertWebhooksPostBody: CreateWebhookApiV1AlertWebhooksPostBody
 ) => {
-  return customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
+  return customInstance<unknown>({
     url: `/api/v1/alert-webhooks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -5654,6 +5657,322 @@ export const useLogoutApiV1AuthLogoutGet = <
 };
 
 /**
+ * Return the payment method of the organization.
+ * @summary Get Payment Method
+ */
+export const getPaymentMethodApiV1BillingPaymentMethodGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
+};
+
+export const getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey = () => [`/api/v1/billing/payment-method`];
+
+export type GetPaymentMethodApiV1BillingPaymentMethodGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>
+>;
+export type GetPaymentMethodApiV1BillingPaymentMethodGetQueryError = ErrorType<unknown>;
+
+export const useGetPaymentMethodApiV1BillingPaymentMethodGet = <
+  TData = Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>> = ({
+    signal
+  }) => getPaymentMethodApiV1BillingPaymentMethodGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Update the payment method on stripe
+ * @summary Update Payment Method
+ */
+export const updatePaymentMethodApiV1BillingPaymentMethodPost = (paymentMethodSchema: PaymentMethodSchema) => {
+  return customInstance<unknown>({
+    url: `/api/v1/billing/payment-method`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: paymentMethodSchema
+  });
+};
+
+export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>
+>;
+export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationBody = PaymentMethodSchema;
+export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdatePaymentMethodApiV1BillingPaymentMethodPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
+    TError,
+    { data: PaymentMethodSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
+    { data: PaymentMethodSchema }
+  > = props => {
+    const { data } = props ?? {};
+
+    return updatePaymentMethodApiV1BillingPaymentMethodPost(data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
+    TError,
+    { data: PaymentMethodSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Return a list of subscription of the organization.
+ * @summary Get Subscriptions
+ */
+export const getSubscriptionsApiV1BillingSubscriptionGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/billing/subscription`, method: 'get', signal });
+};
+
+export const getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey = () => [`/api/v1/billing/subscription`];
+
+export type GetSubscriptionsApiV1BillingSubscriptionGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>
+>;
+export type GetSubscriptionsApiV1BillingSubscriptionGetQueryError = ErrorType<unknown>;
+
+export const useGetSubscriptionsApiV1BillingSubscriptionGet = <
+  TData = Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>> = ({
+    signal
+  }) => getSubscriptionsApiV1BillingSubscriptionGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Creates a checkout session with stripe
+ * @summary Create Subscription
+ */
+export const createSubscriptionApiV1BillingSubscriptionPost = (checkoutSchema: CheckoutSchema) => {
+  return customInstance<unknown>({
+    url: `/api/v1/billing/subscription`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: checkoutSchema
+  });
+};
+
+export type CreateSubscriptionApiV1BillingSubscriptionPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>
+>;
+export type CreateSubscriptionApiV1BillingSubscriptionPostMutationBody = CheckoutSchema;
+export type CreateSubscriptionApiV1BillingSubscriptionPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useCreateSubscriptionApiV1BillingSubscriptionPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
+    TError,
+    { data: CheckoutSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
+    { data: CheckoutSchema }
+  > = props => {
+    const { data } = props ?? {};
+
+    return createSubscriptionApiV1BillingSubscriptionPost(data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
+    TError,
+    { data: CheckoutSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Update the subscription for the organization.
+ * @summary Update Subscription
+ */
+export const updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = (
+  subscriptionId: string,
+  checkoutSchema: CheckoutSchema
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/billing/subscription/${subscriptionId}`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: checkoutSchema
+  });
+};
+
+export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>
+>;
+export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationBody = CheckoutSchema;
+export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
+    TError,
+    { subscriptionId: string; data: CheckoutSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
+    { subscriptionId: string; data: CheckoutSchema }
+  > = props => {
+    const { subscriptionId, data } = props ?? {};
+
+    return updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut(subscriptionId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
+    TError,
+    { subscriptionId: string; data: CheckoutSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Cancel the subscription.
+ * @summary Cancel Subscription
+ */
+export const cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete = (subscriptionId: string) => {
+  return customInstance<unknown>({ url: `/api/v1/billing/subscription/${subscriptionId}`, method: 'delete' });
+};
+
+export type CancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>
+>;
+
+export type CancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDeleteMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useCancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
+    TError,
+    { subscriptionId: string },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
+    { subscriptionId: string }
+  > = props => {
+    const { subscriptionId } = props ?? {};
+
+    return cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete(subscriptionId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
+    TError,
+    { subscriptionId: string },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Webhook to catch stripe events.
+ * @summary Stripe Webhook
+ */
+export const stripeWebhookApiV1BillingWebhookPost = () => {
+  return customInstance<unknown>({ url: `/api/v1/billing/webhook`, method: 'post' });
+};
+
+export type StripeWebhookApiV1BillingWebhookPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>
+>;
+
+export type StripeWebhookApiV1BillingWebhookPostMutationError = ErrorType<unknown>;
+
+export const useStripeWebhookApiV1BillingWebhookPost = <
+  TError = ErrorType<unknown>,
+  TVariables = void,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
+    TError,
+    TVariables,
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
+    TVariables
+  > = () => {
+    return stripeWebhookApiV1BillingWebhookPost();
+  };
+
+  return useMutation<Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>, TError, TVariables, TContext>(
+    mutationFn,
+    mutationOptions
+  );
+};
+
+/**
  * Health check endpoint.
 
 Returns
@@ -5750,11 +6069,7 @@ export const useCreateInviteApiV1OrganizationInvitePut = <
  * @summary Retrive Organization
  */
 export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) => {
-  return customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
-    url: `/api/v1/organization`,
-    method: 'get',
-    signal
-  });
+  return customInstance<unknown>({ url: `/api/v1/organization`, method: 'get', signal });
 };
 
 export const getRetriveOrganizationApiV1OrganizationGetQueryKey = () => [`/api/v1/organization`];

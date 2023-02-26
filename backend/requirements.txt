@@ -32,3 +32,4 @@ pyinstrument
 watchtower==3.0.0
 sentry-sdk[fastapi]==1.14.0
 joblib==1.2.0
+stripe==5.2.0
