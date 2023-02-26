@@ -53,7 +53,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         org_id = task.params['organization_id']
         succeeded = await _read_offset_from_kafka(org_id, model_version_id, session, self.consumer)
         # Deleting the task
-        await session.scalar(delete(Task).where(Task.id == task.id))
+        await session.execute(delete(Task).where(Task.id == task.id))
         # If failed to read offset, scheduling task to run again
         if not succeeded:
             await insert_model_version_offset_update_task(org_id, model_version_id, session)
