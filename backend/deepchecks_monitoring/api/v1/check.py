@@ -15,7 +15,7 @@ from deepchecks import SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import (ReduceFeatureMixin, ReduceLabelMixin, ReduceMetricClassMixin,
                                             ReducePropertyMixin)
-from deepchecks.tabular.checks import TrainTestPerformance
+from deepchecks.tabular.checks import ConfusionMatrixReport, RegressionErrorDistribution
 from fastapi import Query
 from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
@@ -42,7 +42,7 @@ from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
-from deepchecks_monitoring.schema_models import Check, ColumnType, Model
+from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
@@ -626,9 +626,12 @@ async def get_check_display(
 
     # Ugly hack to show different display instead of the one of single dataset performance
     if check.config['class_name'] == 'SingleDatasetPerformance':
-        # TODO: needs to copy kwargs from the original check? are they the same?
-        check = Check(config=TrainTestPerformance().config(), is_reference_required=True,
-                      is_label_required=True)
+        if model_version.model.task_type == TaskType.REGRESSION:
+            check = Check(config=RegressionErrorDistribution().config(), is_reference_required=False,
+                          is_label_required=True)
+        else:
+            check = Check(config=ConfusionMatrixReport().config(), is_reference_required=True,
+                          is_label_required=True)
 
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
