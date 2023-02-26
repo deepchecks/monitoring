@@ -657,5 +657,5 @@ async def get_check_display(
             if isinstance(d, BaseFigure):
                 display.append({'type': 'plotly', 'data': d.to_json()})
             elif isinstance(d, pd.DataFrame):
-                display.append({'type': 'table', 'data': d.to_json(orient='records')})
+                display.append({'type': 'table', 'data': d.to_json(orient='table')})
     return display
