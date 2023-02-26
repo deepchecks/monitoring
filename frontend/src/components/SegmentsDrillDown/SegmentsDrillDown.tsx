@@ -7,7 +7,8 @@ import {
   CheckGroupBySchemaValue,
   DataFilter,
   getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost,
-  SingleCheckRunOptions
+  SingleCheckRunOptions,
+  GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item
 } from 'api/generated';
 
 import { styled, Box } from '@mui/material';
@@ -65,8 +66,8 @@ const SegmentsDrillDownComponent = ({
     [check, datasetName, classOrFeature]
   );
 
-  const [allPlots, setAllPlots] = useState<Record<number, string[]>>({});
-  const [plots, setPlots] = useState<string[] | null>(null);
+  const [allPlots, setAllPlots] = useState<Record<number, GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item[]>>({});
+  const [plots, setPlots] = useState<GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item[] | null>(null);
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);
   const [title, setTitle] = useState<string>();
@@ -111,7 +112,7 @@ const SegmentsDrillDownComponent = ({
             yTitle={yTitle}
             xTitle={feature}
           />
-          {plots ? <SegmentTests title={title} plots={plots.map(plot => JSON.parse(plot))} /> : <Loader />}
+          {plots ? <SegmentTests title={title} plots={plots} /> : <Loader />}
         </>
       )}
     </StyledContainer>

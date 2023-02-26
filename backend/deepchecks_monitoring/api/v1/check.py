@@ -10,6 +10,7 @@
 """V1 API of the check."""
 import typing as t
 
+import pandas as pd
 import pendulum as pdl
 from deepchecks import SingleDatasetBaseCheck, TrainTestBaseCheck
 from deepchecks.core import BaseCheck
@@ -613,7 +614,7 @@ async def run_check_group_by_feature(
 
 
 @router.post('/checks/{check_id}/display/{model_version_id}',
-             response_model=t.List[str], tags=[Tags.CHECKS])
+             response_model=t.List[t.Dict], tags=[Tags.CHECKS])
 async def get_check_display(
         check_id: int,
         model_version_id: int,
@@ -649,7 +650,12 @@ async def get_check_display(
 
     # The function we called is more general, but we know here we have single version and window
     result = model_results_per_window[model_version][0]
+    display = []
     if result['result'] is not None:
         check_result = result['result']
-        return [d.to_json() for d in check_result.display if isinstance(d, BaseFigure)]
-    return []
+        for d in check_result.display:
+            if isinstance(d, BaseFigure):
+                display.append({'type': 'plotly', 'data': d.to_json()})
+            elif isinstance(d, pd.DataFrame):
+                display.append({'type': 'table', 'data': d.to_json(orient='records')})
+    return display

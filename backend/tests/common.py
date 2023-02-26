@@ -1303,7 +1303,7 @@ class TestAPI:
         assert isinstance(data, list)
 
         for it in data:
-            assert isinstance(it, str)
+            assert isinstance(it, dict)
 
         return data
 

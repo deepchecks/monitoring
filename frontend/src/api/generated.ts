@@ -74,6 +74,8 @@ export type GetAllAlertRulesApiV1ConfigAlertRulesGetParams = {
   sortby?: GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem[];
 };
 
+export type GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item = { [key: string]: any };
+
 export type RunManyChecksTogetherApiV1ChecksRunManyPost200 = { [key: string]: CheckResultSchema };
 
 export type RunManyChecksTogetherApiV1ChecksRunManyPostParams = { check_id: number[] };
@@ -2832,7 +2834,7 @@ export const getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost = (
   modelVersionId: number,
   singleCheckRunOptions: SingleCheckRunOptions
 ) => {
-  return customInstance<string[]>({
+  return customInstance<GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item[]>({
     url: `/api/v1/checks/${checkId}/display/${modelVersionId}`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
