@@ -12,7 +12,7 @@ import typing as t
 
 import pendulum as pdl
 import pytest
-from redis.client import Redis
+from fakeredis import FakeRedis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.keys import build_monitor_cache_key
@@ -398,7 +398,7 @@ def test_monitor_execution(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
-    redis_client: Redis,
+    redis: FakeRedis,
     user
 ):
     # Arrange
@@ -431,7 +431,7 @@ def test_monitor_execution(
     count_cache = 0
     monitor_key = build_monitor_cache_key(user.organization_id, classification_model_version["id"], monitor["id"],
                                           None, None)
-    for _ in redis_client.scan_iter(monitor_key):
+    for _ in redis.scan_iter(monitor_key):
         count_cache += 1
 
     assert count_cache == 8

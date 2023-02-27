@@ -95,7 +95,7 @@ class Organization(Base):
         return f"org_{value}_ts_{int(time.time_ns())}"
 
     @classmethod
-    def generate_stripe_customer_id(cls, org_name: str) -> str:
+    def generate_stripe_customer_id(cls, org_name: str) -> t.Optional[str]:
         """Generate a customer ID on stripe"""
         if stripe.api_key:
             return stripe.Customer.create(
@@ -103,7 +103,7 @@ class Organization(Base):
             ).stripe_id
         else:
             logging.warning("Stripe API key wasn't provided. %s won't have a stripe customer ID", org_name)
-            return ""
+            return None
 
     # Instance Properties
     # ===================

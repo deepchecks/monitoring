@@ -23,3 +23,4 @@ uvicorn==0.17.6
 faker
 pyOpenSSL
 aiosmtpd
+fakeredis==2.9.2

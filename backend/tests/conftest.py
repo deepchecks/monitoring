@@ -12,27 +12,25 @@ import asyncio
 import os
 import random
 import string
-import subprocess
 import typing as t
 from unittest import mock
 from unittest.mock import patch
 
 import dotenv
 import faker
+import fakeredis
 import pytest
 import pytest_asyncio
 import testing.postgresql
-from deepchecks_client import DeepchecksClient
-from deepchecks_client.core.api import API
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import RedisDsn
-from redis.client import Redis
 from sqlalchemy.engine.url import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.future import Engine, create_engine
 from sqlalchemy.orm import sessionmaker
 
+from deepchecks_client import DeepchecksClient
+from deepchecks_client.core.api import API
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
@@ -177,26 +175,13 @@ def smtp_server():
         yield server
 
 
-@pytest.fixture(scope="session")
-def redis_url():
-    if (uri := os.environ.get("TESTS_REDIS_URI")) is not None:
-        yield uri
-    else:
-        with subprocess.Popen(["redis-server", "--port", "6380"]) as p:
-            yield "redis://localhost:6380/0"
-            p.kill()
+@pytest.fixture(scope="function")
+def redis():
+    yield fakeredis.FakeStrictRedis()
 
 
 @pytest.fixture(scope="function")
-def redis_client(redis_url: str):
-    with Redis.from_url(redis_url) as r:
-        r.flushdb()
-        yield r
-
-
-@pytest.fixture(scope="function")
-def settings(async_engine, smtp_server, redis_client):
-    redis_config = t.cast(t.Dict[str, t.Any], redis_client.get_connection_kwargs())
+def settings(async_engine, smtp_server):
     return Settings(
         assets_folder="",
         database_uri=str(async_engine.url.set(drivername="postgresql")),  # type: ignore
@@ -212,12 +197,6 @@ def settings(async_engine, smtp_server, redis_client):
         oauth_client_id="",
         oauth_client_secret="",
         auth_jwt_secret="secret",
-        redis_uri=t.cast(RedisDsn, RedisDsn.build(
-            scheme="redis",
-            host=redis_config["host"],
-            port=str(redis_config["port"]),
-            path="/" + str(redis_config["db"])
-        )),
         kafka_host=None,
     )
 
@@ -234,8 +213,9 @@ def launchdarkly_mock():
 
 
 @pytest.fixture(scope="function")
-def resources_provider(settings, launchdarkly_mock):
+def resources_provider(settings, launchdarkly_mock, redis):
     patch.object(ResourcesProvider, "launchdarkly_variation", launchdarkly_mock).start()
+    patch.object(ResourcesProvider, "redis_client", redis).start()
     yield ResourcesProvider(settings)
 
 

@@ -45,8 +45,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install redis
-      run: sudo apt-get install -y redis-server
     - name: Set Up Env
       run: make env
     - name: pip freeze
