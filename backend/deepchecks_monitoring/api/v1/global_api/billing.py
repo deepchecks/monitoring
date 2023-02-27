@@ -42,9 +42,30 @@ class PaymentMethodSchema(BaseModel):
     payment_method_id: str
 
 
+class ProductResponseSchema(BaseModel):
+    """Schema that represent a product from stripe."""
+
+    id: str
+    default_price: str
+    name: str
+    description: t.Optional[str]
+
+
+@router.get("/billing/available-products", tags=["billing"], response_model=t.List[ProductResponseSchema])
+async def list_all_products(
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+):
+    """Get the list of available products from stripe."""
+    try:
+        product_list = stripe.Product.list()
+        return [ProductResponseSchema(**x) for x in product_list["data"]]
+    except Exception as e:  # pylint: disable=broad-except
+        raise BadRequest from e
+
+
 @router.post("/billing/payment-method", tags=["billing"])
 async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(auth.AdminUser())):
-    """Update the payment method on stripe"""
+    """Update the payment method on stripe."""
     try:
         stripe.PaymentMethod.attach(
             body.payment_method_id,
