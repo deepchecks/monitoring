@@ -8,6 +8,8 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module representing the endpoints for billing."""
+import typing as t
+
 import stripe
 from fastapi import Depends, Request
 from pydantic.main import BaseModel
@@ -21,10 +23,17 @@ from .global_router import router
 
 
 class CheckoutSchema(BaseModel):
-    """Schema for the create subscription endpoint."""
+    """Schema for the request of create subscription endpoint."""
 
     price_id: str
     quantity: int
+
+
+class SubscriptionCreationResponse(BaseModel):
+    """Schema for the response of create subscription endpoint."""
+
+    client_secret: str
+    subscription_id: str
 
 
 class PaymentMethodSchema(BaseModel):
@@ -55,7 +64,7 @@ async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(
 
 
 @router.get("/billing/payment-method", tags=["billing"])
-async def get_payment_method(user: User = Depends(auth.AdminUser())):
+async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
     """Return the payment method of the organization."""
     customer_id = user.organization.stripe_customer_id
 
@@ -65,14 +74,14 @@ async def get_payment_method(user: User = Depends(auth.AdminUser())):
             type="card"
         )
     except Exception as e:  # pylint: disable=broad-except
-        return AccessForbidden(str(e))
+        raise AccessForbidden from e
 
 
-@router.post("/billing/subscription", tags=["billing"])
+@router.post("/billing/subscription", tags=["billing"], response_model=SubscriptionCreationResponse)
 async def create_subscription(
         body: CheckoutSchema,
         user: User = Depends(auth.AdminUser())
-):
+) -> SubscriptionCreationResponse:
     """Creates a checkout session with stripe"""
     try:
         # Create the subscription
@@ -88,23 +97,23 @@ async def create_subscription(
             expand=["latest_invoice.payment_intent"],
         )
 
-        return {
-            "clientSecret": subscription.latest_invoice.payment_intent.client_secret,
-            "subscriptionId": subscription.id
-        }
+        return SubscriptionCreationResponse(
+            client_secret=subscription.latest_invoice.payment_intent.client_secret,
+            subscription_id=subscription.id
+        )
     except Exception as e:  # pylint: disable=broad-except
-        return BadRequest(str(e))
+        raise BadRequest from e
 
 
-@router.get("/billing/subscription", tags=["billing"])
-async def get_subscriptions(user: User = Depends(auth.AdminUser())):
+@router.get("/billing/subscription", tags=["billing"], response_model=t.List)
+async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
     """Return a list of subscription of the organization."""
     try:
         subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id,
                                                  expand=["data.latest_invoice.payment_intent"])
         return subscriptions["data"]
     except Exception as e:  # pylint: disable=broad-except
-        return AccessForbidden(str(e))
+        raise AccessForbidden from e
 
 
 @router.delete("/billing/subscription/{subscription_id}", tags=["billing"])
@@ -122,12 +131,12 @@ def cancel_subscription(
         return AccessForbidden(str(e))
 
 
-@router.put("/billing/subscription/{subscription_id}", tags=["billing"])
+@router.put("/billing/subscription/{subscription_id}", tags=["billing"], response_model=SubscriptionCreationResponse)
 def update_subscription(
         subscription_id: str,
         body: CheckoutSchema,
         user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
-):
+) -> SubscriptionCreationResponse:
     """Update the subscription for the organization."""
     try:
         subscription = stripe.Subscription.retrieve(subscription_id)
@@ -139,9 +148,13 @@ def update_subscription(
                 "id": subscription["items"]["data"][0].id,
                 "price": body.price_id,
                 "quantity": body.quantity
-            }]
+            }],
+            expand=["latest_invoice.payment_intent"]
         )
-        return updated_subscription
+        return SubscriptionCreationResponse(
+            client_secret=updated_subscription.latest_invoice.payment_intent.client_secret,
+            subscription_id=updated_subscription.id
+        )
     except Exception as e:  # pylint: disable=broad-except
         return AccessForbidden(str(e))
 

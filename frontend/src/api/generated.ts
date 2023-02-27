@@ -191,6 +191,18 @@ export interface ValidationError {
 }
 
 /**
+ * Schema for user.
+ */
+export interface UserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: OrganizationSchema;
+}
+
+/**
  * Monitor run schema.
  */
 export interface TimeWindowSchema {
@@ -217,6 +229,14 @@ export type TaskType = unknown;
 export interface TableDataSchema {
   filter?: DataFilterList;
   rows_count?: number;
+}
+
+/**
+ * Schema for the response of create subscription endpoint.
+ */
+export interface SubscriptionCreationResponse {
+  clientSecret: string;
+  subscriptionId: string;
 }
 
 export type StandartWebhookPropertiesHttpHeaders = { [key: string]: string };
@@ -307,18 +327,6 @@ export interface OrganizationUpdateSchema {
 export interface OrganizationSchema {
   id: number;
   name: string;
-}
-
-/**
- * Schema for user.
- */
-export interface UserSchema {
-  id: number;
-  email: string;
-  created_at: string;
-  full_name?: string;
-  picture_url?: string;
-  organization?: OrganizationSchema;
 }
 
 /**
@@ -786,7 +794,7 @@ export interface ColumnStatistics {
 }
 
 /**
- * TypedDict containing relavant column metadata.
+ * TypedDict containing relevant column metadata.
  */
 export interface ColumnMetadata {
   type: ColumnType;
@@ -794,7 +802,7 @@ export interface ColumnMetadata {
 }
 
 /**
- * Schema for the create subscription endpoint.
+ * Schema for the request fo create subscription endpoint.
  */
 export interface CheckoutSchema {
   price_id: string;
@@ -5750,7 +5758,7 @@ export const useUpdatePaymentMethodApiV1BillingPaymentMethodPost = <
  * @summary Get Subscriptions
  */
 export const getSubscriptionsApiV1BillingSubscriptionGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/billing/subscription`, method: 'get', signal });
+  return customInstance<unknown[]>({ url: `/api/v1/billing/subscription`, method: 'get', signal });
 };
 
 export const getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey = () => [`/api/v1/billing/subscription`];
@@ -5790,7 +5798,7 @@ export const useGetSubscriptionsApiV1BillingSubscriptionGet = <
  * @summary Create Subscription
  */
 export const createSubscriptionApiV1BillingSubscriptionPost = (checkoutSchema: CheckoutSchema) => {
-  return customInstance<unknown>({
+  return customInstance<SubscriptionCreationResponse>({
     url: `/api/v1/billing/subscription`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -5842,7 +5850,7 @@ export const updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = (
   subscriptionId: string,
   checkoutSchema: CheckoutSchema
 ) => {
-  return customInstance<unknown>({
+  return customInstance<SubscriptionCreationResponse>({
     url: `/api/v1/billing/subscription/${subscriptionId}`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
