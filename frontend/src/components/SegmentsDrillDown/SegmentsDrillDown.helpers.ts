@@ -1,24 +1,49 @@
 import { ChartOptions, ChartData } from 'chart.js';
 
+import { CheckGroupBySchema, CheckGroupBySchemaValue } from 'api/generated';
+
 import { alpha } from '@mui/material';
-import { CheckGroupBySchema } from 'api/generated';
 
-export const TITLE = 'Check Per Segment';
-export const ACTIVE_BAR_COLOR = alpha('#00CCFF', 1);
-export const BAR_COLOR = alpha(ACTIVE_BAR_COLOR, 0.3);
+import { colors } from 'theme/colors';
+
+const NULL_VALUE_BAR_COLOR = colors.neutral.grey.disabled;
+const NULL_VALUE_ACTIVE_BAR_COLOR = colors.neutral.grey[300];
+const ACTIVE_BAR_COLOR = '#00CCFF';
+const BAR_COLOR = alpha(ACTIVE_BAR_COLOR, 0.3);
 export const ACTIVE_BAR_BG_COLOR = alpha(ACTIVE_BAR_COLOR, 0.1);
+export const TITLE = 'Check Per Segment';
 
-export const barsColorArray = (length: number): string[] => Array(length).fill(BAR_COLOR);
+export function barsColorArray(data: (number | null)[], activeBarIndex?: number) {
+  return data.map((d, index) =>
+    activeBarIndex === index ? ACTIVE_BAR_COLOR : d === null ? NULL_VALUE_BAR_COLOR : BAR_COLOR
+  );
+}
+
+function barsHoverColorArray(data: (number | null)[]) {
+  return data.map(d => (d === null ? NULL_VALUE_ACTIVE_BAR_COLOR : ACTIVE_BAR_COLOR));
+}
+
+function stringNameFix(str: string) {
+  return str.replaceAll('_', ' ').toLowerCase();
+}
+
+export function getKeyByDatasetName(obj: CheckGroupBySchemaValue, name: string) {
+  return Object.keys(obj).find(key => stringNameFix(key) == stringNameFix(name));
+}
+
+function removeNulls(data: (number | null)[]) {
+  return data.map(d => (d === null ? 0 : d));
+}
 
 export const chartOptions = (
   segmentData: CheckGroupBySchema[],
   data: Array<number | null>,
+  activeIndex: number,
   yTitle?: string,
-  xTitle?: string,
-  activeIndex?: number
+  xTitle?: string
 ): ChartOptions<'bar'> => {
   const allZeros = data.every(d => d === 0);
-  const nonNulls: number[] = data.filter(f => f !== null) as number[];
+  const nonNulls = removeNulls(data);
   const max = Math.max(...nonNulls);
   const min = Math.min(...nonNulls);
   const stepSize = Math.max(...nonNulls.map(d => Math.abs(d))) / 3;
@@ -41,10 +66,14 @@ export const chartOptions = (
             const percent = new Intl.NumberFormat('default', { style: 'percent', maximumFractionDigits: 2 }).format(
               thisCount / totalCount
             );
-            return [
+
+            const nullValueTooltip = 'Not enough samples to run check';
+            const valueTooltip = [
               ' ' + (yTitle || context.dataset.label || '') + ': ' + context.formattedValue,
               ' Segment Size: ' + thisCount + ' (' + percent + ')'
             ];
+
+            return data[context.dataIndex] === null ? nullValueTooltip : valueTooltip;
           }
         }
       },
@@ -62,7 +91,7 @@ export const chartOptions = (
         },
         type: 'category',
         title: {
-          display: xTitle !== undefined,
+          display: !!xTitle,
           text: xTitle
         }
       },
@@ -74,7 +103,7 @@ export const chartOptions = (
         },
         grid: { drawBorder: false, drawTicks: false },
         title: {
-          display: yTitle !== undefined,
+          display: !!yTitle,
           text: yTitle
         }
       }
@@ -82,15 +111,15 @@ export const chartOptions = (
   };
 };
 
-export const chartData = (labels: string[], data: Array<number | null>, barsColors: string[]): ChartData<'bar'> => ({
+export const chartData = (labels: string[], data: (number | null)[], barsColors: string[]): ChartData<'bar'> => ({
   labels,
   datasets: [
     {
       label: TITLE,
-      data: data as number[],
+      data: removeNulls(data),
       borderColor: 'transparent',
       backgroundColor: barsColors,
-      hoverBackgroundColor: ACTIVE_BAR_COLOR,
+      hoverBackgroundColor: barsHoverColorArray(data),
       barPercentage: 0.5,
       minBarLength: 10 // Used to show also values of 0.
     }

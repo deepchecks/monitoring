@@ -4,7 +4,6 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } fro
 import {
   CheckGroupBySchema,
   CheckSchema,
-  CheckGroupBySchemaValue,
   DataFilter,
   getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost,
   SingleCheckRunOptions,
@@ -21,6 +20,8 @@ import { Loader } from 'components/Loader';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 
+import { getKeyByDatasetName } from './SegmentsDrillDown.helpers';
+
 interface SegmentsDrillDownProps {
   data: CheckGroupBySchema[];
   datasetName: ControlledMarkedSelectSelectValues;
@@ -33,14 +34,6 @@ interface SegmentsDrillDownProps {
 }
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
-
-function stringNameFix(str: string) {
-  return str.replaceAll('_', ' ').toLowerCase();
-}
-
-function getKeyByDatasetname(obj: CheckGroupBySchemaValue, name: string) {
-  return Object.keys(obj).find(key => stringNameFix(key) == stringNameFix(name));
-}
 
 const SegmentsDrillDownComponent = ({
   data,
@@ -55,7 +48,7 @@ const SegmentsDrillDownComponent = ({
   const dataSet: Array<number | null> = useMemo(
     () =>
       data.length && datasetName
-        ? data.map(d => (d.value ? d.value[getKeyByDatasetname(d.value, '' + datasetName) || ''] : null))
+        ? data.map(d => (d.value ? d.value[getKeyByDatasetName(d.value, '' + datasetName) || ''] : null))
         : [],
     [data, datasetName]
   );
@@ -74,8 +67,8 @@ const SegmentsDrillDownComponent = ({
 
   useEffect(() => {
     async function loadDisplay(data: CheckGroupBySchema) {
-      const newfilters = data.filters.filters.concat(singleCheckRunOptions?.filter?.filters || []);
-      const options = { ...singleCheckRunOptions, filter: { filters: newfilters}};
+      const newFilters = data.filters.filters.concat(singleCheckRunOptions?.filter?.filters || []);
+      const options = { ...singleCheckRunOptions, filter: { filters: newFilters } };
       const resp = await getCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost(check.id, modelVersionId, options);
       setAllPlots(prevState => ({ ...prevState, [activeBarIndex]: resp }));
       setPlots(resp);
