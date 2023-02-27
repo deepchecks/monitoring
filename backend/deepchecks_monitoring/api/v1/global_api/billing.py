@@ -84,7 +84,8 @@ async def create_subscription(
                     "quantity": body.quantity
                 }
             ],
-            expand=["latest_invoice.payment_intent", "pending_setup_intent"],
+            payment_behavior="default_incomplete",
+            expand=["latest_invoice.payment_intent"],
         )
 
         return {
@@ -99,7 +100,8 @@ async def create_subscription(
 async def get_subscriptions(user: User = Depends(auth.AdminUser())):
     """Return a list of subscription of the organization."""
     try:
-        subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id)
+        subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id,
+                                                 expand=["data.latest_invoice.payment_intent"])
         return subscriptions["data"]
     except Exception as e:  # pylint: disable=broad-except
         return AccessForbidden(str(e))
