@@ -28,8 +28,8 @@ import {
   useTheme
 } from '@mui/material';
 
-import logger from 'helpers/logger';
-import { events, reportEvent } from 'helpers/mixPanel';
+import logger from 'helpers/services/logger';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Loader } from '../../../Loader';
 

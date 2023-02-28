@@ -6,7 +6,7 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 
 import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { alpha, Box, Typography, styled } from '@mui/material';
 

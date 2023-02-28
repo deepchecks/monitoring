@@ -7,7 +7,7 @@ import { ModelManagmentSchema } from 'api/generated';
 
 import { Box } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import NoDataError from './NoDataError/NoDataError';
 

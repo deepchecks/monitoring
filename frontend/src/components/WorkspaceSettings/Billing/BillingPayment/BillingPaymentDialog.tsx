@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 
-import logger from 'helpers/logger';
+import logger from 'helpers/services/logger';
 
 import { BillingPaymentDialogForm, BillingText } from '../Billing.styles';
 

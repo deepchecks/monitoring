@@ -4,7 +4,7 @@ import { AlertSchema } from 'api/generated';
 
 import { Button, Stack, styled, Typography, StackProps } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { FastForward as Next, Rewind as Prev } from 'assets/icon/icon';
 import { colors } from 'theme/colors';

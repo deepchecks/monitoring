@@ -1,4 +1,4 @@
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 import { customInstance } from './customAxios';
 
 interface completeDetailsProps {

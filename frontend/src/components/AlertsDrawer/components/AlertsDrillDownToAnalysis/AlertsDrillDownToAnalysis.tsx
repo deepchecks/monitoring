@@ -9,7 +9,7 @@ import {
   CheckGroupBySchema,
   MonitorSchema
 } from 'api/generated';
-import { useModels } from 'hooks/useModels';
+import { useModels } from 'helpers/hooks/useModels';
 
 import { Box, Stack, styled } from '@mui/material';
 

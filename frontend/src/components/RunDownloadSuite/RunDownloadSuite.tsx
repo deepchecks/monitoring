@@ -11,7 +11,7 @@ import {
 import { styled, Tooltip } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { DownloadSuiteDropdown } from './DownloadSuiteDropdown';
 

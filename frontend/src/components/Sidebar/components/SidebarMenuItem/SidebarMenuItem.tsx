@@ -5,7 +5,7 @@ import { Box, styled, Typography } from '@mui/material';
 
 import { colors } from 'theme/colors';
 import { PathInfo } from 'helpers/helper';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Arrow } from 'assets/icon/icon';
 

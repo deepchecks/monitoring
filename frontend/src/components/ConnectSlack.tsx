@@ -9,7 +9,7 @@ import {
 
 import { alpha, Box, Button, Stack, Typography } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
 import { Loader } from './Loader';

@@ -2,7 +2,7 @@ import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack } from '@mui/m
 import { SelectCheck } from 'components/SelectCheck';
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { MarkedSelect } from 'components/MarkedSelect';
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SelectValues } from 'helpers/types';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';

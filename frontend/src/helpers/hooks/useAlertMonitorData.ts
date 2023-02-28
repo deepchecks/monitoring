@@ -1,5 +1,9 @@
 import { useEffect, useMemo } from 'react';
-import { AlertRuleInfoSchema, useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost, AlertSchema } from '../api/generated';
+import {
+  AlertRuleInfoSchema,
+  useRunMonitorLookbackApiV1MonitorsMonitorIdRunPost,
+  AlertSchema
+} from '../../api/generated';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 
 const useAlertMonitorsData = (

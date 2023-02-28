@@ -7,7 +7,7 @@ import {
   useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet
 } from 'api/generated';
 
-import { AnalysisContext, ColumnsFilters } from 'context/analysis-context';
+import { AnalysisContext, ColumnsFilters } from 'helpers/context/analysis-context';
 
 import { styled, Stack, StackProps } from '@mui/material';
 
@@ -17,7 +17,7 @@ import { DropdownTextField } from 'components/DropdownTextField';
 import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 
 import { ColumnType } from 'helpers/types/model';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 

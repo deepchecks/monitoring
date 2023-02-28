@@ -8,8 +8,8 @@ import {
   MonitorCheckConfSchema,
   MonitorCheckConf
 } from 'api/generated';
-import useModels from 'hooks/useModels';
-import { AnalysisContext } from 'context/analysis-context';
+import useModels from 'helpers/hooks/useModels';
+import { AnalysisContext } from 'helpers/context/analysis-context';
 
 import { Loader } from 'components/Loader';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';

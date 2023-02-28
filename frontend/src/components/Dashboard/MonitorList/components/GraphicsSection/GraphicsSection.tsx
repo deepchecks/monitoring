@@ -14,7 +14,7 @@ import { StyledContainer } from './GraphicsSection.style';
 
 import { GraphData } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;

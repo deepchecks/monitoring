@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { useDebounce } from 'hooks/useDebounce';
+import { useDebounce } from 'helpers/hooks/useDebounce';
 
 import { Stack, Slider, SliderProps, Box } from '@mui/material';
 

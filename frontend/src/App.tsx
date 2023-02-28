@@ -3,9 +3,9 @@ import { Outlet, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 
-import { GlobalStateProvider } from './context';
-import { StatsTimeProvider } from './hooks/useStatsTime';
-import useUser, { UserProvider } from './hooks/useUser';
+import { GlobalStateProvider } from './helpers/context';
+import { StatsTimeProvider } from './helpers/hooks/useStatsTime';
+import useUser, { UserProvider } from './helpers/hooks/useUser';
 
 import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -17,7 +17,6 @@ import { Loader } from 'components/Loader';
 import 'overlayscrollbars/overlayscrollbars.css';
 
 import { lazyRetry, pathsInfo } from 'helpers/helper';
-import { BACKGROUND_COLOR_MAX_WIDTH } from './helpers/variables/colors';
 
 const DashboardPage = lazy(() => lazyRetry(() => import('./pages/DashboardPage')));
 const CompleteDetails = lazy(() => lazyRetry(() => import('./pages/CompleteDetails')));
@@ -46,7 +45,7 @@ const Layout = () => {
           <Sidebar />
           <Box
             sx={{
-              background: BACKGROUND_COLOR_MAX_WIDTH,
+              background: 'linear-gradient(180deg, #F3F5F8 0%, #FFFFFF 29.64%, #FFFFFF,100% )',
               padding: { xs: '0 30px', lg: '0 30px', xl: '0 35px' },
               width: { xs: 'calc(100% - 196px)', lg: 'calc(100% - 196px)', xl: 'calc(100% - 237px)' }
             }}

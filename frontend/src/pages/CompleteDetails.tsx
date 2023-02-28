@@ -16,7 +16,7 @@ import { useGetCompleteDetailsApiV1UsersCompleteDetailsGet } from '../api/genera
 import { useFlags } from 'launchdarkly-react-client-sdk';
 
 // Services:
-import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../services/userService';
+import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../helpers/services/userService';
 import { Loader } from 'components/Loader';
 import { Alert } from '@mui/material';
 

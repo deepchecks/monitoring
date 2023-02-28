@@ -10,7 +10,7 @@ import {
 import { Box, Button, Checkbox, styled, Typography } from '@mui/material';
 import { Stack } from '@mui/system';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Loader } from './Loader';
 

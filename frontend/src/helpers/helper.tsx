@@ -1,6 +1,6 @@
 import React, { ComponentType, FC, lazy } from 'react';
 
-import { AnalysisProvider } from 'context/analysis-context';
+import { AnalysisProvider } from 'helpers/context/analysis-context';
 
 import {
   Alarm,
@@ -61,7 +61,7 @@ const NotificationsPage = lazy(() => lazyRetry(() => import('pages/Notifications
 const ModelsPage = lazy(() => lazyRetry(() => import('pages/ModelsPage')));
 const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
-const BillingPage = lazy(() => lazyRetry(() => import('pages/BillingPage')));
+const WorkspaceSettingsPage = lazy(() => lazyRetry(() => import('pages/WorkspaceSettingsPage')));
 
 export const pathsInfo: PathInfo[] = [
   {
@@ -76,15 +76,6 @@ export const pathsInfo: PathInfo[] = [
     title: 'Suite View',
     link: '/suite-view',
     element: () => <SuiteViewPage />,
-    Icon: null,
-    IconHover: null,
-    ActiveIcon: null,
-    ignoreLink: true
-  },
-  {
-    title: 'Billing',
-    link: '/billing',
-    element: () => <BillingPage />,
     Icon: null,
     IconHover: null,
     ActiveIcon: null,
@@ -169,5 +160,14 @@ export const pathsInfo: PathInfo[] = [
         ActiveIcon: null
       }
     ]
+  },
+  {
+    title: 'Workspace Setting',
+    link: '/workspace-settings',
+    element: () => <WorkspaceSettingsPage />,
+    Icon: null,
+    IconHover: null,
+    ActiveIcon: null,
+    ignoreLink: true
   }
 ];

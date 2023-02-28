@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { MonitorSchema, AlertRuleInfoSchema, AlertSchema, ModelManagmentSchema } from 'api/generated';
 
-import useAlertMonitorData from 'hooks/useAlertMonitorData';
+import useAlertMonitorData from 'helpers/hooks/useAlertMonitorData';
 
 import { Box } from '@mui/material';
 

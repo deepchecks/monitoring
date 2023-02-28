@@ -13,8 +13,8 @@ import type {
   UseQueryResult,
   QueryKey
 } from '@tanstack/react-query';
-import { customInstance } from '../services/customAxios';
-import type { ErrorType } from '../services/customAxios';
+import { customInstance } from '../helpers/services/customAxios';
+import type { ErrorType } from '../helpers/services/customAxios';
 export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error?: string; state?: string };
 
 export type GetOrCreateVersionApiV1ModelsModelIdVersionPostParams = { identifier_kind?: IdentifierKind };

@@ -7,7 +7,7 @@ import {
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
   SingleCheckRunOptions
 } from 'api/generated';
-import { AnalysisContext } from 'context/analysis-context';
+import { AnalysisContext } from 'helpers/context/analysis-context';
 
 import { styled, Box } from '@mui/material';
 
@@ -62,7 +62,9 @@ const AnalysisGroupByComponent = ({
         let featuresNames;
         if (feature_importance != null && feature_importance.length > 0) {
           // Sort first by importance, then by name
-          featuresNames = Object.keys(feature_importance).sort((a, b) => feature_importance[b] - feature_importance[a] || a.localeCompare(b));
+          featuresNames = Object.keys(feature_importance).sort(
+            (a, b) => feature_importance[b] - feature_importance[a] || a.localeCompare(b)
+          );
         } else {
           featuresNames = Object.keys(features).sort();
         }

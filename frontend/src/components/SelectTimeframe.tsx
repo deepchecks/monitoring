@@ -1,6 +1,6 @@
 import React from 'react';
 import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
-import useStatsTime, { labelPrefix } from '../hooks/useStatsTime';
+import useStatsTime, { labelPrefix } from '../helpers/hooks/useStatsTime';
 
 interface SelectTimeframeProps extends Omit<SelectPrimaryProps, 'children' | 'label'> {
   label?: SelectPrimaryProps['label'];

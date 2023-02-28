@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { getAlertFilters, resetAlertFilters } from '../context';
+import { getAlertFilters, resetAlertFilters } from '../helpers/context';
 
 import {
   AlertRuleConfigSchema,
@@ -12,7 +12,7 @@ import {
 
 import { Button, Box } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';

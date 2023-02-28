@@ -1,8 +1,8 @@
 import React from 'react';
 import { logoutApiV1AuthLogoutGet } from 'api/generated';
-import { cancelPendingRequests } from 'services/customAxios';
+import { cancelPendingRequests } from 'helpers/services/customAxios';
 
-import useUser from 'hooks/useUser';
+import useUser from 'helpers/hooks/useUser';
 
 import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
 

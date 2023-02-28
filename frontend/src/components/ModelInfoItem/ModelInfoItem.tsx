@@ -6,7 +6,7 @@ import { ConnectedModelSchema } from 'api/generated';
 
 import { Stack, Typography, Tooltip } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import {
   StyledModelInfoItemContainer,

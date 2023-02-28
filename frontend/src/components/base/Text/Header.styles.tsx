@@ -1,8 +1,12 @@
 import styled from 'styled-components';
 
-const StyledH1 = styled.h1`
+interface Props {
+  margin?: string;
+}
+
+const StyledH1 = styled.h1<Props>`
   font-size: 1.5rem;
-  margin: 0;
+  margin: ${p => p.margin ?? '0'};
 `;
 
 const StyledH2 = styled.h2`

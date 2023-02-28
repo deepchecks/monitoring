@@ -11,7 +11,7 @@ import { MonitorDrawerGraph } from 'components/Dashboard/MonitorDrawer/component
 import dayjs from 'dayjs';
 import { GraphData } from 'helpers/types';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';

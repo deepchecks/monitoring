@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 import {
   useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet,
   useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet
-} from '../api/generated';
-import { setLineGraphOptions } from '../helpers/setGraphOptions';
+} from '../../api/generated';
+import { setLineGraphOptions } from '../setGraphOptions';
 import useModels from './useModels';
 import useStatsTime from './useStatsTime';
 

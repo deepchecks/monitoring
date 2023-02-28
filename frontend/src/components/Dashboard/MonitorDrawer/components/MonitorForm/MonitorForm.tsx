@@ -9,7 +9,7 @@ import {
   MonitorCheckConfSchema
 } from 'api/generated';
 
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 
 import { TextField, StackProps, Stack, MenuItem } from '@mui/material';
 
@@ -27,7 +27,7 @@ import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monito
 import { SelectValues, SetStateType } from 'helpers/types';
 import { timeValues } from 'helpers/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 interface MonitorFormProps extends StackProps {
   monitor: MonitorSchema | null;

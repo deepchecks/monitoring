@@ -9,11 +9,11 @@ import {
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
-import { getAlertFilters, resetAlertFilters } from 'context';
+import { getAlertFilters, resetAlertFilters } from 'helpers/context';
 
 import { Box, List, ListItem, styled } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { AlertsDrawer } from 'components/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
@@ -23,7 +23,7 @@ import { AlertsRulesItem } from 'components/AlertRulesItem';
 import { AlertsSnackbar } from 'components/AlertsSnackbar';
 import { Loader } from 'components/Loader';
 import NoResults from 'components/NoResults';
-import useModels from '../hooks/useModels';
+import useModels from '../helpers/hooks/useModels';
 
 const snackbarPosition = {
   vertical: 'bottom',

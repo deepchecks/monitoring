@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useCallback } from 'react';
 
-import { AnalysisContext, FilterValue } from 'context/analysis-context';
+import { AnalysisContext, FilterValue } from 'helpers/context/analysis-context';
 
 import { Box, Tooltip } from '@mui/material';
 

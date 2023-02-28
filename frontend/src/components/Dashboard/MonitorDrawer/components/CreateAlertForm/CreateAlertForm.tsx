@@ -8,7 +8,7 @@ import {
   MonitorOptions
 } from 'api/generated';
 
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 
 import { Box, Button, Divider, MenuItem, Stack, Typography } from '@mui/material';
 

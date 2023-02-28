@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 
 import { Loader } from 'components/Loader';
 import { MonitorsGroup } from './components/MonitorsGroup';
@@ -10,7 +10,7 @@ import { DeleteMonitor } from './components/DeleteMonitor';
 
 import { DrawerNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 interface MonitorsListProps {
   dashboard: DashboardSchema | undefined;

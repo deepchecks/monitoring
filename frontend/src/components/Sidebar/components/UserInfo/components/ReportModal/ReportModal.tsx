@@ -14,7 +14,7 @@ import {
 import { CloseIcon, FileUploadIcon } from '../../../../../../assets/icon/icon';
 import { Button } from '@mui/material';
 import * as Sentry from '@sentry/react';
-import logger from 'helpers/logger';
+import logger from 'helpers/services/logger';
 
 interface ReportModalProps {
   open: boolean;

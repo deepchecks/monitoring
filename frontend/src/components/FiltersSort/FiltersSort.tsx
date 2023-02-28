@@ -16,9 +16,9 @@ import { FiltersResetButton } from './components/FiltersResetButton';
 import FiltersSortButton from './components/FiltersSortButton';
 
 import { colors } from 'theme/colors';
-import useModels from 'hooks/useModels';
-import { reportEvent } from 'helpers/mixPanel';
-import { resetAlertFilters } from 'context';
+import useModels from 'helpers/hooks/useModels';
+import { reportEvent } from 'helpers/services/mixPanel';
+import { resetAlertFilters } from 'helpers/context';
 import { setParams } from 'helpers/utils/getParams';
 
 export type AlertsFiltersProps = {

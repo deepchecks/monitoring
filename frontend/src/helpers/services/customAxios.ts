@@ -1,5 +1,5 @@
 import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import logger from 'helpers/logger';
+import logger from 'helpers/services/logger';
 import qs from 'qs';
 
 export const AXIOS_INSTANCE = Axios.create({ baseURL: process.env.REACT_APP_BASE_API, withCredentials: true });

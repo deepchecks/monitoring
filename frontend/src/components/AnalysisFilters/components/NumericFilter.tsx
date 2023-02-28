@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 
 import { ColumnStatistics } from 'api/generated';
-import { AnalysisContext } from 'context/analysis-context';
+import { AnalysisContext } from 'helpers/context/analysis-context';
 
 import { alpha, Box, Button } from '@mui/material';
 import { RangePicker } from 'components/RangePicker/RangePicker';

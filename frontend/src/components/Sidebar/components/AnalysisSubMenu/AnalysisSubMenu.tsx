@@ -1,7 +1,7 @@
 import { alpha, Box, ClickAwayListener, List, ListItem, styled, Typography } from '@mui/material';
 import { getParams, setParams } from 'helpers/utils/getParams';
-import useModels from 'hooks/useModels';
-import { useScrollBar } from 'hooks/useScrollBar';
+import useModels from 'helpers/hooks/useModels';
+import { useScrollBar } from 'helpers/hooks/useScrollBar';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { colors } from 'theme/colors';

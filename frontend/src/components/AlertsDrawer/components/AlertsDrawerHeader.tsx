@@ -13,7 +13,7 @@ import {
   useReactivateAlertApiV1AlertsAlertIdReactivatePost,
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
-import { getAlertFilters } from 'context';
+import { getAlertFilters } from 'helpers/context';
 
 import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, Tooltip } from '@mui/material';
 

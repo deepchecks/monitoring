@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { TimeUnit } from 'chart.js';
 
-import useStatsTime from 'hooks/useStatsTime';
-import useDataIngestion from 'hooks/useDataIngestion';
+import useStatsTime from 'helpers/hooks/useStatsTime';
+import useDataIngestion from 'helpers/hooks/useDataIngestion';
 
 import { MenuItem } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';

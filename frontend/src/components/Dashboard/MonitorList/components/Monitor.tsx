@@ -5,8 +5,8 @@ import {
   runMonitorLookbackApiV1MonitorsMonitorIdRunPost,
   getMonitorApiV1MonitorsMonitorIdGet
 } from 'api/generated';
-import useModels from 'hooks/useModels';
-import { useElementOnScreen } from 'hooks/useElementOnScreen';
+import useModels from 'helpers/hooks/useModels';
+import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 
 import { Grid, GridProps } from '@mui/material';
 import { GraphicsSection } from './GraphicsSection';
@@ -50,7 +50,7 @@ const MonitorComponent = ({
     if (!currentModel?.latest_time) {
       setLoading(false);
     }
-    
+
     if (typeof currentModel?.latest_time === 'number' && isVisible) {
       const graphicSectionData = await runMonitorLookbackApiV1MonitorsMonitorIdRunPost(monitor.id, {
         end_time: new Date(currentModel?.latest_time * 1000).toISOString()

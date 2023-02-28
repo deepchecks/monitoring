@@ -5,7 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { AlertRuleInfoSchema, useGetMonitorApiV1MonitorsMonitorIdGet } from 'api/generated';
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogContext';
 
 import { Tooltip, Typography, Stack } from '@mui/material';
@@ -15,7 +15,7 @@ import { Loader } from '../Loader';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import {
   StyledBlur,

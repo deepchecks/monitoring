@@ -33,9 +33,9 @@ import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButt
 import { colors } from 'theme/colors';
 
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
-import useModels from '../hooks/useModels';
+import useModels from '../helpers/hooks/useModels';
 import { getParams, setParams } from 'helpers/utils/getParams';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 

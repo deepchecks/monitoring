@@ -3,8 +3,8 @@ import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { MonitorCheckConfSchema, useGetCheckInfoApiV1ChecksCheckIdInfoGet } from 'api/generated';
-import { useRunCheckLookback } from 'hooks/useRunCheckLookback';
-import { useElementOnScreen } from 'hooks/useElementOnScreen';
+import { useRunCheckLookback } from 'helpers/hooks/useRunCheckLookback';
+import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 
 import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters';
 import { AnalysisChartItem } from './components/AnalysisChartItem';
@@ -14,7 +14,7 @@ import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { showDatasets } from './AnalysisItem.helpers';
 import { AnalysisItemProps, RunCheckBody, IDataset } from './AnalysisItem.types';
 import { CheckFilterTypes, FilteredValues } from 'helpers/utils/checkUtil';
-import { events, reportEvent } from 'helpers/mixPanel';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 dayjs.extend(localizedFormat);
 

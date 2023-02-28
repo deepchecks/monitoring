@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import useModels from 'hooks/useModels';
+import useModels from 'helpers/hooks/useModels';
 
 import { Loader } from 'components/Loader';
 import { ModelItem } from './components/ModelItem';
