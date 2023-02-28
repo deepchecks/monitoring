@@ -3,7 +3,6 @@ import React, { memo, useEffect, useContext, useState } from 'react';
 import {
   CheckGroupBySchema,
   DataFilter,
-  getSchemaApiV1ModelVersionsModelVersionIdSchemaGet,
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
   SingleCheckRunOptions
 } from 'api/generated';
@@ -22,7 +21,8 @@ import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 import { RunDownloadSuite } from 'components/RunDownloadSuite';
 
 import { CheckTypeOptions } from 'helpers/types/check';
-import { ClassOrFeature, AnalysisGroupByProps, FeaturesResponse } from './AnalysisGroupBy.types';
+import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
+import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
 
 const AnalysisGroupByComponent = ({
   datasetName,
@@ -55,19 +55,7 @@ const AnalysisGroupByComponent = ({
       if (propValuesAreNotNull && frequency) {
         setGlobalLoading(true);
 
-        const { features, feature_importance } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
-          modelVersionId
-        )) as FeaturesResponse;
-
-        let featuresNames;
-        if (feature_importance != null && feature_importance.length > 0) {
-          // Sort first by importance, then by name
-          featuresNames = Object.keys(feature_importance).sort(
-            (a, b) => feature_importance[b] - feature_importance[a] || a.localeCompare(b)
-          );
-        } else {
-          featuresNames = Object.keys(features).sort();
-        }
+        let featuresNames = await getAvailableFeaturesNames(modelVersionId)
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),

@@ -3,7 +3,6 @@ import React, { memo, useState, useEffect, useMemo } from 'react';
 import {
   DataFilter,
   useGetChecksApiV1ModelsModelIdChecksGet,
-  getSchemaApiV1ModelVersionsModelVersionIdSchemaGet,
   SingleCheckRunOptions,
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
   CheckGroupBySchema,
@@ -21,8 +20,8 @@ import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 
 import { colors } from 'theme/colors';
 
-import { FeaturesResponse } from 'components/AnalysisGroupBy/AnalysisGroupBy.types';
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
+import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
 
 interface AlertsDrillDownToAnalysisProps {
   modelId: number;
@@ -100,11 +99,8 @@ const AlertsDrillDownToAnalysisComponent = ({
       if (currenModelVersionId) {
         setFetching(true);
 
-        const { features } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
-          currenModelVersionId
-        )) as FeaturesResponse;
+        const featuresNames = await getAvailableFeaturesNames(currenModelVersionId)
 
-        const featuresNames = Object.keys(features);
         setFeaturesArray(featuresNames);
         setSelectedFeature(featuresNames[0]);
 

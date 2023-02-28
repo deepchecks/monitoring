@@ -17,10 +17,3 @@ export interface AnalysisGroupByProps extends DrawerProps {
   onCloseIconClick: () => void;
   type: CheckType;
 }
-
-export type Features = Record<string, 'numeric' | 'categorical'>;
-
-export interface FeaturesResponse {
-  features: Features;
-  feature_importance: Record<string, number>;
-}
