@@ -7,15 +7,7 @@ export const emptyModel = {
 } as ModelManagmentSchema;
 
 export const useModels = () => {
-  const {
-    data: models = [],
-    isLoading,
-    refetch: refetchModels
-  } = useRetrieveAvailableModelsApiV1AvailableModelsGet({
-    query: {
-      refetchOnWindowFocus: false
-    }
-  });
+  const { data: models = [], isLoading, refetch: refetchModels } = useRetrieveAvailableModelsApiV1AvailableModelsGet();
 
   const sortedModels = useMemo(() => [...models].sort((a, b) => a.name.localeCompare(b.name)), [models]);
 

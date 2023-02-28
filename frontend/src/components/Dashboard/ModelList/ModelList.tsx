@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import { ModelManagmentSchema } from 'api/generated';
+import useModels from 'hooks/useModels';
 
 import { Loader } from 'components/Loader';
 import { ModelItem } from './components/ModelItem';
@@ -24,11 +24,11 @@ import { setParams } from 'helpers/utils/getParams';
 interface ModelListProps {
   setSelectedModelId: React.Dispatch<React.SetStateAction<number | null>>;
   selectedModelId: number | null;
-  models: ModelManagmentSchema[];
-  isLoading?: boolean;
 }
 
-export function ModelList({ selectedModelId, setSelectedModelId, models, isLoading }: ModelListProps) {
+export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
+  const { models, isLoading } = useModels();
+
   const [modelName, setModelName] = useState('');
 
   const filteredModels = useMemo(() => {

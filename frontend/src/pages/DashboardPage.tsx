@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 
 import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
-import useModels from 'hooks/useModels';
 
 import { Grid } from '@mui/material';
 
@@ -15,8 +14,6 @@ import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { getParams } from 'helpers/utils/getParams';
 
 export const DashboardPage = () => {
-  const { models, isLoading: isModelsLoading } = useModels();
-
   const {
     data: dashboard,
     isLoading: isDashboardLoading,
@@ -59,12 +56,7 @@ export const DashboardPage = () => {
         spacing={{ md: 2.5, xl: 4 }}
       >
         <Grid item md={6} lg={6} xl={4}>
-          <ModelList
-            models={models}
-            isLoading={isModelsLoading}
-            selectedModelId={selectedModelId}
-            setSelectedModelId={setSelectedModelId}
-          />
+          <ModelList selectedModelId={selectedModelId} setSelectedModelId={setSelectedModelId} />
         </Grid>
         <Grid item md={6} lg={6} xl={8}>
           <DataIngestion modelId={selectedModelId} />
