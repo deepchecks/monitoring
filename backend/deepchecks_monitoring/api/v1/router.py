@@ -11,6 +11,8 @@
 from fastapi import APIRouter
 
 from deepchecks_monitoring import __version__
+from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.dependencies import SettingsDep
 
 __all__ = ['router']
 
@@ -26,3 +28,14 @@ async def hello_world() -> str:
 @router.get('/backend-version')
 async def retrieve_backend_version():
     return {'version': __version__}
+
+
+@router.get('/configurations')
+async def application_configurations(settings: Settings = SettingsDep):
+    return {
+        'sentryDsn': settings.sentry_dsn,
+        'stripeApiKey': settings.stripe_api_key,
+        'lauchdarklySdkKey': settings.lauchdarkly_sdk_key,
+        'enviroment': settings.enviroment,
+        'mixpanel_id': settings.mixpanel_id
+    }

@@ -127,6 +127,7 @@ class Settings(
 ):
     """Settings for the deepchecks_monitoring package."""
 
+    enviroment: str = 'dev'
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     debug_mode: bool = False
     lauchdarkly_sdk_key: str = ''
@@ -135,6 +136,7 @@ class Settings(
     oauth_client_secret: str
     auth_jwt_secret: str
     access_audit: bool = False
+    mixpanel_id: str = ''
 
 
 class Tags(Enum):

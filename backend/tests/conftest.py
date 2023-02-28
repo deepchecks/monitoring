@@ -22,6 +22,8 @@ import fakeredis
 import pytest
 import pytest_asyncio
 import testing.postgresql
+from deepchecks_client import DeepchecksClient
+from deepchecks_client.core.api import API
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.engine.url import URL, make_url
@@ -29,8 +31,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.future import Engine, create_engine
 from sqlalchemy.orm import sessionmaker
 
-from deepchecks_client import DeepchecksClient
-from deepchecks_client.core.api import API
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
