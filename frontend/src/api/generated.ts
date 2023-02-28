@@ -95,6 +95,8 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
+export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
+
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
@@ -151,6 +153,24 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
 /**
+ * Schema for organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
+  id: number;
+  name: string;
+}
+
+/**
+ * Schema for the organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
+  name: string;
+  is_slack_connected: boolean;
+  slack_notification_levels: AlertSeverity[];
+  email_notification_levels: AlertSeverity[];
+}
+
+/**
  * Schema for getting rows in a specific window.
  */
 export interface WindowDataSchema {
@@ -199,7 +219,7 @@ export interface UserSchema {
   created_at: string;
   full_name?: string;
   picture_url?: string;
-  organization?: OrganizationSchema;
+  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
 }
 
 /**
@@ -235,8 +255,8 @@ export interface TableDataSchema {
  * Schema for the response of create subscription endpoint.
  */
 export interface SubscriptionCreationResponse {
-  clientSecret: string;
-  subscriptionId: string;
+  client_secret: string;
+  subscription_id: string;
 }
 
 export type StandartWebhookPropertiesHttpHeaders = { [key: string]: string };
@@ -284,6 +304,16 @@ export interface SingleCheckRunOptions {
 }
 
 /**
+ * Schema that represent a product from stripe.
+ */
+export interface ProductResponseSchema {
+  id: string;
+  default_price: string;
+  name: string;
+  description?: string;
+}
+
+/**
  * Schema for the payment method update endpoint.
  */
 export interface PaymentMethodSchema {
@@ -319,14 +349,6 @@ export interface PagerDutyWebhookProperties {
 export interface OrganizationUpdateSchema {
   slack_notification_levels?: AlertSeverity[];
   email_notification_levels?: AlertSeverity[];
-}
-
-/**
- * Schema for organization.
- */
-export interface OrganizationSchema {
-  id: number;
-  name: string;
 }
 
 /**
@@ -802,7 +824,7 @@ export interface ColumnMetadata {
 }
 
 /**
- * Schema for the request fo create subscription endpoint.
+ * Schema for the request of create subscription endpoint.
  */
 export interface CheckoutSchema {
   price_id: string;
@@ -1002,7 +1024,7 @@ export interface AlertRuleConfigSchema {
  * @summary Hello World
  */
 export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/say-hello`, method: 'get', signal });
+  return customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
 };
 
 export const getHelloWorldApiV1SayHelloGetQueryKey = () => [`/api/v1/say-hello`];
@@ -1929,7 +1951,7 @@ export const useListWebhooksApiV1AlertWebhooksGet = <
 export const createWebhookApiV1AlertWebhooksPost = (
   createWebhookApiV1AlertWebhooksPostBody: CreateWebhookApiV1AlertWebhooksPostBody
 ) => {
-  return customInstance<unknown>({
+  return customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
     url: `/api/v1/alert-webhooks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -5665,11 +5687,51 @@ export const useLogoutApiV1AuthLogoutGet = <
 };
 
 /**
+ * Get the list of available products from stripe.
+ * @summary List All Products
+ */
+export const listAllProductsApiV1BillingAvailableProductsGet = (signal?: AbortSignal) => {
+  return customInstance<ProductResponseSchema[]>({ url: `/api/v1/billing/available-products`, method: 'get', signal });
+};
+
+export const getListAllProductsApiV1BillingAvailableProductsGetQueryKey = () => [`/api/v1/billing/available-products`];
+
+export type ListAllProductsApiV1BillingAvailableProductsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>
+>;
+export type ListAllProductsApiV1BillingAvailableProductsGetQueryError = ErrorType<unknown>;
+
+export const useListAllProductsApiV1BillingAvailableProductsGet = <
+  TData = Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllProductsApiV1BillingAvailableProductsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>> = ({
+    signal
+  }) => listAllProductsApiV1BillingAvailableProductsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
  * Return the payment method of the organization.
  * @summary Get Payment Method
  */
 export const getPaymentMethodApiV1BillingPaymentMethodGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
+  return customInstance<unknown[]>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
 };
 
 export const getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey = () => [`/api/v1/billing/payment-method`];
@@ -5705,7 +5767,7 @@ export const useGetPaymentMethodApiV1BillingPaymentMethodGet = <
 };
 
 /**
- * Update the payment method on stripe
+ * Update the payment method on stripe.
  * @summary Update Payment Method
  */
 export const updatePaymentMethodApiV1BillingPaymentMethodPost = (paymentMethodSchema: PaymentMethodSchema) => {
@@ -6077,7 +6139,11 @@ export const useCreateInviteApiV1OrganizationInvitePut = <
  * @summary Retrive Organization
  */
 export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/organization`, method: 'get', signal });
+  return customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
+    url: `/api/v1/organization`,
+    method: 'get',
+    signal
+  });
 };
 
 export const getRetriveOrganizationApiV1OrganizationGetQueryKey = () => [`/api/v1/organization`];

@@ -61,6 +61,7 @@ const NotificationsPage = lazy(() => lazyRetry(() => import('pages/Notifications
 const ModelsPage = lazy(() => lazyRetry(() => import('pages/ModelsPage')));
 const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
+const BillingPage = lazy(() => lazyRetry(() => import('pages/BillingPage')));
 
 export const pathsInfo: PathInfo[] = [
   {
@@ -75,6 +76,15 @@ export const pathsInfo: PathInfo[] = [
     title: 'Suite View',
     link: '/suite-view',
     element: () => <SuiteViewPage />,
+    Icon: null,
+    IconHover: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  },
+  {
+    title: 'Billing',
+    link: '/billing',
+    element: () => <BillingPage />,
     Icon: null,
     IconHover: null,
     ActiveIcon: null,
