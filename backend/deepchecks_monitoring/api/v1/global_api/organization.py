@@ -19,13 +19,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import DropSchema
 
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep, get_email_sender_resource
+from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
+                                                get_email_sender_resource)
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.integrations.email import EmailMessage, EmailSender
 from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.resources import ResourcesProvider, TierConfSchema
 from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
 from deepchecks_monitoring.utils import auth
 
@@ -240,3 +242,18 @@ async def leave_organization(
     """Remove member from an organization."""
     user.organization_id = None
     await session.commit()
+
+
+@router.get(
+    '/organization/available-features',
+    status_code=status.HTTP_200_OK,
+    response_model=TierConfSchema,
+    tags=['organization'],
+    description='Get available features'
+)
+async def get_available_features(
+    user: User = Depends(auth.CurrentUser()),
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
+):
+    """Get available features."""
+    return await resources_provider.get_tier_conf(user)

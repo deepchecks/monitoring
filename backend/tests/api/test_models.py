@@ -15,6 +15,7 @@ import sqlalchemy as sa
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from hamcrest import assert_that, has_entries, has_key
+from httpx import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
@@ -27,6 +28,18 @@ def test_model_creation(test_api: TestAPI):
     notes = [{"title": "Super Important", "text": "something important about model"}]
     model = t.cast(Payload, test_api.create_model(model={**payload, "notes": notes}))
     assert model == {"id": 1, **payload}
+
+
+def test_model_creation_above_limit(test_api: TestAPI):
+    for i in range(1, 10):
+        payload = test_api.data_generator.generate_random_model()
+        model = t.cast(Payload, test_api.create_model(model={**payload, }))
+        assert model == {"id": i, **payload}
+    # the 9th model out of subscription
+    resp = t.cast(Response, test_api.create_model(expected_status=402))
+    assert resp.text == "{\"detail\":\"Subscription currently configured for 8 models. " \
+        "Current model amount is 9. " \
+        "please update your subscription if you wish to add more models.\"}"
 
 
 @pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])
@@ -146,8 +159,10 @@ async def test_connected_models_api_missing_version_data(
     time = pdl.now().in_tz("UTC")
     async_session.add(ModelVersion(name="a",
                                    model_id=classification_model["id"],
+                                   last_update_time=time,
                                    ingestion_offset=100))
     async_session.add(ModelVersion(name="b",
+                                   last_update_time=time,
                                    model_id=classification_model["id"], topic_end_offset=250))
     async_session.add(ModelVersion(name="c",
                                    model_id=classification_model["id"],

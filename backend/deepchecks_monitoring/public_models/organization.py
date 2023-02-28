@@ -35,8 +35,9 @@ class OrgTier(str, enum.Enum):
     """Organization tier."""
 
     FREE = "FREE"
-    PRO = "PRO"
-    PREMIUM = "PREMIUM"
+    BASIC = "BASIC"
+    SCALE = "SCALE"
+    DEDICATED = "DEDICATED"
 
 
 class Organization(Base):

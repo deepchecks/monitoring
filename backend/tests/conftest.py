@@ -208,6 +208,14 @@ def launchdarkly_mock():
             return ROWS_PER_MINUTE_LIMIT
         if flag == "signUpEnabled":
             return True
+        if flag == "paid-features":
+            return {
+                "custom_checks": False,
+                "data_retention_months": 12,
+                "max_models": 8,
+                "monthly_predictions": 10000000,
+                "sso": False
+            }
         return
     return mock.Mock(side_effect=replacement_func)
 
@@ -233,12 +241,13 @@ async def application(
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def user(async_session: AsyncSession, settings):
-    return await generate_user(
+    user = await generate_user(
         async_session,
         with_org=True,
         switch_schema=True,
         auth_jwt_secret=settings.auth_jwt_secret
     )
+    return user
 
 
 @pytest_asyncio.fixture(scope="function")

@@ -73,6 +73,12 @@ class AccessForbidden(BaseHTTPException):
     status_code = status.HTTP_403_FORBIDDEN
 
 
+class PaymentRequired(BaseHTTPException):
+    """Payment Required exception."""
+
+    status_code = status.HTTP_402_PAYMENT_REQUIRED
+
+
 class Unauthorized(BaseHTTPException):
     """Unauthorized exception."""
 

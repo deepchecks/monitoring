@@ -7,12 +7,14 @@ import faker
 import httpx
 import pandas as pd
 import pendulum as pdl
+import sqlalchemy as sa
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepchecks_client.core.api import API
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
+from deepchecks_monitoring.public_models.billing import Billing
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 
@@ -56,6 +58,8 @@ async def generate_user(
             await session.commit()
             await session.refresh(u)
             await session.refresh(org)
+            await session.execute(sa.insert(Billing).values(bought_models=8, organization_id=u.organization_id))
+            await session.commit()
     else:
         await session.commit()
         await session.refresh(u)

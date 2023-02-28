@@ -22,6 +22,7 @@ from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
+from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import create_api_token
@@ -146,6 +147,7 @@ class OrganizationSchema(BaseModel):
 
     id: int
     name: str
+    tier: OrgTier
 
     class Config:
         """Pydantic config."""

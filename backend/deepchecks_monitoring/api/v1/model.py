@@ -30,7 +30,7 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
-from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
 from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, AlertSeverityMap,
                                                              MonitorsCountPerModel, floor_window_for_time)
@@ -38,7 +38,7 @@ from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as Async
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.resources import ResourcesProvider
+from deepchecks_monitoring.resources import ResourcesProvider, TierConfSchema
 from deepchecks_monitoring.schema_models import Model, ModelNote
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
@@ -136,7 +136,9 @@ class ModelsInfoSchema(ModelSchema):
 )
 async def get_create_model(
         model_schema: ModelCreationSchema,
-        session: AsyncSession = AsyncSessionDep
+        user: User = Depends(auth.CurrentUser()),
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Create a new model.
 
@@ -146,6 +148,8 @@ async def get_create_model(
         Schema of model to create.
     session : AsyncSession
         SQLAlchemy session.
+    resources_provider: ResourcesProvider
+        Resources provider.
 
     """
     model = await session.scalar(
@@ -160,6 +164,16 @@ async def get_create_model(
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the description "
                              f"'{model_schema.description} and not the description '{model.description}'")
     else:
+        model_count = await session.scalar(func.count(Model.id))
+        if model_count > 0:
+            tier_conf: TierConfSchema = await resources_provider.get_tier_conf(user)
+            if tier_conf.max_models != -1:
+                if tier_conf.bought_models == 0:
+                    raise PaymentRequired("Adding more than 1 model requires to set up a subscription.")
+                if tier_conf.bought_models < model_count:
+                    raise PaymentRequired(f"Subscription currently configured for {tier_conf.bought_models} models. "
+                                          f"Current model amount is {model_count}. "
+                                          "please update your subscription if you wish to add more models.")
         data = model_schema.dict(exclude_none=True)
         notes = [ModelNote(**it) for it in data.pop("notes", [])]
         model = Model(notes=notes, **data)

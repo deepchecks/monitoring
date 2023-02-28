@@ -66,6 +66,25 @@ async def test_organization_retrieval(
     assert "email_notification_levels" in data
 
 
+def test_organization_available_features(
+    client: TestClient
+):
+    response = client.get(
+        "/api/v1/organization/available-features",
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert isinstance(data, dict)
+    assert data["custom_checks"] is False
+    assert data["data_retention_months"] == 12
+    assert data["max_models"] == 8
+    assert data["monthly_predictions"] == 10000000
+    assert data["sso"] is False
+    assert data["bought_models"] == 8
+
+
 @pytest.mark.asyncio
 async def test_organization_members_retrieval(
     unauthorized_client: TestClient,

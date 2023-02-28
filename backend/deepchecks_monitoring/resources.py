@@ -21,11 +21,14 @@ from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
+from pydantic import BaseModel
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import async_object_session as object_session
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -34,9 +37,22 @@ from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
 from deepchecks_monitoring.public_models import Organization
+from deepchecks_monitoring.public_models.billing import Billing
+from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import database
 
-__all__ = ["ResourcesProvider"]
+__all__ = ["ResourcesProvider", "TierConfSchema"]
+
+
+class TierConfSchema(BaseModel):
+    """Tier configuration."""
+
+    custom_checks: bool = False
+    bought_models: int = 0
+    data_retention_months: int = 3
+    max_models: int = 1
+    monthly_predictions: int = 500_000
+    sso: bool = False
 
 
 class BaseResourcesProvider:
@@ -399,3 +415,21 @@ class ResourcesProvider(BaseResourcesProvider):
         # 2 workers might try to create topic at the same time so ignoring if already exists
         except TopicAlreadyExistsError:
             return True
+
+    async def get_tier_conf(self, user: User) -> TierConfSchema:
+        """Get the tier configuration for a user.
+
+        Parameters
+        ----------
+        user : User
+            The user to get the tier configuration for.
+
+        Returns
+        -------
+        TierConfSchema
+            The tier configuration for the user.
+        """
+        tier_conf = self.launchdarkly_variation("paid-features", user, default={})
+        bought_models = await object_session(user).scalar(select(Billing.bought_models)
+                                                          .where(Billing.organization_id == user.organization_id))
+        return TierConfSchema(bought_models=bought_models or 0, **tier_conf)

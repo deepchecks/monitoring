@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """Module defining the ORM models."""
 from .base import Base  # isort:skip
+from .billing import Billing
 from .invitation import Invitation
 from .organization import Organization
 from .task import Task
@@ -20,5 +21,6 @@ __all__ = [
     "User",
     "UserOAuthDTO",
     "Invitation",
-    "Task"
+    "Task",
+    "Billing"
 ]
