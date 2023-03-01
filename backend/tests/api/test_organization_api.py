@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models import Invitation
 from tests.common import generate_user
+from tests.conftest import ROWS_PER_MINUTE_LIMIT
 
 
 @pytest.mark.asyncio
@@ -77,12 +78,12 @@ def test_organization_available_features(
 
     data = response.json()
     assert isinstance(data, dict)
-    assert data["custom_checks"] is False
+    assert data["custom_checks_enabled"] is False
     assert data["data_retention_months"] == 12
     assert data["max_models"] == 8
-    assert data["monthly_predictions"] == 10000000
-    assert data["sso"] is False
-    assert data["bought_models"] == 8
+    assert data["monthly_predictions_limit"] == 10000000
+    assert data["sso_enabled"] is False
+    assert data["rows_per_minute"] == ROWS_PER_MINUTE_LIMIT
 
 
 @pytest.mark.asyncio

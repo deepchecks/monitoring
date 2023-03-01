@@ -103,7 +103,7 @@ async def update_complete_details(
         user.full_name = body.user_full_name
 
     if body.new_organization_name:
-        if resources_provider.launchdarkly_variation("signUpEnabled", user) is False:
+        if resources_provider.get_features_control(user).signup_enabled is False:
             raise BadRequest("This feature is currently not available.")
         org = await Organization.create_for_user(user, body.new_organization_name)
         session.add(org)

@@ -18,6 +18,7 @@ from starlette.datastructures import MutableHeaders
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from deepchecks_monitoring.exceptions import LicenseError
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.utils.auth import CurrentUser
 
@@ -191,6 +192,6 @@ class LicenseCheckDependency:
         request: Request
             http request instance
         """
-        # TODO: implement license check
-        # raise LicenseError('License not valid')
-        pass
+        # TODO: implement license check, for open source all enterprise features are disabled.
+        if request.app.state.settings.is_cloud is False:
+            raise LicenseError("Need license to use this feature")

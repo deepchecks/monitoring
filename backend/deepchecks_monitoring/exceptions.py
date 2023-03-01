@@ -27,7 +27,8 @@ __all__ = [
     'AccessForbidden',
     'RedirectException',
     'InvalidConfigurationException',
-    'Unauthorized'
+    'Unauthorized',
+    'LicenseError'
 ]
 
 

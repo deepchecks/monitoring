@@ -43,7 +43,7 @@ async def _log_or_update(model_version_id, data, session, data_ingest, user, res
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
                                                      options=joinedload(ModelVersion.model))
     time = pdl.now()
-    minute_rate = resources_provider.launchdarkly_variation("rows-per-minute", user, default=100_000)
+    minute_rate = resources_provider.get_features_control(user).rows_per_minute
     # Atomically getting the count and increasing in order to avoid race conditions
     curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
     remains = minute_rate - curr_count

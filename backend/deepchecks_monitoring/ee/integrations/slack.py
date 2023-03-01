@@ -17,7 +17,8 @@ from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as Che
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
 
-__all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification", "SlackInstallationUtils"]
+__all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification", "SlackInstallationUtils",
+           "SlackSender"]
 
 
 class SlackTeamSchema(BaseModel):

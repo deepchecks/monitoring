@@ -22,12 +22,13 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
                                                 get_email_sender_resource)
 from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.features_control import FeaturesSchema
 from deepchecks_monitoring.interfaces import EmailSender
 from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.resources import ResourcesProvider, TierConfSchema
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
 from deepchecks_monitoring.utils import auth
 
@@ -246,7 +247,7 @@ async def leave_organization(
 @router.get(
     '/organization/available-features',
     status_code=status.HTTP_200_OK,
-    response_model=TierConfSchema,
+    response_model=FeaturesSchema,
     tags=['organization'],
     description='Get available features'
 )
@@ -255,4 +256,4 @@ async def get_available_features(
     resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Get available features."""
-    return await resources_provider.get_tier_conf(user)
+    return resources_provider.get_features_control(user).get_all_features()

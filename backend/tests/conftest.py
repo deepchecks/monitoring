@@ -13,7 +13,6 @@ import os
 import random
 import string
 import typing as t
-from unittest import mock
 from unittest.mock import patch
 
 import dotenv
@@ -33,6 +32,7 @@ from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.ee.config import Settings
+from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
 from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
 from deepchecks_monitoring.public_models.base import Base as PublicModelsBase
@@ -170,27 +170,28 @@ def settings(async_engine, smtp_server):
 
 
 @pytest.fixture(scope="session")
-def launchdarkly_mock():
-    def replacement_func(flag, *args, **kwargs):  # pylint: disable=unused-argument
-        if flag == "rows-per-minute":
-            return ROWS_PER_MINUTE_LIMIT
-        if flag == "signUpEnabled":
-            return True
-        if flag == "paid-features":
-            return {
-                "custom_checks": False,
-                "data_retention_months": 12,
-                "max_models": 8,
-                "monthly_predictions": 10000000,
-                "sso": False
-            }
-        return
-    return mock.Mock(side_effect=replacement_func)
+def features_control_mock():
+    class TestsFeaturesControl(CloudFeaturesControl):
+        """Mocked features control class for tests, replacing launchdarkly usage."""
+
+        def _load_tier(self):
+            self._custom_checks_enabled = False
+            self._data_retention_months = 12
+            self._max_models = 8
+            self._monthly_predictions_limit = 10_000_000
+            self._sso_enabled = False
+            self._signup_enabled = None
+            self._rows_per_minute = ROWS_PER_MINUTE_LIMIT
+
+    def mock_get_features_control(self, user):  # pylint: disable=unused-argument
+        return TestsFeaturesControl(user, None)
+
+    return mock_get_features_control
 
 
 @pytest.fixture(scope="function")
-def resources_provider(settings, launchdarkly_mock, redis):
-    patch.object(ResourcesProvider, "launchdarkly_variation", launchdarkly_mock).start()
+def resources_provider(settings, features_control_mock, redis):
+    patch.object(ResourcesProvider, "get_features_control", features_control_mock).start()
     patch.object(ResourcesProvider, "redis_client", redis).start()
     yield ResourcesProvider(settings)
 
