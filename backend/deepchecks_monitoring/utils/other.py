@@ -71,22 +71,3 @@ def datetime_sample_formatter(sample: t.Dict, model_version: ModelVersion):
             continue
         if model_columns[col_name].get('format') == 'date-time':
             sample[col_name] = pdl.parse(val)
-
-
-def sentry_send_hook(event, *args, **kwargs):  # pylint: disable=unused-argument
-    """Sentry transaction send hook.
-
-    Sentry "N+1 DB queries" detector incorrectly identifies a load of
-    monitoring data during monitor execution as the 'N+1' problem, to
-    prevent this we change a span 'op' key to the next value - 'monitoring-data-load'.
-    Sentry uses this key to identify database queries and expects it to be equal
-    to 'db' or 'db.query'.
-    """
-    if event.get('type') == 'transaction':
-        for span in event.get('spans', tuple()):
-            if (
-                span.get('op') in ['db', 'db.query', 'db.sql.query']
-                and '_monitor_data_' in span.get('description', '')
-            ):
-                span['op'] = 'monitoring-data-load'
-    return event

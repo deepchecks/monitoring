@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 from typing_extensions import Self
 
-from deepchecks_monitoring.config import EmailSettings
+from deepchecks_monitoring.ee.config import EmailSettings
 
 # TODO: change this
 TEMPLATES_DIR = pathlib.Path(__file__).absolute().parent.parent / "templates"
@@ -155,19 +155,25 @@ class EmailSender:
         except Exception:  # pylint: disable=broad-except
             return False
 
-    def send(self, emails: t.Union[EmailMessage, t.Sequence[EmailMessage]]) -> None:
-        """Send email."""
-        if self.is_email_available:
-            emails = [emails] if isinstance(emails, EmailMessage) else emails
-            with SMTP(host=self.settings.email_smtp_host, port=self.settings.email_smtp_port) as smtp:
-                smtp.starttls()
-                smtp.login(
-                    user=self.settings.email_smtp_username,
-                    password=self.settings.email_smtp_password
-                )
-                for e in emails:
-                    for msg in e.as_generic_email_msgs():
-                        try:
-                            smtp.send_message(msg=msg)
-                        except Exception as e:  # pylint: disable=broad-except
-                            raise RuntimeError(f"Error sending message to recipient {msg['To']}") from e
+    def send(self, subject, recipients, template_name, template_context):
+        if not self.is_email_available:
+            return
+
+        message = EmailMessage(
+            subject=subject,
+            sender=self.settings.deepchecks_email,
+            recipients=recipients,
+            template_name=template_name,
+            template_context=template_context
+        )
+        with SMTP(host=self.settings.email_smtp_host, port=self.settings.email_smtp_port) as smtp:
+            smtp.starttls()
+            smtp.login(
+                user=self.settings.email_smtp_username,
+                password=self.settings.email_smtp_password
+            )
+            for msg in message.as_generic_email_msgs():
+                try:
+                    smtp.send_message(msg=msg)
+                except Exception as e:  # pylint: disable=broad-except
+                    raise RuntimeError(f"Error sending message to recipient {msg['To']}") from e

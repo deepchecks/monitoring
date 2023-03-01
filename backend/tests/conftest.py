@@ -32,10 +32,10 @@ from sqlalchemy.future import Engine, create_engine
 from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.app import create_application
-from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.ee.config import Settings
+from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
 from deepchecks_monitoring.public_models.base import Base as PublicModelsBase
-from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import TaskType
 from tests.common import Payload, TestAPI, generate_user
 from tests.utils import TestDatabaseGenerator, create_dummy_smtp_server
@@ -117,39 +117,6 @@ async def async_engine(database_generator: TestDatabaseGenerator) -> t.AsyncIter
         yield test_database_engine
 
 
-# @pytest_asyncio.fixture(scope="function")
-# async def async_engine(postgres: testing.postgresql.Postgresql) -> t.AsyncIterator[AsyncEngine]:
-#     url = postgres.url().replace("postgresql", "postgresql+asyncpg")
-#     engine = create_async_engine(url, echo=False, json_serializer=json_dumps)
-#     yield engine
-#     await engine.dispose()
-
-
-# @pytest_asyncio.fixture(scope="function", autouse=True)
-# async def reset_database(async_engine):
-#     async with async_engine.begin() as conn:
-#         def clean_schemas(c):
-#             inspector = inspect(c)
-#             for schema in inspector.get_schema_names():
-#                 if schema in ['public', 'information_schema']:
-#                     continue
-#                 DropSchema(schema, cascade=True).execute(c)
-
-#         def clean_enums(c):
-#             inspector = inspect(c)
-#             for enum in inspector.get_enums():
-#                 c.execute(text(f'drop type {enum["name"]} cascade'))
-
-#         await conn.run_sync(clean_schemas)
-#         await conn.run_sync(clean_enums)
-#         await conn.run_sync(PublicModelsBase.metadata.drop_all)
-#         # await conn.run_sync(TasksBase.metadata.drop_all)
-
-#         await conn.run_sync(PublicModelsBase.metadata.create_all)
-#         # await conn.run_sync(TasksBase.metadata.create_all)
-#         await conn.commit()
-
-
 @pytest_asyncio.fixture()
 async def async_session(async_engine: AsyncEngine):
     """Get async sqlalchemy session instance."""
@@ -190,7 +157,7 @@ def settings(async_engine, smtp_server):
         slack_client_id="",
         slack_client_secret="",
         slack_scopes="chat:write,incoming-webhook",
-        host="http://localhost",
+        deployment_url="http://localhost",
         email_smtp_username="",
         email_smtp_password="",
         oauth_domain="",
@@ -198,6 +165,7 @@ def settings(async_engine, smtp_server):
         oauth_client_secret="",
         auth_jwt_secret="secret",
         kafka_host=None,
+        is_cloud=True,
     )
 
 

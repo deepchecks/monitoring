@@ -24,11 +24,10 @@ from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.actors import WorkerBootstrap
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, execute_alerts_scheduler
 from deepchecks_monitoring.config import DatabaseSettings, Settings
-from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import auth, telemetry
+from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.other import generate_random_user, generate_test_user
 
 
@@ -49,26 +48,6 @@ def initdb():
         "upgrade", "head",
     ]
     alembic.config.main(argv=alembicArgs)
-
-
-@cli.command()
-def consume_data():
-    """Run kafka data consumer."""
-    async def consume():
-        settings = Settings()  # type: ignore
-        resources_provider = ResourcesProvider(settings)
-        if settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.6,
-                environment=settings.sentry_env
-            )
-            telemetry.collect_telemetry(DataIngestionBackend)
-        backend = DataIngestionBackend(settings, resources_provider)
-        await backend.run_data_consumer()
-
-    anyio.run(consume)
 
 
 @cli.command()

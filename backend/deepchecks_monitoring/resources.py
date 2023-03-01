@@ -33,7 +33,7 @@ from sqlalchemy.future.engine import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from deepchecks_monitoring import config
-from deepchecks_monitoring.integrations.email import EmailSender
+from deepchecks_monitoring.interfaces import EmailSender, SlackSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
 from deepchecks_monitoring.public_models import Organization
@@ -95,6 +95,7 @@ class ResourcesProvider(BaseResourcesProvider):
         self._lauchdarkly_client: t.Optional[LDClient] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
+        self._slack_sender: t.Optional[SlackSender] = None
         self._topics = set()
 
     @property
@@ -127,28 +128,6 @@ class ResourcesProvider(BaseResourcesProvider):
                 "In order to be able to instantiate redis resources "
                 "you need to provide instance of 'RedisSettings' "
                 "to the 'ResourcesProvider' constructor"
-            )
-        return self._settings
-
-    @property
-    def email_settings(self) -> config.EmailSettings:
-        """Get the email settings."""
-        if not isinstance(self._settings, config.EmailSettings):
-            raise AssertionError(
-                "In order to be able to use email resources "
-                "you need to provide instance of 'EmailSettings' "
-                "to the 'ResourcesProvider' constructor"
-            )
-        return self._settings
-
-    @property
-    def telemetry_settings(self) -> config.TelemetrySettings:
-        """Get the telemetry settings."""
-        if not isinstance(self._settings, config.TelemetrySettings):
-            raise AssertionError(
-                "Provided settings instance type is not a subclass of "
-                "the 'TelemetrySettings', you need to provide instance "
-                "of 'TelemetrySettings' to the 'ResourcesProvider' constructor"
             )
         return self._settings
 
@@ -382,8 +361,15 @@ class ResourcesProvider(BaseResourcesProvider):
     def email_sender(self) -> EmailSender:
         """Email sender."""
         if self._email_sender is None:
-            self._email_sender = EmailSender(self.email_settings)
+            self._email_sender = EmailSender()
         return self._email_sender
+
+    @property
+    def slack_sender(self) -> SlackSender:
+        """Slack sender."""
+        if self._slack_sender is None:
+            self._slack_sender = SlackSender()
+        return self._slack_sender
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.

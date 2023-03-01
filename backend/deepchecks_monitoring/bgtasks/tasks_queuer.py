@@ -24,12 +24,19 @@ from sqlalchemy.cimmutabledict import immutabledict
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.config import DatabaseSettings, RedisSettings, TelemetrySettings
+from deepchecks_monitoring.config import DatabaseSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
-from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import telemetry
+
+try:
+    from deepchecks_monitoring import ee
+    from deepchecks_monitoring.ee.resources import ResourcesProvider
+
+    with_ee = True
+except ImportError:
+    from deepchecks_monitoring.resources import ResourcesProvider
+    with_ee = False
 
 
 class TasksQueuer:
@@ -97,7 +104,7 @@ class TasksQueuer:
             return 0
 
 
-class WorkerSettings(DatabaseSettings, RedisSettings, TelemetrySettings):
+class BaseWorkerSettings(DatabaseSettings, RedisSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -110,6 +117,16 @@ class WorkerSettings(DatabaseSettings, RedisSettings, TelemetrySettings):
 
         env_file = '.env'
         env_file_encoding = 'utf-8'
+
+
+if with_ee:
+    class WorkerSettings(BaseWorkerSettings, ee.config.TelemetrySettings):
+        """Set of worker settings."""
+        pass
+else:
+    class WorkerSettings(BaseWorkerSettings):
+        """Set of worker settings."""
+        pass
 
 
 def execute_worker():
@@ -130,14 +147,15 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_queuer  # pylint: disable=import-outside-toplevel
 
-        if settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.1,
-                environment=settings.sentry_env,
-            )
-            telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
+        if with_ee:
+            if settings.sentry_dsn:
+                import sentry_sdk  # pylint: disable=import-outside-toplevel
+                sentry_sdk.init(
+                    dsn=settings.sentry_dsn,
+                    traces_sample_rate=0.1,
+                    environment=settings.sentry_env,
+                )
+                ee.integrations.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
 

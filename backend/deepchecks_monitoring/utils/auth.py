@@ -298,7 +298,9 @@ class CurrentActiveUser(CurrentUser):
         if user.disabled:
             raise BadRequest("User is disabled")
 
-        if request.url != request.url_for("eula-acceptance") and user.eula is False:
+        # EULA relevant only for cloud version
+        is_cloud = request.app.state.settings.is_cloud
+        if is_cloud and request.url != request.url_for("eula-acceptance") and user.eula is False:
             raise UnacceptedEULA()
 
         is_schema_changed: bool = getattr(request.state, "is_schema_changed", False)

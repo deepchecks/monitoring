@@ -34,7 +34,7 @@ from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_COL,
                                                              SAMPLE_TS_COL)
-from deepchecks_monitoring.utils import database, telemetry
+from deepchecks_monitoring.utils import database
 
 __all__ = ['AlertsScheduler']
 
@@ -234,7 +234,7 @@ def is_serialization_error(error: DBAPIError):
     )
 
 
-class SchedulerSettings(config.DatabaseSettings, config.TelemetrySettings):
+class BaseSchedulerSettings(config.DatabaseSettings):
     """Scheduler settings."""
 
     scheduler_sleep_seconds: int = 30
@@ -244,20 +244,37 @@ class SchedulerSettings(config.DatabaseSettings, config.TelemetrySettings):
     scheduler_logfile_backup_count: int = 3
 
 
+try:
+    from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
+
+    with_ee = True
+
+    class SchedulerSettings(BaseSchedulerSettings, ee.config.TelemetrySettings):
+        """Set of worker settings."""
+        pass
+except ImportError:
+    with_ee = False
+
+    class SchedulerSettings(BaseSchedulerSettings):
+        """Set of worker settings."""
+        pass
+
+
 def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
     """Execute alrets scheduler."""
     async def main():
         settings = SchedulerSettings()  # type: ignore
         service_name = 'alerts-scheduler'
 
-        if settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.6,
-                environment=settings.sentry_env
-            )
-            telemetry.collect_telemetry(scheduler_implementation)
+        if with_ee:
+            if settings.sentry_dsn:
+                import sentry_sdk  # pylint: disable=import-outside-toplevel
+                sentry_sdk.init(
+                    dsn=settings.sentry_dsn,
+                    traces_sample_rate=0.6,
+                    environment=settings.sentry_env
+                )
+                ee.integrations.telemetry.collect_telemetry(scheduler_implementation)
 
         logger = configure_logger(
             name=service_name,

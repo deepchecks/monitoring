@@ -22,7 +22,7 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
                                                 get_email_sender_resource)
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.integrations.email import EmailMessage, EmailSender
+from deepchecks_monitoring.interfaces import EmailSender
 from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
@@ -73,17 +73,16 @@ async def create_invite(
     session.add(invitation)
 
     # TODO: should be async and should be done by background worker/task
-    email_sender.send(EmailMessage(
+    email_sender.send(
         subject='Deepchecks Invitation',
-        sender=settings.deepchecks_email,
         recipients=[body.email],
         template_name='invite',
         template_context={
             'from_user': f'{user.full_name} ({user.email})' if user.full_name else user.email,
             'organization_name': t.cast(Organization, user.organization).name,
-            'host': str(settings.host)
+            'host': str(settings.deployment_url)
         }
-    ))
+    )
 
     return Response(status_code=status.HTTP_200_OK)
 

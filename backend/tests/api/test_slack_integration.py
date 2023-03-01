@@ -8,8 +8,9 @@ import pytest
 import randomname
 from fastapi.testclient import TestClient
 
-from deepchecks_monitoring.utils.slack import (AuthedUserSchema, SlackIncomingWebhookSchema, SlackInstallationSchema,
-                                               SlackInstallationUtils, SlackTeamSchema)
+from deepchecks_monitoring.ee.integrations.slack import (AuthedUserSchema, SlackIncomingWebhookSchema,
+                                                         SlackInstallationSchema, SlackInstallationUtils,
+                                                         SlackTeamSchema)
 
 
 @pytest.mark.asyncio
@@ -49,7 +50,7 @@ async def test_slack_installation(client: TestClient):
     settings = client.app.state.settings
 
     state = fetch_installation_state(client=client)
-    mock_target = "deepchecks_monitoring.api.v1.slack.SlackInstallationUtils"
+    mock_target = "deepchecks_monitoring.ee.api.v1.slack.SlackInstallationUtils"
     slack_utils = MockedSlackInstallationUtils(settings)
     slack_utils.mocked_installation = generate_slack_installation()
 
@@ -73,7 +74,7 @@ async def test_slack_installation_update(client: TestClient):
     settings = client.app.state.settings
 
     state = fetch_installation_state(client=client)
-    mock_target = "deepchecks_monitoring.api.v1.slack.SlackInstallationUtils"
+    mock_target = "deepchecks_monitoring.ee.api.v1.slack.SlackInstallationUtils"
     slack_utils = MockedSlackInstallationUtils(settings)
     slack_utils.mocked_installation = generate_slack_installation()
 

@@ -18,7 +18,7 @@ from kafka import KafkaAdminClient
 from pydantic import BaseSettings
 
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
-from deepchecks_monitoring.integrations.email import EmailSender
+from deepchecks_monitoring.interfaces import EmailSender
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
@@ -88,7 +88,6 @@ SettingsDep = fastapi.Depends(get_settings)
 DataIngestionDep = fastapi.Depends(get_data_ingestion_backend)
 CacheFunctionsDep = fastapi.Depends(get_cache_functions)
 ResourcesProviderDep = fastapi.Depends(get_resources_provider)
-HostDep = fastapi.Depends(get_host)
 
 # Examples of how to use those dependencies:
 #

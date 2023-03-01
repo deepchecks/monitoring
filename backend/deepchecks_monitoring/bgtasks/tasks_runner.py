@@ -21,12 +21,20 @@ from sqlalchemy import select
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings, TelemetrySettings
+from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
-from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import telemetry
+
+try:
+    from deepchecks_monitoring import ee
+    from deepchecks_monitoring.ee.resources import ResourcesProvider
+
+    with_ee = True
+except ImportError:
+    from deepchecks_monitoring.resources import ResourcesProvider
+
+    with_ee = False
 
 
 class TaskRunner:
@@ -95,7 +103,7 @@ class TaskRunner:
             self.logger.error(f'Unknown task type: {task.bg_worker_task}')
 
 
-class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, TelemetrySettings):
+class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -109,6 +117,16 @@ class WorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, TelemetrySe
 
         env_file = '.env'
         env_file_encoding = 'utf-8'
+
+
+if with_ee:
+    class WorkerSettings(BaseWorkerSettings, ee.config.TelemetrySettings):
+        """Set of worker settings."""
+        pass
+else:
+    class WorkerSettings(BaseWorkerSettings):
+        """Set of worker settings."""
+        pass
 
 
 async def init_async_redis(redis_uri):
@@ -139,18 +157,18 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
-        if settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
-            from sentry_sdk.integrations.logging import ignore_logger  # pylint: disable=import-outside-toplevel
+        if with_ee:
+            if settings.sentry_dsn:
+                import sentry_sdk  # pylint: disable=import-outside-toplevel
 
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.1,
-                environment=settings.sentry_env
-            )
-            telemetry.collect_telemetry(tasks_runner.TaskRunner)
-            # Ignoring this logger since it can spam sentry with errors
-            ignore_logger('aiokafka.cluster')
+                sentry_sdk.init(
+                    dsn=settings.sentry_dsn,
+                    traces_sample_rate=0.1,
+                    environment=settings.sentry_env
+                )
+                ee.integrations.telemetry.collect_telemetry(tasks_runner.TaskRunner)
+                # Ignoring this logger since it can spam sentry with errors
+                sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
 

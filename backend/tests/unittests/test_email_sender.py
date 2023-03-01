@@ -1,22 +1,22 @@
 import pytest
 
-from deepchecks_monitoring.integrations.email import EmailMessage, EmailSender
+from deepchecks_monitoring.ee.integrations.email import EmailSender
 
 
 @pytest.mark.asyncio
 async def test_email_sender(smtp_server, settings):
     email_sender = EmailSender(settings)
 
-    email_sender.send(EmailMessage(
+    email_sender.send(
         subject="Hello world",
-        sender="foo@testing.com",
+        template_name="alert",
         recipients=["bar@testing.com"],
-        template_name="new_alert"
-    ))
+        template_context={}
+    )
 
     assert len(smtp_server.handler.mailbox) == 1
 
     email = smtp_server.handler.mailbox[0]
-    assert email["From"] == "Deepchecks App <foo@testing.com>"
+    assert email["From"] == "Deepchecks App <app@deepchecks.com>"
     assert email["To"] == "bar@testing.com"
     assert email["Subject"] == "Hello world"

@@ -22,8 +22,8 @@ from sqlalchemy.orm import joinedload
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.bgtasks.core import Task
-from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, HostDep
+from deepchecks_monitoring.config import Settings, Tags
+from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, SettingsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
@@ -204,7 +204,7 @@ async def get_notebook(
         monitor_id: int,
         notebook_options: MonitorNotebookSchema,
         session: AsyncSession = AsyncSessionDep,
-        host: str = HostDep,
+        settings: Settings = SettingsDep,
 ):
     """Run a check on a specified model version and returns a Jupyter notebook with the code to run the check.
 
@@ -216,8 +216,7 @@ async def get_notebook(
         The options for the notebook.
     session : AsyncSession, default: AsyncSessionDep
         The database session to use.
-    host : str, default: HostDep
-        The host of the DeepChecks server.
+    settings : Settings, default: SettingsDep
 
     Returns
     -------
@@ -231,7 +230,7 @@ async def get_notebook(
                                                  additional_kwargs=monitor.additional_kwargs,
                                                  model_version_id=notebook_options.model_version_id,
                                                  as_script=notebook_options.as_script)
-    return await get_check_notebook(monitor.check_id, check_notebook_options, session, host)
+    return await get_check_notebook(monitor.check_id, check_notebook_options, session, settings.deployment_url)
 
 
 @router.post("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])

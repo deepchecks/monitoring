@@ -115,6 +115,12 @@ class RequestTooLarge(BaseHTTPException):
     status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
 
+class LicenseError(BaseHTTPException):
+    """Trying to access enterprise feature without license."""
+
+    status_code = status.HTTP_402_PAYMENT_REQUIRED
+
+
 def is_unique_constraint_violation_error(error: IntegrityError) -> bool:
     """Verify whether this integrity error was caused by a unique constraint violation."""
     cause = getattr(error, 'orig', None)

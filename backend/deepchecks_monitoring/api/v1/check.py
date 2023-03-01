@@ -26,8 +26,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
-from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, HostDep
+from deepchecks_monitoring.config import Settings, Tags
+from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
                                                      SingleCheckRunOptions, complete_sessions_for_check,
@@ -436,7 +436,7 @@ async def get_notebook(
         check_id: int,
         notebook_options: CheckNotebookSchema,
         session: AsyncSession = AsyncSessionDep,
-        host: str = HostDep,
+        settings: Settings = SettingsDep,
 ):
     """Run a check on a specified model version and returns a Jupyter notebook with the code to run the check.
 
@@ -448,15 +448,14 @@ async def get_notebook(
         The options for the check notebook.
     session : AsyncSession, default: AsyncSessionDep
         The database session to use.
-    host : str, default: HostDep
-        The host of the DeepChecks server.
+    settings : Settings, default: SettingsDep
 
     Returns
     -------
     PlainTextResponse
         A response containing the Jupyter notebook.
     """
-    return await get_check_notebook(check_id, notebook_options, session, host)
+    return await get_check_notebook(check_id, notebook_options, session, settings.deployment_url)
 
 
 @router.get('/checks/{check_id}/info', response_model=MonitorCheckConf, tags=[Tags.CHECKS])

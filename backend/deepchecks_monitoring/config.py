@@ -16,8 +16,6 @@ from aiokafka.helpers import create_ssl_context
 from pydantic import BaseSettings, PostgresDsn, RedisDsn
 from pydantic.networks import AnyHttpUrl
 
-from deepchecks_monitoring.utils.slack import SlackSettings
-
 __all__ = [
     'Settings',
     'tags_metadata',
@@ -25,7 +23,7 @@ __all__ = [
     'DatabaseSettings',
     'RedisSettings',
     'KafkaSettings',
-    'TelemetrySettings'
+    'BaseDeepchecksSettings'
 ]
 
 
@@ -33,6 +31,7 @@ PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
 
 class BaseDeepchecksSettings(BaseSettings):
+    """Base class for all config classes."""
 
     def __init__(self, *args, **kwargs):  # pylint: disable=useless-super-delegation
         super().__init__(*args, **kwargs)
@@ -90,53 +89,17 @@ class RedisSettings(BaseDeepchecksSettings):
     redis_uri: t.Optional[RedisDsn] = None
 
 
-class EmailSettings(BaseDeepchecksSettings):
-    """Settings for mail service."""
-
-    host: AnyHttpUrl  # TODO: consider moving to Settings
-    deepchecks_email: str = 'app@deepchecks.com'
-    email_smtp_host: str
-    email_smtp_port: int = 25
-    email_smtp_username: str
-    email_smtp_password: str
-
-
-class TelemetrySettings(BaseDeepchecksSettings):
-    """Telemetry settings."""
-
-    instrument_telemetry: bool = False
-    sentry_dsn: t.Optional[str] = None
-    sentry_env: str = 'dev'
-
-
-class StripeSettings(BaseDeepchecksSettings):
-    """Stripe settings."""
-
-    stripe_api_key: str = ''
-    stripe_webhook_secret: str = ''
-
-
 class Settings(
     DatabaseSettings,
     KafkaSettings,
-    RedisSettings,
-    EmailSettings,
-    SlackSettings,
-    TelemetrySettings,
-    StripeSettings
+    RedisSettings
 ):
     """Settings for the deepchecks_monitoring package."""
 
-    enviroment: str = 'dev'
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
-    debug_mode: bool = False
-    lauchdarkly_sdk_key: str = ''
-    oauth_domain: str
-    oauth_client_id: str
-    oauth_client_secret: str
+    is_cloud: bool = False
+    deployment_url: AnyHttpUrl
     auth_jwt_secret: str
-    access_audit: bool = False
-    mixpanel_id: str = ''
 
 
 class Tags(Enum):

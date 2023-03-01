@@ -8,18 +8,18 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pginsert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
+from deepchecks_monitoring.ee.config import Settings
+from deepchecks_monitoring.ee.integrations.slack import SlackInstallationError, SlackInstallationUtils
 from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models.slack import SlackInstallation, SlackInstallationState
 from deepchecks_monitoring.utils import auth
-from deepchecks_monitoring.utils.slack import SlackInstallationError, SlackInstallationUtils
 
-from .router import router
+from .routers import ee_router
 
 
-@router.get('/slack.authorize', name='slack-authorization-redirect', tags=['slack'])
+@ee_router.get('/slack.authorize', name='slack-authorization-redirect', tags=['slack'])
 async def installation_redirect(
     request: Request,
     settings: Settings = SettingsDep,
@@ -53,7 +53,7 @@ async def installation_redirect(
     )
 
 
-@router.get('/slack.install', name='slack-installation-callback', tags=['slack'])
+@ee_router.get('/slack.install', name='slack-installation-callback', tags=['slack'])
 async def installation_callback(
     request: Request,
     code: t.Optional[str] = Query(...),
@@ -193,7 +193,7 @@ class SlackBotSchema(BaseModel):
         orm_mode = True
 
 
-@router.get('/slack/apps', tags=['slack'])
+@ee_router.get('/slack/apps', tags=['slack'])
 async def retrieve_instalations(
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
@@ -204,7 +204,7 @@ async def retrieve_instalations(
     return [SlackBotSchema.from_orm(it).dict() for it in installations]
 
 
-@router.delete('/slack/apps/{app_id}', tags=['slack'])
+@ee_router.delete('/slack/apps/{app_id}', tags=['slack'])
 async def remove_installation(
     app_id: int,
     session: AsyncSession = AsyncSessionDep,

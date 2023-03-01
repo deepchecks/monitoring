@@ -28,12 +28,10 @@ from sqlalchemy.orm import joinedload, selectinload
 from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
-from deepchecks_monitoring.integrations.email import EmailMessage
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
 from deepchecks_monitoring.public_models import Organization, User
-from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, Model
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
@@ -41,7 +39,17 @@ from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
-from deepchecks_monitoring.utils import slack, telemetry
+
+try:
+    from deepchecks_monitoring import ee
+    from deepchecks_monitoring.ee.resources import ResourcesProvider
+
+    with_ee = True
+except ImportError:
+    from deepchecks_monitoring.resources import ResourcesProvider
+
+    with_ee = False
+
 
 __all__ = ["execute_monitor"]
 
@@ -251,6 +259,10 @@ class AlertNotificator:
 
     async def send_emails(self) -> bool:
         """Send notification emails."""
+        email_sender = self.resources_provider.email_sender
+        if email_sender.is_email_available is False:
+            return False
+
         org = self.organization
         alert = self.alert
         alert_rule = self.alert_rule
@@ -279,15 +291,15 @@ class AlertNotificator:
             self.logger.error("Organization(id:%s) does not have members", org.id)
             return False
 
-        settings = self.resources_provider.email_settings
-        alert_link = (furl(settings.host) / "alert-rules")
+        deepchecks_host = self.resources_provider.settings.deployment_url
+        alert_link = (furl(deepchecks_host) / "alert-rules")
         alert_link = alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
 
         email_failed_values = alert.named_failed_values if \
             hasattr(alert, "named_failed_values") else alert.failed_values
-        self.resources_provider.email_sender.send(EmailMessage(
+
+        email_sender.send(
             subject=f"Alert. Model: {model.name}, Monitor: {monitor.name}",
-            sender=settings.deepchecks_email,
             recipients=members_emails,
             template_name="alert",
             template_context={
@@ -299,7 +311,7 @@ class AlertNotificator:
                 "check": check.name,
                 "condition": str(alert_rule.condition),
             }
-        ))
+        )
 
         self.logger.info(
             "Alert(id:%s) email notification was sent to Organization(id:%s) members %s",
@@ -312,6 +324,9 @@ class AlertNotificator:
 
     async def send_slack_messages(self) -> bool:
         """Send slack message."""
+        if self.resources_provider.slack_sender.is_slack_available is False:
+            return False
+
         org = self.organization
         alert = self.alert
         alert_rule = t.cast(AlertRule, alert.alert_rule)
@@ -339,12 +354,10 @@ class AlertNotificator:
             )
             return False
 
-        deepchecks_host = self.resources_provider.email_settings.host
         errors: t.List[t.Tuple[SlackInstallation, str]] = []
-        notification = slack.SlackAlertNotification(alert, deepchecks_host).blocks()
 
         for app in slack_apps:
-            response = app.webhook_client().send(blocks=notification)
+            response = self.resources_provider.slack_sender.send_alert(alert, app)
             if response.status_code != 200:
                 errors.append((app, response.body))
             else:
@@ -382,7 +395,7 @@ class AlertNotificator:
                     w.execute(
                         alert=alert,
                         client=client,
-                        settings=self.resources_provider.email_settings,
+                        settings=self.resources_provider.settings,
                         logger=self.logger
                     )
                     for w in webhooks
@@ -445,11 +458,9 @@ def assert_check_results(
         return alert
 
 
-class WorkerSettings(
+class BaseWorkerSettings(
     config.DatabaseSettings,
-    config.RedisSettings,
-    config.EmailSettings,
-    config.TelemetrySettings
+    config.RedisSettings
 ):
     """Set of worker settings."""
 
@@ -457,6 +468,16 @@ class WorkerSettings(
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
+
+
+if with_ee:
+    class WorkerSettings(BaseWorkerSettings, ee.config.TelemetrySettings):
+        """Set of worker settings."""
+        pass
+else:
+    class WorkerSettings(BaseWorkerSettings):
+        """Set of worker settings."""
+        pass
 
 
 class WorkerBootstrap:
@@ -471,17 +492,17 @@ class WorkerBootstrap:
         settings = self.settings_type()  # type: ignore
         service_name = "deepchecks-worker"
 
-        if settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
+        if with_ee:
+            if settings.sentry_dsn:
+                import sentry_sdk  # pylint: disable=import-outside-toplevel
 
-            from deepchecks_monitoring.utils.other import sentry_send_hook  # pylint: disable=import-outside-toplevel
-            sentry_sdk.init(
-                dsn=settings.sentry_dsn,
-                traces_sample_rate=0.6,
-                environment=settings.sentry_env,
-                before_send_transaction=sentry_send_hook
-            )
-            telemetry.collect_telemetry(Worker)
+                sentry_sdk.init(
+                    dsn=settings.sentry_dsn,
+                    traces_sample_rate=0.6,
+                    environment=settings.sentry_env,
+                    before_send_transaction=ee.integrations.sentry.sentry_send_hook
+                )
+                ee.integrations.telemetry.collect_telemetry(Worker)
 
         logger = configure_logger(
             name=service_name,

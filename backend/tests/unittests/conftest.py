@@ -17,8 +17,8 @@ def _():
     # adding telemetry to make sure that it does not break routines
     from deepchecks_monitoring.bgtasks.core import Worker
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+    from deepchecks_monitoring.ee.integrations import telemetry
     from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-    from deepchecks_monitoring.utils import telemetry
 
     telemetry.collect_telemetry(Worker)
     telemetry.collect_telemetry(AlertsScheduler)

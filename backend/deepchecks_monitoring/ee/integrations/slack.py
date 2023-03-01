@@ -5,16 +5,19 @@ import typing as t
 
 from deepchecks.core.checks import CheckConfig
 from furl import furl
-from pydantic import BaseModel, BaseSettings, SecretStr, ValidationError, validator
+from pydantic import BaseModel, ValidationError, validator
 from slack_sdk import WebClient as SlackClient
 from slack_sdk.errors import SlackApiError
 from slack_sdk.oauth import AuthorizeUrlGenerator, OAuthStateUtils
+from slack_sdk.webhook import WebhookResponse
 
+from deepchecks_monitoring.config import Settings as OpenSourceSettings
+from deepchecks_monitoring.ee.config import SlackSettings
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as CheckParameterKind
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
 
-__all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification"]
+__all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification", "SlackInstallationUtils"]
 
 
 class SlackTeamSchema(BaseModel):
@@ -67,28 +70,6 @@ class SlackInstallationError(Exception):
     """Exception for Slack installation."""
 
     pass
-
-
-class SlackSettings(BaseSettings):
-    """Settings for Slack."""
-
-    slack_client_id: str
-    slack_client_secret: SecretStr
-    slack_scopes: str
-    slack_state_ttl: int = 300
-
-    class Config:
-        """Pydantic config."""
-
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
-    @validator("slack_scopes")
-    def validate_scopes(cls, value: str):  # pylint: disable=no-self-argument
-        """Validate scopes of slack."""
-        minimal_required_scopes = ["chat:write", "incoming-webhook"]
-        assert all(it in value for it in minimal_required_scopes)
-        return value
 
 
 class SlackInstallationUtils:
@@ -307,3 +288,27 @@ class SlackAlertNotification(BaseSlackNotification):
             {"type": "divider"},
             *self.prepare_metadata_section()
         ]
+
+
+class SlackSenderSettings(OpenSourceSettings, SlackSettings):
+    pass
+
+
+class SlackSender:
+    """Sends slack messages."""
+
+    settings: SlackSenderSettings
+
+    def __init__(self, settings: SlackSenderSettings):
+        self.settings = settings
+
+    @property
+    def is_slack_available(self) -> bool:
+        """Return whether slack services are available on this instance (i.e. settings are in place)."""
+        # TODO: improve this
+        return self.settings.slack_client_id is not None
+
+    def send_alert(self, alert, app) -> WebhookResponse:
+        """Send slack message."""
+        notification = SlackAlertNotification(alert, self.settings.deployment_url).blocks()
+        return app.webhook_client().send(blocks=notification)

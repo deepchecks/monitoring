@@ -14,7 +14,6 @@ import typing as t
 
 import deepchecks
 import dotenv
-# import jsonschema.exceptions
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,17 +24,22 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import FileResponse
 
-from deepchecks_monitoring import __version__
 from deepchecks_monitoring.api.v1 import global_router as v1_global_router
 from deepchecks_monitoring.api.v1.router import router as v1_router
-from deepchecks_monitoring.config import Settings, tags_metadata
+from deepchecks_monitoring.config import tags_metadata
+from deepchecks_monitoring.ee.middlewares import LicenseCheckDependency
 from deepchecks_monitoring.exceptions import UnacceptedEULA
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
-from deepchecks_monitoring.middlewares import NoCacheMiddleware, ProfilingMiddleware, SecurityAuditMiddleware
-from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.utils import auth, telemetry
+from deepchecks_monitoring.utils import auth
 
 __all__ = ["create_application"]
+
+try:
+    from deepchecks_monitoring.ee.config import Settings
+    from deepchecks_monitoring.ee.resources import ResourcesProvider
+except ImportError:
+    from deepchecks_monitoring.config import Settings
+    from deepchecks_monitoring.resources import ResourcesProvider
 
 
 def create_application(
@@ -69,23 +73,6 @@ def create_application(
 
     settings = settings or Settings()
 
-    # Configure telemetry
-    if settings.sentry_dsn:
-        import sentry_sdk  # pylint: disable=import-outside-toplevel
-
-        from deepchecks_monitoring.utils.other import sentry_send_hook  # pylint: disable=import-outside-toplevel
-        sentry_sdk.init(
-            dsn=settings.sentry_dsn,
-            traces_sampler=traces_sampler,
-            environment=settings.sentry_env,
-            before_send_transaction=sentry_send_hook
-        )
-        telemetry.collect_telemetry(DataIngestionBackend)
-
-    if settings.stripe_api_key:
-        import stripe  # pylint: disable=import-outside-toplevel
-        stripe.api_key = settings.stripe_api_key
-
     app = FastAPI(
         title=title,
         openapi_url=openapi_url,
@@ -110,20 +97,6 @@ def create_application(
 
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
-
-    if settings.debug_mode:
-        app.add_middleware(ProfilingMiddleware)
-
-    # Set deepchecks testing library logging verbosity to error to not spam the logs
-    deepchecks.set_verbosity(logging.ERROR)
-
-    if settings.access_audit:
-        app.add_middleware(SecurityAuditMiddleware)
-
-    app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
-    app.add_middleware(NoCacheMiddleware)
-
-    app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 
     @app.exception_handler(UnacceptedEULA)
     async def eula_exception_handler(*args, **kwargs):  # pylint: disable=unused-argument
@@ -161,14 +134,46 @@ def create_application(
 
             app.state.ingestion_task.add_done_callback(auto_removal)
 
+    # Set deepchecks testing library logging verbosity to error to not spam the logs
+    deepchecks.set_verbosity(logging.ERROR)
+
+    # Add stuff available only in the enterprise version
+    try:
+        from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
+    except ImportError:
+        pass
+    else:
+        app.include_router(ee.api.v1.ee_router, dependencies=[Depends(LicenseCheckDependency())])
+
+        if settings.is_cloud:
+            app.include_router(ee.api.v1.cloud_router, dependencies=[Depends(LicenseCheckDependency())])
+
+        # Configure telemetry
+        if settings.sentry_dsn:
+            import sentry_sdk  # pylint: disable=import-outside-toplevel
+
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sampler=ee.integrations.sentry.traces_sampler,
+                environment=settings.sentry_env,
+                before_send_transaction=ee.integrations.sentry.sentry_send_hook
+            )
+            ee.integrations.telemetry.collect_telemetry(DataIngestionBackend)
+
+        if settings.stripe_api_key:
+            import stripe  # pylint: disable=import-outside-toplevel
+            stripe.api_key = settings.stripe_api_key
+
+        if settings.debug_mode:
+            app.add_middleware(ee.middlewares.ProfilingMiddleware)
+
+        if settings.access_audit:
+            app.add_middleware(ee.middlewares.SecurityAuditMiddleware)
+
+        app.add_middleware(SessionMiddleware, secret_key=settings.auth_jwt_secret, same_site="none", https_only=True)
+        app.add_middleware(ee.middlewares.NoCacheMiddleware)
+
+    # IMPORTANT: This must be the last router to be included
+    app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
+
     return app
-
-
-def traces_sampler(sampling_context):
-    """Return trace sampling rate for given context."""
-    source = sampling_context["transaction_context"]["source"]
-    # Filtering out say-hello messages completely
-    if source == "route" and sampling_context["asgi_scope"].get("path") == "/api/v1/say-hello":
-        return 0
-    # For everything else return default rate
-    return 0.1

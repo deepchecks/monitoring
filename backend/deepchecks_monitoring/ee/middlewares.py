@@ -12,10 +12,14 @@ import logging
 import time
 
 import watchtower
+from fastapi import Depends
 from pyinstrument import Profiler
 from starlette.datastructures import MutableHeaders
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.utils.auth import CurrentUser
 
 
 class ProfilingMiddleware:
@@ -170,3 +174,23 @@ class NoCacheMiddleware:
             await send(message)
 
         await self.app(scope, receive, wrapped_send)
+
+
+class LicenseCheckDependency:
+    """Dependency used to validate license."""
+
+    async def __call__(
+        self,
+        request: Request,
+        user: User = Depends(CurrentUser()),
+    ):
+        """Authenticate user.
+
+        Parameters
+        ----------
+        request: Request
+            http request instance
+        """
+        # TODO: implement license check
+        # raise LicenseError('License not valid')
+        pass

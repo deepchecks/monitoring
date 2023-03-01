@@ -15,7 +15,7 @@ from deepchecks_monitoring.schema_models import AlertSeverity, Base
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
-    from deepchecks_monitoring.config import EmailSettings
+    from deepchecks_monitoring.config import Settings
     from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Model, Monitor
 
 __all__ = ["AlertWebhook", "WebhookHttpMethod"]
@@ -130,7 +130,7 @@ class AlertWebhook(Base):
         *,
         alert: "Alert",
         client: httpx.AsyncClient,
-        settings: "EmailSettings",
+        settings: "Settings",
         request_timeout: int = 60,
         logger: t.Optional[logging.Logger] = None
     ) -> bool:
@@ -212,7 +212,7 @@ class AlertWebhook(Base):
                 )
                 return False
 
-    def prepare_request_parameters(self, alert: "Alert", settings: "EmailSettings") -> t.Dict[str, t.Any]:
+    def prepare_request_parameters(self, alert: "Alert", settings: "Settings") -> t.Dict[str, t.Any]:
         """Prepare request parameters.
 
         Webhook kind will be taken into account and a corresponding payload will be prepared.
@@ -280,12 +280,12 @@ class AlertWebhook(Base):
                     },
                     "routing_key": additional_arguments["routing_key"],
                     "links": [{
-                        "href": str(prepare_alert_link(alert=alert, deepchecks_host=settings.host)),
+                        "href": str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url)),
                         "text": "Deepchecks Alert"
                     }],
                     "event_action": "trigger",
                     "client": "Deepchecks",
-                    "client_url": settings.host
+                    "client_url": settings.deployment_url
                 }
             }
 
