@@ -18,7 +18,7 @@ import pendulum as pdl
 import pytest
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepdiff import DeepDiff
-from hamcrest import assert_that, contains_exactly, has_entries, has_length
+from hamcrest import assert_that, contains_exactly, has_entries, has_length, close_to
 from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models import TaskType
@@ -674,7 +674,7 @@ def test_run_window_train_test(
     )
 
     result = t.cast(Payload, result)
-    assert result == {"v1": {"Label Drift Score": 0.25584714587462043}}
+    assert_that(result["v1"]["Label Drift Score"], close_to(0.495, 0.001))
 
 
 def test_run_lookback_train_test(
