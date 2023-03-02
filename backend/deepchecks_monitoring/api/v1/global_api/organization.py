@@ -14,9 +14,8 @@ from datetime import datetime
 import sqlalchemy as sa
 from fastapi import Depends, Response, status
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import update
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.schema import DropSchema
 
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
@@ -157,14 +156,10 @@ async def remove_organization(
     """Remove an organization."""
     # Active only in debug mode
     if settings.debug_mode:
-        if user.organization_id is not None:
+        if user.organization is not None:
             if not user.is_admin or user.disabled:
                 return Response(status_code=403)
-            organization: Organization = user.organization
-            await session.execute(update(User).where(User.organization_id == user.organization_id).
-                                  values({User.organization_id: None}))
-            await session.execute(DropSchema(organization.schema_name, cascade=True))
-            await session.delete(organization)
+            await user.organization.drop_organization(session)
             await session.commit()
         return Response()
     else:
@@ -240,6 +235,13 @@ async def leave_organization(
     session: AsyncSession = AsyncSessionDep,
 ):
     """Remove member from an organization."""
+    other_users_count = await session.scalar(select(func.count()).select_from(User)
+                                             .where(User.organization_id == user.organization_id, User.id != user.id,
+                                                    User.is_admin is True))
+    if other_users_count == 0:
+        raise BadRequest('You are the single admin user in the organization, in order to leave you must actively '
+                         'delete the organization.')
+
     user.organization_id = None
     await session.commit()
 

@@ -13,12 +13,13 @@ from datetime import datetime
 
 from fastapi import Depends, Response
 from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from starlette import status
 from starlette.responses import RedirectResponse
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
-from deepchecks_monitoring.exceptions import BadRequest
+from deepchecks_monitoring.exceptions import BadRequest, LicenseError
 from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
@@ -103,8 +104,14 @@ async def update_complete_details(
         user.full_name = body.user_full_name
 
     if body.new_organization_name:
-        if resources_provider.get_features_control(user).signup_enabled is False:
+        feature_control = resources_provider.get_features_control(user)
+        if feature_control.signup_enabled is False:
             raise BadRequest("This feature is currently not available.")
+        if feature_control.multi_tenant is False:
+            org_count = await session.scalar(select(func.count()).select_from(Organization))
+            if org_count > 0:
+                raise LicenseError("Current license does not support multiple organizations.")
+
         org = await Organization.create_for_user(user, body.new_organization_name)
         session.add(org)
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
@@ -120,16 +127,6 @@ async def update_complete_details(
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
-
-
-@router.post("/users/leave-organization", tags=["users"])
-async def leave_organization(
-        user: User = Depends(auth.CurrentUser())
-):
-    """Leave organization."""
-    # TODO: should not we remove organization?
-    user.organization_id = None
-    return Response()
 
 
 @router.delete("/users", tags=["users"])

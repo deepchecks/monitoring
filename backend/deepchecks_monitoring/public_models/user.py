@@ -87,6 +87,7 @@ class User(Base):
         session: AsyncSession,
         auth_jwt_secret: str,
         eula: bool = True,
+        organization_id: int = None
     ) -> Self:
         """Create or get user instance from ouath info."""
         token_data = auth.UserAccessToken(email=info.email, is_admin=True)
@@ -101,6 +102,7 @@ class User(Base):
             picture_url=info.picture,
             access_token=access_token,
             eula=eula,
+            organization_id=organization_id,
         ).on_conflict_do_update(constraint="email_uniqueness", set_={
             "access_token": access_token,
             "last_login": datetime.now()
