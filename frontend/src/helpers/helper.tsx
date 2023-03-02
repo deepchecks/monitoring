@@ -162,7 +162,7 @@ export const pathsInfo: PathInfo[] = [
     ]
   },
   {
-    title: 'Workspace Setting',
+    title: 'Workspace Settings',
     link: '/workspace-settings',
     element: () => <WorkspaceSettingsPage />,
     Icon: null,

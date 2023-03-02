@@ -9,10 +9,10 @@ interface Props {
 
 const stripePromise = loadStripe(`${process.env.REACT_APP_STRIPE_KEY}`);
 
-const PaymentWrapper = ({ children, clientSecret }: Props) => (
+const BillingPaymentWrapper = ({ children, clientSecret }: Props) => (
   <Elements stripe={stripePromise} options={{ clientSecret: clientSecret }}>
     {children}
   </Elements>
 );
 
-export default PaymentWrapper;
+export default BillingPaymentWrapper;
