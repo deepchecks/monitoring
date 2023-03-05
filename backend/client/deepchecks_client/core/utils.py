@@ -78,6 +78,7 @@ class ColumnType(str, enum.Enum):
 
     NUMERIC = 'numeric'
     INTEGER = 'integer'
+    BIGINT = 'bigint'
     CATEGORICAL = 'categorical'
     BOOLEAN = 'boolean'
     TEXT = 'text'
@@ -301,6 +302,8 @@ def _get_series_column_type(series: pd.Series):
     if is_integer_dtype(series):
         if is_categorical(series):
             return ColumnType.CATEGORICAL.value
+        if series.abs().ge(2 ** 32).to_numpy().any():
+            return ColumnType.BIGINT.value
         return ColumnType.INTEGER.value
     if is_numeric_dtype(series):
         return ColumnType.NUMERIC.value
@@ -356,7 +359,8 @@ def describe_dataset(dataset: Dataset) -> DataSchema:
     # if any columns failed to auto infer print this warnings
     # moved to here to not annoy the user so much
     if any(x is None for x in list(features.values()) + list(additional_data.values())):
-        warnings.warn('Supported dtypes for auto infer are numerical, integer, boolean, string and categorical.\n'
+        warnings.warn('Supported dtypes for auto infer are '
+                      'numerical, integer, bigint, boolean, string and categorical.\n'
                       'You can set the type manually in the schema file/dict.\n'
                       'DateTime format is supported using iso format only.')
     return {'features': features, 'additional_data': additional_data}

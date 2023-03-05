@@ -11,7 +11,7 @@
 import enum
 import typing as t
 
-from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, Text
+import sqlalchemy as sa
 
 from deepchecks_monitoring.schema_models.model import TaskType
 
@@ -38,6 +38,7 @@ class ColumnType(str, enum.Enum):
 
     NUMERIC = "numeric"
     INTEGER = "integer"
+    BIGINT = "bigint"
     CATEGORICAL = "categorical"
     BOOLEAN = "boolean"
     TEXT = "text"
@@ -48,14 +49,15 @@ class ColumnType(str, enum.Enum):
     def to_sqlalchemy_type(self):
         """Return the SQLAlchemy type of the data type."""
         types_map = {
-            ColumnType.NUMERIC: Float,
-            ColumnType.INTEGER: Integer,
-            ColumnType.CATEGORICAL: Text,
-            ColumnType.BOOLEAN: Boolean,
-            ColumnType.TEXT: Text,
-            ColumnType.ARRAY_FLOAT: ARRAY(Float),
-            ColumnType.ARRAY_FLOAT_2D: ARRAY(Float),
-            ColumnType.DATETIME: DateTime(timezone=True)
+            ColumnType.NUMERIC: sa.Float,
+            ColumnType.INTEGER: sa.Integer,
+            ColumnType.BIGINT: sa.BigInteger,
+            ColumnType.CATEGORICAL: sa.Text,
+            ColumnType.BOOLEAN: sa.Boolean,
+            ColumnType.TEXT: sa.Text,
+            ColumnType.ARRAY_FLOAT: sa.ARRAY(sa.Float),
+            ColumnType.ARRAY_FLOAT_2D: sa.ARRAY(sa.Float),
+            ColumnType.DATETIME: sa.DateTime(timezone=True)
         }
         return types_map[self]
 
@@ -64,6 +66,7 @@ class ColumnType(str, enum.Enum):
         types_map = {
             ColumnType.NUMERIC: {"type": "number"},
             ColumnType.INTEGER: {"type": "integer", "maximum": 2147483647, "minimum": -2147483648},
+            ColumnType.BIGINT: {"type": "integer", "maximum": 9223372036854775807, "minimum": -9223372036854775808},
             ColumnType.CATEGORICAL: {"type": "string"},
             ColumnType.BOOLEAN: {"type": "boolean"},
             ColumnType.TEXT: {"type": "string"},
@@ -85,6 +88,7 @@ class ColumnType(str, enum.Enum):
         types_map = {
             ColumnType.NUMERIC: {"min": None, "max": None},
             ColumnType.INTEGER: {"min": None, "max": None},
+            ColumnType.BIGINT: {"min": None, "max": None},
             ColumnType.CATEGORICAL: {"values": []},
             ColumnType.BOOLEAN: {"values": []},
             ColumnType.TEXT: None,
@@ -129,7 +133,8 @@ def get_model_columns_by_type(task_type: TaskType, have_classes: bool) -> t.Tupl
         raise Exception(f"Not supported task type {task_type}")
 
 
-def column_types_to_table_columns(column_types: t.Dict[str, ColumnType], primary_key=SAMPLE_ID_COL) -> t.List[Column]:
+def column_types_to_table_columns(column_types: t.Dict[str, ColumnType], primary_key=SAMPLE_ID_COL) \
+        -> t.List[sa.Column]:
     """Get sqlalchemy columns from columns types sent from the user (out of ColumnDataType).
 
     All columns also have index defined on them for faster querying
@@ -144,7 +149,7 @@ def column_types_to_table_columns(column_types: t.Dict[str, ColumnType], primary
     List[sqlalchemy.Column]
     """
     return [
-        Column(
+        sa.Column(
             name,
             data_type.to_sqlalchemy_type(),
             index=True,
