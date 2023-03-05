@@ -75,12 +75,11 @@ dc_client = DeepchecksClient(host=host, token=token)
 # ----------------
 #
 # We'll start by downloading the training data from the deepchecks testing package. This training data will be used
-# to set the reference for the model version.
+# to set the reference for the model version. We'll also download the pre-calculated predictions for this data.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data, \
-    load_pre_calculated_prediction, load_pre_calculated_feature_importance
+from deepchecks.tabular.datasets.regression.airbnb import load_data_large
 
-train_df, _ = load_data(data_format='DataFrame')
+train_df, ref_predictions = load_data_large(data_format='DataFrame')
 train_df.head(2)
 
 # %%
@@ -155,9 +154,6 @@ feature_importance = load_pre_calculated_feature_importance()
 # we must also pass model predictions for the reference data. For classification tasks, not that it's highly recommended
 # to also send the predicted probabilities.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_pre_calculated_prediction
-ref_predictions, _ = load_pre_calculated_prediction()
-
 model_name = 'Rent Prediction - Example'
 
 model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name='ver_1',
@@ -178,8 +174,7 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # read more, refer to the :doc:`Production Data Guide </user-guide/tabular/tabular-production>`. Here we'll
 # show how to use the batch upload method.
 
-_, prod_data = load_data(data_format='DataFrame')
-_, prod_predictions = load_pre_calculated_prediction()
+prod_data, prod_predictions = load_data_large(data_format='DataFrame', load_train=False)
 
 # %%
 # We'll change the original timestamps so the samples are recent
@@ -192,31 +187,7 @@ prod_data[timestamp] = prod_data[timestamp] + (yesterdays_timestamp - prod_data[
 # Uploading a Batch of Data
 # -------------------------
 #
-# Introducing Some Issues
-# ~~~~~~~~~~~~~~~~~~~~~~~
 #
-# The data already has an issue we'll detect in this example - at a certain point in time, the samples belonging to
-# the "Harlem" neighborhood have been modified so that some values of room_types are now "None". Let's also
-# corrupt these samples, to reflect problematic model performance on these samples by introducing systematic error.
-
-bad_segment_indices = prod_data[(prod_data['neighbourhood'] == 'Harlem') & (prod_data['room_type'] == 'None')].index
-
-# %%
-# RMSE before systematic error:
-import numpy as np
-np.mean((prod_predictions[bad_segment_indices] - prod_data.loc[bad_segment_indices, label_col])**2)**0.5
-
-# %%
-# Introduce error:
-
-prod_predictions[bad_segment_indices] = prod_predictions[bad_segment_indices] + 2 + np.random.randn()
-
-# %%
-# RMSE after systematic error:
-
-np.mean((prod_predictions[bad_segment_indices] - prod_data.loc[bad_segment_indices, label_col])**2)**0.5
-
-# %%
 # Uploading the First Batch
 # ~~~~~~~~~~~~~~~~~~~~~~~~~
 #
