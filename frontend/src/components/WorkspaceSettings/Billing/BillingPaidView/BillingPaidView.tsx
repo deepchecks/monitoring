@@ -13,6 +13,7 @@ import { Subscriptions } from '../billing.types';
 const BillingPaidView = ({ subscriptions }: { subscriptions: Subscriptions[] }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [productQuantity, setProductQuantity] = useState(Number(subscriptions[0].quantity));
+  const [dialogQuantity, setDialogQuantity] = useState(1);
 
   const subscriptionId = subscriptions[0].id;
   const priceId = subscriptions[0].items.data[0].price.id;
@@ -24,7 +25,7 @@ const BillingPaidView = ({ subscriptions }: { subscriptions: Subscriptions[] }) 
   };
 
   const handleUpgradeClick = (quantity: number) => {
-    setProductQuantity(quantity);
+    setDialogQuantity(quantity);
     setIsDialogOpen(true);
   };
 
@@ -39,7 +40,7 @@ const BillingPaidView = ({ subscriptions }: { subscriptions: Subscriptions[] }) 
         isDialogOpen={isDialogOpen}
         handleCloseDialog={handleCloseDialog}
         subscriptionId={subscriptionId}
-        quantity={productQuantity}
+        quantity={dialogQuantity}
         priceId={priceId}
       />
     </Col16Gap>

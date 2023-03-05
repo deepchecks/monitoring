@@ -36,13 +36,13 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
   const [quantity, setQuantity] = useState(productQuantity);
 
   const modelPrice = 89;
-  const disableUpdate = quantity === productQuantity || quantity === 0;
+  const disableUpdate = quantity === productQuantity || quantity === 1;
   const totalPrice = productQuantity * modelPrice - modelPrice > 0 ? productQuantity * modelPrice - modelPrice : 0;
   const modifiedTotalPrice =
     quantity * modelPrice - modelPrice > 0 && quantity !== productQuantity && `$${quantity * modelPrice - modelPrice}`;
 
   const handlePlusModel = () => setQuantity(quantity + 1);
-  const handleMinusModel = () => quantity > 0 && setQuantity(quantity - 1);
+  const handleMinusModel = () => quantity > 1 && setQuantity(quantity - 1);
   const handleClick = () => handleUpgradeClick(quantity);
 
   return (
@@ -52,8 +52,8 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
           <StyledH3>{title(tierName as string)}</StyledH3>
           <BillingText color="gray">{availableModels(productQuantity)}</BillingText>
         </Col16Gap>
-        <Row16Gap width={'235px'} height={'60px'}>
-          <BillingPlanCardQuantityButton onClick={handleMinusModel} disabled={quantity === 0}>
+        <Row16Gap width={'240px'} height={'60px'}>
+          <BillingPlanCardQuantityButton onClick={handleMinusModel} disabled={quantity === 1}>
             {minusBtnLabel}
           </BillingPlanCardQuantityButton>
           <BillingCardAmountContainer>
@@ -65,7 +65,9 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
               {modifiedTotalPrice}
             </BillingText>
           </BillingCardAmountContainer>
-          <BillingPlanCardQuantityButton onClick={handlePlusModel}>{plusBtnLabel}</BillingPlanCardQuantityButton>
+          <BillingPlanCardQuantityButton onClick={handlePlusModel} padding={'4px'}>
+            {plusBtnLabel}
+          </BillingPlanCardQuantityButton>
         </Row16Gap>
       </RowAutoGap>
       <BillingSeparator />

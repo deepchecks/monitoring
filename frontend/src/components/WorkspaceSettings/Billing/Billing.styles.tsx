@@ -14,6 +14,8 @@ interface BillingUIProps {
   disabled?: boolean;
   bg?: string;
   align?: boolean;
+  width?: string;
+  padding?: string;
 }
 
 const BillingCardsContainer = styled(Row16Gap)`
@@ -34,7 +36,8 @@ const BillingText = styled.p<BillingUIProps>`
   font-size: ${p => p.fontSize ?? '1rem'};
   font-weight: ${p => p.weight ?? '400'};
   margin: ${p => p.margin ?? '0 auto 0 0'};
-  text-align ${p => p.align && 'center'}
+  text-align: ${p => p.align && 'center'};
+  width: ${p => p.width ?? 'auto'};
 `;
 
 const BillingCardButton = styled(Button)<BillingUIProps>`
@@ -81,9 +84,10 @@ const BillingPlanCardQuantityButton = styled.button<BillingUIProps>`
   font-size: 20px;
   font-weight: 800;
   border-radius: 50%;
-  height: 28px;
-  width: 28px;
+  height: 32px;
+  width: 32px;
   margin: 0 0 0 auto;
+  padding: ${p => p.padding ?? ''};
 `;
 
 const BillingTransactionContainer = styled(RowAutoGap)<BillingUIProps>`

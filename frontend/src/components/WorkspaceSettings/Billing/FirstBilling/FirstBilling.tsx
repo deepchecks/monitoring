@@ -51,7 +51,7 @@ const FirstBilling = () => {
 
   return (
     <FirstBillingContainer>
-      <BillingPlanCard handleUpgradeClick={handleUpgradeClick} productQuantity={0} />
+      <BillingPlanCard handleUpgradeClick={handleUpgradeClick} productQuantity={1} />
       <BillingText color="red">{errorMassage}</BillingText>
       {clientSecret && (
         <BillingPaymentWrapper clientSecret={clientSecret}>

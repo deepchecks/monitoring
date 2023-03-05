@@ -33,12 +33,12 @@ const BillingPlanCardDialog = (props: BillingPlanCardDialogProps) => {
   return (
     <ActionDialog
       open={isDialogOpen}
-      title="Upgrade Plan:"
+      title="Update Plan:"
       submitButtonAction={handleSubmit}
-      submitButtonLabel="Upgrade"
+      submitButtonLabel="Update"
       closeDialog={handleCloseDialog}
     >
-      <BillingText weight="600" margin="44px 0">
+      <BillingText weight="600" margin="44px 24px 84px">
         {totalPriceText}
       </BillingText>
     </ActionDialog>

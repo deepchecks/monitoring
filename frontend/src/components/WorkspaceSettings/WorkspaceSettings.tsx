@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 
+import { MemberSchema, retrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
+
 import Billing from './Billing/Billing';
+import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
+import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
 
 import { StyledH1 } from 'components/base/Text/Header.styles';
 
@@ -15,8 +19,24 @@ const constants = {
 
 const WorkspaceSettings = () => {
   const [value, setValue] = useState(0);
+  const [memberSettings, setMemberSettings] = useState<MemberSchema[]>();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
+  const isAdmin = memberSettings && memberSettings[0].is_admin;
+
+  const getMemberSettings = async () => {
+    const response = await retrieveOrganizationMembersApiV1OrganizationMembersGet();
+    setMemberSettings(response);
+    setIsLoading(false);
+  };
+
+  useEffect(() => void getMemberSettings(), []);
+
+  if (!isAdmin) {
+    return isLoading ? <BillingPaidSkeleton /> : <NotAdminDialog />;
+  }
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
@@ -24,7 +44,7 @@ const WorkspaceSettings = () => {
     <Box sx={{ width: '100%' }}>
       <StyledH1 margin="24px 0 8px">{constants.title}</StyledH1>
       <Box sx={{ borderBottom: 1 }}>
-        <Tabs value={value} onChange={handleChange}>
+        <Tabs value={value} onChange={handleTabChange}>
           <Tab label={constants.billingTabLabel} />
           <Tab label={constants.membersTabLabel} />
         </Tabs>

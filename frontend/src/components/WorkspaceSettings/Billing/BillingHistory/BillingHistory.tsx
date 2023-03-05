@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+import logger from 'helpers/services/logger';
 
 import BillingTransaction from './BillingTransaction';
 
@@ -6,16 +8,29 @@ import { StyledH3 } from 'components/base/Text/Header.styles';
 import { BillingCardContainer, BillingSeparator, BillingText, BillingTransactionContainer } from '../Billing.styles';
 import { Col16Gap } from 'components/base/Container/Container.styles';
 import { constants } from '../billing.constants';
+import { customInstance } from 'helpers/services/customAxios';
 
 const BillingHistory = () => {
-  const transactions = [
-    // TODO - Take from server
-    { date: 'date', amount: 'amount', plan: 'plan', models: 4, status: 'paid' },
-    { date: 'date', amount: 'amount', plan: 'plan', models: 4, status: 'paid' },
-    { date: 'date', amount: 'amount', plan: 'plan', models: 4, status: 'paid' },
-    { date: 'date', amount: 'amount', plan: 'plan', models: 4, status: 'paid' },
-    { date: 'date', amount: 'amount', plan: 'plan', models: 4, status: 'paid' }
-  ];
+  const [transactions, setTransactions] = useState([{ plan: '', models: 1, status: '', start_date: 4, end_date: 1 }]);
+
+  const tableHeaders = ['models', 'plan', 'status', 'start_date'];
+
+  useEffect(() => {
+    const getBillingHistory = async () => {
+      try {
+        const response = (await customInstance({
+          method: 'GET',
+          url: 'api/v1/billing/subscriptions-history'
+        })) as any;
+
+        setTransactions(response);
+      } catch (err) {
+        logger.error(err);
+      }
+    };
+
+    getBillingHistory();
+  }, []);
 
   return (
     <BillingCardContainer border>
@@ -25,8 +40,8 @@ const BillingHistory = () => {
       </Col16Gap>
       <BillingSeparator />
       <BillingTransactionContainer bg="white">
-        {Object.keys(transactions[0]).map((val, i) => (
-          <BillingText key={i} color="gray" weight="800">
+        {tableHeaders.map((val, i) => (
+          <BillingText key={i} color="gray" weight="800" width="20%">
             {val.toUpperCase()}
           </BillingText>
         ))}
