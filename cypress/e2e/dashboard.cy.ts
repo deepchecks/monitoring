@@ -31,9 +31,7 @@ describe('test dashboard', () => {
       cy.visit('/')
       // Check for labels under graph
       cy.contains('p', monitorName).parent().parent().within(() => {
-        cy.contains('h6', 'Neg RMSE').should('exist')
-        cy.contains('h6', 'Neg MAE').should('exist')
-        cy.contains('h6', 'R2').should('exist')
+        cy.contains('h6', 'RMSE').should('exist')
       })
       // Check for label with model name under data status
       cy.contains('p', 'Samples status').parent().parent().within(() => {

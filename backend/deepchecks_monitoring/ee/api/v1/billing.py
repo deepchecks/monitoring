@@ -9,17 +9,37 @@
 # ----------------------------------------------------------------------------
 """Module representing the endpoints for billing."""
 import typing as t
+from datetime import datetime
 
+import sqlalchemy as sa
 import stripe
 from fastapi import Depends, Request
 from pydantic.main import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.dependencies import SettingsDep
-from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest
-from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
+from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest, NotFound
+from deepchecks_monitoring.public_models import Billing, Organization, User
+from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.utils import auth
 
-from .global_router import router
+from .routers import cloud_router as router
+
+
+class BillingSchema(BaseModel):
+    """Billing schema."""
+
+    id: int
+    subscription_id: t.Optional[str]
+    bought_models: int
+    last_update: t.Optional[datetime]
+    started_at: datetime
+    organization_id: int
+
+    class Config:
+        """Schema config."""
+
+        orm_mode = True
 
 
 class CheckoutSchema(BaseModel):
@@ -47,8 +67,50 @@ class ProductResponseSchema(BaseModel):
 
     id: str
     default_price: str
+    unit_amount: int
     name: str
     description: t.Optional[str]
+
+
+class SubscriptionSchema(BaseModel):
+    """Schema for the request of create subscription endpoint."""
+
+    models: int
+    subscription_id: str
+    status: str
+    start_date: int
+    current_period_end: int
+    cancel_at_period_end: bool
+    plan: str
+
+
+def _get_subscription(stripe_customer_id: str, status: t.Optional[str]) -> t.List[SubscriptionSchema]:
+    subscriptions = stripe.Subscription.list(customer=stripe_customer_id, status=status)["data"]
+    product_dict = {product["id"]: product["name"] for product in stripe.Product.list()["data"]}
+    subscriptions_schemas = []
+    for subscription in subscriptions:
+        subscription_schema = SubscriptionSchema(
+            models=subscription["quantity"],
+            subscription_id=subscription["id"],
+            status=subscription["status"],
+            start_date=subscription["start_date"],
+            current_period_end=subscription["current_period_end"],
+            cancel_at_period_end=subscription["cancel_at_period_end"],
+            plan=product_dict[subscription["items"]["data"][0]["price"]["product"]]
+        )
+        subscriptions_schemas.append(subscription_schema)
+    return subscriptions_schemas
+
+
+@router.get("/billing/subscriptions-history", tags=["billing"], response_model=t.List[SubscriptionSchema])
+async def list_all_subscriptions(
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+):
+    """Get the list of subscriptions history of the user from stripe."""
+    try:
+        return _get_subscription(user.organization.stripe_customer_id, "all")
+    except Exception as e:  # pylint: disable=broad-except
+        raise BadRequest(str(e)) from e
 
 
 @router.get("/billing/available-products", tags=["billing"], response_model=t.List[ProductResponseSchema])
@@ -58,9 +120,10 @@ async def list_all_products(
     """Get the list of available products from stripe."""
     try:
         product_list = stripe.Product.list()
-        return [ProductResponseSchema(**x) for x in product_list["data"]]
+        price_dict = {price["id"]: price["unit_amount"] for price in stripe.Price.list()["data"]}
+        return [ProductResponseSchema(unit_amount=price_dict[x["default_price"]], **x) for x in product_list["data"]]
     except Exception as e:  # pylint: disable=broad-except
-        raise BadRequest from e
+        raise BadRequest(str(e)) from e
 
 
 @router.post("/billing/payment-method", tags=["billing"])
@@ -81,7 +144,7 @@ async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(
 
         return
     except Exception as e:  # pylint: disable=broad-except
-        return BadRequest(str(e))
+        raise BadRequest(str(e)) from e
 
 
 @router.get("/billing/payment-method", tags=["billing"])
@@ -95,7 +158,19 @@ async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
             type="card"
         )
     except Exception as e:  # pylint: disable=broad-except
-        raise AccessForbidden from e
+        raise AccessForbidden(str(e)) from e
+
+
+@router.get("/billing", tags=["billing"], response_model=BillingSchema)
+async def get_billing_info(user: User = Depends(auth.AdminUser()),
+                           session: AsyncSession = AsyncSessionDep):
+    """Return the payment method of the organization."""
+    billing: Billing = (await session
+                        .execute(sa.select(Billing)
+                                 .where(Billing.organization_id == user.organization_id))).scalars().first()
+    if billing is None:
+        return NotFound("No billing Info for current organization.")
+    return BillingSchema.from_orm(billing)
 
 
 @router.post("/billing/subscription", tags=["billing"], response_model=SubscriptionCreationResponse)
@@ -123,7 +198,7 @@ async def create_subscription(
             subscription_id=subscription.id
         )
     except Exception as e:  # pylint: disable=broad-except
-        raise BadRequest from e
+        raise BadRequest(str(e)) from e
 
 
 @router.get("/billing/subscription", tags=["billing"], response_model=t.List)
@@ -134,7 +209,7 @@ async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
                                                  expand=["data.latest_invoice.payment_intent"])
         return subscriptions["data"]
     except Exception as e:  # pylint: disable=broad-except
-        raise AccessForbidden from e
+        raise AccessForbidden(str(e)) from e
 
 
 @router.delete("/billing/subscription/{subscription_id}", tags=["billing"])
@@ -181,7 +256,9 @@ def update_subscription(
 
 
 @router.post("/billing/webhook", tags=["billing"])
-async def stripe_webhook(request: Request, settings=SettingsDep):
+async def stripe_webhook(request: Request,
+                         settings=SettingsDep,
+                         session: AsyncSession = AsyncSessionDep):
     """Webhook to catch stripe events."""
     # You can use webhooks to receive information about asynchronous payment events.
     # For more about our webhook events check out https://stripe.com/docs/webhooks.
@@ -228,5 +305,29 @@ async def stripe_webhook(request: Request, settings=SettingsDep):
         # handle subscription canceled automatically based
         # upon your subscription settings. Or if the user cancels it.
         print(data)
+
+    if event_type in [
+        "charge.succeeded",
+        "customer.subscription.created",
+        "customer.subscription.deleted",
+        "customer.subscription.updated"
+    ]:
+        org: Organization = await session.scalar(sa.select(Organization)
+                                                 .where(Organization.stripe_customer_id == data["object"]["customer"]))
+        if org is not None:
+            billing: Billing = await session.scalar(sa.select(Billing).where(Billing.organization_id == org.id))
+            if billing is None:
+                billing = Billing(organization_id=org.id)
+                session.add(billing)
+            subs = _get_subscription(org.stripe_customer_id, "active")
+            if len(subs) > 0:
+                billing.bought_models = subs[0].models
+                billing.subscription_id = subs[0].subscription_id
+                org.tier = OrgTier.BASIC
+            else:
+                billing.bought_models = 0
+                billing.subscription_id = None
+                org.tier = OrgTier.FREE
+            await session.flush()
 
     return {"status": "success"}

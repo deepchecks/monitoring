@@ -95,8 +95,6 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
-export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
-
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
@@ -153,24 +151,6 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
 /**
- * Schema for organization.
- */
-export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
-  id: number;
-  name: string;
-}
-
-/**
- * Schema for the organization.
- */
-export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
-  name: string;
-  is_slack_connected: boolean;
-  slack_notification_levels: AlertSeverity[];
-  email_notification_levels: AlertSeverity[];
-}
-
-/**
  * Schema for getting rows in a specific window.
  */
 export interface WindowDataSchema {
@@ -219,7 +199,7 @@ export interface UserSchema {
   created_at: string;
   full_name?: string;
   picture_url?: string;
-  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
+  organization?: OrganizationSchema;
 }
 
 /**
@@ -249,6 +229,19 @@ export type TaskType = unknown;
 export interface TableDataSchema {
   filter?: DataFilterList;
   rows_count?: number;
+}
+
+/**
+ * Schema for the request of create subscription endpoint.
+ */
+export interface SubscriptionSchema {
+  models: number;
+  subscription_id: string;
+  status: string;
+  start_date: number;
+  current_period_end: number;
+  cancel_at_period_end: boolean;
+  plan: string;
 }
 
 /**
@@ -309,6 +302,7 @@ export interface SingleCheckRunOptions {
 export interface ProductResponseSchema {
   id: string;
   default_price: string;
+  unit_amount: number;
   name: string;
   description?: string;
 }
@@ -349,6 +343,28 @@ export interface PagerDutyWebhookProperties {
 export interface OrganizationUpdateSchema {
   slack_notification_levels?: AlertSeverity[];
   email_notification_levels?: AlertSeverity[];
+}
+
+/**
+ * Organization tier.
+ */
+export type OrgTier = typeof OrgTier[keyof typeof OrgTier];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const OrgTier = {
+  FREE: 'FREE',
+  BASIC: 'BASIC',
+  SCALE: 'SCALE',
+  DEDICATED: 'DEDICATED'
+} as const;
+
+/**
+ * Schema for organization.
+ */
+export interface OrganizationSchema {
+  id: number;
+  name: string;
+  tier: OrgTier;
 }
 
 /**
@@ -435,18 +451,6 @@ export interface MonitorRunSchema {
 }
 
 /**
- * Add to single window monitor options frequency and aggregation window to make it multi window.
- */
-export interface MonitorOptions {
-  filter?: DataFilterList;
-  end_time: string;
-  start_time: string;
-  additional_kwargs?: MonitorCheckConfSchema;
-  frequency?: number;
-  aggregation_window?: number;
-}
-
-/**
  * Schema to get a monitor script/notebook.
  */
 export interface MonitorNotebookSchema {
@@ -480,6 +484,18 @@ export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
 export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
+}
+
+/**
+ * Add to single window monitor options frequency and aggregation window to make it multi window.
+ */
+export interface MonitorOptions {
+  filter?: DataFilterList;
+  end_time: string;
+  start_time: string;
+  additional_kwargs?: MonitorCheckConfSchema;
+  frequency?: number;
+  aggregation_window?: number;
 }
 
 export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
@@ -707,6 +723,19 @@ export interface HTTPValidationError {
 }
 
 /**
+ * Schema to be returned to the client for the features control.
+ */
+export interface FeaturesSchema {
+  max_models: number;
+  signup_enabled: boolean;
+  rows_per_minute: number;
+  custom_checks_enabled: boolean;
+  data_retention_months: number;
+  monthly_predictions_limit: number;
+  sso_enabled: boolean;
+}
+
+/**
  * Filter to be used on data, column can be feature/non-feature and value can be numeric/string.
  */
 export interface DataFilter {
@@ -904,6 +933,15 @@ export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost 
   batch: Blob;
 }
 
+export interface BillingSchema {
+  id: number;
+  subscription_id?: string;
+  bought_models: number;
+  last_update?: string;
+  started_at: string;
+  organization_id: number;
+}
+
 /**
  * Response for auto frequency.
  */
@@ -1024,7 +1062,7 @@ export interface AlertRuleConfigSchema {
  * @summary Hello World
  */
 export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) => {
-  return customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
+  return customInstance<unknown>({ url: `/api/v1/say-hello`, method: 'get', signal });
 };
 
 export const getHelloWorldApiV1SayHelloGetQueryKey = () => [`/api/v1/say-hello`];
@@ -1951,7 +1989,7 @@ export const useListWebhooksApiV1AlertWebhooksGet = <
 export const createWebhookApiV1AlertWebhooksPost = (
   createWebhookApiV1AlertWebhooksPostBody: CreateWebhookApiV1AlertWebhooksPostBody
 ) => {
-  return customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
+  return customInstance<unknown>({
     url: `/api/v1/alert-webhooks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -2671,8 +2709,7 @@ notebook_options : CheckNotebookSchema
     The options for the check notebook.
 session : AsyncSession, default: AsyncSessionDep
     The database session to use.
-host : str, default: HostDep
-    The host of the DeepChecks server.
+settings : Settings, default: SettingsDep
 
 Returns
 -------
@@ -3170,8 +3207,7 @@ notebook_options : MonitorNotebookSchema
     The options for the notebook.
 session : AsyncSession, default: AsyncSessionDep
     The database session to use.
-host : str, default: HostDep
-    The host of the DeepChecks server.
+settings : Settings, default: SettingsDep
 
 Returns
 -------
@@ -5376,201 +5412,6 @@ export const useGetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet =
 };
 
 /**
- * Redirect user to the slack authorization page.
-
-codeflow:
-1. Authenticate user
-2. Verify whether user has permissions to do operation
-3. Issue 'installation state' to prevent forgery attack
-4. Generate redirection URL
-5. Set 'installation state' cookie
-6. Redirect user to slack authorization page.
-
-Slack authorization URL description:
-https://slack.com/oauth/v2/authorize?state=&client_id=&scope=&user_scope=
-state - installation state, slack will include it in request with exchange code
-client_id - application client id
-scope - list of bot permissions
-user_scope -
- * @summary Slack-Authorization-Redirect
- */
-export const slackAuthorizationRedirectApiV1SlackAuthorizeGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/slack.authorize`, method: 'get', signal });
-};
-
-export const getSlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryKey = () => [`/api/v1/slack.authorize`];
-
-export type SlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>
->;
-export type SlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryError = ErrorType<unknown>;
-
-export const useSlackAuthorizationRedirectApiV1SlackAuthorizeGet = <
-  TData = Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getSlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>> = ({
-    signal
-  }) => slackAuthorizationRedirectApiV1SlackAuthorizeGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Finish slack installation.
-
-When a user confirms application (bot) installation,
-slack redirects him back to the 'redirect_uri' URL
-provided within the authorization request.
-
-Slack will include the next query parameters with the redirection URL:
-code - access token exchange code
-error - error message if something went wrong
-state - installation state token that was passed with an authorization request.
- * @summary Slack-Installation-Callback
- */
-export const slackInstallationCallbackApiV1SlackInstallGet = (
-  params: SlackInstallationCallbackApiV1SlackInstallGetParams,
-  signal?: AbortSignal
-) => {
-  return customInstance<unknown>({ url: `/api/v1/slack.install`, method: 'get', params, signal });
-};
-
-export const getSlackInstallationCallbackApiV1SlackInstallGetQueryKey = (
-  params: SlackInstallationCallbackApiV1SlackInstallGetParams
-) => [`/api/v1/slack.install`, ...(params ? [params] : [])];
-
-export type SlackInstallationCallbackApiV1SlackInstallGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>
->;
-export type SlackInstallationCallbackApiV1SlackInstallGetQueryError = ErrorType<HTTPValidationError>;
-
-export const useSlackInstallationCallbackApiV1SlackInstallGet = <
-  TData = Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>,
-  TError = ErrorType<HTTPValidationError>
->(
-  params: SlackInstallationCallbackApiV1SlackInstallGetParams,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>, TError, TData>;
-  }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getSlackInstallationCallbackApiV1SlackInstallGetQueryKey(params);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>> = ({
-    signal
-  }) => slackInstallationCallbackApiV1SlackInstallGet(params, signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Return list of slack installations.
- * @summary Retrieve Instalations
- */
-export const retrieveInstalationsApiV1SlackAppsGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/slack/apps`, method: 'get', signal });
-};
-
-export const getRetrieveInstalationsApiV1SlackAppsGetQueryKey = () => [`/api/v1/slack/apps`];
-
-export type RetrieveInstalationsApiV1SlackAppsGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>
->;
-export type RetrieveInstalationsApiV1SlackAppsGetQueryError = ErrorType<unknown>;
-
-export const useRetrieveInstalationsApiV1SlackAppsGet = <
-  TData = Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getRetrieveInstalationsApiV1SlackAppsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>> = ({ signal }) =>
-    retrieveInstalationsApiV1SlackAppsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Remove slack installation.
- * @summary Remove Installation
- */
-export const removeInstallationApiV1SlackAppsAppIdDelete = (appId: number) => {
-  return customInstance<unknown>({ url: `/api/v1/slack/apps/${appId}`, method: 'delete' });
-};
-
-export type RemoveInstallationApiV1SlackAppsAppIdDeleteMutationResult = NonNullable<
-  Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>
->;
-
-export type RemoveInstallationApiV1SlackAppsAppIdDeleteMutationError = ErrorType<HTTPValidationError>;
-
-export const useRemoveInstallationApiV1SlackAppsAppIdDelete = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>,
-    TError,
-    { appId: number },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>,
-    { appId: number }
-  > = props => {
-    const { appId } = props ?? {};
-
-    return removeInstallationApiV1SlackAppsAppIdDelete(appId);
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>,
-    TError,
-    { appId: number },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
  * Redirect to the Auth0 login page.
  * @summary Auth0 Login
  */
@@ -5687,6 +5528,52 @@ export const useLogoutApiV1AuthLogoutGet = <
 };
 
 /**
+ * Get the list of subscriptions history of the user from stripe.
+ * @summary List All Subscriptions
+ */
+export const listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet = (signal?: AbortSignal) => {
+  return customInstance<SubscriptionSchema[]>({ url: `/api/v1/billing/subscriptions-history`, method: 'get', signal });
+};
+
+export const getListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryKey = () => [
+  `/api/v1/billing/subscriptions-history`
+];
+
+export type ListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>
+>;
+export type ListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryError = ErrorType<unknown>;
+
+export const useListAllSubscriptionsApiV1BillingSubscriptionsHistoryGet = <
+  TData = Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>,
+    TError,
+    TData
+  >;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>> = ({
+    signal
+  }) => listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet(signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
  * Get the list of available products from stripe.
  * @summary List All Products
  */
@@ -5731,7 +5618,7 @@ export const useListAllProductsApiV1BillingAvailableProductsGet = <
  * @summary Get Payment Method
  */
 export const getPaymentMethodApiV1BillingPaymentMethodGet = (signal?: AbortSignal) => {
-  return customInstance<unknown[]>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
+  return customInstance<unknown>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
 };
 
 export const getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey = () => [`/api/v1/billing/payment-method`];
@@ -5813,6 +5700,45 @@ export const useUpdatePaymentMethodApiV1BillingPaymentMethodPost = <
     { data: PaymentMethodSchema },
     TContext
   >(mutationFn, mutationOptions);
+};
+
+/**
+ * Return the payment method of the organization.
+ * @summary Get Billing Info
+ */
+export const getBillingInfoApiV1BillingGet = (signal?: AbortSignal) => {
+  return customInstance<BillingSchema>({ url: `/api/v1/billing`, method: 'get', signal });
+};
+
+export const getGetBillingInfoApiV1BillingGetQueryKey = () => [`/api/v1/billing`];
+
+export type GetBillingInfoApiV1BillingGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>
+>;
+export type GetBillingInfoApiV1BillingGetQueryError = ErrorType<unknown>;
+
+export const useGetBillingInfoApiV1BillingGet = <
+  TData = Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBillingInfoApiV1BillingGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>> = ({ signal }) =>
+    getBillingInfoApiV1BillingGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
 };
 
 /**
@@ -6139,11 +6065,7 @@ export const useCreateInviteApiV1OrganizationInvitePut = <
  * @summary Retrive Organization
  */
 export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) => {
-  return customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
-    url: `/api/v1/organization`,
-    method: 'get',
-    signal
-  });
+  return customInstance<unknown>({ url: `/api/v1/organization`, method: 'get', signal });
 };
 
 export const getRetriveOrganizationApiV1OrganizationGetQueryKey = () => [`/api/v1/organization`];
@@ -6359,6 +6281,52 @@ export const useLeaveOrganizationApiV1OrganizationLeavePost = <
 };
 
 /**
+ * Get available features
+ * @summary Get Available Features
+ */
+export const getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet = (signal?: AbortSignal) => {
+  return customInstance<FeaturesSchema>({ url: `/api/v1/organization/available-features`, method: 'get', signal });
+};
+
+export const getGetAvailableFeaturesApiV1OrganizationAvailableFeaturesGetQueryKey = () => [
+  `/api/v1/organization/available-features`
+];
+
+export type GetAvailableFeaturesApiV1OrganizationAvailableFeaturesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet>>
+>;
+export type GetAvailableFeaturesApiV1OrganizationAvailableFeaturesGetQueryError = ErrorType<unknown>;
+
+export const useGetAvailableFeaturesApiV1OrganizationAvailableFeaturesGet = <
+  TData = Awaited<ReturnType<typeof getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet>>,
+    TError,
+    TData
+  >;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAvailableFeaturesApiV1OrganizationAvailableFeaturesGetQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet>>
+  > = ({ signal }) => getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet(signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
  * Get info needed for the complete details page.
  * @summary Get Complete Details
  */
@@ -6445,49 +6413,6 @@ export const useUpdateCompleteDetailsApiV1UsersCompleteDetailsPost = <
     Awaited<ReturnType<typeof updateCompleteDetailsApiV1UsersCompleteDetailsPost>>,
     TError,
     { data: CompleteDetailsUpdateSchema },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
- * Leave organization.
- * @summary Leave Organization
- */
-export const leaveOrganizationApiV1UsersLeaveOrganizationPost = () => {
-  return customInstance<unknown>({ url: `/api/v1/users/leave-organization`, method: 'post' });
-};
-
-export type LeaveOrganizationApiV1UsersLeaveOrganizationPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>
->;
-
-export type LeaveOrganizationApiV1UsersLeaveOrganizationPostMutationError = ErrorType<unknown>;
-
-export const useLeaveOrganizationApiV1UsersLeaveOrganizationPost = <
-  TError = ErrorType<unknown>,
-  TVariables = void,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
-    TError,
-    TVariables,
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
-    TVariables
-  > = () => {
-    return leaveOrganizationApiV1UsersLeaveOrganizationPost();
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof leaveOrganizationApiV1UsersLeaveOrganizationPost>>,
-    TError,
-    TVariables,
     TContext
   >(mutationFn, mutationOptions);
 };
@@ -6643,4 +6568,199 @@ export const useEulaAcceptanceApiV1UsersAcceptEulaGet = <
   query.queryKey = queryKey;
 
   return query;
+};
+
+/**
+ * Redirect user to the slack authorization page.
+
+codeflow:
+1. Authenticate user
+2. Verify whether user has permissions to do operation
+3. Issue 'installation state' to prevent forgery attack
+4. Generate redirection URL
+5. Set 'installation state' cookie
+6. Redirect user to slack authorization page.
+
+Slack authorization URL description:
+https://slack.com/oauth/v2/authorize?state=&client_id=&scope=&user_scope=
+state - installation state, slack will include it in request with exchange code
+client_id - application client id
+scope - list of bot permissions
+user_scope -
+ * @summary Slack-Authorization-Redirect
+ */
+export const slackAuthorizationRedirectApiV1SlackAuthorizeGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/slack.authorize`, method: 'get', signal });
+};
+
+export const getSlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryKey = () => [`/api/v1/slack.authorize`];
+
+export type SlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>
+>;
+export type SlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryError = ErrorType<unknown>;
+
+export const useSlackAuthorizationRedirectApiV1SlackAuthorizeGet = <
+  TData = Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSlackAuthorizationRedirectApiV1SlackAuthorizeGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>> = ({
+    signal
+  }) => slackAuthorizationRedirectApiV1SlackAuthorizeGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof slackAuthorizationRedirectApiV1SlackAuthorizeGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Finish slack installation.
+
+When a user confirms application (bot) installation,
+slack redirects him back to the 'redirect_uri' URL
+provided within the authorization request.
+
+Slack will include the next query parameters with the redirection URL:
+code - access token exchange code
+error - error message if something went wrong
+state - installation state token that was passed with an authorization request.
+ * @summary Slack-Installation-Callback
+ */
+export const slackInstallationCallbackApiV1SlackInstallGet = (
+  params: SlackInstallationCallbackApiV1SlackInstallGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<unknown>({ url: `/api/v1/slack.install`, method: 'get', params, signal });
+};
+
+export const getSlackInstallationCallbackApiV1SlackInstallGetQueryKey = (
+  params: SlackInstallationCallbackApiV1SlackInstallGetParams
+) => [`/api/v1/slack.install`, ...(params ? [params] : [])];
+
+export type SlackInstallationCallbackApiV1SlackInstallGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>
+>;
+export type SlackInstallationCallbackApiV1SlackInstallGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useSlackInstallationCallbackApiV1SlackInstallGet = <
+  TData = Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  params: SlackInstallationCallbackApiV1SlackInstallGetParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>, TError, TData>;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSlackInstallationCallbackApiV1SlackInstallGetQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>> = ({
+    signal
+  }) => slackInstallationCallbackApiV1SlackInstallGet(params, signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof slackInstallationCallbackApiV1SlackInstallGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Return list of slack installations.
+ * @summary Retrieve Instalations
+ */
+export const retrieveInstalationsApiV1SlackAppsGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/slack/apps`, method: 'get', signal });
+};
+
+export const getRetrieveInstalationsApiV1SlackAppsGetQueryKey = () => [`/api/v1/slack/apps`];
+
+export type RetrieveInstalationsApiV1SlackAppsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>
+>;
+export type RetrieveInstalationsApiV1SlackAppsGetQueryError = ErrorType<unknown>;
+
+export const useRetrieveInstalationsApiV1SlackAppsGet = <
+  TData = Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRetrieveInstalationsApiV1SlackAppsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>> = ({ signal }) =>
+    retrieveInstalationsApiV1SlackAppsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof retrieveInstalationsApiV1SlackAppsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Remove slack installation.
+ * @summary Remove Installation
+ */
+export const removeInstallationApiV1SlackAppsAppIdDelete = (appId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/slack/apps/${appId}`, method: 'delete' });
+};
+
+export type RemoveInstallationApiV1SlackAppsAppIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>
+>;
+
+export type RemoveInstallationApiV1SlackAppsAppIdDeleteMutationError = ErrorType<HTTPValidationError>;
+
+export const useRemoveInstallationApiV1SlackAppsAppIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>,
+    TError,
+    { appId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>,
+    { appId: number }
+  > = props => {
+    const { appId } = props ?? {};
+
+    return removeInstallationApiV1SlackAppsAppIdDelete(appId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof removeInstallationApiV1SlackAppsAppIdDelete>>,
+    TError,
+    { appId: number },
+    TContext
+  >(mutationFn, mutationOptions);
 };

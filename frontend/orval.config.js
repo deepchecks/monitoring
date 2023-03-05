@@ -9,7 +9,7 @@ export default defineConfig({
       prettier: true,
       override: {
         mutator: {
-          path: './src/services/customAxios.ts',
+          path: './src/helpers/services/customAxios.ts',
           name: 'customInstance'
         }
       }

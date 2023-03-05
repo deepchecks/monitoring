@@ -27,6 +27,7 @@ class Billing(Base):
     __tablename__ = "billing"
 
     id = sa.Column(sa.Integer, primary_key=True)
+    subscription_id = sa.Column(sa.String(100), nullable=True)
     bought_models = sa.Column(sa.Integer, nullable=False, server_default=sa.literal(0))
     last_update = sa.Column(sa.DateTime(timezone=True), nullable=True, onupdate=sa.func.now())
     started_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
