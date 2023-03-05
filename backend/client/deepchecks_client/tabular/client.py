@@ -24,8 +24,8 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular import Dataset
 from deepchecks.tabular.checks import (NewCategoryTrainTest, NewLabelTrainTest, SingleDatasetPerformance,
-                                       TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift)
-from deepchecks.tabular.checks.data_integrity import PercentOfNulls
+                                       TrainTestFeatureDrift, TrainTestLabelDrift, TrainTestPredictionDrift, MixedNulls,
+                                       StringMismatch, PercentOfNulls)
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
@@ -542,7 +542,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             'Prediction Drift': TrainTestPredictionDrift(min_samples=100),
             'Label Drift': TrainTestLabelDrift(ignore_na=True, min_samples=100),
             'Percent Of Nulls': PercentOfNulls(),
-            'New Category Train-Test': NewCategoryTrainTest()
+            'New Category Train-Test': NewCategoryTrainTest(),
+            'Mixed Nulls': MixedNulls(),
+            'String Mismatch': StringMismatch(),
         }
 
         if task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
@@ -564,11 +566,14 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         self.add_alert_rule(check_name='New Category Train-Test', threshold=0.01, frequency=frequency,
                             monitor_name='New Category Train-Test', add_monitor_to_dashboard=True,
                             alert_severity='mid')
+        self.add_alert_rule(check_name='Mixed Nulls', threshold=0.0, frequency=frequency,
+                            monitor_name='Mixed Nulls', alert_severity='mid')
+        self.add_alert_rule(check_name='String Mismatch', threshold=0.0, frequency=frequency,
+                            monitor_name='String Mismatch', alert_severity='mid')
 
         if task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
             self.add_alert_rule(check_name='New Label Train-Test', threshold=0.01, frequency=frequency,
-                                monitor_name='New Label Train-Test', add_monitor_to_dashboard=True,
-                                alert_severity='high')
+                                monitor_name='New Label Train-Test', alert_severity='high')
 
         self.add_monitor(check_name='Performance', frequency=frequency, name='Performance')
 

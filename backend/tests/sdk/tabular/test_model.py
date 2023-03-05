@@ -81,7 +81,7 @@ def test_alert_rule_creation_for_existing_monitor(deepchecks_sdk: DeepchecksClie
     monitor_id = model_client.add_monitor(checks_name, frequency=86400, lookback=86400 * 30)
     assert monitor_id > 0
     alert_id = model_client.add_alert_rule_on_existing_monitor(monitor_id, 0.3)
-    assert alert_id == 6
+    assert alert_id == 8
 
 
 async def test_alert_rule_creation_for_new_monitor(
@@ -110,11 +110,11 @@ async def test_default_checks_creation(deepchecks_sdk: DeepchecksClient):
         create_model_defaults=True
     )
     assert model_client.model["id"] == 1
-    assert len(model_client.get_checks()) == 7
+    assert len(model_client.get_checks()) == 9
 
     model_client.add_checks({"check": SingleDatasetPerformance()})
     assert "check" in model_client.get_checks().keys()
     monitor_id = model_client.add_monitor("check", 86400)
-    assert monitor_id == 7
+    assert monitor_id == 9
     alert_id = model_client.add_alert_rule("check", 0.3, 86400)
-    assert alert_id == 6
+    assert alert_id == 8
