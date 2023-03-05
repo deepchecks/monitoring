@@ -553,17 +553,17 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         self.add_checks(checks=checks)
 
-        self.add_alert_rule(check_name='Feature Drift', threshold=0.25, frequency=frequency, alert_severity='high',
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.15, frequency=frequency, alert_severity='high',
                             monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True,
                             kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['l2_weighted']}})
 
-        self.add_alert_rule(check_name='Prediction Drift', threshold=0.15, frequency=frequency,
+        self.add_alert_rule(check_name='Prediction Drift', threshold=0.2, frequency=frequency,
                             monitor_name='Prediction Drift', add_monitor_to_dashboard=True, alert_severity='high')
-        self.add_alert_rule(check_name='Label Drift', threshold=0.15, frequency=frequency,
-                            monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='high')
+        self.add_alert_rule(check_name='Label Drift', threshold=0.2, frequency=frequency,
+                            monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='critical')
         self.add_alert_rule(check_name='New Category Train-Test', threshold=0.01, frequency=frequency,
                             monitor_name='New Category Train-Test', add_monitor_to_dashboard=True,
-                            alert_severity='high')
+                            alert_severity='mid')
 
         if task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
             self.add_alert_rule(check_name='New Label Train-Test', threshold=0.01, frequency=frequency,

@@ -14,14 +14,14 @@ The following aggregation methods are available:
 * Mean - The mean of the scores.
 * Weighted - The weighted mean of the scores, where the weights are the feature importance values.
 * :ref:`L2 Weighted <aggregation_methods__l2_weighted>` (Default).
+* :ref:`L3 Weighted <aggregation_methods__l3_weighted>`.
 
 .. _aggregation_methods__l2_weighted:
 L2 Weighted
 ===========
-L2 norm over the combination of per-feature values and feature importance, minus the
-L2 norm of feature importance alone, specifically:
+L2 norm over the per-feature values weighted by the feature importance, specifically:
 
-``||FEATURE_IMPORTANCE + PER_FEATURE_VALUES|| - ||FEATURE_IMPORTANCE||``
+``|FEATURE_IMPORTANCE * PER_FEATURE_VALUES^2|^(1/2)``
 
 Note that for this method, the feature importance values are normalized to sum to 1.
 
@@ -31,3 +31,15 @@ The main benefits of this method are:
   effect of features with very low importance.
 * This method showed the highest correlation with the actual performance degradation (the change that we're
   ultimately trying to predict), when compared with other methods across various use cases.
+
+.. _aggregation_methods__l3_weighted:
+L3 Weighted
+===========
+Similar to the :ref:`L2 Weighted <aggregation_methods__l2_weighted>` method, but using the L3 norm:
+
+``|FEATURE_IMPORTANCE * PER_FEATURE_VALUES^3|^(1/3)``
+
+In comparison to the L2 method, this method gives less weight to the feature importance thus it is recommended
+to use this method when your model is sensitive to drift in features with low importance. In addition, this method
+returns higher values the the :ref:`L2 Weighted <aggregation_methods__l2_weighted>` method, so if chosen it is
+recommended to update the default alert threshold accordingly.
