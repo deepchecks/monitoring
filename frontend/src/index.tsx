@@ -1,15 +1,54 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material';
+import { BrowserRouter, useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from 'react-router-dom';
+import { hotjar } from 'react-hotjar';
+import mixpanel from 'mixpanel-browser';
 import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
+import * as Sentry from '@sentry/react';
+import { CaptureConsole } from '@sentry/integrations';
+import { BrowserTracing } from '@sentry/tracing';
 
+import { ThemeProvider } from '@mui/material';
 import { theme } from './theme';
 
 import App from './App';
-import InitializationProvider from 'components/Providers/InitializationProvider';
+
+const sentryEnv = process.env.REACT_APP_SENTRY_ENV;
+const sentryDsn = process.env.REACT_APP_SENTRY_DSN;
+
+Sentry.init({
+  dsn: sentryDsn,
+  integrations: [
+    new BrowserTracing({
+      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+        React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes
+      )
+    }),
+    new CaptureConsole({
+      levels: ['warn', 'error', 'info']
+    })
+  ],
+  tracesSampleRate: 1,
+  environment: sentryEnv,
+  denyUrls: [new RegExp('https?://localhost*'), new RegExp('https?://127.0.0.1*')]
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+const hotjarId = process.env.REACT_APP_HJ_ID;
+const hotjarSv = process.env.REACT_APP_HJ_SV;
+const mixpanelId = process.env.REACT_APP_MIXPANEL_ID;
+
+if (hotjarId && hotjarSv) {
+  hotjar.initialize(+hotjarId, +hotjarSv);
+}
+
+if (mixpanelId) {
+  mixpanel.init(mixpanelId, { ignore_dnt: true });
+}
 
 (async () => {
   const LDProvider = await asyncWithLDProvider({
@@ -28,9 +67,7 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
     <BrowserRouter>
       <ThemeProvider theme={theme}>
         <LDProvider>
-          <InitializationProvider>
-            <App />
-          </InitializationProvider>
+          <App />
         </LDProvider>
       </ThemeProvider>
     </BrowserRouter>
