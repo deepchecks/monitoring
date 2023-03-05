@@ -368,3 +368,14 @@ class ResourcesProvider(BaseResourcesProvider):
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""
         return FeaturesControl()
+
+    def get_client_configuration(self) -> dict:
+        """Return configuration to be used in client side."""
+        return {
+            "sentryDsn": None,
+            "stripeApiKey": None,
+            "lauchdarklySdkKey": None,
+            "environment": None,
+            "mixpanel_id": None,
+            "is_cloud": False
+        }

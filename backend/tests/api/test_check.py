@@ -18,7 +18,7 @@ import pendulum as pdl
 import pytest
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepdiff import DeepDiff
-from hamcrest import assert_that, contains_exactly, has_entries, has_length, close_to
+from hamcrest import assert_that, close_to, contains_exactly, has_entries, has_length
 from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models import TaskType

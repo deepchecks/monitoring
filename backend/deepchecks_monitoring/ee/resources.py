@@ -9,12 +9,13 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
+from typing import cast
 
 import ldclient
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 
-from deepchecks_monitoring.ee.config import EmailSettings, Settings, SlackSettings, TelemetrySettings
+from deepchecks_monitoring.ee.config import EmailSettings, Settings, SlackSettings, StripeSettings, TelemetrySettings
 from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
 from deepchecks_monitoring.ee.integrations.email import EmailSender
 from deepchecks_monitoring.ee.integrations.slack import SlackSender
@@ -66,6 +67,17 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         return self._settings
 
     @property
+    def stripe_settings(self) -> StripeSettings:
+        """Get the telemetry settings."""
+        if not isinstance(self._settings, StripeSettings):
+            raise AssertionError(
+                "Provided settings instance type is not a subclass of "
+                "the 'StripeSettings', you need to provide instance "
+                "of 'StripeSettings' to the 'ResourcesProvider' constructor"
+            )
+        return self._settings
+
+    @property
     def email_sender(self) -> EmailSender:
         """Email sender."""
         if self._email_sender is None:
@@ -95,3 +107,16 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.lauchdarkly_client)
         return FeaturesControl()
+
+    def get_client_configuration(self) -> dict:
+        if self.settings.is_cloud:
+            settings = cast(Settings, self.settings)
+            return {
+                "sentryDsn": settings.sentry_dsn,
+                "stripeApiKey": settings.stripe_api_key,
+                "lauchdarklySdkKey": settings.lauchdarkly_sdk_key,
+                "environment": settings.enviroment,
+                "mixpanel_id": settings.mixpanel_id,
+                "is_cloud": True
+            }
+        return super().get_client_configuration()

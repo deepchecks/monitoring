@@ -17,7 +17,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
 
@@ -142,3 +143,9 @@ async def get_all_alert_rules(
     results = (await session.execute(q)).all()
     results = [AlertRuleConfigSchema.from_orm(row) for row in results]
     return results
+
+
+@router.get("/configurations")
+async def application_configurations(resource_provider: ResourcesProvider = ResourcesProviderDep):
+    """Return the application configurations for the client."""
+    return resource_provider.get_client_configuration()
