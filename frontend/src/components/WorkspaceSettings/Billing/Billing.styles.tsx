@@ -64,9 +64,11 @@ const FirstBillingPaymentForm = styled.form`
 `;
 
 const FirstBillingPaymentButton = styled(Button)`
-  width: 100%;
-  border-radius: 8px;
-  margin: 48px 0;
+  && {
+    width: 100%;
+    border-radius: 8px;
+    margin: 48px 0;
+  }
 `;
 
 const FirstBillingContainer = styled(FlexColumnContainer)`

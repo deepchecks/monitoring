@@ -8,18 +8,20 @@ interface ButtonProps {
 }
 
 const WhiteGrayButton = styled(Button)<ButtonProps>`
-  background: ${colors.neutral.white};
-  color: ${colors.neutral.grey[300]};
-  margin: ${p => p.margin};
-  font-size: ${p => p.fontSize};
-  border: none;
-  box-shadow: none;
-  justify-content: center;
-
-  :hover {
+  && {
     background: ${colors.neutral.white};
     color: ${colors.neutral.grey[300]};
+    margin: ${p => p.margin};
+    font-size: ${p => p.fontSize};
+    border: none;
     box-shadow: none;
+    justify-content: center;
+
+    :hover {
+      background: ${colors.neutral.white};
+      color: ${colors.neutral.grey[300]};
+      box-shadow: none;
+    }
   }
 `;
 

@@ -3,15 +3,19 @@ import React, { useEffect, useState } from 'react';
 import logger from 'helpers/services/logger';
 
 import BillingTransaction from './BillingTransaction';
+import { RectSkeleton } from 'components/base/Skeleton/Skeleton';
 
 import { StyledH3 } from 'components/base/Text/Header.styles';
 import { BillingCardContainer, BillingSeparator, BillingText, BillingTransactionContainer } from '../Billing.styles';
 import { Col16Gap } from 'components/base/Container/Container.styles';
-import { constants } from '../billing.constants';
+
 import { customInstance } from 'helpers/services/customAxios';
 
+import { constants } from '../billing.constants';
+
 const BillingHistory = () => {
-  const [transactions, setTransactions] = useState([{ plan: '', models: 1, status: '', start_date: 4, end_date: 1 }]);
+  const [transactions, setTransactions] = useState([{ plan: '', models: 1, status: '', start_date: 4 }]);
+  const [loading, setLoading] = useState(true);
 
   const tableHeaders = ['models', 'plan', 'status', 'start_date'];
 
@@ -24,6 +28,7 @@ const BillingHistory = () => {
         })) as any;
 
         setTransactions(response);
+        setLoading(false);
       } catch (err) {
         logger.error(err);
       }
@@ -31,6 +36,10 @@ const BillingHistory = () => {
 
     getBillingHistory();
   }, []);
+
+  if (loading) {
+    return <RectSkeleton width={'100%'} height={'30vh'} borderRadius={'14px'} margin={'16px 0'} />;
+  }
 
   return (
     <BillingCardContainer border>

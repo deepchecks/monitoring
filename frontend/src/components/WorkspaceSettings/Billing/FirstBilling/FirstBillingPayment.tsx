@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
+import { useStripe, useElements, PaymentElement, AddressElement } from '@stripe/react-stripe-js';
 
 import logger from 'helpers/services/logger';
 
@@ -34,6 +34,8 @@ const FirstBillingPayment = () => {
 
   return (
     <FirstBillingPaymentForm>
+      <AddressElement options={{ mode: 'billing' }} />
+      <br />
       <PaymentElement />
       <BillingText color="red">{errorMessage}</BillingText>
       <FirstBillingPaymentButton onClick={handleSubmit}>
