@@ -231,8 +231,8 @@ model_version.log_batch(sample_ids=first_half_df.index,
 # received some complaints about the model performance from some of your customers, can you find the source of the
 # issue?
 #
-# Dashboard
-# ---------
+# Dashboard & Alerts - Finding the issue
+# --------------------------------------
 #
 # When you log in to Deepchecks, you'll be greeted by the Dashboard, in which you can view all the monitors defined for
 # your models. Selecting our ``Loan Default - Example`` model, we see the default monitors and their corresponding
@@ -243,46 +243,39 @@ model_version.log_batch(sample_ids=first_half_df.index,
 #   :align: center
 #
 # |
-# We see that no monitor has exceeded its threshold, but that is to be excepted - you know it was only a small subset
-# of landlords that made the complaint so whatever is affecting them would probably not be a global phenomenon.
-# Nevertheless, we can see that aggregate feature drift monitor did increase slightly in the past weeks. To explore
-# further, let's go to the Analysis screen.
+# We can see that there are a couple of alerts of medium importance (yellow) that raised. Let's click on the alert in the Models
+# table to see the alert details.
 #
-# Analysis - Finding the root cause for the drift
-# -----------------------------------------------
+# Once in the alerts screen, you can see the list of all current alerts on your model. Clicking on that alert will
+# open an alert analysis screen. This screen has three main components - the monitor history graph, the segment explorer
+# and the check details.
 #
-# The analysis screen is where you can freely explore your data. There, you can run any of the checks you defined for
-# your model over different time periods and segments and easily change the parameters of the checks.
+# 1. The monitor history graph shows the monitor's value over time and the point at which the alert was triggered.
+# 2. The segment explorer allows you to see what was the value of the check at the time of the alert, in different
+#    segments of the data.
+# 3. The check details section shows the details of the check that triggered the alert.
 #
-# To find what is causing the drift we first saw in the Dashboard, we'll head over to the Feature Drift check. Here
-# we indeed see that the :doc:`L2 Weighted </user-guide/general/aggregation_methods>` feature drift has increased in
-# the past weeks. To easily understand what feature is driving this aggregate drift, we'll click on the "Per feature"
-# aggregation method.
+# In this case, you can see in the check details section that there is a new category in the ``room_type`` feature,
+# This is the case for the "All Data" segment, but does this issue originate from a specific segment? Let's find out.
 #
-# .. image:: /_static/images/examples/rent/analysis.gif
-#   :alt: Analysis
-#   :align: center
+# .. image:: /_static/images/examples/rent/alert.gif
+#    :alt: Alert
+#    :align: center
+#
 # |
-#
-# We see that the drift originates from the room_type feature. Clicking on the room_type graph will lead us to the
-# drill-down side panel for this check (Feature Drift in the room_type feature). Using the "Check Per Segment" part
-# of the screen we can see the value of the check when the data is segmented by various features.
-#
-# After exploring some segments, we see that when partitioning the data by neighborhood, we see that all the drift is
-# concentrated in one segment: Harlem neighborhood. Clicking on the check's value for "Harlem" in the graph will run
-# the drift check for the data in that specific segment, in the time period we selected in the main screen,
-# and show the display below. In that display, we can finally see the issue! A new room_type "None" has appeared in
-# the Harlem neighborhood, and it is causing the drift.
-#
-# .. image:: /_static/images/examples/rent/analysis_drilldown.gif
-#   :alt: Analysis Drilldown
-#   :align: center
+# Segmenting on the ``neighborhood`` feature, we can easily see that the new category is only present in the Harlem
+# neighborhood. In it, ``room_type`` has a new category ``None``, appearing in 3.82% of the samples in the selected
+# date.
 #
 # Analysis - Performance Check
 # ----------------------------
 #
 # Now that we've found the source of the issue, we can go ahead and check the performance of the model on the
-# problematic samples. To do so, we'll head over to the Performance check. We'll select one of the time windows in
+# problematic samples. To do so, we'll now go to the analysis screen.
+# The analysis screen is where you can freely explore your data. There, you can run any of the checks you defined for
+# your model over different time periods and segments and easily change the parameters of the checks.
+#
+# In our case, we'll head over to the Performance check. We'll select one of the time windows in
 # which we saw the drift and select room_type as the segmentation feature. Right away we see that the samples with
 # "None" room type have a higher RMSE than the rest of the samples. This is indeed the source of our issue and the
 # complaints we've received from our customers! We can now go fix this integrity issue that caused these "None"
@@ -296,9 +289,9 @@ model_version.log_batch(sample_ids=first_half_df.index,
 # -----------------------------
 #
 # Now that we know for sure that the complaints have been coming from landlords in the Harlem neighborhood, we can
-# define an alert to notify us of any future occurrence of this problem. To do that we head to the Alert Rules screen,
-# nested under the Configuration menu. Here we can define our alert, and make sure it runs only on data that comes from
-# the Harlem neighborhood.
+# define an alert to notify us specifically of any future changes in this neighborhood. To do that we head to the Alert
+# Rules screen, nested under the Configuration menu. Here we can define our alert, and make sure it runs only on data
+# that comes from the Harlem neighborhood.
 #
 # .. image:: /_static/images/examples/rent/alert_rule.gif
 #   :alt: Alert Rule
