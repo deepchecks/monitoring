@@ -166,7 +166,7 @@ def execute_worker():
                     traces_sample_rate=0.1,
                     environment=settings.sentry_env
                 )
-                ee.integrations.telemetry.collect_telemetry(tasks_runner.TaskRunner)
+                ee.utils.telemetry.collect_telemetry(tasks_runner.TaskRunner)
                 # Ignoring this logger since it can spam sentry with errors
                 sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 

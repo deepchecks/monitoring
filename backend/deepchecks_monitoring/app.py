@@ -158,7 +158,7 @@ def create_application(
                 environment=settings.sentry_env,
                 before_send_transaction=ee.integrations.sentry.sentry_send_hook
             )
-            ee.integrations.telemetry.collect_telemetry(DataIngestionBackend)
+            ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
 
         if settings.stripe_api_key:
             import stripe  # pylint: disable=import-outside-toplevel

@@ -194,7 +194,7 @@ async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(
         raise BadRequest(str(e)) from e
 
 
-@router.get("/billing/payment-method", tags=["billing"])
+@router.get("/billing/payment-method", tags=["billing"], response_model=t.List)
 async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
     """Return the payment method of the organization."""
     customer_id = user.organization.stripe_customer_id
@@ -203,7 +203,7 @@ async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
         return stripe.Customer.list_payment_methods(
             customer_id,
             type="card"
-        )
+        )["data"]
     except Exception as e:  # pylint: disable=broad-except
         raise AccessForbidden(str(e)) from e
 

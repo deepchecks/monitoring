@@ -274,7 +274,7 @@ def execute_alerts_scheduler(scheduler_implementation: t.Type[AlertsScheduler]):
                     traces_sample_rate=0.6,
                     environment=settings.sentry_env
                 )
-                ee.integrations.telemetry.collect_telemetry(scheduler_implementation)
+                ee.utils.telemetry.collect_telemetry(scheduler_implementation)
 
         logger = configure_logger(
             name=service_name,

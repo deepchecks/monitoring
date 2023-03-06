@@ -155,7 +155,7 @@ def execute_worker():
                     traces_sample_rate=0.1,
                     environment=settings.sentry_env,
                 )
-                ee.integrations.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
+                ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
 
