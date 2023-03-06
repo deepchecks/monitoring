@@ -232,7 +232,7 @@ export interface TableDataSchema {
 }
 
 /**
- * Schema for the request of create subscription endpoint.
+ * Schema for the subscription object.
  */
 export interface SubscriptionSchema {
   models: number;
@@ -451,6 +451,18 @@ export interface MonitorRunSchema {
 }
 
 /**
+ * Add to single window monitor options frequency and aggregation window to make it multi window.
+ */
+export interface MonitorOptions {
+  filter?: DataFilterList;
+  end_time: string;
+  start_time: string;
+  additional_kwargs?: MonitorCheckConfSchema;
+  frequency?: number;
+  aggregation_window?: number;
+}
+
+/**
  * Schema to get a monitor script/notebook.
  */
 export interface MonitorNotebookSchema {
@@ -484,18 +496,6 @@ export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
 export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
-}
-
-/**
- * Add to single window monitor options frequency and aggregation window to make it multi window.
- */
-export interface MonitorOptions {
-  filter?: DataFilterList;
-  end_time: string;
-  start_time: string;
-  additional_kwargs?: MonitorCheckConfSchema;
-  frequency?: number;
-  aggregation_window?: number;
 }
 
 export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
@@ -669,6 +669,30 @@ export interface MemberSchema {
 }
 
 /**
+ * Schema for the invoice item object.
+ */
+export interface InvoiceItemSchema {
+  models: number;
+  amount: string;
+  description: string;
+  end: number;
+  start: number;
+}
+
+/**
+ * Schema for the invoice object.
+ */
+export interface InvoiceSchema {
+  total: number;
+  status: string;
+  paid: boolean;
+  invoice_pdf: string;
+  period_end: number;
+  period_start: number;
+  invoice_items: InvoiceItemSchema[];
+}
+
+/**
  * Schema for info on invitation.
  */
 export interface InvitationInfoSchema {
@@ -827,6 +851,7 @@ export type ColumnType = typeof ColumnType[keyof typeof ColumnType];
 export const ColumnType = {
   numeric: 'numeric',
   integer: 'integer',
+  bigint: 'bigint',
   categorical: 'categorical',
   boolean: 'boolean',
   text: 'text',
@@ -933,6 +958,9 @@ export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost 
   batch: Blob;
 }
 
+/**
+ * Billing schema.
+ */
 export interface BillingSchema {
   id: number;
   subscription_id?: string;
@@ -5528,447 +5556,6 @@ export const useLogoutApiV1AuthLogoutGet = <
 };
 
 /**
- * Get the list of subscriptions history of the user from stripe.
- * @summary List All Subscriptions
- */
-export const listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet = (signal?: AbortSignal) => {
-  return customInstance<SubscriptionSchema[]>({ url: `/api/v1/billing/subscriptions-history`, method: 'get', signal });
-};
-
-export const getListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryKey = () => [
-  `/api/v1/billing/subscriptions-history`
-];
-
-export type ListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>
->;
-export type ListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryError = ErrorType<unknown>;
-
-export const useListAllSubscriptionsApiV1BillingSubscriptionsHistoryGet = <
-  TData = Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>,
-    TError,
-    TData
-  >;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getListAllSubscriptionsApiV1BillingSubscriptionsHistoryGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>> = ({
-    signal
-  }) => listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet(signal);
-
-  const query = useQuery<
-    Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsHistoryGet>>,
-    TError,
-    TData
-  >(queryKey, queryFn, queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Get the list of available products from stripe.
- * @summary List All Products
- */
-export const listAllProductsApiV1BillingAvailableProductsGet = (signal?: AbortSignal) => {
-  return customInstance<ProductResponseSchema[]>({ url: `/api/v1/billing/available-products`, method: 'get', signal });
-};
-
-export const getListAllProductsApiV1BillingAvailableProductsGetQueryKey = () => [`/api/v1/billing/available-products`];
-
-export type ListAllProductsApiV1BillingAvailableProductsGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>
->;
-export type ListAllProductsApiV1BillingAvailableProductsGetQueryError = ErrorType<unknown>;
-
-export const useListAllProductsApiV1BillingAvailableProductsGet = <
-  TData = Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getListAllProductsApiV1BillingAvailableProductsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>> = ({
-    signal
-  }) => listAllProductsApiV1BillingAvailableProductsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Return the payment method of the organization.
- * @summary Get Payment Method
- */
-export const getPaymentMethodApiV1BillingPaymentMethodGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
-};
-
-export const getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey = () => [`/api/v1/billing/payment-method`];
-
-export type GetPaymentMethodApiV1BillingPaymentMethodGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>
->;
-export type GetPaymentMethodApiV1BillingPaymentMethodGetQueryError = ErrorType<unknown>;
-
-export const useGetPaymentMethodApiV1BillingPaymentMethodGet = <
-  TData = Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>> = ({
-    signal
-  }) => getPaymentMethodApiV1BillingPaymentMethodGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Update the payment method on stripe.
- * @summary Update Payment Method
- */
-export const updatePaymentMethodApiV1BillingPaymentMethodPost = (paymentMethodSchema: PaymentMethodSchema) => {
-  return customInstance<unknown>({
-    url: `/api/v1/billing/payment-method`,
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    data: paymentMethodSchema
-  });
-};
-
-export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>
->;
-export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationBody = PaymentMethodSchema;
-export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationError = ErrorType<HTTPValidationError>;
-
-export const useUpdatePaymentMethodApiV1BillingPaymentMethodPost = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
-    TError,
-    { data: PaymentMethodSchema },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
-    { data: PaymentMethodSchema }
-  > = props => {
-    const { data } = props ?? {};
-
-    return updatePaymentMethodApiV1BillingPaymentMethodPost(data);
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
-    TError,
-    { data: PaymentMethodSchema },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
- * Return the payment method of the organization.
- * @summary Get Billing Info
- */
-export const getBillingInfoApiV1BillingGet = (signal?: AbortSignal) => {
-  return customInstance<BillingSchema>({ url: `/api/v1/billing`, method: 'get', signal });
-};
-
-export const getGetBillingInfoApiV1BillingGetQueryKey = () => [`/api/v1/billing`];
-
-export type GetBillingInfoApiV1BillingGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>
->;
-export type GetBillingInfoApiV1BillingGetQueryError = ErrorType<unknown>;
-
-export const useGetBillingInfoApiV1BillingGet = <
-  TData = Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetBillingInfoApiV1BillingGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>> = ({ signal }) =>
-    getBillingInfoApiV1BillingGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Return a list of subscription of the organization.
- * @summary Get Subscriptions
- */
-export const getSubscriptionsApiV1BillingSubscriptionGet = (signal?: AbortSignal) => {
-  return customInstance<unknown[]>({ url: `/api/v1/billing/subscription`, method: 'get', signal });
-};
-
-export const getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey = () => [`/api/v1/billing/subscription`];
-
-export type GetSubscriptionsApiV1BillingSubscriptionGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>
->;
-export type GetSubscriptionsApiV1BillingSubscriptionGetQueryError = ErrorType<unknown>;
-
-export const useGetSubscriptionsApiV1BillingSubscriptionGet = <
-  TData = Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>> = ({
-    signal
-  }) => getSubscriptionsApiV1BillingSubscriptionGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Creates a checkout session with stripe
- * @summary Create Subscription
- */
-export const createSubscriptionApiV1BillingSubscriptionPost = (checkoutSchema: CheckoutSchema) => {
-  return customInstance<SubscriptionCreationResponse>({
-    url: `/api/v1/billing/subscription`,
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    data: checkoutSchema
-  });
-};
-
-export type CreateSubscriptionApiV1BillingSubscriptionPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>
->;
-export type CreateSubscriptionApiV1BillingSubscriptionPostMutationBody = CheckoutSchema;
-export type CreateSubscriptionApiV1BillingSubscriptionPostMutationError = ErrorType<HTTPValidationError>;
-
-export const useCreateSubscriptionApiV1BillingSubscriptionPost = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
-    TError,
-    { data: CheckoutSchema },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
-    { data: CheckoutSchema }
-  > = props => {
-    const { data } = props ?? {};
-
-    return createSubscriptionApiV1BillingSubscriptionPost(data);
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
-    TError,
-    { data: CheckoutSchema },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
- * Update the subscription for the organization.
- * @summary Update Subscription
- */
-export const updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = (
-  subscriptionId: string,
-  checkoutSchema: CheckoutSchema
-) => {
-  return customInstance<SubscriptionCreationResponse>({
-    url: `/api/v1/billing/subscription/${subscriptionId}`,
-    method: 'put',
-    headers: { 'Content-Type': 'application/json' },
-    data: checkoutSchema
-  });
-};
-
-export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>
->;
-export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationBody = CheckoutSchema;
-export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationError = ErrorType<HTTPValidationError>;
-
-export const useUpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
-    TError,
-    { subscriptionId: string; data: CheckoutSchema },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
-    { subscriptionId: string; data: CheckoutSchema }
-  > = props => {
-    const { subscriptionId, data } = props ?? {};
-
-    return updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut(subscriptionId, data);
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
-    TError,
-    { subscriptionId: string; data: CheckoutSchema },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
- * Cancel the subscription.
- * @summary Cancel Subscription
- */
-export const cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete = (subscriptionId: string) => {
-  return customInstance<unknown>({ url: `/api/v1/billing/subscription/${subscriptionId}`, method: 'delete' });
-};
-
-export type CancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDeleteMutationResult = NonNullable<
-  Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>
->;
-
-export type CancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDeleteMutationError =
-  ErrorType<HTTPValidationError>;
-
-export const useCancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
-    TError,
-    { subscriptionId: string },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
-    { subscriptionId: string }
-  > = props => {
-    const { subscriptionId } = props ?? {};
-
-    return cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete(subscriptionId);
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
-    TError,
-    { subscriptionId: string },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
- * Webhook to catch stripe events.
- * @summary Stripe Webhook
- */
-export const stripeWebhookApiV1BillingWebhookPost = () => {
-  return customInstance<unknown>({ url: `/api/v1/billing/webhook`, method: 'post' });
-};
-
-export type StripeWebhookApiV1BillingWebhookPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>
->;
-
-export type StripeWebhookApiV1BillingWebhookPostMutationError = ErrorType<unknown>;
-
-export const useStripeWebhookApiV1BillingWebhookPost = <
-  TError = ErrorType<unknown>,
-  TVariables = void,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
-    TError,
-    TVariables,
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
-    TVariables
-  > = () => {
-    return stripeWebhookApiV1BillingWebhookPost();
-  };
-
-  return useMutation<Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>, TError, TVariables, TContext>(
-    mutationFn,
-    mutationOptions
-  );
-};
-
-/**
  * Health check endpoint.
 
 Returns
@@ -6763,4 +6350,517 @@ export const useRemoveInstallationApiV1SlackAppsAppIdDelete = <
     { appId: number },
     TContext
   >(mutationFn, mutationOptions);
+};
+
+/**
+ * Get the list of all the subscriptions of the user from stripe.
+ * @summary List All Subscriptions
+ */
+export const listAllSubscriptionsApiV1BillingSubscriptionsGet = (signal?: AbortSignal) => {
+  return customInstance<SubscriptionSchema[]>({ url: `/api/v1/billing/subscriptions`, method: 'get', signal });
+};
+
+export const getListAllSubscriptionsApiV1BillingSubscriptionsGetQueryKey = () => [`/api/v1/billing/subscriptions`];
+
+export type ListAllSubscriptionsApiV1BillingSubscriptionsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>
+>;
+export type ListAllSubscriptionsApiV1BillingSubscriptionsGetQueryError = ErrorType<unknown>;
+
+export const useListAllSubscriptionsApiV1BillingSubscriptionsGet = <
+  TData = Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllSubscriptionsApiV1BillingSubscriptionsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>> = ({
+    signal
+  }) => listAllSubscriptionsApiV1BillingSubscriptionsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Get the list of all the invoices of the user from stripe.
+ * @summary List All Imvoices
+ */
+export const listAllImvoicesApiV1BillingInvoicesGet = (signal?: AbortSignal) => {
+  return customInstance<InvoiceSchema[]>({ url: `/api/v1/billing/invoices`, method: 'get', signal });
+};
+
+export const getListAllImvoicesApiV1BillingInvoicesGetQueryKey = () => [`/api/v1/billing/invoices`];
+
+export type ListAllImvoicesApiV1BillingInvoicesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>
+>;
+export type ListAllImvoicesApiV1BillingInvoicesGetQueryError = ErrorType<unknown>;
+
+export const useListAllImvoicesApiV1BillingInvoicesGet = <
+  TData = Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllImvoicesApiV1BillingInvoicesGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>> = ({ signal }) =>
+    listAllImvoicesApiV1BillingInvoicesGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Get the list of available products from stripe.
+ * @summary List All Products
+ */
+export const listAllProductsApiV1BillingAvailableProductsGet = (signal?: AbortSignal) => {
+  return customInstance<ProductResponseSchema[]>({ url: `/api/v1/billing/available-products`, method: 'get', signal });
+};
+
+export const getListAllProductsApiV1BillingAvailableProductsGetQueryKey = () => [`/api/v1/billing/available-products`];
+
+export type ListAllProductsApiV1BillingAvailableProductsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>
+>;
+export type ListAllProductsApiV1BillingAvailableProductsGetQueryError = ErrorType<unknown>;
+
+export const useListAllProductsApiV1BillingAvailableProductsGet = <
+  TData = Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllProductsApiV1BillingAvailableProductsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>> = ({
+    signal
+  }) => listAllProductsApiV1BillingAvailableProductsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof listAllProductsApiV1BillingAvailableProductsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Return the payment method of the organization.
+ * @summary Get Payment Method
+ */
+export const getPaymentMethodApiV1BillingPaymentMethodGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
+};
+
+export const getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey = () => [`/api/v1/billing/payment-method`];
+
+export type GetPaymentMethodApiV1BillingPaymentMethodGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>
+>;
+export type GetPaymentMethodApiV1BillingPaymentMethodGetQueryError = ErrorType<unknown>;
+
+export const useGetPaymentMethodApiV1BillingPaymentMethodGet = <
+  TData = Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>> = ({
+    signal
+  }) => getPaymentMethodApiV1BillingPaymentMethodGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getPaymentMethodApiV1BillingPaymentMethodGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Update the payment method on stripe.
+ * @summary Update Payment Method
+ */
+export const updatePaymentMethodApiV1BillingPaymentMethodPost = (paymentMethodSchema: PaymentMethodSchema) => {
+  return customInstance<unknown>({
+    url: `/api/v1/billing/payment-method`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: paymentMethodSchema
+  });
+};
+
+export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>
+>;
+export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationBody = PaymentMethodSchema;
+export type UpdatePaymentMethodApiV1BillingPaymentMethodPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdatePaymentMethodApiV1BillingPaymentMethodPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
+    TError,
+    { data: PaymentMethodSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
+    { data: PaymentMethodSchema }
+  > = props => {
+    const { data } = props ?? {};
+
+    return updatePaymentMethodApiV1BillingPaymentMethodPost(data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updatePaymentMethodApiV1BillingPaymentMethodPost>>,
+    TError,
+    { data: PaymentMethodSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Return the payment method of the organization.
+ * @summary Get Billing Info
+ */
+export const getBillingInfoApiV1BillingGet = (signal?: AbortSignal) => {
+  return customInstance<BillingSchema>({ url: `/api/v1/billing`, method: 'get', signal });
+};
+
+export const getGetBillingInfoApiV1BillingGetQueryKey = () => [`/api/v1/billing`];
+
+export type GetBillingInfoApiV1BillingGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>
+>;
+export type GetBillingInfoApiV1BillingGetQueryError = ErrorType<unknown>;
+
+export const useGetBillingInfoApiV1BillingGet = <
+  TData = Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBillingInfoApiV1BillingGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>> = ({ signal }) =>
+    getBillingInfoApiV1BillingGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Return a list of subscription of the organization.
+ * @summary Get Subscriptions
+ */
+export const getSubscriptionsApiV1BillingSubscriptionGet = (signal?: AbortSignal) => {
+  return customInstance<unknown[]>({ url: `/api/v1/billing/subscription`, method: 'get', signal });
+};
+
+export const getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey = () => [`/api/v1/billing/subscription`];
+
+export type GetSubscriptionsApiV1BillingSubscriptionGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>
+>;
+export type GetSubscriptionsApiV1BillingSubscriptionGetQueryError = ErrorType<unknown>;
+
+export const useGetSubscriptionsApiV1BillingSubscriptionGet = <
+  TData = Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSubscriptionsApiV1BillingSubscriptionGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>> = ({
+    signal
+  }) => getSubscriptionsApiV1BillingSubscriptionGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getSubscriptionsApiV1BillingSubscriptionGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Creates a checkout session with stripe
+ * @summary Create Subscription
+ */
+export const createSubscriptionApiV1BillingSubscriptionPost = (checkoutSchema: CheckoutSchema) => {
+  return customInstance<SubscriptionCreationResponse>({
+    url: `/api/v1/billing/subscription`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: checkoutSchema
+  });
+};
+
+export type CreateSubscriptionApiV1BillingSubscriptionPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>
+>;
+export type CreateSubscriptionApiV1BillingSubscriptionPostMutationBody = CheckoutSchema;
+export type CreateSubscriptionApiV1BillingSubscriptionPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useCreateSubscriptionApiV1BillingSubscriptionPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
+    TError,
+    { data: CheckoutSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
+    { data: CheckoutSchema }
+  > = props => {
+    const { data } = props ?? {};
+
+    return createSubscriptionApiV1BillingSubscriptionPost(data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof createSubscriptionApiV1BillingSubscriptionPost>>,
+    TError,
+    { data: CheckoutSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Update the subscription for the organization.
+ * @summary Update Subscription
+ */
+export const updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = (
+  subscriptionId: string,
+  checkoutSchema: CheckoutSchema
+) => {
+  return customInstance<SubscriptionCreationResponse>({
+    url: `/api/v1/billing/subscription/${subscriptionId}`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: checkoutSchema
+  });
+};
+
+export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>
+>;
+export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationBody = CheckoutSchema;
+export type UpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPutMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
+    TError,
+    { subscriptionId: string; data: CheckoutSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
+    { subscriptionId: string; data: CheckoutSchema }
+  > = props => {
+    const { subscriptionId, data } = props ?? {};
+
+    return updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut(subscriptionId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut>>,
+    TError,
+    { subscriptionId: string; data: CheckoutSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Cancel the subscription.
+ * @summary Cancel Subscription
+ */
+export const cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete = (subscriptionId: string) => {
+  return customInstance<unknown>({ url: `/api/v1/billing/subscription/${subscriptionId}`, method: 'delete' });
+};
+
+export type CancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>
+>;
+
+export type CancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDeleteMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useCancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
+    TError,
+    { subscriptionId: string },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
+    { subscriptionId: string }
+  > = props => {
+    const { subscriptionId } = props ?? {};
+
+    return cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete(subscriptionId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof cancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete>>,
+    TError,
+    { subscriptionId: string },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Webhook to catch stripe events.
+ * @summary Stripe Webhook
+ */
+export const stripeWebhookApiV1BillingWebhookPost = () => {
+  return customInstance<unknown>({ url: `/api/v1/billing/webhook`, method: 'post' });
+};
+
+export type StripeWebhookApiV1BillingWebhookPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>
+>;
+
+export type StripeWebhookApiV1BillingWebhookPostMutationError = ErrorType<unknown>;
+
+export const useStripeWebhookApiV1BillingWebhookPost = <
+  TError = ErrorType<unknown>,
+  TVariables = void,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
+    TError,
+    TVariables,
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
+    TVariables
+  > = () => {
+    return stripeWebhookApiV1BillingWebhookPost();
+  };
+
+  return useMutation<Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>, TError, TVariables, TContext>(
+    mutationFn,
+    mutationOptions
+  );
+};
+
+/**
+ * @summary Application Configurations
+ */
+export const applicationConfigurationsApiV1ConfigurationsGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/configurations`, method: 'get', signal });
+};
+
+export const getApplicationConfigurationsApiV1ConfigurationsGetQueryKey = () => [`/api/v1/configurations`];
+
+export type ApplicationConfigurationsApiV1ConfigurationsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>
+>;
+export type ApplicationConfigurationsApiV1ConfigurationsGetQueryError = ErrorType<unknown>;
+
+export const useApplicationConfigurationsApiV1ConfigurationsGet = <
+  TData = Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getApplicationConfigurationsApiV1ConfigurationsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>> = ({
+    signal
+  }) => applicationConfigurationsApiV1ConfigurationsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
 };

@@ -73,7 +73,7 @@ class ProductResponseSchema(BaseModel):
 
 
 class SubscriptionSchema(BaseModel):
-    """Schema for the request of create subscription endpoint."""
+    """Schema for the subscription object."""
 
     models: int
     subscription_id: str
@@ -82,6 +82,28 @@ class SubscriptionSchema(BaseModel):
     current_period_end: int
     cancel_at_period_end: bool
     plan: str
+
+
+class InvoiceItemSchema(BaseModel):
+    """Schema for the invoice item object."""
+
+    models: int
+    amount: str
+    description: str
+    end: int
+    start: int
+
+
+class InvoiceSchema(BaseModel):
+    """Schema for the invoice object."""
+
+    total: int
+    status: str
+    paid: bool
+    invoice_pdf: str
+    period_end: int
+    period_start: int
+    invoice_items: t.List[InvoiceItemSchema]
 
 
 def _get_subscription(stripe_customer_id: str, status: t.Optional[str]) -> t.List[SubscriptionSchema]:
@@ -102,13 +124,38 @@ def _get_subscription(stripe_customer_id: str, status: t.Optional[str]) -> t.Lis
     return subscriptions_schemas
 
 
-@router.get("/billing/subscriptions-history", tags=["billing"], response_model=t.List[SubscriptionSchema])
+@router.get("/billing/subscriptions", tags=["billing"], response_model=t.List[SubscriptionSchema])
 async def list_all_subscriptions(
         user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ):
-    """Get the list of subscriptions history of the user from stripe."""
+    """Get the list of all the subscriptions of the user from stripe."""
     try:
         return _get_subscription(user.organization.stripe_customer_id, "all")
+    except Exception as e:  # pylint: disable=broad-except
+        raise BadRequest(str(e)) from e
+
+
+@router.get("/billing/invoices", tags=["billing"], response_model=t.List[InvoiceSchema])
+async def list_all_imvoices(
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+):
+    """Get the list of all the invoices of the user from stripe."""
+    try:
+        invoices = stripe.Invoice.list(customer=user.organization.stripe_customer_id)["data"]
+        invoices_schema = []
+        for invoice in invoices:
+            invoice_items_schema = []
+            for invoice_item in invoice["lines"]["data"]:
+                invoice_item_schema = InvoiceItemSchema(
+                    models=invoice_item["quantity"],
+                    end=invoice_item["period"]["end"],
+                    start=invoice_item["period"]["start"],
+                    **invoice_item
+                )
+                invoice_items_schema.append(invoice_item_schema)
+            invoice_schema = InvoiceSchema(invoice_items=invoice_items_schema, **invoice)
+            invoices_schema.append(invoice_schema)
+        return invoices_schema
     except Exception as e:  # pylint: disable=broad-except
         raise BadRequest(str(e)) from e
 
