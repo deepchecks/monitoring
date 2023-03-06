@@ -154,9 +154,9 @@ def create_application(
 
             sentry_sdk.init(
                 dsn=settings.sentry_dsn,
-                traces_sampler=ee.integrations.sentry.traces_sampler,
+                traces_sampler=ee.utils.sentry.traces_sampler,
                 environment=settings.sentry_env,
-                before_send_transaction=ee.integrations.sentry.sentry_send_hook
+                before_send_transaction=ee.utils.sentry.sentry_send_hook
             )
             ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
 
