@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { logoutApiV1AuthLogoutGet } from 'api/generated';
 import { cancelPendingRequests } from 'helpers/services/customAxios';
 
@@ -7,11 +9,16 @@ import useUser from 'helpers/hooks/useUser';
 import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
 
 import { StyledMenuItem } from 'components/Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
+import { RowAutoGap } from 'components/base/Container/Container.styles';
+
 import { ReportModal } from './components/ReportModal';
+
+import { Configuration } from 'assets/icon/icon';
 
 export const UserInfo = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [isReportModalOpen, setIsReportModalOpen] = React.useState<boolean>(false);
+  const navigate = useNavigate();
 
   const open = Boolean(anchorEl);
   const { user } = useUser();
@@ -80,22 +87,25 @@ export const UserInfo = () => {
           border: `1px dashed rgba(255, 255, 255, 0.4)`
         }}
       />
-      <Typography
-        sx={{
-          lineHeight: '140%',
-          textTransform: 'ellipsis',
-          fontWeight: 400,
-          fontSize: 12,
-          marginTop: '20px',
-          letterSpacing: '0.1px',
-          color: 'rgba(255, 255, 255, 0.7)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }}
-      >
-        {user.organization?.name}
-      </Typography>
+      <RowAutoGap>
+        <Typography
+          sx={{
+            lineHeight: '100%',
+            textTransform: 'ellipsis',
+            fontWeight: 400,
+            fontSize: 12,
+            marginTop: '5px',
+            letterSpacing: '0.1px',
+            color: 'rgba(255, 255, 255, 0.7)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
+          {user.organization?.name}
+        </Typography>
+        <Configuration onClick={() => navigate('/workspace-settings')} cursor="pointer" height={60} />
+      </RowAutoGap>
       <Menu
         id="basic-menu"
         anchorEl={anchorEl}
