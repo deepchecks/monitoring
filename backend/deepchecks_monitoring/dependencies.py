@@ -18,7 +18,7 @@ from kafka import KafkaAdminClient
 from pydantic import BaseSettings
 
 from deepchecks_monitoring.exceptions import BadRequest, ContentLengthRequired, RequestTooLarge
-from deepchecks_monitoring.interfaces import EmailSender
+from deepchecks_monitoring.integrations.email import EmailSender
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession

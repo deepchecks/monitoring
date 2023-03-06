@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 from typing_extensions import Self
 
-from deepchecks_monitoring.ee.config import EmailSettings
+from deepchecks_monitoring.config import EmailSettings
 
 # TODO: change this
 TEMPLATES_DIR = pathlib.Path(__file__).absolute().parent.parent / "templates"

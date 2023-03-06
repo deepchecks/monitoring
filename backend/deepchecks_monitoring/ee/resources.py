@@ -15,11 +15,12 @@ import ldclient
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 
-from deepchecks_monitoring.ee.config import EmailSettings, Settings, SlackSettings, StripeSettings, TelemetrySettings
+from deepchecks_monitoring.ee import utils
+from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
 from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
-from deepchecks_monitoring.ee.integrations.email import EmailSender
-from deepchecks_monitoring.ee.integrations.slack import SlackSender
 from deepchecks_monitoring.features_control import FeaturesControl
+from deepchecks_monitoring.integrations.email import EmailSender
+from deepchecks_monitoring.notifications import AlertNotificator as EEAlertNotificator
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider as OpenSourceResourcesProvider
 
@@ -29,20 +30,12 @@ __all__ = ["ResourcesProvider"]
 class ResourcesProvider(OpenSourceResourcesProvider):
     """Provider of resources."""
 
+    ALERT_NOTIFICATOR_TYPE = EEAlertNotificator
+
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self._lauchdarkly_client = None
-
-    @property
-    def email_settings(self) -> EmailSettings:
-        """Get the email settings."""
-        if not isinstance(self._settings, EmailSettings):
-            raise AssertionError(
-                "In order to be able to use email resources "
-                "you need to provide instance of 'EmailSettings' "
-                "to the 'ResourcesProvider' constructor"
-            )
-        return self._settings
+        self._is_telemetry_initialized = False
 
     @property
     def telemetry_settings(self) -> TelemetrySettings:
@@ -85,13 +78,6 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         return self._email_sender
 
     @property
-    def slack_sender(self) -> SlackSender:
-        """Slack sender."""
-        if self._slack_sender is None:
-            self._slack_sender = SlackSender(self.slack_settings)
-        return self._slack_sender
-
-    @property
     def lauchdarkly_client(self) -> LDClient:
         """Launchdarkly client."""
         if self.settings.is_cloud is False:
@@ -107,6 +93,30 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.lauchdarkly_client)
         return FeaturesControl()
+
+    def initialize_telemetry_collectors(
+        self,
+        *targets,
+        traces_sample_rate: float = 0.6,
+    ):
+        """Initialize telemetry."""
+        settings = self.telemetry_settings
+
+        if settings.sentry_dsn and not self._is_telemetry_initialized:
+            import sentry_sdk  # pylint: disable=import-outside-toplevel
+
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sample_rate=traces_sample_rate,
+                environment=settings.sentry_env,
+                before_send_transaction=utils.sentry.sentry_send_hook
+            )
+
+            self._is_telemetry_initialized = True
+
+        if self._is_telemetry_initialized:
+            for it in targets:
+                utils.telemetry.collect_telemetry(it)
 
     def get_client_configuration(self) -> dict:
         if self.settings.is_cloud:

@@ -7,8 +7,10 @@ import sqlalchemy as sa
 from aiosmtpd.controller import Controller
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.bgtasks.actors import AlertNotificator
 from deepchecks_monitoring.config import Settings
+from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
+from deepchecks_monitoring.ee.resources import ResourcesProvider as EEResourcesProvider
+from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, TaskType
@@ -211,12 +213,16 @@ async def test_alert_slack_notification(
     alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
     now = datetime.now(timezone.utc)
 
-    alert = (await async_session.execute(sa.insert(Alert).values(
+    alert = Alert(
         failed_values={"1": ["accuracy"], "2": ["accuracy"]},
         start_time=now,
         end_time=now + timedelta(hours=2),
         alert_rule_id=alert_rule["id"]
-    ).returning(Alert))).first()
+    )
+
+    async_session.add(alert)
+    await async_session.flush()
+    await async_session.refresh(alert)
 
     await async_session.execute(sa.insert(SlackInstallation).values(
         app_id="qwert",
@@ -237,8 +243,8 @@ async def test_alert_slack_notification(
 
     settings = Settings()  # type: ignore
 
-    async with ResourcesProvider(settings) as rp:
-        notificator = await AlertNotificator.instantiate(
+    async with EEResourcesProvider(settings) as rp:
+        notificator = await EEAlertNotificator.instantiate(
             organization_id=t.cast(int, user.organization_id),
             alert=alert,
             session=async_session,

@@ -19,23 +19,12 @@ from deepchecks_monitoring.config import Settings as OpenSourceSettings
 __all__ = [
     'Settings',
     'TelemetrySettings',
-    'EmailSettings',
     'StripeSettings',
     'SlackSettings'
 ]
 
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
-
-
-class EmailSettings(BaseDeepchecksSettings):
-    """Settings for mail service."""
-
-    deepchecks_email: str = 'app@deepchecks.com'
-    email_smtp_host: str
-    email_smtp_port: int = 25
-    email_smtp_username: str
-    email_smtp_password: str
 
 
 class TelemetrySettings(BaseDeepchecksSettings):
@@ -71,7 +60,6 @@ class SlackSettings(BaseDeepchecksSettings):
 
 class Settings(
     OpenSourceSettings,
-    EmailSettings,
     SlackSettings,
     TelemetrySettings,
     StripeSettings

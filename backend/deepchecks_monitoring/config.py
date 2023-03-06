@@ -43,6 +43,16 @@ class BaseDeepchecksSettings(BaseSettings):
         env_file_encoding = 'utf-8'
 
 
+class EmailSettings(BaseDeepchecksSettings):
+    """Settings for mail service."""
+
+    deepchecks_email: str = 'app@deepchecks.com'
+    email_smtp_host: str
+    email_smtp_port: int = 25
+    email_smtp_username: str
+    email_smtp_password: str
+
+
 class KafkaSettings(BaseDeepchecksSettings):
     """Settings for kafka usage for data ingestion."""
 
@@ -91,6 +101,7 @@ class RedisSettings(BaseDeepchecksSettings):
 
 class Settings(
     DatabaseSettings,
+    EmailSettings,
     KafkaSettings,
     RedisSettings
 ):

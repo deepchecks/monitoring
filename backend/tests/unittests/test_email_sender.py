@@ -1,6 +1,6 @@
 import pytest
 
-from deepchecks_monitoring.ee.integrations.email import EmailSender
+from deepchecks_monitoring.integrations.email import EmailSender
 
 
 @pytest.mark.asyncio

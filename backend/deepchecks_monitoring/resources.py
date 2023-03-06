@@ -28,9 +28,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.features_control import FeaturesControl
-from deepchecks_monitoring.interfaces import EmailSender, SlackSender
+from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, json_dumps
+from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import database
@@ -65,6 +66,8 @@ class BaseResourcesProvider:
 class ResourcesProvider(BaseResourcesProvider):
     """Provider of resources."""
 
+    ALERT_NOTIFICATOR_TYPE = AlertNotificator
+
     def __init__(self, settings: config.BaseSettings):
         self._settings = settings
         self._database_engine: t.Optional[Engine] = None
@@ -77,8 +80,18 @@ class ResourcesProvider(BaseResourcesProvider):
         self._cache_funcs: t.Optional[CacheFunctions] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
-        self._slack_sender: t.Optional[SlackSender] = None
         self._topics = set()
+
+    @property
+    def email_settings(self) -> config.EmailSettings:
+        """Get the email settings."""
+        if not isinstance(self._settings, config.EmailSettings):
+            raise AssertionError(
+                "In order to be able to use email resources "
+                "you need to provide instance of 'EmailSettings' "
+                "to the 'ResourcesProvider' constructor"
+            )
+        return self._settings
 
     @property
     def database_settings(self) -> config.DatabaseSettings:
@@ -324,15 +337,8 @@ class ResourcesProvider(BaseResourcesProvider):
     def email_sender(self) -> EmailSender:
         """Email sender."""
         if self._email_sender is None:
-            self._email_sender = EmailSender()
+            self._email_sender = EmailSender(self.settings)
         return self._email_sender
-
-    @property
-    def slack_sender(self) -> SlackSender:
-        """Slack sender."""
-        if self._slack_sender is None:
-            self._slack_sender = SlackSender()
-        return self._slack_sender
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
@@ -368,6 +374,10 @@ class ResourcesProvider(BaseResourcesProvider):
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""
         return FeaturesControl()
+
+    def initialize_telemetry_collectors(self, *targets):
+        """Initialize telemetry."""
+        pass
 
     def get_client_configuration(self) -> dict:
         """Return configuration to be used in client side."""

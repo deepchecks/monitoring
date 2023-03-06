@@ -22,7 +22,7 @@ from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProvid
                                                 get_email_sender_resource)
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.features_control import FeaturesSchema
-from deepchecks_monitoring.interfaces import EmailSender
+from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
