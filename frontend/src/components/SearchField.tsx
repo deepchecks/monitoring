@@ -7,9 +7,9 @@ import { colors } from 'theme/colors';
 
 type SearchFieldComponentProps = {
   onReset?: () => void;
-};
+} & TextFieldProps;
 
-const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps & TextFieldProps) => {
+const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps) => {
   const { onChange, value } = props;
 
   return (

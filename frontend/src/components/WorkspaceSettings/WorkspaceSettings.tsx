@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import { MemberSchema, retrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
 
 import Billing from './Billing/Billing';
+import Members from './Members';
 import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
 import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
 
@@ -49,8 +50,10 @@ const WorkspaceSettings = () => {
           <Tab label={constants.membersTabLabel} />
         </Tabs>
       </Box>
-      {value === 0 && <Billing />}
-      {value === 1 && <p>Members Component</p>}
+      <Box sx={{ marginY: '32px' }}>
+        {value === 0 && <Billing />}
+        {value === 1 && <Members />}
+      </Box>
     </Box>
   );
 };

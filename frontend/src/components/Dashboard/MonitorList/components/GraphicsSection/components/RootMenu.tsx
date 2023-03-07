@@ -8,6 +8,8 @@ import { Bell, Edit, Trash } from 'assets/icon/icon';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
+import { colors } from 'theme/colors';
+
 interface RootMenuProps extends MenuProps {
   handleOpenMonitor: (drawerName: DrawerNames) => void;
   handleOpenDeleteMonitor: () => void;
@@ -28,20 +30,26 @@ export const RootMenu = ({ handleOpenMonitor, handleOpenDeleteMonitor, ...props 
     }}
     {...props}
   >
-    <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.CreateAlert)}>
+    <StyledRootMenuItem onClick={() => handleOpenMonitor(DrawerNames.CreateAlert)}>
       <Bell />
       <StyledTypography>Create alert</StyledTypography>
-    </StyledMenuItem>
-    <StyledMenuItem onClick={() => handleOpenMonitor(DrawerNames.EditMonitor)}>
+    </StyledRootMenuItem>
+    <StyledRootMenuItem onClick={() => handleOpenMonitor(DrawerNames.EditMonitor)}>
       <Edit />
       <StyledTypography>Edit monitor</StyledTypography>
-    </StyledMenuItem>
+    </StyledRootMenuItem>
     <StyledMenuItem onClick={handleOpenDeleteMonitor}>
-      <Trash />
-      <StyledTypography sx={{ color: '#E7696A' }}>Delete monitor</StyledTypography>
+      <Trash stroke={colors.semantic.red} />
+      <StyledTypography sx={{ color: theme => theme.palette.severity.critical }}>Delete monitor</StyledTypography>
     </StyledMenuItem>
   </StyledRootMenu>
 );
+
+const StyledRootMenuItem = styled(StyledMenuItem)(({ theme }) => ({
+  '& svg': {
+    stroke: theme.palette.primary.main
+  }
+}));
 
 const StyledTypography = styled(Typography)({
   fontWeight: 500,

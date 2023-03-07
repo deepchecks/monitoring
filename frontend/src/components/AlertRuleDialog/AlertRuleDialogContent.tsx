@@ -1,5 +1,7 @@
-import { Box, Step, StepLabel, Stepper, styled } from '@mui/material';
 import React from 'react';
+
+import { Box, Step, StepLabel, Stepper, styled } from '@mui/material';
+
 import { AlertRuleDialogStepOne } from './RuleDialogStepOne';
 import { AlertRuleDialogStepThree } from './RuleDialogStepThree';
 import { AlertRuleDialogStepTwo } from './RuleDialogStepTwo';
@@ -67,12 +69,12 @@ export const AlertRuleDialogContent = ({ handleComplete, startingStep }: AlertRu
   );
 };
 
-const StyledStep = styled(Step)({
+const StyledStep = styled(Step)(({ theme }) => ({
   '& .MuiStepIcon-root': {
     color: '#3A474E' // circle color
   },
   '& .MuiStepLabel-root .Mui-active': {
-    color: '#9D60FB' // circle color (ACTIVE)
+    color: theme.palette.primary.main // circle color (ACTIVE)
   },
   '& .MuiStepLabel-root .Mui-completed': {
     color: '#3A474E' // circle color (COMPLETED)
@@ -81,4 +83,4 @@ const StyledStep = styled(Step)({
     fill: '#ffffff',
     fontSize: '14px' // circle's number
   }
-});
+}));

@@ -63,7 +63,8 @@ export const lightPaletteOptions: PaletteOptions = {
     50: colors.neutral.grey[50],
     100: colors.neutral.grey[100],
     200: colors.neutral.grey[200],
-    300: colors.neutral.grey[300]
+    300: colors.neutral.grey[300],
+    light: colors.neutral.grey.light
   },
   text: {
     primary: colors.neutral.darkText,

@@ -41,17 +41,6 @@ export const componentOptions: Components<Theme> = {
         minHeight: 30,
         minWidth: 70
       },
-      contained: ({ theme }) => ({
-        background: theme.palette.primary.main,
-        ':hover': {
-          background: theme.palette.primary.dark
-        },
-        ':disabled': {
-          background: theme.palette.grey[100],
-          color: theme.palette.grey[300],
-          boxShadow: 'none'
-        }
-      }),
       outlined: ({ theme }) => ({
         background: alpha(theme.palette.common.white, 0.7),
         border: `1px solid ${theme.palette.primary.main}`,

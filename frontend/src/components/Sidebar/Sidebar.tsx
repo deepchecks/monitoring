@@ -11,7 +11,7 @@ import { AnalysisSubMenu } from './components/AnalysisSubMenu';
 import { Logo } from '../Logo';
 import { SidebarMenuItem } from './components/SidebarMenuItem';
 import { UserInfo } from './components/UserInfo';
-import { UserInviteDialog } from './components/UserInviteDialog';
+import { InviteMember } from 'components/WorkspaceSettings/Members/components/InviteMember';
 
 const StyledButton = styled(Button)(({ theme }) => ({
   width: '100%',
@@ -33,7 +33,6 @@ export const Sidebar = () => {
 
   const handleInviteToOrgClick = () => {
     reportEvent(events.sidebar.clickedInviteWorkspace);
-
     setUserInviteOpen(true);
   };
 
@@ -134,7 +133,7 @@ export const Sidebar = () => {
       </Box>
 
       <AnalysisSubMenu open={openAnalysisSubMenu} onClose={closeAnalysisSubMenu} />
-      <UserInviteDialog open={userInviteOpen} onClose={handleInviteToOrgClose}></UserInviteDialog>
+      <InviteMember open={userInviteOpen} closeDialog={handleInviteToOrgClose} />
     </AppBar>
   );
 };

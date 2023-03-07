@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { Dialog as MaterialDialog } from '@mui/material';
+import { Dialog as MaterialDialog, Box, styled as MUIStyled } from '@mui/material';
 
 interface DialogProps {
   backgroundColor?: string;
@@ -49,5 +49,20 @@ const ResponsiveStyledDialog = styled(StyledDialog)<DialogProps>`
     }
   }
 `;
+
+export const StyledDialogCloseIconButton = MUIStyled(Box)(({ theme }) => ({
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  transition: 'opacity ease 0.3s',
+
+  '&:hover': {
+    opacity: 0.5
+  },
+
+  '& svg': {
+    stroke: theme.palette.text.disabled
+  }
+}));
 
 export { StyledDialog, ResponsiveStyledDialog };
