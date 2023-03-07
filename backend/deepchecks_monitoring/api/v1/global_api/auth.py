@@ -1,4 +1,5 @@
 """Module representing the endpoints for the auth."""
+from authlib.integrations.base_client.errors import MismatchingStateError
 from authlib.integrations.starlette_client import OAuth
 from fastapi import Depends
 from pydantic import ValidationError
@@ -8,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep, get_oauth_resource
-from deepchecks_monitoring.exceptions import InternalError
+from deepchecks_monitoring.exceptions import BadRequest, InternalError
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.user import User, UserOAuthDTO
 
@@ -48,7 +49,11 @@ async def auth0_callback(
 ):
     """Get the user details from the Auth0 callback."""
     auth0_client = oauth.create_client('auth0')
-    token = await auth0_client.authorize_access_token(request)
+
+    try:
+        token = await auth0_client.authorize_access_token(request)
+    except MismatchingStateError as error:
+        raise BadRequest(error.description) from error
 
     try:
         info = UserOAuthDTO(**token['userinfo'])
