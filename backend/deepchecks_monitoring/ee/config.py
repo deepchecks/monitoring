@@ -74,3 +74,5 @@ class Settings(
     oauth_client_secret: str
     access_audit: bool = False
     mixpanel_id: str = ''
+    hotjar_sv: str = ''
+    hotjar_id: str = ''

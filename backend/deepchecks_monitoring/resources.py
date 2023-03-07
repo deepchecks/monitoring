@@ -387,5 +387,7 @@ class ResourcesProvider(BaseResourcesProvider):
             "lauchdarklySdkKey": None,
             "environment": None,
             "mixpanel_id": None,
-            "is_cloud": False
+            "is_cloud": False,
+            "hotjar_id": None,
+            "hotjar_sv": None
         }
