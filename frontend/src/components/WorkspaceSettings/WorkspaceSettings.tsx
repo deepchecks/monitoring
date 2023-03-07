@@ -6,9 +6,9 @@ import Box from '@mui/material/Box';
 import { MemberSchema, retrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
 
 import Billing from './Billing/Billing';
-import Members from './Members';
 import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
 import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
+import Members from './Members/Members';
 
 import { StyledH1 } from 'components/base/Text/Header.styles';
 

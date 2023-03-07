@@ -9,7 +9,7 @@ import { MembersTable } from './components/MembersTable/MembersTable';
 
 import { MembersActionDialogOptions } from './Members.type';
 
-export const Members = () => {
+const Members = () => {
   const {
     data: organizationMembers = [],
     isLoading: isOrganizationMembersLoading,
@@ -60,3 +60,5 @@ export const Members = () => {
     </>
   );
 };
+
+export default Members;

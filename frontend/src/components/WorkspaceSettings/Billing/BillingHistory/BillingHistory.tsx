@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import logger from 'helpers/services/logger';
+import { listAllSubscriptionsApiV1BillingSubscriptionsGet } from 'api/generated';
 
 import BillingTransaction from './BillingTransaction';
 import { RectSkeleton } from 'components/base/Skeleton/Skeleton';
@@ -8,8 +9,6 @@ import { RectSkeleton } from 'components/base/Skeleton/Skeleton';
 import { StyledH3 } from 'components/base/Text/Header.styles';
 import { BillingCardContainer, BillingSeparator, BillingText, BillingTransactionContainer } from '../Billing.styles';
 import { Col16Gap } from 'components/base/Container/Container.styles';
-
-import { customInstance } from 'helpers/services/customAxios';
 
 import { constants } from '../billing.constants';
 
@@ -22,12 +21,9 @@ const BillingHistory = () => {
   useEffect(() => {
     const getBillingHistory = async () => {
       try {
-        const response = (await customInstance({
-          method: 'GET',
-          url: 'api/v1/billing/subscriptions-history'
-        })) as any;
+        const response = await listAllSubscriptionsApiV1BillingSubscriptionsGet();
 
-        setTransactions(response);
+        setTransactions([...response]);
         setLoading(false);
       } catch (err) {
         logger.error(err);
