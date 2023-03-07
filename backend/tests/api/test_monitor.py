@@ -281,7 +281,7 @@ def test_monitor_notebook_retrieval(
             "model_version_id": 1
         }
     ))
-    assert notebook.startswith("import")
+    assert notebook.startswith("# # Data Review")
 
 
 @pytest.mark.asyncio

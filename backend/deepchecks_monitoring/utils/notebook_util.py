@@ -13,10 +13,10 @@ import os
 import pkgutil
 import typing as t
 
+import jupytext
 import nbformat
 from deepchecks.tabular import base_checks as tabular_base_checks
 from fastapi.responses import PlainTextResponse
-from nbformat.v4.nbbase import new_code_cell, new_notebook
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
@@ -84,8 +84,8 @@ async def get_check_notebook(
     filters = str(notebook_options.filter.filters).replace('), ',
                                                            '),\n           ') if notebook_options.filter else None
 
-    asset_name = 'run_single_check.py' if \
-        isinstance(dp_check, tabular_base_checks.SingleDatasetBaseCheck) else 'run_train_test_check.py'
+    asset_name = 'run_single_check.md' if \
+        isinstance(dp_check, tabular_base_checks.SingleDatasetBaseCheck) else 'run_train_test_check.md'
 
     path = os.path.join('utils', 'notebook_resources', asset_name)
     template = pkgutil.get_data('deepchecks_monitoring', path).decode('utf-8')
@@ -96,19 +96,12 @@ async def get_check_notebook(
                                check_module=check_config['module_name'], check_class=check_config['class_name'],
                                check_params=_pretify_params(check_config['params']))
 
+    notebook_node = jupytext.reads(template, fmt='md')
     if notebook_options.as_script:
-        template = template.replace('# cell end', '')
-        response = PlainTextResponse(template)
+        response = PlainTextResponse(jupytext.writes(notebook_node, fmt='py:nomarker'))
     else:
-        cells = []
-        for cell in template.split('\n# cell end'):
-            cells.append(new_code_cell(
-                source=cell,
-            ))
-
-        notebook = new_notebook(cells=cells, metadata={'language': 'python'})
         notebook_stream = io.StringIO()
-        nbformat.write(notebook, notebook_stream)
+        nbformat.write(notebook_node, notebook_stream)
         notebook_stream.seek(0)
 
         response = PlainTextResponse(notebook_stream.getvalue())
