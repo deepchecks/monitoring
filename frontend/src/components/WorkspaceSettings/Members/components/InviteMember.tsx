@@ -61,6 +61,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
       >
         <MembersActionDialogContentLayout>
           <MembersActionDialogInput
+            placeholder={constants.inviteMember.placeholder}
             label={constants.inviteMember.inputLabel}
             value={email}
             onChange={handleEmailChange}

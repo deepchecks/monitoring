@@ -17,6 +17,7 @@ export const constants = {
   },
   inviteMember: {
     title: 'Invite Member',
+    placeholder: 'email1@org-name.com',
     submit: 'Send Invite',
     inputLabel: 'Email address of the invitee',
     success: 'User invited successfully!'

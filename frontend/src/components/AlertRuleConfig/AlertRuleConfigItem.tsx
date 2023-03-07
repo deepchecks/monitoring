@@ -16,14 +16,14 @@ import { OperatorsEnumMap } from 'helpers/conditionOperator';
 interface AlertRuleConfigItemProps {
   alertRule: AlertRuleConfigSchema;
   onEdit: () => void;
-  onDelete: () => Promise<void>;
+  onDelete: () => void;
 }
 
-export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleConfigItemProps) => {
-  dayjs.extend(duration);
-  dayjs.extend(relativeTime);
-  dayjs.extend(localizedFormat);
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+dayjs.extend(localizedFormat);
 
+export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleConfigItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const {
@@ -166,7 +166,7 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
               marginRight: '0.3em'
             }}
             variant="text"
-            onClick={() => onDelete()}
+            onClick={onDelete}
           >
             <DeleteIcon />
             <Typography sx={{ fontSize: '10px', lineHeight: '12px', letterSpacing: '0.4px' }}>Delete rule</Typography>

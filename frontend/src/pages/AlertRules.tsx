@@ -1,44 +1,45 @@
 import React, { useState } from 'react';
 
-import { getAlertFilters, resetAlertFilters } from '../helpers/context';
-
 import {
   AlertRuleConfigSchema,
   GetAlertRulesApiV1AlertRulesGetParams,
   GetAllAlertRulesApiV1ConfigAlertRulesGetParams,
-  useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete,
   useGetAllAlertRulesApiV1ConfigAlertRulesGet
 } from '../api/generated';
 
-import { Button, Box } from '@mui/material';
-
-import { events, reportEvent } from 'helpers/services/mixPanel';
+import { Box, styled } from '@mui/material';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
 import { Loader } from 'components/Loader';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
-
-import { WhitePlusIcon } from 'assets/icon/icon';
 import NoResults from 'components/NoResults';
 import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
 import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
+import { DeleteAlertRule } from 'components/AlertRuleConfig/DeleteAlertRule';
+import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
+
+import { WhitePlusIcon } from 'assets/icon/icon';
+
+import { getAlertFilters, resetAlertFilters } from '../helpers/context';
+import { reportEvent } from 'helpers/services/mixPanel';
 
 export const AlertRules = () => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
     getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams
   );
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [editableAlertRuleId, setEditableAlertRuleId] = useState<AlertRuleConfigSchema['id'] | undefined>(undefined);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editableAlertRuleId, setEditableAlertRuleId] = useState<AlertRuleConfigSchema['id'] | undefined>();
+  const [currentAlertRule, setCurrentAlertRule] = useState<AlertRuleConfigSchema | null>(null);
 
   const {
     data: alertRules = [],
     isLoading: isAlertRulesLoading,
-    refetch: refetchAlertRules
+    refetch
   } = useGetAllAlertRulesApiV1ConfigAlertRulesGet(alertFilters as GetAllAlertRulesApiV1ConfigAlertRulesGetParams);
 
-  const { mutateAsync: deleteAlertRuleById, isLoading: isDeleteAlertRuleLoading } =
-    useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete();
+  const refetchAlertRules = () => refetch();
 
   const onDialogClose = (isRefetch = false) => {
     isRefetch && refetchAlertRules();
@@ -53,46 +54,32 @@ export const AlertRules = () => {
     setEditableAlertRuleId(alertRule?.id);
   };
 
-  const onAlertRuleDelete = async (alertRule: AlertRuleConfigSchema) => {
-    reportEvent(events.alertRulesPage.clickedDeleteRule);
-
-    await deleteAlertRuleById({ alertRuleId: alertRule.id });
-    refetchAlertRules();
+  const openDeleteAlertRuleDialog = (alertRule: AlertRuleConfigSchema) => {
+    setCurrentAlertRule(alertRule);
+    setIsDeleteDialogOpen(true);
   };
 
-  const isLoading = isAlertRulesLoading || isDeleteAlertRuleLoading;
+  const closeDeleteAlertRuleDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setTimeout(() => setCurrentAlertRule(null), 50);
+  };
 
   return (
     <Box>
       <HeaderLayout>
-        <Button
-          sx={{
-            height: '40px'
-          }}
+        <MUIBaseButton
+          sx={{ height: '40px' }}
           disableElevation
           startIcon={<WhitePlusIcon />}
           onClick={() => onDialogOpen()}
         >
           New Alert Rule
-        </Button>
+        </MUIBaseButton>
       </HeaderLayout>
-      <Box
-        sx={{
-          padding: '40px 0 ',
-          width: '100%'
-        }}
-      >
+      <StyledContainer>
         <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
-        <Box
-          sx={{
-            padding: 0,
-            marginTop: '40px',
-            display: 'grid',
-            'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px'
-          }}
-        >
-          {isLoading ? (
+        <StyledAlertRulesContainer>
+          {isAlertRulesLoading ? (
             <Loader />
           ) : alertRules.length !== 0 ? (
             alertRules.map(alertRule => (
@@ -100,20 +87,40 @@ export const AlertRules = () => {
                 key={alertRule.id}
                 onEdit={() => onDialogOpen(alertRule)}
                 alertRule={alertRule}
-                onDelete={() => onAlertRuleDelete(alertRule)}
+                onDelete={() => openDeleteAlertRuleDialog(alertRule)}
               />
             ))
           ) : (
             <NoResults marginTop="184px" handleReset={() => resetAlertFilters(setAlertFilters)} />
           )}
-        </Box>
-      </Box>
+        </StyledAlertRulesContainer>
+      </StyledContainer>
 
       <AlertRuleDialogProvider>
         <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
       </AlertRuleDialogProvider>
+
+      <DeleteAlertRule
+        alertRule={currentAlertRule}
+        open={isDeleteDialogOpen}
+        closeDialog={closeDeleteAlertRuleDialog}
+        refetchAlertRules={refetchAlertRules}
+      />
     </Box>
   );
 };
+
+const StyledContainer = styled(Box)({
+  padding: '40px 0 ',
+  width: '100%'
+});
+
+const StyledAlertRulesContainer = styled(Box)({
+  padding: 0,
+  marginTop: '40px',
+  display: 'grid',
+  'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
+  gap: '20px'
+});
 
 export default AlertRules;

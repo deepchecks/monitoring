@@ -29,6 +29,10 @@ describe('load main page', () => {
     // Intrecepting the request
     cy.intercept('PUT', '/api/v1/organization/invite').as('invitation');
     // Invting the second user
+    cy.contains('button', 'Invite to workspace').click();
+    cy.get('input[placeholder="email1@org-name.com"]').type(
+      Cypress.env('second_username')
+    );
     cy.contains('button', 'Send Invite').click();
     // Wait for invitation to complete
     cy.wait('@invitation').its('response.statusCode').should('eq', 200);
