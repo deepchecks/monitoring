@@ -1,5 +1,6 @@
 import { styled, Typography, Stack, Button, Box } from '@mui/material';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 export const StyledContainer = styled(Stack)({
   flexDirection: 'row',
@@ -16,7 +17,7 @@ export const StyledHeading = styled(Typography)({
 export const StyledLine = styled(Box)({
   flex: 1,
   margin: '0 24px',
-  borderTop: `1px solid ${colors.neutral.grey.light}`
+  borderTop: `1px solid ${theme.palette.grey.light}`
 });
 
 export const StyledButton = styled(Button)({

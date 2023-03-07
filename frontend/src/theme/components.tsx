@@ -1,8 +1,7 @@
-import { alpha, Components, Theme } from '@mui/material';
-// import type {} from "@mui/x-date-pickers/themeAugmentation";
 import React from 'react';
+import { alpha, Components, Theme } from '@mui/material';
+
 import { CheckboxDefault, CheckboxSelected } from '../assets/icon/icon';
-import { colors } from './colors';
 
 export const componentOptions: Components<Theme> = {
   MuiButton: {
@@ -191,11 +190,11 @@ export const componentOptions: Components<Theme> = {
   MuiTooltip: {
     styleOverrides: {
       arrow: {
-        color: colors.neutral.blue[100]
+        color: '#101F39'
       },
       tooltip: {
         padding: '4px 16px',
-        backgroundColor: colors.neutral.blue[100],
+        backgroundColor: '#101F39',
         fontSize: 16,
         lineHeight: '24px',
         letterSpacing: '0.15px',
@@ -207,7 +206,7 @@ export const componentOptions: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }) => ({
         height: 28,
-        backgroundColor: colors.neutral.blue[100],
+        backgroundColor: '#101F39',
         color: theme.palette.common.white,
         fontSize: 12,
         lineHeight: '18px',

@@ -5,8 +5,9 @@ import dayjs from 'dayjs';
 
 import { AlertRuleSchema, AlertSchema } from 'api/generated';
 
-import { colors } from 'theme/colors';
 import { ACTIVE_BAR_BG_COLOR } from '../components/SegmentsDrillDown/SegmentsDrillDown.helpers';
+
+import { theme } from 'theme';
 
 export const zoomOptions: ZoomPluginOptions = {
   limits: {
@@ -48,7 +49,7 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
     ctx.save();
 
     ctx.lineWidth = 1;
-    ctx.strokeStyle = colors.neutral.darkText;
+    ctx.strokeStyle = theme.palette.text.primary;
 
     ctx.beginPath();
     ctx.moveTo(xOffset, yOffset);
@@ -205,7 +206,7 @@ export const drawAlerts = {
     const drawLine = (index: number, meta: ChartMeta) => {
       ctx.beginPath();
       ctx.lineWidth = 2;
-      ctx.strokeStyle = colors.semantic.red;
+      ctx.strokeStyle = theme.palette.error.main;
 
       ctx.moveTo(meta?.data[index]?.x, bottom);
       ctx.lineTo(meta?.data[index]?.x, top);

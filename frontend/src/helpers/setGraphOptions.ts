@@ -1,6 +1,6 @@
 import { AlertSchema } from 'api/generated';
 import { alpha } from '@mui/material';
-import { colors } from '../theme/colors';
+import { theme } from 'theme';
 
 export const PREVIOUS_PERIOD = '|previous_period';
 
@@ -22,7 +22,7 @@ const GRAPH_COLORS = [
   '#2F6CA2',
   '#668FFF'
 ];
-const ALERT_COLOR = colors.semantic.red;
+const ALERT_COLOR = theme.palette.error.main;
 
 const setLabel = (dashed: boolean, label: string) => (dashed ? label + PREVIOUS_PERIOD : label);
 const setBorderDash = (dashed: boolean) => (dashed ? [10, 5] : []);
@@ -74,7 +74,7 @@ export const setLineGraphOptions = (
     pointBackgroundColor: pointColors.length ? pointColors : defaultColor,
     pointHoverBackgroundColor: '#fff',
     pointRadius: pointRadiuses.length ? pointRadiuses : 2,
-    pointHoverBorderColor: colors.primary.violet[400],
+    pointHoverBorderColor: theme.palette.primary.main,
     hidden: false,
     borderDash: setBorderDash(dashed)
   };

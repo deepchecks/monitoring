@@ -1,7 +1,8 @@
 import React from 'react';
 import { WarningIcon } from 'assets/icon/icon';
 import { Stack, styled, Typography } from '@mui/material';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 interface WarningLabelProps {
   numberOfAlerts: number;
@@ -17,8 +18,8 @@ export const WarningLabel = ({ numberOfAlerts }: WarningLabelProps) => (
 );
 
 const StyledWarningLabel = styled(Stack)({
-  color: colors.neutral.white,
-  backgroundColor: colors.semantic.salmon,
+  color: theme.palette.common.white,
+  backgroundColor: 'DD5841',
   width: '44px',
   height: '24px',
   borderRadius: '30px'

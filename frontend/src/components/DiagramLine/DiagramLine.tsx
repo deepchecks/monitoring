@@ -14,9 +14,9 @@ import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
 import { Loader } from '../Loader';
 
-import { colors } from 'theme/colors';
-
 import { DiagramLineProps } from './DiagramLine.types';
+
+import { theme } from 'theme';
 
 Chart.register(...registerables, zoomPlugin);
 
@@ -191,7 +191,7 @@ function DiagramLine({
           display: false
         },
         tooltip: {
-          backgroundColor: colors.neutral.blue[100],
+          backgroundColor: theme.palette.info.main,
           padding: {
             bottom: 4,
             left: 16,

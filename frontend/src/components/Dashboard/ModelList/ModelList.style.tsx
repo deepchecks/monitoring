@@ -1,10 +1,10 @@
 import { styled, Box, List, Typography, Stack } from '@mui/material';
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 export const StyledContainer = styled(Box)({
   overflow: 'hidden',
   height: '502px',
-  border: `1px solid ${colors.neutral.grey.light}`,
+  border: `1px solid ${theme.palette.grey.light}`,
   borderRadius: '10px',
 
   '@media (max-width: 1536px)': {
@@ -28,7 +28,7 @@ export const StyledHeading = styled(Typography)({
   fontWeight: 700,
   lineHeight: '20px',
   textAlign: 'left',
-  color: colors.neutral.darkText
+  color: theme.palette.text.primary
 });
 
 export const StyledSearchFieldContainer = styled(Box)({
@@ -60,8 +60,8 @@ export const StyledResetSelectionContainer = styled(StyledStack)({
   bottom: 0,
   height: '50px',
   padding: '0 24px',
-  background: colors.neutral.white,
-  borderTop: `1px solid ${colors.neutral.grey.light}`,
+  background: theme.palette.common.white,
+  borderTop: `1px solid ${theme.palette.grey.light}`,
   backdropFilter: 'blur(5px)',
 
   '@media (max-width: 1536px)': {
@@ -84,5 +84,5 @@ export const StyledResetSelectionText = styled(Typography)({
   fontSize: '14px',
   lineHeight: '17px',
   marginLeft: '16px',
-  color: colors.primary.violet[400]
+  color: theme.palette.primary.main
 });

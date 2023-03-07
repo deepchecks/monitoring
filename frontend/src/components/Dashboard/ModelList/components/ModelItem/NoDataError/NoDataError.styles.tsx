@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { Tooltip } from '@mui/material';
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 const NoDataErrorToolTip = styled(Tooltip)`
   margin: 0 16px 0 auto;
@@ -11,12 +11,12 @@ const NoDataErrorImg = styled.img`
 `;
 
 const NoDataErrorPopperTextBox = styled.span`
-  color: ${colors.neutral.white};
+  color: ${theme.palette.common.white};
 `;
 
 const NoDataErrorPopperLink = styled.a`
   text-decoration: none;
-  color: ${colors.primary.violet[400]};
+  color: ${theme.palette.primary.main};
 `;
 
 export { NoDataErrorToolTip, NoDataErrorImg, NoDataErrorPopperTextBox, NoDataErrorPopperLink };

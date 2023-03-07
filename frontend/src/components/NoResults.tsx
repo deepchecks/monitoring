@@ -3,7 +3,8 @@ import React from 'react';
 import { Box, Typography, BoxProps, styled } from '@mui/material';
 
 import { NoResultsImage } from 'assets/bg/backgrounds';
-import { colors } from '../theme/colors';
+
+import { theme } from 'theme';
 
 interface NoResultsProps extends BoxProps {
   handleReset: () => void;
@@ -37,7 +38,7 @@ export default NoResults;
 
 const StyledTypography = styled(Typography)({
   marginTop: '60px',
-  color: colors.neutral.lightText,
+  color: theme.palette.text.disabled,
   textAlign: 'center',
   padding: '0 20px'
 });

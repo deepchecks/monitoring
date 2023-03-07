@@ -4,7 +4,7 @@ import { styled, Box, Stack, Typography, BoxProps } from '@mui/material';
 
 import { InfoLink } from 'components/InfoLink';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface AnalysisChartItemProps extends BoxProps {
   title: string;
@@ -43,7 +43,7 @@ export function AnalysisChartItem({
 const StyledAnalysisChartItem = styled(Box)({
   padding: '16px 40px',
   borderRadius: '10px',
-  border: `1px solid ${colors.neutral.grey.light}`,
+  border: `1px solid ${theme.palette.grey.light}`,
 
   '& .legend_icon': {
     width: 22,

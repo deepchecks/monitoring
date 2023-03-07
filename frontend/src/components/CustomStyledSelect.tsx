@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 
 import { Select, styled, SelectProps } from '@mui/material';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface CustomStyledSelectProps extends SelectProps {
   children: ReactNode;
@@ -15,7 +15,7 @@ export const CustomStyledSelect = ({ children, ...props }: CustomStyledSelectPro
 export const StyledSelect = styled(Select)({
   fontWeight: 600,
   minWidth: 150,
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   borderRadius: '10px',
 
   '@media (max-width: 1536px)': {
@@ -23,6 +23,6 @@ export const StyledSelect = styled(Select)({
   },
 
   '& .MuiOutlinedInput-notchedOutline': {
-    border: `1px solid ${colors.neutral.grey.light}`
+    border: `1px solid ${theme.palette.grey[200]}`
   }
 });

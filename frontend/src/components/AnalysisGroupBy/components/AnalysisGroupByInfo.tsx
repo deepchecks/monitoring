@@ -6,9 +6,9 @@ import { styled, Stack, StackProps } from '@mui/material';
 
 import { AnalysisGroupByInfoItem } from './AnalysisGroupByInfoItem';
 
-import { colors } from 'theme/colors';
-
 import { ClassOrFeature } from '../AnalysisGroupBy.types';
+
+import { theme } from 'theme';
 
 interface AnalysisGroupByInfoProps extends StackProps {
   startTime: string;
@@ -43,6 +43,6 @@ const StyledContainer = styled(Stack)({
   justifyContent: 'space-between',
   marginBottom: '37px',
   padding: '20px 0',
-  borderTop: `1px dashed ${colors.neutral.grey[300]}`,
-  borderBottom: `1px dashed ${colors.neutral.grey[300]}`
+  borderTop: `1px dashed ${theme.palette.grey[300]}`,
+  borderBottom: `1px dashed ${theme.palette.grey[300]}`
 });

@@ -3,7 +3,8 @@ import React, { memo } from 'react';
 import { InputAdornment, TextField, TextFieldProps, Typography } from '@mui/material';
 
 import { SearchIcon } from '../assets/icon/icon';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 type SearchFieldComponentProps = {
   onReset?: () => void;
@@ -21,16 +22,16 @@ const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps) 
         },
 
         '& .MuiOutlinedInput-root': {
-          color: colors.neutral.lightText,
+          color: theme.palette.text.disabled,
           borderRadius: '10px',
 
           '& fieldset': {
-            borderColor: colors.neutral.grey.light,
+            borderColor: theme.palette.grey.light,
             transition: 'border-color 0.3s ease'
           },
 
           '&:hover fieldset, &.Mui-focused fieldset': {
-            borderColor: colors.neutral.darkText
+            borderColor: theme.palette.text.primary
           }
         }
       }}
@@ -51,7 +52,7 @@ const SearchFieldComponent = ({ onReset, ...props }: SearchFieldComponentProps) 
               }}
               onClick={onReset}
             >
-              <Typography variant="subtitle2" color={colors.neutral.darkText}>
+              <Typography variant="subtitle2" color={theme.palette.text.primary}>
                 Reset
               </Typography>
             </InputAdornment>

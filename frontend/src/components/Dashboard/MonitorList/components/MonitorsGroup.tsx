@@ -7,10 +7,9 @@ import { Box, Typography, styled, Stack, Grid } from '@mui/material';
 
 import { Monitor } from './Monitor';
 
-import { colors } from 'theme/colors';
-
 import { SetStateType } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { theme } from 'theme';
 
 interface MonitorsGroupProps {
   model: ModelManagmentSchema;
@@ -85,7 +84,7 @@ const StyledModelName = styled(Typography)({
 });
 
 const StyledTypography = styled(Typography)({
-  color: colors.neutral.lightText
+  color: theme.palette.text.disabled
 });
 
 const StyledModelLatestTime = styled(StyledTypography)({
@@ -97,7 +96,7 @@ const StyledModelLatestTime = styled(StyledTypography)({
 const StyledLine = styled(Box)({
   flex: 1,
   marginLeft: '24px',
-  borderTop: `solid 1px ${colors.neutral.grey.light}`
+  borderTop: `solid 1px ${theme.palette.grey.light}`
 });
 
 const StyledModelDate = styled(Box)({

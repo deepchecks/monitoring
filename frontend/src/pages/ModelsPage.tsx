@@ -30,12 +30,12 @@ import NoResults from 'components/NoResults';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 
-import { colors } from 'theme/colors';
-
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
 import useModels from '../helpers/hooks/useModels';
 import { getParams, setParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/services/mixPanel';
+
+import { theme } from 'theme';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
@@ -294,7 +294,7 @@ interface StyledSortMenuItemProps {
 const StyledSortMenuItem = styled(MenuItem, {
   shouldForwardProp: prop => prop !== 'sort' && prop !== 'sortMethod'
 })<StyledSortMenuItemProps>(({ sort, sortMethod }) => ({
-  color: sort === sortMethod ? colors.primary.violet[400] : colors.neutral.darkText,
+  color: sort === sortMethod ? theme.palette.primary.main : theme.palette.text.primary,
   py: '12px',
   pl: '12px'
 }));

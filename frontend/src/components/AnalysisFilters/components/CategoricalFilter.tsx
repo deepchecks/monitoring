@@ -16,7 +16,7 @@ import {
 
 import { SearchField } from 'components/SearchField';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface CategoricalFilterProps {
   column: string;
@@ -133,5 +133,5 @@ const StyledButtonContainer = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '5px 0',
-  borderTop: `1px solid ${colors.neutral.grey.light}`
+  borderTop: `1px solid ${theme.palette.grey.light}`
 });

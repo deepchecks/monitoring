@@ -15,11 +15,12 @@ import { SelectSeverity, SeverityAll, severityAll } from '../SelectSeverity';
 import { FiltersResetButton } from './components/FiltersResetButton';
 import FiltersSortButton from './components/FiltersSortButton';
 
-import { colors } from 'theme/colors';
 import useModels from 'helpers/hooks/useModels';
 import { reportEvent } from 'helpers/services/mixPanel';
 import { resetAlertFilters } from 'helpers/context';
 import { setParams } from 'helpers/utils/getParams';
+
+import { theme } from 'theme';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
@@ -341,7 +342,7 @@ interface StyledSortMenuItemProps {
 const StyledSortMenuItem = styled(MenuItem, {
   shouldForwardProp: prop => prop !== 'sort' && prop !== 'sortMethod'
 })<StyledSortMenuItemProps>(({ sort, sortMethod }) => ({
-  color: sort === sortMethod ? colors.primary.violet[400] : colors.neutral.darkText,
+  color: sort === sortMethod ? theme.palette.primary.main : theme.palette.text.primary,
   py: '12px',
   pl: '12px'
 }));

@@ -12,7 +12,7 @@ export async function getAvailableFeaturesNames(modelVersionId: number) {
   const { features, feature_importance } = (await getSchemaApiV1ModelVersionsModelVersionIdSchemaGet(
     modelVersionId
   )) as FeaturesResponse;
-  
+
   let featuresNames;
   if (feature_importance != null && feature_importance.length > 0) {
     // Sort first by importance, then by name
@@ -22,5 +22,5 @@ export async function getAvailableFeaturesNames(modelVersionId: number) {
   } else {
     featuresNames = Object.keys(features).sort();
   }
-  return featuresNames = featuresNames.filter(val => features?.[val] in ColumnType)  
+  return (featuresNames = featuresNames.filter(val => features?.[val] in ColumnType));
 }

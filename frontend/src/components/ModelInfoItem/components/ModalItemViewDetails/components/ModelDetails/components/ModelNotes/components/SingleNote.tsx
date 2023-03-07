@@ -3,7 +3,8 @@ import { Box, Divider, IconButton, styled, Tooltip, Typography } from '@mui/mate
 import dayjs from 'dayjs';
 import { ModelNoteSchema } from 'api/generated';
 import { DeleteIcon } from 'assets/icon/icon';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 interface SingleNoteProps {
   note: ModelNoteSchema;
@@ -38,7 +39,7 @@ const StyledItem = styled(Box)({
   position: 'relative',
   flexDirection: 'column',
   gap: '8px',
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   paddingTop: '20px'
 });
 
@@ -70,7 +71,7 @@ const StyledNoteText = styled(Typography)({
 const StyledNoteDate = styled(Typography)({
   fontSize: '12px',
   fontWeight: 600,
-  color: colors.neutral.lightText,
+  color: theme.palette.text.disabled,
   padding: '8px 0 12px'
 });
 

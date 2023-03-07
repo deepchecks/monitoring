@@ -16,7 +16,8 @@ import { Loader } from './Loader';
 
 import { Email, Slack } from '../assets/icon/icon';
 import connectSlackBG from '../assets/bg/connectSlackBG.svg';
-import { colors } from '../theme/colors';
+
+import { theme } from 'theme';
 
 export enum NotificationDictionary {
   email = 'email_notification_levels',
@@ -224,7 +225,7 @@ export function AlertNotifications() {
           sx={() => ({
             padding: '20px 30px',
             background: `url(${connectSlackBG}) no-repeat right`,
-            backgroundColor: colors.primary.violet[100],
+            backgroundColor: theme.palette.primary.light,
             borderRadius: '10px',
             marginTop: '124px'
           })}

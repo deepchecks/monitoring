@@ -1,9 +1,10 @@
 import { Box, Menu, MenuItem, styled } from '@mui/material';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 export const StyledContainer = styled(Box)({
   padding: '32px 24px',
-  border: `1px solid ${colors.neutral.grey.light}`,
+  border: `1px solid ${theme.palette.grey.light}`,
   borderRadius: '10px',
   height: '351px',
 

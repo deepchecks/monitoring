@@ -59,7 +59,9 @@ const SegmentsDrillDownComponent = ({
     [check, datasetName, classOrFeature]
   );
 
-  const [allPlots, setAllPlots] = useState<Record<number, GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item[]>>({});
+  const [allPlots, setAllPlots] = useState<
+    Record<number, GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item[]>
+  >({});
   const [plots, setPlots] = useState<GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item[] | null>(null);
   const [activeBarIndex, setActiveBarIndex] = useState(0);
   const [activeBarName, setActiveBarName] = useState(labels[0]);

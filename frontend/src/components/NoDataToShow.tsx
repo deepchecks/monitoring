@@ -4,7 +4,7 @@ import { Box, styled, Typography, BoxProps } from '@mui/material';
 
 import { NoDataToShowIcon } from 'assets/icon/icon';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface NoDataToShowProps extends BoxProps {
   title: string;
@@ -18,7 +18,7 @@ export const NoDataToShow = ({ title, ...props }: NoDataToShowProps) => (
 );
 
 const StyledTypography = styled(Typography)({
-  color: colors.neutral.grey[300],
+  color: theme.palette.grey[300],
   fontSize: '26px',
   transform: 'translateY(-50px)',
   textAlign: 'center',

@@ -1,6 +1,5 @@
 import { alpha, PaletteOptions } from '@mui/material';
 import { AlertSeverity } from 'api/generated';
-import { colors } from './colors';
 
 declare module '@mui/material' {
   interface Color {
@@ -20,56 +19,56 @@ declare module '@mui/material' {
 export const lightPaletteOptions: PaletteOptions = {
   mode: 'light',
   common: {
-    black: colors.neutral.black,
-    white: colors.neutral.white
+    black: '#000000',
+    white: '#ffffff'
   },
   primary: {
-    dark: colors.primary.violet[500],
-    light: colors.primary.violet[100],
-    main: colors.primary.violet[400],
-    contrastText: colors.primary.violet[200]
+    dark: '#5718B8',
+    light: '#F1E9FE',
+    main: '#9D60FB',
+    contrastText: '#E2CFFE'
   },
   secondary: {
-    dark: colors.semantic.orange,
-    light: colors.semantic.yellow[50],
-    main: colors.semantic.yellow[100]
+    dark: '#FF833D',
+    light: '#FFC400',
+    main: '#FCB400'
   },
   severity: {
-    low: colors.neutral.lightText,
-    mid: colors.semantic.yellow[100],
-    high: colors.semantic.orange,
-    critical: colors.semantic.red
+    low: '#7D7E8E',
+    mid: '#FCB400',
+    high: '#FF833D',
+    critical: '#EF4C36'
   },
   error: {
-    main: colors.semantic.red,
-    dark: colors.semantic.orange,
-    light: colors.semantic.yellow[100],
-    contrastText: colors.neutral.lightText
+    main: '#EF4C36',
+    dark: '#FF833D',
+    light: '#FCB400',
+    contrastText: '#7D7E8E'
   },
   warning: {
-    main: colors.semantic.red,
-    dark: colors.semantic.orange,
-    light: colors.semantic.yellow[100],
-    contrastText: colors.neutral.lightText
+    main: '#EF4C36',
+    dark: '#FF833D',
+    light: '#FCB400',
+    contrastText: '#7D7E8E'
   },
   info: {
-    main: colors.accent.blue[100]
+    main: '#101F39'
   },
   success: {
-    main: colors.semantic.green[100],
-    light: colors.semantic.green[50]
+    main: '#06A09B',
+    light: '#72DDC3'
   },
   grey: {
-    50: colors.neutral.grey[50],
-    100: colors.neutral.grey[100],
-    200: colors.neutral.grey[200],
-    300: colors.neutral.grey[300],
-    light: colors.neutral.grey.light
+    light: '#E7E7E7',
+    50: alpha('#F3F5F8', 0.5),
+    100: '#F3F5F8',
+    200: '#D1D8DC',
+    300: '#B3BEC4'
   },
   text: {
-    primary: colors.neutral.darkText,
-    secondary: alpha(colors.neutral.black, 0.87),
-    disabled: colors.neutral.lightText
+    primary: '#303245',
+    secondary: alpha('#00000', 0.87),
+    disabled: '#7D7E8E'
   },
-  divider: colors.neutral.darkText
+  divider: '#303245'
 };

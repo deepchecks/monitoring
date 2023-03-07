@@ -4,10 +4,10 @@ import { CheckGroupBySchema, CheckGroupBySchemaValue } from 'api/generated';
 
 import { alpha } from '@mui/material';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
-const NULL_VALUE_BAR_COLOR = colors.neutral.grey.disabled;
-const NULL_VALUE_ACTIVE_BAR_COLOR = colors.neutral.grey[300];
+const NULL_VALUE_BAR_COLOR = theme.palette.grey[100];
+const NULL_VALUE_ACTIVE_BAR_COLOR = theme.palette.grey[300];
 const ACTIVE_BAR_COLOR = '#00CCFF';
 const BAR_COLOR = alpha(ACTIVE_BAR_COLOR, 0.3);
 export const ACTIVE_BAR_BG_COLOR = alpha(ACTIVE_BAR_COLOR, 0.1);

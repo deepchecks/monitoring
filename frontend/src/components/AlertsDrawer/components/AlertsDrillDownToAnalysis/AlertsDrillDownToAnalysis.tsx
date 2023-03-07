@@ -18,10 +18,10 @@ import { Loader } from 'components/Loader';
 import { AnalysisItem } from 'components/AnalysisItem';
 import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 
-import { colors } from 'theme/colors';
-
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
+
+import { theme } from 'theme';
 
 interface AlertsDrillDownToAnalysisProps {
   modelId: number;
@@ -99,7 +99,7 @@ const AlertsDrillDownToAnalysisComponent = ({
       if (currenModelVersionId) {
         setFetching(true);
 
-        const featuresNames = await getAvailableFeaturesNames(currenModelVersionId)
+        const featuresNames = await getAvailableFeaturesNames(currenModelVersionId);
 
         setFeaturesArray(featuresNames);
         setSelectedFeature(featuresNames[0]);
@@ -199,7 +199,7 @@ const AlertsDrillDownToAnalysisComponent = ({
 
 const StyledContainer = styled(Box)({
   flex: 1,
-  background: colors.neutral.grey[100]
+  background: theme.palette.grey[100]
 });
 
 export const AlertsDrillDownToAnalysis = memo(AlertsDrillDownToAnalysisComponent);

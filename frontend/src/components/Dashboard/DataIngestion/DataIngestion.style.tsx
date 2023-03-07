@@ -1,11 +1,11 @@
 import { Box, styled, Typography } from '@mui/material';
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 export const StyledContainer = styled(Box)({
   height: '502px',
   padding: '32px 24px',
   borderRadius: '10px',
-  border: `1px solid ${colors.neutral.grey.light}`,
+  border: `1px solid ${theme.palette.grey.light}`,
 
   '@media (max-width: 1536px)': {
     height: '370px',
@@ -26,7 +26,7 @@ export const StyledHeader = styled(Box)({
 });
 
 export const StyledTitle = styled(Typography)({
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   fontWeight: 700,
   fontSize: 20,
   lineHeight: '18px',

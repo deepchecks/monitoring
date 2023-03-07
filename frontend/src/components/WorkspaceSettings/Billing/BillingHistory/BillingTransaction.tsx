@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 
 import { BillingText, BillingTransactionContainer } from '../Billing.styles';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface BillingTransactionProps {
   start_date: number;
@@ -16,8 +16,8 @@ interface BillingTransactionProps {
 const BillingTransaction = (props: BillingTransactionProps) => {
   const { start_date, plan, models, status, index } = props;
 
-  const bg = index % 2 !== 0 ? `${colors.neutral.grey[100]}` : `${colors.neutral.white}`;
-  const activeColor = status === 'active' ? `${colors.semantic.green[100]}` : 'gray';
+  const bg = index % 2 !== 0 ? `${theme.palette.grey[100]}` : `${theme.palette.common.white}`;
+  const activeColor = status === 'active' ? `${theme.palette.success.main}` : 'gray';
 
   return (
     <BillingTransactionContainer bg={bg}>

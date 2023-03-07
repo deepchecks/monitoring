@@ -3,11 +3,12 @@ import { Link, LinkProps, useLocation, useNavigate } from 'react-router-dom';
 
 import { Box, styled, Typography } from '@mui/material';
 
-import { colors } from 'theme/colors';
 import { PathInfo } from 'helpers/helper';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Arrow } from 'assets/icon/icon';
+
+import { theme } from 'theme';
 
 interface SidebarMenuItemProps {
   width: number;
@@ -109,7 +110,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: activeHover ? colors.primary.violet[300] : theme.palette.primary.contrastText,
+            backgroundColor: activeHover ? theme.palette.primary.main : theme.palette.primary.contrastText,
             '& svg': {
               fill: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black
             }
@@ -130,7 +131,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
-            backgroundColor: activeHover ? colors.primary.violet[300] : theme.palette.primary.contrastText
+            backgroundColor: activeHover ? theme.palette.primary.main : theme.palette.primary.contrastText
           })}
         >
           {submenuIsOpen ? (
@@ -183,7 +184,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
             padding: '6px 0 6px 16px',
             textDecoration: 'none',
             cursor: 'pointer',
-            color: active ? colors.primary.violet[200] : hover ? colors.primary.violet[300] : '#fff'
+            color: active ? theme.palette.primary.contrastText : hover ? theme.palette.primary.main : '#fff'
           }}
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}
@@ -199,7 +200,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}
           sx={{
-            color: active ? colors.primary.violet[600] : hover ? colors.primary.violet[300] : '#fff'
+            color: active ? theme.palette.primary.dark : hover ? theme.palette.primary.main : '#fff'
           }}
         >
           {MenuItem}
@@ -214,9 +215,9 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
             key={childInfo.link}
             active={location.pathname === childInfo.link}
             sx={{
-              color: location.pathname === childInfo.link ? colors.primary.violet[600] : '#fff',
+              color: location.pathname === childInfo.link ? theme.palette.primary.dark : '#fff',
               ':hover': {
-                color: location.pathname !== childInfo.link ? colors.primary.violet[300] : colors.primary.violet[600]
+                color: location.pathname !== childInfo.link ? theme.palette.primary.main : theme.palette.primary.dark
               },
               m: '21px 0'
             }}

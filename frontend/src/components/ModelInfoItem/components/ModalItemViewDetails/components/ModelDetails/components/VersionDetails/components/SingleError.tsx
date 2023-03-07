@@ -3,7 +3,8 @@ import { IngestionErrorSchema } from 'api/generated';
 import { styled, Tooltip, Typography } from '@mui/material';
 import { StyledTableCell, StyledTableRow } from '../../../ModelDetails.style';
 import dayjs from 'dayjs';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 interface SingleErrorProps {
   error: IngestionErrorSchema;
@@ -12,7 +13,7 @@ interface SingleErrorProps {
 export const SingleError = ({ error }: SingleErrorProps) => (
   <StyledTableRow>
     <StyledTableCell width="12%">
-      <StyledCellText weight={600} color={colors.semantic.red}>
+      <StyledCellText weight={600} color={theme.palette.error.main}>
         {error.sample_id}
       </StyledCellText>
     </StyledTableCell>

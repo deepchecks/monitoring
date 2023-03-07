@@ -1,7 +1,7 @@
 import { AlertSeverity } from 'api/generated';
 import { alpha, Box, ListItemButton, styled, Typography, Stack } from '@mui/material';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface StyledContainerProps {
   active: boolean;
@@ -21,7 +21,7 @@ export const StyledContainer = styled(ListItemButton, {
     backgroundColor: theme.palette.grey[100]
   },
   transition: 'background-color 0.3s ease',
-  borderBottom: `1px solid ${colors.neutral.grey.light}`,
+  borderBottom: `1px solid ${theme.palette.grey.light}`,
   ':last-of-type': {
     border: 'none'
   }
@@ -49,7 +49,7 @@ export const StyledDateContainer = styled(Stack)({
 const StyledDate = styled(Typography)({
   fontSize: 14,
   lineHeight: '17px',
-  color: colors.neutral.lightText
+  color: theme.palette.text.disabled
 });
 
 export const StyledDateTitle = styled(StyledDate)({

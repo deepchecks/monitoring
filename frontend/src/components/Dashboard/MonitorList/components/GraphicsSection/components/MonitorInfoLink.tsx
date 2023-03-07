@@ -2,9 +2,8 @@ import React from 'react';
 
 import { Link, Typography, Stack, styled } from '@mui/material';
 
-import { colors } from 'theme/colors';
-
 import { InfoIconFilled } from 'assets/icon/icon';
+import { theme } from 'theme';
 
 interface MonitorInfoLinkProps {
   docsLink: string;
@@ -20,7 +19,7 @@ export const MonitorInfoLink = ({ docsLink }: MonitorInfoLinkProps) => (
 );
 
 const StyledLink = styled(Link)({
-  color: colors.primary.violet[400],
+  color: theme.palette.primary.main,
   textDecoration: 'none',
   transition: 'opacity 0.3s ease',
 

@@ -2,8 +2,6 @@ import React from 'react';
 
 import { styled, FormControlLabel, Switch, SwitchProps } from '@mui/material';
 
-import { colors } from 'theme/colors';
-
 export interface SwitchButtonProps extends SwitchProps {
   label?: string;
   checked: boolean;
@@ -59,10 +57,10 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
     padding: 2,
     '&.Mui-checked': {
       transform: 'translateX(19.5px)',
-      color: colors.neutral.white,
+      color: theme.palette.common.white,
       '& + .MuiSwitch-track': {
         opacity: 1,
-        backgroundColor: colors.primary.violet[400]
+        backgroundColor: theme.palette.primary.main
       }
     }
   },
@@ -78,7 +76,7 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
   '& .MuiSwitch-track': {
     borderRadius: '16px',
     opacity: 1,
-    backgroundColor: colors.neutral.lightText,
+    backgroundColor: theme.palette.text.disabled,
     boxSizing: 'border-box'
   }
 }));

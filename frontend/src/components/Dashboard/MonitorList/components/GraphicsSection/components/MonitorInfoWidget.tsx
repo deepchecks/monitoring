@@ -9,7 +9,7 @@ import { MonitorInfoTooltipBody } from './MonitorInfoTooltipBody';
 
 import { MenuVertical, InfoIcon } from 'assets/icon/icon';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface MonitorInfoWidgetProps {
   monitor: MonitorSchema;
@@ -49,7 +49,7 @@ export const MonitorInfoWidget = ({ monitor, hover, openRootMenu, handleOpenRoot
               disableTouchListener
             >
               <IconButton onClick={handleTooltipOpen} size="small">
-                <InfoIcon width="20px" height="20px" fill={colors.primary.violet[400]} />
+                <InfoIcon width="20px" height="20px" fill={theme.palette.primary.main} />
               </IconButton>
             </StyledTooltip>
             <IconButton onClick={handleOpenRootMenu} size="small" sx={{ marginLeft: '8px' }}>
@@ -71,7 +71,7 @@ const StyledTitleContainer = styled(Box)({
 });
 
 const StyledTitle = styled(Typography)({
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   fontWeight: 700,
   fontSize: '20px',
   lineHeight: '18px',
@@ -89,7 +89,7 @@ const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
   [`& .${tooltipClasses.tooltip}`]: {
     maxWidth: 'none',
     padding: '15px 20px 14px 16px',
-    background: alpha(colors.neutral.darkText, 0.95),
+    background: alpha(theme.palette.text.primary, 0.95),
     borderRadius: '5px'
   }
 });

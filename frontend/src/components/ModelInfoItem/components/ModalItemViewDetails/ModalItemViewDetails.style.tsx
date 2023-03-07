@@ -1,5 +1,5 @@
 import { Box, IconButton, Modal, Stack, styled, Typography } from '@mui/material';
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 export const StyledModal = styled(Modal)({
   display: 'flex',
@@ -11,7 +11,7 @@ export const StyledModalContent = styled(Box)({
   position: 'relative',
   height: '738px',
   width: '1200px',
-  background: colors.neutral.white,
+  background: theme.palette.common.white,
   padding: '40px 32px 0',
   borderRadius: '20px'
 });

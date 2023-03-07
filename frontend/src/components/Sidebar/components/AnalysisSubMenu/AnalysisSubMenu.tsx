@@ -4,7 +4,6 @@ import useModels from 'helpers/hooks/useModels';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { colors } from 'theme/colors';
 import { SearchField } from '../../../SearchField';
 
 import { WindowTimeout } from 'helpers/types';
@@ -29,7 +28,7 @@ const StyledSearch = styled(SearchField)(({ theme }) => ({
     borderColor: theme.palette.primary.main
   },
   '&.MuiFormControl-root.MuiFormControl-fullWidth svg': {
-    fill: theme.palette.primary.dark
+    fill: theme.palette.primary.main
   }
 }));
 
@@ -90,7 +89,7 @@ export function AnalysisSubMenu({ onClose, open }: AnalysisSubMenuProps) {
           width: '410px',
           height: '100vh',
           padding: '100px 20px 60px 20px',
-          backgroundColor: colors.primary.violet[600],
+          backgroundColor: '#17003E',
           position: 'absolute',
           top: 0,
           right: '-410px',

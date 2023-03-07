@@ -9,9 +9,10 @@ import {
 } from 'components/MarkedSelect/ControlledMarkedSelect';
 
 import { Checks, Research } from 'assets/icon/icon';
-import { colors } from 'theme/colors';
 
 import { SetStateType } from 'helpers/types';
+
+import { theme } from 'theme';
 
 function a11yProps(index: number) {
   return {
@@ -20,7 +21,7 @@ function a11yProps(index: number) {
   };
 }
 
-const TAB_PRIMARY_COLOR = colors.primary.violet[400];
+const TAB_PRIMARY_COLOR = theme.palette.primary.main;
 
 interface AlertsDrillDownToAnalysisHeaderProps {
   tabIndex: number;
@@ -116,7 +117,7 @@ const StyledContainer = styled(Stack)({
   top: 131,
   background: 'inherit',
   zIndex: 999,
-  borderTop: `3px solid ${colors.neutral.grey[200]}`
+  borderTop: `3px solid ${theme.palette.grey[200]}`
 });
 
 const StyledStack = styled(Stack)({
@@ -156,7 +157,7 @@ const StyledTab = styled(Tab)({
   border: `1px solid ${TAB_PRIMARY_COLOR}`,
 
   '&.Mui-selected': {
-    color: colors.neutral.white,
+    color: theme.palette.common.white,
     background: TAB_PRIMARY_COLOR
   }
 });

@@ -1,7 +1,8 @@
 import React, { FormEvent, useState } from 'react';
 import { Box, Button, Stack, styled, TextField, Typography } from '@mui/material';
 import { ModelNoteCreationSchema } from 'api/generated';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 interface CreateNoteProps {
   onCreate: (note: ModelNoteCreationSchema) => void;
@@ -55,7 +56,7 @@ const StyledContainer = styled(Stack)({
 });
 
 const StyledHeader = styled(Typography)({
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   fontWeight: 700,
   fontSize: '24px'
 });
@@ -68,9 +69,9 @@ const StyledForm = styled(Box)({
 
 const StyledTextField = styled(TextField)({
   '& .MuiInputLabel-root.MuiInputLabel-shrink': {
-    color: colors.primary.violet['400']
+    color: theme.palette.primary.main
   },
   '& .MuiInputLabel-root': {
-    color: colors.neutral.lightText
+    color: theme.palette.text.disabled
   }
 });

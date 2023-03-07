@@ -8,7 +8,7 @@ import { Bell, Edit, Trash } from 'assets/icon/icon';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface RootMenuProps extends MenuProps {
   handleOpenMonitor: (drawerName: DrawerNames) => void;
@@ -39,7 +39,7 @@ export const RootMenu = ({ handleOpenMonitor, handleOpenDeleteMonitor, ...props 
       <StyledTypography>Edit monitor</StyledTypography>
     </StyledRootMenuItem>
     <StyledMenuItem onClick={handleOpenDeleteMonitor}>
-      <Trash stroke={colors.semantic.red} />
+      <Trash stroke={theme.palette.error.main} />
       <StyledTypography sx={{ color: theme => theme.palette.severity.critical }}>Delete monitor</StyledTypography>
     </StyledMenuItem>
   </StyledRootMenu>

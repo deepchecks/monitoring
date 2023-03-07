@@ -28,8 +28,8 @@ import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
 
 import { CloseIcon, Check, Sync } from 'assets/icon/icon';
-import { colors } from 'theme/colors';
 import { useLocation } from 'react-router-dom';
+import { theme } from 'theme';
 
 dayjs.extend(localizedFormat);
 
@@ -235,7 +235,7 @@ const StyledTopSection = styled(Stack)({
   width: '100%',
   marginBottom: '6px',
   paddingBottom: '10px',
-  borderBottom: `0.5px solid ${colors.neutral.grey[200]}`
+  borderBottom: `0.5px solid ${theme.palette.grey[200]}`
 });
 
 const StyledAlertName = styled(Typography)({

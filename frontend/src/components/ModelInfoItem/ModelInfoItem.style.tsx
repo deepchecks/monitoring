@@ -1,6 +1,6 @@
 import { styled, Stack, Typography, Button, IconButton } from '@mui/material';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 export const StyledModelInfoItemContainer = styled(Stack)({
   position: 'relative',
@@ -35,8 +35,8 @@ export const StyledModelInfoBadge = styled(Stack)({
   textAlign: 'center',
   minWidth: '50px',
   height: '60px',
-  color: colors.neutral.blue[70],
-  background: colors.neutral.white,
+  color: theme.palette.info.main,
+  background: theme.palette.common.white,
   borderRadius: '20px'
 });
 
@@ -46,7 +46,7 @@ export const StyledModelInfoVersionsTitle = styled(Typography)({
 });
 
 export const StyledNoVersionsTitle = styled(Typography)({
-  color: colors.neutral.lightText
+  color: theme.palette.text.disabled
 });
 
 export const StyledVersion = styled(Typography)({

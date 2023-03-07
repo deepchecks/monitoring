@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { Button } from '@mui/material';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 import { FlexColumnContainer, Row16Gap, RowAutoGap } from 'components/base/Container/Container.styles';
 
@@ -25,14 +25,14 @@ const BillingCardsContainer = styled(Row16Gap)`
 `;
 
 const BillingCardContainer = styled(FlexColumnContainer)<BillingUIProps>`
-  border: ${p => p.border && `1px solid ${colors.neutral.grey[200]}`};
+  border: ${p => p.border && `1px solid ${theme.palette.grey[200]}`};
   padding: 24px;
   border-radius: 14px;
   margin-top: 24px;
 `;
 
 const BillingText = styled.p<BillingUIProps>`
-  color: ${p => p.color ?? `${colors.neutral.black}`};
+  color: ${p => p.color ?? `${theme.palette.common.black}`};
   font-size: ${p => p.fontSize ?? '1rem'};
   font-weight: ${p => p.weight ?? '400'};
   margin: ${p => p.margin ?? '0 auto 0 0'};
@@ -56,7 +56,7 @@ const BillingSeparator = styled.span`
   height: 1px;
   margin: 16px 0;
   width: 100%;
-  background: ${colors.neutral.grey[200]};
+  background: ${theme.palette.grey[200]};
 `;
 
 const FirstBillingPaymentForm = styled.form`
@@ -79,9 +79,9 @@ const FirstBillingContainer = styled(FlexColumnContainer)`
 `;
 
 const BillingPlanCardQuantityButton = styled.button<BillingUIProps>`
-  background: ${colors.neutral.white};
-  color: ${p => (p.disabled ? `${colors.neutral.grey[200]}` : `${colors.primary.violet[400]}`)};
-  border: 2px solid ${p => (p.disabled ? `${colors.neutral.grey[200]}` : `${colors.primary.violet[400]}`)};
+  background: ${theme.palette.common.white};
+  color: ${p => (p.disabled ? `${theme.palette.grey[200]}` : `${theme.palette.primary.main}`)};
+  border: 2px solid ${p => (p.disabled ? `${theme.palette.grey[200]}` : `${theme.palette.primary.main}`)};
   cursor: ${p => !p.disabled && 'pointer'};
   font-size: 20px;
   font-weight: 800;
@@ -93,7 +93,7 @@ const BillingPlanCardQuantityButton = styled.button<BillingUIProps>`
 `;
 
 const BillingTransactionContainer = styled(RowAutoGap)<BillingUIProps>`
-  background: ${p => p.bg ?? `${colors.neutral.white}`};
+  background: ${p => p.bg ?? `${theme.palette.common.white}`};
   border-radius: 14px;
   padding: 16px;
 `;
@@ -104,7 +104,7 @@ const BillingMethodImg = styled.img`
 `;
 
 const BillingMethodBorderContainer = styled(RowAutoGap)`
-  border: 1px solid ${colors.neutral.grey[200]};
+  border: 1px solid ${theme.palette.grey[200]};
   border-radius: 14px;
   padding: 8px 14px;
   margin: 10px 0 0;

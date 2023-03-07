@@ -3,7 +3,6 @@ import { UserInvite } from 'assets/icon/icon';
 import { GlobalStateContext } from 'helpers/context';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
 import React, { useContext, useRef, useState } from 'react';
-import { colors } from 'theme/colors';
 import { PathInfo } from '../../helpers/helper';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import useWindowResize from '../../helpers/hooks/windowResize';
@@ -60,7 +59,7 @@ export const Sidebar = () => {
         left: 0,
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: colors.primary.violet[600],
+        background: '#17003E',
         width: { xs: '196px', lg: '196px', xl: '237px' },
         height: '100vh',
         zIndex: 100
@@ -76,7 +75,7 @@ export const Sidebar = () => {
             justifyContent: 'space-between',
             position: 'relative',
             zIndex: 10,
-            background: colors.primary.violet[600]
+            background: '#17003E'
           }}
         >
           <Box>
@@ -85,7 +84,7 @@ export const Sidebar = () => {
                 position: 'sticky',
                 top: 0,
                 zIndex: 3,
-                background: colors.primary.violet[600],
+                background: '#17003E',
                 paddingBottom: '20px'
               }}
             >

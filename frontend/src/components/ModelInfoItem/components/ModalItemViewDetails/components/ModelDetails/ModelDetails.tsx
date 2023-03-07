@@ -13,7 +13,7 @@ import TabPanel from '@mui/lab/TabPanel';
 import { TabContext } from '@mui/lab';
 import { Loader } from 'components/Loader';
 import { ModelNotes } from './components/ModelNotes';
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface ModelDetailsProps {
   model: ConnectedModelSchema;
@@ -73,9 +73,9 @@ const StyledTabPanel = styled(TabPanel)({
 });
 
 const StyledTab = styled(Tab)({
-  color: colors.neutral.lightText
+  color: theme.palette.text.disabled
 });
 
 const StyledTabList = styled(TabList)({
-  borderBottom: `solid 1px ${colors.neutral.grey.light}`
+  borderBottom: `solid 1px ${theme.palette.grey.light}`
 });

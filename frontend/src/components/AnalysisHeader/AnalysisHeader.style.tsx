@@ -4,7 +4,7 @@ import { styled, alpha, Box, List, Divider } from '@mui/material';
 
 import { SearchField } from '../SearchField';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 export const StyledAnalysisHeader = styled(Box)({
   position: 'relative',
@@ -12,7 +12,7 @@ export const StyledAnalysisHeader = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   flexDirection: 'row',
-  borderBottom: `1px solid ${colors.neutral.grey.light}`,
+  borderBottom: `1px solid ${theme.palette.grey.light}`,
   marginBottom: '20px'
 });
 
@@ -49,7 +49,7 @@ export const StyledAnalysisHeaderList = styled(List)({
 });
 
 export const StyledDivider = styled(Divider)({
-  borderColor: colors.neutral.grey.light,
+  borderColor: theme.palette.grey.light,
   height: '36px',
   margin: '0 24px 0 24px'
 });

@@ -4,7 +4,7 @@ import { styled, Typography, InputAdornment } from '@mui/material';
 
 import { DropdownArrowComponent } from 'components/DropdownArrowComponent';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface DropdownEndAdornmentProps {
   filtersLength: number;
@@ -19,5 +19,5 @@ export const DropdownEndAdornment = ({ filtersLength, isDropdownOpen }: Dropdown
 );
 
 const StyledFiltersCount = styled(Typography)({
-  color: colors.primary.violet[400]
+  color: theme.palette.primary.main
 });

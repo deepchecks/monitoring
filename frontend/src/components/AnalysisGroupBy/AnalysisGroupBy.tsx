@@ -55,7 +55,7 @@ const AnalysisGroupByComponent = ({
       if (propValuesAreNotNull && frequency) {
         setGlobalLoading(true);
 
-        let featuresNames = await getAvailableFeaturesNames(modelVersionId)
+        let featuresNames = await getAvailableFeaturesNames(modelVersionId);
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),

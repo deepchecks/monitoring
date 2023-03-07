@@ -7,14 +7,15 @@ import { Button, Stack, styled, Typography, StackProps } from '@mui/material';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { FastForward as Next, Rewind as Prev } from 'assets/icon/icon';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 function setAlertCountWidgetButtonOpacity(isDisabled: boolean) {
   return isDisabled ? 0.3 : 1;
 }
 
-const PRIMARY_VIOLET = colors.primary.violet[400];
-const NEUTRAL_GREY = colors.neutral.grey[200];
+const PRIMARY_VIOLET = theme.palette.primary.main;
+const NEUTRAL_GREY = theme.palette.grey[200];
 
 interface DiagramAlertCountWidgetProps extends StackProps {
   alerts: AlertSchema[];

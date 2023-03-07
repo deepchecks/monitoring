@@ -2,14 +2,14 @@ import React from 'react';
 
 import { Chip, ChipProps, styled } from '@mui/material';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 export const ColumnChip = (props: ChipProps) => <StyledChip {...props} />;
 
 const StyledChip = styled(Chip)({
   fontSize: '14px',
-  color: colors.neutral.darkText,
-  background: colors.neutral.grey.light,
+  color: theme.palette.text.primary,
+  background: theme.palette.grey.light,
   height: '36px',
   padding: '8px 14px 8px 16px',
   borderRadius: '10px',
@@ -20,10 +20,10 @@ const StyledChip = styled(Chip)({
   },
 
   '.MuiChip-deleteIcon': {
-    color: colors.neutral.blue[100],
+    color: theme.palette.info.main,
 
     '&:hover': {
-      color: colors.neutral.blue[100],
+      color: theme.palette.info.main,
       opacity: 0.5
     }
   },

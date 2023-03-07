@@ -9,8 +9,9 @@ import { CollapseArrowLeft } from 'assets/icon/icon';
 import { Loader } from 'components/Loader';
 import NoResults from 'components/NoResults';
 import { VersionErrorsTable } from './components/VersionErrorsTable';
-import { colors } from 'theme/colors';
 import { NoDataToShow } from 'components/NoDataToShow';
+
+import { theme } from 'theme';
 
 interface VersionDetailsProps {
   version: ConnectedModelVersionSchema;
@@ -102,7 +103,7 @@ const StyledTitle = styled(Typography)({
   fontWeight: 700,
   fontSize: '24px',
   letterSpacing: '0.1px',
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   padding: '5px 18px',
   textAlign: 'center'
 });

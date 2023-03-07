@@ -4,7 +4,7 @@ import { Stack, Button, Divider, styled } from '@mui/material';
 
 import { CloseIcon } from 'assets/icon/icon';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 interface FiltersResetButtonProps {
   title?: string;
@@ -32,13 +32,13 @@ const StyledButton = styled(Button)({
   fontSize: '14px',
   minHeight: '36px',
   borderRadius: '10px',
-  color: colors.neutral.lightText,
+  color: theme.palette.text.disabled,
   paddingRight: 0,
 
   '& svg': {
     width: '17px',
     height: '17px',
-    fill: colors.neutral.lightText
+    fill: theme.palette.text.disabled
   },
 
   '&:hover': {

@@ -4,7 +4,7 @@ import { styled, TextField, TextFieldProps } from '@mui/material';
 
 import { DropdownArrowComponent } from './DropdownArrowComponent';
 
-import { colors } from 'theme/colors';
+import { theme } from 'theme';
 
 type DropdownTextFieldProps = {
   isDropdownOpen?: boolean;
@@ -34,7 +34,7 @@ export const StyledTextField = styled(TextField)({
     borderRadius: '10px',
 
     '& fieldset': {
-      borderColor: colors.neutral.grey.light
+      borderColor: theme.palette.grey.light
     },
 
     '& svg': {

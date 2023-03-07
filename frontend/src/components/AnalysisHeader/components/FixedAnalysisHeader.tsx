@@ -9,8 +9,6 @@ import { AnalysisHeaderOptions } from './AnalysisHeaderOptions';
 import { StyledDivider } from '../AnalysisHeader.style';
 import { AnalysisFilters } from 'components/AnalysisFilters';
 
-import { colors } from 'theme/colors';
-
 interface FixedAnalysisHeaderProps {
   model: ModelManagmentSchema;
   open: boolean;
@@ -50,7 +48,7 @@ const StyledHeaderWrapper = styled(Stack, {
   background: theme.palette.grey[100],
   transition: 'all 0.35s ease-in-out',
   zIndex: 10,
-  borderBottom: `1px solid ${colors.neutral.grey.light}`
+  borderBottom: `1px solid ${theme.palette.grey.light}`
 }));
 
 const StyledSelectContainer = styled(Stack)({

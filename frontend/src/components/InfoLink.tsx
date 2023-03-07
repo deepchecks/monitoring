@@ -1,8 +1,8 @@
 import React, { PropsWithChildren, useState } from 'react';
 import { Link } from '@mui/material';
 import { InfoIcon } from 'assets/icon/icon';
-import { colors } from 'theme/colors';
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { theme } from 'theme';
 
 interface InfoLinkItemProps {
   docsLink: string;
@@ -10,7 +10,7 @@ interface InfoLinkItemProps {
 
 export function InfoLink({ docsLink }: PropsWithChildren<InfoLinkItemProps>) {
   const [isHovered, setIsHovered] = useState(false);
-  const getColor = isHovered ? colors.primary.violet[400] : colors.neutral.lightText;
+  const getColor = isHovered ? theme.palette.primary.main : theme.palette.text.disabled;
 
   const onMouseEnter = () => {
     setIsHovered(true);

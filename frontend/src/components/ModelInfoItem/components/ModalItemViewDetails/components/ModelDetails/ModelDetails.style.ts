@@ -1,14 +1,15 @@
 import { IconButton, styled, TableCell, TableRow } from '@mui/material';
-import { colors } from 'theme/colors';
+
+import { theme } from 'theme';
 
 interface StyledTableCellProps {
   width: number | string;
 }
 
 export const StyledTableRow = styled(TableRow)({
-  backgroundColor: colors.neutral.grey.semiLight,
+  backgroundColor: theme.palette.grey.light,
   '&:nth-of-type(even)': {
-    backgroundColor: colors.neutral.white
+    backgroundColor: theme.palette.common.white
   }
 });
 
@@ -16,13 +17,13 @@ export const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ width 
   padding: '16px 20px',
   border: 0,
   width,
-  color: colors.neutral.darkText,
+  color: theme.palette.text.primary,
   fontWeight: 600
 }));
 
 export const StyledTableHeadCell = styled(StyledTableCell)({
   fontSize: '14px',
-  color: colors.neutral.lightText,
+  color: theme.palette.text.disabled,
   fontWeight: 600
 });
 
