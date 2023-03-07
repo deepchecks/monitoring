@@ -555,7 +555,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
 
         self.add_checks(checks=checks)
 
-        self.add_alert_rule(check_name='Feature Drift', threshold=0.15, frequency=frequency, alert_severity='high',
+        self.add_alert_rule(check_name='Feature Drift', threshold=0.12, frequency=frequency, alert_severity='high',
                             monitor_name='Aggregated Feature Drift', add_monitor_to_dashboard=True,
                             kwargs_for_check={'res_conf': None, 'check_conf': {'aggregation method': ['l2_weighted']}})
 
