@@ -132,3 +132,9 @@ class ResourcesProvider(OpenSourceResourcesProvider):
                 "hotjar_sv": settings.hotjar_sv
             }
         return super().get_client_configuration()
+
+    def get_feature_flags(self, user: User) -> dict:
+        """Return feature flags."""
+        if self.settings.is_cloud:
+            return {"slack_enabled": True}
+        return super().get_feature_flags(user)

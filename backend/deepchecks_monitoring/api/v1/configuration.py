@@ -11,16 +11,18 @@
 import typing as t
 
 import pendulum as pdl
-from fastapi import Query
+from fastapi import Depends, Query
 from pydantic.main import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
+from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
+from deepchecks_monitoring.utils.auth import CurrentUser
 
 from .router import router
 
@@ -149,3 +151,10 @@ async def get_all_alert_rules(
 async def application_configurations(resource_provider: ResourcesProvider = ResourcesProviderDep):
     """Return the application configurations for the client."""
     return resource_provider.get_client_configuration()
+
+
+@router.get("/feature-flags")
+async def application_feature_flags(resource_provider: ResourcesProvider = ResourcesProviderDep,
+                                    user: User = Depends(CurrentUser())):
+    """Return the application feature flags for the client."""
+    return resource_provider.get_feature_flags(user)
