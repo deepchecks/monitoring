@@ -69,9 +69,6 @@ class Settings(
     enviroment: str = 'dev'
     debug_mode: bool = False
     lauchdarkly_sdk_key: str = ''
-    oauth_domain: str
-    oauth_client_id: str
-    oauth_client_secret: str
     access_audit: bool = False
     mixpanel_id: str = ''
     hotjar_sv: str = ''

@@ -160,7 +160,7 @@ def settings(async_engine, smtp_server):
         deployment_url="http://localhost",
         email_smtp_username="",
         email_smtp_password="",
-        oauth_domain="",
+        oauth_url="http://localhost",
         oauth_client_id="",
         oauth_client_secret="",
         auth_jwt_secret="secret",

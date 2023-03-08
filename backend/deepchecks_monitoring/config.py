@@ -111,6 +111,9 @@ class Settings(
     is_cloud: bool = False
     deployment_url: AnyHttpUrl
     auth_jwt_secret: str
+    oauth_url: AnyHttpUrl
+    oauth_client_id: str
+    oauth_client_secret: str
 
 
 class Tags(Enum):

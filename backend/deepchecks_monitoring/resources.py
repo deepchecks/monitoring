@@ -307,7 +307,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Oauth client."""
         if self._oauth_client is None:
             try:
-                url = f"https://{self.settings.oauth_domain}/.well-known/openid-configuration"
+                url = f"{self.settings.oauth_url}/.well-known/openid-configuration"
                 openid_configuration = httpx.get(url).json()
                 self._oauth_client = OAuth()
                 self._oauth_client.register(
@@ -318,7 +318,7 @@ class ResourcesProvider(BaseResourcesProvider):
                     access_token_params=None,
                     authorize_url=openid_configuration["authorization_endpoint"],
                     authorize_params={"prompt": "login"},
-                    jwks_uri=f"https://{self.settings.oauth_domain}/.well-known/jwks.json",
+                    jwks_uri=openid_configuration["jwks_uri"],
                     client_kwargs={"scope": "openid profile email"},
                 )
             except Exception as e:
