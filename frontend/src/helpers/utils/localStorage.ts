@@ -1,3 +1,8 @@
+export const storageKeys = {
+  dataIngestionTimeFilter: 'data_ingestion_time_filter',
+  analysisFrequency: 'analysis_frequency'
+};
+
 export const getStorageItem = (key: string) => {
   const item = localStorage.getItem(key);
   return item ? JSON.parse(item) : null;

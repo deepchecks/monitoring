@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TimeUnit } from 'chart.js';
 
 import useStatsTime from 'helpers/hooks/useStatsTime';
 import useDataIngestion from 'helpers/hooks/useDataIngestion';
+import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 import { MenuItem } from '@mui/material';
 
@@ -45,6 +46,18 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
       'Filter value': newTimeValue
     });
   };
+
+  useEffect(() => {
+    const storageCurrentTime = getStorageItem(storageKeys.dataIngestionTimeFilter);
+
+    if (storageCurrentTime) {
+      const parsedCurrentTime = JSON.parse(storageCurrentTime);
+
+      setCurrentTime(parsedCurrentTime.id);
+    }
+  }, []);
+
+  useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
 
   return (
     <StyledContainer>

@@ -4,6 +4,7 @@ import { DataFilter, AutoFrequencyResponse, OperatorsEnum } from 'api/generated'
 
 import { timeMap, timeValues } from 'helpers/time';
 import { SetStateType } from 'helpers/types';
+import { setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 export type FilterValue = Record<string, boolean> | [number, number] | null;
 
@@ -133,7 +134,9 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
 
   useEffect(() => {
     const label = frequencyData.find(e => e.value === frequency)?.label || null;
+
     setFrequencyLabel(label);
+    setStorageItem(storageKeys.analysisFrequency, JSON.stringify(frequency));
   }, [frequency]);
 
   useEffect(() => {

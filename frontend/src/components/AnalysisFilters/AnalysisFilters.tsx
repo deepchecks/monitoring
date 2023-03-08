@@ -18,6 +18,7 @@ import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 
 import { ColumnType } from 'helpers/types/model';
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 
@@ -72,13 +73,20 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
   };
 
   useEffect(() => {
+    const storageFrequency = getStorageItem(storageKeys.analysisFrequency);
+
     if (model.id != -1) {
       refetchColumns();
       loadDefaultFrequency();
       if (defaultFrequency) {
         setPeriod([new Date(defaultFrequency.start * 1000), new Date(defaultFrequency.end * 1000)]);
-        setFrequency(defaultFrequency.frequency);
         setDefaultFrequency(defaultFrequency);
+        setFrequency(defaultFrequency?.frequency as number);
+      }
+
+      if (storageFrequency !== 'null' && storageFrequency !== '0') {
+        const frequencyNumber = Number(storageFrequency);
+        setFrequency(frequencyNumber);
       }
     }
   }, [model, refetchColumns, defaultFrequency, loadDefaultFrequency, setPeriod, setFrequency, setDefaultFrequency]);
