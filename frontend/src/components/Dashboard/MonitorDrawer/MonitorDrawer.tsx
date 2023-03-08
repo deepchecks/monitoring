@@ -27,6 +27,7 @@ interface MonitorDrawerProps extends DrawerProps {
   setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
   onClose: () => void;
   refetchMonitors(): void;
+  selectedModelId: number | null;
 }
 
 export const MonitorDrawer = ({
@@ -36,6 +37,7 @@ export const MonitorDrawer = ({
   open,
   onClose,
   refetchMonitors,
+  selectedModelId,
   ...props
 }: MonitorDrawerProps) => {
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
@@ -92,6 +94,7 @@ export const MonitorDrawer = ({
             runCheckLookBack={handleGraphLookBack}
             isDrawerOpen={!!open}
             setGraphFrequency={setGraphFrequency}
+            selectedModelId={selectedModelId}
           />
         )}
         <GraphView

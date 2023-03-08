@@ -37,6 +37,7 @@ interface MonitorFormProps extends StackProps {
   isDrawerOpen: boolean;
   refetchMonitors(): void;
   setGraphFrequency: SetStateType<SelectValues>;
+  selectedModelId: number | null;
 }
 
 export const MonitorForm = ({
@@ -47,6 +48,7 @@ export const MonitorForm = ({
   isDrawerOpen,
   refetchMonitors,
   setGraphFrequency,
+  selectedModelId,
   ...props
 }: MonitorFormProps) => {
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || timeValues.week);
@@ -57,9 +59,9 @@ export const MonitorForm = ({
   const [isValidConfig, setIsValidConfig] = useState(true);
   const [error, setError] = useState(false);
   const [monitorName, setMonitorName] = useState(monitor?.name || '');
-  const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || '');
+  const [model, setModel] = useState<SelectValues>(monitor?.check.model_id || selectedModelId || '');
 
-  const [advanced, setAdvanced] = useState<boolean>(false);
+  const [advanced, setAdvanced] = useState(false);
 
   const [check, setCheck] = useState<SelectValues>(monitor?.check.id || '');
 

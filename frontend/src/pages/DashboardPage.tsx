@@ -84,6 +84,7 @@ export const DashboardPage = () => {
         open={isDrawerOpen}
         onClose={handleCloseMonitorDrawer}
         setMonitorToRefreshId={setMonitorToRefreshId}
+        selectedModelId={selectedModelId}
       />
     </>
   );
