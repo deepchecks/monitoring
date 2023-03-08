@@ -86,7 +86,8 @@ def dataframe_to_dataset_and_pred(
     df: t.Union[pd.DataFrame, None],
     model_version: ModelVersion,
     model: Model,
-    top_feat: t.List[str]
+    top_feat: t.List[str],
+    dataset_name: t.Optional[str] = None
 ) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None or len(df) == 0:
@@ -118,7 +119,8 @@ def dataframe_to_dataset_and_pred(
     dataset_params = {
         'features': available_features,
         'cat_features': cat_features,
-        'label_type': model.task_type.value
+        'label_type': model.task_type.value,
+        'dataset_name': dataset_name
     }
 
     if df[SAMPLE_LABEL_COL].isna().all():
@@ -206,7 +208,12 @@ def get_results_for_model_versions_per_window(
             dp_check = Suite('', *all_checks)
 
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference_table_dataframe, model_version, model, top_feat)
+            reference_table_dataframe,
+            model_version,
+            model,
+            top_feat,
+            dataset_name='Reference'
+        )
 
         model_results[model_version] = []
         for curr_test_info in test_infos:
@@ -245,7 +252,13 @@ def get_results_for_model_versions_per_window(
 def run_deepchecks(test_data, model_version, model, top_feat, dp_check, feat_imp, with_display,
                    reference_table_ds, reference_table_pred, reference_table_proba):
 
-    test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(test_data, model_version, model, top_feat)
+    test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
+        test_data,
+        model_version,
+        model,
+        top_feat,
+        dataset_name='Production',
+    )
     shared_args = dict(
         feature_importance=feat_imp,
         with_display=with_display,
@@ -308,7 +321,12 @@ def get_results_for_model_versions_for_reference(
 
         reduced_outs = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference_table_dataframe, model_version, model, top_feat)
+            reference_table_dataframe,
+            model_version,
+            model,
+            top_feat,
+            dataset_name='Reference'
+        )
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,

@@ -68,9 +68,20 @@ async def run_suite_for_model_version(model_version: ModelVersion, window_option
         raise Exception(f"Unsupported task type {task_type}")
 
     suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
-    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(test_df, model_version, model, top_feat)
-    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(ref_df, model_version,
-                                                                                       model, top_feat)
+    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
+        test_df,
+        model_version,
+        model,
+        top_feat,
+        dataset_name="Production",
+    )
+    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+        ref_df,
+        model_version,
+        model,
+        top_feat,
+        dataset_name="Reference",
+    )
 
     if len(ref_df) == 0:  # if no reference is available, must pass test data as reference (as train)
         reference_dataset, reference_pred, reference_proba = test_dataset, test_pred, test_proba
