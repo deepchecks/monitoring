@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import useModels from 'helpers/hooks/useModels';
+import { ModelManagmentSchema, AlertSeverity } from 'api/generated';
 
 import { Loader } from 'components/Loader';
 import { ModelItem } from './components/ModelItem';
@@ -19,17 +19,26 @@ import {
 } from './ModelList.style';
 
 import { Rotate } from 'assets/icon/icon';
+
 import { setParams } from 'helpers/utils/getParams';
+import useModels from 'helpers/hooks/useModels';
+import { constants } from './modelList.constants';
+
+export type SelectedModelAlerts = { [key in AlertSeverity]: number };
 
 interface ModelListProps {
   setSelectedModelId: React.Dispatch<React.SetStateAction<number | null>>;
   selectedModelId: number | null;
 }
 
+const ZERO_ALERTS = { low: 0, mid: 0, high: 0, critical: 0 };
+const { heading, reset, searchFieldPlaceholder } = constants;
+
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
   const { models, isLoading } = useModels();
 
   const [modelName, setModelName] = useState('');
+  const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts | null>(null);
 
   const filteredModels = useMemo(() => {
     if (!modelName) return models;
@@ -41,6 +50,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
     event.stopPropagation();
     setSelectedModelId(null);
     setParams('modelId');
+    setSelectedModelAlerts(null);
   };
 
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,9 +63,12 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
     setModelName('');
   };
 
-  const handleModelClick = (modelId: number) => {
-    setSelectedModelId(modelId);
-    setParams('modelId', modelId);
+  const handleModelClick = (model: ModelManagmentSchema) => {
+    setSelectedModelId(model.id);
+    setParams('modelId', model.id);
+    setSelectedModelAlerts(
+      model.max_severity ? { ...ZERO_ALERTS, [model.max_severity]: model.alerts_count } : ZERO_ALERTS
+    );
   };
 
   return (
@@ -65,8 +78,8 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
       ) : (
         <>
           <StyledHeadingContainer>
-            <StyledHeading variant="subtitle1">Models</StyledHeading>
-            <AlertsCountWidget />
+            <StyledHeading variant="subtitle1">{heading}</StyledHeading>
+            <AlertsCountWidget selectedModelAlerts={selectedModelAlerts} />
           </StyledHeadingContainer>
           <StyledSearchFieldContainer>
             <SearchField
@@ -75,7 +88,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
               onChange={onSearch}
               value={modelName}
               onReset={clearSearchBar}
-              placeholder="Search Model..."
+              placeholder={searchFieldPlaceholder}
             />
           </StyledSearchFieldContainer>
           <StyledList>
@@ -92,7 +105,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
               <StyledResetSelectionContainer>
                 <StyledResetSelectionContent onClick={onReset}>
                   <Rotate />
-                  <StyledResetSelectionText>Reset selection</StyledResetSelectionText>
+                  <StyledResetSelectionText>{reset}</StyledResetSelectionText>
                 </StyledResetSelectionContent>
               </StyledResetSelectionContainer>
             )}

@@ -5,9 +5,15 @@ import { useCountAlertsApiV1AlertsCountActiveGet } from 'api/generated';
 import { Stack } from '@mui/material';
 
 import { AlertCount, SEVERITY } from 'components/AlertCount';
+import { SelectedModelAlerts } from '../ModelList';
 
-export const AlertsCountWidget = () => {
-  const { data } = useCountAlertsApiV1AlertsCountActiveGet();
+interface AlertsCountWidgetProps {
+  selectedModelAlerts: SelectedModelAlerts | null;
+}
+
+export const AlertsCountWidget = ({ selectedModelAlerts }: AlertsCountWidgetProps) => {
+  const { data: totalAlerts } = useCountAlertsApiV1AlertsCountActiveGet();
+  const data = selectedModelAlerts || totalAlerts;
 
   return (
     <Stack spacing="16px" direction="row">

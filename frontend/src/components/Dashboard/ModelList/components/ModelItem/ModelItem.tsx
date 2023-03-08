@@ -27,7 +27,7 @@ dayjs.extend(localizedFormat);
 
 interface ModelItemProps {
   activeModel: boolean;
-  onModelClick: (modelId: number) => void;
+  onModelClick: (model: ModelManagmentSchema) => void;
   onReset: (event: React.MouseEvent<HTMLDivElement>) => void;
   model: ModelManagmentSchema;
 }
@@ -44,7 +44,7 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
 
   const handleModelClick = () => {
     reportEvent(events.dashboardPage.clickedModelInModelList);
-    onModelClick(model.id);
+    onModelClick(model);
   };
 
   return (

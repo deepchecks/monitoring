@@ -2,7 +2,7 @@ import React from 'react';
 
 import NoDataErrorPopper from './NoDataErrorPopper';
 
-import redWarningIcon from '../../../../../../assets/icon/red-warning.svg';
+import redWarningIcon from 'assets/icon/red-warning.svg';
 
 import { StyledAlertBadge } from '../ModelItem.style';
 import { NoDataErrorImg, NoDataErrorToolTip } from './NoDataError.styles';
