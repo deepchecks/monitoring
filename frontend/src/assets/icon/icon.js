@@ -73,6 +73,7 @@ import { ReactComponent as Edit } from './edit.svg';
 import { ReactComponent as Trash } from './trash.svg';
 import { ReactComponent as InfoIconFilled } from './infoIconFilled.svg';
 import { ReactComponent as NoDataToShowIcon } from './noDataToShowIcon.svg';
+import { ReactComponent as WorkspaceSettings } from './workspace-settings.svg';
 
 export {
   Alarm,
@@ -149,5 +150,6 @@ export {
   Edit,
   Trash,
   InfoIconFilled,
-  NoDataToShowIcon
+  NoDataToShowIcon,
+  WorkspaceSettings
 };

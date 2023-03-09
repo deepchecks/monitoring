@@ -1,29 +1,22 @@
 import React, { useState } from 'react';
 
-import { Col16Gap, Row16Gap, RowAutoGap } from 'components/base/Container/Container.styles';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+
+import { Col16Gap, FlexRowContainer, RowAutoGap } from 'components/base/Container/Container.styles';
 import { StyledH3 } from 'components/base/Text/Header.styles';
 import {
   BillingCardAmountContainer,
   BillingCardButton,
   BillingCardContainer,
-  BillingPlanCardQuantityButton,
   BillingSeparator,
   BillingText
 } from '../Billing.styles';
 
 import { constants } from '../billing.constants';
 
-const {
-  title,
-  availableModels,
-  minusBtnLabel,
-  plusBtnLabel,
-  currentBilling,
-  increaseModels,
-  submitBtnLabel,
-  capacity,
-  modelQuantity
-} = constants.cardPlan;
+const { title, availableModels, currentBilling, increaseModels, submitBtnLabel, capacity, modelQuantity } =
+  constants.cardPlan;
 
 interface BillingPlanCardProps {
   productQuantity: number;
@@ -38,6 +31,7 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
   const modelPrice = 89;
   const disableUpdate = quantity === productQuantity || quantity === 1;
   const totalPrice = productQuantity * modelPrice - modelPrice > 0 ? productQuantity * modelPrice - modelPrice : 0;
+  const minusBtnColor = quantity === 1 ? 'disabled' : 'primary';
   const modifiedTotalPrice =
     quantity * modelPrice - modelPrice > 0 && quantity !== productQuantity && `$${quantity * modelPrice - modelPrice}`;
 
@@ -52,10 +46,8 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
           <StyledH3>{title(tierName as string)}</StyledH3>
           <BillingText color="gray">{availableModels(productQuantity)}</BillingText>
         </Col16Gap>
-        <Row16Gap width={'240px'} height={'60px'}>
-          <BillingPlanCardQuantityButton onClick={handleMinusModel} disabled={quantity === 1}>
-            {minusBtnLabel}
-          </BillingPlanCardQuantityButton>
+        <FlexRowContainer width={'220px'} height={'60px'}>
+          <RemoveCircleOutlineIcon onClick={handleMinusModel} color={minusBtnColor} fontSize="large" />
           <BillingCardAmountContainer>
             <BillingText weight="600">{modelQuantity(quantity)}</BillingText>
             <BillingText color="gray" align>
@@ -65,10 +57,8 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
               {modifiedTotalPrice}
             </BillingText>
           </BillingCardAmountContainer>
-          <BillingPlanCardQuantityButton onClick={handlePlusModel} padding={'4px'}>
-            {plusBtnLabel}
-          </BillingPlanCardQuantityButton>
-        </Row16Gap>
+          <AddCircleOutlineIcon onClick={handlePlusModel} color={'primary'} fontSize="large" />
+        </FlexRowContainer>
       </RowAutoGap>
       <BillingSeparator />
       <RowAutoGap>

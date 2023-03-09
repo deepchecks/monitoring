@@ -1,26 +1,20 @@
-import { alpha, AppBar, Box, Button, styled, Typography } from '@mui/material';
-import { UserInvite } from 'assets/icon/icon';
+import React, { useContext, useRef, useState } from 'react';
+import { AppBar, Box } from '@mui/material';
+
 import { GlobalStateContext } from 'helpers/context';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
-import React, { useContext, useRef, useState } from 'react';
 import { PathInfo } from '../../helpers/helper';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import useWindowResize from '../../helpers/hooks/windowResize';
+
 import { AnalysisSubMenu } from './components/AnalysisSubMenu';
-import { Logo } from '../Logo';
 import { SidebarMenuItem } from './components/SidebarMenuItem';
 import { UserInfo } from './components/UserInfo';
 import { InviteMember } from 'components/WorkspaceSettings/Members/components/InviteMember';
 
-const StyledButton = styled(Button)(({ theme }) => ({
-  width: '100%',
-  background: 'none',
-  borderRadius: 2,
-  border: `1px solid ${alpha(theme.palette.common.white, 0.4)}}`,
-  '& .MuiButton-startIcon.MuiButton-iconSizeLarge': {
-    marginRight: '8px'
-  }
-}));
+import { SidebarInviteButton } from './Sidebar.styles';
+
+import { Logo } from '../Logo';
 
 export const Sidebar = () => {
   const width = useWindowResize();
@@ -107,30 +101,12 @@ export const Sidebar = () => {
             </Box>
           </Box>
 
-          <Box sx={{ padding: { xs: '23px 20px', lg: '23px 20px', xl: '50px 30px' } }}>
-            <StyledButton onClick={handleInviteToOrgClick} startIcon={<UserInvite />}>
-              <Typography
-                sx={{
-                  textTransform: 'none',
-                  fontSize: 12,
-                  lineHeight: '42px',
-                  letterSpacing: '0.1px',
-                  color: theme => theme.palette.common.white,
-                  height: '44px',
-
-                  '@media (max-width: 1536px)': {
-                    fontSize: 10
-                  }
-                }}
-              >
-                Invite to workspace
-              </Typography>
-            </StyledButton>
+          <Box sx={{ padding: '30px 20px' }}>
             <UserInfo />
+            <SidebarInviteButton onClick={handleInviteToOrgClick}>Invite members</SidebarInviteButton>
           </Box>
         </Box>
       </Box>
-
       <AnalysisSubMenu open={openAnalysisSubMenu} onClose={closeAnalysisSubMenu} />
       <InviteMember open={userInviteOpen} closeDialog={handleInviteToOrgClose} />
     </AppBar>

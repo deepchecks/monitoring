@@ -13,7 +13,7 @@ import { RowAutoGap } from 'components/base/Container/Container.styles';
 
 import { ReportModal } from './components/ReportModal';
 
-import { Configuration } from 'assets/icon/icon';
+import { WorkspaceSettings } from 'assets/icon/icon';
 
 export const UserInfo = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -65,18 +65,8 @@ export const UserInfo = () => {
         ></Avatar>
         <Typography
           sx={{
-            lineHeight: '140%',
-            textTransform: 'ellipsis',
-            fontWeight: 400,
-            fontSize: 12,
-            marginLeft: '8px',
-            letterSpacing: '0.1px',
-            textAlign: 'center',
-            verticalAlign: 'middle',
-            color: '#FFFFFF',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            fontSize: 14,
+            marginLeft: '8px'
           }}
         >
           {user.full_name}
@@ -90,21 +80,13 @@ export const UserInfo = () => {
       <RowAutoGap>
         <Typography
           sx={{
-            lineHeight: '100%',
-            textTransform: 'ellipsis',
-            fontWeight: 400,
-            fontSize: 12,
-            marginTop: '5px',
-            letterSpacing: '0.1px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            fontSize: 14,
+            fontWeight: 800
           }}
         >
           {user.organization?.name}
         </Typography>
-        <Configuration onClick={() => navigate('/workspace-settings')} cursor="pointer" height={60} />
+        <WorkspaceSettings onClick={() => navigate('/workspace-settings')} cursor="pointer" height={70} />
       </RowAutoGap>
       <Menu
         id="basic-menu"
@@ -115,7 +97,6 @@ export const UserInfo = () => {
           'aria-labelledby': 'basic-button'
         }}
       >
-        {/* <StyledMenuItem sx={{minWidth: 200}} onClick={handleMyAccount}><Typography variant="body2">My account</Typography></StyledMenuItem> */}
         <StyledMenuItem sx={{ minWidth: 200 }} onClick={handleOpenReportModal}>
           <Typography variant="body2">Report a bug</Typography>
         </StyledMenuItem>

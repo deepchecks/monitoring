@@ -21,10 +21,10 @@ import { constants } from '../billing.constants';
 import { getPaymentMethodApiV1BillingPaymentMethodGet } from 'api/generated';
 
 const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
-  const [paymentMethods, setPaymentMethods] = useState([{ last4: null }]);
+  const [paymentMethods, setPaymentMethods] = useState([{ card: { last4: null } }]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const cardLast4 = null as unknown as number; // TODO - take from server once the will fix the endpoint
+  const cardLast4 = paymentMethods[0].card.last4 ?? (null as unknown as number);
 
   const handleOpenDialog = () => setIsDialogOpen(true);
   const handleCloseDialog = () => setIsDialogOpen(false);
@@ -34,7 +34,7 @@ const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
       const response = await getPaymentMethodApiV1BillingPaymentMethodGet();
       setPaymentMethods(response as any[]);
     } catch (err) {
-      logger.error(err, JSON.stringify(paymentMethods));
+      logger.error(err);
     }
   };
 

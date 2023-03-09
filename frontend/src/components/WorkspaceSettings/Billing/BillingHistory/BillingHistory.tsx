@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import logger from 'helpers/services/logger';
-import { listAllSubscriptionsApiV1BillingSubscriptionsGet } from 'api/generated';
+import { ChargeSchema, listAllChargesApiV1BillingChargesGet } from 'api/generated';
 
 import BillingTransaction from './BillingTransaction';
 import { RectSkeleton } from 'components/base/Skeleton/Skeleton';
@@ -13,23 +13,23 @@ import { Col16Gap } from 'components/base/Container/Container.styles';
 import { constants } from '../billing.constants';
 
 const BillingHistory = () => {
-  const [transactions, setTransactions] = useState([{ plan: '', models: 1, status: '', start_date: 4 }]);
   const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<ChargeSchema[]>([]);
 
-  const tableHeaders = ['models', 'plan', 'status', 'start_date'];
+  const tableHeaders = ['models', 'plan', 'status', 'created'];
+
+  const getBillingHistory = async () => {
+    try {
+      const response = await listAllChargesApiV1BillingChargesGet();
+
+      setTransactions([...response]);
+      setLoading(false);
+    } catch (err) {
+      logger.error(err);
+    }
+  };
 
   useEffect(() => {
-    const getBillingHistory = async () => {
-      try {
-        const response = await listAllSubscriptionsApiV1BillingSubscriptionsGet();
-
-        setTransactions([...response]);
-        setLoading(false);
-      } catch (err) {
-        logger.error(err);
-      }
-    };
-
     getBillingHistory();
   }, []);
 
@@ -44,9 +44,9 @@ const BillingHistory = () => {
         <BillingText color="gray">{constants.billingHistory.description}</BillingText>
       </Col16Gap>
       <BillingSeparator />
-      <BillingTransactionContainer bg="white">
+      <BillingTransactionContainer bg="none">
         {tableHeaders.map((val, i) => (
-          <BillingText key={i} color="gray" weight="800" width="20%">
+          <BillingText key={i} color="gray" weight="800">
             {val.toUpperCase()}
           </BillingText>
         ))}

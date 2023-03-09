@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { Button } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 import { theme } from 'theme';
 
@@ -38,6 +39,7 @@ const BillingText = styled.p<BillingUIProps>`
   margin: ${p => p.margin ?? '0 auto 0 0'};
   text-align: ${p => p.align && 'center'};
   width: ${p => p.width ?? 'auto'};
+  white-space: pre-line;
 `;
 
 const BillingCardButton = styled(Button)<BillingUIProps>`
@@ -78,20 +80,6 @@ const FirstBillingContainer = styled(FlexColumnContainer)`
   gap: 24px;
 `;
 
-const BillingPlanCardQuantityButton = styled.button<BillingUIProps>`
-  background: ${theme.palette.common.white};
-  color: ${p => (p.disabled ? `${theme.palette.grey[200]}` : `${theme.palette.primary.main}`)};
-  border: 2px solid ${p => (p.disabled ? `${theme.palette.grey[200]}` : `${theme.palette.primary.main}`)};
-  cursor: ${p => !p.disabled && 'pointer'};
-  font-size: 20px;
-  font-weight: 800;
-  border-radius: 50%;
-  height: 32px;
-  width: 32px;
-  margin: 0 0 0 auto;
-  padding: ${p => p.padding ?? ''};
-`;
-
 const BillingTransactionContainer = styled(RowAutoGap)<BillingUIProps>`
   background: ${p => p.bg ?? `${theme.palette.common.white}`};
   border-radius: 14px;
@@ -110,12 +98,17 @@ const BillingMethodBorderContainer = styled(RowAutoGap)`
   margin: 10px 0 0;
 `;
 
+const BillingTransactionDownloadIcon = styled(OpenInNewIcon)`
+  && {
+    cursor: pointer;
+  }
+`;
+
 export {
   BillingText,
   FirstBillingPaymentForm,
   FirstBillingPaymentButton,
   FirstBillingContainer,
-  BillingPlanCardQuantityButton,
   BillingCardContainer,
   BillingCardButton,
   BillingSeparator,
@@ -123,5 +116,6 @@ export {
   BillingMethodImg,
   BillingMethodBorderContainer,
   BillingCardAmountContainer,
-  BillingCardsContainer
+  BillingCardsContainer,
+  BillingTransactionDownloadIcon
 };

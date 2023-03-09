@@ -2,15 +2,15 @@ export const constants = {
   cardPlan: {
     title: (planName: string) => `${planName !== undefined ? planName : 'Plan'}`,
     availableModels: (productQuantity: number) => `You have ${productQuantity} available models`,
-    minusBtnLabel: '-',
-    plusBtnLabel: '+',
     currentBilling: (totalPrice: number) => `Current billing amount: $${totalPrice}/mo`,
     increaseModels: (modelPrice: number) => `You can increase number of models for $${modelPrice} per each model`,
     submitBtnLabel: 'Update Plan',
     capacity: 'Capacity',
     modelQuantity: (quantity: number) => `${quantity} Models`,
+    decreaseDialogText: (price: number, decreasedBy: number) =>
+      `Decreasing your number of models by ${decreasedBy} will reduce your monthly bill by $${price}.\n Do you confirm?`,
     upgradeDialogText: (price: number, increasedBy: number) =>
-      `You have changed the number of billed models to ${increasedBy}, which will change your monthly payment to $${price} per month, do you confirm this action?`
+      `Adding ${-increasedBy} models will increase your monthly bill by  $${-price}.\n Do you confirm?`
   },
   firstBilling: {
     submitButtonLabel: 'Submit',

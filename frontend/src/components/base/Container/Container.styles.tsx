@@ -13,11 +13,13 @@ const FlexContainer = styled.div<ContainerProps>`
   margin: ${p => p.margin ?? ''};
 `;
 
-const FlexRowContainer = styled.div`
+const FlexRowContainer = styled.div<ContainerProps>`
   width: 100%;
   display: flex;
   flex-direction: row;
   align-items: center;
+  width: ${p => p.width ?? ''};
+  height: ${p => p.height ?? ''};
 `;
 
 const FlexColumnContainer = styled.div`
@@ -31,8 +33,10 @@ const HiddenContainer = styled.div`
   display: none;
 `;
 
-const Row8Gap = styled(FlexRowContainer)`
+const Row8Gap = styled(FlexRowContainer)<ContainerProps>`
   gap: 8px;
+  width: ${p => p.width ?? ''};
+  height: ${p => p.height ?? ''};
 `;
 
 const Col8Gap = styled(FlexColumnContainer)`
