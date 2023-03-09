@@ -669,30 +669,6 @@ export interface MemberSchema {
 }
 
 /**
- * Schema for the invoice item object.
- */
-export interface InvoiceItemSchema {
-  models: number;
-  amount: string;
-  description: string;
-  end: number;
-  start: number;
-}
-
-/**
- * Schema for the invoice object.
- */
-export interface InvoiceSchema {
-  total: number;
-  status: string;
-  paid: boolean;
-  invoice_pdf: string;
-  period_end: number;
-  period_start: number;
-  invoice_items: InvoiceItemSchema[];
-}
-
-/**
  * Schema for info on invitation.
  */
 export interface InvitationInfoSchema {
@@ -952,6 +928,19 @@ export interface CheckConfigSchema {
 export interface CheckCreationSchema {
   config: CheckConfigSchema;
   name?: string;
+}
+
+/**
+ * Schema for the charge object.
+ */
+export interface ChargeSchema {
+  id: string;
+  plan?: string;
+  models?: number;
+  paid: boolean;
+  amount: number;
+  receipt_url: string;
+  created: number;
 }
 
 export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost {
@@ -3029,6 +3018,46 @@ export const useGetAllAlertRulesApiV1ConfigAlertRulesGet = <
     getAllAlertRulesApiV1ConfigAlertRulesGet(params, signal);
 
   const query = useQuery<Awaited<ReturnType<typeof getAllAlertRulesApiV1ConfigAlertRulesGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Return the application configurations for the client.
+ * @summary Application Configurations
+ */
+export const applicationConfigurationsApiV1ConfigurationsGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/configurations`, method: 'get', signal });
+};
+
+export const getApplicationConfigurationsApiV1ConfigurationsGetQueryKey = () => [`/api/v1/configurations`];
+
+export type ApplicationConfigurationsApiV1ConfigurationsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>
+>;
+export type ApplicationConfigurationsApiV1ConfigurationsGetQueryError = ErrorType<unknown>;
+
+export const useApplicationConfigurationsApiV1ConfigurationsGet = <
+  TData = Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getApplicationConfigurationsApiV1ConfigurationsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>> = ({
+    signal
+  }) => applicationConfigurationsApiV1ConfigurationsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>(
     queryKey,
     queryFn,
     queryOptions
@@ -6393,34 +6422,34 @@ export const useListAllSubscriptionsApiV1BillingSubscriptionsGet = <
 };
 
 /**
- * Get the list of all the invoices of the user from stripe.
- * @summary List All Imvoices
+ * Get the list of available products from stripe.
+ * @summary List All Charges
  */
-export const listAllImvoicesApiV1BillingInvoicesGet = (signal?: AbortSignal) => {
-  return customInstance<InvoiceSchema[]>({ url: `/api/v1/billing/invoices`, method: 'get', signal });
+export const listAllChargesApiV1BillingChargesGet = (signal?: AbortSignal) => {
+  return customInstance<ChargeSchema[]>({ url: `/api/v1/billing/charges`, method: 'get', signal });
 };
 
-export const getListAllImvoicesApiV1BillingInvoicesGetQueryKey = () => [`/api/v1/billing/invoices`];
+export const getListAllChargesApiV1BillingChargesGetQueryKey = () => [`/api/v1/billing/charges`];
 
-export type ListAllImvoicesApiV1BillingInvoicesGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>
+export type ListAllChargesApiV1BillingChargesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllChargesApiV1BillingChargesGet>>
 >;
-export type ListAllImvoicesApiV1BillingInvoicesGetQueryError = ErrorType<unknown>;
+export type ListAllChargesApiV1BillingChargesGetQueryError = ErrorType<unknown>;
 
-export const useListAllImvoicesApiV1BillingInvoicesGet = <
-  TData = Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>,
+export const useListAllChargesApiV1BillingChargesGet = <
+  TData = Awaited<ReturnType<typeof listAllChargesApiV1BillingChargesGet>>,
   TError = ErrorType<unknown>
 >(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>, TError, TData>;
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllChargesApiV1BillingChargesGet>>, TError, TData>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListAllImvoicesApiV1BillingInvoicesGetQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListAllChargesApiV1BillingChargesGetQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>> = ({ signal }) =>
-    listAllImvoicesApiV1BillingInvoicesGet(signal);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllChargesApiV1BillingChargesGet>>> = ({ signal }) =>
+    listAllChargesApiV1BillingChargesGet(signal);
 
-  const query = useQuery<Awaited<ReturnType<typeof listAllImvoicesApiV1BillingInvoicesGet>>, TError, TData>(
+  const query = useQuery<Awaited<ReturnType<typeof listAllChargesApiV1BillingChargesGet>>, TError, TData>(
     queryKey,
     queryFn,
     queryOptions
@@ -6476,7 +6505,7 @@ export const useListAllProductsApiV1BillingAvailableProductsGet = <
  * @summary Get Payment Method
  */
 export const getPaymentMethodApiV1BillingPaymentMethodGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
+  return customInstance<unknown[]>({ url: `/api/v1/billing/payment-method`, method: 'get', signal });
 };
 
 export const getGetPaymentMethodApiV1BillingPaymentMethodGetQueryKey = () => [`/api/v1/billing/payment-method`];
@@ -6824,43 +6853,4 @@ export const useStripeWebhookApiV1BillingWebhookPost = <
     mutationFn,
     mutationOptions
   );
-};
-
-/**
- * @summary Application Configurations
- */
-export const applicationConfigurationsApiV1ConfigurationsGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/configurations`, method: 'get', signal });
-};
-
-export const getApplicationConfigurationsApiV1ConfigurationsGetQueryKey = () => [`/api/v1/configurations`];
-
-export type ApplicationConfigurationsApiV1ConfigurationsGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>
->;
-export type ApplicationConfigurationsApiV1ConfigurationsGetQueryError = ErrorType<unknown>;
-
-export const useApplicationConfigurationsApiV1ConfigurationsGet = <
-  TData = Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getApplicationConfigurationsApiV1ConfigurationsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>> = ({
-    signal
-  }) => applicationConfigurationsApiV1ConfigurationsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
 };

@@ -84,26 +84,16 @@ class SubscriptionSchema(BaseModel):
     plan: str
 
 
-class InvoiceItemSchema(BaseModel):
-    """Schema for the invoice item object."""
+class ChargeSchema(BaseModel):
+    """Schema for the charge object."""
 
-    models: int
-    amount: str
-    description: str
-    end: int
-    start: int
-
-
-class InvoiceSchema(BaseModel):
-    """Schema for the invoice object."""
-
-    total: int
-    status: str
+    id: str
+    plan: t.Optional[str]
+    models: t.Optional[int]
     paid: bool
-    invoice_pdf: str
-    period_end: int
-    period_start: int
-    invoice_items: t.List[InvoiceItemSchema]
+    amount: int
+    receipt_url: str
+    created: int
 
 
 def _get_subscription(stripe_customer_id: str, status: t.Optional[str]) -> t.List[SubscriptionSchema]:
@@ -131,32 +121,32 @@ async def list_all_subscriptions(
     """Get the list of all the subscriptions of the user from stripe."""
     try:
         return _get_subscription(user.organization.stripe_customer_id, "all")
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         raise BadRequest(str(e)) from e
 
 
-@router.get("/billing/invoices", tags=["billing"], response_model=t.List[InvoiceSchema])
-async def list_all_imvoices(
+@router.get("/billing/charges", tags=["billing"], response_model=t.List[ChargeSchema])
+async def list_all_charges(
         user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ):
-    """Get the list of all the invoices of the user from stripe."""
+    """Get the list of available products from stripe."""
     try:
-        invoices = stripe.Invoice.list(customer=user.organization.stripe_customer_id)["data"]
-        invoices_schema = []
-        for invoice in invoices:
-            invoice_items_schema = []
-            for invoice_item in invoice["lines"]["data"]:
-                invoice_item_schema = InvoiceItemSchema(
-                    models=invoice_item["quantity"],
-                    end=invoice_item["period"]["end"],
-                    start=invoice_item["period"]["start"],
-                    **invoice_item
-                )
-                invoice_items_schema.append(invoice_item_schema)
-            invoice_schema = InvoiceSchema(invoice_items=invoice_items_schema, **invoice)
-            invoices_schema.append(invoice_schema)
-        return invoices_schema
-    except Exception as e:  # pylint: disable=broad-except
+        charges_list = stripe.Charge.list(customer=user.organization.stripe_customer_id)["data"]
+        invoices_dict = {invoice["id"]: invoice for invoice in
+                         stripe.Invoice.list(customer=user.organization.stripe_customer_id)["data"]}
+        sub_dict = {sub.subscription_id: sub for sub in
+                    _get_subscription(user.organization.stripe_customer_id, "all")}
+        charges_schema = []
+        for charge in charges_list:
+            invoice = invoices_dict[charge["invoice"]] if charge.get("invoice") else None
+            sub = sub_dict[invoice["subscription"]] if invoice is not None else None
+            if sub:
+                charge_schema = ChargeSchema(plan=sub.plan, models=sub.models, **charge)
+            else:
+                charge_schema = ChargeSchema(**charge)
+            charges_schema.append(charge_schema)
+        return charges_schema
+    except stripe.error.StripeError as e:
         raise BadRequest(str(e)) from e
 
 
@@ -169,7 +159,7 @@ async def list_all_products(
         product_list = stripe.Product.list()
         price_dict = {price["id"]: price["unit_amount"] for price in stripe.Price.list()["data"]}
         return [ProductResponseSchema(unit_amount=price_dict[x["default_price"]], **x) for x in product_list["data"]]
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         raise BadRequest(str(e)) from e
 
 
@@ -190,7 +180,7 @@ async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(
         )
 
         return
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         raise BadRequest(str(e)) from e
 
 
@@ -204,7 +194,7 @@ async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
             customer_id,
             type="card"
         )["data"]
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         raise AccessForbidden(str(e)) from e
 
 
@@ -244,7 +234,7 @@ async def create_subscription(
             client_secret=subscription.latest_invoice.payment_intent.client_secret,
             subscription_id=subscription.id
         )
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         raise BadRequest(str(e)) from e
 
 
@@ -255,7 +245,7 @@ async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
         subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id,
                                                  expand=["data.latest_invoice.payment_intent"])
         return subscriptions["data"]
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         raise AccessForbidden(str(e)) from e
 
 
@@ -270,7 +260,7 @@ def cancel_subscription(
         deleted_subscription = stripe.Subscription.delete(
             subscription_id)
         return deleted_subscription
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         return AccessForbidden(str(e))
 
 
@@ -298,7 +288,7 @@ def update_subscription(
             client_secret=updated_subscription.latest_invoice.payment_intent.client_secret,
             subscription_id=updated_subscription.id
         )
-    except Exception as e:  # pylint: disable=broad-except
+    except stripe.error.StripeError as e:
         return AccessForbidden(str(e))
 
 
@@ -319,7 +309,7 @@ async def stripe_webhook(request: Request,
             event = stripe.Webhook.construct_event(
                 payload=request_data, sig_header=signature, secret=webhook_secret)
             data = event["data"]
-        except Exception as e:  # pylint: disable=broad-except
+        except stripe.error.StripeError as e:
             return e
         # Get the type of webhook event sent - used to check the status of PaymentIntents.
         event_type = event["type"]
