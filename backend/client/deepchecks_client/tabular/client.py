@@ -23,9 +23,8 @@ import numpy as np
 import pandas as pd
 import pendulum as pdl
 from deepchecks.tabular import Dataset
-from deepchecks.tabular.checks import (MixedNulls, NewCategoryTrainTest, NewLabelTrainTest, PercentOfNulls,
-                                       SingleDatasetPerformance, StringMismatch, TrainTestFeatureDrift,
-                                       TrainTestLabelDrift, TrainTestPredictionDrift)
+from deepchecks.tabular.checks import (FeatureDrift, LabelDrift, MixedNulls, NewCategoryTrainTest, NewLabelTrainTest,
+                                       PercentOfNulls, PredictionDrift, SingleDatasetPerformance, StringMismatch)
 from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
@@ -538,9 +537,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
         frequency = intervals[monitoring_frequency]
 
         checks = {
-            'Feature Drift': TrainTestFeatureDrift(min_samples=100),
-            'Prediction Drift': TrainTestPredictionDrift(min_samples=100),
-            'Label Drift': TrainTestLabelDrift(ignore_na=True, min_samples=100),
+            'Feature Drift': FeatureDrift(min_samples=100),
+            'Prediction Drift': PredictionDrift(min_samples=100),
+            'Label Drift': LabelDrift(ignore_na=True, min_samples=100),
             'Percent Of Nulls': PercentOfNulls(),
             'New Category Train-Test': NewCategoryTrainTest(),
             'Mixed Nulls': MixedNulls(),

@@ -34,7 +34,7 @@ LABEL_CHECK_CONFIG = {
 }
 
 NON_LABEL_CHECK_CONFIG = {
-    "class_name": "TrainTestFeatureDrift",
+    "class_name": "FeatureDrift",
     "module_name": "deepchecks.tabular.checks",
     "params": {}
 }

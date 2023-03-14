@@ -115,7 +115,7 @@ def classification_model_train_test_check(
         model_id=classification_model["id"],
         check={
             "config": {
-                "class_name": "TrainTestLabelDrift",
+                "class_name": "LabelDrift",
                 "params": {},
                 "module_name": "deepchecks.tabular.checks"
             }
