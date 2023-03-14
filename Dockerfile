@@ -48,7 +48,7 @@ RUN pip install -U pip \
     && pip install -q -r requirements.txt --compile --no-cache-dir
     # && apk del .build-deps
 
-RUN pip install uvicorn pyinstrument
+RUN pip install pyinstrument
 
 RUN adduser --system --group deepchecks
 

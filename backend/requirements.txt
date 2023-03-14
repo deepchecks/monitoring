@@ -34,3 +34,4 @@ sentry-sdk[fastapi]==1.14.0
 joblib==1.2.0
 stripe==5.2.0
 jupytext>=1.14.5
+uvicorn==0.17.6
