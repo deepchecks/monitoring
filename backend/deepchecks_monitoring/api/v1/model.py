@@ -22,6 +22,7 @@ from fastapi import BackgroundTasks, Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import Integer as SQLInteger
+from sqlalchemy import String as SQLString
 from sqlalchemy import case, delete, func, insert, literal, select, text, union_all, update
 from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.orm import joinedload, selectinload
@@ -44,7 +45,7 @@ from deepchecks_monitoring.schema_models import Model, ModelNote
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
 from deepchecks_monitoring.schema_models.check import Check
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
@@ -117,6 +118,7 @@ class ModelDailyIngestion(TypedDict):
     """Model ingestion record."""
 
     count: int
+    label_count: int
     timestamp: int
 
 
@@ -225,11 +227,11 @@ async def retrieve_models_data_ingestion(
 
 
 async def _retrieve_models_data_ingestion(
-        *,
-        model_identifier: t.Optional[ModelIdentifier] = None,
-        time_filter: int = TimeUnit.HOUR * 24,
-        end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+    *,
+    model_identifier: t.Optional[ModelIdentifier] = None,
+    time_filter: int = TimeUnit.HOUR * 24,
+    end_time: t.Optional[str] = None,
+    session: AsyncSession = AsyncSessionDep
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
 
@@ -244,6 +246,9 @@ async def _retrieve_models_data_ingestion(
 
     def sample_timestamp(columns):
         return getattr(columns, SAMPLE_TS_COL)
+
+    def sample_label(columns):
+        return getattr(columns, SAMPLE_LABEL_COL)
 
     model_identifier_name = "id"
     models_query = select(Model).options(selectinload(Model.versions))
@@ -283,6 +288,7 @@ async def _retrieve_models_data_ingestion(
         select(
             literal(model_id).label("model_id"),
             sample_id(table.c).label("sample_id"),
+            func.cast(sample_label(table.c), SQLString).label("sample_label"),
             truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
         ).where(is_within_dateframe(
             sample_timestamp(table.c),
@@ -295,7 +301,8 @@ async def _retrieve_models_data_ingestion(
         select(
             union.c.model_id,
             union.c.timestamp,
-            func.count(union.c.sample_id).label("count"))
+            func.count(union.c.sample_id).label("count"),
+            func.count(union.c.sample_label).label("label_count"))
         .group_by(union.c.model_id, union.c.timestamp)
         .order_by(union.c.model_id, union.c.timestamp, "count"),
     )).fetchall()
@@ -305,6 +312,7 @@ async def _retrieve_models_data_ingestion(
     for row in rows:
         result[row.model_id].append(ModelDailyIngestion(
             count=row.count,
+            label_count=row.label_count,
             timestamp=row.timestamp
         ))
 

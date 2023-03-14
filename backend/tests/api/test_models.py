@@ -14,7 +14,7 @@ import pytest
 import sqlalchemy as sa
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, has_entries, has_key
+from hamcrest import assert_that, has_entries
 from httpx import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -241,7 +241,31 @@ def test_get_models_ingestion_no_end_time(
     response = client.get("/api/v1/models/data-ingestion")
     # Assert
     assert response.status_code == 200
-    assert_that(response.json(), has_key("1"))
+    resp = response.json()["1"][0]
+    assert resp["count"] == 2
+    assert resp["label_count"] == 2
+
+
+def test_get_models_ingestion_null_labels(
+    client: TestClient,
+    test_api: TestAPI,
+    classification_model_version: Payload
+):
+    # Arrange
+    upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        samples_per_date=2,
+        daterange=[pdl.now().subtract(hours=2)],
+        is_labeled=False
+    )
+    # Act
+    response = client.get("/api/v1/models/data-ingestion")
+    # Assert
+    assert response.status_code == 200
+    resp = response.json()["1"][0]
+    assert resp["count"] == 2
+    assert resp["label_count"] == 0
 
 
 TableExists = sa.text(
