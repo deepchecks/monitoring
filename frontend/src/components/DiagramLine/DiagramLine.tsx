@@ -243,17 +243,12 @@ function DiagramLine({
         },
         y: analysis
           ? {
-              ticks: {
-                stepSize: range.current.max === 0 ? 1 / 3 : (range.current.max - range.current.min) * 0.3,
-                align: 'end'
-              },
-              grid: { drawBorder: false, drawTicks: false },
               min: range.current.min,
-              max: range.current.max === 0 ? 1 : range.current.max * 1.2
+              max: range.current.max === 0 ? 1 : undefined
             }
           : {
               min: range.current.min,
-              max: Math.max(range.current.max + (range.current.max - range.current.min) * 0.3, 1)
+              max: range.current.max <= 1 ? 1 : undefined
             }
       }
     }),
