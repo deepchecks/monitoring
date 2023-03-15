@@ -18,9 +18,7 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
-from deepchecks.tabular.metric_utils.scorers import (binary_scorers_dict, multiclass_scorers_dict,
-                                                     regression_scorers_higher_is_better_dict,
-                                                     regression_scorers_lower_is_better_dict)
+from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, root_validator, validator
 from sqlalchemy import Column, Table, and_, select
@@ -230,9 +228,8 @@ def get_metric_class_info(latest_version: ModelVersion, model: Model) -> Monitor
     if model.task_type == TaskType.MULTICLASS:
         scorers = _metric_api_listify(multiclass_scorers_dict, ignore_binary=False)
     elif model.task_type == TaskType.REGRESSION:
-        reg_scorers = sorted(list(regression_scorers_higher_is_better_dict.keys()) +
-                             list(regression_scorers_lower_is_better_dict.keys()))
-        scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True} for scorer_name in reg_scorers]
+        reg_scorers = ["RMSE", "MSE", "MAE", "R2"]
+        scorers = [{"name": scorer_name, "is_agg": True} for scorer_name in reg_scorers]
     elif model.task_type == TaskType.BINARY:
         scorers = [{"name": _metric_name_pretify(scorer_name), "is_agg": True} for scorer_name in binary_scorers_dict]
 
