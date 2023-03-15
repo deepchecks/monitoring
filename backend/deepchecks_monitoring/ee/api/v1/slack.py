@@ -48,7 +48,7 @@ async def installation_redirect(
     redirect_path = request.url_for('slack-installation-callback')
     utils = SlackInstallationUtils(settings)
     return RedirectResponse(
-        url=utils.generate_authorization_url(state, redirect_path),
+        url=utils.generate_authorization_url(state, str(redirect_path)),
         headers={'set-cookie': utils.generate_state_cookies(state)}
     )
 

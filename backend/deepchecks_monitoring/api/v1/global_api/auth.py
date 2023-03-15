@@ -32,9 +32,9 @@ async def auth0_login(
     if settings.debug_mode:
         # If no return uri defined, then use the default '/'
         return_uri = request.query_params.get('return_uri', DEFAULT_RETURN_URI)
-        redirect = await auth0_client.authorize_redirect(request, redirect_uri, state=return_uri)
+        redirect = await auth0_client.authorize_redirect(request, str(redirect_uri), state=return_uri)
     else:
-        redirect = await auth0_client.authorize_redirect(request, redirect_uri)
+        redirect = await auth0_client.authorize_redirect(request, str(redirect_uri))
 
     return redirect
 
