@@ -13,7 +13,7 @@ from datetime import datetime
 
 import sqlalchemy as sa
 from fastapi import Depends, Response, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +23,6 @@ from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProvid
 from deepchecks_monitoring.exceptions import BadRequest
 from deepchecks_monitoring.features_control import FeaturesSchema
 from deepchecks_monitoring.integrations.email import EmailSender
-from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.user import User
@@ -37,49 +36,76 @@ from .global_router import router
 class InvitationCreationSchema(BaseModel):
     """Schema for the invitation creation."""
 
-    email: EmailStr
+    emails: t.Union[EmailStr, t.List[EmailStr]] = Field(alias='email')
     ttl: t.Optional[int]
+
+    @validator('emails')
+    @classmethod
+    def validate_list_of_emails(cls, value):
+        if len(value) == 0:
+            raise ValueError("'emails' attribute cannot be empty")
+        return value
 
 
 @router.put('/organization/invite', tags=['organization'])
 async def create_invite(
         body: InvitationCreationSchema,
-        user: User = Depends(auth.AdminUser()),
+        admin: User = Depends(auth.AdminUser()),
         email_sender: EmailSender = Depends(get_email_sender_resource),
         session: AsyncSession = AsyncSessionDep,
         settings: Settings = SettingsDep
 ):
     """Create invite between organization and a user."""
-    # Check organization exists
-    await exists_or_404(session, Organization, id=user.organization_id)
+    body.emails = body.emails if isinstance(body.emails, list) else [body.emails]
+
     # If user already belong to an organization return bad request
-    other_user_query = await User.filter_by(session, email=body.email)
-    other_user = other_user_query.scalar_one_or_none()
-    if other_user and other_user.organization_id is not None:
-        raise BadRequest('User already associated to an organization')
+    users = await session.scalars(
+        sa.select(User)
+        .where(User.email.in_(body.emails))
+    )
 
-    # Fetch user invitation if already exist
-    invitation = (await Invitation.filter_by(session, email=body.email)).scalar_one_or_none()
-    if invitation:
-        from_user = (await User.filter_by(session, email=invitation.creating_user)).scalar_one_or_none()
-        # If invitation not valid, remove it and allow new invitation
-        if invitation.expired() or from_user is None:
-            await invitation.delete(session)
-        else:
-            raise BadRequest('User already invited')
+    for u in users:
+        if u.orhanization_id is not None:
+            raise BadRequest(f'User {u.email} already associated to an organization')
 
-    invitation = Invitation(organization_id=user.organization_id, **body.dict(exclude_none=True),
-                            creating_user=user.email)
-    session.add(invitation)
+    # Fetch users invitations if already exist
+    existing_invitations = (await session.execute(
+        sa.select(Invitation, User.id.label('created_by'))
+        .outerjoin(User, User.email == Invitation.creating_user)
+        .where(Invitation.email.in_(body.emails))
+        # .where(Invitation.organization_id == admin.organization_id)  # TODO:
+    )).all()
+
+    if existing_invitations:
+        for record in existing_invitations:
+            if record.Invitation.expired() or record.created_by is None:
+                # If invitation not valid, remove it and allow new invitation
+                await session.execute(
+                    sa.delete(Invitation)
+                    .where(Invitation.email == record.Invitation.email)
+                    .where(Invitation.organization_id == record.Invitation.organization_id)
+                )
+            else:
+                raise BadRequest(f'User "{record.Invitation.email}" already invited')
+
+    session.add_all([
+        Invitation(
+            email=email,
+            ttl=body.ttl,
+            organization_id=admin.organization_id,
+            creating_user=admin.email
+        )
+        for email in body.emails
+    ])
 
     # TODO: should be async and should be done by background worker/task
     email_sender.send(
         subject='Deepchecks Invitation',
-        recipients=[body.email],
+        recipients=body.emails,
         template_name='invite',
         template_context={
-            'from_user': f'{user.full_name} ({user.email})' if user.full_name else user.email,
-            'organization_name': t.cast(Organization, user.organization).name,
+            'from_user': f'{admin.full_name} ({admin.email})' if admin.full_name else admin.email,
+            'organization_name': t.cast(Organization, admin.organization).name,
             'host': str(settings.deployment_url)
         }
     )

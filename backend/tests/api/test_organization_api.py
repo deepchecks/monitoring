@@ -19,7 +19,7 @@ async def test_user_invitation_to_organization(
     smtp_server
 ):
     user = await generate_user(async_session, settings.auth_jwt_secret)
-    payload = {"email": "someluckyuser@testing.com"}
+    payload = {"email": ["someluckyuser@testing.com", "someluckyuser2@testing.com", ]}
 
     response = unauthorized_client.put(
         "/api/v1/organization/invite",
@@ -28,17 +28,21 @@ async def test_user_invitation_to_organization(
     )
 
     assert response.status_code == 200, (response.content, response.json())
-    assert len(smtp_server.handler.mailbox) == 1
-    assert smtp_server.handler.mailbox[0]["From"] == f"Deepchecks App <{settings.deepchecks_email}>"
-    assert smtp_server.handler.mailbox[0]["To"] == payload["email"]
-    assert smtp_server.handler.mailbox[0]["Subject"] == "Deepchecks Invitation"
+    assert len(smtp_server.handler.mailbox) == 2
+
+    for index, email_message in enumerate(smtp_server.handler.mailbox):
+        assert email_message["From"] == f"Deepchecks App <{settings.deepchecks_email}>"
+        assert email_message["To"] == payload["email"][index]
+        assert email_message["Subject"] == "Deepchecks Invitation"
 
     invitation_exists = await async_session.scalar(
-        sa.select(sa.literal(1))
-        .where(Invitation.email == payload["email"])
-        .where(Invitation.creating_user == user.email)
-        .where(Invitation.organization_id == user.organization_id)
-        .limit(1)
+        sa.select(
+            sa.select(Invitation)
+            .where(Invitation.email.in_(payload["email"]))
+            .where(Invitation.creating_user == user.email)
+            .where(Invitation.organization_id == user.organization_id)
+            .exists()
+        )
     )
 
     assert invitation_exists
