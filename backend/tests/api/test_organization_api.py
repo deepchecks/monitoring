@@ -49,6 +49,26 @@ async def test_user_invitation_to_organization(
 
 
 @pytest.mark.asyncio
+async def test_user_invitation_that_is_already_associated_with_organization(
+    unauthorized_client: TestClient,
+    async_session: AsyncSession,
+    settings,
+):
+    user = await generate_user(async_session, settings.auth_jwt_secret)
+    member = await generate_user(async_session, settings.auth_jwt_secret)
+    payload = {"email": member.email}
+
+    response = unauthorized_client.put(
+        "/api/v1/organization/invite",
+        headers={"Authorization": f"bearer {user.access_token}"},
+        json=payload
+    )
+
+    assert response.status_code == 400, (response.content, response.json())
+    assert response.json()["detail"] == f"User {member.email} already associated to an organization"
+
+
+@pytest.mark.asyncio
 async def test_organization_retrieval(
     unauthorized_client: TestClient,
     async_session: AsyncSession,

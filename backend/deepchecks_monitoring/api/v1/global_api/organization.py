@@ -65,7 +65,7 @@ async def create_invite(
     )
 
     for u in users:
-        if u.orhanization_id is not None:
+        if u.organization_id is not None:
             raise BadRequest(f'User {u.email} already associated to an organization')
 
     # Fetch users invitations if already exist
