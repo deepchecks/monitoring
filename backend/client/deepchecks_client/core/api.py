@@ -15,15 +15,15 @@ import warnings
 from copy import copy
 from datetime import datetime
 
-import deepchecks_client
 import httpx
 import packaging.version
 import pandas as pd
-from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
 from httpx import URL
 
-__all__ = ['API']
+import deepchecks_client
+from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
 
+__all__ = ['API']
 
 TAPI = t.TypeVar('TAPI', bound='API')
 
@@ -110,9 +110,9 @@ class API:
         return payload['version']
 
     def get_samples_count(
-        self,
-        model_version_id: int,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            raise_on_status: bool = True,
     ) -> t.Union[t.Dict[str, int], httpx.Response]:
         """Get the amount of samples uploaded.
 
@@ -137,9 +137,9 @@ class API:
             return self.session.get(f'model-versions/{model_version_id}/count-samples')
 
     def fetch_model_version(
-        self,
-        model_version_id: int,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            raise_on_status: bool = True,
     ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch the model version.
 
@@ -164,9 +164,9 @@ class API:
             return self.session.get(f'model-versions/{model_version_id}')
 
     def fetch_model_version_schema(
-        self,
-        model_version_id: int,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            raise_on_status: bool = True,
     ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch model version schema.
 
@@ -191,10 +191,10 @@ class API:
             return self.session.get(f'model-versions/{model_version_id}/schema')
 
     def upload_samples(
-        self,
-        model_version_id: int,
-        samples: t.List[t.Dict[str, t.Any]],
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            samples: t.List[t.Dict[str, t.Any]],
+            raise_on_status: bool = True,
     ) -> t.Optional[httpx.Response]:
         """Upload production samples.
 
@@ -221,10 +221,10 @@ class API:
             return self.session.post(f'model-versions/{model_version_id}/data', json=samples)
 
     def update_samples(
-        self,
-        model_version_id: int,
-        samples: t.List[t.Dict[str, t.Any]],
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            samples: t.List[t.Dict[str, t.Any]],
+            raise_on_status: bool = True,
     ) -> t.Optional[httpx.Response]:
         """Update production samples.
 
@@ -251,10 +251,10 @@ class API:
             return self.session.put(f'model-versions/{model_version_id}/data', json=samples)
 
     def upload_reference(
-        self,
-        model_version_id: int,
-        reference: t.AnyStr,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            reference: t.AnyStr,
+            raise_on_status: bool = True,
     ):
         """Upload reference data.
 
@@ -287,11 +287,11 @@ class API:
             )
 
     def fetch_model_version_time_window_statistics(
-        self,
-        model_version_id: int,
-        start_time: t.Optional[str] = None,
-        end_time: t.Optional[str] = None,
-        raise_on_status: bool = True
+            self,
+            model_version_id: int,
+            start_time: t.Optional[str] = None,
+            end_time: t.Optional[str] = None,
+            raise_on_status: bool = True
     ) -> t.Union[t.Dict[str, t.Any], httpx.Response]:
         """Fetch model version time window statistics.
 
@@ -328,9 +328,9 @@ class API:
             )
 
     def create_model(
-        self,
-        model: t.Dict[str, t.Any],
-        raise_on_status: bool = True
+            self,
+            model: t.Dict[str, t.Any],
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create model.
 
@@ -355,10 +355,10 @@ class API:
             return self.session.post('models', json=model)
 
     def create_model_notes(
-        self,
-        model_id: int,
-        notes: t.List[t.Dict[str, str]],
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            notes: t.List[t.Dict[str, str]],
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create model notes.
 
@@ -383,9 +383,9 @@ class API:
         )
 
     def delete_model_note(
-        self,
-        note_id: int,
-        raise_on_status: bool = True
+            self,
+            note_id: int,
+            raise_on_status: bool = True
     ) -> t.Optional[httpx.Response]:
         """Delete model note.
 
@@ -409,9 +409,9 @@ class API:
         )
 
     def fetch_model_notes(
-        self,
-        model_id: int,
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
         """Fetch list of model notes.
 
@@ -437,9 +437,9 @@ class API:
         )
 
     def delete_model_by_id(
-        self,
-        model_id: int,
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            raise_on_status: bool = True
     ) -> t.Optional[httpx.Response]:
         """Delete model by its numerical identifier.
 
@@ -464,15 +464,15 @@ class API:
             return self.session.delete(f'models/{model_id}')
 
     def delete_model_by_name(
-        self,
-        model_name: str,
-        raise_on_status: bool = True
+            self,
+            model_name: str,
+            raise_on_status: bool = True
     ) -> t.Optional[httpx.Response]:
         """Delete model by its name.
 
         Parameters
         ----------
-        model_name : int
+        model_name : str
             The model name.
         raise_on_status : bool, optional
             Raise exception if status code is not 200.
@@ -491,9 +491,9 @@ class API:
             return self.session.delete(f'models/{model_name}', params={'identifier_kind': 'name'})
 
     def fetch_model_by_name(
-        self,
-        model_name: str,
-        raise_on_status: bool = True
+            self,
+            model_name: str,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch model record by its name.
 
@@ -518,9 +518,9 @@ class API:
             return self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'})
 
     def fetch_model_by_id(
-        self,
-        model_id: int,
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch model record by its numerical identifier.
 
@@ -545,9 +545,9 @@ class API:
             return self.session.get(f'models/{model_id}')
 
     def fetch_all_model_versions(
-        self,
-        model_id: int,
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            raise_on_status: bool = True
     ) -> t.Union[t.List[t.Dict[str, t.Any]], httpx.Response]:
         """Fetch model versions.
 
@@ -572,10 +572,10 @@ class API:
             return self.session.get(f'models/{model_id}/versions')
 
     def create_model_version(
-        self,
-        model_id: int,
-        model_version: t.Dict[str, t.Any],
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            model_version: t.Dict[str, t.Any],
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create model version.
 
@@ -602,10 +602,10 @@ class API:
             return self.session.post(f'models/{model_id}/version', json=model_version)
 
     def update_model_version(
-        self,
-        model_version_id: int,
-        data: t.Dict[str, t.Any],
-        raise_on_status: bool = True
+            self,
+            model_version_id: int,
+            data: t.Dict[str, t.Any],
+            raise_on_status: bool = True
     ) -> t.Optional[httpx.Response]:
         """Update model version.
 
@@ -632,9 +632,9 @@ class API:
             return self.session.put(f'model-versions/{model_version_id}', json=data)
 
     def delete_model_version_by_id(
-        self,
-        model_version_id: int,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            raise_on_status: bool = True,
     ) -> t.Optional[httpx.Response]:
         """Delete a model by version ID.
 
@@ -659,11 +659,11 @@ class API:
             return self.session.delete(f'model-versions/{model_version_id}')
 
     def get_model_version_reference_data(
-        self,
-        model_version_id: int,
-        rows_count: int = 10_000,
-        filters: t.List[DataFilter] = None,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            rows_count: int = 10_000,
+            filters: t.List[DataFilter] = None,
+            raise_on_status: bool = True,
     ) -> t.Union[pd.DataFrame, httpx.Response]:
         """Get reference data for a model version.
 
@@ -700,13 +700,13 @@ class API:
         return resp
 
     def get_model_version_production_data(
-        self,
-        model_version_id: int,
-        start_time: t.Union[datetime, str, int],
-        end_time: t.Union[datetime, str, int],
-        rows_count: int = 10_000,
-        filters: t.List[DataFilter] = None,
-        raise_on_status: bool = True,
+            self,
+            model_version_id: int,
+            start_time: t.Union[datetime, str, int],
+            end_time: t.Union[datetime, str, int],
+            rows_count: int = 10_000,
+            filters: t.List[DataFilter] = None,
+            raise_on_status: bool = True,
     ) -> t.Union[pd.DataFrame, httpx.Response]:
         """Get production data for a model version on a specific window.
 
@@ -756,10 +756,10 @@ class API:
         return resp
 
     def delete_model_version_by_name(
-        self,
-        model_name: str,
-        model_version_name: str,
-        raise_on_status: bool = True,
+            self,
+            model_name: str,
+            model_version_name: str,
+            raise_on_status: bool = True,
     ) -> t.Optional[httpx.Response]:
         """Delete a model by version ID.
 
@@ -788,9 +788,9 @@ class API:
             return self.session.delete(path, params=params)
 
     def fetch_model_version_by_id(
-        self,
-        model_version_id: int,
-        raise_on_status: bool = True
+            self,
+            model_version_id: int,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch the model version by its ID.
 
@@ -816,10 +816,10 @@ class API:
             return response
 
     def fetch_model_version_by_name(
-        self,
-        model_name: str,
-        model_version_name: str,
-        raise_on_status: bool = True
+            self,
+            model_name: str,
+            model_version_name: str,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Fetch the model version by its name.
 
@@ -847,10 +847,10 @@ class API:
             return response
 
     def create_checks(
-        self,
-        model_id: int,
-        checks: t.List[t.Dict[str, t.Any]],
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            checks: t.List[t.Dict[str, t.Any]],
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
         """Create checks.
 
@@ -877,9 +877,9 @@ class API:
             return self.session.post(url=f'models/{model_id}/checks', json=checks)
 
     def fetch_all_model_checks_by_id(
-        self,
-        model_id: int,
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.List[t.Dict[str, t.Any]]]:
         """Fetch all model checks.
 
@@ -904,9 +904,9 @@ class API:
             return self.session.get(f'models/{model_id}/checks')
 
     def fetch_all_model_checks_by_name(
-        self,
-        model_name: str,
-        raise_on_status: bool = True
+            self,
+            model_name: str,
+            raise_on_status: bool = True
     ):
         """Fetch all model checks.
 
@@ -921,10 +921,10 @@ class API:
         raise NotImplementedError()
 
     def create_alert_rule(
-        self,
-        monitor_id: int,
-        alert_rule: t.Dict[str, t.Any],
-        raise_on_status: bool = True
+            self,
+            monitor_id: int,
+            alert_rule: t.Dict[str, t.Any],
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create alert rule.
 
@@ -951,9 +951,9 @@ class API:
             return self.session.post(url=f'monitors/{monitor_id}/alert-rules', json=alert_rule)
 
     def fetch_alert_rule(
-        self,
-        alert_rule_id: int,
-        raise_on_status: bool = True
+            self,
+            alert_rule_id: int,
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create alert rule.
 
@@ -978,10 +978,10 @@ class API:
             return self.session.get(url=f'alert-rules/{alert_rule_id}')
 
     def create_monitor(
-        self,
-        check_id: int,
-        monitor: t.Dict[str, t.Any],
-        raise_on_status: bool = True
+            self,
+            check_id: int,
+            monitor: t.Dict[str, t.Any],
+            raise_on_status: bool = True
     ) -> t.Union[httpx.Response, t.Dict[str, t.Any]]:
         """Create monitor.
 
@@ -1008,9 +1008,9 @@ class API:
             return self.session.post(url=f'checks/{check_id}/monitors', json=monitor)
 
     def fetch_monitor(
-        self,
-        monitor_id: int,
-        raise_on_status: bool = True
+            self,
+            monitor_id: int,
+            raise_on_status: bool = True
     ):
         """Create monitor.
 
@@ -1055,10 +1055,10 @@ class API:
             return self.session.get('dashboards')
 
     def delete_model_checks_by_name(
-        self,
-        model_id: int,
-        check_names: t.Sequence[str],
-        raise_on_status: bool = True
+            self,
+            model_id: int,
+            check_names: t.Sequence[str],
+            raise_on_status: bool = True
     ) -> t.Optional[httpx.Response]:
         """Delete model checks by their names.
 
@@ -1082,3 +1082,33 @@ class API:
     def delete_check_by_name(self):
         # TODO: corresponding PR is not merged into main yet
         raise NotImplementedError()
+
+    def set_schedule_time(self, model_id: int, timestamp: t.Union[datetime, str, int],
+                          raise_on_status: bool = True) -> t.Optional[httpx.Response]:
+        """Set new scheduling time for all monitors of a model.
+
+        Parameters
+        ----------
+        model_id: int
+            model's id (model['id'])
+        timestamp : t.Union[datetime, str, int]
+            The start time timestamp.
+            Alerts of the model will be calculated from this timestamp and forward
+            - int: Unix timestamp
+            - str: timestamp in ISO8601 format
+            - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        raise_on_status : bool, optional
+            Raise exception is status code is not 200.
+        Returns
+        -------
+        Union[httpx.Response, Dict[str, Any]]
+            The response from the server
+        """
+        timestamp_parsed = parse_timestamp(timestamp).isoformat()
+        data = {'timestamp': timestamp_parsed}
+        response = self.session.post(url=f'models/{model_id}/monitors-set-schedule-time', json=data)
+
+        if raise_on_status:
+            maybe_raise(response, msg=f'Failed to set new scheduling time for model {model_id}.\n{{error}}').json()
+
+        return response

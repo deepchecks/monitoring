@@ -18,6 +18,7 @@ from hamcrest import assert_that, has_entries
 from httpx import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_client import DeepchecksClient
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from tests.common import ModelIdentifiersPair, Payload, TestAPI, upload_classification_data
@@ -281,7 +282,7 @@ TableExists = sa.text(
 @pytest.mark.asyncio
 async def test_model_set_monitors_time(
     test_api: TestAPI,
-    client: TestClient,
+    deepchecks_sdk: DeepchecksClient,
     async_session: AsyncSession,
 ):
     # Arrange
@@ -295,10 +296,10 @@ async def test_model_set_monitors_time(
 
     # Act
     new_date = pdl.now().subtract(years=1)
-    response = client.post(f"/api/v1/models/{model['id']}/monitors-set-schedule-time",
-                           json={"timestamp": new_date.isoformat()})
-    assert response.status_code == 200
+    model = deepchecks_sdk.get_or_create_model(name=model["name"], task_type="binary")
+    response = model.set_schedule_time(timestamp=new_date.isoformat(), model_id=model.model["id"])
 
+    assert response.status_code == 200
     # Assert
     monitors = (await async_session.scalars(sa.select(Monitor))).all()
     for monitor in monitors:

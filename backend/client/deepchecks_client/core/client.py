@@ -374,7 +374,7 @@ class DeepchecksModelClient:
 
     @classmethod
     def create_from_name(cls, model_name: str, api: API):
-        """Request model instance by name and and create a model client from it."""
+        """Request model instance by name and create a model client from it."""
         return cls(
             model=t.cast(t.Dict[str, t.Any], api.fetch_model_by_name(model_name)),
             api=api,
@@ -382,7 +382,7 @@ class DeepchecksModelClient:
 
     @classmethod
     def create_from_id(cls, model_id: int, api: API):
-        """Request model instance by ID and and create a model client from it."""
+        """Request model instance by ID and create a model client from it."""
         return cls(
             model=t.cast(t.Dict[str, t.Any], api.fetch_model_by_id(model_id)),
             api=api,
@@ -707,3 +707,27 @@ class DeepchecksModelClient:
         """
         notes = self.api.fetch_model_notes(model_id=self.model['id'])
         return t.cast(t.List[t.Dict[str, t.Any]], notes)
+
+    def set_schedule_time(self, model_id: int, timestamp: t.Union[datetime, str, int],
+                          raise_on_status: bool = True):
+        """Set new scheduling time for all monitors of a model.
+
+        Parameters
+        ----------
+        model_id: int
+            models id (model['id'])
+        timestamp : t.Union[datetime, str, int]
+            The start time timestamp.
+            Alerts of the model will be calculated from this timestamp and forward
+            - int: Unix timestamp
+            - str: timestamp in ISO8601 format
+            - datetime: If no timezone info is provided on the datetime assumes local timezone.
+        raise_on_status : bool, optional
+            Raise exception is status code is not 200.
+        Returns
+        -------
+        Union[httpx.Response, Dict[str, Any]]
+            The response from the server
+        """
+        response = self.api.set_schedule_time(model_id=model_id, timestamp=timestamp, raise_on_status=raise_on_status)
+        return response
