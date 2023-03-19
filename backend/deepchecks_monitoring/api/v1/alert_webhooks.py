@@ -4,9 +4,8 @@ import typing as t
 import httpx
 import sqlalchemy as sa
 from fastapi import Body, Depends, Path, status
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing_extensions import Annotated
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
@@ -73,12 +72,6 @@ async def retrive_webhook(
     ))
 
 
-AlertWebhookCreationSchema = Annotated[
-    t.Union[StandartWebhookProperties, PagerDutyWebhookProperties],
-    Field(discriminator="kind")
-]
-
-
 @router.post(
     "/alert-webhooks",
     tags=["alert-webhooks"],
@@ -86,7 +79,7 @@ AlertWebhookCreationSchema = Annotated[
     status_code=status.HTTP_201_CREATED
 )
 async def create_webhook(
-    webhook: AlertWebhookCreationSchema = Body(...),
+    webhook: t.Union[StandartWebhookProperties, PagerDutyWebhookProperties] = Body(discriminator="kind"),
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ) -> t.Dict[str, int]:
