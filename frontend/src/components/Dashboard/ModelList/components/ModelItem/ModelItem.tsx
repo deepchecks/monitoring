@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { ModelManagmentSchema } from 'api/generated';
+import { ModelManagmentSchema, ConnectedModelSchema } from 'api/generated';
 
 import { Box } from '@mui/material';
-
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import NoDataError from './NoDataError/NoDataError';
 
@@ -21,25 +19,31 @@ import {
   StyledModelName,
   StyledAlertsCount
 } from './ModelItem.style';
+
+import { events, reportEvent } from 'helpers/services/mixPanel';
 import { setParams } from 'helpers/utils/getParams';
+import { constants } from '../../../dashboard.constants';
 
 dayjs.extend(localizedFormat);
 
 interface ModelItemProps {
   activeModel: boolean;
   onModelClick: (model: ModelManagmentSchema) => void;
-  onReset: (event: React.MouseEvent<HTMLDivElement>) => void;
   model: ModelManagmentSchema;
+  connectedModelsMap: Record<string, ConnectedModelSchema>;
 }
 
-export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) {
+const { lastDataUpdate } = constants.modelList.modelItem;
+
+export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap }: ModelItemProps) {
   const navigate = useNavigate();
 
-  const predictionData = !!model.has_data;
+  const { id, name, latest_time, alerts_count, max_severity, has_data } = model;
+  const { n_of_pending_rows: pendingRows } = connectedModelsMap[id];
 
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    navigate({ pathname: '/alerts', search: setParams('modelId', model.id, false) });
+    navigate({ pathname: '/alerts', search: setParams('modelId', id, false) });
   };
 
   const handleModelClick = () => {
@@ -51,15 +55,15 @@ export function ModelItem({ activeModel, onModelClick, model }: ModelItemProps) 
     <StyledContainer active={activeModel} onClick={handleModelClick} autoFocus={activeModel}>
       <StyledModelInfo>
         <Box>
-          <StyledModelName>{model.name}</StyledModelName>
+          <StyledModelName>{name}</StyledModelName>
           <StyledDateContainer>
-            <StyledDateTitle>Last data update:&nbsp;</StyledDateTitle>
-            <StyledDateValue>{model.latest_time ? dayjs.unix(model.latest_time).format('L') : '-'}</StyledDateValue>
+            <StyledDateTitle>{lastDataUpdate}&nbsp;</StyledDateTitle>
+            <StyledDateValue>{latest_time ? dayjs.unix(latest_time).format('L') : '-'}</StyledDateValue>
           </StyledDateContainer>
         </Box>
-        <NoDataError predictionData={predictionData} />
-        <StyledAlertBadge severity={model.max_severity} alertsCount={model.alerts_count} onClick={handleAlertClick}>
-          <StyledAlertsCount>{model.alerts_count}</StyledAlertsCount>
+        {!has_data && <NoDataError pendingRows={pendingRows} />}
+        <StyledAlertBadge severity={max_severity} alertsCount={alerts_count} onClick={handleAlertClick}>
+          <StyledAlertsCount>{alerts_count}</StyledAlertsCount>
         </StyledAlertBadge>
       </StyledModelInfo>
     </StyledContainer>

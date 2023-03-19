@@ -1,6 +1,11 @@
 import React, { useMemo, useState } from 'react';
 
-import { ModelManagmentSchema, AlertSeverity } from 'api/generated';
+import {
+  ModelManagmentSchema,
+  AlertSeverity,
+  useRetrieveConnectedModelsApiV1ConnectedModelsGet,
+  ConnectedModelSchema
+} from 'api/generated';
 
 import { Loader } from 'components/Loader';
 import { ModelItem } from './components/ModelItem';
@@ -22,7 +27,7 @@ import { Rotate } from 'assets/icon/icon';
 
 import { setParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
-import { constants } from './modelList.constants';
+import { constants } from '../dashboard.constants';
 
 export type SelectedModelAlerts = { [key in AlertSeverity]: number };
 
@@ -32,10 +37,17 @@ interface ModelListProps {
 }
 
 const ZERO_ALERTS = { low: 0, mid: 0, high: 0, critical: 0 };
-const { heading, reset, searchFieldPlaceholder } = constants;
+const { heading, reset, searchFieldPlaceholder } = constants.modelList;
 
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
   const { models, isLoading } = useModels();
+
+  const { data: connectedModels = [] } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const connectedModelsMap = useMemo(() => {
+    const map: Record<string, ConnectedModelSchema> = {};
+    connectedModels.forEach(model => (map[model.id] = model));
+    return map;
+  }, [connectedModels]);
 
   const [modelName, setModelName] = useState('');
   const [selectedModelAlerts, setSelectedModelAlerts] = useState<SelectedModelAlerts | null>(null);
@@ -97,8 +109,8 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
                 key={index}
                 activeModel={selectedModelId === model.id}
                 onModelClick={handleModelClick}
-                onReset={onReset}
                 model={model}
+                connectedModelsMap={connectedModelsMap}
               />
             ))}
             {selectedModelId && (
