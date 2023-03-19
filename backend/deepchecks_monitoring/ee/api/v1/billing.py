@@ -18,7 +18,7 @@ from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
-from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest, NotFound
+from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest
 from deepchecks_monitoring.public_models import Billing, Organization, User
 from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.utils import auth
@@ -114,17 +114,6 @@ def _get_subscription(stripe_customer_id: str, status: t.Optional[str]) -> t.Lis
     return subscriptions_schemas
 
 
-@router.get("/billing/subscriptions", tags=["billing"], response_model=t.List[SubscriptionSchema])
-async def list_all_subscriptions(
-        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
-):
-    """Get the list of all the subscriptions of the user from stripe."""
-    try:
-        return _get_subscription(user.organization.stripe_customer_id, "all")
-    except stripe.error.StripeError as e:
-        raise BadRequest(str(e)) from e
-
-
 @router.get("/billing/charges", tags=["billing"], response_model=t.List[ChargeSchema])
 async def list_all_charges(
         user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
@@ -198,16 +187,15 @@ async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
         raise AccessForbidden(str(e)) from e
 
 
-@router.get("/billing", tags=["billing"], response_model=BillingSchema)
-async def get_billing_info(user: User = Depends(auth.AdminUser()),
-                           session: AsyncSession = AsyncSessionDep):
-    """Return the payment method of the organization."""
-    billing: Billing = (await session
-                        .execute(sa.select(Billing)
-                                 .where(Billing.organization_id == user.organization_id))).scalars().first()
-    if billing is None:
-        return NotFound("No billing Info for current organization.")
-    return BillingSchema.from_orm(billing)
+@router.get("/billing/subscription", tags=["billing"], response_model=t.List)
+async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
+    """Return a list of subscription of the organization."""
+    try:
+        subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id,
+                                                 expand=["data.latest_invoice.payment_intent"])
+        return subscriptions["data"]
+    except stripe.error.StripeError as e:
+        raise AccessForbidden(str(e)) from e
 
 
 @router.post("/billing/subscription", tags=["billing"], response_model=SubscriptionCreationResponse)
@@ -236,17 +224,6 @@ async def create_subscription(
         )
     except stripe.error.StripeError as e:
         raise BadRequest(str(e)) from e
-
-
-@router.get("/billing/subscription", tags=["billing"], response_model=t.List)
-async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
-    """Return a list of subscription of the organization."""
-    try:
-        subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id,
-                                                 expand=["data.latest_invoice.payment_intent"])
-        return subscriptions["data"]
-    except stripe.error.StripeError as e:
-        raise AccessForbidden(str(e)) from e
 
 
 @router.delete("/billing/subscription/{subscription_id}", tags=["billing"])

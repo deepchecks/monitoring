@@ -95,6 +95,8 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
+export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
+
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
@@ -151,6 +153,25 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
 /**
+ * Schema for organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
+  id: number;
+  name: string;
+  tier: OrgTier;
+}
+
+/**
+ * Schema for the organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
+  name: string;
+  is_slack_connected: boolean;
+  slack_notification_levels: AlertSeverity[];
+  email_notification_levels: AlertSeverity[];
+}
+
+/**
  * Schema for getting rows in a specific window.
  */
 export interface WindowDataSchema {
@@ -199,7 +220,7 @@ export interface UserSchema {
   created_at: string;
   full_name?: string;
   picture_url?: string;
-  organization?: OrganizationSchema;
+  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
 }
 
 /**
@@ -229,19 +250,6 @@ export type TaskType = unknown;
 export interface TableDataSchema {
   filter?: DataFilterList;
   rows_count?: number;
-}
-
-/**
- * Schema for the subscription object.
- */
-export interface SubscriptionSchema {
-  models: number;
-  subscription_id: string;
-  status: string;
-  start_date: number;
-  current_period_end: number;
-  cancel_at_period_end: boolean;
-  plan: string;
 }
 
 /**
@@ -357,15 +365,6 @@ export const OrgTier = {
   SCALE: 'SCALE',
   DEDICATED: 'DEDICATED'
 } as const;
-
-/**
- * Schema for organization.
- */
-export interface OrganizationSchema {
-  id: number;
-  name: string;
-  tier: OrgTier;
-}
 
 /**
  * Operators for numeric and categorical filters.
@@ -639,6 +638,7 @@ export interface ModelManagmentSchema {
 
 export interface ModelDailyIngestion {
   count: number;
+  label_count: number;
   timestamp: number;
 }
 
@@ -676,11 +676,13 @@ export interface InvitationInfoSchema {
   org_name: string;
 }
 
+export type InvitationCreationSchemaEmail = string | string[];
+
 /**
  * Schema for the invitation creation.
  */
 export interface InvitationCreationSchema {
-  email: string;
+  email: InvitationCreationSchemaEmail;
   ttl?: number;
 }
 
@@ -948,18 +950,6 @@ export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost 
 }
 
 /**
- * Billing schema.
- */
-export interface BillingSchema {
-  id: number;
-  subscription_id?: string;
-  bought_models: number;
-  last_update?: string;
-  started_at: string;
-  organization_id: number;
-}
-
-/**
  * Response for auto frequency.
  */
 export interface AutoFrequencyResponse {
@@ -1079,7 +1069,7 @@ export interface AlertRuleConfigSchema {
  * @summary Hello World
  */
 export const helloWorldApiV1SayHelloGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/say-hello`, method: 'get', signal });
+  return customInstance<string>({ url: `/api/v1/say-hello`, method: 'get', signal });
 };
 
 export const getHelloWorldApiV1SayHelloGetQueryKey = () => [`/api/v1/say-hello`];
@@ -2006,7 +1996,7 @@ export const useListWebhooksApiV1AlertWebhooksGet = <
 export const createWebhookApiV1AlertWebhooksPost = (
   createWebhookApiV1AlertWebhooksPostBody: CreateWebhookApiV1AlertWebhooksPostBody
 ) => {
-  return customInstance<unknown>({
+  return customInstance<CreateWebhookApiV1AlertWebhooksPost201>({
     url: `/api/v1/alert-webhooks`,
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -3058,6 +3048,46 @@ export const useApplicationConfigurationsApiV1ConfigurationsGet = <
   }) => applicationConfigurationsApiV1ConfigurationsGet(signal);
 
   const query = useQuery<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Return the application feature flags for the client.
+ * @summary Application Feature Flags
+ */
+export const applicationFeatureFlagsApiV1FeatureFlagsGet = (signal?: AbortSignal) => {
+  return customInstance<unknown>({ url: `/api/v1/feature-flags`, method: 'get', signal });
+};
+
+export const getApplicationFeatureFlagsApiV1FeatureFlagsGetQueryKey = () => [`/api/v1/feature-flags`];
+
+export type ApplicationFeatureFlagsApiV1FeatureFlagsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>
+>;
+export type ApplicationFeatureFlagsApiV1FeatureFlagsGetQueryError = ErrorType<unknown>;
+
+export const useApplicationFeatureFlagsApiV1FeatureFlagsGet = <
+  TData = Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getApplicationFeatureFlagsApiV1FeatureFlagsGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>> = ({
+    signal
+  }) => applicationFeatureFlagsApiV1FeatureFlagsGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>, TError, TData>(
     queryKey,
     queryFn,
     queryOptions
@@ -5681,7 +5711,11 @@ export const useCreateInviteApiV1OrganizationInvitePut = <
  * @summary Retrive Organization
  */
 export const retriveOrganizationApiV1OrganizationGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/organization`, method: 'get', signal });
+  return customInstance<DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema>({
+    url: `/api/v1/organization`,
+    method: 'get',
+    signal
+  });
 };
 
 export const getRetriveOrganizationApiV1OrganizationGetQueryKey = () => [`/api/v1/organization`];
@@ -6382,46 +6416,6 @@ export const useRemoveInstallationApiV1SlackAppsAppIdDelete = <
 };
 
 /**
- * Get the list of all the subscriptions of the user from stripe.
- * @summary List All Subscriptions
- */
-export const listAllSubscriptionsApiV1BillingSubscriptionsGet = (signal?: AbortSignal) => {
-  return customInstance<SubscriptionSchema[]>({ url: `/api/v1/billing/subscriptions`, method: 'get', signal });
-};
-
-export const getListAllSubscriptionsApiV1BillingSubscriptionsGetQueryKey = () => [`/api/v1/billing/subscriptions`];
-
-export type ListAllSubscriptionsApiV1BillingSubscriptionsGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>
->;
-export type ListAllSubscriptionsApiV1BillingSubscriptionsGetQueryError = ErrorType<unknown>;
-
-export const useListAllSubscriptionsApiV1BillingSubscriptionsGet = <
-  TData = Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getListAllSubscriptionsApiV1BillingSubscriptionsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>> = ({
-    signal
-  }) => listAllSubscriptionsApiV1BillingSubscriptionsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof listAllSubscriptionsApiV1BillingSubscriptionsGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
  * Get the list of available products from stripe.
  * @summary List All Charges
  */
@@ -6587,45 +6581,6 @@ export const useUpdatePaymentMethodApiV1BillingPaymentMethodPost = <
     { data: PaymentMethodSchema },
     TContext
   >(mutationFn, mutationOptions);
-};
-
-/**
- * Return the payment method of the organization.
- * @summary Get Billing Info
- */
-export const getBillingInfoApiV1BillingGet = (signal?: AbortSignal) => {
-  return customInstance<BillingSchema>({ url: `/api/v1/billing`, method: 'get', signal });
-};
-
-export const getGetBillingInfoApiV1BillingGetQueryKey = () => [`/api/v1/billing`];
-
-export type GetBillingInfoApiV1BillingGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>
->;
-export type GetBillingInfoApiV1BillingGetQueryError = ErrorType<unknown>;
-
-export const useGetBillingInfoApiV1BillingGet = <
-  TData = Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetBillingInfoApiV1BillingGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>> = ({ signal }) =>
-    getBillingInfoApiV1BillingGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof getBillingInfoApiV1BillingGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
 };
 
 /**
