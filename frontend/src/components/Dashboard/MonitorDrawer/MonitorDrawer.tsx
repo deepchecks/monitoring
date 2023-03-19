@@ -2,12 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { ChartData } from 'chart.js';
 
 import {
-  MonitorSchema,
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost,
-  MonitorOptions
+  MonitorOptions,
+  MonitorSchema
 } from 'api/generated';
 
-import { DrawerProps, Stack } from '@mui/material';
+import { Stack, DrawerProps } from '@mui/material';
 
 import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
 import { MonitorDrawerGraph as GraphView } from './components/MonitorDrawerGraph';
@@ -45,6 +45,7 @@ export const MonitorDrawer = ({
 
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
   const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
+  const [reset, setReset] = useState(false);
 
   const handleGraphLookBack = useCallback(
     async (checkId: SelectValues, data: MonitorOptions) => {
@@ -95,12 +96,16 @@ export const MonitorDrawer = ({
             isDrawerOpen={!!open}
             setGraphFrequency={setGraphFrequency}
             selectedModelId={selectedModelId}
+            reset={reset}
+            setReset={setReset}
           />
         )}
         <GraphView
           graphData={graphData}
           isLoading={isRunCheckLoading}
           timeFreq={(graphFrequency && +graphFrequency) || monitor?.frequency}
+          monitor={monitor}
+          setReset={setReset}
         />
       </Stack>
     </CustomDrawer>

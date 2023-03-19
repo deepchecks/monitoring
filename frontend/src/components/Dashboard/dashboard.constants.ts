@@ -13,5 +13,11 @@ export const constants = {
       noDataErrorImageAlt: 'warning icon',
       noDataDataUpdate: 'Data update in progress'
     }
+  },
+  monitorDrawer: {
+    graph: {
+      title: 'No data to show, try altering the filters',
+      reset: 'Reset changes'
+    }
   }
 };

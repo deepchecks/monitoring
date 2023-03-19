@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 import {
-  MonitorSchema,
   useCreateMonitorApiV1ChecksCheckIdMonitorsPost,
   useUpdateMonitorApiV1MonitorsMonitorIdPut,
   MonitorOptions,
@@ -11,7 +10,7 @@ import {
 
 import useModels from 'helpers/hooks/useModels';
 
-import { TextField, StackProps, Stack, MenuItem } from '@mui/material';
+import { TextField, Stack, MenuItem } from '@mui/material';
 
 import { MarkedSelect } from 'components/MarkedSelect';
 import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
@@ -24,21 +23,11 @@ import { ActiveAlertsModal } from '../ActiveAlertsModal';
 import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
 
 import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
-import { SelectValues, SetStateType } from 'helpers/types';
+import { SelectValues } from 'helpers/types';
 import { timeValues } from 'helpers/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-
-interface MonitorFormProps extends StackProps {
-  monitor: MonitorSchema | null;
-  setMonitorToRefreshId: SetStateType<number | null>;
-  runCheckLookBack: (checkId: SelectValues, data: MonitorOptions) => Promise<void>;
-  handleCloseDrawer: () => void;
-  isDrawerOpen: boolean;
-  refetchMonitors(): void;
-  setGraphFrequency: SetStateType<SelectValues>;
-  selectedModelId: number | null;
-}
+import { InitialState, MonitorFormProps } from './MonitorForm.types';
 
 export const MonitorForm = ({
   monitor,
@@ -49,8 +38,12 @@ export const MonitorForm = ({
   refetchMonitors,
   setGraphFrequency,
   selectedModelId,
+  reset,
+  setReset,
   ...props
 }: MonitorFormProps) => {
+  const [initialState, setInitialState] = useState<InitialState | null>(null);
+
   const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || timeValues.week);
   useEffect(() => {
     setGraphFrequency(frequency);
@@ -88,6 +81,47 @@ export const MonitorForm = ({
   });
 
   const [activeAlertsModalOpen, setActiveAlertsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (monitor) {
+      setInitialState({
+        frequency,
+        monitorName,
+        model,
+        check,
+        filteredValues,
+        resConf,
+        aggregationWindow,
+        lookBack,
+        column,
+        category,
+        numericValue
+      });
+    }
+  }, []);
+
+  const resetChanges = () => {
+    if (initialState) {
+      setFrequency(initialState.frequency);
+      setMonitorName(initialState.monitorName);
+      setModel(initialState.model);
+      setCheck(initialState.check);
+      setFilteredValues(initialState.filteredValues);
+      setResConf(initialState.resConf);
+      setAggregationWindow(initialState.aggregationWindow);
+      setLookBack(initialState.lookBack);
+      setColumn(initialState.column);
+      setCategory(initialState.category);
+      setNumericValue(initialState.numericValue);
+    }
+  };
+
+  useEffect(() => {
+    if (reset) {
+      resetChanges();
+      setReset(false);
+    }
+  }, [reset]);
 
   const { models: modelsList, getCurrentModel } = useModels();
   const currentModel = useMemo(
