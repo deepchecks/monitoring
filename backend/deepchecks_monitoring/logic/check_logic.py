@@ -243,7 +243,7 @@ def get_feature_property_info(latest_version: ModelVersion, dp_check: BaseCheck)
     aggs_names = ["mean", "max"]
     # FeatureMixin has additional aggregation options
     if isinstance(dp_check, ReduceFeatureMixin):
-        aggs_names += ["weighted", "l2_weighted", "l3_weighted"]
+        aggs_names += ["weighted", "l3_weighted", "l5_weighted"]
     aggs = [{"name": agg_name, "is_agg": True} for agg_name in aggs_names]
     check_parameter_conf = {"check_conf": [{"type": CheckParameterTypeEnum.AGGREGATION_METHOD.value,
                                             "values": aggs}], "res_conf": None}

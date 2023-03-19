@@ -13,15 +13,15 @@ The following aggregation methods are available:
 * Max - The maximum of the scores.
 * Mean - The mean of the scores.
 * Weighted - The weighted mean of the scores, where the weights are the feature importance values.
-* :ref:`L2 Weighted <aggregation_methods__l2_weighted>` (Default).
-* :ref:`L3 Weighted <aggregation_methods__l3_weighted>`.
+* :ref:`L3 Weighted <aggregation_methods__l3_weighted>` (Default).
+* :ref:`L5 Weighted <aggregation_methods__l5_weighted>`.
 
-.. _aggregation_methods__l2_weighted:
-L2 Weighted
+.. _aggregation_methods__l3_weighted:
+L3 Weighted
 ===========
-L2 norm over the per-feature values weighted by the feature importance, specifically:
+L3 norm over the per-feature values weighted by the feature importance, specifically:
 
-``|FEATURE_IMPORTANCE * PER_FEATURE_VALUES^2|^(1/2)``
+``|FEATURE_IMPORTANCE * PER_FEATURE_VALUES^3|^(1/3)``
 
 Note that for this method, the feature importance values are normalized to sum to 1.
 
@@ -32,14 +32,14 @@ The main benefits of this method are:
 * This method showed the highest correlation with the actual performance degradation (the change that we're
   ultimately trying to predict), when compared with other methods across various use cases.
 
-.. _aggregation_methods__l3_weighted:
-L3 Weighted
+.. _aggregation_methods__l5_weighted:
+L5 Weighted
 ===========
-Similar to the :ref:`L2 Weighted <aggregation_methods__l2_weighted>` method, but using the L3 norm:
+Similar to the :ref:`L3 Weighted <aggregation_methods__l3_weighted>` method, but using the L5 norm:
 
-``|FEATURE_IMPORTANCE * PER_FEATURE_VALUES^3|^(1/3)``
+``|FEATURE_IMPORTANCE * PER_FEATURE_VALUES^5|^(1/5)``
 
-In comparison to the L2 method, this method gives less weight to the feature importance thus it is recommended
+In comparison to the L3 method, this method gives less weight to the feature importance thus it is recommended
 to use this method when your model is sensitive to drift in features with low importance. In addition, this method
-returns higher values the the :ref:`L2 Weighted <aggregation_methods__l2_weighted>` method, so if chosen it is
+returns higher values the the :ref:`L3 Weighted <aggregation_methods__l3_weighted>` method, so if chosen it is
 recommended to update the default alert threshold accordingly.

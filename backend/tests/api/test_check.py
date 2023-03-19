@@ -437,8 +437,8 @@ def test_feature_check_info(
                     {"name": "mean", "is_agg": True},
                     {"name": "max", "is_agg": True},
                     {"name": "weighted", "is_agg": True},
-                    {"name": "l2_weighted", "is_agg": True},
-                    {"name": "l3_weighted", "is_agg": True}
+                    {"name": "l3_weighted", "is_agg": True},
+                    {"name": "l5_weighted", "is_agg": True}
                 ]
             },
             {
