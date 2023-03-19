@@ -39,7 +39,7 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
   const navigate = useNavigate();
 
   const { id, name, latest_time, alerts_count, max_severity, has_data } = model;
-  const { n_of_pending_rows: pendingRows } = connectedModelsMap[id];
+  const pendingRows = connectedModelsMap[id]?.n_of_pending_rows;
 
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
