@@ -239,21 +239,21 @@ export const ModelsPage = () => {
             </Menu>
           </Stack>
 
-          <StyledModelsList>
-            {isLoading || !filteredAndSortedModelsList ? (
-              <Loader />
-            ) : filteredAndSortedModelsList.length !== 0 ? (
-              filteredAndSortedModelsList.map(model => (
+          {isLoading || !filteredAndSortedModelsList ? (
+            <Loader />
+          ) : filteredAndSortedModelsList.length !== 0 ? (
+            <StyledModelsList>
+              {filteredAndSortedModelsList.map(model => (
                 <ModelInfoItem key={model.id} model={model} onDelete={async () => handleOpenModal(model.id)} />
-              ))
-            ) : (
-              <NoResults marginTop="168px" handleReset={handleReset} />
-            )}
-          </StyledModelsList>
+              ))}
+            </StyledModelsList>
+          ) : (
+            <NoResults margin="168px auto" handleReset={handleReset} />
+          )}
         </StyledModelsContainer>
       </Box>
 
-      <Dialog open={modelIdToDelete !== null} onClose={handleModalClose}>
+      <Dialog open={!!modelIdToDelete} onClose={handleModalClose}>
         <Box>
           <DialogTitle>{'Delete Model'}</DialogTitle>
           <DialogContent>
@@ -280,7 +280,7 @@ const StyledModelsContainer = styled(Box)(() => ({
 
 const StyledModelsList = styled(Box)({
   display: 'grid',
-  'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
+  'grid-template-columns': 'repeat(auto-fill, minmax(300px, 1fr))',
   gap: '20px',
   marginTop: '40px',
   padding: 0
