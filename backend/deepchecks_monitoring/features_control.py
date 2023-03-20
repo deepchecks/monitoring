@@ -18,6 +18,7 @@ class FeaturesSchema(BaseModel):
 
     max_models: int
     signup_enabled: bool
+    slack_enabled: bool
     rows_per_minute: int
     custom_checks_enabled: bool
     data_retention_months: int
@@ -44,6 +45,11 @@ class FeaturesControl:
     def signup_enabled(self) -> bool:
         """Whether signup is enabled."""
         return True
+
+    @property
+    def slack_enabled(self) -> bool:
+        """Whether slack is enabled."""
+        return False
 
     @property
     def rows_per_minute(self) -> int:
@@ -80,6 +86,7 @@ class FeaturesControl:
         return FeaturesSchema(
             max_models=self.max_models,
             signup_enabled=self.signup_enabled,
+            slack_enabled=self.slack_enabled,
             rows_per_minute=self.rows_per_minute,
             custom_checks_enabled=self.custom_checks_enabled,
             data_retention_months=self.data_retention_months,

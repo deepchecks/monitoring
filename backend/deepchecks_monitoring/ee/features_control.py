@@ -31,6 +31,7 @@ class CloudFeaturesControl(FeaturesControl):
         self._data_retention_months = None
         self._monthly_predictions_limit = None
         self._sso_enabled = None
+        self._signup_enabled = None
 
     @property
     def max_models(self) -> int:
@@ -47,6 +48,12 @@ class CloudFeaturesControl(FeaturesControl):
 
     @property
     def signup_enabled(self) -> bool:
+        if self._signup_enabled is None:
+            self._load_tier()
+        return self._signup_enabled
+
+    @property
+    def slack_enabled(self) -> bool:
         return True
 
     @property
@@ -91,6 +98,7 @@ class CloudFeaturesControl(FeaturesControl):
                 "organization_id": self.user.organization.id
             }
         tier_conf = self.ld_client.variation("paid-features", ld_user, default={})
+        self._signup_enabled = self.ld_client.variation("signUpEnabled", ld_user, default=True)
         tier_conf = TierConfSchema(**tier_conf)
         self._custom_checks_enabled = tier_conf.custom_checks
         self._data_retention_months = tier_conf.data_retention_months

@@ -730,6 +730,7 @@ export interface HTTPValidationError {
 export interface FeaturesSchema {
   max_models: number;
   signup_enabled: boolean;
+  slack_enabled: boolean;
   rows_per_minute: number;
   custom_checks_enabled: boolean;
   data_retention_months: number;
@@ -3048,46 +3049,6 @@ export const useApplicationConfigurationsApiV1ConfigurationsGet = <
   }) => applicationConfigurationsApiV1ConfigurationsGet(signal);
 
   const query = useQuery<Awaited<ReturnType<typeof applicationConfigurationsApiV1ConfigurationsGet>>, TError, TData>(
-    queryKey,
-    queryFn,
-    queryOptions
-  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  query.queryKey = queryKey;
-
-  return query;
-};
-
-/**
- * Return the application feature flags for the client.
- * @summary Application Feature Flags
- */
-export const applicationFeatureFlagsApiV1FeatureFlagsGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/api/v1/feature-flags`, method: 'get', signal });
-};
-
-export const getApplicationFeatureFlagsApiV1FeatureFlagsGetQueryKey = () => [`/api/v1/feature-flags`];
-
-export type ApplicationFeatureFlagsApiV1FeatureFlagsGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>
->;
-export type ApplicationFeatureFlagsApiV1FeatureFlagsGetQueryError = ErrorType<unknown>;
-
-export const useApplicationFeatureFlagsApiV1FeatureFlagsGet = <
-  TData = Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getApplicationFeatureFlagsApiV1FeatureFlagsGetQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>> = ({
-    signal
-  }) => applicationFeatureFlagsApiV1FeatureFlagsGet(signal);
-
-  const query = useQuery<Awaited<ReturnType<typeof applicationFeatureFlagsApiV1FeatureFlagsGet>>, TError, TData>(
     queryKey,
     queryFn,
     queryOptions

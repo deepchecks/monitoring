@@ -391,7 +391,3 @@ class ResourcesProvider(BaseResourcesProvider):
             "hotjar_id": None,
             "hotjar_sv": None
         }
-
-    def get_feature_flags(self, user: User) -> dict:  # pylint: disable=unused-argument
-        """Return feature flags."""
-        return {"slack_enabled": False}
