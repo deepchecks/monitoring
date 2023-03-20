@@ -108,11 +108,12 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
               </StyledListItem>
             ))
           ) : (
-            <NoResults
-              isTwoWeeksOlder={isModelsEndTimeTwoWeeksOlder}
-              marginTop="207"
-              handleReset={() => resetAlertFilters(setAlertFilters)}
-            />
+            <StyledNoResultsContainer>
+              <NoResults
+                isTwoWeeksOlder={isModelsEndTimeTwoWeeksOlder}
+                handleReset={() => resetAlertFilters(setAlertFilters)}
+              />
+            </StyledNoResultsContainer>
           )}
         </StyledList>
       </Box>
@@ -181,9 +182,16 @@ const StyledList = styled(List)({
 const StyledListItem = styled(ListItem)({
   padding: 0,
   margin: '20px 0',
+
   ':first-of-type': {
     marginTop: 0
   }
+});
+
+const StyledNoResultsContainer = styled(Box)({
+  display: 'flex',
+  height: 'calc(100vh - 350px)',
+  alignItems: 'center'
 });
 
 export default AlertsPage;
