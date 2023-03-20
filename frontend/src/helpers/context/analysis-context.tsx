@@ -140,6 +140,10 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   }, [frequency]);
 
   useEffect(() => {
+    setStorageItem(storageKeys.analysisPeriod, JSON.stringify(period));
+  }, [period]);
+
+  useEffect(() => {
     const length = calculateFiltersLength(filters);
     setFiltersLength(length);
 

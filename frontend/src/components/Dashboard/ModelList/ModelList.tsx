@@ -9,7 +9,6 @@ import {
 
 import { Loader } from 'components/Loader';
 import { ModelItem } from './components/ModelItem';
-import { SearchField } from 'components/SearchField';
 import { AlertsCountWidget } from './components/AlertsCountWidget';
 
 import {
@@ -22,8 +21,9 @@ import {
   StyledResetSelectionText,
   StyledResetSelectionContent
 } from './ModelList.style';
+import { StyledTextInput } from 'components/base/Input/Input.styles';
 
-import { Rotate } from 'assets/icon/icon';
+import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
 
 import { setParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
@@ -94,13 +94,13 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
             <AlertsCountWidget selectedModelAlerts={selectedModelAlerts} />
           </StyledHeadingContainer>
           <StyledSearchFieldContainer>
-            <SearchField
-              size="small"
-              fullWidth
+            <StyledTextInput
               onChange={onSearch}
               value={modelName}
-              onReset={clearSearchBar}
               placeholder={searchFieldPlaceholder}
+              startAdornment={<SearchIcon />}
+              endAdornment={modelName && <CloseIcon onClick={clearSearchBar} cursor="pointer" />}
+              disableUnderline
             />
           </StyledSearchFieldContainer>
           <StyledList>

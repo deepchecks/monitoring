@@ -74,6 +74,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
 
   useEffect(() => {
     const storageFrequency = getStorageItem(storageKeys.analysisFrequency);
+    const storagePeriod = getStorageItem(storageKeys.analysisPeriod);
 
     if (model.id != -1) {
       refetchColumns();
@@ -87,6 +88,11 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
       if (storageFrequency !== 'null' && storageFrequency !== '0') {
         const frequencyNumber = Number(storageFrequency);
         setFrequency(frequencyNumber);
+      }
+
+      if (storagePeriod !== '' && storagePeriod !== 'null') {
+        const parsedPeriod = JSON.parse(storagePeriod);
+        setPeriod(parsedPeriod);
       }
     }
   }, [model, refetchColumns, defaultFrequency, loadDefaultFrequency, setPeriod, setFrequency, setDefaultFrequency]);
