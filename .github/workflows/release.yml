@@ -21,6 +21,7 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: "!github.event.pull_request.draft"
     steps:
       - uses: dawidd6/action-download-artifact@v2
         with:
@@ -56,7 +57,7 @@ jobs:
           task-definition: task-definition.json
           container-name: app
           image: ${{ secrets.MON_IMAGE_NAME }}:${{ env.TAG }}
-      - name:  Fill in the new image ID in the Amazon ECS task definition - alert-scheduler
+      - name: Fill in the new image ID in the Amazon ECS task definition - alert-scheduler
         id: render-alert-scheduler-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:

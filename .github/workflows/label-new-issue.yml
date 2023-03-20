@@ -17,6 +17,7 @@ on:
 jobs:
   label-blank-issues:
     runs-on: ubuntu-latest
+    if: "!github.event.pull_request.draft"
     steps:
       - uses: andymckay/labeler@1.0.4
         with:
