@@ -30,7 +30,11 @@ export const StyledTitle = styled(Typography)({
   fontWeight: 700,
   fontSize: 20,
   lineHeight: '18px',
-  textAlign: 'left'
+  textAlign: 'left',
+
+  '@media (max-width: 1260px)': {
+    fontSize: 16
+  }
 });
 
 export const StyledModel = styled(Box)({
@@ -54,4 +58,10 @@ export const StyledLoaderBox = styled(Box)({
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center'
+});
+
+export const StyledFiltersContainer = styled(Box)({
+  display: 'flex',
+  width: '320px',
+  gap: '16px'
 });

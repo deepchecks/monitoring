@@ -37,7 +37,8 @@ function DiagramLine({
   analysis = false,
   previousPeriodLabels = [],
   comparison,
-  onPointCLick
+  onPointCLick,
+  setPointIndex
 }: PropsWithChildren<DiagramLineProps>) {
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
   const [legends, setLegends] = useState<LegendItem[]>([]);
@@ -142,6 +143,7 @@ function DiagramLine({
       animation: false,
       responsive: true,
       onClick: (event, elements) => {
+        setPointIndex && setPointIndex(elements[0].index);
         if (elements.length && onPointCLick) {
           const { index, datasetIndex } = elements[0];
 
