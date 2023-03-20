@@ -158,7 +158,11 @@ async def get_alert_rules(
         alerts_info = alerts_info.where(Alert.end_time <= end)
 
     alerts_info = alerts_info.subquery()
-    severity_index = AlertRule.alert_severity_index.label("severity_index")
+
+    severity_index = func.array_position(
+        func.enum_range(AlertRule.alert_severity),
+        AlertRule.alert_severity
+    ).label("severity_index")
 
     q = (
         select(
