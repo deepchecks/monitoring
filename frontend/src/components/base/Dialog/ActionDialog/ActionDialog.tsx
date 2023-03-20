@@ -15,6 +15,7 @@ export interface ActionDialogProps extends DialogProps {
   closeDialog: () => void;
   title: string;
   submitButtonLabel: string;
+  cancelButtonLabel?: string;
   submitButtonDisabled?: boolean;
   submitButtonAlertType?: boolean;
   submitButtonAction: () => void;
@@ -28,6 +29,7 @@ const ActionDialog = (props: ActionDialogProps) => {
     title,
     submitButtonAction,
     submitButtonLabel,
+    cancelButtonLabel = 'Cancel',
     submitButtonDisabled = false,
     submitButtonAlertType = false,
     children,
@@ -52,7 +54,7 @@ const ActionDialog = (props: ActionDialogProps) => {
           {submitButtonLabel}
         </MUIBaseButton>
         <MUIBaseButton variant="text" sx={{ color: theme => theme.palette.text.disabled }} onClick={closeDialog}>
-          Cancel
+          {cancelButtonLabel}
         </MUIBaseButton>
       </Row16Gap>
     </StyledDialog>

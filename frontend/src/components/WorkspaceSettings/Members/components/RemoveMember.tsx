@@ -2,15 +2,14 @@ import React from 'react';
 
 import { useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete } from 'api/generated';
 
-import { Typography } from '@mui/material';
-
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
-import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
+import { DeleteActionDialog } from 'components/base/Dialog/ActionDialog/DeleteActionDialog';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { MembersActionDialogWithInputs } from '../Members.type';
 import { constants } from '../members.constants';
+
+const { messageEnd, messageStart, name, submit, title } = constants.removeMember;
 
 export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: MembersActionDialogWithInputs) => {
   const { mutateAsync: deleteMember } = useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete();
@@ -25,23 +24,15 @@ export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: Memb
   };
 
   return (
-    <ActionDialog
+    <DeleteActionDialog
       open={open}
-      title={constants.removeMember.title}
+      title={title}
       closeDialog={closeDialog}
-      submitButtonLabel={constants.removeMember.submit}
+      submitButtonLabel={submit}
       submitButtonAction={removeMember}
-      submitButtonAlertType
-    >
-      <MembersActionDialogContentLayout>
-        <Typography fontSize="16px" textAlign="left">
-          {constants.removeMember.messageStart}
-          <Typography component="span" fontWeight={600}>
-            {constants.removeMember.name(member.full_name)}
-          </Typography>
-          {constants.removeMember.messageEnd}
-        </Typography>
-      </MembersActionDialogContentLayout>
-    </ActionDialog>
+      messageStart={messageStart}
+      itemNameToDelete={name(member.full_name)}
+      messageEnd={messageEnd}
+    />
   );
 };

@@ -2,14 +2,12 @@ import React from 'react';
 
 import { AlertRuleConfigSchema, useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete } from 'api/generated';
 
-import { Typography } from '@mui/material';
-
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
-
-import { StyledHeaderContainer, StyledTypography } from './DeleteAlertRule.style';
+import { DeleteActionDialog } from 'components/base/Dialog/ActionDialog/DeleteActionDialog';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { constants } from '../../alertRuleConfig.constants';
+
+const { messageEnd, messageStart, name, submit, title } = constants.deleteAlertRule;
 
 interface DeleteAlertRuleProps {
   alertRule: AlertRuleConfigSchema | null;
@@ -31,23 +29,15 @@ export const DeleteAlertRule = ({ alertRule, open, closeDialog, refetchAlertRule
   };
 
   return (
-    <ActionDialog
+    <DeleteActionDialog
       open={open}
-      title={constants.deleteAlertRule.title}
+      title={title}
       closeDialog={closeDialog}
-      submitButtonLabel={constants.deleteAlertRule.submit}
+      submitButtonLabel={submit}
       submitButtonAction={deleteAlertRule}
-      submitButtonAlertType
-    >
-      <StyledHeaderContainer>
-        <StyledTypography>
-          {constants.deleteAlertRule.messageStart}
-          <Typography component="span" fontWeight={600}>
-            {constants.deleteAlertRule.name(alertRule?.name)}
-          </Typography>
-          {constants.deleteAlertRule.messageEnd}
-        </StyledTypography>
-      </StyledHeaderContainer>
-    </ActionDialog>
+      messageStart={messageStart}
+      itemNameToDelete={name(alertRule?.name)}
+      messageEnd={messageEnd}
+    />
   );
 };

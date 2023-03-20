@@ -2,40 +2,38 @@ import React from 'react';
 
 import { MonitorSchema } from 'api/generated';
 
-import { Dialog, IconButton, Stack, DialogProps } from '@mui/material';
+import { DeleteActionDialog } from 'components/base/Dialog/ActionDialog/DeleteActionDialog';
 
-import { StyledContainer, StyledHeading, StyledText, StyledActionButton } from './DeleteMonitor.style';
-import { CloseIcon } from 'assets/icon/icon';
+import { constants } from '../../../dashboard.constants';
 
-interface DeleteMonitorProps extends DialogProps {
+const { cancel, messageEnd, messageStart, name, submit, title } = constants.monitorList.deleteMonitor;
+
+interface DeleteMonitorProps {
+  open: boolean;
   monitor?: MonitorSchema;
   setIsOpen: (isOpen: boolean) => void;
-  onActionButtonClick: (confirm: boolean) => void;
+  deleteMonitor: () => Promise<void>;
 }
 
-export const DeleteMonitor = ({ monitor, onActionButtonClick, setIsOpen, ...props }: DeleteMonitorProps) => (
-  <Dialog onClose={() => setIsOpen(false)} {...props}>
-    <StyledContainer>
-      <Stack direction="row">
-        <StyledHeading variant="h4">Delete Monitor</StyledHeading>
-        <IconButton onClick={() => setIsOpen(false)} sx={{ backgroundColor: 'transparent' }}>
-          <CloseIcon />
-        </IconButton>
-      </Stack>
-      <Stack>
-        <StyledText variant="body1">
-          You are about to permanently delete {monitor?.name}, this will also delete any alerts connected to this
-          monitor. Are you sure you want to continue?
-        </StyledText>
-      </Stack>
-      <Stack direction="row" justifyContent="flex-end">
-        <StyledActionButton onClick={() => onActionButtonClick(false)} variant="outlined">
-          NO, CANCEL
-        </StyledActionButton>
-        <StyledActionButton onClick={() => onActionButtonClick(true)} variant="contained">
-          YES, CONTINUE
-        </StyledActionButton>
-      </Stack>
-    </StyledContainer>
-  </Dialog>
-);
+export const DeleteMonitor = ({ monitor, deleteMonitor, setIsOpen, open }: DeleteMonitorProps) => {
+  const handleClose = () => setIsOpen(false);
+
+  const handleSubmit = () => {
+    deleteMonitor();
+    handleClose();
+  };
+
+  return (
+    <DeleteActionDialog
+      title={title}
+      open={open}
+      closeDialog={handleClose}
+      submitButtonLabel={submit}
+      cancelButtonLabel={cancel}
+      submitButtonAction={handleSubmit}
+      messageStart={messageStart}
+      itemNameToDelete={name(monitor?.name)}
+      messageEnd={messageEnd}
+    />
+  );
+};

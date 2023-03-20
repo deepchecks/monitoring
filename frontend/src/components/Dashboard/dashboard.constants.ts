@@ -19,5 +19,15 @@ export const constants = {
       title: 'No data to show, try altering the filters',
       reset: 'Reset changes'
     }
+  },
+  monitorList: {
+    deleteMonitor: {
+      title: 'Delete Monitor',
+      submit: 'YES, CONTINUE',
+      cancel: 'NO, CANCEL',
+      messageStart: 'You are about to permanently delete ',
+      name: (name: string | undefined) => (name ? name : 'current monitor'),
+      messageEnd: ', this will also delete any alerts connected to this monitor. Are you sure you want to continue?'
+    }
   }
 };

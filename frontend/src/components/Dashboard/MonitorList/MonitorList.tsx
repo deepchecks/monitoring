@@ -54,20 +54,16 @@ export const MonitorList = ({
     setMonitors(filtered);
   }, [currentModelId, dashboardMonitors]);
 
-  const handleDeleteMonitor = async (confirm: boolean) => {
+  const handleDeleteMonitor = async () => {
     if (!currentMonitor) return;
 
-    if (confirm) {
-      reportEvent(events.dashboardPage.clickedConfirmDeletion);
+    reportEvent(events.dashboardPage.clickedConfirmDeletion);
 
-      await DeleteMonitorById({ monitorId: currentMonitor.id });
+    await DeleteMonitorById({ monitorId: currentMonitor.id });
 
-      const filtered = monitors.filter(mon => mon.id !== currentMonitor.id);
-      setMonitors(filtered);
-      setCurrentMonitor(null);
-    }
-
-    setIsDeleteMonitorDialogOpen(false);
+    const filtered = monitors.filter(mon => mon.id !== currentMonitor.id);
+    setMonitors(filtered);
+    setCurrentMonitor(null);
   };
 
   return (
@@ -93,7 +89,7 @@ export const MonitorList = ({
           monitor={currentMonitor}
           open={isDeleteMonitorDialogOpen}
           setIsOpen={setIsDeleteMonitorDialogOpen}
-          onActionButtonClick={handleDeleteMonitor}
+          deleteMonitor={handleDeleteMonitor}
         />
       )}
     </>
