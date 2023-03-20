@@ -882,6 +882,68 @@ def test_categorical_feature_drill_down(
     assert_that(result, has_length(1))
 
 
+def test_categorical_feature_drill_down_w_nulls(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    classification_model_check: Payload
+):
+    # == Arrange
+    _, start_time, _ = upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+    )
+    _, _, end_time = upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        is_labeled=False,
+        id_prefix="nulli_"
+    )
+    upload_multiclass_reference_data(
+        api=test_api,
+        classification_model_version=classification_model_version
+    )
+
+    options = {
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat()
+    }
+    # == Act
+    result = test_api.feature_drill_down(
+        feature="b",
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        options=options
+    )
+
+    # == Assert
+    result = t.cast(t.List[Payload], result)
+
+    assert_that(result, contains_exactly(
+        has_entries({
+            "name": "All Data",
+            "value": has_length(3),
+            "count": 4,
+            "filters": has_entries({"filters": has_length(0)})
+        }),
+        has_entries({
+            "name": "ppppp",
+            "value": has_length(3),
+            "count": 4,
+            "filters": has_entries({"filters": has_length(1)})
+        })
+    ))
+
+    # == Act - display
+    options["filters"] = result[1]["filters"]
+    result = test_api.check_display(
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        options=options
+    )
+    # == Assert - display
+    assert_that(result, has_length(1))
+
+
 def test_numerical_feature_drill_down_with_single_value_in_bin(
     test_api: TestAPI,
     classification_model_version: Payload,
@@ -969,6 +1031,71 @@ def test_numerical_feature_drill_down(
         api=test_api,
         model_version_id=classification_model_version["id"],
         samples_per_date=30
+    )
+    options = {
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.add(minutes=1).isoformat()
+    }
+
+    # == Act
+    result = test_api.feature_drill_down(
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        feature="a",
+        options=options
+    )
+
+    # == Assert
+    result = t.cast(t.List[Payload], result)
+    assert_that(result, contains_exactly(
+        has_entries({
+            "name": "All Data",
+            "value": has_length(3),
+            "count": 150,
+            "filters": has_entries({"filters": has_length(0)})
+        }),
+        has_entries({
+            "name": "[10, 30)",
+            "value": has_length(3),
+            "count": 72,
+            "filters": has_entries({"filters": has_length(2)})
+        }),
+        has_entries({
+            "name": "[30, 126]",
+            "value": has_length(3),
+            "count": 78,
+            "filters": has_entries({"filters": has_length(2)})
+        })
+    ))
+
+    # == Act - display
+    options["filters"] = result[0]["filters"]
+    result = test_api.check_display(
+        check_id=classification_model_check["id"],
+        model_version_id=classification_model_version["id"],
+        options=options
+    )
+    # == Assert - display
+    assert_that(result, has_length(0))
+
+
+def test_numerical_feature_drill_down_w_nulls(
+    test_api: TestAPI,
+    classification_model_version: Payload,
+    classification_model_check: Payload
+):
+    # == Arrange
+    _, start_time, _ = upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        samples_per_date=30
+    )
+    _, _, end_time = upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        samples_per_date=30,
+        is_labeled=False,
+        id_prefix="nulli_"
     )
     options = {
         "start_time": start_time.isoformat(),

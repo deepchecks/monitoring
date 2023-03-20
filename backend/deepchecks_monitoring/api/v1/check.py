@@ -44,7 +44,7 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
@@ -535,7 +535,9 @@ async def run_check_group_by_feature(
 
     # Get all data count
     data_table = model_version.get_monitor_table(session)
-    count = (await session.execute(select(func.count()).where(monitor_options.sql_all_filters())
+    count = (await session.execute(select(func.count())
+                                   .where(monitor_options.sql_all_filters())
+                                   .where(not check.is_label_required or data_table.c[SAMPLE_LABEL_COL].isnot(None))
                                    .select_from(data_table))).scalar()
     if count == 0:
         raise NotFound('No data was found for given filters and dates')
@@ -553,7 +555,8 @@ async def run_check_group_by_feature(
     # Get number of bins between 2 and 10, depends on the count
     numeric_bins_count = min(max(2, count // magic_numeric_min_samples), 10)
     feature_type, bins = await bins_for_feature(model_version, data_table, feature, session, monitor_options,
-                                                numeric_bins=numeric_bins_count)
+                                                numeric_bins=numeric_bins_count,
+                                                filter_labels_exist=check.is_label_required)
 
     if feature_type == ColumnType.CATEGORICAL:
         for curr_bin in bins:

@@ -16,13 +16,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions
 from deepchecks_monitoring.schema_models import ModelVersion
-from deepchecks_monitoring.schema_models.column_type import ColumnType
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, ColumnType
 
 __all__ = ['bins_for_feature']
 
 
 async def bins_for_feature(model_version: ModelVersion, table, feature: str, session: AsyncSession,
-                           monitor_options: SingleCheckRunOptions, numeric_bins=10, categorical_bins=30) \
+                           monitor_options: SingleCheckRunOptions, numeric_bins=10, categorical_bins=30,
+                           filter_labels_exist: bool = False) \
         -> t.Tuple[ColumnType, t.List[t.Dict]]:
     """Query from the database given number of bins.
 
@@ -35,6 +36,8 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
     monitor_options: SingleCheckRunOptions
     numeric_bins: int
     categorical_bins: int
+    filter_labels_exist: bool, default False
+        Whether to filter out samples that don't have labels
 
     Returns
     -------
@@ -49,9 +52,12 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
     num_bins = numeric_bins if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER] else categorical_bins
     if feature_type in [ColumnType.NUMERIC, ColumnType.INTEGER]:
         # Adds for each feature his quantile
-        feature_quantiles_cte = select([feature_column,
-                                        func.cume_dist().over(order_by=feature_column).label('quantile')])\
-            .select_from(table).where(monitor_options.sql_all_filters()).cte('feature_with_quantile')
+        feature_quantiles_cte = (select([feature_column,
+                                        func.cume_dist().over(order_by=feature_column).label('quantile')])
+                                 .select_from(table)
+                                 .where(monitor_options.sql_all_filters())
+                                 .where(not filter_labels_exist or table.c[SAMPLE_LABEL_COL].isnot(None))
+                                 .cte('feature_with_quantile'))
         # Handle the case when quantile is 1, in this case the floor(quantile * bins number) doesn't work so setting it
         # into the last bin manually (bins number - 1).
         # For nulls the window function returns 1, so they will get the last bin + 1.
@@ -68,11 +74,14 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
         _add_scaled_bins_names(bins)
         return feature_type, bins
     elif feature_type == ColumnType.CATEGORICAL:
-        query = select([
+        query = (select([
             feature_column.label('value'),
             func.count().label('count')
-        ]).select_from(table).where(monitor_options.sql_all_filters()).group_by(feature_column)\
-            .order_by(desc(text('count'))).limit(num_bins)
+        ]).select_from(table)
+            .where(monitor_options.sql_all_filters())
+            .where(not filter_labels_exist or table.c[SAMPLE_LABEL_COL].isnot(None))
+            .group_by(feature_column)
+            .order_by(desc(text('count'))).limit(num_bins))
         bins = (await session.execute(query)).all()
         return feature_type, bins
     else:
