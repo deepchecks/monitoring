@@ -11,22 +11,12 @@
 from datetime import datetime
 
 import pendulum as pdl
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 
-from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor
-
-AlertSeverityMap = {
-    0: AlertSeverity.LOW.value,
-    1: AlertSeverity.MID.value,
-    2: AlertSeverity.HIGH.value,
-    3: AlertSeverity.CRITICAL.value,
-}
-
-AlertSeverityCase = case(*((AlertRule.alert_severity == text, num) for num, text in AlertSeverityMap.items()),
-                         else_=0)
+from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Monitor
 
 AlertsCountPerModel = (
-    select(Check.model_id, func.count(Alert.id), func.max(AlertSeverityCase))
+    select(Check.model_id, func.count(Alert.id), func.max(AlertRule.alert_severity_index))
     .join(Check.monitors)
     .join(Monitor.alert_rules)
     .join(AlertRule.alerts)

@@ -95,11 +95,7 @@ async def get_all_alert_rules(
     )
 
     total_count = total_count.subquery()
-
-    severity_index = func.array_position(
-        func.enum_range(AlertRule.alert_severity),
-        AlertRule.alert_severity
-    ).label("severity_index")
+    severity_index = AlertRule.alert_severity_index.label("severity_index")
 
     q = (
         select(

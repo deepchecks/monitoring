@@ -14,7 +14,7 @@ import typing as t
 import sqlalchemy as sa
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, column_property, relationship
 
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum
 from deepchecks_monitoring.schema_models.alert import Alert
@@ -59,6 +59,14 @@ class AlertSeverity(str, enum.Enum):
     MID = "mid"
     HIGH = "high"
     CRITICAL = "critical"
+
+    @property
+    def severity_index(self) -> int:
+        return tuple(type(self)).index(self)
+
+    @classmethod
+    def from_index(cls, index: int) -> "AlertSeverity":
+        return tuple(type(cls))[index]
 
 
 class AlertRule(Base):
@@ -109,6 +117,15 @@ class AlertRule(Base):
 
         results = (await session.execute(q)).all()
         return {r.alert_rule_id: r.alerts_count for r in results}
+
+
+AlertRule.alert_severity_index = column_property(sa.case(
+    *(
+        (AlertRule.alert_severity == it.value, it.severity_index)
+        for it in AlertSeverity
+    ),
+    else_=-1
+))
 
 
 UnresolvedAlertsCount = (
