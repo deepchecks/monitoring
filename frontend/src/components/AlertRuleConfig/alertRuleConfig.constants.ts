@@ -1,4 +1,12 @@
 export const constants = {
+  header: 'Alert',
+  conditionTitle: 'Condition:',
+  frequencyTitle: 'Check Frequency:',
+  frequencyOnce: 'Once',
+  alertTitle: 'Alert #:',
+  recentAlertTitle: 'Recent Alert:',
+  editButton: 'Edit rule',
+  deleteButton: 'Delete rule',
   deleteAlertRule: {
     title: 'Delete alert rule',
     submit: 'Yes, continue',

@@ -1,11 +1,15 @@
 import React, { Dispatch, SetStateAction, useEffect, memo, useMemo } from 'react';
-import { Box, Stack, Typography, useTheme } from '@mui/material';
 
-import { ReactComponent as LowSeverityIcon } from '../../assets/icon/severity/low.svg';
-import { ReactComponent as MediumSeverityIcon } from '../../assets/icon/severity/medium.svg';
-import { ReactComponent as HighSeverityIcon } from '../../assets/icon/severity/high.svg';
-import { ReactComponent as CriticalSeverityIcon } from '../../assets/icon/severity/critical.svg';
 import { AlertSeverity } from 'api/generated';
+
+import { useTheme } from '@mui/material';
+
+import { StyledContainer, StyledIconBox, StyledTypography } from './AlertCount.style';
+
+import { ReactComponent as LowSeverityIcon } from 'assets/icon/severity/low.svg';
+import { ReactComponent as MediumSeverityIcon } from 'assets/icon/severity/medium.svg';
+import { ReactComponent as HighSeverityIcon } from 'assets/icon/severity/high.svg';
+import { ReactComponent as CriticalSeverityIcon } from 'assets/icon/severity/critical.svg';
 
 interface AlertCountComponentProps {
   severity: AlertSeverity;
@@ -50,36 +54,12 @@ const AlertCountComponent = ({ severity = AlertSeverity.high, setColor }: AlertC
   }, [color, setColor]);
 
   return (
-    <Stack
-      className="severity-wrapper"
-      alignItems="center"
-      sx={{
-        textAlign: 'center',
-        backgroundColor: color,
-        borderRadius: '10px 0px 0px 0px'
-      }}
-    >
-      <Box
-        sx={{
-          padding: '19.5px 18px 0',
-          height: '45.5px'
-        }}
-      >
+    <StyledContainer color={color}>
+      <StyledIconBox>
         <Icon fill="white" width={27} height={26} />
-      </Box>
-      <Typography
-        sx={{
-          color: theme.palette.common.white,
-          mt: '10px',
-
-          fontSize: 10,
-          lineHeight: '12px',
-          letterSpacing: '0.4px'
-        }}
-      >
-        {severity}
-      </Typography>
-    </Stack>
+      </StyledIconBox>
+      <StyledTypography>{severity}</StyledTypography>
+    </StyledContainer>
   );
 };
 

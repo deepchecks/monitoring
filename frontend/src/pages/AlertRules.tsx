@@ -16,7 +16,7 @@ import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
 import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
-import { DeleteAlertRule } from 'components/AlertRuleConfig/DeleteAlertRule';
+import { DeleteAlertRule } from 'components/AlertRuleConfig/components/DeleteAlertRule';
 import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
 
 import { WhitePlusIcon } from 'assets/icon/icon';

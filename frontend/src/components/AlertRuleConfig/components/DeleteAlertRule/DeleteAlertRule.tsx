@@ -2,12 +2,14 @@ import React from 'react';
 
 import { AlertRuleConfigSchema, useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete } from 'api/generated';
 
-import { Typography, Box } from '@mui/material';
+import { Typography } from '@mui/material';
 
 import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 
+import { StyledHeaderContainer, StyledTypography } from './DeleteAlertRule.style';
+
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { constants } from './alertRuleConfig.constants';
+import { constants } from '../../alertRuleConfig.constants';
 
 interface DeleteAlertRuleProps {
   alertRule: AlertRuleConfigSchema | null;
@@ -37,15 +39,15 @@ export const DeleteAlertRule = ({ alertRule, open, closeDialog, refetchAlertRule
       submitButtonAction={deleteAlertRule}
       submitButtonAlertType
     >
-      <Box margin="16px 0 50px 0">
-        <Typography fontSize="16px" textAlign="left">
+      <StyledHeaderContainer>
+        <StyledTypography>
           {constants.deleteAlertRule.messageStart}
           <Typography component="span" fontWeight={600}>
             {constants.deleteAlertRule.name(alertRule?.name)}
           </Typography>
           {constants.deleteAlertRule.messageEnd}
-        </Typography>
-      </Box>
+        </StyledTypography>
+      </StyledHeaderContainer>
     </ActionDialog>
   );
 };
