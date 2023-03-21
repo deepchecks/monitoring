@@ -21,22 +21,23 @@ from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, root_validator, validator
-from sqlalchemy import Column, Table, and_, select
+from sqlalchemy import Column, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, create_model_version_select_object,
-                                                     get_model_versions_for_time_range,
+from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf, random_sample)
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
-from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilterList, MonitorCheckConf,
-                                                    MonitorCheckConfSchema, TimeUnit, fetch_or_404, make_oparator_func)
+from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
+                                                    MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum, TimeUnit,
+                                                    fetch_or_404, make_oparator_func)
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.check import Check
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                             SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 
 MAX_FEATURES_TO_RETURN = 1000
@@ -100,7 +101,8 @@ class TimeWindowOption(TableFiltersSchema):
 
     def sql_time_filter(self):
         """Create sql filter clause on the timestamp from the defined start and end times."""
-        return _times_to_sql_where(self.start_time_dt(), self.end_time_dt())
+        ts_column = Column(SAMPLE_TS_COL)
+        return and_(self.start_time_dt() <= ts_column, ts_column < self.end_time_dt())
 
     def sql_all_filters(self):
         """Create sql filter clause on both timestamp and data columns."""
@@ -205,9 +207,12 @@ def _metric_api_listify(metric_names: t.List[str], ignore_binary: bool = True):
     return metric_list
 
 
-def _times_to_sql_where(start_time, end_time):
-    ts_column = Column(SAMPLE_TS_COL)
-    return and_(start_time <= ts_column, ts_column < end_time)
+def _times_to_data_filter(start_time, end_time) -> DataFilterList:
+    data_filters = [
+        DataFilter(column=SAMPLE_TS_COL, operator=OperatorsEnum.GE, value=start_time),
+        DataFilter(column=SAMPLE_TS_COL, operator=OperatorsEnum.LT, value=end_time)
+    ]
+    return DataFilterList(filters=data_filters)
 
 
 def _get_observed_classes(model_version: ModelVersion) -> t.List[t.Union[int, str]]:
@@ -298,6 +303,7 @@ async def run_check_per_window_in_range(
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
     model_columns = list(model_versions[0].model_columns.keys())
+    columns = top_feat + model_columns
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
@@ -306,8 +312,6 @@ async def run_check_per_window_in_range(
         if not model_version.is_filter_fit(monitor_options.filter):
             continue
 
-        test_table = model_version.get_monitor_table(session)
-        select_obj = create_model_version_select_object(test_table, top_feat + model_columns, check.is_label_required)
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
@@ -322,19 +326,17 @@ async def run_check_per_window_in_range(
                     curr_test_info["result"] = cache_result.value
                     continue
             if model_version.is_in_range(window_start, window_end):
-                filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
-                filtered_select_obj = filtered_select_obj.filter(monitor_options.sql_columns_filter())
-                filtered_select_obj = random_sample(filtered_select_obj, test_table)
-                curr_test_info["query"] = session.execute(filtered_select_obj)
+                options_with_time_filter = monitor_options.add_filters(_times_to_data_filter(window_start, window_end))
+                curr_test_info["query"] = create_execution_data_query(model_version, session, options_with_time_filter,
+                                                                      columns, with_labels=check.is_label_required,
+                                                                      is_ref=False)
             else:
                 curr_test_info["data"] = pd.DataFrame()
         # Query reference if the check use it, and there are results not from cache
         if check.is_reference_required and any(("query" in x for x in test_info)):
-            reference_table = model_version.get_reference_table(session)
-            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns,
-                                                                 check.is_label_required)
-            reference_query = reference_query.filter(monitor_options.sql_columns_filter())
-            reference_query = session.execute(random_sample(reference_query, reference_table))
+            reference_query = create_execution_data_query(model_version, session, monitor_options,
+                                                          columns, with_labels=check.is_label_required,
+                                                          is_ref=True)
         else:
             reference_query = None
 
@@ -422,6 +424,7 @@ async def run_suite_per_window_in_range(
 
     top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
     model_columns = list(model_versions[0].model_columns.keys())
+    columns = top_feat + model_columns
 
     # execute an async session per each model version
     model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
@@ -430,9 +433,6 @@ async def run_suite_per_window_in_range(
         if not model_version.is_filter_fit(monitor_options.filter):
             continue
 
-        test_table = model_version.get_monitor_table(session)
-        select_obj = create_model_version_select_object(test_table, top_feat + model_columns, False)
-        select_obj = select_obj.filter(monitor_options.sql_columns_filter())
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
@@ -440,17 +440,15 @@ async def run_suite_per_window_in_range(
             curr_test_info = {"start": window_start, "end": window_end}
             test_info.append(curr_test_info)
             if model_version.is_in_range(window_start, window_end):
-                filtered_select_obj = select_obj.filter(_times_to_sql_where(window_start, window_end))
-                filtered_select_obj = random_sample(filtered_select_obj, test_table)
-                curr_test_info["query"] = session.execute(filtered_select_obj)
+                options_with_time_filter = monitor_options.add_filters(_times_to_data_filter(window_start, window_end))
+                curr_test_info["query"] = create_execution_data_query(model_version, session, options_with_time_filter,
+                                                                      columns, with_labels=True, is_ref=False)
             else:
                 curr_test_info["data"] = pd.DataFrame()
         # Query reference if the check use it
         if uses_reference_data:
-            reference_table = model_version.get_reference_table(session)
-            reference_query = create_model_version_select_object(reference_table, top_feat + model_columns, False)
-            reference_query = reference_query.filter(monitor_options.sql_columns_filter())
-            reference_query = session.execute(random_sample(reference_query, reference_table))
+            reference_query = create_execution_data_query(model_version, session, monitor_options,
+                                                          columns, with_labels=True, is_ref=True)
         else:
             reference_query = None
 
@@ -547,6 +545,7 @@ async def run_check_window(
                                                         with_reference=is_train_test_check or reference_only,
                                                         with_test=not reference_only,
                                                         n_samples=n_samples,
+                                                        with_labels=check.is_label_required,
                                                         filter_labels_exist=check.is_label_required)
         if test_session is None:
             info = {}
@@ -588,41 +587,75 @@ async def run_check_window(
 
 
 def create_execution_data_query(
-        data_table: Table,
+        model_version: ModelVersion,
         session: AsyncSession,
         options: TableFiltersSchema,
         columns: t.List[str] = None,
         n_samples: int = DEFAULT_N_SAMPLES,
-        all_columns: bool = False,
+        with_labels: bool = False,
         filter_labels_exist: bool = False,
-) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
+        is_ref: bool = False
+) -> t.Coroutine:
     """Return sessions of the data load for the given model version.
 
     Parameters
     ----------
-    data_table: Table
+    model_version: Table
     session
     columns
     options
     n_samples: int
         The number of samples to collect
-    all_columns: bool, default False
-        Whether to load all the columns instead of just the top features
+    with_labels: bool, default False
+        Whether to add labels to the query
     filter_labels_exist: bool, default False
-        Whether to filter the data to only include rows with labels
+        Whether to filter out samples without labels
+    is_ref
 
     Returns
     -------
     Coroutine
         Routine is the data session.
     """
-    if all_columns:
-        data_query = select(data_table)
+    if filter_labels_exist and not with_labels:
+        raise ValueError("filter_labels_exist is True but with_labels is False")
+
+    if is_ref:
+        table = model_version.get_reference_table(session)
+        if columns is None:
+            if with_labels is False:
+                columns = [col.name for col in table.c if col.name != SAMPLE_LABEL_COL]
+            else:
+                columns = [col.name for col in table.c]
+        elif with_labels:
+            columns = columns + [SAMPLE_LABEL_COL]
+
+        data_query = select([table.c[col] for col in columns])
+
+        if filter_labels_exist:
+            data_query = data_query.where(table.c[SAMPLE_LABEL_COL].isnot(None))
     else:
-        data_query = create_model_version_select_object(data_table, columns, filter_labels_exist)
-    data_query = data_query.filter(options.sql_all_filters()
-                                   if SAMPLE_TS_COL in data_table.c else options.sql_columns_filter())
-    return session.execute(random_sample(data_query, data_table, n_samples=n_samples))
+        table = model_version.get_monitor_table(session)
+        if columns is None:
+            columns = [col.name for col in table.c]
+
+        # For monitoring tables, we join the labels table if needed
+        if with_labels:
+            sample_labels_table = model_version.model.get_sample_labels_table(session)
+            data_query = select([table.c[col] for col in columns] + [sample_labels_table.c[SAMPLE_LABEL_COL]])
+            data_query = data_query.join(sample_labels_table,
+                                         onclause=table.c[SAMPLE_ID_COL] == sample_labels_table.c[SAMPLE_ID_COL],
+                                         isouter=True)
+            # Filter only samples with labels
+            if filter_labels_exist:
+                data_query = data_query.where(sample_labels_table.c[SAMPLE_LABEL_COL].isnot(None))
+        else:
+            data_query = select([table.c[col] for col in columns])
+
+    # Apply filters and sampling
+    filters = options.sql_all_filters() if SAMPLE_TS_COL in table.c else options.sql_columns_filter()
+    data_query = data_query.filter(filters)
+    return session.execute(random_sample(data_query, table, n_samples=n_samples))
 
 
 def load_data_for_check(
@@ -633,7 +666,7 @@ def load_data_for_check(
         with_reference: bool = True,
         with_test: bool = True,
         n_samples: int = DEFAULT_N_SAMPLES,
-        all_columns: bool = False,
+        with_labels: bool = False,
         filter_labels_exist: bool = False,
 ) -> t.Tuple[t.Optional[t.Coroutine], t.Optional[t.Coroutine]]:
     """Return sessions of the data load for the given model version.
@@ -650,11 +683,10 @@ def load_data_for_check(
         Whether to load test
     n_samples: int
         The number of samples to collect
-    all_columns: bool, default False
-        Whether to load all the columns instead of just the top features
+    with_labels: bool, default False
+        Whether to add labels to the query
     filter_labels_exist: bool, default False
-        Whether to filter out samples that don't have labels
-
+        Whether to filter out samples without labels
     Returns
     -------
     Tuple[t.Optional[Coroutine], t.Optional[Coroutine]]
@@ -666,27 +698,27 @@ def load_data_for_check(
     columns = features + list(model_version.model_columns.keys())
 
     if with_reference:
-        reference_table = model_version.get_reference_table(session)
-        reference_query = create_execution_data_query(reference_table,
+        reference_query = create_execution_data_query(model_version,
                                                       session=session,
                                                       columns=columns,
                                                       options=options,
                                                       n_samples=n_samples,
-                                                      all_columns=all_columns,
-                                                      filter_labels_exist=filter_labels_exist)
+                                                      with_labels=with_labels,
+                                                      filter_labels_exist=filter_labels_exist,
+                                                      is_ref=True)
     else:
         reference_query = None
 
     if with_test:
         if model_version.is_in_range(options.start_time_dt(), options.end_time_dt()):
-            test_table = model_version.get_monitor_table(session)
-            test_query = create_execution_data_query(test_table,
+            test_query = create_execution_data_query(model_version,
                                                      session=session,
                                                      columns=columns,
                                                      options=options,
                                                      n_samples=n_samples,
-                                                     all_columns=all_columns,
-                                                     filter_labels_exist=filter_labels_exist)
+                                                     with_labels=with_labels,
+                                                     filter_labels_exist=filter_labels_exist,
+                                                     is_ref=False)
         else:
             test_query = None
     else:

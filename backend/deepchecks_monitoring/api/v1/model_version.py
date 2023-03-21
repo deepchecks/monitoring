@@ -22,8 +22,7 @@ from sqlalchemy import Index, MetaData, Table, and_, func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from sqlalchemy.schema import CreateTable
-from sqlalchemy.sql.ddl import CreateIndex
+from sqlalchemy.sql.ddl import CreateIndex, CreateTable
 from starlette.responses import HTMLResponse
 
 from deepchecks_monitoring.config import Tags
@@ -40,7 +39,7 @@ from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
                                                              SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
-                                                             get_model_columns_by_type)
+                                                             get_label_column_type, get_predictions_columns_by_type)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils import auth
@@ -139,20 +138,22 @@ async def get_or_create_version(
 
     # Create meta columns
     meta_columns = {SAMPLE_ID_COL: ColumnType.TEXT, SAMPLE_TS_COL: ColumnType.DATETIME}
-    model_related_cols, required_model_cols = get_model_columns_by_type(model.task_type, have_classes)
+    predictions_cols, required_cols = get_predictions_columns_by_type(model.task_type, have_classes)
 
     # Validate no intersections between user columns and dc columns
-    saved_keys = set(meta_columns.keys()) | set(model_related_cols.keys())
+    saved_keys = set(meta_columns.keys()) | set(predictions_cols.keys())
     intersects_columns = saved_keys.intersection(set(info.features.keys()) | set(info.additional_data.keys()))
 
     if intersects_columns:
         raise BadRequest(f'Can\'t use the following names for columns: {intersects_columns}')
 
-    monitor_table_columns = {**meta_columns, **model_related_cols, **info.additional_data, **info.features}
-    ref_table_columns = {**model_related_cols, **info.additional_data, **info.features}
+    monitor_table_columns = {**meta_columns, **predictions_cols, **info.additional_data, **info.features}
+    # For the reference we save the label directly in the table
+    label_col = {SAMPLE_LABEL_COL: get_label_column_type(TaskType(model.task_type))}
+    ref_table_columns = {**predictions_cols, **info.additional_data, **info.features, **label_col}
 
     # Create json schema
-    not_null_columns = list(meta_columns.keys()) + required_model_cols
+    not_null_columns = list(meta_columns.keys()) + required_cols
     # Define the length of the array for probabilities column
     length_columns = {
         SAMPLE_PRED_PROBA_COL: len(classes)
@@ -168,7 +169,7 @@ async def get_or_create_version(
             )
             for name, data_type in monitor_table_columns.items()
         },
-        'required': list(info.features.keys()) + list(meta_columns.keys()) + required_model_cols,
+        'required': list(info.features.keys()) + list(meta_columns.keys()) + required_cols,
         'additionalProperties': False
     }
     reference_table_schema = {
@@ -181,7 +182,7 @@ async def get_or_create_version(
             )
             for name, data_type in ref_table_columns.items()
         },
-        'required': list(info.features.keys()) + required_model_cols,
+        'required': list(info.features.keys()) + required_cols,
         'additionalProperties': False
     }
 
@@ -194,7 +195,8 @@ async def get_or_create_version(
 
     # Private columns are handled by us and are not exposed to the user
     private_columns = {SAMPLE_LOGGED_TIME_COL: ColumnType.DATETIME}
-    private_reference_columns = {REFERENCE_SAMPLE_ID_COL: ColumnType.INTEGER}
+    # Save the label column in the reference table as private, in order to be able to query it later
+    private_reference_columns = {REFERENCE_SAMPLE_ID_COL: ColumnType.INTEGER, **label_col}
 
     # Save version entity
     model_version = ModelVersion(
@@ -205,7 +207,7 @@ async def get_or_create_version(
         features_columns=info.features,
         additional_data_columns=info.additional_data,
         meta_columns=meta_columns,
-        model_columns=model_related_cols,
+        model_columns=predictions_cols,
         feature_importance=info.feature_importance,
         statistics=empty_statistics,
         classes=info.classes,
@@ -230,7 +232,6 @@ async def get_or_create_version(
         Index(f'_{monitor_table_name}_md5_index', text(f'md5({SAMPLE_ID_COL})'))
     )
     await session.execute(CreateTable(monitor_table))
-
     # Create indices
     for index in monitor_table.indexes:
         await session.execute(CreateIndex(index))
@@ -253,9 +254,7 @@ async def get_or_create_version(
         # with reference table 'SAMPLE_ID_COL' column
         Index(f'_{reference_table_name}_md5_index', text(f'md5({REFERENCE_SAMPLE_ID_COL}::varchar)'))
     )
-
     await session.execute(CreateTable(reference_table))
-
     # Create indices
     for index in reference_table.indexes:
         await session.execute(CreateIndex(index))
@@ -362,8 +361,8 @@ class ModelVersionSchema(BaseModel):
     status_code=HttpStatus.HTTP_200_OK
 )
 async def retrieve_model_version_by_id(
-    model_version_id: int,
-    session: AsyncSession = AsyncSessionDep
+        model_version_id: int,
+        session: AsyncSession = AsyncSessionDep
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
@@ -378,9 +377,9 @@ async def retrieve_model_version_by_id(
     status_code=HttpStatus.HTTP_200_OK
 )
 async def retrieve_model_version_by_name(
-    model_name: str = Path(..., description='Model name.'),
-    version_name: str = Path(..., description='Model version name.'),
-    session: ExtendedAsyncSession = AsyncSessionDep
+        model_name: str = Path(..., description='Model name.'),
+        version_name: str = Path(..., description='Model version name.'),
+        session: ExtendedAsyncSession = AsyncSessionDep
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     model = await fetch_or_404(session, Model, name=model_name)
@@ -476,18 +475,21 @@ async def _get_data(model_version_id: int,
     ORJSONResponse
         The data in a json format.
     """
-    options = joinedload(ModelVersion.model).joinedload(Model.checks)
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=options, id=model_version_id)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=joinedload(ModelVersion.model),
+                                                     id=model_version_id)
 
-    prod_table = model_version.get_reference_table(session) if is_ref else model_version.get_monitor_table(session)
-    columns = {**model_version.features_columns, **model_version.additional_data_columns, **model_version.meta_columns,
-               **model_version.model_columns}
-    data_query = create_execution_data_query(prod_table,
-                                             columns=list(columns.keys()),
+    columns = (list(model_version.features_columns.keys()) + list(model_version.additional_data_columns.keys()) +
+               list(model_version.model_columns.keys()))
+    if not is_ref:
+        columns += list(model_version.meta_columns.keys())
+
+    data_query = create_execution_data_query(model_version,
                                              session=session,
                                              options=monitor_options,
+                                             columns=columns,
                                              n_samples=monitor_options.rows_count,
-                                             all_columns=False)
+                                             is_ref=is_ref,
+                                             with_labels=True)
     data_query = await data_query
     df = pd.DataFrame(data_query.all(), columns=[str(key) for key in data_query.keys()])
 
@@ -594,10 +596,12 @@ async def get_time_window_statistics(
     -------
     json schema of the model version
     """
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
+    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, options=joinedload(ModelVersion.model),
+                                                     id=model_version_id)
     test_table = model_version.get_monitor_table(session)
+    sample_labels_table = model_version.model.get_sample_labels_table(session)
     sample_id = test_table.c[SAMPLE_ID_COL]
-    sample_label = test_table.c[SAMPLE_LABEL_COL]
+    sample_label = sample_labels_table.c[SAMPLE_LABEL_COL]
     sample_timestamp = test_table.c[SAMPLE_TS_COL]
 
     query = select(
@@ -606,7 +610,11 @@ async def get_time_window_statistics(
     ).where(and_(
         sample_timestamp < body.end_time_dt(),
         sample_timestamp >= body.start_time_dt()
-    ))
+    )).join(
+        sample_labels_table,
+        onclause=test_table.c[SAMPLE_ID_COL] == sample_labels_table.c[SAMPLE_ID_COL],
+        isouter=True
+    )
 
     result = (await session.execute(query)).first()
     return {'num_samples': result[0], 'num_labeled_samples': result[1]}
@@ -644,12 +652,12 @@ async def get_count_samples(
     description='Delete model version.'
 )
 async def delete_model_version_by_name(
-    background_tasks: BackgroundTasks,
-    model_name: str = Path(..., description='Model name'),
-    version_name: str = Path(..., description='Model version name'),
-    session: AsyncSession = AsyncSessionDep,
-    resources_provider: ResourcesProvider = ResourcesProviderDep,
-    user: User = Depends(auth.AdminUser()),
+        background_tasks: BackgroundTasks,
+        model_name: str = Path(..., description='Model name'),
+        version_name: str = Path(..., description='Model version name'),
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        user: User = Depends(auth.AdminUser()),
 ):
     """Delete model version by name."""
     await _delete_model_version(
@@ -694,13 +702,13 @@ async def delete_model_version_by_id(
 
 
 async def _delete_model_version(
-    *,
-    organization: Organization,
-    version_identifier: ModelVersionIdentifier,
-    model_identifier: t.Optional[ModelIdentifier] = None,
-    session: AsyncSession = AsyncSessionDep,
-    resources_provider: ResourcesProvider = ResourcesProviderDep,
-    background_tasks: BackgroundTasks,
+        *,
+        organization: Organization,
+        version_identifier: ModelVersionIdentifier,
+        model_identifier: t.Optional[ModelIdentifier] = None,
+        session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        background_tasks: BackgroundTasks,
 ):
     """Delete model version.
 

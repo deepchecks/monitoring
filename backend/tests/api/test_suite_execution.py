@@ -13,6 +13,7 @@ from tests.common import Payload, TestAPI, upload_classification_data
 def test_tabular_classification_suite_with_ref(
     test_api: TestAPI,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     # Arrange
     test_api.upload_reference(
@@ -22,6 +23,7 @@ def test_tabular_classification_suite_with_ref(
     _, start_date, end_date = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
     # Act
     # NOTE: "test_api" will assert response status code
@@ -34,11 +36,13 @@ def test_tabular_classification_suite_with_ref(
 def test_tabular_classification_suite_without_ref(
     test_api: TestAPI,
     classification_model_version: Payload,
+    classification_model: Payload
 ):
     # Arrange
     _, start_date, end_date = upload_classification_data(
         api=test_api,
-        model_version_id=classification_model_version["id"]
+        model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
     # Act
     # NOTE: "test_api" will assert response status code

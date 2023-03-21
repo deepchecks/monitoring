@@ -19,14 +19,17 @@ from deepchecks_monitoring.config import KafkaSettings
 async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logger):
     """Create an endless-loop of consuming messages from kafka."""
     while True:
+        consumer = None
         try:
             consumer = AIOKafkaConsumer(
                 **settings.kafka_params,
                 group_id="data_group",  # Consumer must be in a group to commit
                 enable_auto_commit=False,  # Will disable autocommit
                 auto_offset_reset="earliest",  # If committed offset not found, start from beginning,
-                max_poll_records=1000,
+                max_poll_records=500,
                 session_timeout_ms=60 * 1000,
+                heartbeat_interval_ms=5 * 1000,
+                consumer_timeout_ms=5 * 1000,
             )
             await consumer.start()
             consumer.subscribe(pattern=pattern)
@@ -40,5 +43,8 @@ async def consume_from_kafka(settings: KafkaSettings, handle_func, pattern, logg
 
         except KafkaError as e:  # pylint: disable=broad-except
             logger.exception(e)
+        finally:
+            if consumer:
+                await consumer.stop()
         # If consumer fails sleep 30 seconds and tried again
         await asyncio.sleep(30)

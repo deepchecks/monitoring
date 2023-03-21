@@ -8,32 +8,26 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the model ORM model."""
-import enum
 import typing as t
 from datetime import datetime
 
 import pendulum as pdl
 import sqlalchemy as sa
-from sqlalchemy import func, update
+from sqlalchemy import MetaData, PrimaryKeyConstraint, Table, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, Query, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
+                                                             column_types_to_table_columns, get_label_column_type)
+from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
     from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
 
 
-__all__ = ["TaskType", "Model", "ModelNote"]
-
-
-class TaskType(enum.Enum):
-    """Enum containing supported task types."""
-
-    REGRESSION = "regression"
-    BINARY = "binary"
-    MULTICLASS = "multiclass"
+__all__ = ["Model", "ModelNote"]
 
 
 class Model(Base):
@@ -59,6 +53,12 @@ class Model(Base):
     alerts_delay_seconds = sa.Column(sa.Integer, nullable=False)
     start_time = sa.Column(sa.DateTime(timezone=True), default=pdl.datetime(3000, 1, 1))
     end_time = sa.Column(sa.DateTime(timezone=True), default=pdl.datetime(1970, 1, 1))
+    # Indicates the last time the data (labels) was updated.
+    last_update_time = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=func.now())
+    # Indicates the latest messages offset that was ingested
+    ingestion_offset = sa.Column(sa.BigInteger, default=-1)
+    # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
+    topic_end_offset = sa.Column(sa.BigInteger, default=-1)
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
@@ -98,6 +98,42 @@ class Model(Base):
     def has_data(self) -> bool:
         """Check if model has data."""
         return self.start_time <= self.end_time
+
+    def get_sample_labels_table_name(self):
+        """Get table name of the sample labels table."""
+        return f"model_{self.id}_sample_labels"
+
+    def get_sample_labels_table(self, connection=None) -> Table:
+        """Get table object of the sample labels table."""
+        metadata = MetaData(bind=connection)
+        columns_sqlalchemy = column_types_to_table_columns(self.get_sample_labels_columns())
+        return Table(self.get_sample_labels_table_name(), metadata, *columns_sqlalchemy)
+
+    def get_sample_labels_columns(self):
+        return {
+            SAMPLE_ID_COL: ColumnType.TEXT,
+            SAMPLE_LABEL_COL: get_label_column_type(TaskType(self.task_type))
+        }
+
+    def get_samples_versions_map_table_name(self):
+        """Get table name of the versions mapping table."""
+        return f"model_{self.id}_samples_versions_map"
+
+    def get_samples_versions_map_table(self, connection=None) -> Table:
+        """Get table object of the versions mapping table."""
+        metadata = MetaData(bind=connection)
+        columns = (sa.Column(SAMPLE_ID_COL, sa.Text),
+                   sa.Column("version_id", sa.Integer))
+        pk_constraint = PrimaryKeyConstraint(SAMPLE_ID_COL, "version_id")
+        return Table(self.get_samples_versions_map_table_name(), metadata, *columns, pk_constraint)
+
+    def filter_labels_exist(self, query: Query, data_table, filter_not_null=True) -> Query:
+        """Filter query to include only samples that have labels."""
+        labels_table = self.get_sample_labels_table()
+        if filter_not_null:
+            query = query.where(labels_table.c[SAMPLE_LABEL_COL].isnot(None))
+        query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
+        return query
 
 
 class ModelNote(Base):

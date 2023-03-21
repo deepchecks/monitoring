@@ -16,6 +16,7 @@ import typing as t
 import warnings
 from datetime import datetime
 from json import JSONDecodeError
+from numbers import Number
 
 import httpx
 import numpy as np
@@ -32,7 +33,7 @@ from typing_extensions import TypeAlias, TypedDict
 
 __all__ = ['ColumnType', 'ColumnTypeName', 'TaskType', 'DeepchecksColumns',
            'validate_additional_data_schema', 'describe_dataset', 'DataSchema',
-           'DataFilter', 'OperatorsEnum']
+           'DataFilter', 'OperatorsEnum', 'classification_label_formatter']
 
 ColumnTypeName: TypeAlias = str
 
@@ -364,3 +365,12 @@ def describe_dataset(dataset: Dataset) -> DataSchema:
                       'You can set the type manually in the schema file/dict.\n'
                       'DateTime format is supported using iso format only.')
     return {'features': features, 'additional_data': additional_data}
+
+
+def classification_label_formatter(label):
+    """Converts a label to a string, or returns None if the label is NaN."""
+    if pd.isna(label):
+        return None
+    if isinstance(label, Number) and int(label) == label:
+        label = int(label)
+    return str(label)

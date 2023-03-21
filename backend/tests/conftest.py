@@ -269,16 +269,22 @@ def multiclass_model_version_client(
 
 
 @pytest.fixture()
-# pylint: disable=unused-argument
 def regression_model_version_client(
-    regression_model: Payload,
+    regression_model_client,
     regression_model_version: Payload,
+):
+    return regression_model_client.version(regression_model_version["name"])
+
+
+@pytest.fixture()
+def regression_model_client(
+    regression_model: Payload,
     deepchecks_sdk: DeepchecksClient
 ):
     return deepchecks_sdk.get_or_create_model(
-        name="Regression Model",
+        name=regression_model["name"],
         task_type=TaskType.REGRESSION.value
-    ).version("v1")
+    )
 
 
 @pytest_asyncio.fixture()

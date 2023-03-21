@@ -42,7 +42,7 @@ async def wait_for_queue(
         return
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     consumer = KafkaConsumer(**resources_provider.kafka_settings.kafka_params)
-    topic_partition = TopicPartition(get_data_topic_name(user.organization.id, model_version_id), 0)
+    topic_partition = TopicPartition(get_data_topic_name(user.organization.id, model_version_id, "model-version"), 0)
     # The end_offset returned is the next offset (end + 1)
     topic_end_offset = consumer.end_offsets([topic_partition])[topic_partition] - 1
 

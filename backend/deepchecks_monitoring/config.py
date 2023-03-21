@@ -23,7 +23,8 @@ __all__ = [
     'DatabaseSettings',
     'RedisSettings',
     'KafkaSettings',
-    'BaseDeepchecksSettings'
+    'BaseDeepchecksSettings',
+    'EmailSettings'
 ]
 
 

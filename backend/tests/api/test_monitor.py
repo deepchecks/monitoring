@@ -93,6 +93,7 @@ async def test_add_monitor_day_schedule_from_version(
     upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        is_labeled=False
     )
     # Act
     monitor = t.cast(Payload, test_api.create_monitor(
@@ -256,7 +257,8 @@ def test_monitor_notebook_retrieval(
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
-        samples_per_date=50
+        samples_per_date=50,
+        is_labeled=False
     )
 
     start_time = start_time.isoformat()
@@ -294,7 +296,8 @@ async def test_monitor_update_with_data(
     # Arrange
     upload_classification_data(
         api=test_api,
-        model_version_id=classification_model_version["id"]
+        model_version_id=classification_model_version["id"],
+        is_labeled=False
     )
     monitor = test_api.create_monitor(check_id=classification_model_check["id"])
     monitor = await async_session.get(Monitor, monitor["id"])
@@ -374,7 +377,8 @@ async def test_update_monitor_freq(
     # Arrange
     upload_classification_data(
         api=test_api,
-        model_version_id=classification_model_version["id"]
+        model_version_id=classification_model_version["id"],
+        is_labeled=False
     )
     frequency = 3600 * 24
     monitor = test_api.create_monitor(check_id=classification_model_check["id"], monitor={"frequency": frequency})
@@ -398,6 +402,7 @@ def test_monitor_execution(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
     redis: FakeRedis,
     user
 ):
@@ -417,7 +422,8 @@ def test_monitor_execution(
     ))
     upload_classification_data(
         api=test_api,
-        model_version_id=classification_model_version["id"]
+        model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
     # Act
     result_without_cache = test_api.execute_monitor(
@@ -461,11 +467,12 @@ def test_monitor_execution_with_invalid_end_time(
 
 
 @pytest.mark.asyncio
-async def test_monitor_run_filter(classification_model_check, classification_model_version,
+async def test_monitor_run_filter(classification_model_check, classification_model_version, classification_model,
                                   client, test_api: TestAPI):
     response, start_time, end_time = upload_classification_data(test_api,
                                                                 classification_model_version["id"],
-                                                                samples_per_date=50)
+                                                                samples_per_date=50,
+                                                                model_id=classification_model["id"])
     assert response.status_code == 200, response.json()
     start_time = start_time.isoformat()
     end_time = end_time.add(hours=1).isoformat()

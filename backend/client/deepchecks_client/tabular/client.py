@@ -29,7 +29,8 @@ from deepchecks.utils.dataframes import un_numpy
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
-                                          maybe_raise, parse_timestamp, pretty_print, validate_additional_data_schema)
+                                          classification_label_formatter, maybe_raise, parse_timestamp, pretty_print,
+                                          validate_additional_data_schema)
 from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_input
 
 
@@ -204,7 +205,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             data: 'pd.DataFrame',
             predictions: t.Union[pd.Series, np.ndarray, t.List[t.Any]],
             prediction_probas: t.Union[np.ndarray, pd.Series, t.List[t.Any], None] = None,
-            labels: t.Optional[np.ndarray] = None,
             timestamps: t.Union[np.ndarray, pd.Series, t.List[int], None] = None,
             samples_per_send: int = 10_000
     ):
@@ -220,8 +220,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             set of predictions
         prediction_probas : Optional[numpy.ndarray] , default None
             set of predictions probabilities
-        labels : Optional[numpy.ndarray] , default None
-            set of labels
         timestamps : Union[numpy.ndarray, pandas.Series, List[int], None] , default None
             set of numerical timestamps that represent second-based epoch time.
             If not provided then current time will be used.
@@ -254,7 +252,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             predictions=predictions,
             prediction_probas=prediction_probas,
             model_classes=self.model_classes,
-            labels=labels,
         )
 
         self.send()
@@ -274,7 +271,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             prediction: t.Union[str, float],
             timestamp: t.Union[datetime, int, str, None] = None,
             prediction_proba: t.Optional[t.Sequence[float]] = None,
-            label: t.Union[str, float, None] = None,
     ):
         """Add a data sample for the model version update queue. Requires a call to send() to upload.
 
@@ -294,8 +290,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Prediction value if exists
         prediction : Union[str, float]
             Prediction label if exists
-        label : Union[str, float, None] , default None
-            True label of sample
         """
         if timestamp is None:
             warnings.warn('log_sample was called without timestamp, using current time instead')
@@ -310,7 +304,6 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             prediction=prediction,
             prediction_proba=prediction_proba,
             model_classes=self.model_classes,
-            label=label,
         ))
 
     def upload_reference(
@@ -352,7 +345,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         else:
             if dataset.has_label():
                 data[DeepchecksColumns.SAMPLE_LABEL_COL.value] = \
-                    list(dataset.label_col.apply(_classification_label_formatter))
+                    list(dataset.label_col.apply(classification_label_formatter))
             if prediction_probas is not None:
                 data[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = \
                     [_prediction_proba_formatter(prediction_proba, self.model_classes)
@@ -584,7 +577,6 @@ def _process_batch(
     data_columns: t.Dict[str, str],
     sample_ids: np.ndarray,
     data: t.Optional[pd.DataFrame] = None,
-    labels: t.Optional[np.ndarray] = None,
     timestamps: t.Optional[np.ndarray] = None,
     predictions: t.Optional[t.Union[pd.Series, np.ndarray, t.List]] = None,
     model_classes: t.Optional[t.Sequence[str]] = None,
@@ -627,14 +619,6 @@ def _process_batch(
             raise ValueError('"prediction_probas" must be a two-dimensional array')
         else:
             metadata['prediction_proba'] = list(prediction_probas)
-
-    # Validate 'labels' array
-    if labels is not None:
-        labels = standardize_input(labels, 'labels')
-        if len(labels) != len(sample_ids):
-            raise ValueError(error_template.format('labels'))
-        else:
-            metadata['label'] = labels
 
     batch = metadata.to_dict(orient='records')
 
@@ -707,7 +691,6 @@ def _process_sample(
     timestamp: t.Union[datetime, int, str, None] = None,
     prediction_proba: t.Optional[t.Sequence[float]] = None,
     model_classes: t.Optional[t.Sequence[str]] = None,
-    label: t.Union[str, float, None] = None,
 ) -> t.Dict[str, t.Any]:
     """Prepare and validate sample dictionary instance."""
     if values is None:
@@ -728,9 +711,6 @@ def _process_sample(
             )
 
     if task_type in {TaskType.MULTICLASS, TaskType.BINARY}:
-        if label is not None:
-            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = _classification_label_formatter(label)
-
         if prediction_proba is not None:
             sample[DeepchecksColumns.SAMPLE_PRED_PROBA_COL.value] = \
                 _prediction_proba_formatter(prediction_proba, model_classes)
@@ -739,8 +719,6 @@ def _process_sample(
                                                                                                model_classes)
 
     elif task_type == TaskType.REGRESSION:
-        if label is not None:
-            sample[DeepchecksColumns.SAMPLE_LABEL_COL.value] = float(label)
         if prediction is not None:
             sample[DeepchecksColumns.SAMPLE_PRED_COL.value] = float(prediction)
         if prediction_proba is not None:
@@ -784,12 +762,6 @@ def _classification_prediction_formatter(prediction, model_classes):
     return str(prediction)
 
 
-def _classification_label_formatter(label):
-    if pd.isna(label):
-        return None
-    if isinstance(label, Number) and int(label) == label:
-        label = int(label)
-    return str(label)
 
 
 def _datetime_formatter(datetime_obj):

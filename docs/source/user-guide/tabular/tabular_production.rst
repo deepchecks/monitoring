@@ -1,3 +1,4 @@
+
 .. _tabular_prod:
 
 ===============================
@@ -113,11 +114,6 @@ has the following arguments:
 * ``prediction_probas`` - A 2D numpy array of probabilities made by the model on the data. This is argument should
   be provided only for classification models, and is used to calculate metrics such as AUC that require probabilities.
   The array must have the same number of rows as the data, and the number of columns must match the number of classes.
-* ``labels`` - A Sequence of labels for each sample. Each item in the sequence must be a single label value,
-  matching the corresponding sample in the data.
-  **Labels are the only component of the production data that can be updated or provided later on**
-  (see the `Updating Labels <#updating-labels>`__ section below). To represent missing labels,
-  use the ``None`` value.
 * ``samples_per_send`` - The number of samples to send in each request. This is useful when uploading large batches
   of data, to avoid sending too many samples in a single request. The default value is 10,000, and can be lowered
   if you encounter errors when uploading data with a large number of columns.
@@ -166,8 +162,6 @@ has the following arguments:
 * ``prediction_proba`` - A Sequence (of probabilities made by the model on the sample. This is argument should
   be provided only for classification models, and is used to calculate metrics such as AUC that require probabilities.
   The sequence must have the same number of entries as the number of classes.
-* ``label`` - The label for the sample.
-  **Labels are the only component of the production data that can be updated or provided later on**
 
 In the following example, we upload a single sample to the a model version we have already created. In this case, the
 sample is contained within a single dictionary, with the dictionary keys serving as the column names, and the values
@@ -191,7 +185,6 @@ not provide the ``prediction_proba`` argument.
     ...     values=values_dict,
     ...     timestamp=sample_timestamp,
     ...     prediction=prediction,
-    ...     label=sample_label
     ... )
 
 .. _tabular_production__validating_your_data_has_arrived:
@@ -216,17 +209,35 @@ Updating Labels
 
 When building an ML system, it is common for the labels to arrive later than the predictions. In this case, you can
 update the labels for a sample by calling the
-:meth:`DeepchecksModelVersionClient.update_sample() <deepchecks_client.core.client.DeepchecksModelVersionClient.update_sample>`
-method of the :class:`Model Version <deepchecks_client.core.client.DeepchecksModelVersionClient>` object.
+:meth:`DeepchecksModelClient.log_label() <deepchecks_client.core.client.DeepchecksModelClient.log_label>` or
+:meth:`DeepchecksModelClient.log_batch_labels() <deepchecks_client.core.client.DeepchecksModelClient.log_batch_labels>`
+methods of the :class:`Model Client <deepchecks_client.core.client.DeepchecksModelClient>` object.
 
-The method is a simple one, receiving only the sample ID and the new label value. For example:
+The labels are global to the model and not to a specific model version. This means that when you update label by his
+sample id it will affect all the model versions that are using this sample id.
+
+The methods are simple, receiving only the sample ID and the new label value. For example:
 
 .. doctest::
 
-    >>> model_version = dc_client.get_model_version('my_model', 'v1')
-    >>> model_version.update_sample('1', 378)  # '1' is the sample ID, 378 is the new label value
+    >>> model_client = dc_client.get_or_create_model('my_model')
+    >>> model_client.log_label('1', 378)  # '1' is the sample ID, 378 is the new label value
+    >>> model_client.log_label('2', 320)  # '2' is the sample ID, 320 is the new label value
+    >>> model_client.send()
+    2 labels sent.
 
-Note that labels are the only component of the production data that can be updated or provided later on.
+It is advised to update the labels in batch for better performance:
+
+.. doctest::
+
+    >>> model_client = dc_client.get_or_create_model('my_model')
+    >>> sample_ids = ['1', '2', '3', '4', '5']
+    >>> labels = [378, 320, 451, 503, 600]
+    >>> model_client.log_batch_labels(sample_ids, labels)
+    5 labels sent.
+
+Note that labels are the only component of the production data that can be updated or provided separately from the rest
+of the data.
 
 Handling Delayed Labels in Alerts
 ---------------------------------

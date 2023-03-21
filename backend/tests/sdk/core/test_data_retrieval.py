@@ -14,12 +14,12 @@ import pandas as pd
 import pytest
 from deepchecks.tabular.dataset import Dataset
 from deepchecks_client.core.utils import DataFilter, OperatorsEnum
-# from deepchecks_client.tabular.utils import create_schema
+from deepchecks_client.tabular.client import DeepchecksModelVersionClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
-from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_PRED_PROBA_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_PROBA_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from tests.common import Payload, TestAPI, upload_classification_data
 
@@ -29,22 +29,29 @@ async def test_classification_model_production_data_retrieval(
     test_api: TestAPI,
     multiclass_model_version_client: DeepchecksModelVersionClient,
     classification_model_version: Payload,
+    classification_model: Payload,
     async_session: AsyncSession
 ):
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version['id'],
+        model_id=classification_model['id'],
     )
 
     df = multiclass_model_version_client.get_production_data(start_time, end_time.add(hours=1))
 
     model_version = await async_session.get(
         ModelVersion,
-        multiclass_model_version_client.model_version_id
+        multiclass_model_version_client.model_version_id,
+        options=[joinedload(ModelVersion.model)]
     )
 
     prod_table = model_version.get_monitor_table(async_session)
-    prod_query = await async_session.execute(select(prod_table))
+    labels_table = model_version.model.get_sample_labels_table(async_session)
+    prod_query = await async_session.execute(
+        select(list(prod_table.c) + [labels_table.c[SAMPLE_LABEL_COL]])
+        .join(labels_table, prod_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
+    )
 
     prod_df = pd.DataFrame(
         prod_query.all(),
@@ -70,7 +77,8 @@ def test_classification_model_production_data_retrieval_with_filter(
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version['id'],
-        samples_per_date=2
+        samples_per_date=2,
+        is_labeled=False
     )
     df = multiclass_model_version_client.get_production_data(
         start_time,

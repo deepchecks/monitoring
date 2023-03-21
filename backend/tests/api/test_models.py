@@ -228,14 +228,16 @@ def test_get_models_ingestion_no_models(client: TestClient):
 def test_get_models_ingestion_no_end_time(
     client: TestClient,
     test_api: TestAPI,
-    classification_model_version: Payload
+    classification_model_version: Payload,
+    classification_model: Payload,
 ):
     # Arrange
     upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
         samples_per_date=2,
-        daterange=[pdl.now().subtract(years=2)]
+        daterange=[pdl.now().subtract(years=2)],
+        model_id=classification_model["id"],
     )
 
     # Act
@@ -245,28 +247,6 @@ def test_get_models_ingestion_no_end_time(
     resp = response.json()["1"][0]
     assert resp["count"] == 2
     assert resp["label_count"] == 2
-
-
-def test_get_models_ingestion_null_labels(
-    client: TestClient,
-    test_api: TestAPI,
-    classification_model_version: Payload
-):
-    # Arrange
-    upload_classification_data(
-        api=test_api,
-        model_version_id=classification_model_version["id"],
-        samples_per_date=2,
-        daterange=[pdl.now().subtract(hours=2)],
-        is_labeled=False
-    )
-    # Act
-    response = client.get("/api/v1/models/data-ingestion")
-    # Assert
-    assert response.status_code == 200
-    resp = response.json()["1"][0]
-    assert resp["count"] == 2
-    assert resp["label_count"] == 0
 
 
 TableExists = sa.text(

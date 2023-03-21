@@ -28,6 +28,7 @@ __all__ = [
     'RedirectException',
     'InvalidConfigurationException',
     'Unauthorized',
+    'PaymentRequired',
     'LicenseError'
 ]
 

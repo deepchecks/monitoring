@@ -199,11 +199,9 @@ end_of_first_half = timestamps[3 * int(len(timestamps) // 4)]  # This is the fir
 first_half_df = prod_data[prod_data.datestamp < end_of_first_half]
 second_half_df = prod_data[prod_data.datestamp >= end_of_first_half]
 
-# If labels arrive along with the data it is possible to upload them directly via the labels param.
 model_version.log_batch(sample_ids=first_half_df.index,
                         data=first_half_df.drop([timestamp, label_col], axis=1),
-                        timestamps=first_half_df[timestamp], predictions=prod_predictions[:len(first_half_df)],
-                        labels=first_half_df[label_col])
+                        timestamps=first_half_df[timestamp], predictions=prod_predictions[:len(first_half_df)])
 
 # %%
 # Uploading the Second Batch
@@ -211,11 +209,18 @@ model_version.log_batch(sample_ids=first_half_df.index,
 #
 # Now let's upload the second half of the dataset.
 
-# If labels arrive along with the data it is possible to upload them directly via the labels param.
-model_version.log_batch(sample_ids=first_half_df.index,
-                        data=first_half_df.drop([timestamp, label_col], axis=1),
-                        timestamps=first_half_df[timestamp], predictions=prod_predictions[:len(first_half_df)],
-                        labels=first_half_df[label_col])
+model_version.log_batch(sample_ids=second_half_df.index,
+                        data=second_half_df.drop([timestamp, label_col], axis=1),
+                        timestamps=second_half_df[timestamp], predictions=prod_predictions[len(first_half_df):])
+
+# %%
+# Uploading The Labels
+# --------------------
+# The labels are global to the model, and not specific to a version. Therefore, to upload them we need the model client.
+# You can do this directly after uploading the predictions, or at any other time.
+
+model_client = dc_client.get_or_create_model(model_name)
+model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label_col])
 
 # %%
 # Making Sure Your Data Has Arrived

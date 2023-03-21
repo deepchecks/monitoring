@@ -21,7 +21,7 @@ from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
-                                          parse_timestamp, pretty_print)
+                                          classification_label_formatter, parse_timestamp, pretty_print)
 
 from .api import API
 
@@ -62,7 +62,6 @@ class DeepchecksModelVersionClient:
         self.model_version_id = model_version_id
         self.task_type = TaskType(self.model['task_type'])
         self._log_samples = []
-        self._update_samples = []
 
         schemas = t.cast(t.Dict[str, t.Any], self.api.fetch_model_version_schema(model_version_id))
         self.schema = schemas['monitor_schema']
@@ -76,18 +75,6 @@ class DeepchecksModelVersionClient:
 
         self.schema_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(self.schema))
         self.ref_schema_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile(self.ref_schema))
-
-        sample_id_column = DeepchecksColumns.SAMPLE_ID_COL.value
-        label_column = DeepchecksColumns.SAMPLE_LABEL_COL.value
-
-        self.update_record_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile({
-            'type': 'object',
-            'required': [sample_id_column],
-            'properties': {
-                sample_id_column: self.schema['properties'][sample_id_column],
-                label_column: self.schema['properties'][label_column]
-            }
-        }))
 
         self.features = schemas['features']
         self.additional_data = schemas['additional_data']
@@ -148,16 +135,6 @@ class DeepchecksModelVersionClient:
             pretty_print(f'{len(self._log_samples)} new samples sent.')
             self._log_samples.clear()
 
-        if len(self._update_samples) > 0:
-            for i in range(0, len(self._update_samples), samples_per_send):
-                self.api.update_samples(
-                    self.model_version_id,
-                    self._update_samples[i: i+samples_per_send]
-                )
-
-            pretty_print(f'{len(self._update_samples)} updated samples sent.')
-            self._update_samples.clear()
-
     def upload_reference(self, *args, **kwargs):
         """Upload reference data. Possible to upload only once for a given model version.
 
@@ -178,72 +155,6 @@ class DeepchecksModelVersionClient:
         for i in range(0, len(data), samples_per_request):
             content = data.iloc[i:i + samples_per_request]
             self.api.upload_reference(self.model_version_id, content.to_json(orient='split', index=False))
-
-    def update_sample(
-        self,
-        sample_id: str,
-        label: t.Any,
-    ):
-        """Update an existing sample.
-
-        Adds the sample to the update queue.
-        Requires a call to send() to upload.
-
-        Parameters
-        ----------
-        sample_id : str
-            The sample id.
-        label: Any
-            label of the sample
-        """
-        if self.task_type in {TaskType.MULTICLASS, TaskType.BINARY}:
-            label = str(label)
-        elif self.task_type == TaskType.REGRESSION:
-            label = float(label)
-        else:
-            raise ValueError('Unknown model type - {self.task_type}')
-
-        sample = {DeepchecksColumns.SAMPLE_ID_COL: str(sample_id), DeepchecksColumns.SAMPLE_LABEL_COL: label}
-        sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
-        self.update_record_validator(sample)
-        self._update_samples.append(sample)
-
-    def update_batch(
-        self,
-        sample_ids: t.Sequence[str],
-        labels: t.Sequence[t.Any],
-        samples_per_send: int = 10_000
-    ):
-        """Update samples labels.
-
-        Any previously appended samples will be send to the server.
-
-        Important to understand that updated labels are not used in alerts
-        calculation if update happened after "alert delay window" and that
-        they also do not trigger alerts recalculation.
-
-        TODO:
-        - add link to documentation explaining "alert delay window"
-
-        Parameters
-        ==========
-        sample_ids : Sequence[str]
-            A sequence of sample ids of already uploaded samples whose labels we wish to modify.
-        labels : Sequence[Any]
-            A sequence of sample labels.
-        samples_per_send: int , default 10_000
-            how many samples to send by one request
-        """
-        if len(sample_ids) == 0:
-            raise ValueError('"sample_ids" array cannot be empty')
-
-        if len(labels) != len(sample_ids):
-            raise ValueError('length of "labels" array must be equal to length of "sample_ids" array')
-
-        for sample_id, label in zip(sample_ids, labels):
-            self.update_sample(sample_id=sample_id, label=label)
-
-        self.send(samples_per_send)
 
     def time_window_statistics(
         self,
@@ -331,8 +242,6 @@ class DeepchecksModelVersionClient:
 
         Parameters
         ----------
-        model_version_id : int
-            The model version id.
         start_time : t.Union[datetime, str, int]
             The start time timestamp.
                 - int: Unix timestamp
@@ -396,6 +305,22 @@ class DeepchecksModelClient:
         self.api = api
         self.model = model
         self._model_version_clients = {}
+        self._log_labels = []
+
+        sample_id_column = DeepchecksColumns.SAMPLE_ID_COL.value
+        label_column = DeepchecksColumns.SAMPLE_LABEL_COL.value
+        task_type = TaskType(self.model['task_type'])
+        self.label_data_type = {TaskType.MULTICLASS: 'string', TaskType.BINARY: 'string',
+                                TaskType.REGRESSION: 'number'}[task_type]
+
+        self.log_labels_validator = t.cast(t.Callable[..., t.Any], fastjsonschema.compile({
+            'type': 'object',
+            'required': [sample_id_column, label_column],
+            'properties': {
+                sample_id_column: {'type': 'string'},
+                label_column: {'type': [self.label_data_type, 'null']},
+            }
+        }))
 
     def version(self, *args, **kwargs) -> DeepchecksModelVersionClient:
         """Get or create a new model version.
@@ -707,6 +632,88 @@ class DeepchecksModelClient:
         """
         notes = self.api.fetch_model_notes(model_id=self.model['id'])
         return t.cast(t.List[t.Dict[str, t.Any]], notes)
+
+    def log_label(
+        self,
+        sample_id: str,
+        label: t.Any,
+    ):
+        """Update an existing sample.
+
+        Adds the sample to the update queue.
+        Requires a call to send() to upload.
+
+        Parameters
+        ----------
+        sample_id : str
+            The sample id.
+        label: Any
+            label of the sample
+        """
+        if label is not None:
+            if self.label_data_type == 'string':
+                label = classification_label_formatter(label)
+            elif self.label_data_type == 'number':
+                label = float(label)
+            else:
+                raise ValueError(f'Unsupported label data type - {self.label_data_type}')
+
+        sample = {DeepchecksColumns.SAMPLE_ID_COL: str(sample_id), DeepchecksColumns.SAMPLE_LABEL_COL: label}
+        sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
+        self.log_labels_validator(sample)
+        self._log_labels.append(sample)
+
+    def log_batch_labels(
+        self,
+        sample_ids: t.Sequence[str],
+        labels: t.Sequence[t.Any],
+        samples_per_send: int = 10_000
+    ):
+        """Update samples labels.
+
+        Any previously appended samples will be send to the server.
+
+        Important to understand that updated labels are not used in alerts
+        calculation if update happened after "alert delay window" and that
+        they also do not trigger alerts recalculation.
+
+        TODO:
+        - add link to documentation explaining "alert delay window"
+
+        Parameters
+        ==========
+        sample_ids : Sequence[str]
+            A sequence of sample ids of already uploaded samples whose labels we wish to modify.
+        labels : Sequence[Any]
+            A sequence of sample labels.
+        samples_per_send: int , default 10_000
+            how many samples to send by one request
+        """
+        if len(sample_ids) == 0:
+            raise ValueError('"sample_ids" array cannot be empty')
+
+        if len(labels) != len(sample_ids):
+            raise ValueError('length of "labels" array must be equal to length of "sample_ids" array')
+
+        for sample_id, label in zip(sample_ids, labels):
+            self.log_label(sample_id=sample_id, label=label)
+
+        self.send(samples_per_send)
+
+    def send(self, samples_per_send: int = 10_000):
+        """Send all the aggregated samples for upload or update.
+
+        Parameters
+        ==========
+        samples_per_send : int , default 10_000
+            how many samples to send by one request
+        """
+        if len(self._log_labels) > 0:
+            for i in range(0, len(self._log_labels), samples_per_send):
+                batch = self._log_labels[i: i + samples_per_send]
+                self.api.log_labels(self.model['id'], batch)
+                pretty_print(f'{len(batch)} labels sent.')
+            self._log_labels.clear()
 
     def set_schedule_time(self, model_id: int, timestamp: t.Union[datetime, str, int],
                           raise_on_status: bool = True):

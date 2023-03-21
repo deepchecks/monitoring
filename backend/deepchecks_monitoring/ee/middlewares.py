@@ -48,7 +48,8 @@ class ProfilingMiddleware:
             # For start message, editing the response headers
             if message["type"] == "http.response.start":
                 profiler.stop()
-                output_html = profiler.output_html().encode()
+                profiler.print(show_all=True)
+                output_html = profiler.output_html(timeline=True).encode()
                 # This modifies the "message" Dict in place, which is used by the "send" function below
                 response_headers = MutableHeaders(scope=message)
                 response_headers["content-encoding"] = ""

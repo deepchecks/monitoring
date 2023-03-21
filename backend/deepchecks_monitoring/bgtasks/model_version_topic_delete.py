@@ -1,4 +1,8 @@
+import threading
+from typing import Optional
+
 import pendulum as pdl
+from aiokafka.admin import AIOKafkaAdminClient
 from kafka.errors import KafkaError, UnknownTopicOrPartitionError
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
@@ -9,7 +13,7 @@ from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.utils import database
 
 __all__ = ['ModelVersionTopicDeletionWorker', 'insert_model_version_topic_delete_task']
@@ -30,6 +34,10 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     worker run than we know to recreate the task, so it will be run again later.
     """
 
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.kafka_admin: Optional[AIOKafkaAdminClient] = None
+
     def queue_name(self) -> str:
         return QUEUE_NAME
 
@@ -37,9 +45,21 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider):
-        model_version_id = task.params['model_version_id']
+        if self.kafka_admin is None:
+            with self.lock:
+                if self.kafka_admin is None:
+                    self.kafka_admin = AIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_params)
+                    await self.kafka_admin.start()
+
+        # Backward compatibility, remove in next release and replace with:
+        # model_version_id = task.params['id']
+        # entity = task.params['entity']
+        entity_id = task.params.get('id') or task.params['model_version_id']
+        entity = task.params.get('entity', 'model-version')
+        #####
+
         org_id = task.params['organization_id']
-        topic_names = [get_data_topic_name(org_id, model_version_id)]
+        topic_names = [get_data_topic_name(org_id, entity_id, entity)]
         reinsert_task = False
 
         organization_schema = (await session.execute(
@@ -54,15 +74,21 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
                 session=session,
                 schema_search_path=[organization_schema, 'public']
             )
-            model_version = await session.scalar(select(ModelVersion).where(ModelVersion.id == model_version_id))
+            if entity == 'model-version':
+                ingested_entity = await session.scalar(select(ModelVersion).where(ModelVersion.id == entity_id))
+            elif entity == 'model':
+                ingested_entity = await session.scalar(select(Model).where(Model.id == entity_id))
+            else:
+                raise ValueError(f'Unknown entity {entity}')
+
             # Check conditions to remove topic
-            remove_topic = (model_version is None or
-                            (model_version.last_update_time < pdl.now().subtract(hours=3) and
-                             model_version.ingestion_offset == model_version.topic_end_offset))
+            remove_topic = (ingested_entity is None or
+                            (ingested_entity.last_update_time < pdl.now().subtract(hours=3) and
+                             ingested_entity.ingestion_offset == ingested_entity.topic_end_offset))
 
         if remove_topic:
             try:
-                resources_provider.kafka_admin.delete_topics(topic_names)
+                await self.kafka_admin.delete_topics(topic_names)
             except UnknownTopicOrPartitionError:
                 pass
             except KafkaError:
@@ -74,10 +100,10 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         await session.execute(delete(Task).where(Task.id == task.id))
 
         if reinsert_task:
-            await insert_model_version_topic_delete_task(org_id, model_version_id, session)
+            await insert_model_version_topic_delete_task(org_id, id, entity, session)
 
 
-async def insert_model_version_topic_delete_task(organization_id, model_version_id, session):
+async def insert_model_version_topic_delete_task(organization_id, entity_id, entity, session):
     """Insert task to check delete kafka topics.
 
     We do this when new topic is created in the data ingestion, and inside the worker itself if there was kafka error
@@ -91,7 +117,8 @@ async def insert_model_version_topic_delete_task(organization_id, model_version_
     # By adding the floored timestamp the "created task" in server will have different name than the task being deleted
     # by the worker
     floored_now = now - now % DELAY
-    params = {'organization_id': organization_id, 'model_version_id': model_version_id}
-    values = dict(name=f'{organization_id}:{model_version_id}:{floored_now}', bg_worker_task=QUEUE_NAME, params=params)
+    params = {'organization_id': organization_id, 'id': entity_id, 'entity': entity}
+    values = dict(name=f'{organization_id}:{entity}:{entity_id}:{floored_now}', bg_worker_task=QUEUE_NAME,
+                  params=params)
 
     await session.execute(insert(Task).values(values).on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))

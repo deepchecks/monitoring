@@ -117,7 +117,6 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 timestamp, label_col = 'datestamp', 'price'
 _, prod_data = load_data(data_format='DataFrame')
 _, prod_predictions = load_pre_calculated_prediction()
-# If labels arrive along with the data it is possible to upload them directly via the labels param.
 model_version.log_batch(sample_ids=prod_data.index,
                         data=prod_data.drop([timestamp, label_col], axis=1),
                         timestamps=prod_data[timestamp], predictions=prod_predictions)
@@ -127,9 +126,10 @@ model_version.log_batch(sample_ids=prod_data.index,
 # -------------------
 # In many real world scenarios, the labels of the data are only available at a later time. We can update them
 # in hindsight using the global sample ids.
+# The labels are global to the model, and not specific to a version. Therefore, to upload them we need the model client.
 
-model_version.update_batch(sample_ids=prod_data.index, labels=prod_data[label_col])
-
+model_client = dc_client.get_or_create_model(model_name)
+model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label_col])
 
 #%%
 # The Application

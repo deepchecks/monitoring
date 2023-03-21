@@ -24,7 +24,7 @@ import sentry_sdk
 from deepchecks_monitoring import __version__
 from deepchecks_monitoring.bgtasks.core import TaskStatus
 from deepchecks_monitoring.public_models import Organization, User
-from deepchecks_monitoring.schema_models import ModelVersion
+from deepchecks_monitoring.schema_models import Model, ModelVersion
 
 if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime
@@ -281,24 +281,24 @@ class DataIngetionInstrumentor:
 
     def __init__(self, data_ingestion_backend_type: t.Type["DataIngestionBackend"]):
         self.data_ingestion_backend_type = data_ingestion_backend_type
-        self.original_log_or_update = self.data_ingestion_backend_type.log_or_update
+        self.original_log_samples = self.data_ingestion_backend_type.log_samples
+        self.original_log_labels = self.data_ingestion_backend_type.log_labels
 
     def instrument(self):
         """Instrument fo the data ingestion backend."""
 
-        @wraps(self.data_ingestion_backend_type.log_or_update)
-        async def log_or_update(
+        @wraps(self.data_ingestion_backend_type.log_samples)
+        async def log_samples(
             data_ingestion_backend: "DataIngestionBackend",
             model_version: ModelVersion,
             data: t.List[t.Dict[str, t.Any]],
             session: "AsyncSession",
             user: User,
-            action: t.Literal["log", "update"],
             log_time: "PendulumDateTime",
         ):
             settings = data_ingestion_backend.resources_provider.settings
 
-            with sentry_sdk.start_transaction(name="Data Ingestion"):
+            with sentry_sdk.start_transaction(name="Log Samples"):
                 sentry_sdk.set_context("deepchecks_monitoring", {
                     "version": __version__
                 })
@@ -320,15 +320,13 @@ class DataIngetionInstrumentor:
                     span.set_data("user.id", user.id)
                     span.set_data("user.organization_id", user.organization_id)
                     span.set_data("n_of_samples", len(data))
-                    span.set_data("action", action)
                     try:
-                        result = await self.original_log_or_update(
+                        result = await self.original_log_samples(
                             data_ingestion_backend,
                             model_version,
                             data,
                             session,
                             user,
-                            action,
                             log_time
                         )
                     except Exception as error:
@@ -338,10 +336,59 @@ class DataIngetionInstrumentor:
                     else:
                         return result
 
-        self.data_ingestion_backend_type.log_or_update = log_or_update
+        @wraps(self.data_ingestion_backend_type.log_labels)
+        async def log_labels(
+                data_ingestion_backend: "DataIngestionBackend",
+                model: Model,
+                data: t.List[t.Dict[str, t.Any]],
+                session: "AsyncSession",
+                user: User,
+        ):
+            settings = data_ingestion_backend.resources_provider.settings
+
+            with sentry_sdk.start_transaction(name="Log Labels"):
+                sentry_sdk.set_context("deepchecks_monitoring", {
+                    "version": __version__
+                })
+                sentry_sdk.set_context("kafka", {
+                    "host": settings.kafka_host,
+                    "username": settings.kafka_username,
+                    "security_protocol": settings.kafka_security_protocol,
+                    "max_metadata_age": settings.kafka_max_metadata_age,
+                    "replication_factor": settings.kafka_replication_factor,
+                    "sasl_mechanism": settings.kafka_sasl_mechanism,
+                })
+                sentry_sdk.set_context("redis", {
+                    "uri": settings.redis_uri
+                })
+                sentry_sdk.set_context("database", {
+                    "uri": settings.database_uri
+                })
+                with sentry_sdk.start_span(op="DataIngestionBackend.log_or_update") as span:
+                    span.set_data("user.id", user.id)
+                    span.set_data("user.organization_id", user.organization_id)
+                    span.set_data("n_of_samples", len(data))
+                    try:
+                        result = await self.original_log_labels(
+                            data_ingestion_backend,
+                            model,
+                            data,
+                            session,
+                            user
+                        )
+                    except Exception as error:
+                        span.set_status(SpanStatus.FAILED)
+                        sentry_sdk.capture_exception(error)
+                        raise
+                    else:
+                        return result
+
+        self.data_ingestion_backend_type.log_samples = log_samples
+        self.data_ingestion_backend_type.log_labels = log_labels
 
     def uninstrument(self):
-        self.data_ingestion_backend_type.log_or_update = self.original_log_or_update
+        self.data_ingestion_backend_type.log_samples = self.original_log_samples
+        self.data_ingestion_backend_type.log_labels = self.original_log_labels
 
 
 class TaskRunerInstrumentor:

@@ -45,7 +45,7 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
@@ -542,10 +542,10 @@ async def run_check_group_by_feature(
 
     # Get all data count
     data_table = model_version.get_monitor_table(session)
-    count = (await session.execute(select(func.count())
-                                   .where(monitor_options.sql_all_filters())
-                                   .where(not check.is_label_required or data_table.c[SAMPLE_LABEL_COL].isnot(None))
-                                   .select_from(data_table))).scalar()
+    count_query = select(func.count()).where(monitor_options.sql_all_filters()).select_from(data_table)
+    if check.is_label_required:
+        count_query = model_version.model.filter_labels_exist(count_query, data_table)
+    count = (await session.execute(count_query)).scalar()
     if count == 0:
         raise NotFound('No data was found for given filters and dates')
 
@@ -599,6 +599,7 @@ async def run_check_group_by_feature(
         test_session, ref_session = load_data_for_check(model_version, session, top_feat,
                                                         monitor_options.add_filters(f['filters']),
                                                         with_reference=check.is_reference_required, with_test=True,
+                                                        with_labels=check.is_label_required,
                                                         filter_labels_exist=check.is_label_required)
         # The test info is used for caching purposes so need to fill it here
         test_session_info = {'start': None, 'end': None, 'query': test_session}
@@ -647,6 +648,7 @@ async def get_check_display(
 
     test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
                                                     with_reference=check.is_reference_required, with_test=True,
+                                                    with_labels=check.is_label_required,
                                                     filter_labels_exist=check.is_label_required)
     # The test info is used for caching purposes so need to fill it here
     test_session_info = {'start': None, 'end': None, 'query': test_session}

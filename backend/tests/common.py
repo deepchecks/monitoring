@@ -1160,20 +1160,21 @@ class TestAPI:
         expected_status.assert_response_status(response)
         return response
 
-    def update_samples(
+    def upload_labels(
         self,
-        model_version_id: int,
-        samples: t.List[Payload],
+        model_id: int,
+        data: t.List[Payload],
         expected_status: ExpectedStatus = (200, 299)
-    ):
+    ) -> httpx.Response:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        response = t.cast(httpx.Response, self.api.update_samples(
-            model_version_id=model_version_id,
-            samples=samples,
+        response = t.cast(httpx.Response, self.api.log_labels(
+            model_id=model_id,
+            data=data,
             raise_on_status=False
         ))
         expected_status.assert_response_status(response)
         return response
+
 
     # TODO: consider adding corresponding method to sdk API class
     def execute_check_for_window(
@@ -1496,32 +1497,39 @@ def upload_classification_data(
     id_prefix: str = "",
     is_labeled: bool = True,
     with_proba: bool = True,
-    samples_per_date: int = 1
+    samples_per_date: int = 1,
+    model_id: int = None,
 ):
     if daterange is None:
         curr_time = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
         day_before_curr_time = t.cast("PendulumDateTime", curr_time - pdl.duration(days=1))
         daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 
+    if is_labeled and model_id is None:
+        raise ValueError("model_id must be provided if is_labeled is True")
+
     data = []
+    labels = []
 
     for i, date in enumerate(daterange):
         for j in range(samples_per_date):
             time = date.isoformat()
-            label = ("2" if i != 1 else "1") if is_labeled else None
             sample = {
                 "_dc_sample_id": f"{id_prefix}{i}_{j}",
                 "_dc_time": time,
                 "_dc_prediction": "2" if i % 2 else "1",
-                "_dc_label": label,
                 "a": 10 + i * j,
                 "b": "ppppp",
             }
             if with_proba:
                 sample["_dc_prediction_probabilities"] = [0.1, 0.3, 0.6] if i % 2 else [0.1, 0.6, 0.3]
             data.append(sample)
+            if is_labeled:
+                labels.append({"_dc_sample_id": sample["_dc_sample_id"], "_dc_label": "2" if i != 1 else "1"})
 
     response = api.upload_samples(model_version_id=model_version_id, samples=data)
+    if labels:
+        api.upload_labels(model_id=model_id, data=labels)
     return response, daterange[0], daterange[-1]
 
 # def send_reference_request(client, model_version_id, dicts: list):

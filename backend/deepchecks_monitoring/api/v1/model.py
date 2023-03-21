@@ -149,6 +149,7 @@ async def get_create_model(
     ----------
     model_schema : ModelCreationSchema
         Schema of model to create.
+    user
     session : AsyncSession
         SQLAlchemy session.
     resources_provider: ResourcesProvider
@@ -183,6 +184,15 @@ async def get_create_model(
         model = Model(notes=notes, **data)
         session.add(model)
         await session.flush()
+
+        # Create model tables
+        labels_table = model.get_sample_labels_table(session)
+        versions_map_table = model.get_samples_versions_map_table(session)
+
+        connection = await session.connection()
+        await connection.run_sync(labels_table.metadata.create_all)
+        await connection.run_sync(versions_map_table.metadata.create_all)
+
     return {"id": model.id, "name": model.name}
 
 
@@ -250,7 +260,6 @@ async def _retrieve_models_data_ingestion(
     def sample_label(columns):
         return getattr(columns, SAMPLE_LABEL_COL)
 
-    model_identifier_name = "id"
     models_query = select(Model).options(selectinload(Model.versions))
 
     if model_identifier is not None:
@@ -262,18 +271,9 @@ async def _retrieve_models_data_ingestion(
             ))
         ]
     else:
+        model_identifier_name = "id"
         result = await session.execute(models_query)
         models = t.cast(t.List[Model], result.scalars().all())
-
-    # TODO: move query creation logic into Model type definition
-    tables = [
-        (getattr(model, model_identifier_name), version.get_monitor_table(session))
-        for model in models
-        for version in model.versions
-    ]
-
-    if not tables:
-        return {}
 
     if time_filter == TimeUnit.HOUR:
         agg_time_unit = "minute"
@@ -282,27 +282,50 @@ async def _retrieve_models_data_ingestion(
     else:
         agg_time_unit = "day"
 
+    if not models:
+        return {}
+
     end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
-    union = union_all(*(
-        select(
-            literal(model_id).label("model_id"),
-            sample_id(table.c).label("sample_id"),
-            func.cast(sample_label(table.c), SQLString).label("sample_label"),
-            truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
-        ).where(is_within_dateframe(
-            sample_timestamp(table.c),
-            end_time
-        )).distinct()
-        for model_id, table in tables
-    ))
+    all_models_queries = []
+
+    for model in models:
+        tables = [version.get_monitor_table(session) for version in model.versions]
+        if not tables:
+            continue
+
+        labels_table = model.get_sample_labels_table(session)
+        # Get all samples within time window from all the versions
+        data_query = union_all(*(
+            select(
+                sample_id(table.c).label("sample_id"),
+                truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
+            ).where(is_within_dateframe(
+                sample_timestamp(table.c),
+                end_time
+            )).distinct()  # TODO why distinct?
+            for table in tables)
+        )
+        # Join with labels table
+        all_models_queries.append(
+            select(literal(getattr(model, model_identifier_name)).label("model_id"),
+                   data_query.c.sample_id,
+                   data_query.c.timestamp,
+                   func.cast(sample_label(labels_table.c), SQLString).label("label"))
+            .join(labels_table, onclause=data_query.c.sample_id == sample_id(labels_table.c), isouter=True)
+        )
+
+    if not all_models_queries:
+        return {}
+
+    union = union_all(*all_models_queries)
 
     rows = (await session.execute(
         select(
             union.c.model_id,
             union.c.timestamp,
             func.count(union.c.sample_id).label("count"),
-            func.count(union.c.sample_label).label("label_count"))
+            func.count(func.cast(union.c.label, SQLString)).label("label_count"))
         .group_by(union.c.model_id, union.c.timestamp)
         .order_by(union.c.model_id, union.c.timestamp, "count"),
     )).fetchall()
@@ -477,15 +500,16 @@ async def delete_model(
         user: User = Depends(auth.AdminUser()),
 ):
     """Delete model instance."""
-    model = await session.fetchone_or_404(
+    model: Model = await session.fetchone_or_404(
         select(Model)
         .where(model_identifier.as_expression)
         .options(joinedload(Model.versions)),
         message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
     )
 
-    tables = []
     organization_schema = user.organization.schema_name
+    tables = [f'"{organization_schema}"."{model.get_sample_labels_table_name()}"',
+              f'"{organization_schema}"."{model.get_samples_versions_map_table_name()}"']
 
     for version in model.versions:
         tables.append(f'"{organization_schema}"."{version.get_monitor_table_name()}"')

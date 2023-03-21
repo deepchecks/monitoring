@@ -14,7 +14,7 @@ import pandas as pd
 import pendulum as pdl
 import pytest
 from deepchecks_client import DeepchecksClient, TaskType
-from deepchecks_client.tabular.client import DeepchecksModelVersionClient
+from deepchecks_client.tabular.client import DeepchecksModelClient, DeepchecksModelVersionClient
 from hamcrest import assert_that, calling, raises
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,21 +33,18 @@ async def test_classification_log(
         sample_id='1',
         prediction='2',
         prediction_proba=[0.1, 0.3, 0.6],
-        label=2,
         values={'a': 2, 'b': '2', 'c': 1}
     )
     multiclass_model_version_client.log_sample(
         sample_id='2',
         prediction='1',
         prediction_proba=[0.1, 0.6, 0.1],
-        label=2,
         values={'a': 3, 'b': '4', 'c': -1}
     )
     multiclass_model_version_client.log_sample(
         sample_id='3',
         prediction='0',
         prediction_proba=[0.1, 0.6, 0.1],
-        label=1,
         values={'a': 2, 'b': '0', 'c': 0}
     )
 
@@ -59,9 +56,8 @@ async def test_classification_log(
     )
 
     stats = model_version.statistics
-    assert set(stats['_dc_label']['values']) == set(['1', '2'])
-    assert set(stats['_dc_prediction']['values']) == set(['0', '1', '2'])
-    assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert set(stats['_dc_prediction']['values']) == {'0', '1', '2'}
+    assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
 
@@ -88,19 +84,16 @@ async def test_regression_w_date_log(
     version_client.log_sample(
         sample_id='1',
         prediction=2,
-        label=1,
         values={'a': 2, 'b': '2', 'd': curr_time}
     )
     version_client.log_sample(
         sample_id='2',
         prediction=2,
-        label=2,
         values={'a': 3, 'b': '4', 'd': curr_time.add(days=-1)}
     )
     version_client.log_sample(
         sample_id='3',
         prediction=0,
-        label=1,
         values={'a': 3, 'b': '0', 'd': curr_time.add(days=2)}
     )
 
@@ -112,9 +105,8 @@ async def test_regression_w_date_log(
     )
 
     stats = model_version.statistics
-    assert stats['_dc_label'] == {'max': 2, 'min': 1}
     assert stats['_dc_prediction'] == {'max': 2, 'min': 0}
-    assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['d'] == {'max': curr_time.add(days=2).timestamp(),
                           'min': curr_time.add(days=-1).timestamp()}
@@ -144,19 +136,16 @@ async def test_classification_log_without_probas(
     version_client.log_sample(
         sample_id='1',
         prediction='2',
-        label=2,
         values={'a': 2, 'b': '2', 'c': 1}
     )
     version_client.log_sample(
         sample_id='2',
         prediction='1',
-        label=2,
         values={'a': 3, 'b': '4', 'c': -1}
     )
     version_client.log_sample(
         sample_id='3',
         prediction='0',
-        label=1,
         values={'a': 2, 'b': '0', 'c': 0}
     )
     version_client.send()
@@ -164,7 +153,6 @@ async def test_classification_log_without_probas(
     # Assert
     model_version = await async_session.get(ModelVersion, version['id'])
     stats = model_version.statistics
-    assert set(stats['_dc_label']['values']) == {'1', '2'}
     assert set(stats['_dc_prediction']['values']) == {'0', '1', '2'}
     assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
@@ -179,19 +167,16 @@ async def test_regression_log(
     regression_model_version_client.log_sample(
         sample_id='1',
         prediction='2',
-        label=2,
         values={'a': 2, 'b': '2', 'c': 1}
     )
     regression_model_version_client.log_sample(
         sample_id='2',
         prediction='1',
-        label=2,
         values={'a': 3, 'b': '4', 'c': -1}
     )
     regression_model_version_client.log_sample(
         sample_id='3',
         prediction='0',
-        label=1,
         values={'a': 2, 'b': '0', 'c': 0}
     )
     regression_model_version_client.send()
@@ -202,9 +187,8 @@ async def test_regression_log(
     )
 
     stats = model_version.statistics
-    assert stats['_dc_label'] == {'max': 2.0, 'min': 1.0}
     assert stats['_dc_prediction'] == {'max': 2.0, 'min': 0.0}
-    assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
 
@@ -231,8 +215,7 @@ async def test_classification_batch_log(
             [0.1, 0.3, 0.6],
             [0.1, 0.6, 0.1],
             [0.1, 0.6, 0.1]
-        ]),
-        labels=np.array([2, 2, 1])
+        ])
     )
 
     model_version = await async_session.get(
@@ -241,9 +224,8 @@ async def test_classification_batch_log(
     )
 
     stats = model_version.statistics
-    assert set(stats['_dc_label']['values']) == set(['1', '2'])
-    assert set(stats['_dc_prediction']['values']) == set(['0', '1', '2'])
-    assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert set(stats['_dc_prediction']['values']) == {'0', '1', '2'}
+    assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
 
@@ -251,6 +233,7 @@ async def test_classification_batch_log(
 @pytest.mark.asyncio
 async def test_regression_batch_log(
     regression_model_version_client: DeepchecksModelVersionClient,
+    regression_model_client: DeepchecksModelClient,
     async_session: AsyncSession
 ):
     regression_model_version_client.log_batch(
@@ -265,9 +248,9 @@ async def test_regression_batch_log(
             pdl.now().int_timestamp,
             pdl.now().int_timestamp
         ]),
-        predictions=np.array(['2', '1', '0']),
-        labels=np.array([2, 2, 1])
+        predictions=np.array(['2', '1', '0'])
     )
+    regression_model_client.log_batch_labels(['1', '2', '3'], [2, 2, 1])
 
     model_version = await async_session.get(
         ModelVersion,
@@ -275,14 +258,14 @@ async def test_regression_batch_log(
     )
 
     stats = model_version.statistics
-    assert stats['_dc_label'] == {'max': 2.0, 'min': 1.0}
     assert stats['_dc_prediction'] == {'max': 2.0, 'min': 0.0}
-    assert set(stats['b']['values']) == set(['4', '0', '2'])
+    assert set(stats['b']['values']) == {'4', '0', '2'}
     assert stats['a'] == {'max': 3, 'min': 2}
     assert stats['c'] == {'max': 1, 'min': -1}
 
 
-def test_regression_batch_update_only_label(regression_model_version_client: DeepchecksModelVersionClient):
+def test_regression_batch_update_only_label(regression_model_version_client: DeepchecksModelVersionClient,
+                                            regression_model_client: DeepchecksModelClient):
     time = pdl.now().int_timestamp
 
     regression_model_version_client.log_batch(
@@ -299,7 +282,7 @@ def test_regression_batch_update_only_label(regression_model_version_client: Dee
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
-    regression_model_version_client.update_batch(
+    regression_model_client.log_batch_labels(
         sample_ids=np.array(['1', '2', '3']),
         labels=np.array([1, 2, 1])
     )
@@ -308,7 +291,8 @@ def test_regression_batch_update_only_label(regression_model_version_client: Dee
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
 
-def test_regression_single_update(regression_model_version_client: DeepchecksModelVersionClient):
+def test_regression_single_update(regression_model_version_client: DeepchecksModelVersionClient,
+                                  regression_model_client: DeepchecksModelClient):
     time = pdl.now().int_timestamp
 
     regression_model_version_client.log_batch(
@@ -325,13 +309,15 @@ def test_regression_single_update(regression_model_version_client: DeepchecksMod
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 0}
 
-    regression_model_version_client.update_sample(sample_id=str(1), label=1)
+    regression_model_client.log_label(sample_id='1', label=1)
     regression_model_version_client.send()
+    regression_model_client.send()
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 1}
 
 
-def test_regression_single_update_none(regression_model_version_client: DeepchecksModelVersionClient):
+def test_regression_single_update_none(regression_model_version_client: DeepchecksModelVersionClient,
+                                       regression_model_client: DeepchecksModelClient):
     time = pdl.now().int_timestamp
 
     regression_model_version_client.log_batch(
@@ -343,19 +329,22 @@ def test_regression_single_update_none(regression_model_version_client: Deepchec
         ]),
         timestamps=np.array([time, time, time]),
         predictions=np.array(['2', '1', '0']),
-        labels=np.array(['2', None, '0'])
     )
+
+    labels = np.array(['2', None, '0'])
+    regression_model_client.log_batch_labels(sample_ids=['1', '2', '3'], labels=labels)
+    regression_model_client.send()
 
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 2}
 
-    regression_model_version_client.update_sample(sample_id=str(2), label=1)
-    regression_model_version_client.send()
+    regression_model_client.log_label(sample_id='2', label=1)
+    regression_model_client.send()
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
-    regression_model_version_client.update_sample(sample_id=str(1), label=1)
-    regression_model_version_client.send()
+    regression_model_client.log_label(sample_id='1', label=1)
+    regression_model_client.send()
     stats = regression_model_version_client.time_window_statistics(time - 1, time + 1)
     assert stats == {'num_samples': 3, 'num_labeled_samples': 3}
 
@@ -377,7 +366,6 @@ def test_batch_log_with_parameters_of_different_length(
                 {'a': 2, 'b': '0', 'c': 0},
             ]),
             predictions=np.array(['2', '1', '0', '0']),
-            labels=np.array([2, 2, 1, 1]),
             timestamps=np.array([
                 pdl.now().int_timestamp,
                 pdl.now().int_timestamp,
@@ -405,7 +393,6 @@ def test_classification_log_pass_probas_without_classes(
             sample_id='1',
             prediction='2',
             prediction_proba=[0.1, 0.3, 0.6],
-            label=2,
             values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
@@ -440,7 +427,6 @@ def test_classification_log_pass_probas_not_same_length_as_classes(
             sample_id='1',
             prediction='2',
             prediction_proba=[0.1, 0.3, 0.5, 0.1],
-            label=2,
             values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
@@ -473,7 +459,6 @@ def test_classification_log_pass_prediction_not_in_classes(
             sample_id='1',
             prediction='10',
             prediction_proba=[0.1, 0.3, 0.6],
-            label=2,
             values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(
@@ -501,7 +486,6 @@ def test_regression_log_sample_pass_proba(
             sample_id='1',
             prediction=10,
             prediction_proba=[0.1],
-            label=2,
             values={'a': 2, 'b': '2', 'c': 1}
         ),
         raises(

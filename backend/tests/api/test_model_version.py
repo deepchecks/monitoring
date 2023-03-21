@@ -208,7 +208,9 @@ def test_model_version_duplicate_creation_with_different_set_of_features(
 
 def test_time_window_statistics_retrieval(
     test_api: TestAPI,
-    classification_model_version: Payload
+    classification_model_version: Payload,
+    classification_model: Payload
+
 ):
     # Arrange
     sample = {"_dc_label": "2", "a": 11.1, "b": "ppppp", "_dc_prediction": "1"}
@@ -220,12 +222,13 @@ def test_time_window_statistics_retrieval(
     upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"],
     )
     upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
         is_labeled=False,
-        id_prefix="unlabeled"
+        id_prefix="unlabeled",
     )
 
     # Act
@@ -255,7 +258,8 @@ def test_number_of_samples_retrieval(
     )
     upload_classification_data(
         api=test_api,
-        model_version_id=classification_model_version["id"]
+        model_version_id=classification_model_version["id"],
+        is_labeled=False
     )
 
     # Act
@@ -311,9 +315,6 @@ def test_model_version_schema_retrieval(
                 "_dc_time": {
                     "type": "string",
                     "format": "date-time"
-                },
-                "_dc_label": {
-                    "type": ["string", "null"]
                 },
                 "_dc_sample_id": {
                     "type": "string"

@@ -20,7 +20,7 @@ from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
 from joblib import Parallel, delayed
-from sqlalchemy import VARCHAR, Table, func, select
+from sqlalchemy import VARCHAR, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
@@ -51,27 +51,19 @@ async def get_model_versions_for_time_range(session: AsyncSession,
     return await fetch_or_404(session, Model, id=model_id), []
 
 
-def create_model_version_select_object(mon_table: Table, columns: t.List[str], filter_label_exist) -> Select:
-    """Create model version select object."""
-    s = select([mon_table.c[col] for col in columns if col in mon_table.c])
-    if filter_label_exist:
-        s = s.where(mon_table.c[SAMPLE_LABEL_COL].isnot(None))
-    return s
-
-
-def random_sample(select_obj: Select, mon_table: Table, n_samples: int = DEFAULT_N_SAMPLES) -> Select:
+def random_sample(select_obj: Select, table, n_samples: int = DEFAULT_N_SAMPLES) -> Select:
     """Sample randomly on a select object by id/row number md5."""
     sampled_select_obj = select_obj
 
-    if SAMPLE_ID_COL in mon_table.c:
-        order_func = func.md5(mon_table.c[SAMPLE_ID_COL])
-    elif REFERENCE_SAMPLE_ID_COL in mon_table.c:
-        order_func = func.md5(func.cast(mon_table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR))
+    if SAMPLE_ID_COL in table.c:
+        order_func = func.md5(table.c[SAMPLE_ID_COL])
+    elif REFERENCE_SAMPLE_ID_COL in table.c:
+        order_func = func.md5(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR))
     else:
         name = (
-            mon_table.name
-            if not mon_table.schema
-            else f'{mon_table.schema}.{mon_table.name}'
+            table.schema
+            if not table.schema
+            else f'{table.schema}.{table.name}'
         )
         warnings.warn(
             f'Table "{name}" does not contain neither "{SAMPLE_ID_COL}" '
@@ -123,11 +115,12 @@ def dataframe_to_dataset_and_pred(
         'dataset_name': dataset_name
     }
 
-    if df[SAMPLE_LABEL_COL].isna().all():
-        df = df.drop(SAMPLE_LABEL_COL, axis=1)
-    else:
-        df = df.rename(columns={SAMPLE_LABEL_COL: 'label'})
-        dataset_params['label'] = 'label'
+    if SAMPLE_LABEL_COL in df.columns:
+        if df[SAMPLE_LABEL_COL].isna().all():
+            df = df.drop(SAMPLE_LABEL_COL, axis=1)
+        else:
+            df = df.rename(columns={SAMPLE_LABEL_COL: 'label'})
+            dataset_params['label'] = 'label'
 
     if SAMPLE_TS_COL in df.columns:
         dataset_params['datetime_name'] = SAMPLE_TS_COL
@@ -239,13 +232,14 @@ def get_results_for_model_versions_per_window(
     if jobs:
         # Do not want to use parallel for less than 3 jobs
         if len(jobs) <= 2:
-            job_results = [job[0](*job[1], **job[2]) for job in jobs]
+            jobs = [job[0](*job[1], **job[2]) for job in jobs]
         else:
-            job_results = Parallel(n_jobs=-1)(jobs)
+            jobs = Parallel(n_jobs=-1)(jobs)
+
         for model_version, version_results in model_results.items():
             for result in version_results:
                 if 'job_index' in result:
-                    result['result'] = job_results[result.pop('job_index')]
+                    result['result'] = jobs[result.pop('job_index')]
     return model_results
 
 

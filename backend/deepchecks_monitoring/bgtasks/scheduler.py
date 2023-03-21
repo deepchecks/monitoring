@@ -20,7 +20,7 @@ import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
 from asyncpg import SerializationError
-from sqlalchemy import Column, func, literal_column, select, text
+from sqlalchemy import Column, DateTime, MetaData, Table, Text, func, literal_column, select
 from sqlalchemy.dialects.postgresql import INTERVAL, insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -32,8 +32,9 @@ from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_TS_COL)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
+                                                             SAMPLE_PRED_COL, SAMPLE_TS_COL,
+                                                             get_predictions_columns_by_type)
 from deepchecks_monitoring.utils import database
 
 __all__ = ['AlertsScheduler']
@@ -115,7 +116,7 @@ class AlertsScheduler:
                 versions = (await session.execute(select(ModelVersion).options(load_only(ModelVersion.model_id))
                                                   .where(ModelVersion.end_time >= minimum_time,
                                                          ModelVersion.model_id == model.id))).scalars()
-                versions_windows = await get_versions_hour_windows(versions, session, minimum_time)
+                versions_windows = await get_versions_hour_windows(model, versions, session, minimum_time)
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
@@ -140,7 +141,7 @@ class AlertsScheduler:
                                 raise
 
 
-async def get_versions_hour_windows(versions, session, minimum_time) -> t.List[t.Dict[int, t.Dict]]:
+async def get_versions_hour_windows(model, versions, session, minimum_time) -> t.List[t.Dict[int, t.Dict]]:
     """Get windows data for all given versions starting from minimum time.
 
     Returns
@@ -149,21 +150,29 @@ async def get_versions_hour_windows(versions, session, minimum_time) -> t.List[t
         A list of dictionaries of hour (timestamp) to a dictionary window data
     """
     results = []
+    labels_table = model.get_sample_labels_table(session)
     for version in versions:
+        label_type = get_predictions_columns_by_type(model.task_type, False)[0][SAMPLE_PRED_COL].to_sqlalchemy_type()
+        # We don't need to load all columns, just initializing the needed columns
+        mon_table = Table(version.get_monitor_table_name(), MetaData(), Column(SAMPLE_ID_COL, Text),
+                          Column(SAMPLE_LOGGED_TIME_COL, DateTime(timezone=True)),
+                          Column(SAMPLE_TS_COL, DateTime(timezone=True)),
+                          Column(SAMPLE_PRED_COL, label_type))
         hour_window = literal_column(f'date_trunc(\'hour\', "{SAMPLE_TS_COL}") + interval \'1 hour\'')\
             .label('hour_window')
-        columns = [
-            hour_window,
-            func.count(Column(SAMPLE_PRED_COL)).label('count_predictions'),
-            func.count(Column(SAMPLE_LABEL_COL)).label('count_labels'),
-            func.max(Column(SAMPLE_LOGGED_TIME_COL)).label('max_logged_timestamp')
-        ]
+
         # The hour window represents the end of the hour, so we are looking for hour windows which are larger than the
         # minimum time. For example if minimum time is 2:00 We want the windows of 3:00 and above
-        records = (await session.execute(select(*columns).select_from(text(version.get_monitor_table_name()))
-                                         .where(hour_window > minimum_time)
-                                         .group_by(hour_window)
-                                         )).all()
+        query = select(
+            hour_window,
+            func.count(mon_table.c[SAMPLE_PRED_COL]).label('count_predictions'),
+            func.max(mon_table.c[SAMPLE_LOGGED_TIME_COL]).label('max_logged_timestamp'),
+            func.count(labels_table.c[SAMPLE_LABEL_COL]).label('count_labels')
+        ).join(labels_table, mon_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL], isouter=True)\
+            .where(hour_window > minimum_time)\
+            .group_by(hour_window)
+
+        records = (await session.execute(query)).all()
         results.append({int(r['hour_window'].timestamp()): r for r in records})
     return results
 

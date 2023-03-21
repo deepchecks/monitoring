@@ -14,17 +14,16 @@ from client.deepchecks_client.tabular.client import DeepchecksModelVersionClient
 
 
 @pytest.mark.asyncio
-async def test_regression_log(regression_model_version_client: DeepchecksModelVersionClient):
+async def test_regression_log(regression_model_version_client: DeepchecksModelVersionClient,
+                              regression_model_client):
     regression_model_version_client.log_sample(
         sample_id='1',
         prediction='2',
-        label=2,
         values=dict(a=2, b='2', c=1)
     )
     regression_model_version_client.log_sample(
         sample_id='2',
         prediction='1',
-        label=2,
         values=dict(a=3, b='4', c=-1)
     )
     regression_model_version_client.log_sample(
@@ -38,14 +37,12 @@ async def test_regression_log(regression_model_version_client: DeepchecksModelVe
     regression_model_version_client.log_sample(
         sample_id='4',
         prediction='2',
-        label=2,
         timestamp=time.int_timestamp,
         values=dict(a=2, b='2', c=1),
     )
     regression_model_version_client.log_sample(
         sample_id='5',
         prediction='1',
-        label=2,
         timestamp=time.int_timestamp,
         values=dict(a=3, b='4', c=-1),
     )
@@ -57,6 +54,10 @@ async def test_regression_log(regression_model_version_client: DeepchecksModelVe
     )
 
     regression_model_version_client.send()
+
+    regression_model_client.log_batch_labels(['1', '2', '4', '5'], ['2', '2', '2', '2'])
+    regression_model_client.send()
+
     stats = regression_model_version_client.time_window_statistics()
     assert stats == {'num_samples': 6, 'num_labeled_samples': 4}
 

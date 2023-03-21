@@ -13,14 +13,15 @@ import typing as t
 
 import sqlalchemy as sa
 
-from deepchecks_monitoring.schema_models.model import TaskType
+from deepchecks_monitoring.schema_models.task_type import TaskType
 
 __all__ = [
     "SAMPLE_ID_COL", "SAMPLE_TS_COL",
     "SAMPLE_LABEL_COL", "SAMPLE_PRED_PROBA_COL",
     "SAMPLE_PRED_COL", "SAMPLE_LOGGED_TIME_COL",
     "REFERENCE_SAMPLE_ID_COL", "ColumnType",
-    "get_model_columns_by_type", "column_types_to_table_columns"
+    "get_predictions_columns_by_type", "column_types_to_table_columns",
+    "get_label_column_type"
 ]
 
 
@@ -76,7 +77,7 @@ class ColumnType(str, enum.Enum):
         }
         schema = types_map[self]
         if nullable:
-            schema["type"] = (schema["type"], "null")
+            schema["type"] = [schema["type"], "null"]
         if min_items and self == ColumnType.ARRAY_FLOAT:
             schema["minItems"] = min_items
         if max_items and self == ColumnType.ARRAY_FLOAT:
@@ -99,7 +100,8 @@ class ColumnType(str, enum.Enum):
         return types_map[self]
 
 
-def get_model_columns_by_type(task_type: TaskType, have_classes: bool) -> t.Tuple[t.Dict[str, ColumnType], t.List]:
+def get_predictions_columns_by_type(task_type: "TaskType", have_classes: bool) \
+        -> t.Tuple[t.Dict[str, ColumnType], t.List]:
     """Get deepchecks' saved columns to be used in json schema based on given task type.
 
     Parameters
@@ -114,21 +116,37 @@ def get_model_columns_by_type(task_type: TaskType, have_classes: bool) -> t.Tupl
     """
     if task_type == TaskType.REGRESSION:
         return {
-            SAMPLE_LABEL_COL: ColumnType.NUMERIC,
             SAMPLE_PRED_COL: ColumnType.NUMERIC
         }, [SAMPLE_PRED_COL]
     elif task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
         if have_classes:
             return {
-                SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
                 SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
                 SAMPLE_PRED_PROBA_COL: ColumnType.ARRAY_FLOAT
             }, [SAMPLE_PRED_COL]
         else:
             return {
-                SAMPLE_LABEL_COL: ColumnType.CATEGORICAL,
                 SAMPLE_PRED_COL: ColumnType.CATEGORICAL,
             }, [SAMPLE_PRED_COL]
+    else:
+        raise Exception(f"Not supported task type {task_type}")
+
+
+def get_label_column_type(task_type: "TaskType") -> ColumnType:
+    """Get column type for label on given task type.
+
+    Parameters
+    ----------
+    task_type
+
+    Returns
+    -------
+    ColumnType
+    """
+    if task_type == TaskType.REGRESSION:
+        return ColumnType.NUMERIC
+    elif task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
+        return ColumnType.CATEGORICAL
     else:
         raise Exception(f"Not supported task type {task_type}")
 

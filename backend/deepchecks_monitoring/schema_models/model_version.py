@@ -31,7 +31,7 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models import Model  # pylint: disable=unused-import
     from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError  # pylint: disable=unused-import
 
-__all__ = ["ModelVersion", "ColumnMetadata", "update_statistics_from_sample"]
+__all__ = ["ModelVersion", "ColumnMetadata", "update_statistics_from_sample", "get_monitor_table_name"]
 
 CATEGORICAL_STATISTICS_VALUES_LIMIT = 200
 
@@ -121,7 +121,7 @@ class ModelVersion(Base):
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""
-        return f"model_{self.model_id}_monitor_data_{self.id}"
+        return get_monitor_table_name(self.model_id, self.id)
 
     def get_monitor_table(self, connection) -> Table:
         """Get table object of the monitor table."""
@@ -243,6 +243,10 @@ def unify_statistics(original_statistics: dict, added_statistics: dict):
                 values = original_statistics[col]["values"]
             unified_dict[col]["values"] = values
     return unified_dict
+
+
+def get_monitor_table_name(model_id, model_version_id):
+    return f"model_{model_id}_monitor_data_{model_version_id}"
 
 
 # ~~~~~ Automatic triggers to delete the data tables when a model version is deleted ~~~~~~

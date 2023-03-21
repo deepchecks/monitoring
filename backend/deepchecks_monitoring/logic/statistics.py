@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions
 from deepchecks_monitoring.schema_models import ModelVersion
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, ColumnType
+from deepchecks_monitoring.schema_models.column_type import ColumnType
 
 __all__ = ['bins_for_feature']
 
@@ -55,9 +55,11 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
         feature_quantiles_cte = (select([feature_column,
                                         func.cume_dist().over(order_by=feature_column).label('quantile')])
                                  .select_from(table)
-                                 .where(monitor_options.sql_all_filters())
-                                 .where(not filter_labels_exist or table.c[SAMPLE_LABEL_COL].isnot(None))
-                                 .cte('feature_with_quantile'))
+                                 .where(monitor_options.sql_all_filters()))
+        if filter_labels_exist:
+            feature_quantiles_cte = model_version.model.filter_labels_exist(feature_quantiles_cte, table)
+        feature_quantiles_cte = feature_quantiles_cte.cte('feature_with_quantile')
+
         # Handle the case when quantile is 1, in this case the floor(quantile * bins number) doesn't work so setting it
         # into the last bin manually (bins number - 1).
         # For nulls the window function returns 1, so they will get the last bin + 1.
@@ -79,9 +81,10 @@ async def bins_for_feature(model_version: ModelVersion, table, feature: str, ses
             func.count().label('count')
         ]).select_from(table)
             .where(monitor_options.sql_all_filters())
-            .where(not filter_labels_exist or table.c[SAMPLE_LABEL_COL].isnot(None))
             .group_by(feature_column)
             .order_by(desc(text('count'))).limit(num_bins))
+        if filter_labels_exist:
+            query = model_version.model.filter_labels_exist(query, table, filter_not_null=True)
         bins = (await session.execute(query)).all()
         return feature_type, bins
     else:

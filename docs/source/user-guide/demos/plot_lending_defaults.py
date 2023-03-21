@@ -214,13 +214,20 @@ prod_prediction_probas = model.predict_proba(prod_data[train_dataset.features].f
 # We'll also convert out pandas datetime column to int timestamps (seconds since epoch), which is the time format
 # expected by deepchecks.
 
-# If labels arrive along with the data it is possible to upload them directly via the labels param.
 model_version.log_batch(sample_ids=prod_data['id'],
                         data=prod_data.drop(['issue_d', 'id', 'loan_status'], axis=1),
                         timestamps=(prod_data['issue_d'].astype(int) // 1e9).astype(int),
                         predictions=prod_predictions,
-                        prediction_probas=prod_prediction_probas,
-                        labels=prod_data['loan_status'])
+                        prediction_probas=prod_prediction_probas)
+
+# %%
+# Uploading The Labels
+# --------------------
+# The labels are global to the model, and not specific to a version. Therefore, to upload them we need the model client.
+# You can do this directly after uploading the predictions, or at any other time.
+
+model_client = dc_client.get_or_create_model(model_name)
+model_client.log_batch_labels(sample_ids=prod_data['id'], labels=prod_data['loan_status'])
 
 # %%
 # Making Sure Your Data Has Arrived
@@ -303,7 +310,7 @@ labels_to_update = [87609, 87640, 87751, 93415, 87574, 87446, 87703, 87627, 9316
                     87669, 87608, 87743, 87650, 87587, 87545, 87657, 87702, 87398,
                     87673, 87408, 87685, 92032, 88162, 87515, 87723, 87537, 87710,
                     87761, 87445, 87554, 87463, 87521, 87659, 87569]
-model_version.update_batch(sample_ids=labels_to_update, labels=[0] * len(labels_to_update))
+model_client.log_batch_labels(sample_ids=labels_to_update, labels=[0] * len(labels_to_update))
 
 # %%
 #

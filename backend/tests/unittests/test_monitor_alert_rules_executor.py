@@ -71,7 +71,7 @@ async def test_monitor_executor(
     daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 
     for version in versions[:2]:
-        upload_classification_data(test_api, version["id"], daterange=daterange)
+        upload_classification_data(test_api, version["id"], daterange=daterange, model_id=classification_model["id"])
 
     result: t.List[Alert] = await execute_monitor(
         monitor_id=monitor["id"],
@@ -116,7 +116,8 @@ async def test_alert_scheduling(
 
     past_date = pdl.now() - pdl.duration(days=1)
     daterange = [past_date.add(hours=h) for h in range(1, 24, 2)]
-    upload_classification_data(test_api, model_version["id"], daterange=daterange, with_proba=False)
+    upload_classification_data(test_api, model_version["id"], daterange=daterange, with_proba=False,
+                               model_id=classification_model["id"])
 
     check = test_api.create_check(classification_model["id"],
                                   {"config": SingleDatasetPerformance().config(include_version=False)})
@@ -267,7 +268,7 @@ async def test_monitor_executor_is_using_cache(
 
     model_version = test_api.create_model_version(classification_model["id"], dict(name="v1", classes=["0", "1", "2"]))
 
-    upload_classification_data(test_api, model_version["id"])
+    upload_classification_data(test_api, model_version["id"], model_id=classification_model["id"])
 
     now = pdl.now()
     organization_id = user.organization.id

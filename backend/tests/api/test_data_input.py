@@ -183,9 +183,10 @@ async def test_samples_upload_with_integer_value_overflow(
 
 
 @pytest.mark.asyncio
-async def test_update_data(
+async def test_log_labels(
     test_api: TestAPI,
     classification_model_version: Payload,
+    classification_model: Payload,
     async_session: AsyncSession
 ):
     # Arrange
@@ -202,12 +203,11 @@ async def test_update_data(
         }]
     )
     # Act
-    test_api.update_samples(
-        model_version_id=classification_model_version["id"],
-        samples=[{
+    test_api.upload_labels(
+        model_id=classification_model["id"],
+        data=[{
             "_dc_sample_id": "a000",
             "_dc_label": "1",
-            "c": 0
         }]
     )
     # Assert
@@ -215,49 +215,21 @@ async def test_update_data(
 
 
 @pytest.mark.asyncio
-async def test_update_of_not_existing_samples(
+async def test_log_labels_non_existing_samples(
     test_api: TestAPI,
-    classification_model_version: Payload,
+    classification_model: Payload,
     async_session: AsyncSession
 ):
     # Arrange
-    test_api.update_samples(
-        model_version_id=classification_model_version["id"],
-        samples=[{
+    test_api.upload_labels(
+        model_id=classification_model["id"],
+        data=[{
             "_dc_sample_id": "not exists",
-            "_dc_label": "1",
             "c": 0
         }]
     )
     # Assert
-    await assert_ingestion_errors_count(1, async_session)
-
-
-@pytest.mark.asyncio
-async def test_samples_update_without_providing_samples_id(
-    test_api: TestAPI,
-    classification_model_version: Payload,
-    async_session: AsyncSession
-):
-    # Arrange
-    test_api.upload_samples(
-        model_version_id=classification_model_version["id"],
-        samples=[{
-            "_dc_sample_id": "first",
-            "_dc_time": pdl.datetime(2020, 1, 1, 0, 0, 0).isoformat(),
-            "_dc_prediction": "2",
-            "a": 11.1,
-            "b": "ppppp",
-            "c": 11
-        }]
-    )
-    # Act
-    test_api.update_samples(
-        model_version_id=classification_model_version["id"],
-        samples=[{"c": 0}]
-    )
-    # Assert
-    await assert_ingestion_errors_count(1, async_session)
+    await assert_ingestion_errors_count(0, async_session)
 
 
 def test_send_reference_features(
@@ -420,55 +392,8 @@ async def test_statistics(
         "a": {"max": 11.1, "min": -1},
         "b": {"values": ["something", "cat"]},
         "c": {"max": None, "min": None},
-        "_dc_label": {"values": []},
         "_dc_prediction": {"values": ["2"]},
         "_dc_time": {"max": pdl.datetime(2020, 1, 3, 0, 0, 0).timestamp(),
-                     "min": pdl.datetime(2020, 1, 1, 0, 0, 0).timestamp()},
-    }, ignore_order=True)
-
-    assert not diff
-
-    # Test update
-    # Arrange
-    samples = [
-        {
-            "_dc_sample_id": "1",
-            "_dc_label": "2",
-            "c": 100
-        }
-    ]
-
-    # Act
-    test_api.update_samples(
-        model_version_id=classification_model_version["id"],
-        samples=samples
-    )
-
-    samples = [
-        {
-            "_dc_sample_id": "5",
-            "_dc_time": pdl.datetime(2020, 1, 10, 0, 0, 0).isoformat(),
-            "_dc_prediction_probabilities": [0.1, 0.3, 0.6],
-            "_dc_prediction": "2",
-            "a": 3,
-            "b": "cat",
-        }
-    ]
-
-    # Act
-    test_api.upload_samples(
-        model_version_id=classification_model_version["id"],
-        samples=samples
-    )
-    await async_session.refresh(model_version)
-
-    diff = DeepDiff(model_version.statistics, {
-        "a": {"max": 11.1, "min": -1},
-        "b": {"values": ["something", "cat"]},
-        "c": {"max": 100, "min": 100},
-        "_dc_label": {"values": ["2"]},
-        "_dc_prediction": {"values": ["2"]},
-        "_dc_time": {"max": pdl.datetime(2020, 1, 10, 0, 0, 0).timestamp(),
                      "min": pdl.datetime(2020, 1, 1, 0, 0, 0).timestamp()},
     }, ignore_order=True)
 

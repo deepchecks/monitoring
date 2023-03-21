@@ -100,15 +100,16 @@ def test_quick_start_flow(deepchecks_sdk: DeepchecksClient):
         timestamps=timestamp.to_numpy(),
         predictions=np.array(pred),
         prediction_probas=proba,
-        labels=data['label'].to_numpy()
     )
+
+    model = deepchecks_sdk.get_or_create_model('test')
+    model.log_batch_labels(np.array([0, 1]), data['label'].to_numpy())
 
     # Assert
     version = deepchecks_sdk.get_model_version(model_name='test', version_name='ver')
     assert version.model_version_id == 1
     expected_statistics = {'num_samples': 2, 'num_labeled_samples': 2}
     assert version.time_window_statistics(timestamp[0], timestamp[1] + 1) == expected_statistics
-
 
 
 def test_create_tabular_model_version_wrong_proba_length(deepchecks_sdk: DeepchecksClient):

@@ -23,7 +23,8 @@ from deepchecks_monitoring.bgtasks.core import Task, TaskStatus
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import ModelVersion, Monitor, TaskType
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL
+from deepchecks_monitoring.schema_models.model_version import get_monitor_table_name
 from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START
 from tests.common import TestAPI, upload_classification_data
 
@@ -255,8 +256,8 @@ async def test_scheduling_with_labels_ratio_delay(
 ):
     # == Prepare
     # alerts delay should have no affect on the monitor since it is not a label check
-    model = test_api.create_model(model={"task_type":TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
-                                            "alerts_delay_seconds": 3600 * 24})
+    model = test_api.create_model(model={"task_type": TaskType.MULTICLASS.value, "alerts_delay_labels_ratio": 1,
+                                         "alerts_delay_seconds": 3600 * 24})
     model_version = test_api.create_model_version(model["id"], model_version={"classes": ["0", "1", "2"]})
     check = test_api.create_check(model["id"], check={"config": LABEL_CHECK_CONFIG})
     frequency = 3600 * 3
@@ -280,14 +281,11 @@ async def test_scheduling_with_labels_ratio_delay(
     # == Act - Add labels to all data
     session_factory = sessionmaker(async_engine, class_=AsyncSession)
     async with session_factory.begin() as session:
-        schema_translate_map = {None: user.organization.schema_name}
-
-        model_version = t.cast(ModelVersion, (await session.execute(
-            sa.select(ModelVersion).execution_options(schema_translate_map=schema_translate_map)
-        )).first()[0])
-
-        table = user.organization.schema_name + "." + model_version.get_monitor_table_name()
-        update_sql = f"update {table} set {SAMPLE_LABEL_COL} = '1'"
+        samples_table = f"{user.organization.schema_name}.{get_monitor_table_name(model['id'], model_version['id'])}"
+        labels_table = f"{user.organization.schema_name}.model_{model['id']}_sample_labels"
+        update_sql = f"""
+            insert into {labels_table} select "{SAMPLE_ID_COL}", '1' from {samples_table} 
+        """
         await session.execute(text(update_sql))
 
     # Should schedule tasks since we now passed the delay of 24 hours
@@ -296,7 +294,6 @@ async def test_scheduling_with_labels_ratio_delay(
     # == Assert
     tasks, _ = await get_tasks_and_latest_schedule(async_engine, user, monitor)
     assert len(tasks) == 2
-
 
 
 def assert_tasks(tasks: t.Sequence[Task], monitor, expected_status: TaskStatus):

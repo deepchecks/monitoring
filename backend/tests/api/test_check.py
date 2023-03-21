@@ -244,10 +244,12 @@ def test_check_execution_for_window_with_f1_scorer(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload
 ):
     upload_classification_data(
         api=test_api,
-        model_version_id=classification_model_version["id"]
+        model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
 
     now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
@@ -351,8 +353,10 @@ def test_check_info_retrieval_with_model_versions(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
-    upload_classification_data(api=test_api, model_version_id=classification_model_version["id"])
+    upload_classification_data(api=test_api, model_version_id=classification_model_version["id"],
+                               model_id=classification_model["id"])
     info = test_api.fetch_check_execution_info(classification_model_check["id"])
     info = t.cast(Payload, info)
 
@@ -419,9 +423,11 @@ def test_feature_check_info(
     test_api: TestAPI,
     classification_model_category_mismatch_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     upload_classification_data(
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"],
         api=test_api,
     )
 
@@ -458,11 +464,13 @@ def run_lookback(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     _, start_time, end_time = upload_classification_data(
         model_version_id=classification_model_version["id"],
         api=test_api,
-        samples_per_date=50
+        samples_per_date=50,
+        model_id=classification_model["id"],
     )
 
     start_time = start_time.isoformat()
@@ -508,10 +516,12 @@ def test_run_lookback_empty_filters(
     classification_model_check: Payload,
     classification_model_version: Payload,
     classification_model_train_test_check: Payload,
+    classification_model: Payload,
 ):
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
 
     start_time = start_time.isoformat()
@@ -563,11 +573,13 @@ def run_window(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
-        samples_per_date=2
+        samples_per_date=2,
+        model_id=classification_model["id"]
     )
 
     start_time = start_time.isoformat()
@@ -619,11 +631,13 @@ def test_run_window(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     run_window(
         test_api=test_api,
         classification_model_check=classification_model_check,
         classification_model_version=classification_model_version,
+        classification_model=classification_model
     )
 
 
@@ -631,11 +645,13 @@ def test_check_execution_for_window_without_feature_importance(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version_without_feature_importance: Payload,
+    classification_model: Payload,
 ):
     run_window(
         test_api=test_api,
         classification_model_check=classification_model_check,
-        classification_model_version=classification_model_version_without_feature_importance
+        classification_model_version=classification_model_version_without_feature_importance,
+        classification_model=classification_model
     )
 
 
@@ -643,11 +659,13 @@ def test_check_execution_for_range(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     run_lookback(
         test_api=test_api,
         classification_model_check=classification_model_check,
-        classification_model_version=classification_model_version
+        classification_model_version=classification_model_version,
+        classification_model=classification_model
     )
 
 
@@ -655,11 +673,13 @@ def test_run_window_train_test(
     test_api: TestAPI,
     classification_model_train_test_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
-        samples_per_date=5
+        samples_per_date=5,
+        model_id=classification_model["id"]
     )
 
     start_time = start_time.isoformat()
@@ -682,11 +702,13 @@ def test_run_lookback_train_test(
     test_api: TestAPI,
     classification_model_train_test_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     run_lookback(
         test_api=test_api,
         classification_model_check=classification_model_train_test_check,
-        classification_model_version=classification_model_version
+        classification_model_version=classification_model_version,
+        classification_model=classification_model
     )
 
 
@@ -694,11 +716,13 @@ def test_run_lookback_no_fi(
     test_api: TestAPI,
     classification_model_check,
     classification_model_version_without_feature_importance: Payload,
+    classification_model: Payload,
 ):
     run_lookback(
         test_api=test_api,
         classification_model_check=classification_model_check,
         classification_model_version=classification_model_version_without_feature_importance,
+        classification_model=classification_model
     )
 
 
@@ -715,6 +739,7 @@ def test_run_many_checks(
     _, start_time, end_time = upload_classification_data(
         model_version_id=model_version["id"],
         api=test_api,
+        model_id=model["id"],
     )
     upload_multiclass_reference_data(
         api=test_api,
@@ -738,11 +763,13 @@ def test_metric_check_w_features(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload,
 ):
     # == Arrange
     upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
 
     now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
@@ -811,6 +838,7 @@ def test_tabular_check_execution_with_classification_model_and_without_classes(t
         api=test_api,
         model_version_id=model_version["id"],
         with_proba=False,
+        model_id=model["id"]
     )
 
     now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
@@ -829,12 +857,14 @@ def test_tabular_check_execution_with_classification_model_and_without_classes(t
 def test_categorical_feature_drill_down(
     test_api: TestAPI,
     classification_model_version: Payload,
-    classification_model_check: Payload
+    classification_model_check: Payload,
+    classification_model: Payload
 ):
     # == Arrange
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
     upload_multiclass_reference_data(
         api=test_api,
@@ -885,12 +915,14 @@ def test_categorical_feature_drill_down(
 def test_categorical_feature_drill_down_w_nulls(
     test_api: TestAPI,
     classification_model_version: Payload,
-    classification_model_check: Payload
+    classification_model_check: Payload,
+    classification_model: Payload
 ):
     # == Arrange
     _, start_time, _ = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
     )
     _, _, end_time = upload_classification_data(
         api=test_api,
@@ -947,26 +979,32 @@ def test_categorical_feature_drill_down_w_nulls(
 def test_numerical_feature_drill_down_with_single_value_in_bin(
     test_api: TestAPI,
     classification_model_version: Payload,
-    classification_model_check: Payload
+    classification_model_check: Payload,
+    classification_model: Payload
 ):
     # Arrange
     now = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
     now_str = now.isoformat()
 
+    labels = []
     data = []
     for i in range(1500):
         sample = {
             "_dc_sample_id": str(i),
             "_dc_time": now_str,
             "_dc_prediction": "1",
-            "_dc_label": "1",
             "a": i // 500,
             "b": "ppppp",
             "_dc_prediction_probabilities": [0.1, 0.3, 0.6]
         }
         data.append(sample)
+        labels.append({
+            "_dc_sample_id": sample["_dc_sample_id"],
+            "_dc_label": "1"
+        })
 
     test_api.upload_samples(model_version_id=classification_model_version["id"], samples=data)
+    test_api.upload_labels(classification_model["id"], labels)
 
     options = {
         "start_time": now_str,
@@ -1024,13 +1062,15 @@ def test_numerical_feature_drill_down_with_single_value_in_bin(
 def test_numerical_feature_drill_down(
     test_api: TestAPI,
     classification_model_version: Payload,
-    classification_model_check: Payload
+    classification_model_check: Payload,
+    classification_model: Payload
 ):
     # == Arrange
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
-        samples_per_date=30
+        samples_per_date=30,
+        model_id=classification_model["id"]
     )
     options = {
         "start_time": start_time.isoformat(),
@@ -1082,13 +1122,15 @@ def test_numerical_feature_drill_down(
 def test_numerical_feature_drill_down_w_nulls(
     test_api: TestAPI,
     classification_model_version: Payload,
-    classification_model_check: Payload
+    classification_model_check: Payload,
+    classification_model: Payload
 ):
     # == Arrange
     _, start_time, _ = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
-        samples_per_date=30
+        samples_per_date=30,
+        model_id=classification_model["id"]
     )
     _, _, end_time = upload_classification_data(
         api=test_api,
@@ -1148,12 +1190,14 @@ async def test_get_notebook(
     test_api: TestAPI,
     classification_model_check: Payload,
     classification_model_version: Payload,
+    classification_model: Payload
 ):
     # Arrange
     _, start_time, end_time = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
-        samples_per_date=50
+        samples_per_date=50,
+        model_id=classification_model["id"]
     )
 
     start_time = start_time.isoformat()
@@ -1210,13 +1254,15 @@ def test_auto_frequency(
     upload_classification_data(
         model_version_id=model_version["id"],
         api=test_api,
-        daterange=[curr_time.subtract(days=x) for x in [1, 2, 3, 10, 20, 22, 40, 51, 53]]
+        daterange=[curr_time.subtract(days=x) for x in [1, 2, 3, 10, 20, 22, 40, 51, 53]],
+        model_id=model["id"]
     )
     model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
     upload_classification_data(
         model_version_id=model_version["id"],
         api=test_api,
-        daterange=[curr_time.subtract(days=x) for x in [0, 1, 2, 3]]
+        daterange=[curr_time.subtract(days=x) for x in [0, 1, 2, 3]],
+        model_id=model["id"]
     )
 
     # Act

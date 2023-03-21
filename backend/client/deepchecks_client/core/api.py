@@ -219,19 +219,19 @@ class API:
         else:
             return self.session.post(f'model-versions/{model_version_id}/data', json=samples)
 
-    def update_samples(
-            self,
-            model_version_id: int,
-            samples: t.List[t.Dict[str, t.Any]],
-            raise_on_status: bool = True,
+    def log_labels(
+        self,
+        model_id: int,
+        data: t.List[t.Dict[str, t.Any]],
+        raise_on_status: bool = True,
     ) -> t.Optional[httpx.Response]:
         """Update production samples.
 
         Parameters
         ----------
-        model_version_id : int
-            The model version ID.
-        samples : list
+        model_id : int
+            The model ID.
+        data : list
             The list of samples to upload.
         raise_on_status : bool
             Raise exception if status code is not 200.
@@ -241,13 +241,12 @@ class API:
         httpx.Response
             The response object.
         """
+        response = self.session.put(f'model/{model_id}/labels', json=data)
+
         if raise_on_status:
-            maybe_raise(
-                self.session.put(f'model-versions/{model_version_id}/data', json=samples),
-                msg='Samples update failure.\n{error}'
-            )
+            maybe_raise(response, msg='Samples update failure.\n{error}')
         else:
-            return self.session.put(f'model-versions/{model_version_id}/data', json=samples)
+            return response
 
     def upload_reference(
             self,
