@@ -64,5 +64,4 @@ export interface DiagramLineProps {
   previousPeriodLabels?: number[];
   comparison?: boolean;
   onPointCLick?: (datasetName: string, versionName: string, timeLabel: number) => void;
-  setPointIndex?: (index: number) => void;
 }

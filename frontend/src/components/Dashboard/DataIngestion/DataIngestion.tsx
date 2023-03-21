@@ -27,15 +27,14 @@ interface DataIngestionProps {
 }
 
 export const DataIngestion = ({ modelId }: DataIngestionProps) => {
-  const { graphData, data, isLoading } = useDataIngestion(modelId);
+  const [selectedPointType, setSelectedPointType] = useState<string>('Samples');
+  const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
 
   const [minTimeUnit, setMinTimeUnit] = useState<TimeUnit>('day');
   const [timeValue, setTimeValue] = useState(86400);
-  const [labelsArr, setLabelsArr] = useState([{ name: '', value: 0 }]);
-  const [pointIndex, setPointIndex] = useState(0);
 
-  const modelKey = Number(Object.keys(data)[0]);
+  const labelsArr = ['Samples', 'Labels', 'Missing Labels'];
 
   const handleTime = (newTimeValue: unknown) => {
     if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
@@ -59,21 +58,6 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   };
 
   useEffect(() => {
-    const labelsData = (data as any[])[modelKey] ? (data as any[])[modelKey][pointIndex] : { label_count: 0, count: 0 };
-    const loadNewLabels = modelKey && labelsData;
-
-    loadNewLabels &&
-      setLabelsArr([
-        { name: 'Samples', value: labelsData?.count },
-        { name: 'Labels', value: labelsData?.label_count },
-        {
-          name: 'Missing Labels',
-          value: labelsData.count - labelsData?.label_count
-        }
-      ]);
-  }, [modelKey, currentTime]);
-
-  useEffect(() => {
     const storageCurrentTime = getStorageItem(storageKeys.dataIngestionTimeFilter);
 
     if (storageCurrentTime) {
@@ -90,10 +74,14 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
       <StyledHeader>
         <StyledTitle>Samples status</StyledTitle>
         <StyledFiltersContainer>
-          <CustomStyledSelect value={'Samples'} size="small">
+          <CustomStyledSelect
+            value={selectedPointType}
+            size="small"
+            onChange={e => setSelectedPointType(e.target.value as string)}
+          >
             {labelsArr.map((val, i) => (
-              <MenuItem key={i} value={val.name}>
-                {val.value} {val.name}
+              <MenuItem key={i} value={val}>
+                # {val}
               </MenuItem>
             ))}
           </CustomStyledSelect>
@@ -121,7 +109,6 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
             minTimeUnit={minTimeUnit}
             timeFreq={timeValue}
             height={{ lg: 259, xl: 362 }}
-            setPointIndex={setPointIndex}
           ></DiagramLine>
         </DiagramTutorialTooltip>
       )}

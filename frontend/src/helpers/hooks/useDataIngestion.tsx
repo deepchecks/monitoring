@@ -8,7 +8,7 @@ import { setLineGraphOptions } from '../setGraphOptions';
 import useModels from './useModels';
 import useStatsTime from './useStatsTime';
 
-const useDataIngestion = (modelId: number | null = null) => {
+const useDataIngestion = (modelId: number | null = null, selectedPointType?: string) => {
   const [statsTime] = useStatsTime();
   const { modelsMap } = useModels();
 
@@ -44,13 +44,29 @@ const useDataIngestion = (modelId: number | null = null) => {
   const data = modelId ? singleModelData : allModelsData;
   const isLoading = modelId ? singleLoading : allLoading;
 
+  const yCalculator = (count: number, label_count: number) => {
+    switch (selectedPointType) {
+      case 'Samples':
+        return count;
+      case 'Missing Labels':
+        return count - label_count;
+      case 'Labels':
+        return label_count;
+      default:
+        return count;
+    }
+  };
+
   const graphData = useMemo(
     () => ({
       datasets:
         Object.entries(data).map(([key, item], index) => ({
           data: item
             .sort((a, b) => a.timestamp - b.timestamp)
-            .map(({ timestamp, count }) => ({ x: dayjs(timestamp * 1000).valueOf(), y: count })),
+            .map(({ timestamp, count, label_count }) => ({
+              x: dayjs(timestamp * 1000).valueOf(),
+              y: yCalculator(count, label_count)
+            })),
           ...setLineGraphOptions(modelsMap ? modelsMap[key]?.name : key, index)
         })) ?? [],
       labels: Object.entries(data)
@@ -58,7 +74,7 @@ const useDataIngestion = (modelId: number | null = null) => {
         .sort()
         .map(day => dayjs(day).valueOf())
     }),
-    [data, modelsMap]
+    [data, modelsMap, selectedPointType]
   );
 
   return {
