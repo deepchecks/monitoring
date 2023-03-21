@@ -199,7 +199,7 @@ prod_data = pd.read_csv('https://figshare.com/ndownloader/files/39316157', parse
 # We'll change the original timestamps so the samples are recent
 
 import datetime
-time_delta = pd.Timedelta(pd.to_datetime(datetime.datetime.now()) - prod_data['issue_d'].max()) - pd.Timedelta(35, unit='d')
+time_delta = pd.Timedelta(pd.to_datetime(datetime.datetime.now()) - prod_data['issue_d'].max()) - pd.Timedelta(2, unit='d')
 prod_data['issue_d'] = prod_data['issue_d'] + time_delta
 prod_data['issue_d'].unique()
 
