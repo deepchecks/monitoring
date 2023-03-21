@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """V1 API of the check."""
 import typing as t
+from itertools import chain
 
 import pandas as pd
 import pendulum as pdl
@@ -44,7 +45,7 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
@@ -263,19 +264,25 @@ async def get_model_auto_frequency(
         return option_to_response({'frequency': 3600 * 24, 'days': 30})
 
     # Query random timestamps of samples in the last 90 days
-    start_time = end_time.subtract(days=90)
+    start_time = end_time.subtract(days=365)
     _, model_versions = await get_model_versions_for_time_range(
         session, model.id, start_time, end_time)
 
     total_timestamps = 10_000
     timestamps_per_version = max(100, total_timestamps // max(len(model_versions), 1))
-    timestamps = []
+    queries = []
     for model_version in model_versions:
+        # To improve performance does not load all the table definition and just define the timestamp and id columns
+        # manually
         ts_column = Column(SAMPLE_TS_COL)
+        id_column = Column(SAMPLE_ID_COL)
         query = select(ts_column).where(ts_column <= end_time, ts_column >= start_time)\
-            .order_by(func.random()).limit(timestamps_per_version)
-        version_ts = (await session.scalars(query.select_from(text(model_version.get_monitor_table_name())))).all()
-        timestamps.extend(version_ts)
+            .order_by(func.md5(id_column)).limit(timestamps_per_version)\
+            .select_from(text(model_version.get_monitor_table_name()))
+        queries.append(session.scalars(query))
+
+    # Awaiting all queries and collect timestamps
+    timestamps = list(chain.from_iterable([(await query).all() for query in queries]))
 
     # Set option in order of importance - the first option to pass 0.8 windows percentage returns, else the one with
     # maximum percentage returns

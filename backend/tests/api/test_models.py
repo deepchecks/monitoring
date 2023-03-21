@@ -12,13 +12,13 @@ import typing as t
 import pendulum as pdl
 import pytest
 import sqlalchemy as sa
+from deepchecks_client import DeepchecksClient
 from deepdiff import DeepDiff
 from fastapi.testclient import TestClient
 from hamcrest import assert_that, has_entries
 from httpx import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_client import DeepchecksClient
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from tests.common import ModelIdentifiersPair, Payload, TestAPI, upload_classification_data
