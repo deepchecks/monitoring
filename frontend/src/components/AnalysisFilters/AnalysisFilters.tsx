@@ -18,7 +18,7 @@ import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 
 import { ColumnType } from 'helpers/types/model';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-// import { getStorageItem, storageKeys } from 'helpers/utils/localStorage'; todo - investigate this behavior
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 
@@ -73,8 +73,8 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
   };
 
   useEffect(() => {
-    // const storageFrequency = getStorageItem(storageKeys.analysisFrequency);
-    // const storagePeriod = getStorageItem(storageKeys.analysisPeriod);
+    const storageFrequency = getStorageItem(storageKeys.analysisFrequency);
+    //  const storagePeriod = getStorageItem(storageKeys.analysisPeriod);
 
     if (model.id != -1) {
       refetchColumns();
@@ -85,15 +85,15 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
         setFrequency(defaultFrequency?.frequency as number);
       }
 
-      /* if (storageFrequency !== 'null' && storageFrequency !== '0') {
+      if (storageFrequency !== 'null' && storageFrequency !== '0') {
         const frequencyNumber = Number(storageFrequency);
         setFrequency(frequencyNumber);
       }
 
-      if (storagePeriod !== '' && storagePeriod !== 'null') {
-        const parsedPeriod = JSON.parse(storagePeriod);
-        setPeriod(parsedPeriod);
-      } */
+      // if (storagePeriod !== '' && storagePeriod !== 'null') {
+      //   const parsedPeriod = JSON.parse(storagePeriod);
+      //   setPeriod(parsedPeriod);
+      // }
     }
   }, [model, refetchColumns, defaultFrequency, loadDefaultFrequency, setPeriod, setFrequency, setDefaultFrequency]);
 

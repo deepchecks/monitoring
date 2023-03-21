@@ -21,10 +21,10 @@ import { constants } from '../billing.constants';
 import { getPaymentMethodApiV1BillingPaymentMethodGet } from 'api/generated';
 
 const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
-  const [paymentMethods, setPaymentMethods] = useState([{ card: { last4: null } }]);
+  const [paymentMethods, setPaymentMethods] = useState([{ card: { last4: Number(null) } }]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const cardLast4 = paymentMethods[0].card.last4 ?? (null as unknown as number);
+  const cardLast4 = paymentMethods && paymentMethods[0] && paymentMethods[0].card.last4;
 
   const handleOpenDialog = () => setIsDialogOpen(true);
   const handleCloseDialog = () => setIsDialogOpen(false);
