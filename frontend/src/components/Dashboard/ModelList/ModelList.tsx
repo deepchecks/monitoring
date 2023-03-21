@@ -36,7 +36,7 @@ interface ModelListProps {
   selectedModelId: number | null;
 }
 
-const ZERO_ALERTS = { low: 0, mid: 0, high: 0, critical: 0 };
+const ZERO_ALERTS = { low: 0, medium: 0, high: 0, critical: 0 };
 const { heading, reset, searchFieldPlaceholder } = constants.modelList;
 
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {

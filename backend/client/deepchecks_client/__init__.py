@@ -397,7 +397,7 @@ class DeepchecksClient:
         check_name: str,
         threshold: float,
         frequency: int,
-        alert_severity: str = 'mid',
+        alert_severity: str = 'medium',
         aggregation_window: t.Optional[int] = None,
         greater_than: bool = True,
         kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None,

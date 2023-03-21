@@ -56,7 +56,7 @@ class AlertSeverity(str, enum.Enum):
     """Enum for the alert severity."""
 
     LOW = "low"
-    MID = "mid"
+    MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
@@ -68,7 +68,7 @@ class AlertRule(Base):
 
     id = sa.Column(sa.Integer, primary_key=True)
     condition = sa.Column(PydanticType(pydantic_model=Condition))
-    alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MID, nullable=False, index=True)
+    alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MEDIUM, nullable=False, index=True)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
     start_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
 

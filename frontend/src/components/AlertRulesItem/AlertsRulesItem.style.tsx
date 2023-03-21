@@ -35,7 +35,7 @@ export const StyledCriticality = styled(Box, {
       return alpha(theme.palette.error.contrastText, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
-    if (filed === 'mid') {
+    if (filed === 'medium') {
       return alpha(theme.palette.error.light, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 

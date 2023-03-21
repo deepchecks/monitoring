@@ -60,8 +60,8 @@ frequency: int, default: None
 aggregation_window: int
     The aggregation window of each calculation of the alert, provided in seconds. If None, the aggregation window
     will be the same as the frequency.
-alert_severity: str, default: "mid"
-    The severity level associated with the alert. Possible values are: critical, high, mid and low.
+alert_severity: str, default: "medium"
+    The severity level associated with the alert. Possible values are: critical, high, medium and low.
 greater_than: bool, default: True
     Whether the alert condition requires the check value to be larger or smaller than provided threshold.
 kwargs_for_check: t.Dict, default = None

@@ -13,7 +13,7 @@ import { setParams } from 'helpers/utils/getParams';
 
 export enum SEVERITY {
   LOW = 'low',
-  MID = 'mid',
+  MEDIUM = 'medium',
   HIGH = 'high',
   CRITICAL = 'critical'
 }
@@ -42,14 +42,14 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
   };
 
   const { color, Icon } = useMemo(() => {
-    const { LOW, MID, HIGH, CRITICAL } = SEVERITY;
+    const { LOW, MEDIUM, HIGH, CRITICAL } = SEVERITY;
 
     const severityMap = {
       [LOW]: {
         color: theme.palette.error.contrastText,
         Icon: LowSeverityIcon
       },
-      [MID]: {
+      [MEDIUM]: {
         color: theme.palette.error.light,
         Icon: MediumSeverityIcon
       },

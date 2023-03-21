@@ -139,7 +139,7 @@ async def test_get_alert_rules(
     alert_rule = as_dict(test_api.create_alert_rule(
         monitor_id=monitor["id"],
         alert_rule={
-            "alert_severity": AlertSeverity.MID.value,
+            "alert_severity": AlertSeverity.MEDIUM.value,
             "condition": {"operator": "greater_than", "value": 100.0},
         }
     ))
@@ -156,7 +156,7 @@ async def test_get_alert_rules(
             "id": 2,
             "monitor_id": 1,
             "condition": {"operator": "greater_than", "value": 100.0},
-            "alert_severity": "mid",
+            "alert_severity": "medium",
             "model_id": 1,
             "alerts_count": 2,
             "max_end_time": "1970-01-19T12:26:40+00:00",
@@ -184,7 +184,7 @@ async def test_get_alert_rules(
             "id": 2,
             "monitor_id": 1,
             "condition": {"operator": "greater_than", "value": 100.0},
-            "alert_severity": "mid",
+            "alert_severity": "medium",
             "model_id": 1,
             "alerts_count": 2,
             "max_end_time": "1970-01-19T12:26:40+00:00",

@@ -11,7 +11,7 @@ import { ReactComponent as MediumSeverityIcon } from 'assets/icon/severity/mediu
 
 enum SEVERITY {
   LOW = 'low',
-  MID = 'mid',
+  MEDIUM = 'medium',
   HIGH = 'high',
   CRITICAL = 'critical'
 }
@@ -23,16 +23,16 @@ interface AlertBadgeProps {
 
 const AlertBadgeComponent = ({ severity = SEVERITY.HIGH, color }: AlertBadgeProps) => {
   const { Icon, title } = useMemo(() => {
-    const { LOW, MID, HIGH, CRITICAL } = SEVERITY;
+    const { LOW, MEDIUM, HIGH, CRITICAL } = SEVERITY;
 
     const severityMap = {
       [LOW]: {
         Icon: LowSeverityIcon,
         title: 'Low'
       },
-      [MID]: {
+      [MEDIUM]: {
         Icon: MediumSeverityIcon,
-        title: 'Mid'
+        title: 'Medium'
       },
       [HIGH]: {
         Icon: HighSeverityIcon,

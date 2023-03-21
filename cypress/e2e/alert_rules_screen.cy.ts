@@ -3,7 +3,7 @@ import { should } from 'chai';
 describe('Alert Rules Screen', () => {
   const Severity = {
     Low: 'Low',
-    Mid: 'Mid',
+    Medium: 'Medium',
     High: 'High',
     Critical: 'Critical',
   };
@@ -48,7 +48,7 @@ describe('Alert Rules Screen', () => {
     {
       details: {
         name: 'New Alert Rule #1',
-        severity: Severity.Mid,
+        severity: Severity.Medium,
       },
       monitorData: {
         model: availableModels[0].name,

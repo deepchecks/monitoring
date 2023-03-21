@@ -107,7 +107,7 @@ export const AlertsDrawerHeader = ({
   const alertColorsMap = useMemo(
     () => ({
       low: theme.palette.error.contrastText,
-      mid: theme.palette.error.light,
+      medium: theme.palette.error.light,
       high: theme.palette.error.dark,
       critical: theme.palette.error.main
     }),

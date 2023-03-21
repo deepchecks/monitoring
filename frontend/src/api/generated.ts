@@ -971,7 +971,7 @@ export type AlertSeverity = typeof AlertSeverity[keyof typeof AlertSeverity];
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AlertSeverity = {
   low: 'low',
-  mid: 'mid',
+  medium: 'medium',
   high: 'high',
   critical: 'critical'
 } as const;

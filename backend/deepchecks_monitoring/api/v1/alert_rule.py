@@ -30,7 +30,7 @@ class AlertRuleCreationSchema(BaseModel):
     """Schema defines the parameters for creating new alert rule."""
 
     condition: Condition
-    alert_severity: AlertSeverity = AlertSeverity.MID
+    alert_severity: AlertSeverity = AlertSeverity.MEDIUM
     is_active: bool = True
 
 

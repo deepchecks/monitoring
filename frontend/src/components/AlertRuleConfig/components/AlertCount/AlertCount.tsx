@@ -19,14 +19,14 @@ interface AlertCountComponentProps {
 const AlertCountComponent = ({ severity = AlertSeverity.high, setColor }: AlertCountComponentProps) => {
   const theme = useTheme();
   const { color, Icon } = useMemo(() => {
-    const { low, mid, high, critical } = AlertSeverity;
+    const { low, medium, high, critical } = AlertSeverity;
 
     const severityMap = {
       [low]: {
         color: theme.palette.error.contrastText,
         Icon: LowSeverityIcon
       },
-      [mid]: {
+      [medium]: {
         color: theme.palette.error.light,
         Icon: MediumSeverityIcon
       },

@@ -242,7 +242,7 @@ Cypress.Commands.add('addMonitor', (checkInfo: object, frequency = 3600, lookbac
 });
 
 
-Cypress.Commands.add('addAlertRule', (monitorInfo: object, operator = "less_than", value = 0.5, alert_severity = "mid") => {
+Cypress.Commands.add('addAlertRule', (monitorInfo: object, operator = "less_than", value = 0.5, alert_severity = "medium") => {
     const data = {
         "condition": {
             "operator": operator,

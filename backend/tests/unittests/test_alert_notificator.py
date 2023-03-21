@@ -71,7 +71,7 @@ async def test_that_email_notification_levels_config_is_respected(
     await async_session.execute(
         sa.update(Organization)
         .where(Organization.id == user.organization_id)
-        .values(email_notification_levels=[AlertSeverity.MID])
+        .values(email_notification_levels=[AlertSeverity.MEDIUM])
     )
 
     model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
@@ -84,7 +84,7 @@ async def test_that_email_notification_levels_config_is_respected(
     alert_rules = [
         t.cast(Payload, test_api.create_alert_rule(
             monitor_id=monitor["id"],
-            alert_rule={"alert_severity": "mid"}
+            alert_rule={"alert_severity": "medium"}
         )),
         t.cast(int, test_api.create_alert_rule(
             monitor_id=monitor["id"],

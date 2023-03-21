@@ -99,7 +99,7 @@ class AlertWebhook(Base):
     # Set of alert severities for which to execute the current webhook instance
     notification_levels = sa.Column(
         sa.ARRAY(sa.Enum(AlertSeverity)),
-        default=[AlertSeverity.CRITICAL, AlertSeverity.HIGH, AlertSeverity.MID],
+        default=[AlertSeverity.CRITICAL, AlertSeverity.HIGH, AlertSeverity.MEDIUM],
         nullable=False
     )
 
@@ -251,7 +251,7 @@ class AlertWebhook(Base):
 
             if alert_rule.alert_severity == AlertSeverity.CRITICAL:
                 severity = "critical"
-            elif alert_rule.alert_severity in {AlertSeverity.HIGH, AlertSeverity.MID}:
+            elif alert_rule.alert_severity in {AlertSeverity.HIGH, AlertSeverity.MEDIUM}:
                 severity = "error"
             elif alert_rule.alert_severity == AlertSeverity.LOW:
                 severity = "warning"

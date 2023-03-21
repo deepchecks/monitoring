@@ -54,13 +54,13 @@ const notificationsMap: NotificationsMap = {
   [NotificationDictionary.email]: {
     0: 'critical',
     1: 'high',
-    2: 'mid',
+    2: 'medium',
     3: 'low'
   },
   [NotificationDictionary.slack]: {
     0: 'critical',
     1: 'high',
-    2: 'mid',
+    2: 'medium',
     3: 'low'
   }
 };

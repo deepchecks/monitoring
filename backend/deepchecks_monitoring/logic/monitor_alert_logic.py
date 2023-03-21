@@ -17,7 +17,7 @@ from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity,
 
 AlertSeverityMap = {
     0: AlertSeverity.LOW.value,
-    1: AlertSeverity.MID.value,
+    1: AlertSeverity.MEDIUM.value,
     2: AlertSeverity.HIGH.value,
     3: AlertSeverity.CRITICAL.value,
 }

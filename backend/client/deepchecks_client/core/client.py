@@ -497,7 +497,7 @@ class DeepchecksModelClient:
         self,
         monitor_id: int,
         threshold: float,
-        alert_severity: str = 'mid',
+        alert_severity: str = 'medium',
         greater_than: bool = True
     ) -> int:
         """Create an alert based on an existing monitor.
@@ -508,7 +508,7 @@ class DeepchecksModelClient:
             The monitor on which we wise to add an alert.
         threshold : float
             The value to compare the check value to.
-        alert_severity : str, default: "mid"
+        alert_severity : str, default: "medium"
             The severity level associated with the alert. Possible values are: critical, high, mid and low.
         greater_than : bool, default: True
             Whether the alert condition requires the check value to be larger or smaller than provided threshold.
@@ -518,9 +518,9 @@ class DeepchecksModelClient:
         int
             The alert id.
         """
-        if alert_severity not in {'low', 'mid', 'high', 'critical'}:
+        if alert_severity not in {'low', 'medium', 'high', 'critical'}:
             raise ValueError(
-                'Alert severity must be of one of low, mid, '
+                'Alert severity must be of one of low, medium, '
                 f'high, critical received {alert_severity}.'
             )
 
@@ -544,7 +544,7 @@ class DeepchecksModelClient:
         check_name: str,
         threshold: float,
         frequency: int,
-        alert_severity: str = 'mid',
+        alert_severity: str = 'medium',
         aggregation_window: t.Optional[int] = None,
         greater_than: bool = True,
         kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None,
@@ -562,9 +562,9 @@ class DeepchecksModelClient:
         int
             The alert rule ID.
         """
-        if alert_severity not in {'low', 'mid', 'high', 'critical'}:
+        if alert_severity not in {'low', 'medium', 'high', 'critical'}:
             raise ValueError(
-                'Alert severity must be of one of low, mid, '
+                'Alert severity must be of one of low, medium, '
                 f'high, critical received {alert_severity}.'
             )
         monitor_id = self.add_monitor(

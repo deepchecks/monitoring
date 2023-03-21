@@ -48,7 +48,7 @@ async def test_standart_webhook_execution(
         notification_levels=[
             AlertSeverity.CRITICAL,
             AlertSeverity.HIGH,
-            AlertSeverity.MID,
+            AlertSeverity.MEDIUM,
             AlertSeverity.LOW
         ],
     )
@@ -133,7 +133,7 @@ async def test_pager_duty_webhook_execution(
         notification_levels=[
             AlertSeverity.CRITICAL,
             AlertSeverity.HIGH,
-            AlertSeverity.MID,
+            AlertSeverity.MEDIUM,
             AlertSeverity.LOW
         ],
         additional_arguments={

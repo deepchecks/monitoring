@@ -191,7 +191,7 @@ class SlackAlertNotification(BaseSlackNotification):
             # ask for a list of icons
             AlertSeverity.CRITICAL: "🔥",
             AlertSeverity.HIGH: "🚨",
-            AlertSeverity.MID: "⚠",
+            AlertSeverity.MEDIUM: "⚠",
             AlertSeverity.LOW: "😟",
         }
         return {

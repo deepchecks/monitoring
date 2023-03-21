@@ -19,7 +19,7 @@ export const AlertsCountWidget = ({ selectedModelAlerts }: AlertsCountWidgetProp
     <Stack spacing="16px" direction="row">
       <AlertCount count={data?.critical || 0} severity={SEVERITY.CRITICAL} showText={false} />
       <AlertCount count={data?.high || 0} severity={SEVERITY.HIGH} showText={false} />
-      <AlertCount count={data?.mid || 0} severity={SEVERITY.MID} showText={false} />
+      <AlertCount count={data?.medium || 0} severity={SEVERITY.MEDIUM} showText={false} />
       <AlertCount count={data?.low || 0} severity={SEVERITY.LOW} showText={false} />
     </Stack>
   );

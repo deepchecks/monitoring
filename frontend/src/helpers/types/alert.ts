@@ -1,6 +1,6 @@
 import { ID } from '.';
 
-export type Criticality = 'low' | 'mid' | 'high' | 'critical';
+export type Criticality = 'low' | 'medium' | 'high' | 'critical';
 
 export type SortBy = 'severity:asc' | 'severity:sesc' | 'alert-window: asc' | 'alert-window:desc';
 

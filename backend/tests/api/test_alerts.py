@@ -30,7 +30,7 @@ async def test_count_active_alerts(
     )
     # Act/Assert
     data = test_api.fetch_number_of_unresolved_alerts()
-    assert data == {"low": 1, "mid": 2}
+    assert data == {"low": 1, "medium": 2}
 
 
 @pytest.mark.asyncio
@@ -89,7 +89,7 @@ async def generate_monitor_with_alert_rules(
 
     rule = t.cast(Payload, api.create_alert_rule(
         monitor_id=monitor["id"],
-        alert_rule={"alert_severity": AlertSeverity.MID.value}
+        alert_rule={"alert_severity": AlertSeverity.MEDIUM.value}
     ))
     create_alert(rule["id"], session)
     create_alert(rule["id"], session, resolved=False)

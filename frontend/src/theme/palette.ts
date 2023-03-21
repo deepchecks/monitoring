@@ -35,7 +35,7 @@ export const lightPaletteOptions: PaletteOptions = {
   },
   severity: {
     low: '#7D7E8E',
-    mid: '#FCB400',
+    medium: '#FCB400',
     high: '#FF833D',
     critical: '#EF4C36'
   },

@@ -564,11 +564,11 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
                             monitor_name='Label Drift', add_monitor_to_dashboard=True, alert_severity='critical')
         self.add_alert_rule(check_name='New Category Train-Test', threshold=0.01, frequency=frequency,
                             monitor_name='New Category Train-Test', add_monitor_to_dashboard=True,
-                            alert_severity='mid')
+                            alert_severity='medium')
         self.add_alert_rule(check_name='Mixed Nulls', threshold=0.0, frequency=frequency,
-                            monitor_name='Mixed Nulls', alert_severity='mid')
+                            monitor_name='Mixed Nulls', alert_severity='medium')
         self.add_alert_rule(check_name='String Mismatch', threshold=0.0, frequency=frequency,
-                            monitor_name='String Mismatch', alert_severity='mid')
+                            monitor_name='String Mismatch', alert_severity='medium')
 
         if task_type in [TaskType.BINARY, TaskType.MULTICLASS]:
             self.add_alert_rule(check_name='New Label Train-Test', threshold=0.01, frequency=frequency,

@@ -123,7 +123,7 @@ class DataGenerator:
     def generate_random_alert_rule(self) -> "Payload":
         return {
             "condition": self.generate_random_condition(numeric=True),
-            "alert_severity": random.choice(["low", "mid", "high", "critical"]),
+            "alert_severity": random.choice(["low", "medium", "high", "critical"]),
             "is_active": True
         }
 
