@@ -14,7 +14,7 @@ services:
     image: postgres:14-alpine
     restart: on-failure
     ports:
-      - '5432:5432'
+      - '5432'
     environment:
       POSTGRES_USER: user
       POSTGRES_MULTIPLE_DATABASES: deepchecks,casdoor
@@ -22,20 +22,26 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./bin/pg_multiple_databases:/docker-entrypoint-initdb.d
+    networks:
+      default:
+        ipv4_address: 10.5.0.11
 
   casdoor:
     restart: always
     image: casbin/casdoor
     entrypoint: /bin/sh -c './server --createDatabase=true'
-    ports:
-      - "4545:4545"
     depends_on:
       - db
     environment:
       RUNNING_IN_DOCKER: "true"
+    ports:
+      - '4545'
     volumes:
       - ./bin/casbin_conf:/conf/
       - ./bin/casbin_conf/init_data/init_data.json:/init_data.json
+    networks:
+      default:
+        ipv4_address: 10.5.0.10
 
   zookeeper:
     image: zookeeper:3.7.0
@@ -44,13 +50,15 @@ services:
       - zookeeper-datalog:/datalog
       - zookeeper-data:/data
       - zookeeper-logs:/logs
+    networks:
+      default:
+        ipv4_address: 10.5.0.9
+
   kafka:
     image: bitnami/kafka:2.8.1-debian-10-r99
     restart: on-failure
     depends_on:
       - zookeeper
-    ports:
-      - '9092:9092'
     environment:
       KAFKA_BROKER_ID: 1001
       KAFKA_CFG_RESERVED_BROKER_MAX_ID: 1001
@@ -58,12 +66,135 @@ services:
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       ALLOW_PLAINTEXT_LISTENER: 'true'
+    networks:
+      default:
+        ipv4_address: 10.5.0.8
   redis:
     image: redis:6.2.7-alpine
     restart: on-failure
-    ports:
-      - '6379:6379'
     command: redis-server --maxmemory-policy allkeys-lru --maxmemory 200mb
+    networks:
+      default:
+        ipv4_address: 10.5.0.7
+
+  app:
+    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    extra_hosts:
+      - "auth.$DOMAIN:10.5.0.20"
+    networks:
+      default:
+        ipv4_address: 10.5.0.6
+
+  alert-scheduler:
+    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-alert-scheduler.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.5
+
+  task-queuer:
+    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-task-queuer.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.4
+  task-runner:
+    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-task-runner.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.3
+  worker:
+    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-worker.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.2
+  caddy:
+    image: caddy:2.6.1
+    restart: unless-stopped
+    ports:
+        - '80:80'
+        - '443:443'
+        - '8443:8443'
+    volumes:
+        - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+        - app
+    networks:
+      default:
+        ipv4_address: 10.5.0.20
 
 volumes:
   zookeeper-data:
@@ -75,3 +206,6 @@ networks:
   default:
     driver: bridge
     name: deepchecks
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
