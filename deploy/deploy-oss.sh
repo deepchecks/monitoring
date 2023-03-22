@@ -108,7 +108,7 @@ envsubst > Caddyfile <<EOF
 $TLS_BLOCK
 auto_https disable_redirects
 }
-auth.$DOMAIN, :8443 {
+$DOMAIN, :8443 {
     reverse_proxy http://casdoor:4545 {
         header_up Host {upstream_hostport}
         header_up X-Real-IP {remote_host}
