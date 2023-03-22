@@ -106,7 +106,6 @@ rm -f Caddyfile
 envsubst > Caddyfile <<EOF
 {
 $TLS_BLOCK
-auto_https disable_redirects
 }
 $DOMAIN, :8443 {
     reverse_proxy http://casdoor:4545 {
