@@ -2,7 +2,7 @@ import React, { useContext, PropsWithChildren } from 'react';
 import { useLocation } from 'react-router-dom';
 import groupBy from 'lodash/groupBy';
 
-import { GlobalStateContext } from 'helpers/context';
+import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 
 import { Stack, Typography } from '@mui/material';
 

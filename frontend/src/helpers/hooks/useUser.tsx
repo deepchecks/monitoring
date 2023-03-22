@@ -1,9 +1,9 @@
-import { useRetrieveUserInfoApiV1UsersMeGet, UserSchema } from 'api/generated';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hotjar } from 'react-hotjar';
 import mixpanel from 'mixpanel-browser';
-import { useLDClient } from 'launchdarkly-react-client-sdk';
+
+import { useRetrieveUserInfoApiV1UsersMeGet, UserSchema } from 'api/generated';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -41,16 +41,8 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   }, [user, isUserDetailsComplete]);
 
   const value = { user, isUserDetailsComplete };
-  const ldClient = useLDClient();
 
   if (user) {
-    ldClient?.identify({
-      key: user.email,
-      email: user.email,
-      name: user.full_name,
-      custom: { organization: user.organization ? user.organization.id : '' }
-    });
-
     if (isUserDetailsComplete) {
       if (hotjar.initialized()) {
         hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });

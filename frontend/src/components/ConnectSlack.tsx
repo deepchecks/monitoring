@@ -23,12 +23,11 @@ interface App {
 }
 
 export function ConnectSlack() {
+  const { data: apps, isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
   const { data: slackConnect, isLoading: isSlackConnectLoading } =
     useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>();
   const { mutate: updateNotifications, isLoading: isUpdateNotificationsLoading } =
     useUpdateOrganizationApiV1OrganizationPut();
-
-  const { data: apps, isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
   const { mutate: removeInstallation, isLoading: isRemoveInstallationLoading } =
     useRemoveInstallationApiV1SlackAppsAppIdDelete({
       mutation: {

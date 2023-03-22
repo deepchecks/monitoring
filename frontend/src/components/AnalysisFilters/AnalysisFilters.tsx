@@ -7,7 +7,7 @@ import {
   useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet
 } from 'api/generated';
 
-import { AnalysisContext, ColumnsFilters } from 'helpers/context/analysis-context';
+import { AnalysisContext, ColumnsFilters } from 'helpers/context/AnalysisProvider';
 
 import { styled, Stack, StackProps } from '@mui/material';
 

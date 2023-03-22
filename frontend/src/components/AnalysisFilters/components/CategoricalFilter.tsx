@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 
-import { AnalysisContext } from 'helpers/context/analysis-context';
+import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
 import {
   Box,

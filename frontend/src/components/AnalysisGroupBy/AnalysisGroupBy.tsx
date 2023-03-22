@@ -6,7 +6,7 @@ import {
   runCheckGroupByFeatureApiV1ChecksCheckIdGroupByModelVersionIdFeaturePost,
   SingleCheckRunOptions
 } from 'api/generated';
-import { AnalysisContext } from 'helpers/context/analysis-context';
+import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
 import { styled, Box } from '@mui/material';
 

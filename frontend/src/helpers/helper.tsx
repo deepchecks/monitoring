@@ -1,6 +1,6 @@
 import React, { ComponentType, FC, lazy } from 'react';
 
-import { AnalysisProvider } from 'helpers/context/analysis-context';
+import { AnalysisProvider } from 'helpers/context/AnalysisProvider';
 
 import {
   Alarm,

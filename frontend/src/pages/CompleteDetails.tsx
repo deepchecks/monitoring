@@ -12,10 +12,11 @@ import { theme } from '../theme';
 import Typography from '@mui/material/Typography';
 import { ThemeProvider } from '@mui/material/styles';
 
-import { useGetCompleteDetailsApiV1UsersCompleteDetailsGet } from '../api/generated';
-import { useFlags } from 'launchdarkly-react-client-sdk';
+import {
+  getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet,
+  useGetCompleteDetailsApiV1UsersCompleteDetailsGet
+} from '../api/generated';
 
-// Services:
 import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../helpers/services/userService';
 import { Loader } from 'components/Loader';
 import { Alert } from '@mui/material';
@@ -26,19 +27,12 @@ export const CompleteDetails = () => {
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('');
   const [acceptInvite, setAcceptInvite] = useState(false);
+  const [flags, setFlags] = useState({ signup_enabled: true });
 
-  const flags = useFlags();
-
-  useEffect(() => {
-    if (completeDetailsData?.user_full_name && completeDetailsData?.organization_name) {
-      window.location.href = window.location.origin;
-      return;
-    }
-
-    setFullName(completeDetailsData?.user_full_name ? completeDetailsData.user_full_name : '');
-    setOrganization(completeDetailsData?.organization_name ? completeDetailsData.organization_name : '');
-    setAcceptInvite(completeDetailsData?.invitation ? true : false);
-  }, [completeDetailsData]);
+  const getFlags = async () => {
+    const res = await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet();
+    setFlags(res as any);
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,11 +46,26 @@ export const CompleteDetails = () => {
     }
   };
 
+  useEffect(() => {
+    if (completeDetailsData?.user_full_name && completeDetailsData?.organization_name) {
+      window.location.href = window.location.origin;
+      return;
+    }
+
+    setFullName(completeDetailsData?.user_full_name ? completeDetailsData.user_full_name : '');
+    setOrganization(completeDetailsData?.organization_name ? completeDetailsData.organization_name : '');
+    setAcceptInvite(completeDetailsData?.invitation ? true : false);
+  }, [completeDetailsData]);
+
+  useEffect(() => {
+    getFlags();
+  }, []);
+
   if (isLoading) return <Loader />;
 
   let detailsGrid = null;
 
-  if (!acceptInvite && !flags.signUpEnabled) {
+  if (!acceptInvite && !flags.signup_enabled) {
     detailsGrid = (
       <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
         <Box
@@ -118,7 +127,7 @@ export const CompleteDetails = () => {
               </Typography>{' '}
               go ahead to get in.
               <br />
-              {flags.signUpEnabled ? (
+              {flags.signup_enabled ? (
                 <>
                   Want to create a new organization instead?{' '}
                   <Link

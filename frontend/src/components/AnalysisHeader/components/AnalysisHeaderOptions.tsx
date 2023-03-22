@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import dayjs from 'dayjs';
 
 import { useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet } from 'api/generated';
-import { AnalysisContext, frequencyData } from 'helpers/context/analysis-context';
+import { AnalysisContext, frequencyData } from 'helpers/context/AnalysisProvider';
 
 import { MenuItem, SelectChangeEvent } from '@mui/material';
 

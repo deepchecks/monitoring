@@ -1,7 +1,8 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 
-import { customInstance } from './services/customAxios';
 import logger from './services/logger';
+
+import { getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet } from 'api/generated';
 
 interface Dict {
   type: { [key: string]: number | boolean };
@@ -9,10 +10,7 @@ interface Dict {
 
 const getFeaturesStatus = async ({ setFeatures }: { setFeatures: (arg: Dict['type']) => void }) => {
   try {
-    const response = (await customInstance({
-      method: 'GET',
-      url: '/api/v1/organization/available-features'
-    })) as Dict['type'];
+    const response = (await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet()) as unknown as Dict['type'];
 
     setFeatures(response);
   } catch (err) {

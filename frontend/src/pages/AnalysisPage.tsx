@@ -9,7 +9,7 @@ import {
   MonitorCheckConf
 } from 'api/generated';
 import useModels from 'helpers/hooks/useModels';
-import { AnalysisContext } from 'helpers/context/analysis-context';
+import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
 import { Loader } from 'components/Loader';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';

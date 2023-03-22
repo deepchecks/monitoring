@@ -9,7 +9,7 @@ import {
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
-import { getAlertFilters, resetAlertFilters } from 'helpers/context';
+import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
 
 import { Box, List, ListItem, styled } from '@mui/material';
 

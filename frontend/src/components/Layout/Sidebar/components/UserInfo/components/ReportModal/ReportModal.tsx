@@ -11,7 +11,7 @@ import {
   StyledTitle,
   StyledUploadArea
 } from './ReportModal.style';
-import { CloseIcon, FileUploadIcon } from '../../../../../../assets/icon/icon';
+import { CloseIcon, FileUploadIcon } from '../../../../../../../assets/icon/icon';
 import { Button } from '@mui/material';
 import * as Sentry from '@sentry/react';
 import logger from 'helpers/services/logger';

@@ -10,7 +10,6 @@ const SidebarInviteButton = styled(Button)`
     border-radius: 8px;
     width: 100%;
     height: 40px;
-
     :hover {
       background: ${theme.palette.primary.light};
     }

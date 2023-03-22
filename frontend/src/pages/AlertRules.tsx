@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
+
 import {
   AlertRuleConfigSchema,
   GetAlertRulesApiV1AlertRulesGetParams,
@@ -21,7 +23,6 @@ import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
 
 import { WhitePlusIcon } from 'assets/icon/icon';
 
-import { getAlertFilters, resetAlertFilters } from '../helpers/context';
 import { reportEvent } from 'helpers/services/mixPanel';
 
 export const AlertRules = () => {

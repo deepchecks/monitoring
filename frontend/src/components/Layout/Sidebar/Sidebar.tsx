@@ -1,11 +1,11 @@
 import React, { useContext, useRef, useState } from 'react';
 import { AppBar, Box } from '@mui/material';
 
-import { GlobalStateContext } from 'helpers/context';
+import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
-import { PathInfo } from '../../helpers/helper';
+import { PathInfo } from '../../../helpers/helper';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import useWindowResize from '../../helpers/hooks/windowResize';
+import useWindowResize from '../../../helpers/hooks/windowResize';
 
 import { AnalysisSubMenu } from './components/AnalysisSubMenu';
 import { SidebarMenuItem } from './components/SidebarMenuItem';
@@ -14,7 +14,7 @@ import { InviteMember } from 'components/WorkspaceSettings/Members/components/In
 
 import { SidebarInviteButton } from './Sidebar.styles';
 
-import { Logo } from '../Logo';
+import { Logo } from '../../Logo';
 
 export const Sidebar = () => {
   const width = useWindowResize();

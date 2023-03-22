@@ -4,7 +4,7 @@ import useModels from 'helpers/hooks/useModels';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { SearchField } from '../../../SearchField';
+import { SearchField } from '../../../../SearchField';
 
 import { WindowTimeout } from 'helpers/types';
 

@@ -2,17 +2,22 @@ import React, { ReactNode } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
+import useConfig from 'helpers/hooks/useConfig';
+
 interface Props {
   children: ReactNode | ReactNode[];
   clientSecret?: string;
 }
 
-const stripePromise = loadStripe(`${process.env.REACT_APP_STRIPE_KEY}`);
+const BillingPaymentWrapper = ({ children, clientSecret }: Props) => {
+  const envVariables = useConfig();
+  const stripePromise = loadStripe(`${envVariables.stripeApiKey}`);
 
-const BillingPaymentWrapper = ({ children, clientSecret }: Props) => (
-  <Elements stripe={stripePromise} options={{ clientSecret: clientSecret }}>
-    {children}
-  </Elements>
-);
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret: clientSecret }}>
+      {children}
+    </Elements>
+  );
+};
 
 export default BillingPaymentWrapper;

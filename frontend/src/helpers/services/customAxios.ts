@@ -1,5 +1,7 @@
 import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
+
 import logger from 'helpers/services/logger';
+
 import qs from 'qs';
 
 export const AXIOS_INSTANCE = Axios.create({ baseURL: process.env.REACT_APP_BASE_API, withCredentials: true });
@@ -12,20 +14,23 @@ AXIOS_INSTANCE.interceptors.response.use(
   error => {
     const { response } = error;
 
-    if (response.status === 401) {
-      let redirectLocation = `${process.env.REACT_APP_BASE_API}/api/v1/auth/login/auth0`;
-      if (process.env.REACT_APP_LOCAL_URL) {
-        redirectLocation += `?return_uri=${encodeURIComponent(process.env.REACT_APP_LOCAL_URL)}`;
+    if (response) {
+      if (response.status === 401) {
+        let redirectLocation = `${process.env.REACT_APP_BASE_API}/api/v1/auth/login/auth0`;
+        if (window.location.href.includes('localhost')) {
+          const localUrl = 'https://localhost:3000';
+          redirectLocation += `?return_uri=${encodeURIComponent(localUrl)}`;
+        }
+        window.location.href = redirectLocation;
+      } else if (response.status === 403 && response.headers['x-substatus'] === '10') {
+        // Complete details...
+        window.location.href = '/complete-details';
+      } else if (response.status === 451 && window.location.pathname !== '/license-agreement') {
+        window.location.href = '/license-agreement';
       }
-      window.location.href = redirectLocation;
-    } else if (response.status === 403 && response.headers['x-substatus'] === '10') {
-      // Complete details...
-      window.location.href = '/complete-details';
-    } else if (response.status === 451 && window.location.pathname !== '/license-agreement') {
-      window.location.href = '/license-agreement';
     }
 
-    return;
+    return '';
   }
 );
 
