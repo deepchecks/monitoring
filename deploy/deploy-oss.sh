@@ -166,6 +166,7 @@ envsubst <  mon/oss-conf.env > oss-conf.env
 cp -a mon/bin/. bin/
 envsubst < docker-compose-oss.yml.tmpl > docker-compose-oss.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf
+envsubst < bin/casbin_conf/init_data/init_data.json.tmpl > bin/casbin_conf/init_data/init_data.json
 
 rm docker-compose-oss.yml.tmpl bin/casbin_conf/app.conf.tmpl
 
@@ -175,7 +176,7 @@ sudo -E docker-compose -f docker-compose-oss.yml up -d --build
 echo "We will need to wait ~5-10 minutes for things to settle down, migrations to finish, and TLS certs to be issued"
 echo ""
 echo "⏳ Waiting for Deepchecks to boot (this will take a few minutes)"
-bash -c 'while [[ "$(curl -s -k -o /dev/null -w ''%{http_code}'' https://localhost/api/v1/health-check)" != "200" ]]; do sleep 5; done'
+bash -c 'while [[ "$(curl -s -k -o /dev/null -w ''%{http_code}'' https://$DOMAIN/api/v1/health-check)" != "200" ]]; do sleep 5; done'
 echo "⌛️ Deepchecks looks up!"
 echo ""
 echo "🎉🎉🎉  Done! 🎉🎉🎉"
