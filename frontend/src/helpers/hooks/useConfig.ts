@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import logger from 'helpers/services/logger';
 
-import { getApplicationConfigurationsApiV1ConfigurationsGetQueryKey } from 'api/generated';
+import { applicationConfigurationsApiV1ConfigurationsGet } from 'api/generated';
 
 const initialVars = {
   sentryDsn: `${process.env.REACT_APP_SENTRY_DSN}`,
@@ -20,7 +20,7 @@ const useConfig = () => {
 
   const getConfiguration = async () => {
     try {
-      const res = getApplicationConfigurationsApiV1ConfigurationsGetQueryKey() as unknown;
+      const res = (await applicationConfigurationsApiV1ConfigurationsGet()) as unknown;
 
       setEnvVariables(res as { [key: string]: string | boolean });
     } catch (err) {

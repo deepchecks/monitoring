@@ -12,6 +12,8 @@ import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
 
 import { StyledH1 } from 'components/base/Text/Header.styles';
 
+import useConfig from 'helpers/hooks/useConfig';
+
 const constants = {
   title: 'Workspace Settings',
   billingTabLabel: 'Billing',
@@ -31,7 +33,17 @@ const WorkspaceSettings = () => {
     setIsLoading(false);
   };
 
+  const { is_cloud } = useConfig();
+
   useEffect(() => void getMemberSettings(), []);
+
+  useEffect(() => {
+    if (!is_cloud) {
+      setValue(1);
+    } else {
+      setValue(0);
+    }
+  }, [is_cloud]);
 
   if (!isAdmin) {
     return isLoading ? <BillingPaidSkeleton /> : <NotAdminDialog />;
@@ -45,13 +57,15 @@ const WorkspaceSettings = () => {
     <Box sx={{ width: '100%' }}>
       <StyledH1 margin="24px 0 8px">{constants.title}</StyledH1>
       <Box sx={{ borderBottom: 1 }}>
-        <Tabs value={value} onChange={handleTabChange}>
-          <Tab label={constants.billingTabLabel} />
-          <Tab label={constants.membersTabLabel} />
-        </Tabs>
+        {is_cloud && (
+          <Tabs value={value} onChange={handleTabChange}>
+            <Tab label={constants.billingTabLabel} />
+            <Tab label={constants.membersTabLabel} />
+          </Tabs>
+        )}
       </Box>
       <Box sx={{ marginY: '32px' }}>
-        {value === 0 && <Billing />}
+        {value === 0 && is_cloud && <Billing />}
         {value === 1 && <Members />}
       </Box>
     </Box>

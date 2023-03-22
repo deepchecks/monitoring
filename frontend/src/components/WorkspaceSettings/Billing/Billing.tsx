@@ -13,7 +13,7 @@ const Billing = () => {
 
   const getSubscription = async () => {
     const response = (await getSubscriptionsApiV1BillingSubscriptionGet()) as Subscriptions[];
-    setSubscriptions(response);
+    setSubscriptions([...response]);
     setIsLoading(false);
   };
 
