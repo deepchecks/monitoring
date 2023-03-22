@@ -129,7 +129,7 @@ class DeepchecksModelVersionClient:
             for i in range(0, len(self._log_samples), samples_per_send):
                 self.api.upload_samples(
                     self.model_version_id,
-                    self._log_samples[i: i+samples_per_send]
+                    self._log_samples[i: i + samples_per_send]
                 )
 
             pretty_print(f'{len(self._log_samples)} new samples sent.')
@@ -214,8 +214,6 @@ class DeepchecksModelVersionClient:
 
         Parameters
         ----------
-        model_version_id : int
-            The model version id.
         rows_count : int, optional
             The number of rows to return (random sampling will be used).
         filters : t.List[DataFilter], optional

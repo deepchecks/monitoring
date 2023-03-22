@@ -34,7 +34,7 @@ end_time = '{end_time}'
 filters = {filters}
 
 dataset, y_pred, y_proba = \
-    model_version_client.get_deepchecks_production_dataset(start_time=start_time, end_time=end_time, filters=filters)
+    model_version_client.get_production_data(start_time=start_time, end_time=end_time, filters=filters, deepchecks_format=True)
 ```
 
 ```python

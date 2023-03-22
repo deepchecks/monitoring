@@ -92,17 +92,16 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             return None
         return pd.Series(self.feature_importance)
 
-    def get_deepchecks_reference_dataset(
+    def get_reference_data(
         self,
         rows_count: int = 10_000,
         filters: t.List[DataFilter] = None,
-    ) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
-        """Get a deepchecks dataset and predictions for a model version reference data.
+        deepchecks_format: bool = False,
+    ) -> t.Union[pd.DataFrame, t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]]:
+        """Get DataFrame or Deepchecks dataset and predictions for a model version reference data.
 
         Parameters
         ----------
-        model_version_id : int
-            The model version id.
         rows_count : int, optional
             The number of rows to return (random sampling will be used).
         filters : t.List[DataFilter], optional
@@ -110,23 +109,31 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Required format for filters and possible operators are detailed under the respected objects
             which can be found at:
             `from deepchecks_client import DataFilter, OperatorsEnum`
+        deepchecks_format : bool, default False
+            If True will return in Deepchecks format:
+            (Deepchecks dataset, predictions array, prediction probabilities array)
 
         Returns
         -------
-        t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]
-            a tuple of: (deepchecks dataset, predictions array, prediction probabilities array).
+        t.Union['pandas'.DataFrame, t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]]
+            The reference dataframe or if deepchecks_format is True - a tuple of:
+            (Deepchecks dataset, predictions array, prediction probabilities array).
         """
-        df = self.api.get_model_version_reference_data(self.model_version_id, rows_count, filters)
-        return self._dataframe_to_dataset_and_pred(df)
+        df = super().get_reference_data(rows_count=rows_count,
+                                        filters=filters)
+        if deepchecks_format:
+            return self._dataframe_to_dataset_and_pred(df)
+        return df
 
-    def get_deepchecks_production_dataset(
+    def get_production_data(
         self,
         start_time: t.Union[datetime, str, int],
         end_time: t.Union[datetime, str, int],
         rows_count: int = 10_000,
         filters: t.List[DataFilter] = None,
-    ) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
-        """Get a deepchecks dataset and predictions for a model version production data on a specific window.
+        deepchecks_format: bool = False,
+    ) -> t.Union[pd.DataFrame, t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]]:
+        """Get DataFrame or Deepchecks dataset and predictions for a model version production data on a specific window.
 
         Parameters
         ----------
@@ -149,16 +156,23 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             Required format for filters and possible operators are detailed under the respected objects
             which can be found at:
             `from deepchecks_client import DataFilter, OperatorsEnum`
+        deepchecks_format : bool, default False
+            If True will return in Deepchecks format:
+            (Deepchecks dataset, predictions array, prediction probabilities array)
 
         Returns
         -------
-        t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]
-            a tuple of: (deepchecks dataset, predictions array, prediction probabilities array).
+        t.Union['pandas'.DataFrame, t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]]
+            The production dataframe or if deepchecks_format is True - a tuple of:
+            (Deepchecks dataset, predictions array, prediction probabilities array).
         """
-        df = self.api.get_model_version_production_data(self.model_version_id,
-                                                        start_time, end_time,
-                                                        rows_count, filters)
-        return self._dataframe_to_dataset_and_pred(df)
+        df = super().get_production_data(start_time=start_time,
+                                         end_time=end_time,
+                                         rows_count=rows_count,
+                                         filters=filters)
+        if deepchecks_format:
+            return self._dataframe_to_dataset_and_pred(df)
+        return df
 
     def set_feature_importance(
             self,
@@ -760,8 +774,6 @@ def _classification_prediction_formatter(prediction, model_classes):
     if model_classes is not None and prediction not in model_classes:
         raise ValueError(f'Provided prediction not in allowed model classes: {prediction}')
     return str(prediction)
-
-
 
 
 def _datetime_formatter(datetime_obj):

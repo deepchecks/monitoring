@@ -34,10 +34,10 @@ end_time = '{end_time}'
 filters = {filters}
 
 test_dataset, y_pred_test, y_proba_test = \
-    model_version_client.get_deepchecks_production_dataset(start_time=start_time, end_time=end_time, filters=filters)
+    model_version_client.get_production_data(start_time=start_time, end_time=end_time, filters=filters, deepchecks_format=True)
 
 train_dataset, y_pred_train, y_proba_train = \
-    model_version_client.get_deepchecks_reference_dataset(filters=filters)
+    model_version_client.get_reference_data(filters=filters, deepchecks_format=True)
 ```
 
 ```python
