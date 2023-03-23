@@ -153,7 +153,7 @@ if [[ -z $DOCKER_EXIST ]]; then
   echo "Installing Docker"
   if [[ "$OS" == *linux* ]]; then
     curl -fsSL https://get.docker.com -o get-docker.sh
-    sudo sh ./get-docker.sh --dry-run
+    sudo sh ./get-docker.sh
   elif [[ "$OS" == *darwin* ]]; then
     echo "Cannot install docker automatically, please follow the instructions here: https://docs.docker.com/desktop/install/mac-install/"
     exit 0
