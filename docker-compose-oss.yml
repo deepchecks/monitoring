@@ -85,7 +85,9 @@ services:
       - oss-conf.env
     environment:
       DEPLOYMENT_URL: https://$DOMAIN
-      SECRET_KEY: $DEECHECKS_SECRET
+      SECRET_KEY: $DEEPCHECKS_SECRET
+      REQUESTS_CA_BUNDLE: $SSL_CERT_FILE
+      SSL_CERT_FILE: $SSL_CERT_FILE
     restart: always
     volumes:
       - ./bin:/start
@@ -190,6 +192,7 @@ services:
         - '8443:8443'
     volumes:
         - ./Caddyfile:/etc/caddy/Caddyfile
+        - ./mon/deploy/local_certs/certs:/certs
     depends_on:
         - app
     networks:

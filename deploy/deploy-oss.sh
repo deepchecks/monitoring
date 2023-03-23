@@ -28,8 +28,8 @@ export DEEPCHECKS_APP_TAG=$1
 else
 echo "What version of Deepchecks would you like to install? (We default to 'latest-release')"
 echo "You can check out available versions here: https://gallery.ecr.aws/y1h3v2p7/monitoring"
-read -r DEEPCHECK_APP_TAG_READ
-if [ -z "$DEEPCHECK_APP_TAG_READ" ]
+read -r DEEPCHECKS_APP_TAG_READ
+if [ -z "$DEEPCHECKS_APP_TAG_READ" ]
 then
     echo "Using default and installing $DEEPCHECKS_APP_TAG"
 else
@@ -54,6 +54,7 @@ echo ""
 echo "We will need sudo access so the next question is for you to give us superuser access"
 echo "Please enter your sudo password now:"
 sudo echo ""
+sudo sh -c "export CGO_ENABLED=1"
 echo "Thanks! 🙏"
 echo ""
 echo "Ok! We'll take it from here 🚀"
@@ -103,20 +104,40 @@ fi
 
 # rewrite caddyfile
 rm -f Caddyfile
-envsubst > Caddyfile <<EOF
-{
-$TLS_BLOCK
-}
-$DOMAIN:8443 {
-    reverse_proxy http://casdoor:4545 {
-        header_up Host {upstream_hostport}
-        header_up X-Real-IP {remote_host}
-    }
-}
-$DOMAIN, :80, :443 {
-reverse_proxy http://app:8000
-}
+if [[ $DOMAIN == 'localhost' ]]; then
+  export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+  envsubst > Caddyfile <<EOF
+  $DOMAIN:8443 {
+      tls /certs/localhost.crt /certs/localhost.key
+
+      reverse_proxy http://casdoor:4545 {
+          header_up Host {upstream_hostport}
+          header_up X-Real-IP {remote_host}
+      }
+  }
+  $DOMAIN, :443 {
+      tls /certs/localhost.crt /certs/localhost.key
+
+      reverse_proxy http://app:8000
+  }
 EOF
+else
+  envsubst > Caddyfile <<EOF
+  {
+  $TLS_BLOCK
+  }
+  $DOMAIN:8443 {
+      reverse_proxy http://casdoor:4545 {
+          header_up Host {upstream_hostport}
+          header_up X-Real-IP {remote_host}
+      }
+  }
+  $DOMAIN, :80, :443 {
+  reverse_proxy http://app:8000
+  }
+EOF
+
+fi;
 
 # Write .env file
 envsubst > .env <<EOF
@@ -164,6 +185,7 @@ rm -f docker-compose.yml
 cp mon/docker-compose-oss.yml docker-compose-oss.yml.tmpl
 envsubst <  mon/oss-conf.env > oss-conf.env
 cp -a mon/bin/. bin/
+
 envsubst < docker-compose-oss.yml.tmpl > docker-compose-oss.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf
 envsubst < bin/casbin_conf/init_data/init_data.json.tmpl > bin/casbin_conf/init_data/init_data.json

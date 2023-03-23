@@ -71,6 +71,9 @@ COPY ./bin ./bin/
 
 RUN chown -R deepchecks.deepchecks /code
 
+COPY ./deploy/local_certs/CA/rootCA.pem /usr/local/share/ca-certificates/deepchecksRootCA.crt
+RUN update-ca-certificates
+
 USER deepchecks
 
 # Expose container port and run entry point script
