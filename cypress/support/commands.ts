@@ -140,7 +140,7 @@ Cypress.Commands.add('addDataToVersion', (modelInfo: object, samplesPerHour = 20
     }
 
     return cy.request('POST', '/api/v1/model-versions/' + modelInfo['version_id'] + '/data', data).then(() => {
-        return cy.request('PUT', '/api/v1/model-versions/' + modelInfo['version_id'] + '/labels', labels).then(() => {
+        return cy.request('PUT', '/api/v1/model/' + modelInfo['model_id'] + '/labels', labels).then(() => {
             return cy.request('GET', '/api/v1/wait-for-queue/' + modelInfo['version_id'])
         });
     });
