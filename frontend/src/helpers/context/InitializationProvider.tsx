@@ -10,9 +10,9 @@ import * as Sentry from '@sentry/react';
 import { CaptureConsole } from '@sentry/integrations';
 import { BrowserTracing } from '@sentry/tracing';
 
-import useConfig from './useConfig';
+import useConfig from '../hooks/useConfig';
 
-const AppInitialization = ({ children }: { children: ReactNode | ReactNode[] }) => {
+const InitializationProvider = ({ children }: { children: ReactNode | ReactNode[] }) => {
   const envVariables = useConfig() as { [key: string]: string };
 
   if (envVariables) {
@@ -57,4 +57,4 @@ const AppInitialization = ({ children }: { children: ReactNode | ReactNode[] }) 
   return <>{children}</>;
 };
 
-export default AppInitialization;
+export default InitializationProvider;

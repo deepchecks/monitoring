@@ -7,7 +7,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
-import AppInitialization from 'helpers/hooks/AppInitialization';
+import InitializationProvider from 'helpers/context/InitializationProvider';
 import { GlobalStateProvider } from './helpers/context/GlobalProvider';
 import { StatsTimeProvider } from './helpers/hooks/useStatsTime';
 import { UserProvider } from './helpers/hooks/useUser';
@@ -34,7 +34,7 @@ const App = () => {
   const flatPathsInfo = pathsInfo.flatMap(pathInfo => [pathInfo, ...(pathInfo?.children ?? [])]);
 
   return (
-    <AppInitialization>
+    <InitializationProvider>
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
@@ -91,7 +91,7 @@ const App = () => {
           </Sentry.ErrorBoundary>
         </ThemeProvider>
       </BrowserRouter>
-    </AppInitialization>
+    </InitializationProvider>
   );
 };
 

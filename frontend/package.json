@@ -54,11 +54,7 @@
     "lint": "eslint . --fix",
     "format": "npx prettier --write .",
     "tsc": "node_modules/typescript/bin/tsc",
-    "precommit": "lint-staged",
-    "storybook": "start-storybook -p 6006 -s public",
-    "predeploy": "npm run build-storybook",
-    "deploy-storybook": "gh-pages -d storybook-static",
-    "build-storybook": "build-storybook"
+    "precommit": "lint-staged"
   },
   "eslintConfig": {
     "extends": [
@@ -96,16 +92,6 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.4.2",
-    "@storybook/addon-actions": "^6.5.16",
-    "@storybook/addon-essentials": "^6.5.16",
-    "@storybook/addon-interactions": "^6.5.16",
-    "@storybook/addon-links": "^6.5.16",
-    "@storybook/builder-webpack5": "^6.5.16",
-    "@storybook/manager-webpack5": "^6.5.16",
-    "@storybook/node-logger": "^6.5.16",
-    "@storybook/preset-create-react-app": "^4.1.2",
-    "@storybook/react": "^6.5.16",
-    "@storybook/testing-library": "^0.0.13",
     "@types/jest": "^27.0.1",
     "@types/lodash": "^4.14.185",
     "@types/mixpanel-browser": "^2.38.0",
@@ -127,7 +113,6 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-storybook": "^0.6.10",
     "gh-pages": "^5.0.0",
     "license-checker": "^25.0.1",
     "lint-staged": "^13.1.1",
