@@ -193,7 +193,11 @@ envsubst < bin/casbin_conf/init_data/init_data.json.tmpl > bin/casbin_conf/init_
 rm docker-compose-oss.yml.tmpl bin/casbin_conf/app.conf.tmpl
 
 echo "Starting the stack!"
-sudo -E docker-compose -f docker-compose-oss.yml up -d --build
+if [[ "$OS" == *linux* ]]; then
+  sudo -E docker-compose -f docker-compose-oss.yml up -d --build
+else
+  docker-compose -f docker-compose-oss.yml up -d --build
+fi
 
 echo "We will need to wait ~5-10 minutes for things to settle down, migrations to finish, and TLS certs to be issued"
 echo ""
