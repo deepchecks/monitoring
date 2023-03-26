@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """Module defining the configuration for the deepchecks_monitoring package."""
 import pathlib
+import secrets
 import typing as t
 from enum import Enum
 
@@ -48,10 +49,10 @@ class EmailSettings(BaseDeepchecksSettings):
     """Settings for mail service."""
 
     deepchecks_email: str = 'app@deepchecks.com'
-    email_smtp_host: str
+    email_smtp_host: t.Optional[str]
     email_smtp_port: int = 25
-    email_smtp_username: str
-    email_smtp_password: str
+    email_smtp_username: t.Optional[str]
+    email_smtp_password: t.Optional[str]
 
 
 class KafkaSettings(BaseDeepchecksSettings):
@@ -110,8 +111,8 @@ class Settings(
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     is_cloud: bool = False
-    deployment_url: AnyHttpUrl
-    auth_jwt_secret: str
+    deployment_url: AnyHttpUrl = 'http://localhost:8000'
+    auth_jwt_secret: t.Optional[str] = secrets.token_hex(20)
     oauth_url: AnyHttpUrl
     oauth_client_id: str
     oauth_client_secret: str
