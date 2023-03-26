@@ -24,7 +24,7 @@ import pandas as pd
 import pendulum as pdl
 import rfc3339_validator
 from deepchecks.tabular import Dataset
-from deepchecks.tabular.utils.feature_inference import is_categorical
+from deepchecks.utils.type_inference import is_categorical
 from pandas.core.dtypes.common import (is_bool_dtype, is_categorical_dtype, is_datetime64_dtype, is_integer_dtype,
                                        is_numeric_dtype, is_period_dtype)
 from pendulum.datetime import DateTime as PendulumDateTime
