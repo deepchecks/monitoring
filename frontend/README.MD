@@ -1,6 +1,6 @@
 # Frontend
 
-## Mon's frontend app is react & typescript app which using MUI for styling, In order to run it you need NVM (Node Version Manager) installed.
+### Mon's frontend app is react & typescript app which using MUI for styling, in order to run it you need NVM (Node Version Manager) installed.
 
 <a href="https://www.freecodecamp.org/news/node-version-manager-nvm-install-guide/" target="_blank">Install NVM here</a>
 
