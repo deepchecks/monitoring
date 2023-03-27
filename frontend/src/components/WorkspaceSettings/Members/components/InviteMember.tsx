@@ -14,6 +14,13 @@ import { validateEmail } from 'helpers/utils/validateEmail';
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
 
+function convertEmailsIntoAnArray(emails: string) {
+  return emails
+    .split(',')
+    .filter(v => v !== '')
+    .map(v => v.trim());
+}
+
 export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [email, setEmail] = useState('');
   const [buttonEnabled, setButtonEnabled] = useState(false);
@@ -25,7 +32,8 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     setEmail(value);
-    setButtonEnabled(validateEmail(value));
+    const emailsAreValid = convertEmailsIntoAnArray(value).every(e => validateEmail(e));
+    setButtonEnabled(emailsAreValid);
   };
 
   const handleCloseDialog = () => {
@@ -36,18 +44,16 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   };
 
   const handleInviteMember = async () => {
-    inviteUser({ data: { email } }).then(() => {
+    inviteUser({ data: { email: convertEmailsIntoAnArray(email) } }).then(() => {
       setSuccess(true);
       reportEvent(events.authentication.inviteUser, {
-        'Invited user email': email
+        'Invited users emails': email
       });
       handleCloseDialog();
     });
-    // .catch(error => {
-    //   logger.info(error);
-    //   setError(`User ${email} already exists or invited to the system`);
-    // });
   };
+
+  const handleCloseSnackBar = () => setSuccess(false);
 
   return (
     <>
@@ -69,7 +75,12 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
           {error && <Alert severity="error">{error}</Alert>}
         </MembersActionDialogContentLayout>
       </ActionDialog>
-      <Snackbar open={success} autoHideDuration={6000} message={constants.inviteMember.success} />
+      <Snackbar
+        open={success}
+        onClose={handleCloseSnackBar}
+        autoHideDuration={6000}
+        message={constants.inviteMember.success}
+      />
     </>
   );
 };
