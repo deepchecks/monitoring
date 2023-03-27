@@ -27,58 +27,58 @@ depends_on = None
 def upgrade() -> None:
     op.add_column('alert_rules',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('alert_rules', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('alert_rules', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('alert_rules',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('alert_rules', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('alert_rules', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
     op.add_column('alert_webhooks',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('alert_webhooks', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('alert_webhooks', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('alert_webhooks',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('alert_webhooks', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('alert_webhooks', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
     op.add_column('checks',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('checks', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('checks', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('checks',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('checks', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('checks', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
-    op.add_column('model_notes', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('model_notes', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('model_notes',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('model_notes', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('model_notes', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     # model_notes column created_at already exists, therfore it is 'missing' here
 
     op.add_column('model_versions',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('model_versions', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('model_versions', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('model_versions',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('model_versions', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('model_versions', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
     op.add_column('models',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('models', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('models', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('models',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('models', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('models', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
     op.add_column('monitors',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('monitors', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('monitors', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('monitors',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('monitors', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('monitors', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
     op.add_column('slack_installations',
                   sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('slack_installations', sa.Column('created_by', sa.Integer(), nullable=False))
+    op.add_column('slack_installations', sa.Column('created_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('slack_installations',
                   sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
-    op.add_column('slack_installations', sa.Column('updated_by', sa.Integer(), nullable=False))
+    op.add_column('slack_installations', sa.Column('updated_by', sa.Integer(), nullable=False, server_default=sa.text('0')))
 
 
 def downgrade() -> None:
