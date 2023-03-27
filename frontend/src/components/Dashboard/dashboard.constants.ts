@@ -29,5 +29,9 @@ export const constants = {
       name: (name: string | undefined) => (name ? name : 'current monitor'),
       messageEnd: ', this will also delete any alerts connected to this monitor. Are you sure you want to continue?'
     }
+  },
+  monitorInfoWidget: {
+    zoomToolTipText: 'In order to zoom click the icon, point on the exact point on the graph & scroll',
+    zoomReset: 'Reset'
   }
 };

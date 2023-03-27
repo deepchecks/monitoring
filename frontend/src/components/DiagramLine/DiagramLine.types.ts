@@ -63,5 +63,6 @@ export interface DiagramLineProps {
   analysis?: boolean;
   previousPeriodLabels?: number[];
   comparison?: boolean;
+  zoomEnabled?: boolean;
   onPointCLick?: (datasetName: string, versionName: string, timeLabel: number) => void;
 }

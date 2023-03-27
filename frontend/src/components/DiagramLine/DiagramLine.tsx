@@ -1,8 +1,8 @@
 import React, { PropsWithChildren, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Chart, ChartOptions, LegendItem, registerables, Plugin } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import 'chartjs-adapter-dayjs-3';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import 'chartjs-adapter-dayjs-3';
 
 import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
@@ -37,7 +37,8 @@ function DiagramLine({
   analysis = false,
   previousPeriodLabels = [],
   comparison,
-  onPointCLick
+  onPointCLick,
+  zoomEnabled
 }: PropsWithChildren<DiagramLineProps>) {
   const [lineIndexMap, setLineIndexMap] = useState<Record<number, boolean>>({});
   const [legends, setLegends] = useState<LegendItem[]>([]);
@@ -215,17 +216,19 @@ function DiagramLine({
             }
           },
           pan: {
-            enabled: false,
-            mode: 'xy'
+            enabled: !!zoomEnabled,
+            threshold: 10,
+            scaleMode: 'xy',
+            overScaleMode: 'xy'
           },
           zoom: {
             wheel: {
-              enabled: false
+              enabled: !!zoomEnabled,
+              speed: 0.02
             },
             pinch: {
-              enabled: false
-            },
-            mode: 'x'
+              enabled: !!zoomEnabled
+            }
           }
         }
       },
