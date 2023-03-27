@@ -71,6 +71,7 @@ async def get_or_create_version(
         info: ModelVersionCreationSchema,
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Create a new model version.
 
@@ -213,7 +214,9 @@ async def get_or_create_version(
         classes=info.classes,
         label_map=label_map,
         private_columns=private_columns,
-        private_reference_columns=private_reference_columns
+        private_reference_columns=private_reference_columns,
+        created_by=user.id,
+        updated_by=user.id
     )
 
     session.add(model_version)
@@ -292,6 +295,7 @@ async def update_model_version(
     model_version_id: int,
     data: ModelVersionUpdateSchema,
     session: AsyncSession = AsyncSessionDep,
+    user: User = Depends(auth.CurrentUser()),
 ):
     """Update model version."""
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
@@ -320,7 +324,7 @@ async def update_model_version(
         await session.execute(
             update(ModelVersion)
             .where(ModelVersion.id == model_version_id)
-            .values(**data.dict(exclude_none=True))
+            .values(created_by=user.id, updated_by=user.id, **data.dict(exclude_none=True))
         )
     except IntegrityError as error:
         if is_unique_constraint_violation_error(error):

@@ -411,7 +411,7 @@ class TestAPI:
                 self.data_generator.generate_random_model_note(),
             ]
 
-        response= self.api.create_model_notes(model_id=model_id, notes=notes, raise_on_status=False)
+        response = self.api.create_model_notes(model_id=model_id, notes=notes, raise_on_status=False)
         response = t.cast(httpx.Response, response)
         expected_status = ExpectedHttpStatus.create(expected_status)
         expected_status.assert_response_status(response)

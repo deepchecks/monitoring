@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
-from deepchecks_monitoring.monitoring_utils import OperatorsEnum
+from deepchecks_monitoring.monitoring_utils import MetadataMixin, OperatorsEnum
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
@@ -61,7 +61,7 @@ class AlertSeverity(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class AlertRule(Base):
+class AlertRule(Base, MetadataMixin):
     """ORM model for the alert rule."""
 
     __tablename__ = "alert_rules"
@@ -91,9 +91,9 @@ class AlertRule(Base):
 
     @classmethod
     async def get_alerts_per_rule(
-        cls,
-        session: AsyncSession,
-        ids: t.Optional[t.List[int]] = None
+            cls,
+            session: AsyncSession,
+            ids: t.Optional[t.List[int]] = None
     ) -> t.Dict[int, int]:
         """Return count of active alerts per alert rule id.
 

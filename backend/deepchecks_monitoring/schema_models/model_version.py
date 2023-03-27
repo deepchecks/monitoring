@@ -23,7 +23,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
 
-from deepchecks_monitoring.monitoring_utils import DataFilterList
+from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import ColumnType, column_types_to_table_columns
 
@@ -51,7 +51,7 @@ class ColumnMetadata(BaseModel):
     stats: ColumnStatistics
 
 
-class ModelVersion(Base):
+class ModelVersion(Base, MetadataMixin):
     """ORM model for the model version."""
 
     __tablename__ = "model_versions"

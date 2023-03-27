@@ -16,6 +16,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, UniqueConst
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, relationship
 
+from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 
 if t.TYPE_CHECKING:
@@ -27,7 +28,7 @@ __all__ = ["Check"]
 _DOCS_LINK_FORMAT = "https://docs.deepchecks.com/stable/checks_gallery/{data_type}/{check_type}/plot_{check_name}.html"
 
 
-class Check(Base):
+class Check(Base, MetadataMixin):
     """ORM model for the check."""
 
     __tablename__ = "checks"

@@ -51,6 +51,8 @@ async def test_standart_webhook_execution(
             AlertSeverity.MEDIUM,
             AlertSeverity.LOW
         ],
+        created_by=1,
+        updated_by=1
     )
 
     async_session.add(webhook)

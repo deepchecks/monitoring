@@ -11,6 +11,7 @@ import sqlalchemy as sa
 from pydantic import AnyUrl, BaseModel, validator
 from sqlalchemy.dialects.postgresql import JSONB
 
+from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models import AlertSeverity, Base
 
 if t.TYPE_CHECKING:
@@ -39,7 +40,7 @@ class WebhookKind(str, enum.Enum):
 # should not we attach a webhook to a particular alert-rule/monitor?
 
 
-class AlertWebhook(Base):
+class AlertWebhook(Base, MetadataMixin):
     """ORM model representing alert webhooks."""
 
     __tablename__ = "alert_webhooks"

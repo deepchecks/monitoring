@@ -18,7 +18,7 @@ from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import (ReduceFeatureMixin, ReduceLabelMixin, ReduceMetricClassMixin,
                                             ReducePropertyMixin)
 from deepchecks.tabular.checks import ConfusionMatrixReport, RegressionErrorDistribution
-from fastapi import Query
+from fastapi import Depends, Query
 from fastapi.responses import PlainTextResponse
 from plotly.basedatatypes import BaseFigure
 from pydantic import BaseModel, Field
@@ -47,8 +47,10 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
+from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
+from ...public_models import User
 from .router import router
 
 
@@ -120,7 +122,8 @@ class AutoFrequencyResponse(BaseModel):
 async def add_checks(
         checks: t.Union[CheckCreationSchema, t.List[CheckCreationSchema]],
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-        session: ExtendedAsyncSession = AsyncSessionDep
+        session: ExtendedAsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.List[t.Dict[t.Any, t.Any]]:
     """Add a new check or checks to the model.
 
@@ -159,8 +162,8 @@ async def add_checks(
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
             raise ValueError('incompatible check type')
         check_object = Check(model_id=model.id, is_label_required=isinstance(dp_check, ReduceLabelMixin),
-                             is_reference_required=isinstance(dp_check, TrainTestBaseCheck),
-                             **check_creation_schema.dict(exclude_none=True))
+                             is_reference_required=isinstance(dp_check, TrainTestBaseCheck), created_by=user.id,
+                             updated_by=user.id, **check_creation_schema.dict(exclude_none=True))
         check_entities.append(check_object)
         session.add(check_object)
 
@@ -220,8 +223,8 @@ async def delete_checks_by_name(
     tags=[Tags.CHECKS]
 )
 async def get_checks(
-    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-    session: AsyncSession = AsyncSessionDep
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep
 ) -> t.List[CheckSchema]:
     """Return all the checks for a given model.
 
@@ -276,8 +279,8 @@ async def get_model_auto_frequency(
         # manually
         ts_column = Column(SAMPLE_TS_COL)
         id_column = Column(SAMPLE_ID_COL)
-        query = select(ts_column).where(ts_column <= end_time, ts_column >= start_time)\
-            .order_by(func.md5(id_column)).limit(timestamps_per_version)\
+        query = select(ts_column).where(ts_column <= end_time, ts_column >= start_time) \
+            .order_by(func.md5(id_column)).limit(timestamps_per_version) \
             .select_from(text(model_version.get_monitor_table_name()))
         queries.append(session.scalars(query))
 

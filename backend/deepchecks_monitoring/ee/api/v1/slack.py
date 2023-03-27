@@ -155,6 +155,8 @@ async def installation_callback(
         incoming_webhook_channel=installation.incoming_webhook.channel,
         incoming_webhook_url=installation.incoming_webhook.url,
         incoming_webhook_configuration_url=installation.incoming_webhook.configuration_url,
+        created_by=user.id,
+        updated_by=user.id,
     ).on_conflict_do_update(
         constraint='slackapp_per_workspace',
         set_=dict(
@@ -167,6 +169,8 @@ async def installation_callback(
             incoming_webhook_channel=installation.incoming_webhook.channel,
             incoming_webhook_url=installation.incoming_webhook.url,
             incoming_webhook_configuration_url=installation.incoming_webhook.configuration_url,
+            created_by=user.id,
+            updated_by=user.id,
         )
     ))
 

@@ -54,7 +54,8 @@ __all__ = [
     "configure_logger",
     "ModelIdentifier",
     "CheckIdentifier",
-    "MonitorCheckConf"
+    "MonitorCheckConf",
+    "MetadataMixin"
 ]
 
 
@@ -619,3 +620,13 @@ class CheckIdentifier(EntityIdentifier):
         """Return the ORM entity."""
         from deepchecks_monitoring.schema_models import Check
         return Check
+
+
+class MetadataMixin:
+    """Mixin class for ORM entities that have metadata."""
+
+    created_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
+    created_by = sa.Column(sa.Integer, primary_key=False, nullable=False)
+    updated_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now(),
+                           onupdate=sa.func.now())
+    updated_by = sa.Column(sa.Integer, nullable=False)

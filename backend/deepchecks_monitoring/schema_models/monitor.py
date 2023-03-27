@@ -16,7 +16,7 @@ from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.future import select
 from sqlalchemy.orm import Mapped, relationship
 
-from deepchecks_monitoring.monitoring_utils import DataFilterList, MonitorCheckConfSchema
+from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin, MonitorCheckConfSchema
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
 
@@ -56,7 +56,7 @@ def _get_start_schedule_time(context: DefaultExecutionContext):
     return floor_window_for_time(time, frequency)
 
 
-class Monitor(Base):
+class Monitor(Base, MetadataMixin):
     """ORM model for the monitor."""
 
     __tablename__ = "monitors"
