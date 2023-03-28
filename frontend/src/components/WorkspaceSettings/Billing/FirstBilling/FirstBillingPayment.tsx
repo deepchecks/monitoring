@@ -6,16 +6,24 @@ import logger from 'helpers/services/logger';
 import { FirstBillingPaymentForm, BillingText, FirstBillingPaymentButton } from '../Billing.styles';
 
 import { constants } from '../billing.constants';
+import { Loader } from 'components/Loader';
 
 const FirstBillingPayment = () => {
   const stripe = useStripe();
   const elements = useElements();
+
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleClearErrMessage = () => setErrorMessage('');
 
   const handleSubmit = async () => {
+    setIsLoading(true);
     setErrorMessage('');
 
     if (!stripe || !elements) {
+      setIsLoading(false);
+
       return;
     }
 
@@ -27,20 +35,28 @@ const FirstBillingPayment = () => {
     });
 
     if (error) {
+      setIsLoading(false);
       setErrorMessage(error.message as string);
       logger.error(error);
     }
+
+    setIsLoading(false);
   };
 
   return (
     <FirstBillingPaymentForm>
-      <AddressElement options={{ mode: 'billing' }} />
+      <AddressElement options={{ mode: 'billing' }} onChange={handleClearErrMessage} />
       <br />
-      <PaymentElement />
+      <PaymentElement onChange={handleClearErrMessage} options={{ layout: 'accordion' }} />
       <BillingText color="red">{errorMessage}</BillingText>
-      <FirstBillingPaymentButton onClick={handleSubmit}>
-        {constants.firstBilling.submitButtonLabel}
-      </FirstBillingPaymentButton>
+      <br />
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <FirstBillingPaymentButton onClick={handleSubmit}>
+          {constants.firstBilling.submitButtonLabel}
+        </FirstBillingPaymentButton>
+      )}
     </FirstBillingPaymentForm>
   );
 };

@@ -8,12 +8,13 @@ import sqlalchemy as sa
 from slack_sdk.webhook import WebhookClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 
 __all__ = ["SlackInstallation", "SlackInstallationState"]
 
 
-class SlackInstallation(Base):
+class SlackInstallation(Base, MetadataMixin):
     """Slack installations ORM model."""
 
     __tablename__ = "slack_installations"

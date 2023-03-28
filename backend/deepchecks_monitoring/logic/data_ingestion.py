@@ -34,9 +34,10 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
-                                                             SAMPLE_TS_COL)
+                                                             SAMPLE_PRED_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model_version import get_monitor_table_name, update_statistics_from_sample
+from deepchecks_monitoring.schema_models.task_type import TaskType
 from deepchecks_monitoring.utils.database import sqlalchemy_exception_to_asyncpg_exception
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
@@ -171,7 +172,8 @@ async def log_labels(
         data: t.List[t.Dict[t.Any, t.Any]],
         session: AsyncSession,
         org_id,
-        cache_functions
+        cache_functions,
+        logger
 ):
     valid_data = {}
     labels_table_columns = model.get_sample_labels_columns()
@@ -203,14 +205,6 @@ async def log_labels(
                 valid_data[sample[SAMPLE_ID_COL]] = sample
 
     if valid_data:
-        # First insert or update all labels
-        labels_table = model.get_sample_labels_table(session)
-        insert_statement = postgresql.insert(labels_table)
-        upsert_statement = insert_statement.on_conflict_do_update(
-            index_elements=[SAMPLE_ID_COL],
-            set_={SAMPLE_LABEL_COL: insert_statement.excluded[SAMPLE_LABEL_COL]}
-        )
-        await session.execute(upsert_statement, list(valid_data.values()))
         # Query from the ids mapping all the relevant versions per each version. This is needed in order to query
         # the timestamps to invalidate the monitors cache
         versions_table = model.get_samples_versions_map_table(session)
@@ -218,9 +212,52 @@ async def log_labels(
                            .where(versions_table.c[SAMPLE_ID_COL].in_(list(valid_data.keys())))
                            .group_by(versions_table.c["version_id"]))
         results = (await session.execute(versions_select)).all()
+
+        # Validation of classes amount for binary tasks
+        if model.task_type == TaskType.BINARY:
+            errors = []
+            for row in results:
+                version_id = row[0]
+                sample_ids = row[1]
+                model_version: ModelVersion = \
+                    (await session.execute(select(ModelVersion).where(ModelVersion.id == version_id))).scalars().first()
+                classes = set(model_version.statistics.get(SAMPLE_LABEL_COL, {"values": []})["values"] +
+                              model_version.statistics.get(SAMPLE_PRED_COL, {"values": []})["values"])
+                for sample_id in sample_ids:
+                    if len(classes) > 1 and valid_data[sample_id][SAMPLE_LABEL_COL] not in classes:
+                        errors.append(dict(sample=str(valid_data[sample_id]),
+                                           sample_id=valid_data[sample_id],
+                                           error=f"More than 2 classes in binary model. {classes} present, " +
+                                           f"received: {valid_data[sample_id][SAMPLE_LABEL_COL]}",
+                                           model_version_id=model_version.id))
+                        del valid_data[sample_id]
+            await save_failures(session, errors, logger)
+
+    if valid_data:
+        # update label statistics
         for row in results:
             version_id = row[0]
-            sample_ids = row[1]
+            sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
+            model_version: ModelVersion = \
+                (await session.execute(select(ModelVersion).where(ModelVersion.id == version_id))).scalars().first()
+            updated_statistics = copy.deepcopy(model_version.statistics)
+            for sample_id in sample_ids:
+                update_statistics_from_sample(updated_statistics, valid_data[sample_id])
+            if model_version.statistics != updated_statistics:
+                await model_version.update_statistics(updated_statistics, session)
+
+        # Insert or update all labels
+        labels_table = model.get_sample_labels_table(session)
+        insert_statement = postgresql.insert(labels_table)
+        upsert_statement = insert_statement.on_conflict_do_update(
+            index_elements=[SAMPLE_ID_COL],
+            set_={SAMPLE_LABEL_COL: insert_statement.excluded[SAMPLE_LABEL_COL]}
+        )
+        await session.execute(upsert_statement, list(valid_data.values()))
+
+        for row in results:
+            version_id = row[0]
+            sample_ids = [sample_id for sample_id in row[1] if sample_id in valid_data]
             monitor_table_name = get_monitor_table_name(model.id, version_id)
             ts_select = (select(Column(SAMPLE_TS_COL))
                          .select_from(text(monitor_table_name))
@@ -350,7 +387,8 @@ class DataIngestionBackend(object):
                 send_futures.append(await self._producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
         else:
-            await log_labels(model, data, session, user.organization_id, self.resources_provider.cache_functions)
+            await log_labels(model, data, session, user.organization_id,
+                             self.resources_provider.cache_functions, self.logger)
 
     async def run_data_consumer(self):
         """Create an endless-loop of consuming messages from kafka."""
@@ -395,7 +433,8 @@ class DataIngestionBackend(object):
                     messages_data = [json.loads(m.value) for m in messages if m.offset > model.ingestion_offset]
                     model.ingestion_offset = messages[-1].offset
                     samples = [m["data"] for m in messages_data]
-                    await log_labels(model, samples, session, organization_id, self.resources_provider.cache_functions)
+                    await log_labels(model, samples, session, organization_id,
+                                     self.resources_provider.cache_functions, self.logger)
 
             return True
         except Exception as exception:  # pylint: disable=broad-except

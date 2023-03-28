@@ -127,8 +127,8 @@ async def list_all_charges(
                     _get_subscription(user.organization.stripe_customer_id, "all")}
         charges_schema = []
         for charge in charges_list:
-            invoice = invoices_dict[charge["invoice"]] if charge.get("invoice") else None
-            sub = sub_dict[invoice["subscription"]] if invoice is not None else None
+            invoice = invoices_dict.get(charge["invoice"]) if charge.get("invoice") else None
+            sub = sub_dict.get(invoice["subscription"]) if invoice is not None else None
             if sub:
                 charge_schema = ChargeSchema(plan=sub.plan, models=sub.models, **charge)
             else:

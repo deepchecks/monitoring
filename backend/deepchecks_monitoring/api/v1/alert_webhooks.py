@@ -46,8 +46,8 @@ class AlertWebhookSchema(BaseModel):
     response_model=t.List[AlertWebhookSchema]
 )
 async def list_webhooks(
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ) -> t.List[AlertWebhookSchema]:
     """Retrieve all available organization alert webhooks."""
     webhooks = await session.scalars(sa.select(AlertWebhook))
@@ -61,9 +61,9 @@ async def list_webhooks(
     response_model=AlertWebhookSchema
 )
 async def retrive_webhook(
-    webhook_id: int = Path(...),
-    session: ExtendedAsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        webhook_id: int = Path(...),
+        session: ExtendedAsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ) -> AlertWebhookSchema:
     """Retrieve specified alert webhook instance."""
     return AlertWebhookSchema.from_orm(await session.fetchone_or_404(
@@ -79,9 +79,9 @@ async def retrive_webhook(
     status_code=status.HTTP_201_CREATED
 )
 async def create_webhook(
-    webhook: t.Union[StandartWebhookProperties, PagerDutyWebhookProperties] = Body(discriminator="kind"),
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        webhook: t.Union[StandartWebhookProperties, PagerDutyWebhookProperties] = Body(discriminator="kind"),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ) -> t.Dict[str, int]:
     """Create alert webhook.."""
     if isinstance(webhook, StandartWebhookProperties):
@@ -98,7 +98,7 @@ async def create_webhook(
 
     webhook_id = await session.scalar(
         sa.insert(AlertWebhook)
-        .values(**webhook.as_values())
+        .values(created_by=user.id, updated_by=user.id, **webhook.as_values())
         .returning(AlertWebhook.id)
     )
     return {"id": webhook_id}
@@ -110,9 +110,9 @@ async def create_webhook(
     description="Delete alert webhook",
 )
 async def delete_webhook(
-    webhook_id: int = Path(...),
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        webhook_id: int = Path(...),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ):
     """Delete specified alert webhook."""
     await exists_or_404(

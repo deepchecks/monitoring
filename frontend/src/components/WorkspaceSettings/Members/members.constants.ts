@@ -16,11 +16,11 @@ export const constants = {
     emailInputLabel: 'Email address'
   },
   inviteMember: {
-    title: 'Invite Member',
-    placeholder: 'email1@org-name.com',
+    title: 'Invite Members',
+    placeholder: 'email1@org-name.com, email2@org-name.com, email3@org-name.com, email4@org...',
     submit: 'Send Invite',
-    inputLabel: 'Email address of the invitee',
-    success: 'User invited successfully!'
+    inputLabel: 'Email address of the invitees',
+    success: 'Users invited successfully!'
   },
   removeMember: {
     title: 'Remove Member',

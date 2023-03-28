@@ -11,6 +11,7 @@ import { Box, Button, Checkbox, styled, Typography } from '@mui/material';
 import { Stack } from '@mui/system';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { featuresList, TierControlWrapper } from 'helpers/tierControl';
 
 import { Loader } from './Loader';
 
@@ -220,30 +221,32 @@ export function AlertNotifications() {
           </Box>
         ))}
       </Box>
-      {!data?.is_slack_connected && (
-        <Box
-          sx={() => ({
-            padding: '20px 30px',
-            background: `url(${connectSlackBG}) no-repeat right`,
-            backgroundColor: theme.palette.primary.light,
-            borderRadius: '10px',
-            marginTop: '124px'
-          })}
-        >
-          <Typography variant="subtitle1">Get notified on slack</Typography>
-          <Typography variant="body2" mt="2px">
-            Get DeepChecks alerts and communications via slack integrations.
-          </Typography>
-          <Button
-            size="small"
-            variant="contained"
-            sx={{ marginTop: '24px', height: 30, width: 144 }}
-            onClick={linkToConnectSlack}
+      <TierControlWrapper feature={featuresList.slack_enabled}>
+        {!data?.is_slack_connected && (
+          <Box
+            sx={() => ({
+              padding: '20px 30px',
+              background: `url(${connectSlackBG}) no-repeat right`,
+              backgroundColor: theme.palette.primary.light,
+              borderRadius: '10px',
+              marginTop: '124px'
+            })}
           >
-            Connect
-          </Button>
-        </Box>
-      )}
+            <Typography variant="subtitle1">Get notified on slack</Typography>
+            <Typography variant="body2" mt="2px">
+              Get DeepChecks alerts and communications via slack integrations.
+            </Typography>
+            <Button
+              size="small"
+              variant="contained"
+              sx={{ marginTop: '24px', height: 30, width: 144 }}
+              onClick={linkToConnectSlack}
+            >
+              Connect
+            </Button>
+          </Box>
+        )}
+      </TierControlWrapper>
     </Box>
   );
 }

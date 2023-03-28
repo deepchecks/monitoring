@@ -180,8 +180,8 @@ async def get_create_model(
                                           f"Current model amount is {model_count}. "
                                           "please update your subscription if you wish to add more models.")
         data = model_schema.dict(exclude_none=True)
-        notes = [ModelNote(**it) for it in data.pop("notes", [])]
-        model = Model(notes=notes, **data)
+        notes = [ModelNote(created_by=user.id, updated_by=user.id, **it) for it in data.pop("notes", [])]
+        model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
         await session.flush()
 
@@ -929,6 +929,7 @@ async def set_schedule_time(
     body: ModelScheduleTimeSchema,
     model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
     session: AsyncSession = AsyncSessionDep,
+    user: User = Depends(auth.CurrentUser()),
 ):
     """Set schedule time."""
     options = (selectinload(Model.checks).load_only(Check.id).selectinload(Check.monitors))
@@ -941,6 +942,7 @@ async def set_schedule_time(
     for monitor in monitors:
         # Update schedule time
         monitor.latest_schedule = floor_window_for_time(timestamp, monitor.frequency)
+        monitor.updated_by = user.id
 
     # Delete monitors tasks
     await Task.delete_monitor_tasks(monitor_ids, timestamp, session)
@@ -983,6 +985,7 @@ async def create_model_notes(
     notes: t.List[ModelNoteCreationSchema],
     model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
     session: AsyncSession = AsyncSessionDep,
+    user: User = Depends(auth.CurrentUser()),
 ) -> t.List[ModelNoteSchema]:
     if len(notes) == 0:
         raise BadRequest("notes list cannot be empty")
@@ -993,7 +996,7 @@ async def create_model_notes(
     )
     records = (await session.execute(
         insert(ModelNote)
-        .values([{"model_id": model.id, **it.dict()} for it in notes])
+        .values([{"model_id": model.id, "created_by": user.id, "updated_by": user.id, **it.dict()} for it in notes])
         .returning(ModelNote.id, ModelNote.created_at, ModelNote.model_id)
     )).all()
     return [

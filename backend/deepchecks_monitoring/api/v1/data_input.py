@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """V1 API of the data input."""
+import copy
 import typing as t
 from io import StringIO
 
@@ -31,6 +32,7 @@ from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
+from deepchecks_monitoring.schema_models.model_version import update_statistics_from_sample
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.other import datetime_sample_formatter
 
@@ -195,6 +197,12 @@ async def save_reference(
     label_counts = all_labels.dropna().value_counts(normalize=True)
     # Only for binary now
     model_version.balance_classes = label_counts.shape[0] == 2 and label_counts.iloc[0] >= 0.95
+
+    updated_statistics = copy.deepcopy(model_version.statistics)
+    for sample in items:
+        update_statistics_from_sample(updated_statistics, sample)
+    if model_version.statistics != updated_statistics:
+        await model_version.update_statistics(updated_statistics, session)
 
     await session.execute(ref_table.insert(), items)
     return Response(status_code=status.HTTP_200_OK)

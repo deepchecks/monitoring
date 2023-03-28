@@ -2,11 +2,12 @@ import styled from 'styled-components';
 
 interface Props {
   margin?: string;
+  color?: string;
 }
 
 const StyledH1 = styled.h1<Props>`
-  font-size: 1.5rem;
   margin: ${p => p.margin ?? '0'};
+  font-size: 1.5rem;
 `;
 
 const StyledH2 = styled.h2`
@@ -35,11 +36,13 @@ const StyledH5 = styled.h5`
   text-align: left;
 `;
 
-const StyledH6 = styled.h6`
+const StyledH6 = styled.h6<Props>`
+  color: ${p => p.color ?? 'gray'};
   font-size: 1rem;
   margin: 0;
-  line-height: 1;
+  line-height: 1.4;
   letter-spacing: -0.1px;
+  white-space: pre-line;
 `;
 
 export { StyledH1, StyledH2, StyledH3, StyledH4, StyledH5, StyledH6 };

@@ -32,6 +32,7 @@ from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyn
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
 from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Monitor
+from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 
@@ -110,15 +111,19 @@ class MonitorNotebookSchema(BaseModel):
 @router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],
              summary="Create a new monitor.",
              description="Create a new monitor based on a check. This endpoint requires the "
-                         "name, lookback, data_filter and description of the monitor.",)
+                         "name, lookback, data_filter and description of the monitor.", )
 async def create_monitor(
-    check_id: int,
-    body: MonitorCreationSchema,
-    session: AsyncSession = AsyncSessionDep
+        check_id: int,
+        body: MonitorCreationSchema,
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Create new monitor on a given check."""
     await exists_or_404(session, Check, id=check_id)
-    monitor = Monitor(check_id=check_id, **body.dict(exclude_none=True))
+    updated_body = body.dict(exclude_unset=True).copy()
+    updated_body["updated_by"] = user.id
+    updated_body["created_by"] = user.id
+    monitor = Monitor(check_id=check_id, **updated_body)
     session.add(monitor)
     await session.flush()
     return {"id": monitor.id}
@@ -126,8 +131,8 @@ async def create_monitor(
 
 @router.get("/monitors/{monitor_id}", response_model=MonitorSchema, tags=[Tags.MONITORS])
 async def get_monitor(
-    monitor_id: int,
-    session: ExtendedAsyncSession = AsyncSessionDep
+        monitor_id: int,
+        session: ExtendedAsyncSession = AsyncSessionDep
 ):
     """Get monitor by id."""
     moonitor = await session.fetchone_or_404(
@@ -141,11 +146,11 @@ async def get_monitor(
 
 @router.put("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def update_monitor(
-    monitor_id: int,
-    body: MonitorUpdateSchema,
-    session: AsyncSession = AsyncSessionDep,
-    cache_funcs: CacheFunctions = CacheFunctionsDep,
-    user: User = Depends(CurrentActiveUser())
+        monitor_id: int,
+        body: MonitorUpdateSchema,
+        session: AsyncSession = AsyncSessionDep,
+        cache_funcs: CacheFunctions = CacheFunctionsDep,
+        user: User = Depends(CurrentActiveUser())
 ):
     """Update monitor by id."""
     options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
@@ -180,17 +185,17 @@ async def update_monitor(
                               .values({AlertRule.start_time: None}))
         # Delete cache
         cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
-
+    update_dict["updated_by"] = user.id
     await Monitor.update(session, monitor_id, update_dict)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
-    monitor_id: int,
-    session: AsyncSession = AsyncSessionDep,
-    cache_funcs: CacheFunctions = CacheFunctionsDep,
-    user: User = Depends(CurrentActiveUser())
+        monitor_id: int,
+        session: AsyncSession = AsyncSessionDep,
+        cache_funcs: CacheFunctions = CacheFunctionsDep,
+        user: User = Depends(CurrentActiveUser())
 ):
     """Delete monitor by id."""
     await exists_or_404(session, Monitor, id=monitor_id)
@@ -235,11 +240,11 @@ async def get_notebook(
 
 @router.post("/monitors/{monitor_id}/run", response_model=CheckResultSchema, tags=[Tags.MONITORS])
 async def run_monitor_lookback(
-    monitor_id: int,
-    body: MonitorRunSchema,
-    session: AsyncSession = AsyncSessionDep,
-    cache_funcs: CacheFunctions = CacheFunctionsDep,
-    user: User = Depends(CurrentActiveUser())
+        monitor_id: int,
+        body: MonitorRunSchema,
+        session: AsyncSession = AsyncSessionDep,
+        cache_funcs: CacheFunctions = CacheFunctionsDep,
+        user: User = Depends(CurrentActiveUser())
 ):
     """Run a monitor for each time window by lookback.
 

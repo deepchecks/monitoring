@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import UndoIcon from '@mui/icons-material/Undo';
+import { Box, IconButton, Typography, Stack, styled, alpha } from '@mui/material';
+import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 
 import { MonitorSchema } from 'api/generated';
 
-import { Box, IconButton, Typography, Stack, ClickAwayListener, styled, alpha } from '@mui/material';
-import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
-
 import { MonitorInfoTooltipBody } from './MonitorInfoTooltipBody';
+import { StyledH6 } from 'components/base/Text/Header.styles';
+
+import { constants } from 'components/Dashboard/dashboard.constants';
 
 import { MenuVertical, InfoIcon } from 'assets/icon/icon';
 
@@ -15,48 +19,67 @@ interface MonitorInfoWidgetProps {
   monitor: MonitorSchema;
   hover: boolean;
   openRootMenu: boolean;
+  zoomEnabled: boolean;
+  setZoomEnabled: (zoomEnabled: boolean) => void;
   handleOpenRootMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-export const MonitorInfoWidget = ({ monitor, hover, openRootMenu, handleOpenRootMenu }: MonitorInfoWidgetProps) => {
-  const [infoTooltipIsOpen, setInfoTooltipIsOpen] = useState(false);
+export const MonitorInfoWidget = (props: MonitorInfoWidgetProps) => {
+  const { monitor, hover, openRootMenu, handleOpenRootMenu, setZoomEnabled, zoomEnabled } = props;
 
-  const handleTooltipClose = () => setInfoTooltipIsOpen(false);
-
-  const handleTooltipOpen = () => setInfoTooltipIsOpen(true);
-
-  useEffect(() => {
-    if (!hover) setInfoTooltipIsOpen(false);
-  }, [hover]);
+  const handleEnableZoom = () => setZoomEnabled(!zoomEnabled);
 
   return (
     <StyledTitleContainer>
       <StyledTitle>{monitor.name}</StyledTitle>
       {(hover || openRootMenu) && (
-        <ClickAwayListener onClickAway={handleTooltipClose}>
-          <StyledTooltipContainer>
+        <StyledTooltipContainer>
+          {zoomEnabled && (
             <StyledTooltip
-              title={<MonitorInfoTooltipBody monitor={monitor} />}
+              title={<StyledH6 color={theme.palette.primary.light}>{constants.monitorInfoWidget.zoomReset}</StyledH6>}
               placement="top"
               arrow
-              PopperProps={{
-                disablePortal: true
-              }}
-              onClose={handleTooltipClose}
-              open={infoTooltipIsOpen}
-              disableFocusListener
-              disableHoverListener
-              disableTouchListener
             >
-              <IconButton onClick={handleTooltipOpen} size="small">
-                <InfoIcon width="20px" height="20px" fill={theme.palette.primary.main} />
+              <IconButton onClick={handleEnableZoom} size="small" sx={{ margin: '0 8px' }}>
+                <UndoIcon width="20px" height="20px" style={{ color: theme.palette.primary.main }} />
               </IconButton>
             </StyledTooltip>
-            <IconButton onClick={handleOpenRootMenu} size="small" sx={{ marginLeft: '8px' }}>
-              <MenuVertical />
+          )}
+          <StyledTooltip
+            title={
+              <StyledH6 color={theme.palette.primary.light}>{constants.monitorInfoWidget.zoomToolTipText}</StyledH6>
+            }
+            placement="top"
+            arrow
+          >
+            <IconButton
+              onClick={handleEnableZoom}
+              size="small"
+              sx={{ margin: '0 8px', background: `${zoomEnabled && theme.palette.primary.main}` }}
+            >
+              <ZoomInIcon
+                width="20px"
+                height="20px"
+                style={{ color: `${zoomEnabled ? theme.palette.common.white : theme.palette.primary.main}` }}
+              />
             </IconButton>
-          </StyledTooltipContainer>
-        </ClickAwayListener>
+          </StyledTooltip>
+          <StyledTooltip
+            title={<MonitorInfoTooltipBody monitor={monitor} />}
+            placement="top"
+            PopperProps={{
+              disablePortal: true
+            }}
+            arrow
+          >
+            <IconButton size="small">
+              <InfoIcon width="20px" height="20px" fill={theme.palette.primary.main} />
+            </IconButton>
+          </StyledTooltip>
+          <IconButton onClick={handleOpenRootMenu} size="small" sx={{ marginLeft: '8px' }}>
+            <MenuVertical />
+          </IconButton>
+        </StyledTooltipContainer>
       )}
     </StyledTitleContainer>
   );

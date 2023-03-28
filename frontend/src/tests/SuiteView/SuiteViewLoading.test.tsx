@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 import SuiteViewLoading from 'components/SuiteView/SuiteViewLoading';
 
-import { constants } from '../../../components/SuiteView/helpers/suiteViewPage.constants';
+import { constants } from '../../components/SuiteView/helpers/suiteViewPage.constants';
 
 describe('SuiteViewLoading', () => {
   beforeEach(() => {

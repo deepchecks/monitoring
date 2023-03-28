@@ -33,13 +33,14 @@ export function GraphicsSection({
   ...props
 }: GraphicsSectionProps) {
   const [hover, setHover] = useState(false);
+  const [zoomEnabled, setZoomEnabled] = useState(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<HTMLElement | null>(null);
 
   const openRootMenu = Boolean(anchorElRootMenu);
 
   const onMouseOver = () => setHover(true);
 
-  const onMouseLeave = () => setHover(false);
+  const onMouseLeave = () => !zoomEnabled && setHover(false);
 
   const handleOpenRootMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorElRootMenu(event.currentTarget);
@@ -77,6 +78,8 @@ export function GraphicsSection({
               hover={hover}
               openRootMenu={openRootMenu}
               handleOpenRootMenu={handleOpenRootMenu}
+              zoomEnabled={zoomEnabled}
+              setZoomEnabled={setZoomEnabled}
             />
             <DiagramLine
               data={data}
@@ -84,6 +87,7 @@ export function GraphicsSection({
               height={{ lg: 203, xl: 215 }}
               minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'}
               timeFreq={monitor.frequency}
+              zoomEnabled={zoomEnabled}
             />
           </>
         )}

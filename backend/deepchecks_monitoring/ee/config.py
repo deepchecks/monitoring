@@ -45,9 +45,9 @@ class StripeSettings(BaseDeepchecksSettings):
 class SlackSettings(BaseDeepchecksSettings):
     """Settings for Slack."""
 
-    slack_client_id: str
-    slack_client_secret: SecretStr
-    slack_scopes: str
+    slack_client_id: t.Optional[str]
+    slack_client_secret: t.Optional[SecretStr]
+    slack_scopes: str = 'chat:write,incoming-webhook'
     slack_state_ttl: int = 300
 
     @validator('slack_scopes')

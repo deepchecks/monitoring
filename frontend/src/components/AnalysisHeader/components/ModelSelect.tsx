@@ -28,5 +28,5 @@ const StyledSelectWrapper = styled(Stack)({
 
 const StyledModelName = styled(Typography)({
   fontWeight: 700,
-  fontSize: '20px'
+  fontSize: '24px'
 });

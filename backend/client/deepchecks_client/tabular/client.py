@@ -375,6 +375,12 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
                 if new_predictions:
                     raise ValueError(f'Got predictions not in model classes: {new_predictions}')
 
+        if self.task_type == TaskType.BINARY:
+            total_classes = set(data[DeepchecksColumns.SAMPLE_LABEL_COL.value].dropna().unique().tolist() +
+                                data[DeepchecksColumns.SAMPLE_PRED_COL.value].dropna().unique().tolist())
+            if len(total_classes) > 2:
+                raise ValueError(f'Binary model can only contain 2 classes - received ({len(total_classes)})')
+
         if len(dataset) > core_client.MAX_REFERENCE_SAMPLES:
             data = data.sample(core_client.MAX_REFERENCE_SAMPLES, random_state=42)
             warnings.warn('Maximum size allowed for reference data is 100,000, applying random sampling')

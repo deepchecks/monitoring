@@ -123,14 +123,15 @@ async def test_connected_models_api(
 ):
     # Arrange
     time = pdl.now().in_tz("UTC")
+    user_id = 1
     async_session.add(ModelVersion(name="a", last_update_time=time.subtract(days=1),
                                    model_id=classification_model["id"],
-                                   ingestion_offset=100, topic_end_offset=1000))
+                                   ingestion_offset=100, topic_end_offset=1000, created_by=user_id, updated_by=user_id))
     async_session.add(ModelVersion(name="b", last_update_time=time, model_id=classification_model["id"],
-                                   ingestion_offset=100, topic_end_offset=100))
+                                   ingestion_offset=100, topic_end_offset=100, created_by=user_id, updated_by=user_id))
     async_session.add(ModelVersion(name="c", last_update_time=time.subtract(days=2),
                                    model_id=classification_model["id"],
-                                   ingestion_offset=200, topic_end_offset=150))
+                                   ingestion_offset=200, topic_end_offset=150, created_by=user_id, updated_by=user_id))
     await async_session.commit()
 
     # Act
@@ -158,17 +159,19 @@ async def test_connected_models_api_missing_version_data(
 ):
     # Arrange
     time = pdl.now().in_tz("UTC")
+    user_id = 1
     async_session.add(ModelVersion(name="a",
                                    model_id=classification_model["id"],
                                    last_update_time=time,
-                                   ingestion_offset=100))
+                                   ingestion_offset=100, created_by=user_id, updated_by=user_id))
     async_session.add(ModelVersion(name="b",
                                    last_update_time=time,
-                                   model_id=classification_model["id"], topic_end_offset=250))
+                                   model_id=classification_model["id"], topic_end_offset=250,
+                                   created_by=user_id, updated_by=user_id))
     async_session.add(ModelVersion(name="c",
                                    model_id=classification_model["id"],
                                    last_update_time=time,
-                                   ingestion_offset=200, topic_end_offset=250))
+                                   ingestion_offset=200, topic_end_offset=250, created_by=user_id, updated_by=user_id))
     await async_session.commit()
 
     # Act
@@ -195,10 +198,11 @@ async def test_connected_models_api_missing_all_version_data(
     async_session: AsyncSession
 ):
     # Arrange
+    user_id = 1
     async_session.add(ModelVersion(name="a",
-                                   model_id=classification_model["id"]))
+                                   model_id=classification_model["id"], created_by=user_id, updated_by=user_id))
     async_session.add(ModelVersion(name="b",
-                                   model_id=classification_model["id"]))
+                                   model_id=classification_model["id"], created_by=user_id, updated_by=user_id))
     await async_session.commit()
 
     # Act
