@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
-import { Alert, Snackbar } from '@mui/material';
+import { Snackbar, Typography } from '@mui/material';
 
 import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
@@ -14,6 +14,8 @@ import { validateEmail } from 'helpers/utils/validateEmail';
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
 
+import { theme } from 'theme';
+
 function convertEmailsIntoAnArray(emails: string) {
   return emails
     .split(',')
@@ -22,10 +24,10 @@ function convertEmailsIntoAnArray(emails: string) {
 }
 
 export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
+  const [err, setErr] = useState('');
   const [email, setEmail] = useState('');
-  const [buttonEnabled, setButtonEnabled] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
 
@@ -38,20 +40,25 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
 
   const handleCloseDialog = () => {
     setButtonEnabled(false);
-    setError('');
+    setErr('');
     setEmail('');
     closeDialog();
   };
 
   const handleInviteMember = async () => {
-    inviteUser({ data: { email: convertEmailsIntoAnArray(email) } }).then(() => {
+    const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
+    setErr((res as any).detail ?? 'none'); // TODO - need to agreed with server about strict err format
+  };
+
+  useEffect(() => {
+    if (err === 'none') {
       setSuccess(true);
       reportEvent(events.authentication.inviteUser, {
         'Invited users emails': email
       });
       handleCloseDialog();
-    });
-  };
+    }
+  }, [err]);
 
   const handleCloseSnackBar = () => setSuccess(false);
 
@@ -72,7 +79,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
             value={email}
             onChange={handleEmailChange}
           />
-          {error && <Alert severity="error">{error}</Alert>}
+          <Typography sx={{ margin: '8px', color: theme.palette.error.main }}>{err !== 'none' && err}</Typography>
         </MembersActionDialogContentLayout>
       </ActionDialog>
       <Snackbar
