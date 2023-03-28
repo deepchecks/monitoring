@@ -26,7 +26,7 @@ if ! [ -z "$1" ]
 then
 export DEEPCHECKS_APP_TAG=$1
 else
-echo "What version of Deepchecks would you like to install? (We default to 'latest-release')"
+echo "What version of Deepchecks would you like to install? (Press Enter for latest release)"
 echo "You can check out available versions here: https://gallery.ecr.aws/y1h3v2p7/monitoring"
 read -r DEEPCHECKS_APP_TAG_READ
 if [ -z "$DEEPCHECKS_APP_TAG_READ" ]
@@ -44,12 +44,29 @@ export DOMAIN=$2
 else
 echo "Let's get the exact domain Deepchecks will be installed on"
 echo "Make sure that you have a Host A DNS record pointing to this instance!"
-echo "This will be used for TLS 🔐"
+echo "This will be used for TLS 🔐 and for the app to know where to redirect to"
 echo "ie: test.deepchecks.net (NOT an IP address)"
+echo "Please enter the domain name (Press Enter for default: localhost)"
 read -r DOMAIN
-export DOMAIN=$DOMAIN
+if [ -z "$DOMAIN" ]
+then
+  export DOMAIN='localhost'
+else
+  export DOMAIN=$DOMAIN
+fi
 fi
 echo "Ok we'll set up certs for https://$DOMAIN"
+echo ""
+echo "Do you want to enable http traffic? (This is recommended for local deployments or behind private networks)"
+echo "⚠️ HTTPS won't work for localhost or inaccessible domains ⚠️"
+echo "Specify true to enable http (Press Enter for default: true)"
+read -r ENABLE_HTTP
+if [ -z "$ENABLE_HTTP" ]
+then
+  export ENABLE_HTTP='true'
+else
+  export ENABLE_HTTP=$ENABLE_HTTP
+fi
 echo ""
 echo "We will need sudo access so the next question is for you to give us superuser access"
 echo "Please enter your sudo password now:"
@@ -97,6 +114,11 @@ cd mon
 git pull
 cd ..
 
+if [[ "$OS" == *darwin* ]]; then
+  brew install gettext
+  brew link --force gettext
+fi;
+
 if [ -n "$3" ]
 then
 export TLS_BLOCK="acme_ca https://acme-staging-v02.api.letsencrypt.org/directory"
@@ -104,9 +126,12 @@ fi
 
 # rewrite caddyfile
 rm -f Caddyfile
-if [[ $DOMAIN == 'localhost' ]]; then
+if [[ $ENABLE_HTTP == 'true' ]]; then
   export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   envsubst > Caddyfile <<EOF
+  {
+    auto_https disable_redirects
+  }
   $DOMAIN:8443 {
       tls /certs/localhost.crt /certs/localhost.key
 
@@ -120,11 +145,14 @@ if [[ $DOMAIN == 'localhost' ]]; then
 
       reverse_proxy http://app:8000
   }
+  $DOMAIN:80 {
+      reverse_proxy http://app:8000
+  }
 EOF
 else
   envsubst > Caddyfile <<EOF
   {
-  $TLS_BLOCK
+    $TLS_BLOCK
   }
   $DOMAIN:8443 {
       reverse_proxy http://casdoor:4545 {
@@ -221,5 +249,8 @@ echo "If you have any issues at all delete everything in this directory and run 
 echo ""
 echo "Deepchecks will be up at the location you provided!"
 echo "https://${DOMAIN}"
+if [[ $ENABLE_HTTP == 'true' ]]; then
+  echo "http://${DOMAIN}"
+fi
 echo ""
 echo "Thanks for installing! You earned this: 🥇"
