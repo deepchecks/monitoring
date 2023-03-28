@@ -174,11 +174,15 @@ async def get_create_model(
             if features_control.max_models != -1:
                 allowed_models = await features_control.get_allowed_models(session)
                 if allowed_models == 1:
-                    raise PaymentRequired("Adding more than 1 model requires to set up a subscription.")
+                    raise PaymentRequired("Adding more than 1 model requires to set up a subscription. "
+                                          f"Set up through {resources_provider.settings.deployment_url}"
+                                          f"/workspace-settings")
                 if allowed_models < model_count:
                     raise PaymentRequired(f"Subscription currently configured for {allowed_models} models. "
                                           f"Current model amount is {model_count}. "
-                                          "please update your subscription if you wish to add more models.")
+                                          "please update your subscription if you wish to add more models. "
+                                          f"Update through {resources_provider.settings.deployment_url}"
+                                          f"/workspace-settings")
         data = model_schema.dict(exclude_none=True)
         notes = [ModelNote(created_by=user.id, updated_by=user.id, **it) for it in data.pop("notes", [])]
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)

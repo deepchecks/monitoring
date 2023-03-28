@@ -19,6 +19,7 @@ from hamcrest import assert_that, has_entries
 from httpx import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
 from tests.common import ModelIdentifiersPair, Payload, TestAPI, upload_classification_data
@@ -31,7 +32,7 @@ def test_model_creation(test_api: TestAPI):
     assert model == {"id": 1, **payload}
 
 
-def test_model_creation_above_limit(test_api: TestAPI):
+def test_model_creation_above_limit(test_api: TestAPI, settings: Settings):
     for i in range(1, 10):
         payload = test_api.data_generator.generate_random_model()
         model = t.cast(Payload, test_api.create_model(model={**payload, }))
@@ -40,7 +41,8 @@ def test_model_creation_above_limit(test_api: TestAPI):
     resp = t.cast(Response, test_api.create_model(expected_status=402))
     assert resp.text == "{\"detail\":\"Subscription currently configured for 8 models. " \
         "Current model amount is 9. " \
-        "please update your subscription if you wish to add more models.\"}"
+        "please update your subscription if you wish to add more models. " \
+                        f"Update through {settings.deployment_url}/workspace-settings\"}}"
 
 
 @pytest.mark.parametrize("identifier_kind", ["by-id", "by-name"])

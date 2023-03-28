@@ -44,6 +44,9 @@ class CloudFeaturesControl(FeaturesControl):
             self._allowed_models = await session.scalar(
                 select(Billing.bought_models).where(Billing.organization_id == self.user.organization_id)
             )
+        if self._allowed_models is None:
+            return 1
+
         return self._allowed_models
 
     @property
