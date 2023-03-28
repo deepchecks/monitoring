@@ -71,6 +71,7 @@ export const StyledResetSelectionContainer = styled(StyledStack)({
 });
 
 export const StyledResetSelectionContent = styled(StyledStack)({
+  marginTop: '-11px',
   cursor: 'pointer',
   transition: 'opacity 0.3s ease',
 
