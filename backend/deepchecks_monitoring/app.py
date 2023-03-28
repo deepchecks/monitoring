@@ -158,6 +158,8 @@ def create_application(
                 environment=settings.sentry_env,
                 before_send_transaction=ee.utils.sentry.sentry_send_hook
             )
+            # Ignoring this logger since it can spam sentry with errors
+            sentry_sdk.integrations.logging.ignore_logger("aiokafka.cluster")
             ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
 
         if settings.stripe_api_key:
