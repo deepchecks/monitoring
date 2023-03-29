@@ -198,6 +198,10 @@ function AnalysisItemComponent({
     [additionalKwargs, check, checkInfo, onPointCLick]
   );
 
+  if (!data) {
+    return <></>;
+  }
+
   return (
     <div ref={observedContainerRef}>
       {checkConf && checkConf.length ? (
