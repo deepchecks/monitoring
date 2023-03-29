@@ -18,10 +18,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
+from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
 
+from .global_api.users import UserSchema
 from .router import router
 
 
@@ -37,6 +39,7 @@ class AlertRuleConfigSchema(BaseModel):
     total_alerts: t.Optional[int] = 0
     non_resolved_alerts: t.Optional[int] = 0
     recent_alert: t.Optional[pdl.DateTime]
+    user: t.Optional[UserSchema] = None
 
     class Config:
         """Config for Alert schema."""
@@ -102,6 +105,7 @@ async def get_all_alert_rules(
     q = (
         select(
             AlertRule.id,
+            AlertRule.created_by,
             AlertRule.condition,
             Monitor.name,
             AlertRule.alert_severity,
@@ -118,7 +122,6 @@ async def get_all_alert_rules(
         .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
         .outerjoin(total_count, total_count.c.alert_rule_id == AlertRule.id)
     )
-
     if models:
         q = q.where(Check.model_id.in_(models))
     if severity:
@@ -140,9 +143,18 @@ async def get_all_alert_rules(
         if "alert-window:desc" in sortby:
             q = q.order_by(total_count.c.recent_alert.desc())
 
-    results = (await session.execute(q)).all()
-    results = [AlertRuleConfigSchema.from_orm(row) for row in results]
-    return results
+    alert_rules_rows = (await session.execute(q)).all()
+    alert_rule_schemas = []
+    for row in alert_rules_rows:
+        alert_rule_schema = AlertRuleConfigSchema.from_orm(row)
+        if row.created_by != 0:
+            q = select(User).where(User.id == row.created_by)
+            user = (await session.execute(q)).scalars().first()
+            if user is not None:
+                user_schema = UserSchema.from_orm(user)
+                alert_rule_schema.user = user_schema
+        alert_rule_schemas.append(alert_rule_schema)
+    return alert_rule_schemas
 
 
 @router.get("/configurations")
