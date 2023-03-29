@@ -31,7 +31,7 @@ export const constants = {
     }
   },
   monitorInfoWidget: {
-    zoomToolTipText: 'In order to zoom click the icon, point on the exact point on the graph & scroll',
+    zoomToolTipText: 'Zoom using mouse/touchpad',
     zoomReset: 'Reset'
   }
 };
