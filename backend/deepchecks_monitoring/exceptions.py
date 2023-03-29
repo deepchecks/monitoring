@@ -13,6 +13,7 @@ import typing as t
 
 from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException, status
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError
 
 __all__ = [
@@ -29,30 +30,61 @@ __all__ = [
     'InvalidConfigurationException',
     'Unauthorized',
     'PaymentRequired',
-    'LicenseError'
+    'LicenseError',
+    'error_to_dict'
 ]
 
 
-class UnacceptedEULA(Exception):
-    """Exception which indicates that user did not accept EULA."""
-
-    def __init__(self, message: str = 'User did not accept EULA'):
-        super().__init__(message)
-        self.message = message
+def error_to_dict(error) -> t.Dict[str, t.Any]:
+    """Transform http error into a dictionary."""
+    if isinstance(error, BaseHTTPException):
+        return error.to_dict()
+    if isinstance(error, HTTPException):
+        return {
+            'error_message': error.detail,
+            'additional_information': {}
+        }
+    if isinstance(error, RequestValidationError):
+        return {
+            'error_message': f'{error}'.replace('\n', ' ').replace('   ', ' '),
+            'additional_information': {'errors': error.errors()}
+        }
+    raise TypeError(f'Unsupported error type - {type(error)}')
 
 
 class BaseHTTPException(abc.ABC, HTTPException):
     """Base HTTP Exception."""
 
+    default_message: t.ClassVar[t.Optional[str]] = None
     status_code: int
 
     def __init__(
         self,
-        message: str,
-        headers: t.Optional[t.Dict[str, t.Any]] = None
+        message: t.Optional[str] = None,
+        additional_information: t.Optional[t.Dict[str, t.Any]] = None,
+        headers: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         super().__init__(self.status_code, message, headers)
-        self.message = message
+        self.message = message or self.default_message
+        self.additional_information = additional_information
+
+        if not self.message:
+            type_name = type(self).__name__
+            raise ValueError(f'{type_name} message parameter cannot be empty')
+
+    def to_dict(self):
+        """Prepare a error dictionary."""
+        return {
+            'error_message': self.message,
+            'additional_information': self.additional_information or {}
+        }
+
+
+class UnacceptedEULA(BaseHTTPException):
+    """Exception which indicates that user did not accept EULA."""
+
+    default_message = 'User must accept Deeppchecks End-User License Agreement to continue'
+    status_code = status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS
 
 
 class RedirectException(HTTPException):
@@ -62,11 +94,22 @@ class RedirectException(HTTPException):
         super().__init__(status.HTTP_307_TEMPORARY_REDIRECT, headers={'Location': url})
 
 
-class InvalidConfigurationException(HTTPException):
+class InvalidConfigurationException(BaseHTTPException):
     """Exception which indicates user that is misconfigured."""
 
-    def __init__(self):
-        super().__init__(status.HTTP_403_FORBIDDEN, headers={'X-Substatus': '10'})
+    status_code = status.HTTP_403_FORBIDDEN  # TODO: change status code
+
+    def __init__(
+        self,
+        message: t.Optional[str] = None,
+        additional_information: t.Optional[t.Dict[str, t.Any]] = None,
+        headers: t.Optional[t.Dict[str, t.Any]] = None
+    ):
+        super().__init__(
+            message=message,
+            additional_information=additional_information,
+            headers={**{'X-Substatus': '10'}, **headers} if headers else {'X-Substatus': '10'}
+        )
 
 
 class AccessForbidden(BaseHTTPException):
@@ -120,6 +163,7 @@ class RequestTooLarge(BaseHTTPException):
 class LicenseError(BaseHTTPException):
     """Trying to access enterprise feature without license."""
 
+    # TODO: change status code, PaymentRequired also uses 402 status code
     status_code = status.HTTP_402_PAYMENT_REQUIRED
 
 

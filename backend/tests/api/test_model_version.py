@@ -68,7 +68,7 @@ def test_binary_model_version_creation_with_too_many_classes(test_api: TestAPI):
 
     response = t.cast(httpx.Response, response)
     content = response.json()
-    assert content["detail"] == "Got 3 classes but task type is binary"
+    assert content["error_message"] == "Got 3 classes but task type is binary"
 
 
 def test_model_version_creation_with_not_sorted_classes(test_api: TestAPI):
@@ -87,7 +87,7 @@ def test_model_version_creation_with_not_sorted_classes(test_api: TestAPI):
     )
 
     content = t.cast(httpx.Response, response).json()
-    assert content["detail"] == "Classes list must be sorted alphabetically"
+    assert content["error_message"] == "Classes list must be sorted alphabetically"
 
 
 def test_regression_model_version_creation_with_classes(test_api: TestAPI):
@@ -107,7 +107,7 @@ def test_regression_model_version_creation_with_classes(test_api: TestAPI):
 
     content = t.cast(httpx.Response, response).json()
     expected_message = "Classes parameter is valid only for classification, bot model task is regression"
-    assert content["detail"] == expected_message
+    assert content["error_message"] == expected_message
 
 
 def test_model_version_creation(
@@ -203,7 +203,7 @@ def test_model_version_duplicate_creation_with_different_set_of_features(
     # Assert
     content = t.cast(httpx.Response, response).json()
     expected_message = 'A model version with the name "v1" already exists but with different features'
-    assert content["detail"] == expected_message
+    assert content["error_message"] == expected_message
 
 
 def test_time_window_statistics_retrieval(

@@ -17,7 +17,7 @@ def test_standart_webhook_creation_with_not_reacheable_url_address(test_api: Tes
         expected_status=400
     )
     response = t.cast(httpx.Response, response)
-    assert response.json() == {"detail": "Failed to connect to the given URL address"}
+    assert response.json()["error_message"] == "Failed to connect to the given URL address"
 
 
 def test_standart_webhook_deletion(test_api: TestAPI):

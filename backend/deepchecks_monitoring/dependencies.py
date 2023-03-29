@@ -124,8 +124,8 @@ def limit_request_size(size: int) -> t.Callable[[Request], None]:
 
         try:
             content_length = int(request.headers["content-length"])
-        except ValueError:
-            raise BadRequest("Content-length header value must be an integer")  # pylint: disable=raise-missing-from
+        except ValueError as e:
+            raise BadRequest("Content-length header value must be an integer") from e
 
         if content_length > size:
             mb = size / (1024 * 1024)

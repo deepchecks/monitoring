@@ -28,7 +28,8 @@ async def test_end_user_license_aggrement_access_restriction(
     assert response.status_code == 451
 
     payload = response.json()
-    assert "kind" in payload and payload["kind"] == "unaccepted-eula"
+    assert "error_message" in payload
+    assert payload["error_message"] == "User must accept Deeppchecks End-User License Agreement to continue"
 
     # == Act/Assert
     # accept eula

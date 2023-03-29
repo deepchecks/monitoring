@@ -427,8 +427,10 @@ async def test_log_data_exceeding_rate(
 
     # == Assert
     assert response.json() == {
-        "num_saved": ROWS_PER_MINUTE_LIMIT,
-        "detail": (
+        "additional_information": {
+            "num_saved": ROWS_PER_MINUTE_LIMIT,
+        },
+        "error_message": (
             f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute. "
             "5000 first rows were received"
         )
@@ -457,6 +459,6 @@ async def test_log_data_exceeding_rate(
         )
         # == Assert
         assert response.json() == {
-            "detail": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute",
-            "num_saved": 0
+            "additional_information": {"num_saved": 0},
+            "error_message": f"Rate limit exceeded, you can send {ROWS_PER_MINUTE_LIMIT} rows per minute"
         }

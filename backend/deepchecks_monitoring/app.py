@@ -14,12 +14,12 @@ import typing as t
 
 import deepchecks
 import dotenv
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.params import Depends
-from fastapi.responses import JSONResponse, ORJSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import FileResponse
@@ -28,7 +28,7 @@ from deepchecks_monitoring.api.v1 import global_router as v1_global_router
 from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import tags_metadata
 from deepchecks_monitoring.ee.middlewares import LicenseCheckDependency
-from deepchecks_monitoring.exceptions import UnacceptedEULA
+from deepchecks_monitoring.exceptions import BaseHTTPException, error_to_dict
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 from deepchecks_monitoring.utils import auth
 
@@ -98,31 +98,50 @@ def create_application(
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
 
-    @app.exception_handler(UnacceptedEULA)
-    async def eula_exception_handler(*args, **kwargs):  # pylint: disable=unused-argument
+    @app.exception_handler(BaseHTTPException)
+    async def base_http_exceptions_handler(
+        request: Request,
+        error: BaseHTTPException
+    ):  # pylint: disable=unused-argument
         return JSONResponse(
-            status_code=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
-            content={
-                "message": "User must accept Deeppchecks End-User License Agreement to continue",
-                "kind": "unaccepted-eula"
-            }
+            status_code=error.status_code,
+            headers=error.headers,
+            content=error_to_dict(error)
+        )
+
+    @app.exception_handler(HTTPException)
+    async def fastapi_http_exceptions_handler(
+        request: Request,
+        error: HTTPException
+    ):  # pylint: disable=unused-argument
+        return JSONResponse(
+            status_code=error.status_code,
+            headers=error.headers,
+            content=error_to_dict(error)
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(_: Request, exc: RequestValidationError):
-        exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
-        return JSONResponse(content={"message": exc_str}, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    async def validation_exception_handler(_: Request, error: RequestValidationError):
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=error_to_dict(error)
+        )
 
     @app.exception_handler(404)
-    async def custom_404_handler(request: Request, exc):
+    async def custom_404_handler(request: Request, error: HTTPException):
+        error_response = JSONResponse(
+            status_code=error.status_code,
+            content=error_to_dict(error)
+        )
+
         if request.url.path.startswith("/api/"):
-            return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
-        else:
-            # On not-existing route returns the index, and let the frontend handle the incorrect path.
-            path = settings.assets_folder.absolute() / "index.html"
-            if path.exists():
-                return FileResponse(path)
-            return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
+            return error_response
+
+        # On not-existing route returns the index, and let the frontend handle the incorrect path.
+        if (path := settings.assets_folder.absolute() / "index.html").exists():
+            return FileResponse(path)
+
+        return error_response
 
     @app.on_event("startup")
     async def app_startup():

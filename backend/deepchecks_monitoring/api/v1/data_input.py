@@ -53,25 +53,48 @@ async def log_data_batch(
 ):
     """Insert batch data samples."""
     if len(data) == 0:
-        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
-                                                     options=joinedload(ModelVersion.model))
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "Got empty list"}
+        )
+
+    model_version: ModelVersion = await fetch_or_404(
+        session,
+        ModelVersion,
+        id=model_version_id,
+        options=joinedload(ModelVersion.model)
+    )
+
     time = pdl.now()
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
+
     # Atomically getting the count and increasing in order to avoid race conditions
     curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
     remains = minute_rate - curr_count
+
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
-                   "num_saved": 0}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+        return ORJSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={
+                "error_message": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
+                "additional_information": {"num_saved": 0}
+            }
+        )
+
     await data_ingest.log_samples(model_version, data[:remains], session, user, time)
+
     if remains < len(data):
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
-                             f"{remains} first rows were received",
-                   "num_saved": remains}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+        return ORJSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={
+                "error_message": (
+                    f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
+                    f"{remains} first rows were received"
+                ),
+                "additional_information": {"num_saved": remains}
+            }
+        )
 
     return Response(status_code=status.HTTP_200_OK)
 
@@ -87,24 +110,42 @@ async def log_labels(
 ):
     """Update data samples."""
     if len(data) == 0:
-        return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "Got empty list"})
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "Got empty list"}
+        )
+
     model: Model = await fetch_or_404(session, Model, id=model_id)
     time = pdl.now()
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
+
     # Atomically getting the count and increasing in order to avoid race conditions
     curr_count = resources_provider.cache_functions.get_and_incr_user_rate_count(user, time, len(data))
     remains = minute_rate - curr_count
+
     # Remains can be negative because we don't check the limit before incrementing
     if remains <= 0:
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
-                   "num_saved": 0}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+        return ORJSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={
+                "error_message": f"Rate limit exceeded, you can send {minute_rate} rows per minute",
+                "additional_information": {"num_saved": 0}
+            }
+        )
+
     await data_ingest.log_labels(model, data[:remains], session, user)
+
     if remains < len(data):
-        content = {"detail": f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
-                             f"{remains} first rows were received",
-                   "num_saved": remains}
-        return ORJSONResponse(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, content=content)
+        return ORJSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={
+                "error_message": (
+                    f"Rate limit exceeded, you can send {minute_rate} rows per minute. "
+                    f"{remains} first rows were received"
+                ),
+                "additional_information": {"num_saved": remains}
+            }
+        )
 
     return Response(status_code=status.HTTP_200_OK)
 

@@ -7,7 +7,7 @@ import typing as t
 import bcrypt
 import jwt
 import pendulum as pdl
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
@@ -17,7 +17,6 @@ from pydantic import BaseModel, EmailStr, ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from starlette.status import HTTP_403_FORBIDDEN
 
 from deepchecks_monitoring import public_models as models
 from deepchecks_monitoring.dependencies import AsyncSessionDep
@@ -208,10 +207,7 @@ class AccessBearer(OAuth2):
             request.state.access_token = access_token
 
         if self.auto_error and access_token is None:
-            raise HTTPException(
-                status_code=HTTP_403_FORBIDDEN,
-                detail="Not authenticated"
-            )
+            raise AccessForbidden("Not authenticated")
 
         return access_token
 
@@ -294,7 +290,7 @@ class CurrentActiveUser(CurrentUser):
         """Dependency for validation of a current active user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
         if user.organization_id is None or user.full_name is None:
-            raise InvalidConfigurationException()
+            raise InvalidConfigurationException("User did not finish the registration process")
         if user.disabled:
             raise BadRequest("User is disabled")
 

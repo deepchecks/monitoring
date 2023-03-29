@@ -190,7 +190,7 @@ def test_check_duplicate_creation(
         expected_status=400
     )
     response = t.cast(httpx.Response, response)
-    assert response.json()["detail"] == f"Model already contains a check named {payload['name']}"
+    assert response.json()["error_message"] == f"Model already contains a check named {payload['name']}"
 
 
 def test_check_creation_of_wrong_type(
@@ -216,7 +216,7 @@ def test_check_creation_of_wrong_type(
     )
 
     response = t.cast(httpx.Response, response)
-    assert response.json()["detail"] == "Check checky v1 is not compatible with the model task type"
+    assert response.json()["error_message"] == "Check checky v1 is not compatible with the model task type"
 
 
 def test_check_deletion(

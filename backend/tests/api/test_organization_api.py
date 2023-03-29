@@ -65,7 +65,7 @@ async def test_user_invitation_that_is_already_associated_with_organization(
     )
 
     assert response.status_code == 400, (response.content, response.json())
-    assert response.json()["detail"] == f"User {member.email} already associated to an organization"
+    assert response.json()["error_message"] == f"User {member.email} already associated to an organization"
 
 
 @pytest.mark.asyncio
