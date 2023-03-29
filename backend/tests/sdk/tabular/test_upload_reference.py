@@ -63,6 +63,26 @@ async def test_classification_upload(
 
 
 @pytest.mark.asyncio
+async def test_classification_upload_fail_if_exists(
+    multiclass_model_version_client: DeepchecksModelVersionClient):
+    df = pd.DataFrame([dict(a=2, b='2', c=1, label=2), dict(a=3, b='4', c=2, label=0)])
+    proba = np.asarray([[0.1, 0.3, 0.6], [0.1, 0.6, 0.3]])
+    pred = [2, 1]
+
+    multiclass_model_version_client.upload_reference(
+        Dataset(df, features=['a', 'b'], label='label'),
+        prediction_probas=proba,
+        predictions=pred
+    )
+    with pytest.raises(ValueError):
+        multiclass_model_version_client.upload_reference(
+            Dataset(df, features=['a', 'b'], label='label'),
+            prediction_probas=proba,
+            predictions=pred
+        )
+
+
+@pytest.mark.asyncio
 async def test_classification_upload_without_classes(
     test_api: TestAPI,
     deepchecks_sdk: DeepchecksClient,
@@ -173,6 +193,7 @@ async def test_regression_upload_w_date(regression_model: Payload,
         (2.0, '2', curr_time, 2, 2),
         (3.0, '4', curr_time.add(days=1), 0, 1),
     ]
+
 
 def test_pass_probas_to_regression(
     deepchecks_sdk: DeepchecksClient,

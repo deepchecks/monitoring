@@ -11,6 +11,7 @@
 """Module containing deepchecks monitoring client."""
 import io
 import pathlib
+import time
 # flake8: noqa: F821
 import typing as t
 import warnings
@@ -189,9 +190,21 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         model_version = self.api.fetch_model_version(self.model_version_id)
         model_version = t.cast(t.Dict[str, t.Any], model_version)
 
-        if not model_version.get('feature_importance'):
-            warnings.warn('Model version already has feature importance.')
-
+        prod_data = self.get_production_data(start_time=0, end_time=int(time.time()), rows_count=1)
+        if prod_data is not None and len(prod_data.index) > 0:
+            dashboard = self.api.fetch_dashboard()
+            if dashboard is not None and len(dashboard['monitors']) > 0:
+                for monitor in dashboard['monitors']:
+                    monitor_model_id = monitor['check']['model_id']
+                    # can only update when it does not affect already calculated values in monitors
+                    if self.model['id'] == monitor_model_id:
+                        raise ValueError(
+                            'It is not possible to replace feature importance for model version with existing '
+                            'production data and existing monitors. You can create a new model version... See '
+                            'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/tabular_setup.html '
+                            'and '
+                            'https://docs.deepchecks.com/monitoring/stable/user-guide/user_interface/dashboard.html '
+                            'for more info.')
         feature_importance = (
             dict(feature_importance)
             if isinstance(feature_importance, pd.Series)
@@ -340,6 +353,13 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
         samples_per_request : int
             The samples per batch request.
         """
+        existing_reference_data = self.get_reference_data(rows_count=1)
+        if existing_reference_data is not None and len(existing_reference_data.index > 0):
+            raise ValueError('it is not possible to replace reference data for existing model version you can'
+                             ' create a new model version... See '
+                             'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/tabular_setup.html '
+                             'for more info.')
+
         columns_to_use = [col for col in dataset.data.columns if col not in
                           [dataset.label_name if dataset.has_label() else None,
                            dataset.index_name,

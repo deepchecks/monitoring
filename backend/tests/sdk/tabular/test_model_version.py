@@ -8,12 +8,13 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 import io
+import time
 
 import numpy as np
 import pandas as pd
 import pytest
 from deepchecks.tabular import Dataset
-from deepchecks_client import DeepchecksClient
+from deepchecks_client import DeepchecksClient, DeepchecksModelVersionClient
 from deepchecks_client.tabular.utils import create_schema, describe_dataset, read_schema
 from hamcrest import assert_that, calling, raises
 from httpx import HTTPError
@@ -190,6 +191,95 @@ async def test_model_version_feature_importance_update(
     assert model_version is not None
     assert isinstance(model_version.feature_importance, dict)
     assert model_version.feature_importance == feature_importance
+
+
+@pytest.mark.asyncio
+async def test_model_version_feature_importance_set_fail_if_data_and_monitors_exist(deepchecks_sdk: DeepchecksClient):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name="classification model",
+        task_type=TaskType.MULTICLASS.value
+    )
+    ref_dataset = Dataset(df={"a": [2], "b": ["2"], "c": [1]})
+    schema_file_path = "schema_file.yaml"
+    create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
+
+    model_version_client = model_client.version(name="test", schema=schema_file_path)
+    model_version_client.log_sample(
+        sample_id="1",
+        prediction="2",
+        values={"a": 2, "b": "2", "c": 1}
+    )
+    model_version_client.send()
+    # Making sure data is ingested in the system because otherwise the test will fail
+    timeout = time.time() + 5  # 5 seconds from now
+    while True:
+        prod_data = model_version_client.get_production_data(start_time=0, end_time=int(time.time()), rows_count=1)
+        if len(prod_data.index) > 0 or time.time() > timeout:
+            break
+    assert len(prod_data.index) > 0
+
+    feature_importance = {"a": 0.5, "b": 0.4, "c": 0.1}
+    with pytest.raises(ValueError):
+        model_version_client.set_feature_importance(feature_importance)
+
+
+@pytest.mark.asyncio
+async def test_model_version_feature_importance_set_success_if_data_but_no_monitors_exist(
+        deepchecks_sdk: DeepchecksClient):
+    model_client = deepchecks_sdk.get_or_create_model(
+        name="Model without monitor",
+        task_type=TaskType.MULTICLASS.value,
+        create_model_defaults=False
+    )
+    assert model_client.model["id"] == 1
+
+    ref_dataset = Dataset(df={"a": [2], "b": ["2"], "c": [1]})
+    schema_file_path = "schema_file.yaml"
+    create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
+    model_version_client = model_client.version(name="test", schema=schema_file_path)
+    model_version_client.log_sample(
+        sample_id="1",
+        prediction="2",
+        values={"a": 2, "b": "2", "c": 1}
+    )
+    model_version_client.send()
+
+    # Making sure data is ingested in the system because otherwise the test will fail
+    timeout = time.time() + 5  # 5 seconds from now
+    while True:
+        prod_data = model_version_client.get_production_data(start_time=0, end_time=int(time.time()), rows_count=1)
+        if len(prod_data.index) > 0 or time.time() > timeout:
+            break
+    assert len(prod_data.index) > 0
+
+    model_with_monitors = deepchecks_sdk.get_or_create_model(
+        name="Model with monitor",
+        task_type=TaskType.MULTICLASS.value
+    )
+    assert model_with_monitors.model["id"] != model_client.model["id"]
+
+    feature_importance = {"a": 0.5, "b": 0.4, "c": 0.1}
+    # Assert
+    model_version_client.set_feature_importance(feature_importance)
+
+
+@pytest.mark.asyncio
+async def test_model_version_upload_reference_data_fail_if_exists(
+    multiclass_model_version_client: DeepchecksModelVersionClient,
+):
+    dataset = Dataset(
+        pd.DataFrame([dict(a=2, b="2", c=1, label=2), dict(a=3, b="3", c=2, label=0)]),
+        label="label",
+        cat_features=["b"]
+    )
+
+
+    proba = np.asarray([[0.2, 0.4, 0.2], [0.4, 0.2, 0.2]])
+    pred = [2, 1]
+    multiclass_model_version_client.upload_reference(dataset, pred, proba)
+
+    with pytest.raises(ValueError):
+        multiclass_model_version_client.upload_reference(dataset, pred, proba)
 
 
 def test_model_version_deletion(deepchecks_sdk: DeepchecksClient):
