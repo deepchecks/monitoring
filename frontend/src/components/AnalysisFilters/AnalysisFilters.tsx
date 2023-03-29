@@ -19,6 +19,7 @@ import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 import { ColumnType } from 'helpers/types/model';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 
@@ -82,7 +83,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
       if (defaultFrequency) {
         setPeriod([new Date(defaultFrequency.start * 1000), new Date(defaultFrequency.end * 1000)]);
         setDefaultFrequency(defaultFrequency);
-        setFrequency(defaultFrequency?.frequency as number);
+        setFrequency(FrequencyMap[defaultFrequency?.frequency]);
       }
 
       if (storageFrequency !== 'null' && storageFrequency !== '0') {

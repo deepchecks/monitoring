@@ -4,6 +4,8 @@ import 'chartjs-adapter-dayjs-3';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
+import { frequencyValues } from 'helpers/utils/frequency';
+
 import { AlertsWidget } from './DiagramLine.types';
 
 dayjs.extend(localizedFormat);
@@ -16,7 +18,7 @@ export function createGradient(ctx: CanvasRenderingContext2D, area: ChartArea, c
 }
 
 function getTime(timeLabel: string, monitorFreq: number) {
-  if (monitorFreq < 86400) return dayjs(timeLabel).format('L LT');
+  if (monitorFreq < frequencyValues.DAY) return dayjs(timeLabel).format('L LT');
   return dayjs(timeLabel).format('L');
 }
 

@@ -19,9 +19,10 @@ from hamcrest import assert_that, has_entries
 from httpx import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
 from deepchecks_monitoring.config import Settings
-from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
+from deepchecks_monitoring.schema_models.monitor import round_off_datetime
 from tests.common import ModelIdentifiersPair, Payload, TestAPI, upload_classification_data
 
 
@@ -281,15 +282,23 @@ async def test_model_set_monitors_time(
     test_api.create_monitor(check_id=check2["id"])
 
     # Act
-    new_date = pdl.now().subtract(years=1)
+    new_date = pdl.now("utc").subtract(years=1)
+
     model = deepchecks_sdk.get_or_create_model(name=model["name"], task_type="binary")
     response = model.set_schedule_time(timestamp=new_date.isoformat(), model_id=model.model["id"])
-
     assert response.status_code == 200
+
     # Assert
-    monitors = (await async_session.scalars(sa.select(Monitor))).all()
+    monitors = (await async_session.execute(
+        sa.select(
+            Monitor.id,
+            Monitor.latest_schedule,
+            Monitor.frequency
+        )
+    )).all()
+
     for monitor in monitors:
-        assert monitor.latest_schedule == floor_window_for_time(new_date, monitor.frequency)
+        assert pdl.instance(monitor.latest_schedule) == round_off_datetime(new_date, monitor.frequency)
 
 
 def test_model_note_creation(

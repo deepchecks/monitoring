@@ -8,61 +8,84 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the monitor ORM model."""
+import enum
 import typing as t
+from datetime import datetime
 
 import pendulum as pdl
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.future import select
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, column_property, relationship
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin, MonitorCheckConfSchema
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.schema_models.alert_rule import AlertRule  # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.dashboard import Dashboard  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from pendulum.datetime import DateTime as PendulumDateTime
+
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.alert_rule import AlertRule
+    from deepchecks_monitoring.schema_models.check import Check
+    from deepchecks_monitoring.schema_models.dashboard import Dashboard
 
 __all__ = ["Monitor", "NUM_WINDOWS_TO_START"]
 
 NUM_WINDOWS_TO_START = 14
 
 
-def _get_start_schedule_time(context: DefaultExecutionContext):
+def _calculate_default_latest_schedule(context: DefaultExecutionContext):
     # pylint: disable=import-outside-toplevel, redefined-outer-name
-    from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.model import Model
 
-    check_id = context.get_current_parameters()["check_id"]
-    frequency = context.get_current_parameters()["frequency"]
+    check_id = t.cast(int, context.get_current_parameters()["check_id"])
+    frequency = t.cast("Frequency", context.get_current_parameters()["frequency"])
 
-    select_obj = (
-        select(Model.start_time, Model.end_time)
+    record = context.connection.execute(
+        select(Model.start_time, Model.end_time, Model.timezone)
         .join(Check, Check.id == check_id)
         .where(Model.id == Check.model_id)
+    ).first()
+
+    tz = record["timezone"]
+    start_time = pdl.instance(record["start_time"])
+    end_time = pdl.instance(record["end_time"])
+
+    return calculate_initial_latest_schedule(
+        frequency=frequency,
+        model_timezone=tz,
+        model_start_time=start_time,
+        model_end_time=end_time,
     )
 
-    record = context.connection.execute(select_obj).first()
-    start_time, end_time = record[0], record[1]
-    # This indicates there is still no data for the model
-    if end_time < start_time:
-        time = pdl.now().subtract(seconds=frequency * NUM_WINDOWS_TO_START)
-    else:
-        time = max(pdl.instance(start_time),
-                   pdl.instance(end_time).subtract(seconds=frequency * NUM_WINDOWS_TO_START))
-    return floor_window_for_time(time, frequency)
+
+class Frequency(str, enum.Enum):
+    """Monitor execution frequency."""
+
+    HOUR = "HOUR"
+    DAY = "DAY"
+    WEEK = "WEEK"
+    MONTH = "MONTH"
+
+    def to_pendulum_duration_unit(self):
+        return f"{self.value.lower()}s"
+
+    def to_pendulum_duration(self):
+        unit = self.to_pendulum_duration_unit()
+        return pdl.duration(**{unit: 1})
+
+    def to_postgres_interval(self):
+        return f"INTERVAL '1 {self.value}'"
 
 
 class Monitor(Base, MetadataMixin):
     """ORM model for the monitor."""
 
     __tablename__ = "monitors"
-    __table_args__ = (sa.CheckConstraint("frequency >= 3600 AND frequency % 3600 = 0", name="frequency_valid"),
-                      sa.CheckConstraint("aggregation_window >= 3600 AND aggregation_window % 3600 = 0 AND "
-                                         "aggregation_window >= frequency", name="aggregation_window_valid"),)
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(50))
@@ -71,10 +94,14 @@ class Monitor(Base, MetadataMixin):
     lookback = sa.Column(sa.Integer)
     additional_kwargs = sa.Column(PydanticType(pydantic_model=MonitorCheckConfSchema), default=None, nullable=True)
 
-    aggregation_window = sa.Column(sa.Integer, nullable=False)
-    frequency = sa.Column(sa.Integer, nullable=False)
+    aggregation_window = sa.Column(sa.Integer, nullable=False, default=1, server_default=sa.literal(1))
+    frequency = sa.Column(sa.Enum(Frequency), nullable=False)
+    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False, default=_calculate_default_latest_schedule)
 
-    latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False, default=_get_start_schedule_time)
+    frequency_as_interval = column_property(sa.cast(
+        sa.func.concat(1, " ", sa.cast(frequency, sa.VARCHAR)),
+        INTERVAL
+    ))
 
     check_id = sa.Column(
         sa.Integer,
@@ -103,3 +130,88 @@ class Monitor(Base, MetadataMixin):
         passive_deletes=True,
         passive_updates=True
     )
+
+    @property
+    def next_schedule(self):
+        latest_schedule = pdl.instance(t.cast("datetime", self.latest_schedule))
+        frequency = t.cast("Frequency", self.frequency).to_pendulum_duration()
+        return latest_schedule + frequency
+
+    # TODO: better/shorter name
+    @property
+    def left_edge_of_calculation_window(self) -> "PendulumDateTime":
+        frequency = t.cast("Frequency", self.frequency).to_pendulum_duration()
+        aggregation_window = frequency * t.cast(int, self.aggregation_window)
+        return self.next_schedule - aggregation_window
+
+
+def as_pendulum_datetime(value: t.Union[int, str, "PendulumDateTime", "datetime"]) -> "PendulumDateTime":
+    if isinstance(value, datetime):
+        return pdl.instance(value)
+    elif isinstance(value, int):
+        return pdl.from_timestamp(value)
+    elif isinstance(value, str):
+        return t.cast("PendulumDateTime", pdl.parser.parse(value))
+    else:
+        raise TypeError(f"Unexpected type of value - {type(value)}")
+
+
+def round_off_datetime(
+    value: t.Union[int, str, "PendulumDateTime", "datetime"],
+    frequency: "Frequency"
+) -> "PendulumDateTime":
+    value = as_pendulum_datetime(value)
+    s = value.start_of(frequency.value.lower())
+    d = frequency.to_pendulum_duration()
+    return s + d if s != value else value
+
+
+def calculate_initial_latest_schedule(
+    frequency: "Frequency",
+    *,
+    model_timezone: str = "UTC",
+    model_start_time: t.Optional["pdl.datetime.DateTime"] = None,
+    model_end_time: t.Optional["pdl.datetime.DateTime"] = None,
+    windows_to_lookback: int = NUM_WINDOWS_TO_START
+):
+    now = pdl.now(model_timezone)
+    lookback = frequency.to_pendulum_duration() * windows_to_lookback
+
+    if model_end_time is not None and model_start_time is not None:
+        unrounded_latest_schedule = (
+            (now - lookback)
+            if model_end_time < model_start_time
+            else max(model_start_time, model_end_time - lookback)
+        ).in_tz(model_timezone)
+    else:
+        unrounded_latest_schedule = (now - lookback).in_tz(model_timezone)
+
+    return round_off_datetime(
+        unrounded_latest_schedule,
+        frequency=frequency
+    )
+
+
+def monitor_execution_range(
+    latest_schedule: "pdl.datetime.DateTime",
+    frequency: "Frequency",
+    *,
+    until: t.Optional["pdl.datetime.DateTime"] = None
+):
+    if until is not None and latest_schedule >= until:
+        return
+
+    duration = frequency.to_pendulum_duration()
+    previous = latest_schedule + duration
+
+    if until is not None:
+        while True:
+            if previous > until:
+                return
+            else:
+                yield previous
+                previous = previous + duration
+    else:
+        while True:
+            yield previous
+            previous = previous + duration

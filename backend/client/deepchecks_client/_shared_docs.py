@@ -28,8 +28,9 @@ check_name: str
 frequency: int
     How often the minitor would be calculated, provided in seconds.
 aggregation_window: int, default: None
-    The aggregation window of each calculation of the monitor, provided in seconds. If None, the aggregation window
-    will be the same as the frequency.
+    The aggregation window of each calculation of the monitor.
+    If None, the aggregation window will be the same as the frequency.
+    TODO: better explanation
 lookback: int, default: None
     Determines the time range for which the monitor is run, provided in seconds. If None, the lookback will be
     inferred based on the frequency.
@@ -58,8 +59,9 @@ threshold: float
 frequency: int, default: None
     Control the frequency the alert will be calculated, provided in seconds.
 aggregation_window: int
-    The aggregation window of each calculation of the alert, provided in seconds. If None, the aggregation window
-    will be the same as the frequency.
+    The aggregation window of each calculation of the alert.
+    If None, the aggregation window will be the same as the frequency.
+    TODO: better explanation
 alert_severity: str, default: "medium"
     The severity level associated with the alert. Possible values are: critical, high, medium and low.
 greater_than: bool, default: True

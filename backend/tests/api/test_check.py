@@ -22,6 +22,7 @@ from hamcrest import assert_that, close_to, contains_exactly, has_entries, has_l
 from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models import TaskType
+from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
 from tests.common import Payload, TestAPI, upload_classification_data
 
 if t.TYPE_CHECKING:
@@ -1269,9 +1270,15 @@ def test_auto_frequency(
     request = client.get(f"/api/v1/models/{model['id']}/auto-frequency")
 
     # Assert
+    expected_end = round_off_datetime(curr_time, Frequency.WEEK)
+    expected_start = expected_end - pdl.duration(weeks=12)
+
     assert request.status_code == 200
-    assert request.json() == {"frequency": 604800, "end": curr_time.int_timestamp,
-                              "start": curr_time.subtract(days=90).int_timestamp}
+    assert request.json() == {
+        "frequency": Frequency.WEEK.value,
+        "end": expected_end.int_timestamp,
+        "start": expected_start.int_timestamp
+    }
 
 
 def test_label_check_runs_only_on_data_with_label(

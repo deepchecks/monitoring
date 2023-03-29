@@ -239,6 +239,8 @@ async def test_alert_slack_notification(
         # only this attr is needed to send a message
         incoming_webhook_url=os.environ["SLACK_INCOMING_WEBHOOK_URL"],
         incoming_webhook_configuration_url="qwert",
+        created_by=0,
+        updated_by=0
     ))
 
     settings = Settings()  # type: ignore

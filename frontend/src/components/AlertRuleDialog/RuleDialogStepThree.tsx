@@ -1,18 +1,23 @@
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import Divider from '@mui/material/Divider';
+import { ChartData } from 'chart.js';
+import dayjs from 'dayjs';
+
 import {
   MonitorOptions,
   OperatorsEnum,
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from 'api/generated';
-import { ChartData } from 'chart.js';
+
 import { SelectCondition } from 'components/Dashboard/MonitorDrawer/components/CreateAlertForm/SelectCondition';
 import { MonitorDrawerGraph } from 'components/Dashboard/MonitorDrawer/components/MonitorDrawerGraph';
-import dayjs from 'dayjs';
+
 import { GraphData } from 'helpers/types';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import useModels from 'helpers/hooks/useModels';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { FrequencyMap } from 'helpers/utils/frequency';
+
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 
@@ -93,7 +98,11 @@ export const AlertRuleDialogStepThree = ({ handleNext, handleBack }: AlertRuleSt
             </Box>
           </Box>
           <Divider orientation="vertical" flexItem light />
-          <MonitorDrawerGraph graphData={graphData} isLoading={isRunCheckLoading} timeFreq={monitor?.frequency} />
+          <MonitorDrawerGraph
+            graphData={graphData}
+            isLoading={isRunCheckLoading}
+            timeFreq={FrequencyMap[monitor?.frequency]}
+          />
         </Stack>
       </Box>
     </Box>

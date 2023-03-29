@@ -34,8 +34,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
-from deepchecks_monitoring.logic.monitor_alert_logic import (AlertsCountPerModel, AlertSeverityMap,
-                                                             MonitorsCountPerModel, floor_window_for_time)
+from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, AlertSeverityMap, MonitorsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
@@ -49,7 +48,7 @@ from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
-from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.schema_models.monitor import Monitor, round_off_datetime
 from deepchecks_monitoring.utils import auth
 
 from .router import router
@@ -941,20 +940,28 @@ async def set_schedule_time(
 
     monitors = [monitor for check in model.checks for monitor in check.monitors]
     monitor_ids = [monitor.id for monitor in monitors]
-    timestamp = pdl.parse(body.timestamp)
+    timestamp = pdl.parser.parse(body.timestamp).in_tz(model.timezone)
 
     for monitor in monitors:
         # Update schedule time
-        monitor.latest_schedule = floor_window_for_time(timestamp, monitor.frequency)
+        monitor.latest_schedule = round_off_datetime(timestamp, monitor.frequency)
         monitor.updated_by = user.id
 
     # Delete monitors tasks
     await Task.delete_monitor_tasks(monitor_ids, timestamp, session)
 
     # Resolving all alerts which are connected to this monitors
-    await session.execute(update(Alert).where(AlertRule.monitor_id.in_(monitor_ids))
-                          .values({Alert.resolved: True}),
-                          execution_options=immutabledict({"synchronize_session": False}))
+    await session.execute(
+        update(Alert)
+        .where(AlertRule.monitor_id.in_(monitor_ids))
+        .values({Alert.resolved: True}),
+        execution_options=immutabledict({"synchronize_session": False})
+    )
+
+    return [
+        {"id": it.id, "latest_schedule": it.latest_schedule}
+        for it in monitors
+    ]
 
 
 @router.get(

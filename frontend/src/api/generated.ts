@@ -55,7 +55,7 @@ export type RetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGetParams = {
   end_time?: string;
 };
 
-export type UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem = { [key: string]: any };
+export type LogLabelsApiV1ModelModelIdLabelsPutBodyItem = { [key: string]: any };
 
 export type LogDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem = { [key: string]: any };
 
@@ -412,7 +412,7 @@ export interface MonitorUpdateSchema {
   data_filters?: MonitorUpdateSchemaDataFilters;
   dashboard_id?: number | null;
   additional_kwargs?: MonitorUpdateSchemaAdditionalKwargs;
-  frequency?: number;
+  frequency?: Frequency;
   aggregation_window?: number;
 }
 
@@ -439,7 +439,7 @@ export interface MonitorSchema {
   data_filters?: DataFilterList;
   additional_kwargs?: MonitorCheckConfSchema;
   alert_rules: AlertRuleSchema[];
-  frequency: number;
+  frequency: Frequency;
 }
 
 /**
@@ -457,7 +457,7 @@ export interface MonitorOptions {
   end_time: string;
   start_time: string;
   additional_kwargs?: MonitorCheckConfSchema;
-  frequency?: number;
+  frequency?: Frequency;
   aggregation_window?: number;
 }
 
@@ -480,7 +480,7 @@ export interface MonitorCreationSchema {
   name: string;
   lookback: number;
   aggregation_window: number;
-  frequency: number;
+  frequency: Frequency;
   dashboard_id?: number | null;
   description?: string;
   data_filters?: MonitorCreationSchemaDataFilters;
@@ -725,6 +725,19 @@ export interface HTTPValidationError {
 }
 
 /**
+ * Monitor execution frequency.
+ */
+export type Frequency = typeof Frequency[keyof typeof Frequency];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Frequency = {
+  HOUR: 'HOUR',
+  DAY: 'DAY',
+  WEEK: 'WEEK',
+  MONTH: 'MONTH'
+} as const;
+
+/**
  * Schema to be returned to the client for the features control.
  */
 export interface FeaturesSchema {
@@ -954,7 +967,7 @@ export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost 
  * Response for auto frequency.
  */
 export interface AutoFrequencyResponse {
-  frequency: number;
+  frequency: Frequency;
   start: number;
   end: number;
 }
@@ -1058,7 +1071,7 @@ export interface AlertRuleConfigSchema {
   id: number;
   name: string;
   check_name: string;
-  frequency: number;
+  frequency: Frequency;
   condition: Condition;
   alert_severity?: AlertSeverity;
   total_alerts?: number;
@@ -3568,53 +3581,52 @@ export const useLogDataBatchApiV1ModelVersionsModelVersionIdDataPost = <
 
 /**
  * Update data samples.
- * @summary Update Data Batch
+ * @summary Log Labels
  */
-export const updateDataBatchApiV1ModelVersionsModelVersionIdDataPut = (
-  modelVersionId: number,
-  updateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem: UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem[]
+export const logLabelsApiV1ModelModelIdLabelsPut = (
+  modelId: number,
+  logLabelsApiV1ModelModelIdLabelsPutBodyItem: LogLabelsApiV1ModelModelIdLabelsPutBodyItem[]
 ) => {
   return customInstance<unknown>({
-    url: `/api/v1/model-versions/${modelVersionId}/data`,
+    url: `/api/v1/model/${modelId}/labels`,
     method: 'put',
     headers: { 'Content-Type': 'application/json' },
-    data: updateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem
+    data: logLabelsApiV1ModelModelIdLabelsPutBodyItem
   });
 };
 
-export type UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateDataBatchApiV1ModelVersionsModelVersionIdDataPut>>
+export type LogLabelsApiV1ModelModelIdLabelsPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logLabelsApiV1ModelModelIdLabelsPut>>
 >;
-export type UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutMutationBody =
-  UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem[];
-export type UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutMutationError = ErrorType<HTTPValidationError>;
+export type LogLabelsApiV1ModelModelIdLabelsPutMutationBody = LogLabelsApiV1ModelModelIdLabelsPutBodyItem[];
+export type LogLabelsApiV1ModelModelIdLabelsPutMutationError = ErrorType<HTTPValidationError>;
 
-export const useUpdateDataBatchApiV1ModelVersionsModelVersionIdDataPut = <
+export const useLogLabelsApiV1ModelModelIdLabelsPut = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateDataBatchApiV1ModelVersionsModelVersionIdDataPut>>,
+    Awaited<ReturnType<typeof logLabelsApiV1ModelModelIdLabelsPut>>,
     TError,
-    { modelVersionId: number; data: UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem[] },
+    { modelId: number; data: LogLabelsApiV1ModelModelIdLabelsPutBodyItem[] },
     TContext
   >;
 }) => {
   const { mutation: mutationOptions } = options ?? {};
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateDataBatchApiV1ModelVersionsModelVersionIdDataPut>>,
-    { modelVersionId: number; data: UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem[] }
+    Awaited<ReturnType<typeof logLabelsApiV1ModelModelIdLabelsPut>>,
+    { modelId: number; data: LogLabelsApiV1ModelModelIdLabelsPutBodyItem[] }
   > = props => {
-    const { modelVersionId, data } = props ?? {};
+    const { modelId, data } = props ?? {};
 
-    return updateDataBatchApiV1ModelVersionsModelVersionIdDataPut(modelVersionId, data);
+    return logLabelsApiV1ModelModelIdLabelsPut(modelId, data);
   };
 
   return useMutation<
-    Awaited<ReturnType<typeof updateDataBatchApiV1ModelVersionsModelVersionIdDataPut>>,
+    Awaited<ReturnType<typeof logLabelsApiV1ModelModelIdLabelsPut>>,
     TError,
-    { modelVersionId: number; data: UpdateDataBatchApiV1ModelVersionsModelVersionIdDataPutBodyItem[] },
+    { modelId: number; data: LogLabelsApiV1ModelModelIdLabelsPutBodyItem[] },
     TContext
   >(mutationFn, mutationOptions);
 };

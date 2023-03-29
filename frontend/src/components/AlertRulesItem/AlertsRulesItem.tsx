@@ -32,6 +32,7 @@ import {
 } from './AlertsRulesItem.style';
 
 import { Checkmark, PencilDrawing, Sync } from 'assets/icon/icon';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -62,7 +63,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
     modelsMap[model_id]?.name,
     monitor?.check?.name,
     `${monitor?.check?.name} ${OperatorsEnumMap[condition.operator]} ${condition.value}`,
-    monitor ? processFrequency(dayjs.duration(monitor?.frequency, 'seconds')) : undefined
+    monitor ? processFrequency(dayjs.duration(FrequencyMap[monitor?.frequency], 'seconds')) : undefined
   ];
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {

@@ -30,7 +30,7 @@ from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core import client as core_client
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
                                           classification_label_formatter, maybe_raise, parse_timestamp, pretty_print,
-                                          validate_additional_data_schema)
+                                          validate_additional_data_schema, validate_frequency)
 from deepchecks_client.tabular.utils import DataSchema, read_schema, standardize_input
 
 
@@ -539,15 +539,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
     def _add_defaults(self, monitoring_frequency: str):
         """Add default checks, monitors and alerts to a tabular model."""
         task_type = TaskType(self.model['task_type'])
-        intervals = {
-            'hour': 60 * 60,
-            'day': 24 * 60 * 60,
-            'week': 7 * 24 * 60 * 60,
-            'month': 30 * 24 * 60 * 60
-        }
-        if monitoring_frequency not in intervals:
-            raise ValueError(f'monitoring_frequency must be one of {list(intervals.keys())}')
-        frequency = intervals[monitoring_frequency]
+        frequency = validate_frequency(monitoring_frequency)
 
         checks = {
             'Feature Drift': FeatureDrift(min_samples=100),

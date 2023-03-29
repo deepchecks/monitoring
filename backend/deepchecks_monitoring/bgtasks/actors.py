@@ -15,7 +15,6 @@ import typing as t
 from collections import defaultdict
 
 import anyio
-import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
 from sqlalchemy import func, update
@@ -26,13 +25,12 @@ from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
-from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
-from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 
 __all__ = ["execute_monitor"]
 
@@ -68,8 +66,9 @@ async def _execute_monitor(
         logger.info("Monitor(id:%s) does not have alert rules", monitor_id)
         return []
 
-    end_time = floor_window_for_time(pdl.parse(timestamp), monitor.frequency)
-    start_time = end_time - pdl.duration(seconds=monitor.aggregation_window)
+    monitor_frequency = t.cast(Frequency, monitor.frequency).to_pendulum_duration()
+    end_time = as_pendulum_datetime(timestamp)
+    start_time = end_time - (monitor_frequency * t.cast(int, monitor.aggregation_window))
 
     model_versions = t.cast(t.List[ModelVersion], (await session.scalars(
         sa.select(ModelVersion)

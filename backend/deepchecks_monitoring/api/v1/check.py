@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 """V1 API of the check."""
 import typing as t
-from itertools import chain
 
 import pandas as pd
 import pendulum as pdl
@@ -39,18 +38,19 @@ from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckR
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
-from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
+from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
+from deepchecks_monitoring.utils.typing import as_datetime, as_pendulum_datetime
 
-from ...public_models import User
 from .router import router
 
 
@@ -109,7 +109,7 @@ class CheckGroupBySchema(BaseModel):
 class AutoFrequencyResponse(BaseModel):
     """Response for auto frequency."""
 
-    frequency: int
+    frequency: Frequency
     start: int
     end: int
 
@@ -246,68 +246,106 @@ async def get_checks(
     return [CheckSchema.from_orm(res) for res in results]
 
 
-@router.get('/models/{model_id}/auto-frequency', tags=[Tags.CHECKS], response_model=AutoFrequencyResponse)
+@router.get(
+    '/models/{model_id}/auto-frequency',
+    tags=[Tags.CHECKS],
+    response_model=AutoFrequencyResponse
+)
 async def get_model_auto_frequency(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
 ):
     """Infer from the data the best frequency to show for analysis screen."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-    end_time = pdl.instance(model.end_time)
+    model_timezone = t.cast(str, model.timezone)
 
-    def option_to_response(opt: dict):
+    if model.end_time is None:
+        frequency = Frequency.DAY
+        end = round_off_datetime(pdl.now(model_timezone), Frequency.DAY)
         return {
-            'frequency': opt['frequency'],
-            'start': end_time.subtract(days=opt['days']).int_timestamp,
-            'end': end_time.int_timestamp,
+            'end': end.int_timestamp,
+            'start': as_pendulum_datetime(end - frequency.to_pendulum_duration()).int_timestamp,
+            'frequency': frequency.value
         }
 
-    # If end time is none the model doesn't have any data, so return default
-    if end_time is None:
-        return option_to_response({'frequency': 3600 * 24, 'days': 30})
-
     # Query random timestamps of samples in the last 90 days
-    start_time = end_time.subtract(days=365)
+    model_end_time = pdl.instance(as_datetime(model.end_time)).in_tz(model_timezone)
+    end_time = round_off_datetime(model_end_time, Frequency.MONTH)
+    start_time = end_time.subtract(years=1)
+    # start_time = end_time.subtract(days=90)
+
     _, model_versions = await get_model_versions_for_time_range(
-        session, model.id, start_time, end_time)
+        session,
+        model.id,
+        start_time,
+        end_time
+    )
 
     total_timestamps = 10_000
     timestamps_per_version = max(100, total_timestamps // max(len(model_versions), 1))
-    queries = []
+    timestamps = []
+    # queries = []
+
     for model_version in model_versions:
         # To improve performance does not load all the table definition and just define the timestamp and id columns
         # manually
-        ts_column = Column(SAMPLE_TS_COL)
         id_column = Column(SAMPLE_ID_COL)
-        query = select(ts_column).where(ts_column <= end_time, ts_column >= start_time) \
-            .order_by(func.md5(id_column)).limit(timestamps_per_version) \
-            .select_from(text(model_version.get_monitor_table_name()))
-        queries.append(session.scalars(query))
+        ts_column = Column(SAMPLE_TS_COL)
+        monitor_table_name = model_version.get_monitor_table_name()
 
-    # Awaiting all queries and collect timestamps
-    timestamps = list(chain.from_iterable([(await query).all() for query in queries]))
+        timestamps.extend(
+            (await session.scalars(
+                select(ts_column)
+                .select_from(text(monitor_table_name))
+                .where(ts_column <= end_time, ts_column >= start_time)
+                .order_by(func.md5(id_column))
+                .limit(timestamps_per_version)
+            )).all()
+        )
 
     # Set option in order of importance - the first option to pass 0.8 windows percentage returns, else the one with
     # maximum percentage returns
-    options = [
-        {'frequency': 3600 * 24, 'days': 30},
-        {'frequency': 3600, 'days': 3},
-        {'frequency': 3600 * 24 * 7, 'days': 90},
-        {'frequency': 3600 * 24 * 30, 'days': 365}
-    ]
-    for option in options:
-        num_windows = int(option['days'] * 24 * 3600 / option['frequency'])
+    options = []
+
+    for frequency, lookback in (
+        (Frequency.DAY, pdl.duration(days=30)),
+        (Frequency.HOUR, pdl.duration(days=3)),
+        (Frequency.WEEK, pdl.duration(weeks=12)),
+        (Frequency.MONTH, pdl.duration(years=1))
+    ):
+        end_time = round_off_datetime(model_end_time, frequency)
+        start_time = as_pendulum_datetime(end_time - lookback)
+        period = pdl.period(start_time, end_time)
+
+        if frequency is Frequency.MONTH:
+            # this `if` is needed because:
+            # >>> period / pdl.duration(years=1)
+            # ... raises ZeroDivisionError
+            num_windows = 12
+        else:
+            num_windows = int(period / frequency.to_pendulum_duration())
+
         # Convert timestamps to windows and count number of unique windows
-        num_windows_exists = len(set((floor_window_for_time(x, option['frequency']) for x in timestamps
-                                      if x >= end_time.subtract(days=option['days']))))
-        option['percent_windows_exists'] = num_windows_exists / num_windows
-        # Return the first option that has at least 80% of the windows
-        if option['percent_windows_exists'] >= 0.8:
-            return option_to_response(option)
+        num_windows_exists = len(set((
+            round_off_datetime(pdl.instance(it).in_tz(model_timezone), frequency)
+            for it in timestamps
+            if it >= start_time
+        )))
+
+        option = {
+            'start': start_time.int_timestamp,
+            'end': end_time.int_timestamp,
+            'frequency': frequency.value
+        }
+
+        if (percent_windows_exists := num_windows_exists / num_windows) >= 0.8:
+            return option
+        else:
+            options.append((percent_windows_exists, option))
 
     # If no option has at least 80% of the windows, return the option with the highest percentage
-    max_option = max(options, key=lambda x: x['percent_windows_exists'])
-    return option_to_response(max_option)
+    max_option = max(options, key=lambda it: it[0])
+    return max_option[1]
 
 
 @router.post('/checks/run-many', response_model=t.Dict[int, CheckResultSchema], tags=[Tags.CHECKS])

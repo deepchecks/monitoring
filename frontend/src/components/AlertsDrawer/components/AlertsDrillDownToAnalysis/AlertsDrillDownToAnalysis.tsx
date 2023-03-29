@@ -20,6 +20,7 @@ import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { theme } from 'theme';
 
@@ -42,7 +43,7 @@ const AlertsDrillDownToAnalysisComponent = ({
 }: AlertsDrillDownToAnalysisProps) => {
   const { isLoading: isModelMapLoading, getCurrentModel } = useModels();
   const filters: DataFilter[] | undefined = monitor?.data_filters?.filters;
-  const frequency: number = monitor.frequency;
+  const frequency: number = FrequencyMap[monitor.frequency];
 
   const {
     data: checks,

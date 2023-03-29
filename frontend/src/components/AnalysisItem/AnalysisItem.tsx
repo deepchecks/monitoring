@@ -15,6 +15,7 @@ import { showDatasets } from './AnalysisItem.helpers';
 import { AnalysisItemProps, RunCheckBody, IDataset } from './AnalysisItem.types';
 import { CheckFilterTypes, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 dayjs.extend(localizedFormat);
 
@@ -95,7 +96,7 @@ function AnalysisItemComponent({
       const runCheckBody: RunCheckBody = {
         checkId: check.id,
         data: {
-          frequency,
+          frequency: FrequencyNumberMap[frequency as FrequencyNumberType['type']],
           start_time: period[0].toISOString(),
           end_time: period[1].toISOString()
         }

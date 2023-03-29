@@ -26,6 +26,8 @@ import {
 
 import { DeleteIcon, PencilDrawing } from 'assets/icon/icon';
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
+import { FrequencyMap } from 'helpers/utils/frequency';
+
 import { constants } from './alertRuleConfig.constants';
 
 interface AlertRuleConfigItemProps {
@@ -65,7 +67,7 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
   const theme = useTheme();
   const [headerColor, setHeaderColor] = useState(theme.palette.error.dark);
 
-  const checkFrequencyFormatted = dayjs.duration(frequency, 'seconds').humanize();
+  const checkFrequencyFormatted = dayjs.duration(FrequencyMap[frequency], 'seconds').humanize();
 
   const { operator, value } = alertRule.condition;
   const condition = `${OperatorsEnumMap[operator]} ${value}`;

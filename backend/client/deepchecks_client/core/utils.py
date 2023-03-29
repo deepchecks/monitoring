@@ -33,7 +33,7 @@ from typing_extensions import TypeAlias, TypedDict
 
 __all__ = ['ColumnType', 'ColumnTypeName', 'TaskType', 'DeepchecksColumns',
            'validate_additional_data_schema', 'describe_dataset', 'DataSchema',
-           'DataFilter', 'OperatorsEnum', 'classification_label_formatter']
+           'DataFilter', 'OperatorsEnum', 'classification_label_formatter', 'validate_frequency']
 
 ColumnTypeName: TypeAlias = str
 
@@ -374,3 +374,23 @@ def classification_label_formatter(label):
     if isinstance(label, Number) and int(label) == label:
         label = int(label)
     return str(label)
+
+
+def validate_frequency(value) -> str:
+    if isinstance(value, int):
+        if value == 3600:
+            return 'HOUR'
+        elif value == 86400:
+            return 'DAY'
+        elif value == 604800:
+            return 'WEEK'
+        elif value == 2592000:
+            return 'MONTH'
+        else:
+            # TODO: better message
+            raise ValueError(f'Unsupported value of frequency - {value}')
+
+    if isinstance(value, str) and value.lower() in {'hour', 'day', 'week', 'month'}:
+        return value.upper()
+
+    raise ValueError(f'Unexpecte value - {value}')

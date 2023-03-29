@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChartData } from 'chart.js';
 
-import { MonitorSchema } from 'api/generated';
+import { Frequency, MonitorSchema } from 'api/generated';
 
 import { BoxProps } from '@mui/material';
 
@@ -15,6 +15,7 @@ import { StyledContainer } from './GraphicsSection.style';
 import { GraphData } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
@@ -35,6 +36,8 @@ export function GraphicsSection({
   const [hover, setHover] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<HTMLElement | null>(null);
+
+  const minTimeUnit = monitor.frequency === Frequency['HOUR'] ? 'hour' : 'day';
 
   const openRootMenu = Boolean(anchorElRootMenu);
 
@@ -85,8 +88,8 @@ export function GraphicsSection({
               data={data}
               alert_rules={monitor.alert_rules}
               height={{ lg: 203, xl: 215 }}
-              minTimeUnit={monitor.frequency < 86400 ? 'hour' : 'day'}
-              timeFreq={monitor.frequency}
+              minTimeUnit={minTimeUnit}
+              timeFreq={FrequencyMap[monitor.frequency]}
               zoomEnabled={zoomEnabled}
             />
           </>

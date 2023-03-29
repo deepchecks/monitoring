@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
-import { MonitorSchema, AlertRuleInfoSchema, AlertSchema, ModelManagmentSchema } from 'api/generated';
+import { MonitorSchema, AlertRuleInfoSchema, AlertSchema, ModelManagmentSchema, Frequency } from 'api/generated';
 
 import useAlertMonitorData from 'helpers/hooks/useAlertMonitorData';
+import { FrequencyMap, frequencyValues } from 'helpers/utils/frequency';
 
 import { Box } from '@mui/material';
 
@@ -28,6 +29,9 @@ export const AlertsDrawerDiagram = ({
   const [alertMonitorDataTime, setAlertMonitorDataTime] = useState(currentModel?.latest_time);
 
   const { graphData, isLoading: isGraphDataLoading } = useAlertMonitorData(alertRule, alertMonitorDataTime, alerts);
+
+  const minTimeUnit = monitor && monitor.frequency === Frequency['HOUR'] ? 'hour' : 'day';
+  const timeFreq = monitor ? FrequencyMap[monitor?.frequency] : frequencyValues.DAY;
 
   useEffect(() => {
     if (graphData.labels.length > 0 && alerts[alertIndex]?.end_time) {
@@ -58,8 +62,8 @@ export const AlertsDrawerDiagram = ({
           alertIndex: alertIndex,
           changeAlertIndex: setAlertIndex
         }}
-        minTimeUnit={monitor && monitor.frequency < 86400 ? 'hour' : 'day'}
-        timeFreq={monitor?.frequency}
+        minTimeUnit={minTimeUnit}
+        timeFreq={timeFreq}
         alert_rules={[alertRule]}
         isLoading={isGraphDataLoading}
       />

@@ -16,6 +16,7 @@ from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.public_models.billing import Billing
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
+from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 
 if t.TYPE_CHECKING:
@@ -108,7 +109,8 @@ class DataGenerator:
         }
 
     def generate_random_monitor(self) -> "Payload":
-        frequency = random.choice([TimeUnit.DAY, TimeUnit.DAY * 4, TimeUnit.WEEK])
+        frequency = random.choice(list(Frequency))
+        aggregation_window = random.choice([1, 2, 3])
         return {
             "name": self.faker.name(),
             "lookback": random.choice([TimeUnit.WEEK, TimeUnit.WEEK * 2, TimeUnit.WEEK * 3]),
@@ -116,8 +118,8 @@ class DataGenerator:
             "dashboard_id": None,
             "data_filters": None,  # TODO:
             "additional_kwargs": None,
-            "aggregation_window": frequency * random.choice([1, 2, 4]),
-            "frequency": frequency,
+            "aggregation_window": aggregation_window,
+            "frequency": frequency.value,
         }
 
     def generate_random_alert_rule(self) -> "Payload":
@@ -556,8 +558,6 @@ class TestAPI:
         if monitor is None:
             monitor = generated_payload
         else:
-            if "aggregation_window" not in monitor:
-                monitor["aggregation_window"] = monitor["frequency"]
             monitor = {**generated_payload, **monitor}
 
         response = self.api.create_monitor(check_id=check_id, monitor=monitor, raise_on_status=False)
@@ -631,7 +631,7 @@ class TestAPI:
         assert "lookback" in data and isinstance(data["lookback"], int)
         assert "aggregation_window" in data and isinstance(data["aggregation_window"], int)
         assert "description" in data and isinstance(data["description"], str)
-        assert "frequency" in data and isinstance(data["frequency"], int)
+        assert "frequency" in data and isinstance(data["frequency"], str)
         assert "data_filters" in data
         return data
 
@@ -1501,7 +1501,7 @@ def upload_classification_data(
     model_id: int = None,
 ):
     if daterange is None:
-        curr_time = t.cast("PendulumDateTime", pdl.now().set(minute=0, second=0, microsecond=0))
+        curr_time = t.cast("PendulumDateTime", pdl.now("utc").set(minute=0, second=0, microsecond=0))
         day_before_curr_time = t.cast("PendulumDateTime", curr_time - pdl.duration(days=1))
         daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 

@@ -28,6 +28,7 @@ import { timeValues } from 'helpers/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { InitialState, MonitorFormProps } from './MonitorForm.types';
+import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 export const MonitorForm = ({
   monitor,
@@ -159,7 +160,7 @@ export const MonitorForm = ({
         name: monitorName,
         lookback: +lookBack,
         aggregation_window: +aggregationWindow,
-        frequency: +frequency,
+        frequency: FrequencyNumberMap[+frequency as FrequencyNumberType['type']],
         dashboard_id: 1,
         additional_kwargs: additionalKwargs as MonitorCheckConfSchema,
         data_filters: buildFilters(column, category, numericValue)
@@ -233,7 +234,7 @@ export const MonitorForm = ({
           start_time: new Date(endTime.getTime() - +lookBack * 1000).toISOString(),
           end_time: endTime.toISOString(),
           additional_kwargs: (additionalKwargs as MonitorCheckConfSchema) || undefined,
-          frequency: +frequency,
+          frequency: FrequencyNumberMap[+frequency as FrequencyNumberType['type']],
           aggregation_window: +aggregationWindow,
           filter: buildFilters(column, category, numericValue) || undefined
         };

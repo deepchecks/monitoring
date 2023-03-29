@@ -142,7 +142,9 @@ async def test_pager_duty_webhook_execution(
             "routing_key": event_routing_key,
             "group": "deepchecks-dev",
             "class": "deepchecks-dev",
-        }
+        },
+        created_by=0,
+        updated_by=0
     )
 
     async_session.add(webhook)

@@ -4,7 +4,8 @@ import { ChartData } from 'chart.js';
 import {
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost,
   MonitorOptions,
-  MonitorSchema
+  MonitorSchema,
+  Frequency
 } from 'api/generated';
 
 import { Stack, DrawerProps } from '@mui/material';
@@ -20,6 +21,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import { DrawerNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
 import { SelectValues } from 'helpers/types';
+import { FrequencyMap, frequencyValues } from 'helpers/utils/frequency';
 
 interface MonitorDrawerProps extends DrawerProps {
   monitor: MonitorSchema | null;
@@ -46,6 +48,11 @@ export const MonitorDrawer = ({
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
   const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [reset, setReset] = useState(false);
+
+  const timeFreq =
+    (graphFrequency && +graphFrequency) || monitor
+      ? FrequencyMap[monitor?.frequency as Frequency]
+      : frequencyValues.DAY;
 
   const handleGraphLookBack = useCallback(
     async (checkId: SelectValues, data: MonitorOptions) => {
@@ -103,7 +110,7 @@ export const MonitorDrawer = ({
         <GraphView
           graphData={graphData}
           isLoading={isRunCheckLoading}
-          timeFreq={(graphFrequency && +graphFrequency) || monitor?.frequency}
+          timeFreq={timeFreq}
           monitor={monitor}
           setReset={setReset}
         />

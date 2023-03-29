@@ -21,7 +21,8 @@ from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
-                                          classification_label_formatter, parse_timestamp, pretty_print)
+                                          classification_label_formatter, parse_timestamp, pretty_print,
+                                          validate_frequency)
 
 from .api import API
 
@@ -466,7 +467,7 @@ class DeepchecksModelClient:
         self,
         check_name: str,
         threshold: float,
-        frequency: int,
+        frequency: t.Union[int, str],
         alert_severity: str = 'medium',
         aggregation_window: t.Optional[int] = None,
         greater_than: bool = True,
@@ -485,6 +486,8 @@ class DeepchecksModelClient:
         int
             The alert rule ID.
         """
+        frequency = validate_frequency(frequency)
+
         if alert_severity not in {'low', 'medium', 'high', 'critical'}:
             raise ValueError(
                 'Alert severity must be of one of low, medium, '
@@ -509,7 +512,7 @@ class DeepchecksModelClient:
     def add_monitor(
         self,
         check_name: str,
-        frequency: int,
+        frequency: t.Union[int, str],
         aggregation_window: t.Optional[int] = None,
         lookback: t.Optional[int] = None,
         name: t.Optional[str] = None,
@@ -528,6 +531,8 @@ class DeepchecksModelClient:
         int
             The monitor id.
         """
+        frequency = validate_frequency(frequency)
+
         if add_to_dashboard:
             dashboard = t.cast(t.Dict[str, t.Any], self.api.fetch_dashboard())
             dashboard_id = dashboard['id']
@@ -539,15 +544,20 @@ class DeepchecksModelClient:
         if check_id is None:
             raise ValueError(f'Check(id:{check_id}) does not exist')
 
+        hour = int(pdl.duration(hours=1).total_seconds())
+        day = hour * 24
+
+        lookback_map = {
+            'MONTH': day * 365,
+            'WEEK': day * 90,
+            'DAY': day * 30,
+            'HOUR': day * 7
+        }
+
         if lookback is None:
-            if frequency >= 86400 * 30:
-                lookback = 86400 * 365  # 1 year
-            elif frequency >= 86400 * 7:
-                lookback = 86400 * 90  # 3 months
-            elif frequency >= 86400:
-                lookback = 86400 * 30  # 1 month
-            else:
-                lookback = 86400 * 7  # 1 week
+            lookback = lookback_map[frequency]
+        if aggregation_window is None:
+            aggregation_window = 1
 
         monitor = self.api.create_monitor(
             check_id=check_id,
@@ -555,7 +565,7 @@ class DeepchecksModelClient:
                 'name': name if name is not None else f'{check_name} Monitor',
                 'lookback': lookback,
                 'frequency': frequency,
-                'aggregation_window': frequency if aggregation_window is None else aggregation_window,
+                'aggregation_window': aggregation_window,
                 'dashboard_id': dashboard_id,
                 'description': description,
                 'additional_kwargs': kwargs_for_check

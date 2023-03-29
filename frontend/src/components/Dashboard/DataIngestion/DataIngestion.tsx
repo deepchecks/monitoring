@@ -8,6 +8,7 @@ import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/local
 import { MenuItem } from '@mui/material';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { frequencyValues } from 'helpers/utils/frequency';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
@@ -32,7 +33,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
 
   const [minTimeUnit, setMinTimeUnit] = useState<TimeUnit>('day');
-  const [timeValue, setTimeValue] = useState(86400);
+  const [timeValue, setTimeValue] = useState(frequencyValues.DAY);
 
   const labelsArr = ['Samples', 'Labels', 'Missing Labels'];
 
@@ -45,7 +46,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
 
     if (+newTimeValue <= 3600) {
       setMinTimeUnit('minute');
-    } else if (+newTimeValue <= 86400) {
+    } else if (+newTimeValue <= frequencyValues.DAY) {
       setMinTimeUnit('hour');
     } else {
       setMinTimeUnit('day');

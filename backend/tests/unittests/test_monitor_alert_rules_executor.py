@@ -22,13 +22,18 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from deepchecks_monitoring.bgtasks.actors import execute_monitor
 from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert
+from deepchecks_monitoring.schema_models.monitor import (Frequency, calculate_initial_latest_schedule,
+                                                         monitor_execution_range, round_off_datetime)
 from deepchecks_monitoring.utils import database
-from tests.common import TestAPI, upload_classification_data
+from tests.common import Payload, TestAPI, upload_classification_data
+
+
+def as_payload(v):
+    return t.cast(Payload, v)
 
 
 @pytest.mark.asyncio
@@ -39,23 +44,27 @@ async def test_monitor_executor(
     resources_provider,
     test_api: TestAPI
 ):
-    check = test_api.create_check(classification_model["id"],
-                                  {"config": SingleDatasetPerformance().config(include_version=False)})
-    monitor = test_api.create_monitor(
+    check = as_payload(test_api.create_check(
+        classification_model["id"],
+        {"config": SingleDatasetPerformance().config(include_version=False)}
+    ))
+    monitor = as_payload(test_api.create_monitor(
         check["id"],
         monitor=dict(
             lookback=TimeUnit.DAY * 24,
-            frequency=TimeUnit.DAY,
-            aggregation_window=TimeUnit.DAY,
+            frequency=Frequency.DAY.value,
+            aggregation_window=1,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={
                 "filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]
             }
         )
-    )
+    ))
 
-    rule_that_should_raise = test_api.create_alert_rule(monitor["id"],
-                                                        dict(condition={"operator": "less_than", "value": 0.7}))
+    rule_that_should_raise = as_payload(test_api.create_alert_rule(
+        monitor["id"],
+        dict(condition={"operator": "less_than", "value": 0.7})
+    ))
 
     # Rule that does nothing
     test_api.create_alert_rule(monitor["id"], dict(condition={"operator": "less_than", "value": 0}))
@@ -66,16 +75,16 @@ async def test_monitor_executor(
         test_api.create_model_version(classification_model["id"], dict(name="v3", classes=["0", "1", "2"])),
     ]
 
-    curr_time = pdl.datetime(2023, 1, 9, 10).set(minute=0, second=0, microsecond=0)
-    day_before_curr_time = curr_time - pdl.duration(days=1)
-    daterange = [day_before_curr_time.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
+    now = pdl.datetime(2023, 1, 9, 10).set(minute=0, second=0, microsecond=0)
+    day_before = now - pdl.duration(days=1)
+    daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
 
     for version in versions[:2]:
         upload_classification_data(test_api, version["id"], daterange=daterange, model_id=classification_model["id"])
 
     result: t.List[Alert] = await execute_monitor(
         monitor_id=monitor["id"],
-        timestamp=str(curr_time),
+        timestamp=str(now),
         session=async_session,
         organization_id=user.organization.id,
         organization_schema=user.organization.schema_name,
@@ -92,10 +101,17 @@ async def test_monitor_executor(
     assert alert.failed_values == {"1": {"accuracy": 0.2}, "2": {"accuracy": 0.2}}, alert.failed_values
 
     # Assert cache was saved
-    window_end = floor_window_for_time(curr_time, TimeUnit.DAY)
-    window_start = window_end.subtract(seconds=TimeUnit.DAY)
-    cache_value = resources_provider.cache_functions.get_monitor_cache(user.organization.id, versions[0]["id"],
-                                                                       monitor["id"], window_start, window_end)
+    # window_end = round_off_datetime(now, Frequency.DAY)
+    window_end = now
+    window_start = window_end - Frequency.DAY.to_pendulum_duration()
+
+    cache_value = resources_provider.cache_functions.get_monitor_cache(
+        user.organization.id,
+        versions[0]["id"],
+        monitor["id"],
+        window_start,
+        window_end
+    )
 
     assert cache_value.found is True
     assert cache_value.value == {"accuracy": 0.2}
@@ -112,41 +128,58 @@ async def test_alert_scheduling(
 ):
     # TODO: add description to the test
     # == Prepare
-    model_version = test_api.create_model_version(classification_model["id"], dict(name="v1", classes=["0", "1", "2"]))
+    model_version = as_payload(test_api.create_model_version(
+        classification_model["id"],
+        dict(name="v1", classes=["0", "1", "2"])
+    ))
 
-    past_date = pdl.now() - pdl.duration(days=1)
+    past_date = pdl.now("utc") - pdl.duration(days=1)
     daterange = [past_date.add(hours=h) for h in range(1, 24, 2)]
-    upload_classification_data(test_api, model_version["id"], daterange=daterange, with_proba=False,
-                               model_id=classification_model["id"])
 
-    check = test_api.create_check(classification_model["id"],
-                                  {"config": SingleDatasetPerformance().config(include_version=False)})
+    upload_classification_data(
+        test_api,
+        model_version["id"],
+        daterange=daterange,
+        with_proba=False,
+        model_id=classification_model["id"]
+    )
+
+    check = as_payload(test_api.create_check(
+        classification_model["id"],
+        {"config": SingleDatasetPerformance().config(include_version=False)}
+    ))
 
     monitors = [
-        test_api.create_monitor(
+        as_payload(test_api.create_monitor(
             check["id"],
             monitor=dict(
                 lookback=TimeUnit.DAY * 3,
-                frequency=TimeUnit.HOUR,
-                aggregation_window=TimeUnit.DAY,
+                frequency=Frequency.HOUR,
+                aggregation_window=24,
                 additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
                 data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
             )
-        ),
-        test_api.create_monitor(
+        )),
+        as_payload(test_api.create_monitor(
             check["id"],
             monitor=dict(
                 lookback=TimeUnit.HOUR * 2,
-                frequency=TimeUnit.HOUR,
-                aggregation_window=TimeUnit.HOUR * 2,
+                frequency=Frequency.HOUR,
+                aggregation_window=2,
                 additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
                 data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
             )
-        )
+        ))
     ]
     rules = [
-        test_api.create_alert_rule(monitors[0]["id"], dict(condition={"operator": "less_than", "value": 0.7})),
-        test_api.create_alert_rule(monitors[1]["id"], dict(condition={"operator": "less_than", "value": 0.7})),
+        as_payload(test_api.create_alert_rule(
+            monitors[0]["id"],
+            dict(condition={"operator": "less_than", "value": 0.7})
+        )),
+        as_payload(test_api.create_alert_rule(
+            monitors[1]["id"],
+            dict(condition={"operator": "less_than", "value": 0.7})
+        )),
     ]
 
     # == Act
@@ -181,18 +214,36 @@ async def test_alert_scheduling(
     )).all()
 
     alert_per_rule = defaultdict(list)
-    tasks_per_monitor = defaultdict(list)
-
-    for it in tasks:
-        tasks_per_monitor[it.reference].append(it)
 
     for it in alerts:
         alert_per_rule[it.alert_rule_id].append(it)
 
-    assert all(len(v) == 14 for v in tasks_per_monitor.values())
+    for monitor in monitors:
+        reference = f"Monitor:{monitor['id']}"
+        monitor_frequency = Frequency(monitor["frequency"])
+
+        initial_latest_schedule = calculate_initial_latest_schedule(
+            frequency=monitor_frequency,
+            model_start_time=daterange[0],
+            model_end_time=daterange[-1],
+        )
+        expected_tasks_timestamps = list(monitor_execution_range(
+            frequency=monitor_frequency,
+            latest_schedule=initial_latest_schedule,
+            until=daterange[-1]
+        ))
+        tasks_timestamps = [
+            pdl.instance(it.execute_after)
+            for it in tasks
+            if it.reference == reference
+        ]
+        assert sorted(expected_tasks_timestamps) == sorted(tasks_timestamps)
+
+
+    # assert all(len(v) == 14 for v in tasks_per_monitor.values())
     assert all(it.status == TaskStatus.COMPLETED for it in tasks)
-    assert len(alert_per_rule[rules[0]["id"]]) == 14
-    assert len(alert_per_rule[rules[1]["id"]]) == 8
+    assert len(alert_per_rule[rules[0]["id"]]) == 13
+    assert len(alert_per_rule[rules[1]["id"]]) == 7
 
     for alert in alert_per_rule[rules[0]["id"]]:
         assert alert.failed_values["1"]["accuracy"] < 0.7
@@ -209,25 +260,31 @@ async def test_monitor_executor_with_unactive_alert_rules(
     resources_provider,
     test_api: TestAPI,
 ):
-    check = test_api.create_check(classification_model["id"],
-                                  {"config": SingleDatasetPerformance().config(include_version=False)})
+    check = as_payload(test_api.create_check(
+        classification_model["id"],
+        {"config": SingleDatasetPerformance().config(include_version=False)}
+    ))
 
-    monitor = test_api.create_monitor(
+    monitor = as_payload(test_api.create_monitor(
         check["id"],
         monitor=dict(
             lookback=TimeUnit.DAY * 3,
-            frequency=TimeUnit.DAY * 2,
-            aggregation_window=TimeUnit.DAY * 2,
+            frequency=Frequency.DAY.value,
+            aggregation_window=2,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         )
+    ))
+
+    test_api.create_alert_rule(
+        monitor["id"],
+        dict(condition={"operator": "less_than", "value": 0.7},
+        is_active=False)
     )
 
-    test_api.create_alert_rule(monitor["id"], dict(condition={"operator": "less_than", "value": 0.7}, is_active=False))
-
     now = pdl.now()
-
     logger = logging.Logger("test")
+
     result: t.List[Alert] = await execute_monitor(
         monitor_id=monitor["id"],
         timestamp=str(now),
@@ -237,6 +294,7 @@ async def test_monitor_executor_with_unactive_alert_rules(
         resources_provider=resources_provider,
         logger=logger
     )
+
     assert not result
 
 
@@ -249,40 +307,60 @@ async def test_monitor_executor_is_using_cache(
     test_api: TestAPI,
 ):
     # Arrange
-    check = test_api.create_check(classification_model["id"],
-                                  {"config": SingleDatasetPerformance().config(include_version=False)})
+    check = as_payload(test_api.create_check(
+        classification_model["id"],
+        {"config": SingleDatasetPerformance().config(include_version=False)}
+    ))
 
-    monitor = test_api.create_monitor(
+    monitor_frequency = Frequency.DAY
+
+    monitor = as_payload(test_api.create_monitor(
         check["id"],
         monitor=dict(
             lookback=TimeUnit.DAY * 7,
-            frequency=TimeUnit.DAY,
-            aggregation_window=TimeUnit.DAY * 3,
+            frequency=monitor_frequency.value,
+            aggregation_window=3,
             additional_kwargs={"check_conf": {"scorer": ["accuracy"]}, "res_conf": None},
             data_filters={"filters": [{"operator": "equals", "value": "ppppp", "column": "b"}]}
         )
+    ))
+
+    rule_that_should_raise = as_payload(test_api.create_alert_rule(
+        monitor["id"],
+        dict(condition={"operator": "greater_than", "value": 0.7})
+    ))
+
+    model_version = as_payload(test_api.create_model_version(
+        classification_model["id"],
+        dict(name="v1", classes=["0", "1", "2"])
+    ))
+
+    upload_classification_data(
+        test_api,
+        model_version["id"],
+        model_id=classification_model["id"],
     )
-
-    rule_that_should_raise = test_api.create_alert_rule(monitor["id"],
-                                                        dict(condition={"operator": "greater_than", "value": 0.7}))
-
-    model_version = test_api.create_model_version(classification_model["id"], dict(name="v1", classes=["0", "1", "2"]))
-
-    upload_classification_data(test_api, model_version["id"], model_id=classification_model["id"])
 
     now = pdl.now()
     organization_id = user.organization.id
 
     # Act - Set monitor cache
-    window_end = floor_window_for_time(now, monitor["frequency"])
-    window_start = window_end.subtract(seconds=monitor["aggregation_window"])
+    window_end = round_off_datetime(now, monitor_frequency)
+    window_start = window_end - (monitor_frequency.to_pendulum_duration() * monitor["aggregation_window"])
     cache_value = {"my special key": 1}
-    resources_provider.cache_functions.set_monitor_cache(organization_id, model_version["id"], monitor["id"],
-                                                         window_start, window_end, cache_value)
+
+    resources_provider.cache_functions.set_monitor_cache(
+        organization_id,
+        model_version["id"],
+        monitor["id"],
+        window_start,
+        window_end,
+        cache_value
+    )
 
     result: t.List[Alert] = await execute_monitor(
         monitor_id=monitor["id"],
-        timestamp=str(now),
+        timestamp=str(window_end),
         session=async_session,
         organization_id=organization_id,
         organization_schema=user.organization.schema_name,

@@ -60,6 +60,7 @@ class Model(Base, MetadataMixin):
     ingestion_offset = sa.Column(sa.BigInteger, default=-1)
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
     topic_end_offset = sa.Column(sa.BigInteger, default=-1)
+    timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",

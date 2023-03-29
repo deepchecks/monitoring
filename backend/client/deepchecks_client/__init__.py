@@ -23,7 +23,7 @@ from deepchecks.tabular import Dataset
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.api import API
 from deepchecks_client.core.client import DeepchecksModelClient, DeepchecksModelVersionClient
-from deepchecks_client.core.utils import ColumnTypeName, DataFilter, OperatorsEnum, TaskType, pretty_print
+from deepchecks_client.core.utils import DataFilter, OperatorsEnum, TaskType, pretty_print
 from deepchecks_client.tabular import create_schema, read_schema
 from deepchecks_client.tabular.client import DeepchecksModelClient as TabularModelClient
 from deepchecks_client.tabular.client import DeepchecksModelVersionClient as TabularModelVersionClient
@@ -104,7 +104,8 @@ class DeepchecksClient:
             list of model notes.
             Each dictionary expected to contain only two keys 'title' and 'text'.
         monitoring_frequency : str, default 'day'
-            The frequency & aggregation window for the default monitors and alerts. One of 'hour', 'day', 'week'.
+            The frequency & aggregation window for the default monitors and alerts.
+            One of 'hour', 'day', 'week', 'month'.
 
         Returns
         -------

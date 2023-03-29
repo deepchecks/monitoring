@@ -26,6 +26,7 @@ import { AlertsSnackbar } from 'components/AlertsSnackbar';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { CloseIcon, Check, Sync } from 'assets/icon/icon';
 import { useLocation } from 'react-router-dom';
@@ -139,7 +140,7 @@ export const AlertsDrawerHeader = ({
       currentModel?.name || '',
       monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : 'N/A',
       monitor?.data_filters ? `${monitor?.data_filters.filters[0].column}` : 'N/A',
-      monitor?.frequency ? processFrequency(dayjs.duration(monitor.frequency, 'seconds')) : 'N/A',
+      monitor?.frequency ? processFrequency(dayjs.duration(FrequencyMap[monitor.frequency], 'seconds')) : 'N/A',
       monitor?.aggregation_window ? processFrequency(dayjs.duration(monitor.aggregation_window, 'seconds')) : 'N/A'
     ],
     [

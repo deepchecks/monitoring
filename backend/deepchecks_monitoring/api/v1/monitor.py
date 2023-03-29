@@ -15,7 +15,6 @@ import sqlalchemy as sa
 from fastapi import Depends, Response, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, validator
-from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -26,15 +25,15 @@ from deepchecks_monitoring.config import Settings, Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, SettingsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
-from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
                                                     MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
-from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Monitor
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_off_datetime
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
+from deepchecks_monitoring.utils.typing import as_datetime
 
 from .router import router
 
@@ -45,7 +44,7 @@ class MonitorCreationSchema(BaseModel):
     name: str = Field(max_length=field_length(Monitor.name))
     lookback: int = Field(ge=0)
     aggregation_window: int = Field(ge=0)
-    frequency: int = Field(ge=0)
+    frequency: Frequency
     dashboard_id: t.Optional[int] = Field(nullable=True)
     description: t.Optional[str] = Field(max_length=field_length(Monitor.description))
     data_filters: t.Optional[DataFilterList] = Field(nullable=True)
@@ -65,7 +64,7 @@ class MonitorSchema(BaseModel):
     data_filters: t.Optional[DataFilterList] = None
     additional_kwargs: t.Optional[MonitorCheckConfSchema]
     alert_rules: t.List[AlertRuleSchema]
-    frequency: int
+    frequency: Frequency
 
     class Config:
         """Config for Monitor schema."""
@@ -82,7 +81,7 @@ class MonitorUpdateSchema(BaseModel):
     data_filters: t.Optional[DataFilterList] = Field(nullable=True)
     dashboard_id: t.Optional[int] = Field(nullable=True)
     additional_kwargs: t.Optional[MonitorCheckConfSchema] = Field(nullable=True)
-    frequency: t.Optional[int]
+    frequency: t.Optional[Frequency]
     aggregation_window: t.Optional[int]
 
 
@@ -154,10 +153,15 @@ async def update_monitor(
 ):
     """Update monitor by id."""
     options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
-    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
+    monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
     model = monitor.check.model
+
     # Remove from body all the fields which hasn't changed
-    update_dict = {k: v for k, v in body.dict(exclude_unset=True).items() if v != getattr(monitor, k)}
+    update_dict = {
+        k: v
+        for k, v in body.dict(exclude_unset=True).items()
+        if v != getattr(monitor, k)
+    }
 
     # If nothing changed returns
     if not update_dict:
@@ -168,21 +172,44 @@ async def update_monitor(
     # If still no data, the monitor would not have run yet anyway so no need to update schedule/remove tasks.
     if model.has_data() and any(key in update_dict for key in fields_require_alerts_recalc):
         frequency = update_dict.get("frequency", monitor.frequency)
+        model_end_time = pdl.instance(as_datetime(model.end_time))
+        model_start_time = pdl.instance(as_datetime(model.start_time))
+        latest_schedule = pdl.instance(as_datetime(monitor.latest_schedule))
+
         # Either continue from the latest schedule if it's early enough or take it back number of windows to start
-        new_schedule_time = min(pdl.instance(model.end_time).subtract(seconds=frequency * NUM_WINDOWS_TO_START),
-                                pdl.instance(monitor.latest_schedule))
-        new_schedule_time = floor_window_for_time(new_schedule_time, frequency)
-        update_dict["latest_schedule"] = new_schedule_time
+        update_dict["latest_schedule"] = round_off_datetime(
+            value=max(
+                model_start_time,
+                min(
+                    model_end_time - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START),
+                    latest_schedule
+                )
+            ).in_tz(model.timezone),
+            frequency=frequency
+        )
+
         # Delete monitor tasks
         await Task.delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
+
         # Resolving all alerts which are connected to this monitor
-        alert_rules_select = sa.select(AlertRule.id).where(AlertRule.monitor_id == monitor_id)
-        await session.execute(sa.update(Alert).where(Alert.alert_rule_id.in_(alert_rules_select))
-                              .values({Alert.resolved: True}),
-                              execution_options=immutabledict({"synchronize_session": False}))
+        await session.execute(
+            sa.update(Alert)
+            .where(Alert.alert_rule_id.in_(
+                sa.select(AlertRule.id)
+                .where(AlertRule.monitor_id == monitor_id)
+                .subquery()
+            ))
+            .values({Alert.resolved: True}),
+            execution_options={"synchronize_session": False}
+        )
+
         # Reset the alert rules start time - it will be updated when the monitor will run again
-        await session.execute(sa.update(AlertRule).where(AlertRule.monitor_id == monitor_id)
-                              .values({AlertRule.start_time: None}))
+        await session.execute(
+            sa.update(AlertRule)
+            .where(AlertRule.monitor_id == monitor_id)
+            .values({AlertRule.start_time: None})
+        )
+
         # Delete cache
         cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     update_dict["updated_by"] = user.id
@@ -263,17 +290,18 @@ async def run_monitor_lookback(
     CheckResultSchema
         Check run result.
     """
-    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)
+    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
     end_time = pdl.parse(body.end_time) if body.end_time else pdl.now()
     start_time = end_time.subtract(seconds=monitor.lookback)
 
-    options = MonitorOptions(start_time=start_time.to_iso8601_string(),
-                             end_time=end_time.to_iso8601_string(),
-                             frequency=monitor.frequency,
-                             aggregation_window=monitor.aggregation_window,
-                             additional_kwargs=monitor.additional_kwargs,
-                             filter=monitor.data_filters)
-
+    options = MonitorOptions(
+        start_time=start_time.to_iso8601_string(),
+        end_time=end_time.to_iso8601_string(),
+        frequency=monitor.frequency,
+        aggregation_window=monitor.aggregation_window,
+        additional_kwargs=monitor.additional_kwargs,
+        filter=monitor.data_filters
+    )
     return await run_check_per_window_in_range(
         monitor.check_id,
         session,

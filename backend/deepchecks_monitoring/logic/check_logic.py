@@ -20,7 +20,7 @@ from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, root_validator
 from sqlalchemy import Column, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,7 +30,6 @@ from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_mode
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf, random_sample)
-from deepchecks_monitoring.logic.monitor_alert_logic import floor_window_for_time
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
                                                     MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum, TimeUnit,
                                                     fetch_or_404, make_oparator_func)
@@ -39,6 +38,8 @@ from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
                                                              SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
+from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
+from deepchecks_monitoring.utils.typing import as_pendulum_datetime
 
 MAX_FEATURES_TO_RETURN = 1000
 
@@ -136,42 +137,36 @@ class WindowDataSchema(TableDataSchema, TimeWindowOption):
 class MonitorOptions(SingleCheckRunOptions):
     """Add to single window monitor options frequency and aggregation window to make it multi window."""
 
-    frequency: t.Optional[int] = None
+    frequency: t.Optional[Frequency] = None
     aggregation_window: t.Optional[int] = None
-
-    @validator("frequency")
-    def check_frequency_min(cls, v):  # pylint: disable=no-self-argument
-        """Check frequency is at least an hour."""
-        if v and v < TimeUnit.HOUR:
-            raise ValueError(f"frequency must be at least {TimeUnit.HOUR}")
-        return v
-
-    @validator("aggregation_window")
-    def check_aggregation_window(cls, v):  # pylint: disable=no-self-argument
-        """Check aggergation_windwow is at least an hour."""
-        if v and v < TimeUnit.HOUR:
-            raise ValueError(f"aggregation_window must be at least {TimeUnit.HOUR}")
-        return v
 
     @root_validator()
     def set_missing_frequency(cls, values: dict) -> dict:  # pylint: disable=no-self-argument
         """Set missing frequency based on start and end times."""
         if values.get("frequency") is None:
-            start_time = pdl.parse(values["start_time"])
-            end_time = pdl.parse(values["end_time"])
-            values["frequency"] = (end_time - start_time).in_seconds() // 12
+            start_time = as_pendulum_datetime(pdl.parser.parse(values["start_time"]))
+            end_time = as_pendulum_datetime(pdl.parser.parse(values["end_time"]))
+
+            if (n := (end_time - start_time) // pdl.duration(days=1)) <= 3:
+                values["frequency"] = Frequency.HOUR
+            elif n <= 30:
+                values["frequency"] = Frequency.DAY
+            elif n <= 90:
+                values["frequency"] = Frequency.WEEK
+            else:
+                values["frequency"] = Frequency.MONTH
 
         return values
 
     def calculate_windows(self):
-        lookback = self.end_time_dt().int_timestamp - self.start_time_dt().int_timestamp
-        last_window_end = floor_window_for_time(self.end_time_dt(), self.frequency)
-        num_windows_in_range = max(lookback // self.frequency, 1)
-        first_window_end = last_window_end.subtract(seconds=(num_windows_in_range - 1) * self.frequency)
-        # the last window might be partial so we need to create it manually
-        if last_window_end <= self.end_time_dt():
-            last_window_end = last_window_end.add(seconds=self.frequency)
-        return list((last_window_end - first_window_end).range("seconds", self.frequency))
+        frequency = self.frequency
+        assert frequency is not None
+
+        end_time = round_off_datetime(self.end_time_dt(), frequency)
+        # Not sure if need to reduce another frequency unit, don't remember if
+        # the first window is before start time or after
+        start_time = round_off_datetime(self.start_time_dt(), frequency)
+        return list((end_time - start_time).range(frequency.to_pendulum_duration_unit()))
 
 
 class SpecificVersionCheckRun(SingleCheckRunOptions):
@@ -291,12 +286,23 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-
     all_windows = monitor_options.calculate_windows()[-30:]
-    aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
+    frequency = monitor_options.frequency
+
+    assert frequency is not None
+
+    aggregation_window = (
+        frequency.to_pendulum_duration() * monitor_options.aggregation_window
+        if monitor_options.aggregation_window
+        else frequency.to_pendulum_duration()
+    )
 
     model, model_versions = await get_model_versions_for_time_range(
-        session, check.model_id, all_windows[0].subtract(seconds=aggregation_window), all_windows[-1])
+        session,
+        check.model_id,
+        all_windows[0] - aggregation_window,
+        all_windows[-1]
+    )
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
@@ -315,7 +321,7 @@ async def run_check_per_window_in_range(
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
-            window_start = window_end.subtract(seconds=aggregation_window)
+            window_start = window_end - aggregation_window
             curr_test_info = {"start": window_start, "end": window_end}
             test_info.append(curr_test_info)
             if monitor_id and cache_funcs:
@@ -369,9 +375,15 @@ async def run_check_per_window_in_range(
                                                   result_dict["end"], result_value)
             reduce_results[model_version.name].append(result_value)
 
-    # The windows are until the end time exclusive, we want the UI to show the end time as inclusive, therefore
-    # reducing the end time by 1 microsecond
-    return {"output": reduce_results, "time_labels": [d.subtract(microseconds=1).isoformat() for d in all_windows]}
+    return {
+        "output": reduce_results,
+        "time_labels": [d.isoformat() for d in all_windows]
+        # TODO: not sure whether it is still needed
+        # The windows are until the end time exclusive,
+        # we want the UI to show the end time as inclusive,
+        # therefore reducing the end time by 1 microsecond
+        # "time_labels": [d.subtract(microseconds=1).isoformat() for d in all_windows]
+    }
 
 
 async def run_suite_per_window_in_range(
@@ -412,12 +424,23 @@ async def run_suite_per_window_in_range(
     model_id = checks[0].model_id
 
     uses_reference_data = any((check.is_reference_required for check in checks))
-
     all_windows = monitor_options.calculate_windows()[-30:]
-    aggregation_window = monitor_options.aggregation_window or monitor_options.frequency
+    frequency = monitor_options.frequency
+
+    assert frequency is not None
+
+    aggregation_window = (
+        frequency.to_pendulum_duration() * monitor_options.aggregation_window
+        if monitor_options.aggregation_window is not None
+        else frequency.to_pendulum_duration()
+    )
 
     model, model_versions = await get_model_versions_for_time_range(
-        session, model_id, all_windows[0].subtract(seconds=aggregation_window), all_windows[-1])
+        session,
+        model_id,
+        all_windows[0] - aggregation_window,
+        all_windows[-1]
+    )
 
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
@@ -436,7 +459,7 @@ async def run_suite_per_window_in_range(
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
-            window_start = window_end.subtract(seconds=aggregation_window)
+            window_start = window_end - aggregation_window
             curr_test_info = {"start": window_start, "end": window_end}
             test_info.append(curr_test_info)
             if model_version.is_in_range(window_start, window_end):

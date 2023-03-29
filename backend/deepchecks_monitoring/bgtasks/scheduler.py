@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+# pylint: disable=ungrouped-imports
 """Contains alert scheduling logic."""
 import asyncio
 import logging
@@ -21,11 +22,10 @@ import sqlalchemy as sa
 import uvloop
 from asyncpg import SerializationError
 from sqlalchemy import Column, DateTime, MetaData, Table, Text, func, literal_column, select
-from sqlalchemy.dialects.postgresql import INTERVAL, insert
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import joinedload, load_only, sessionmaker
-from sqlalchemy.sql.functions import concat
 
 from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.bgtasks.core import Task
@@ -35,7 +35,12 @@ from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Moni
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL,
                                                              get_predictions_columns_by_type)
+from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.utils import database
+
+if t.TYPE_CHECKING:
+    # pylint: disable=unused-import
+    from pendulum.datetime import DateTime as PendulumDateTime
 
 __all__ = ['AlertsScheduler']
 
@@ -94,14 +99,19 @@ class AlertsScheduler:
                 session=session,
                 schema_search_path=[organization.schema_name, 'public']
             )
-            monitors = (await session.execute(
-                select(Monitor).options(joinedload(Monitor.check).load_only(Check.model_id, Check.is_label_required)
-                                        .joinedload(Check.model))
+            monitors = await session.scalars(
+                select(Monitor)
+                .options(
+                    joinedload(Monitor.check)
+                    .load_only(Check.model_id, Check.is_label_required)
+                    .joinedload(Check.model)
+                )
                 .where(
                     Monitor.latest_schedule.isnot(None),
-                    Monitor.latest_schedule + func.cast(concat(Monitor.frequency, ' SECOND'), INTERVAL) <
-                    Model.end_time)
-                )).scalars()
+                    (Monitor.latest_schedule + Monitor.frequency_as_interval) < Model.end_time
+                )
+            )
+
             # Aggregate the monitors per model in order to query the versions windows data only once per model
             monitors_per_model = defaultdict(list)
             for m in monitors:
@@ -110,22 +120,34 @@ class AlertsScheduler:
             for model, monitors in monitors_per_model.items():
                 # Get the minimal time needed to query windows data for. Doing it together for all monitors in order to
                 # query the data once
-                minimum_time = min([pdl.instance(m.latest_schedule).add(seconds=m.frequency - m.aggregation_window)
-                                    for m in monitors])
+                minimum_time = min(
+                    t.cast(Monitor, m).left_edge_of_calculation_window
+                    for m in monitors
+                )
+                versions = await session.scalars(
+                    select(ModelVersion)
+                    .options(load_only(ModelVersion.model_id))
+                    .where(
+                        ModelVersion.end_time >= minimum_time,
+                        ModelVersion.model_id == model.id
+                    )
+                )
 
-                versions = (await session.execute(select(ModelVersion).options(load_only(ModelVersion.model_id))
-                                                  .where(ModelVersion.end_time >= minimum_time,
-                                                         ModelVersion.model_id == model.id))).scalars()
                 versions_windows = await get_versions_hour_windows(model, versions, session, minimum_time)
+
                 # For each monitor enqueue schedules
                 for monitor in monitors:
                     schedules = []
-                    schedule_time = pdl.instance(monitor.latest_schedule).add(seconds=monitor.frequency)
+                    frequency = monitor.frequency.to_pendulum_duration()
+                    schedule_time = monitor.next_schedule
+
                     # IMPORTANT NOTE: Forwarding the schedule only if the rule is passing for ALL the model versions.
-                    while (schedule_time <= model.end_time and
-                           rules_pass(versions_windows, monitor, schedule_time, model)):
+                    while (
+                        schedule_time <= model.end_time
+                        and rules_pass(versions_windows, monitor, schedule_time, model)
+                    ):
                         schedules.append(schedule_time)
-                        schedule_time = schedule_time.add(seconds=monitor.frequency)
+                        schedule_time = schedule_time + frequency
 
                     if schedules:
                         try:
@@ -141,7 +163,12 @@ class AlertsScheduler:
                                 raise
 
 
-async def get_versions_hour_windows(model, versions, session, minimum_time) -> t.List[t.Dict[int, t.Dict]]:
+async def get_versions_hour_windows(
+    model: Model,
+    versions: t.List[ModelVersion],
+    session: AsyncSession,
+    minimum_time: 'PendulumDateTime'
+) -> t.List[t.Dict[int, t.Dict]]:
     """Get windows data for all given versions starting from minimum time.
 
     Returns
@@ -158,8 +185,10 @@ async def get_versions_hour_windows(model, versions, session, minimum_time) -> t
                           Column(SAMPLE_LOGGED_TIME_COL, DateTime(timezone=True)),
                           Column(SAMPLE_TS_COL, DateTime(timezone=True)),
                           Column(SAMPLE_PRED_COL, label_type))
-        hour_window = literal_column(f'date_trunc(\'hour\', "{SAMPLE_TS_COL}") + interval \'1 hour\'')\
-            .label('hour_window')
+
+        hour_window = literal_column(
+            f'date_trunc(\'hour\', "{SAMPLE_TS_COL}") + interval \'1 hour\''
+        ).label('hour_window')
 
         # The hour window represents the end of the hour, so we are looking for hour windows which are larger than the
         # minimum time. For example if minimum time is 2:00 We want the windows of 3:00 and above
@@ -177,8 +206,12 @@ async def get_versions_hour_windows(model, versions, session, minimum_time) -> t
     return results
 
 
-def rules_pass(versions_windows: t.List[t.Dict[int, t.Dict]], monitor: Monitor, schedule_time: pdl.DateTime,
-               model: Model):
+def rules_pass(
+    versions_windows: t.List[t.Dict[int, t.Dict]],
+    monitor: Monitor,
+    schedule_time: pdl.DateTime,
+    model: Model
+):
     """Check the versions windows for given schedule time. If in all versions at least one of the alerts delay rules \
     passes, return True. Otherwise, return False."""
     # Rules applies only for monitors that are related to labels
@@ -188,7 +221,9 @@ def rules_pass(versions_windows: t.List[t.Dict[int, t.Dict]], monitor: Monitor, 
     # Adding 1 hour since the time in version info represents the end of the hour. For example if my schedule time is
     # 14:00 and 2 hours aggregation window, I need to hour windows of [13:00, 14:00] (as they represent the end of the
     # hour)
-    start_hour = schedule_time.int_timestamp - monitor.aggregation_window + 3600
+    frequency = t.cast(Frequency, monitor.frequency).to_pendulum_duration()
+    aggregation_window = t.cast(int, monitor.aggregation_window)
+    start_hour = int((schedule_time - (frequency * aggregation_window)).int_timestamp) + 3600
     hours = list(range(start_hour, schedule_time.int_timestamp + 1, 3600))
     # Test each version
     for windows in versions_windows:

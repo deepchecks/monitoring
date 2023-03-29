@@ -22,6 +22,7 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
+from deepchecks_monitoring.schema_models.monitor import Frequency
 
 from .global_api.users import UserSchema
 from .router import router
@@ -33,7 +34,7 @@ class AlertRuleConfigSchema(BaseModel):
     id: int
     name: str
     check_name: str
-    frequency: int
+    frequency: Frequency
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
     total_alerts: t.Optional[int] = 0

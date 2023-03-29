@@ -17,6 +17,7 @@ import { CustomDrawer } from '../CustomDrawer';
 import { AlertsDrillDownToAnalysis } from './components/AlertsDrillDownToAnalysis';
 import { AlertsDrawerDiagram } from './components/AlertsDrawerDiagram';
 import { unionCheckConf } from 'helpers/utils/checkUtil';
+import { FrequencyMap } from 'helpers/utils/frequency';
 
 interface AlertsDrawerProps extends DrawerProps {
   alertRule: AlertRuleInfoSchema | null;
@@ -91,7 +92,7 @@ const AlertsDrawerComponent = ({ onClose, alertRule, resolved, ...props }: Alert
   );
 
   const period: [Date, Date] = useMemo(() => {
-    const monitorFrequency = monitor?.frequency || 0;
+    const monitorFrequency = (monitor && FrequencyMap[monitor?.frequency]) || 0;
 
     return [
       new Date(new Date(alerts[alertIndex]?.start_time).getTime() - 3 * monitorFrequency * 1000),

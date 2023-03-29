@@ -13,6 +13,7 @@ import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectColumn } from 'components/SelectColumn';
 import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
 import { MonitorCheckConfSchema } from 'api/generated';
+import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStepBaseProps) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
@@ -67,7 +68,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       // Setting the context values
       monitor.check.model_id = +model;
       monitor.check.id = +check;
-      monitor.frequency = +frequency;
+      monitor.frequency = FrequencyNumberMap[+frequency as FrequencyNumberType['type']];
       monitor.dashboard_id = dashboardId;
       monitor.aggregation_window = +aggregationWindow;
       (monitor.additional_kwargs = (additionalKwargs as MonitorCheckConfSchema) || undefined),

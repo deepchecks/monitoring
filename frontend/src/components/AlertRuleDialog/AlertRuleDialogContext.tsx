@@ -1,7 +1,8 @@
 import React, { createContext, ReactNode, useState } from 'react';
 
-import { AlertRuleSchema, MonitorSchema, OperatorsEnum } from 'api/generated';
+import { AlertRuleSchema, Frequency, MonitorSchema, OperatorsEnum } from 'api/generated';
 import { SetStateType } from 'helpers/types';
+import { frequencyValues } from 'helpers/utils/frequency';
 
 export interface AlertRuleContextValues {
   alertRule: AlertRuleSchema;
@@ -25,13 +26,13 @@ const initialAlertRule = {
 
 const initialMonitor = {
   name: '',
-  lookback: 86400 * 7,
+  lookback: frequencyValues.DAY * 7,
   check: {
     id: 0,
     model_id: 0
   },
-  frequency: 86400,
-  aggregation_window: 86400,
+  frequency: Frequency.DAY,
+  aggregation_window: frequencyValues.DAY,
   data_filters: {
     filters: [
       {
