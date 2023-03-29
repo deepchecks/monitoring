@@ -24,6 +24,7 @@ import { theme } from 'theme';
 const DashboardPage = lazy(() => lazyRetry(() => import('./pages/DashboardPage')));
 const CompleteDetails = lazy(() => lazyRetry(() => import('./pages/CompleteDetails')));
 const LicenseAgreementPage = lazy(() => lazyRetry(() => import('./pages/LicenseAgreement')));
+const NotFoundPage = lazy(() => lazyRetry(() => import('./pages/NotFoundPage')));
 
 const LazyWrapper = ({ children }: { children: ReactNode }) => <Suspense fallback={<Loader />}>{children}</Suspense>;
 
@@ -37,7 +38,7 @@ const App = () => {
     <InitializationProvider>
       <BrowserRouter>
         <ThemeProvider theme={theme}>
-          <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
+          <Sentry.ErrorBoundary fallback={<NotFoundPage />}>
             <QueryClientProvider client={queryClient}>
               <CssBaseline />
               <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -79,6 +80,14 @@ const App = () => {
                           element={
                             <LazyWrapper>
                               <LicenseAgreementPage />
+                            </LazyWrapper>
+                          }
+                        />
+                        <Route
+                          path="*"
+                          element={
+                            <LazyWrapper>
+                              <NotFoundPage />
                             </LazyWrapper>
                           }
                         />

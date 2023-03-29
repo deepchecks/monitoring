@@ -5,7 +5,7 @@ import SuiteViewLoading from 'components/SuiteView/SuiteViewLoading';
 
 import { constants } from '../../components/SuiteView/helpers/suiteViewPage.constants';
 
-describe('SuiteViewLoading', () => {
+describe('Suite View Loading Test', () => {
   beforeEach(() => {
     render(<SuiteViewLoading />);
   });
