@@ -120,7 +120,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
         </StyledAnalysisHeaderList>
       </Popover>
       <Stack direction="row" alignItems="center" marginLeft="auto">
-        <AnalysisHeaderOptions modelId={model.id} />
+        <AnalysisHeaderOptions model={model} />
         <ShareButton />
       </Stack>
     </StyledAnalysisHeader>

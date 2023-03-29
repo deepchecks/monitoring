@@ -1,7 +1,7 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import dayjs from 'dayjs';
 
-import { useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet } from 'api/generated';
+import { ModelManagmentSchema, useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet } from 'api/generated';
 import { AnalysisContext, frequencyData } from 'helpers/context/AnalysisProvider';
 
 import { MenuItem, SelectChangeEvent } from '@mui/material';
@@ -11,22 +11,32 @@ import { CustomStyledSelect } from 'components/CustomStyledSelect';
 import { SwitchButton } from 'components/SwitchButton';
 
 import { StyledDivider } from '../AnalysisHeader.style';
-
-const MAX_WINDOWS_COUNT = 30;
+import { frequencyValues } from 'helpers/utils/frequency';
 
 interface AnalysisHeaderOptions {
-  modelId: number;
+  model: ModelManagmentSchema;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const AnalysisHeaderOptions = ({ modelId }: AnalysisHeaderOptions) => {
+export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
   const { compareWithPreviousPeriod, setCompareWithPreviousPeriod, period, setPeriod, frequency, setFrequency } =
     useContext(AnalysisContext);
 
-  const [minDate, setMinDate] = useState<Date | null>(null);
-  const [maxDate, setMaxDate] = useState<Date | null>(null);
+  const [minDate, setMinDate] = useState<Date | null>(
+    model.start_time && frequency ? dayjs.unix(model.start_time - frequencyValues.DAY).toDate() : null
+  );
+  const [maxDate, setMaxDate] = useState<Date | null>(
+    model.latest_time && frequency ? dayjs.unix(model.latest_time + frequencyValues.DAY).toDate() : null
+  );
 
-  const { data: defaultFrequency } = useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(modelId, undefined, {
+  useEffect(() => {
+    if (frequency) {
+      model.start_time && setMinDate(dayjs.unix(model.start_time - frequencyValues.DAY).toDate())
+      model.latest_time && setMaxDate(dayjs.unix(model.latest_time + frequencyValues.DAY).toDate())
+    }
+  }, [model, frequency])
+
+  const { data: defaultFrequency } = useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
     query: {
       enabled: false
     }
@@ -38,34 +48,24 @@ export const AnalysisHeaderOptions = ({ modelId }: AnalysisHeaderOptions) => {
     }
   };
 
-  const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
-    if (frequency && dayjs(startTime).isSame(dayjs(endTime))) {
-      setMaxDate(
-        dayjs(startTime)
-          .add(frequency * MAX_WINDOWS_COUNT, 'second')
-          .toDate()
-      );
-      setMinDate(
-        dayjs(startTime)
-          .subtract(frequency * MAX_WINDOWS_COUNT, 'second')
-          .toDate()
-      );
-    } else {
-      setMaxDate(null);
-      setMinDate(null);
-    }
-  };
-
   const handleFrequencyChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as number;
     setFrequency(value);
+    let windows_count = 12;
+    if (value < frequencyValues.DAY) {
+      windows_count = 24;
+    } else if (value < frequencyValues.WEEK) {
+      windows_count = 31;
+    }
     if (period) {
-      setPeriod([
-        dayjs(period[1])
-          .subtract(value * MAX_WINDOWS_COUNT, 'second')
-          .toDate(),
-        period[1]
-      ]);
+      let start_date = dayjs(period[1]).subtract(value * windows_count, 'second').toDate();
+      if (model.start_time) {
+        const model_start_date = dayjs.unix(model.start_time).toDate();
+        if (model_start_date > start_date) {
+          start_date = model_start_date;
+        }
+      }
+      setPeriod([start_date, period[1]]);
     }
   };
 
@@ -75,7 +75,6 @@ export const AnalysisHeaderOptions = ({ modelId }: AnalysisHeaderOptions) => {
         <>
           <DateRange
             onApply={handleDateSet}
-            onChange={handleDateChange}
             startTime={period ? period[0] : undefined}
             endTime={period ? period[1] : undefined}
             minDate={minDate ? minDate : undefined}

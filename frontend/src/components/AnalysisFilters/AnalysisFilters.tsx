@@ -18,7 +18,7 @@ import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 
 import { ColumnType } from 'helpers/types/model';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+// import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
@@ -74,7 +74,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
   };
 
   useEffect(() => {
-    const storageFrequency = getStorageItem(storageKeys.analysisFrequency);
+    // const storageFrequency = getStorageItem(storageKeys.analysisFrequency);
     //  const storagePeriod = getStorageItem(storageKeys.analysisPeriod);
 
     if (model.id != -1) {
@@ -86,10 +86,10 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
         setFrequency(FrequencyMap[defaultFrequency?.frequency]);
       }
 
-      if (storageFrequency !== 'null' && storageFrequency !== '0') {
-        const frequencyNumber = Number(storageFrequency);
-        setFrequency(frequencyNumber);
-      }
+      // if (storageFrequency !== 'null' && storageFrequency !== '0') {
+      //   const frequencyNumber = Number(storageFrequency);
+      //   setFrequency(frequencyNumber);
+      // }
 
       // if (storagePeriod !== '' && storagePeriod !== 'null') {
       //   const parsedPeriod = JSON.parse(storagePeriod);

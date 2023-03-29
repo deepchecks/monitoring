@@ -309,12 +309,14 @@ async def get_model_auto_frequency(
 
     for frequency, lookback in (
         (Frequency.DAY, pdl.duration(days=30)),
-        (Frequency.HOUR, pdl.duration(days=3)),
+        (Frequency.HOUR, pdl.duration(days=1)),
         (Frequency.WEEK, pdl.duration(weeks=12)),
         (Frequency.MONTH, pdl.duration(years=1))
     ):
         end_time = round_off_datetime(model_end_time, frequency)
         start_time = as_pendulum_datetime(end_time - lookback)
+        if model.start_time > start_time:
+            start_time = pdl.instance(model.start_time).subtract(seconds=1)
         period = pdl.period(start_time, end_time)
 
         if frequency is Frequency.MONTH:

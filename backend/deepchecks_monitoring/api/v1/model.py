@@ -426,6 +426,7 @@ class ModelManagmentSchema(BaseModel):
     alerts_count: int
     monitors_count: int
     latest_time: t.Optional[int] = None
+    start_time: t.Optional[int] = None
     description: t.Optional[str] = None
     task_type: t.Optional[TaskType] = None
     has_data: bool = False
@@ -481,6 +482,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
             has_data=record.Model.has_data(),
             max_severity=AlertSeverityMap.get(record.max_severity),
             latest_time=record.Model.end_time.timestamp() if record.Model.has_data() else None,
+            start_time=record.Model.start_time.timestamp() if record.Model.has_data() else None,
             versions=[
                 ModelVersionManagmentSchema.from_orm(version)
                 for version in record.Model.versions

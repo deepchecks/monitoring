@@ -19,7 +19,7 @@ export const FixedAnalysisHeader = ({ model, open, onOpenModelsMenu }: FixedAnal
   <StyledHeaderWrapper isOpen={open}>
     <StyledSelectContainer>
       <ModelSelect model={model} onOpen={onOpenModelsMenu} sx={{ marginRight: '20px' }} />
-      <AnalysisHeaderOptions modelId={model.id} />
+      <AnalysisHeaderOptions model={model} />
       <StyledDivider orientation="vertical" flexItem sx={{ marginLeft: '18px' }} />
       <AnalysisFilters model={model} fixedHeader sx={{ flexGrow: 1 }} />
     </StyledSelectContainer>

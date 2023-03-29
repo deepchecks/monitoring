@@ -1271,13 +1271,12 @@ def test_auto_frequency(
 
     # Assert
     expected_end = round_off_datetime(curr_time, Frequency.WEEK)
-    expected_start = expected_end - pdl.duration(weeks=12)
 
     assert request.status_code == 200
     assert request.json() == {
         "frequency": Frequency.WEEK.value,
         "end": expected_end.int_timestamp,
-        "start": expected_start.int_timestamp
+        "start": curr_time.subtract(days=53, seconds=1).int_timestamp,
     }
 
 

@@ -629,6 +629,7 @@ export interface ModelManagmentSchema {
   alerts_count: number;
   monitors_count: number;
   latest_time?: number;
+  start_time?: number;
   description?: string;
   task_type?: TaskType;
   has_data?: boolean;
