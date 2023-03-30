@@ -29,6 +29,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.bgtasks.core import Task
+from deepchecks_monitoring.bgtasks.delete_db_table_task import insert_delete_db_table_task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
@@ -240,11 +241,11 @@ async def retrieve_models_data_ingestion(
 
 
 async def _retrieve_models_data_ingestion(
-    *,
-    model_identifier: t.Optional[ModelIdentifier] = None,
-    time_filter: int = TimeUnit.HOUR * 24,
-    end_time: t.Optional[str] = None,
-    session: AsyncSession = AsyncSessionDep
+        *,
+        model_identifier: t.Optional[ModelIdentifier] = None,
+        time_filter: int = TimeUnit.HOUR * 24,
+        end_time: t.Optional[str] = None,
+        session: AsyncSession = AsyncSessionDep
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
 
@@ -308,7 +309,7 @@ async def _retrieve_models_data_ingestion(
                 end_time
             )).distinct()  # TODO why distinct?
             for table in tables)
-        )
+                               )
         # Join with labels table
         all_models_queries.append(
             select(literal(getattr(model, model_identifier_name)).label("model_id"),
@@ -520,26 +521,14 @@ async def delete_model(
         tables.append(f'"{organization_schema}"."{version.get_monitor_table_name()}"')
         tables.append(f'"{organization_schema}"."{version.get_reference_table_name()}"')
 
-    background_tasks.add_task(
-        drop_tables,
-        resources_provider=resources_provider,
-        tables=tables
-    )
+    await insert_delete_db_table_task(session=session, full_table_paths=tables)
 
     await session.execute(delete(Model).where(model_identifier.as_expression))
 
-    # NOTE:
-    # tests will hung without statement below,
-    # it looks like that it happens because in test env
-    # background task is called in sync manner before
-    # finalizing database session context manager (generator)
-    # and that leads to the deadlock
-    await session.commit()
-
 
 async def drop_tables(
-    resources_provider: ResourcesProvider,
-    tables: t.List[str]
+        resources_provider: ResourcesProvider,
+        tables: t.List[str]
 ):
     """Drop specified tables."""
     if not tables:
@@ -718,8 +707,8 @@ class ConnectedModelVersionSchema(BaseModel):
     description="Retrieve list of versions of a connected model."
 )
 async def retrive_connected_model_versions(
-    model_id: int = Path(...),
-    session: AsyncSession = AsyncSessionDep
+        model_id: int = Path(...),
+        session: AsyncSession = AsyncSessionDep
 ) -> t.List[ConnectedModelVersionSchema]:
     """Retrieve list of versions of a connected model."""
     await exists_or_404(session=session, model=Model, id=model_id)
@@ -801,14 +790,14 @@ class IngestionErrorSchema(BaseModel):
     response_model=t.List[IngestionErrorSchema]
 )
 async def retrieve_connected_model_version_ingestion_errors(
-    model_id: int = Path(...),
-    version_id: int = Path(...),
-    sort_key: IngestionErrorsSortKey = Query(default=IngestionErrorsSortKey.TIMESTAMP),
-    sort_order: SortOrder = Query(default=SortOrder.DESC),
-    download: bool = Query(default=False),
-    limit: int = Query(default=50, le=10_000, ge=1),
-    offset: int = Query(default=0, ge=0),
-    session: AsyncSession = AsyncSessionDep
+        model_id: int = Path(...),
+        version_id: int = Path(...),
+        sort_key: IngestionErrorsSortKey = Query(default=IngestionErrorsSortKey.TIMESTAMP),
+        sort_order: SortOrder = Query(default=SortOrder.DESC),
+        download: bool = Query(default=False),
+        limit: int = Query(default=50, le=10_000, ge=1),
+        offset: int = Query(default=0, ge=0),
+        session: AsyncSession = AsyncSessionDep
 ):
     """Retrieve connected model version ingestion errors."""
     await exists_or_404(
@@ -891,8 +880,8 @@ async def retrieve_scorers(session: AsyncSession = AsyncSessionDep):
     description="Retrieve list of model scorers."
 )
 async def retrieve_model_scorers(
-    model_id: int = Path(...),
-    session: AsyncSession = AsyncSessionDep
+        model_id: int = Path(...),
+        session: AsyncSession = AsyncSessionDep
 ):
     """Retrieve list of model scorers."""
     # TODO
@@ -905,9 +894,9 @@ async def retrieve_model_scorers(
     description="Add a scorer to a model."
 )
 async def add_scorer(
-    model_id: int = Path(...),
-    body: t.Dict[str, t.Any] = Body(...),
-    session: AsyncSession = AsyncSessionDep
+        model_id: int = Path(...),
+        body: t.Dict[str, t.Any] = Body(...),
+        session: AsyncSession = AsyncSessionDep
 ):
     """Add a scorer to a model."""
     # TODO
@@ -931,10 +920,10 @@ class ModelScheduleTimeSchema(BaseModel):
     summary="Set new scheduling time for all monitors of the model."
 )
 async def set_schedule_time(
-    body: ModelScheduleTimeSchema,
-    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.CurrentUser()),
+        body: ModelScheduleTimeSchema,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Set schedule time."""
     options = (selectinload(Model.checks).load_only(Check.id).selectinload(Check.monitors))
@@ -973,8 +962,8 @@ async def set_schedule_time(
     response_model=t.List[ModelNoteSchema]
 )
 async def retrieve_model_notes(
-    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-    session: AsyncSession = AsyncSessionDep,
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep,
 ) -> t.List[ModelNoteSchema]:
     model = await fetch_or_404(
         session,
@@ -995,10 +984,10 @@ async def retrieve_model_notes(
     response_model=t.List[ModelNoteSchema]
 )
 async def create_model_notes(
-    notes: t.List[ModelNoteCreationSchema],
-    model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.CurrentUser()),
+        notes: t.List[ModelNoteCreationSchema],
+        model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.List[ModelNoteSchema]:
     if len(notes) == 0:
         raise BadRequest("notes list cannot be empty")
@@ -1030,8 +1019,8 @@ async def create_model_notes(
     summary="Delete model note."
 )
 async def delete_model_note(
-    note_id: int = Path(...),
-    session: AsyncSession = AsyncSessionDep,
+        note_id: int = Path(...),
+        session: AsyncSession = AsyncSessionDep,
 ):
     await exists_or_404(
         session=session,

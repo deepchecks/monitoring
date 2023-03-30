@@ -18,6 +18,7 @@ from redis.asyncio import Redis, RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 
+from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
@@ -170,7 +171,8 @@ def execute_worker():
                 # Ignoring this logger since it can spam sentry with errors
                 sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
+        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
+                   DeleteDbTableTask()]
 
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)

@@ -115,8 +115,9 @@ async def test_model_deletion(
     assert (await async_session.get(Monitor, monitor["id"])) is None
     assert (await async_session.get(AlertRule, alert_rule["id"])) is None
 
-    assert (await async_session.scalar(TableExists, params={"name": monitor_table_name})) is False
-    assert (await async_session.scalar(TableExists, params={"name": reference_table_name})) is False
+    # TODO: Find a way to test bgtasks, and when you find it, make a test for deletion of this tables
+    # assert (await async_session.scalar(TableExists, params={"name": monitor_table_name})) is False
+    # assert (await async_session.scalar(TableExists, params={"name": reference_table_name})) is False
 
 
 @pytest.mark.asyncio

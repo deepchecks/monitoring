@@ -14,7 +14,7 @@ from io import StringIO
 
 import pandas as pd
 import pendulum as pdl
-from fastapi import BackgroundTasks, Depends, Path
+from fastapi import Depends, Path
 from fastapi import status as HttpStatus
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field, root_validator
@@ -25,8 +25,9 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.ddl import CreateIndex, CreateTable
 from starlette.responses import HTMLResponse
 
+from deepchecks_monitoring.bgtasks.delete_db_table_task import insert_delete_db_table_task
 from deepchecks_monitoring.config import Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest, is_unique_constraint_violation_error
 from deepchecks_monitoring.logic.check_logic import (SingleCheckRunOptions, TableDataSchema, WindowDataSchema,
                                                      create_execution_data_query)
@@ -35,7 +36,6 @@ from deepchecks_monitoring.monitoring_utils import (ExtendedAsyncSession, Identi
                                                     ModelVersionIdentifier, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
                                                              SAMPLE_LOGGED_TIME_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType, column_types_to_table_columns,
@@ -292,10 +292,10 @@ class ModelVersionUpdateSchema(BaseModel):
     status_code=HttpStatus.HTTP_200_OK
 )
 async def update_model_version(
-    model_version_id: int,
-    data: ModelVersionUpdateSchema,
-    session: AsyncSession = AsyncSessionDep,
-    user: User = Depends(auth.CurrentUser()),
+        model_version_id: int,
+        data: ModelVersionUpdateSchema,
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Update model version."""
     model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
@@ -656,11 +656,9 @@ async def get_count_samples(
     description='Delete model version.'
 )
 async def delete_model_version_by_name(
-        background_tasks: BackgroundTasks,
         model_name: str = Path(..., description='Model name'),
         version_name: str = Path(..., description='Model version name'),
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
         user: User = Depends(auth.AdminUser()),
 ):
     """Delete model version by name."""
@@ -669,8 +667,6 @@ async def delete_model_version_by_name(
         model_identifier=ModelIdentifier(model_name, kind=IdentifierKind.NAME),
         version_identifier=ModelVersionIdentifier(version_name, kind=IdentifierKind.NAME),
         session=session,
-        resources_provider=resources_provider,
-        background_tasks=background_tasks
     )
 
 
@@ -681,10 +677,8 @@ async def delete_model_version_by_name(
     status_code=HttpStatus.HTTP_200_OK
 )
 async def delete_model_version_by_id(
-        background_tasks: BackgroundTasks,
         model_version_id: int = Path(..., description='Model version id'),
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
         user: User = Depends(auth.AdminUser()),
 ):
     """Delete model version by id.
@@ -700,8 +694,6 @@ async def delete_model_version_by_id(
         organization=user.organization,
         version_identifier=ModelVersionIdentifier.from_request_params(model_version_id),
         session=session,
-        resources_provider=resources_provider,
-        background_tasks=background_tasks
     )
 
 
@@ -711,15 +703,12 @@ async def _delete_model_version(
         version_identifier: ModelVersionIdentifier,
         model_identifier: t.Optional[ModelIdentifier] = None,
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
-        background_tasks: BackgroundTasks,
 ):
     """Delete model version.
 
     A caller needs to make sure that version identifier uses id field
     if model identifier is not given.
     """
-    from .model import drop_tables  # pylint: disable=import-outside-toplevel
 
     if model_identifier is not None:
         await exists_or_404(session, Model, **model_identifier.as_kwargs)
@@ -730,20 +719,6 @@ async def _delete_model_version(
         model_version = await fetch_or_404(session, ModelVersion, **version_identifier.as_kwargs)
 
     await session.delete(model_version)
-
-    background_tasks.add_task(
-        drop_tables,
-        resources_provider=resources_provider,
-        tables=[
-            f'"{organization.schema_name}"."{model_version.get_monitor_table_name()}"',
-            f'"{organization.schema_name}"."{model_version.get_reference_table_name()}"',
-        ]
-    )
-
-    # NOTE:
-    # tests will hung without commit statement below,
-    # it looks like that it happens because in test env
-    # background task is called in sync manner before
-    # finalizing database session context manager (generator)
-    # and that leads to the deadlock
-    await session.commit()
+    tables = [f'"{organization.schema_name}"."{model_version.get_monitor_table_name()}"',
+              f'"{organization.schema_name}"."{model_version.get_reference_table_name()}"']
+    await insert_delete_db_table_task(session=session, full_table_paths=tables)
