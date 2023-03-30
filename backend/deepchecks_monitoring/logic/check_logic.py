@@ -377,12 +377,10 @@ async def run_check_per_window_in_range(
 
     return {
         "output": reduce_results,
-        "time_labels": [d.isoformat() for d in all_windows]
-        # TODO: not sure whether it is still needed
         # The windows are until the end time exclusive,
         # we want the UI to show the end time as inclusive,
         # therefore reducing the end time by 1 microsecond
-        # "time_labels": [d.subtract(microseconds=1).isoformat() for d in all_windows]
+        "time_labels": [d.subtract(microseconds=1).isoformat() for d in all_windows]
     }
 
 
