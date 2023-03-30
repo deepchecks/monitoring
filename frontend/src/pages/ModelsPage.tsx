@@ -20,7 +20,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button
+  Button,
+  Snackbar,
+  Alert
 } from '@mui/material';
 
 import HeaderLayout from 'components/HeaderLayout';
@@ -69,6 +71,8 @@ export const ModelsPage = () => {
 
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
+
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     reportEvent(events.modelsPage.modelsPageView);
@@ -147,9 +151,15 @@ export const ModelsPage = () => {
 
   const handleDeleteModel = async () => {
     if (modelIdToDelete) {
-      await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
-      await refetchModels();
-      await refetchAvailableModels();
+      const res = await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
+
+      if ((res as any).detail) {
+        setError((res as any).detail);
+      } else {
+        await refetchModels();
+        await refetchAvailableModels();
+      }
+
       handleModalClose();
       reportEvent(events.modelsPage.clickedDeleteModel);
     }
@@ -269,6 +279,18 @@ export const ModelsPage = () => {
           </DialogActions>
         </Box>
       </Dialog>
+
+      <Snackbar
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right'
+        }}
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+      >
+        <Alert severity="error">{error}</Alert>
+      </Snackbar>
     </>
   );
 };
