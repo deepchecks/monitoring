@@ -315,17 +315,21 @@ async def get_model_auto_frequency(
     ):
         end_time = round_off_datetime(model_end_time, frequency)
         start_time = as_pendulum_datetime(end_time - lookback)
+
         if model.start_time > start_time:
             start_time = pdl.instance(model.start_time).subtract(seconds=1)
+
         period = pdl.period(start_time, end_time)
 
         if frequency is Frequency.MONTH:
             # this `if` is needed because:
             # >>> period / pdl.duration(years=1)
             # ... raises ZeroDivisionError
-            num_windows = 12
+            num_windows = period.in_months()
         else:
             num_windows = max(int(period / frequency.to_pendulum_duration()), 1)
+
+        num_windows = 1 if num_windows == 0 else num_windows
 
         # Convert timestamps to windows and count number of unique windows
         num_windows_exists = len(set((
