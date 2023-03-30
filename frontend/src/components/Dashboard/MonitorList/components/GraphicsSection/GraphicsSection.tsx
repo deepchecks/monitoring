@@ -11,12 +11,14 @@ import { RootMenu } from './components/RootMenu';
 import { MonitorInfoWidget } from './components/MonitorInfoWidget';
 import { MonitorAlertRuleWidget } from './components/MonitorAlertRuleWidget';
 
-import { StyledContainer } from './GraphicsSection.style';
+import { StyledContainer, StyledText } from './GraphicsSection.style';
 
 import { GraphData } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { FrequencyMap } from 'helpers/utils/frequency';
+
+import { constants } from 'components/Dashboard/dashboard.constants';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
@@ -94,7 +96,11 @@ export function GraphicsSection({
               timeFreq={FrequencyMap[frequency]}
               zoomEnabled={zoomEnabled}
             />
-            {alert_rules.length > 0 && <MonitorAlertRuleWidget monitor={monitor} alertRules={alert_rules} />}
+            {alert_rules.length > 0 ? (
+              <MonitorAlertRuleWidget monitor={monitor} alertRules={alert_rules} />
+            ) : (
+              <StyledText>{constants.noAlertText}</StyledText>
+            )}
           </Stack>
         )}
       </StyledContainer>

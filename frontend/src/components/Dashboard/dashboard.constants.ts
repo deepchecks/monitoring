@@ -38,5 +38,6 @@ export const constants = {
   monitorInfoWidget: {
     zoomToolTipText: 'Zoom using mouse/touchpad',
     zoomReset: 'Reset'
-  }
+  },
+  noAlertText: 'No alert rule configured for this monitor'
 };

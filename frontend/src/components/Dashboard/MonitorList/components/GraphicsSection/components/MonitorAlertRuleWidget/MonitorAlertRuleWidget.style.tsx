@@ -3,11 +3,12 @@ import { FlexRowContainer } from 'components/base/Container/Container.styles';
 
 const StyledContainer = styled(FlexRowContainer)({
   marginTop: 'auto',
-  paddingTop: '34px'
+  paddingTop: '16px'
 });
 
 const StyledTypography = styled(Typography)({
-  marginLeft: '5px'
+  marginLeft: '5px',
+  fontSize: '14px'
 });
 
 interface ColorOptions {
@@ -19,7 +20,8 @@ const StyledSeverity = styled(Typography, {
 })<ColorOptions>(({ color }) => ({
   display: 'inline-block',
   fontWeight: 600,
-  color
+  color,
+  fontSize: '14px'
 }));
 
 export { StyledContainer, StyledTypography, StyledSeverity };

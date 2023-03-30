@@ -32,7 +32,7 @@ const initialMonitor = {
     model_id: 0
   },
   frequency: Frequency.DAY,
-  aggregation_window: frequencyValues.DAY,
+  aggregation_window: 1,
   data_filters: {
     filters: [
       {

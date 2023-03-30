@@ -1,4 +1,5 @@
-import { Box, Menu, MenuItem, styled } from '@mui/material';
+import { Box, Menu, MenuItem, styled, Typography } from '@mui/material';
+
 import { theme } from 'theme';
 
 export const StyledContainer = styled(Box)({
@@ -28,4 +29,10 @@ export const StyledRootMenu = styled(Menu)({
 export const StyledMenuItem = styled(MenuItem)({
   position: 'relative',
   padding: '12px 17px'
+});
+
+export const StyledText = styled(Typography)({
+  marginTop: 'auto',
+  fontSize: '14px',
+  color: theme.palette.grey[600]
 });

@@ -4,11 +4,10 @@ import { timeValues } from 'helpers/time';
 import { SelectValues } from 'helpers/types';
 
 export const freqTimeWindow = [
-  { label: '1 hour', value: timeValues.hour },
-  { label: '1 day', value: timeValues.day },
-  { label: '1 week', value: timeValues.week },
-  { label: '1 month', value: timeValues.month },
-  { label: '3 months', value: timeValues.threeMonths }
+  { label: 'Hour', value: timeValues.hour },
+  { label: 'Day', value: timeValues.day },
+  { label: 'Week', value: timeValues.week },
+  { label: 'Month', value: timeValues.month }
 ];
 
 export const lookbackTimeWindow = freqTimeWindow.filter(obj => obj.value != timeValues.hour);

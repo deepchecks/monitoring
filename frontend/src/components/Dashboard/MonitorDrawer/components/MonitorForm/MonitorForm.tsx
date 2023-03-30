@@ -45,7 +45,7 @@ export const MonitorForm = ({
 }: MonitorFormProps) => {
   const [initialState, setInitialState] = useState<InitialState | null>(null);
 
-  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || timeValues.week);
+  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency);
   useEffect(() => {
     setGraphFrequency(frequency);
   }, [frequency, setGraphFrequency]);
@@ -146,11 +146,11 @@ export const MonitorForm = ({
 
   useEffect(() => {
     if (frequency && !aggregationWindow) {
-      setAggregationWindow(frequency);
+      setAggregationWindow(1);
     }
 
-    if ((aggregationWindow && frequency && frequency > aggregationWindow) || (!frequency && aggregationWindow)) {
-      setFrequency(aggregationWindow);
+    if (aggregationWindow && !frequency) {
+      setFrequency(freqTimeWindow[0].label);
     }
   }, [aggregationWindow, frequency]);
 
@@ -211,11 +211,6 @@ export const MonitorForm = ({
     saveMonitor();
     setActiveAlertsModalOpen(false);
   };
-
-  const clearAggregationWindow = useCallback(() => {
-    setAggregationWindow('');
-    setFrequency('');
-  }, []);
 
   const clearLookBack = useCallback(() => {
     setLookBack('');
@@ -316,10 +311,7 @@ export const MonitorForm = ({
             value={frequency}
             required
             error={error && !frequency}
-            onChange={event => {
-              setFrequency(event.target.value as number);
-              !advanced && setAggregationWindow(event.target.value as number);
-            }}
+            onChange={event => setFrequency(event.target.value as number)}
             clearValue={() => {
               setFrequency('');
               setAggregationWindow('');
@@ -349,16 +341,16 @@ export const MonitorForm = ({
           </StyledLink>
         ) : (
           <Subcategory sx={{ marginTop: '0 !important' }}>
-            <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">
-              <ControlledMarkedSelect
+            <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. Day frequency and aggregation window 2 means 2 days">
+              <TextField
                 label="Aggregation window"
-                values={freqTimeWindow}
+                size="small"
                 value={aggregationWindow}
-                setValue={setAggregationWindow}
-                clearValue={clearAggregationWindow}
-                required
+                onChange={event => setAggregationWindow(event.target.value)}
                 error={error && !aggregationWindow}
+                type="number"
                 fullWidth
+                required
               />
             </TooltipInputWrapper>
             <StyledLink
@@ -366,7 +358,7 @@ export const MonitorForm = ({
               sx={{ display: 'flex' }}
               onClick={() => {
                 setAdvanced(false);
-                setAggregationWindow(frequency);
+                setAggregationWindow(1);
               }}
             >
               Reset to default

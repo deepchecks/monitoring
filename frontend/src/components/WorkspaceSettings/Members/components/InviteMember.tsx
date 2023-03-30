@@ -26,7 +26,7 @@ function convertEmailsIntoAnArray(emails: string) {
 
 export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [err, setErr] = useState('');
-  const [email, setEmail] = useState('err');
+  const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
@@ -48,11 +48,11 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
 
   const handleInviteMember = async () => {
     const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
-    setErr((res as resError).error_message ?? '');
+    setErr((res as resError).error_message ?? 'none');
   };
 
   useEffect(() => {
-    if (!err) {
+    if (err === 'none') {
       setSuccess(true);
       reportEvent(events.authentication.inviteUser, {
         'Invited users emails': email

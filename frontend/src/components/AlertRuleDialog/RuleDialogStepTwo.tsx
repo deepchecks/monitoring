@@ -1,19 +1,20 @@
-import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack } from '@mui/material';
+import React, { useContext, useMemo, useState } from 'react';
+import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField } from '@mui/material';
+
+import { MonitorCheckConfSchema } from 'api/generated';
+
+import useModels from 'helpers/hooks/useModels';
+import { SelectValues } from 'helpers/types';
+import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
+import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
+import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
+
 import { SelectCheck } from 'components/SelectCheck';
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { MarkedSelect } from 'components/MarkedSelect';
-import useModels from 'helpers/hooks/useModels';
-import React, { useCallback, useContext, useMemo, useState } from 'react';
-import { SelectValues } from 'helpers/types';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
-
-import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectColumn } from 'components/SelectColumn';
-import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
-import { MonitorCheckConfSchema } from 'api/generated';
-import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStepBaseProps) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
@@ -46,11 +47,6 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       return filters.length > 1 ? [filters[0].value as number, filters[1].value as number] : undefined;
     }
   });
-
-  const clearAggregationWindow = useCallback(() => {
-    setAggregationWindow('');
-    setFrequency('');
-  }, []);
 
   const additionalKwargs = useMemo(() => {
     if (Object.keys(filteredValues).length) {
@@ -114,14 +110,15 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
             setIsValidConfig={setIsValidConfig}
             disabled={!!alertRule.id || !model}
           />
-          <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. sample every day and use the last 7 days to calculate the metric">
-            <ControlledMarkedSelect
+          <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. Day frequency and aggregation window 2 means 2 days">
+            <TextField
               label="Aggregation window"
-              values={freqTimeWindow}
+              size="small"
               value={aggregationWindow}
-              setValue={setAggregationWindow}
-              clearValue={clearAggregationWindow}
+              onChange={(event: any) => setAggregationWindow(event.target.value)}
+              type="number"
               fullWidth
+              required
             />
           </TooltipInputWrapper>
           <TooltipInputWrapper title="The frequency of sampling the monitor data">
