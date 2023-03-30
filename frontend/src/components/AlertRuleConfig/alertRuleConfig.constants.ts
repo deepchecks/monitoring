@@ -1,5 +1,9 @@
 export const constants = {
-  header: 'Alert',
+  header: {
+    titleString: 'Alert',
+    createdBy: 'Created by: ',
+    createdByDate: 'Created by date: '
+  },
   conditionTitle: 'Condition:',
   frequencyTitle: 'Check Frequency:',
   frequencyOnce: 'Once',

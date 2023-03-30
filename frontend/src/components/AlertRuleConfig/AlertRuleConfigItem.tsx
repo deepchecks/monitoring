@@ -9,6 +9,7 @@ import { AlertRuleConfigSchema } from 'api/generated';
 import { Typography, useTheme } from '@mui/material';
 
 import { AlertCount } from './components/AlertCount';
+import { NoMaxWidthTooltip } from 'components/base/Tooltip';
 
 import {
   StyledAlertName,
@@ -27,6 +28,7 @@ import {
 import { DeleteIcon, PencilDrawing } from 'assets/icon/icon';
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import { FrequencyMap } from 'helpers/utils/frequency';
+import { truncateString } from 'helpers/utils/truncateString';
 
 import { constants } from './alertRuleConfig.constants';
 
@@ -51,8 +53,11 @@ const {
   recentAlertTitle
 } = constants;
 
+const MAX_ALERT_RULE_NAME_LENGTH = 18;
+const MAX_ALERT_CONDITION_LENGTH = 20;
+
 export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleConfigItemProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const theme = useTheme();
 
   const {
     alert_severity: severity,
@@ -61,16 +66,19 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
     total_alerts: totalAlerts,
     recent_alert: recentAlert,
     frequency: frequency,
-    name
+    name,
+    user
   } = alertRule;
 
-  const theme = useTheme();
   const [headerColor, setHeaderColor] = useState(theme.palette.error.dark);
+  const [isHovered, setIsHovered] = useState(false);
 
   const checkFrequencyFormatted = dayjs.duration(FrequencyMap[frequency], 'seconds').humanize();
 
   const { operator, value } = alertRule.condition;
   const condition = `${OperatorsEnumMap[operator]} ${value}`;
+  const alertName = name + ' ' + header.titleString;
+  const alertCondition = checkName + ' ' + condition;
 
   const handleMouseEnter = () => setIsHovered(true);
   const handleMouseLeave = () => setIsHovered(false);
@@ -80,17 +88,32 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
       <StyledHeaderContainer>
         {severity && <AlertCount severity={severity} setColor={setHeaderColor} />}
         <StyledHeader color={headerColor} isHovered={isHovered}>
-          <StyledAlertName>
-            {name} {header}
-          </StyledAlertName>
+          {alertName.length > MAX_ALERT_RULE_NAME_LENGTH ? (
+            <NoMaxWidthTooltip title={alertName} placement="top">
+              <StyledAlertName>{truncateString(alertName, MAX_ALERT_RULE_NAME_LENGTH)}</StyledAlertName>
+            </NoMaxWidthTooltip>
+          ) : (
+            <StyledAlertName>{alertName}</StyledAlertName>
+          )}
+          {user && (
+            <Typography fontSize={15}>
+              {user.created_at
+                ? header.createdByDate + dayjs(user.created_at).format('L')
+                : header.createdBy + user.full_name || '-'}
+            </Typography>
+          )}
         </StyledHeader>
       </StyledHeaderContainer>
       <StyledBody>
         <StyledBodyItem>
           <StyledTitle>{conditionTitle}</StyledTitle>
-          <StyledValue>
-            {checkName} {condition}
-          </StyledValue>
+          {alertCondition.length > MAX_ALERT_CONDITION_LENGTH ? (
+            <NoMaxWidthTooltip title={alertCondition} placement="top">
+              <StyledValue>{truncateString(alertCondition, MAX_ALERT_CONDITION_LENGTH)}</StyledValue>
+            </NoMaxWidthTooltip>
+          ) : (
+            <StyledValue>{alertCondition}</StyledValue>
+          )}
         </StyledBodyItem>
         <StyledBodyItem>
           <StyledTitle>{frequencyTitle}</StyledTitle>

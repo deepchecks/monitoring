@@ -1078,6 +1078,7 @@ export interface AlertRuleConfigSchema {
   total_alerts?: number;
   non_resolved_alerts?: number;
   recent_alert?: string;
+  user?: UserSchema;
 }
 
 /**
