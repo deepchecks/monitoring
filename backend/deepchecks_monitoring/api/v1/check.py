@@ -325,7 +325,7 @@ async def get_model_auto_frequency(
             # ... raises ZeroDivisionError
             num_windows = 12
         else:
-            num_windows = int(period / frequency.to_pendulum_duration())
+            num_windows = max(int(period / frequency.to_pendulum_duration()), 1)
 
         # Convert timestamps to windows and count number of unique windows
         num_windows_exists = len(set((
