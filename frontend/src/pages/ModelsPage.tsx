@@ -36,6 +36,7 @@ import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/Filters
 import useModels from '../helpers/hooks/useModels';
 import { getParams, setParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/services/mixPanel';
+import { resError } from 'helpers/types/resError';
 
 import { theme } from 'theme';
 
@@ -153,8 +154,8 @@ export const ModelsPage = () => {
     if (modelIdToDelete) {
       const res = await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
 
-      if ((res as any).detail) {
-        setError((res as any).detail);
+      if ((res as resError).error_message) {
+        setError((res as resError).error_message);
       } else {
         await refetchModels();
         await refetchAvailableModels();
