@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import { useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost } from 'api/generated';
 
 import { parseDataForBarChart, parseDataForLineChart } from 'helpers/utils/parseDataForChart';
@@ -7,8 +5,8 @@ import { parseDataForBarChart, parseDataForLineChart } from 'helpers/utils/parse
 export const useRunCheckLookback = (type: 'line' | 'bar' = 'line') => {
   const checkRun = useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
-  const chartData = useMemo(() => {
-    if (checkRun.data) {
+  const chartData = () => {
+    if (checkRun && checkRun.data) {
       if (type === 'line') {
         return parseDataForLineChart(checkRun.data);
       }
@@ -19,7 +17,7 @@ export const useRunCheckLookback = (type: 'line' | 'bar' = 'line') => {
     }
 
     return { datasets: [], labels: [] };
-  }, [checkRun.data, type]);
+  };
 
   return { chartData, ...checkRun };
 };

@@ -15,7 +15,7 @@ import { Loader } from 'components/Loader';
 import { AnalysisFilters } from 'components/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/AnalysisHeader/AnalysisHeader';
 import { AnalysisGroupBy } from 'components/AnalysisGroupBy';
-import { AnalysisItem } from 'components/AnalysisItem';
+import AnalysisItem from 'components/AnalysisItem/AnalysisItem';
 
 import { getParams } from 'helpers/utils/getParams';
 import { CheckType } from 'helpers/types/check';

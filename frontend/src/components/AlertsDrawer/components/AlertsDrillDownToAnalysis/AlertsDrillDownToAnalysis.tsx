@@ -15,7 +15,7 @@ import { Box, Stack, styled } from '@mui/material';
 import { AlertsDrillDownToAnalysisHeader } from './AlertsDrillDownToAnalysisHeader';
 import { TabPanel } from 'components/TabPanel';
 import { Loader } from 'components/Loader';
-import { AnalysisItem } from 'components/AnalysisItem';
+import AnalysisItem from 'components/AnalysisItem/AnalysisItem';
 import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
