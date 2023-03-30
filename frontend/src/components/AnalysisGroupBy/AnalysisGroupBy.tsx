@@ -22,7 +22,8 @@ import { RunDownloadSuite } from 'components/RunDownloadSuite';
 
 import { CheckTypeOptions } from 'helpers/types/check';
 import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
-import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
+import { getAvailableFeatures } from 'helpers/utils/featuresUtils';
+import { SwitchButton } from 'components/SwitchButton';
 
 const AnalysisGroupByComponent = ({
   datasetName,
@@ -47,15 +48,37 @@ const AnalysisGroupByComponent = ({
   const [groupBySchema, setGroupBySchema] = useState<CheckGroupBySchema[]>([]);
   const [activeBarFilters, setActiveBarFilters] = useState<DataFilter[]>([]);
 
+  const [featureImportance, setFeatureImportance] = useState<Record<string, number> | null>(null);
+  const [sortByFi, setSortByFi] = useState(true);
+
   const propValuesAreNotNull = !!(datasetName && check && modelVersionId && timeLabel);
   const testSuitePropsAreNotNull = !!(selectedFeature && modelVersionId && singleCheckRunOptions);
+
+  const filterFeatureNames = (featuresNames: string[]) => {
+    if (additionalKwargs && type) {
+      const value = type === CheckTypeOptions.Class ? additionalKwargs.res_conf?.[0] : datasetName;
+
+      if (value) {
+        // if the type is feature we want to only show dataset name if a feature is selected
+        if (type != CheckTypeOptions.Feature || additionalKwargs.check_conf?.['feature']?.length) {
+          setClassOrFeature({ type, value });
+        }
+        // Filter selected feature from feature list
+        if (type === CheckTypeOptions.Feature) {
+          return featuresNames.filter(feature => feature != value);
+        }
+      }
+    }
+    return featuresNames;
+  }
 
   useEffect(() => {
     async function getData() {
       if (propValuesAreNotNull && frequency) {
         setGlobalLoading(true);
 
-        let featuresNames = await getAvailableFeaturesNames(modelVersionId);
+        const { featuresNames, featureImportance } = await getAvailableFeatures(modelVersionId, sortByFi);
+        setFeatureImportance(featureImportance)
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
@@ -66,22 +89,9 @@ const AnalysisGroupByComponent = ({
 
         setSingleCheckRunOptions(SingleCheckRunOptions);
 
-        if (additionalKwargs && type) {
-          const value = type === CheckTypeOptions.Class ? additionalKwargs.res_conf?.[0] : datasetName;
 
-          if (value) {
-            // if the type is feature we want to only show dataset name if a feature is selected
-            if (type != CheckTypeOptions.Feature || additionalKwargs.check_conf?.['feature']?.length) {
-              setClassOrFeature({ type, value });
-            }
-            // Filter selected feature from feature list
-            if (type === CheckTypeOptions.Feature) {
-              featuresNames = featuresNames.filter(feature => feature != value);
-            }
-          }
-        }
 
-        setFeaturesArray(featuresNames);
+        setFeaturesArray(filterFeatureNames(featuresNames));
         setSelectedFeature(featuresNames[0]);
       }
     }
@@ -128,6 +138,19 @@ const AnalysisGroupByComponent = ({
     }
   };
 
+  const updateFeaturesSort = (checked: boolean) => {
+    let featuresNames;
+    if (checked && featureImportance != null && Object.keys(featureImportance).length > 0) {
+      featuresNames = Object.keys(featureImportance).sort(
+        (a, b) => featureImportance[b] - featureImportance[a]
+      );
+    } else {
+      featuresNames = (Object.values(featuresArray) as string[]).sort();
+    }
+    setFeaturesArray(filterFeatureNames(featuresNames));
+    setSortByFi(checked);
+  }
+
   return (
     <CustomDrawer loading={globalLoading} {...props}>
       {propValuesAreNotNull && singleCheckRunOptions && (
@@ -148,6 +171,12 @@ const AnalysisGroupByComponent = ({
               disabled={loading}
               setValue={setSelectedFeature}
             />
+            {featureImportance && <SwitchButton
+              sx={{ marginLeft: '16px', height: '38px' }}
+              checked={sortByFi}
+              setChecked={checked => updateFeaturesSort(checked as boolean)}
+              label="Sort by feature importance"
+            />}
           </StyledHeaderContainer>
           {loading ? (
             <Loader />

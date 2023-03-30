@@ -16,7 +16,8 @@ export function SwitchButton({ checked, setChecked, label, labelPlacement = 'end
 
   return (
     <StyledFormControlLabel
-      control={<StyledSwitch sx={{ ...sx }} checked={checked} onChange={handleChange} {...props} />}
+      sx={{ ...sx }}
+      control={<StyledSwitch checked={checked} onChange={handleChange} {...props} />}
       label={label}
       labelPlacement={labelPlacement}
     />
