@@ -243,8 +243,10 @@ def rules_pass(
         if total_preds_count > 0:
             labels_percent = total_label_count / total_preds_count
             # Test the rules. If both rules don't pass, return False.
-            if (labels_percent < model.alerts_delay_labels_ratio and
-                    pdl.instance(max_timestamp).add(seconds=model.alerts_delay_seconds) > pdl.now()):
+            if (
+                labels_percent < model.alerts_delay_labels_ratio
+                and pdl.instance(max_timestamp).add(seconds=model.alerts_delay_seconds) > pdl.now()
+            ):
                 return False
     # In all versions at least one of the rules passed, return True
     return True

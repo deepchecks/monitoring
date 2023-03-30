@@ -161,9 +161,9 @@ def round_off_datetime(
     frequency: "Frequency"
 ) -> "PendulumDateTime":
     value = as_pendulum_datetime(value)
-    s = value.start_of(frequency.value.lower())
-    d = frequency.to_pendulum_duration()
-    return s + d if s != value else value
+    start_of_window = value.start_of(frequency.value.lower())
+    duration = frequency.to_pendulum_duration()
+    return start_of_window + duration
 
 
 def calculate_initial_latest_schedule(

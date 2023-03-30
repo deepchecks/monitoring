@@ -1,11 +1,11 @@
-import { IDataset } from './AnalysisItem.types';
+import { IDataset } from '../AnalysisItem.types';
 
 interface IScore {
   id: string;
   score: number;
 }
 
-export function showDatasets(dataSets: IDataset[], dataSetsToShow: number, ascending = true) {
+export const showDatasets = (dataSets: IDataset[], dataSetsToShow: number, ascending = true) => {
   const scores: IScore[] = [];
 
   dataSets.forEach(dataSet => {
@@ -36,4 +36,4 @@ export function showDatasets(dataSets: IDataset[], dataSetsToShow: number, ascen
   });
 
   return result;
-}
+};

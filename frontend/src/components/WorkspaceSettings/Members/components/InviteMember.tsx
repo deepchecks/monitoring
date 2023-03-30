@@ -10,6 +10,7 @@ import { MembersActionDialogInput } from './MembersActionDialogInput';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { validateEmail } from 'helpers/utils/validateEmail';
+import { resError } from 'helpers/types/resError';
 
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
@@ -25,7 +26,7 @@ function convertEmailsIntoAnArray(emails: string) {
 
 export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [err, setErr] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('err');
   const [success, setSuccess] = useState(false);
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
@@ -47,11 +48,11 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
 
   const handleInviteMember = async () => {
     const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
-    setErr((res as any).detail ?? 'none'); // TODO - need to agreed with server about strict err format
+    setErr((res as resError).error_message ?? '');
   };
 
   useEffect(() => {
-    if (err === 'none') {
+    if (!err) {
       setSuccess(true);
       reportEvent(events.authentication.inviteUser, {
         'Invited users emails': email

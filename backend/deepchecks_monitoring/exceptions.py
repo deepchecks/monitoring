@@ -15,6 +15,7 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 __all__ = [
     'UnacceptedEULA',
@@ -39,7 +40,7 @@ def error_to_dict(error) -> t.Dict[str, t.Any]:
     """Transform http error into a dictionary."""
     if isinstance(error, BaseHTTPException):
         return error.to_dict()
-    if isinstance(error, HTTPException):
+    if isinstance(error, (HTTPException, StarletteHTTPException)):
         return {
             'error_message': error.detail,
             'additional_information': {}
