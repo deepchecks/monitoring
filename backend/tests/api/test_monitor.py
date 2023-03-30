@@ -514,13 +514,12 @@ async def test_monitor_run_filter(
     ))["id"]
 
     response = client.post(f"/api/v1/monitors/{monitor_id}/run", json={"end_time": end_time})
-
     json_rsp = response.json()
 
     expected_output = {
         "v1": [
             None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
             None,
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
@@ -528,6 +527,7 @@ async def test_monitor_run_filter(
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 1.0},
             None,
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+            None,
         ]
     }
 
@@ -558,11 +558,12 @@ async def test_monitor_run_filter(
     assert json_rsp["output"] == {
         "v1": [
             None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None,
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 1.0},
             None,
             {"F1 Per Class 0": 0.0, "F1 Per Class 1": 0.0, "F1 Per Class 2": 0.0},
+            None,
         ]
     }

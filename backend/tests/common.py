@@ -333,8 +333,8 @@ class TestAPI:
         assert isinstance(data, dict)
         assert "id" in data and isinstance(data["id"], int)
         assert "name" in data and isinstance(data["name"], str)
-        assert "description" in data
         assert "task_type" in data
+        assert "description" in data
         return data
 
     def fetch_model_columns(
