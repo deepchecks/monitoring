@@ -3,12 +3,13 @@ import { ChartData } from 'chart.js';
 
 import { Frequency, MonitorSchema } from 'api/generated';
 
-import { BoxProps } from '@mui/material';
+import { BoxProps, Stack } from '@mui/material';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import { Loader } from 'components/Loader';
 import { RootMenu } from './components/RootMenu';
 import { MonitorInfoWidget } from './components/MonitorInfoWidget';
+import { MonitorAlertRuleWidget } from './components/MonitorAlertRuleWidget';
 
 import { StyledContainer } from './GraphicsSection.style';
 
@@ -33,6 +34,8 @@ export function GraphicsSection({
   isLoading,
   ...props
 }: GraphicsSectionProps) {
+  const { alert_rules, frequency } = monitor;
+
   const [hover, setHover] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [anchorElRootMenu, setAnchorElRootMenu] = useState<HTMLElement | null>(null);
@@ -42,7 +45,6 @@ export function GraphicsSection({
   const openRootMenu = Boolean(anchorElRootMenu);
 
   const onMouseOver = () => setHover(true);
-
   const onMouseLeave = () => !zoomEnabled && setHover(false);
 
   const handleOpenRootMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -75,7 +77,7 @@ export function GraphicsSection({
         {isLoading ? (
           <Loader />
         ) : (
-          <>
+          <Stack direction="column" height="100%">
             <MonitorInfoWidget
               monitor={monitor}
               hover={hover}
@@ -86,13 +88,14 @@ export function GraphicsSection({
             />
             <DiagramLine
               data={data}
-              alert_rules={monitor.alert_rules}
+              alert_rules={alert_rules}
               height={{ lg: 203, xl: 215 }}
               minTimeUnit={minTimeUnit}
-              timeFreq={FrequencyMap[monitor.frequency]}
+              timeFreq={FrequencyMap[frequency]}
               zoomEnabled={zoomEnabled}
             />
-          </>
+            {alert_rules.length > 0 && <MonitorAlertRuleWidget monitor={monitor} alertRules={alert_rules} />}
+          </Stack>
         )}
       </StyledContainer>
       <RootMenu

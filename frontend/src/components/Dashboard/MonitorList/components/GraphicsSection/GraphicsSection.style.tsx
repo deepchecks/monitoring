@@ -1,15 +1,15 @@
 import { Box, Menu, MenuItem, styled } from '@mui/material';
-
 import { theme } from 'theme';
 
 export const StyledContainer = styled(Box)({
   padding: '32px 24px',
   border: `1px solid ${theme.palette.grey.light}`,
   borderRadius: '10px',
-  height: '351px',
+  height: '100%',
+  minHeight: '351px',
 
   '@media (max-width: 1536px)': {
-    height: '317px',
+    minHeight: '317px',
     padding: '20px 16px'
   }
 });

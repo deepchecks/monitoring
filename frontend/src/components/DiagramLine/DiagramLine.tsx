@@ -16,14 +16,16 @@ import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
 import { Loader } from '../Loader';
 
 import { DiagramLineProps } from './DiagramLine.types';
-
 import { theme } from 'theme';
+import { constants } from './diagramLine.constants';
 
 Chart.register(...registerables, zoomPlugin);
 
 function handleTimeUnit(freq: number) {
   return freq < frequencyValues.DAY ? 'hour' : 'day';
 }
+
+const { noDataMessage } = constants;
 
 function DiagramLine({
   data,
@@ -320,11 +322,9 @@ function DiagramLine({
   return isLoading ? (
     <Loader sx={{ transform: 'translate(0, -16%)' }} />
   ) : !data.datasets.length || data.datasets.every(d => !d) ? (
-    <Box display="flex" alignItems="center" height={{ xs: height.lg - 61, lg: height.lg - 61, xl: height.xl - 61 }}>
-      <StyledNoDataWarning variant="h4" fontWeight={500} margin="0 auto">
-        No data for this monitor configuration
-      </StyledNoDataWarning>
-    </Box>
+    <StyledNoDataWarningContainer>
+      <StyledNoDataWarning variant="h4">{noDataMessage}</StyledNoDataWarning>
+    </StyledNoDataWarningContainer>
   ) : (
     <>
       <DiagramTutorialTooltip>
@@ -348,9 +348,17 @@ function DiagramLine({
 
 export default DiagramLine;
 
+const StyledNoDataWarningContainer = styled(Typography)({
+  display: 'flex',
+  alignItems: 'center',
+  height: '100%',
+  maxHeight: '185px'
+});
+
 const StyledNoDataWarning = styled(Typography)({
-  fontWeight: '500',
+  fontWeight: 500,
   margin: '0 auto',
+
   '@media (max-width: 1765px)': {
     fontSize: '22px'
   },

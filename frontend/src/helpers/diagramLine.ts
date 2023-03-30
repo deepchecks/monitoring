@@ -33,31 +33,40 @@ export const setAlertLine = (alert_rule: AlertRuleSchema) => ({
   beforeDatasetsDraw(chart: Chart<'line', number[], string>) {
     const {
       ctx,
-      chartArea: { right },
+      chartArea: { left, right },
       scales: { x, y }
     } = chart;
 
-    if (!x || !y || !alert_rule.start_time) return;
+    if (!x || !y) return;
 
+    const startTime = alert_rule.start_time;
     const minTime = x.min;
-    const alertRuleStartTime = new Date(alert_rule.start_time).getTime();
-    const alertRuleStartTimeOnTheGraph = alertRuleStartTime < minTime ? minTime : alertRuleStartTime;
-
     const yOffset = y.getPixelForValue(alert_rule.condition.value);
-    const xOffset = x.getPixelForValue(alertRuleStartTimeOnTheGraph);
-
-    ctx.save();
 
     ctx.lineWidth = 1;
     ctx.strokeStyle = theme.palette.text.primary;
-
-    ctx.beginPath();
-    ctx.moveTo(xOffset, yOffset);
-    ctx.lineTo(right, yOffset);
     ctx.setLineDash([5, 5]);
-    ctx.stroke();
+    ctx.beginPath();
 
-    ctx.restore();
+    if (startTime) {
+      const alertRuleStartTime = new Date(startTime).getTime();
+      const alertRuleStartTimeOnTheGraph = alertRuleStartTime < minTime ? minTime : alertRuleStartTime;
+      const xOffset = x.getPixelForValue(alertRuleStartTimeOnTheGraph);
+
+      ctx.moveTo(left, yOffset);
+      ctx.lineTo(xOffset, yOffset);
+      ctx.stroke();
+
+      ctx.strokeStyle = theme.palette.error.main;
+      ctx.beginPath();
+      ctx.moveTo(xOffset, yOffset);
+      ctx.lineTo(right, yOffset);
+    } else {
+      ctx.moveTo(left, yOffset);
+      ctx.lineTo(right, yOffset);
+    }
+
+    ctx.stroke();
   }
 });
 

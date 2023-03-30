@@ -21,6 +21,11 @@ export const constants = {
     }
   },
   monitorList: {
+    monitor: {
+      alertRuleWidget: {
+        alertRuleString: 'Alert Rule: '
+      }
+    },
     deleteMonitor: {
       title: 'Delete Monitor',
       submit: 'YES, CONTINUE',
