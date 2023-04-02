@@ -1276,8 +1276,8 @@ def test_auto_frequency(
     assert request.status_code == 200
     assert request.json() == {
         "frequency": Frequency.MONTH.value,
-        "end": expected_end.int_timestamp,
-        "start": curr_time.subtract(days=53, seconds=1).int_timestamp,
+        "end": expected_end.subtract(microseconds=1).int_timestamp,
+        "start": curr_time.subtract(days=53, microseconds=1).int_timestamp,
     }
 
 

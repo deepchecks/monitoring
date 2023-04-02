@@ -286,7 +286,7 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check: Check = await fetch_or_404(session, Check, id=check_id)
-    all_windows = monitor_options.calculate_windows()[-30:]
+    all_windows = monitor_options.calculate_windows()[-31:]
     frequency = monitor_options.frequency
 
     assert frequency is not None
@@ -422,7 +422,7 @@ async def run_suite_per_window_in_range(
     model_id = checks[0].model_id
 
     uses_reference_data = any((check.is_reference_required for check in checks))
-    all_windows = monitor_options.calculate_windows()[-30:]
+    all_windows = monitor_options.calculate_windows()[-31:]
     frequency = monitor_options.frequency
 
     assert frequency is not None
