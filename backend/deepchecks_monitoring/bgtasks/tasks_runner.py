@@ -174,6 +174,9 @@ def execute_worker():
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
                    DeleteDbTableTask()]
 
+        # AIOKafka is spamming our logs, disable it for errors and warnings
+        logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
+
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
 

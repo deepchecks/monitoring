@@ -197,4 +197,7 @@ def create_application(
     # IMPORTANT: This must be the last router to be included
     app.mount("/", StaticFiles(directory=str(settings.assets_folder.absolute()), html=True))
 
+    # AIOKafka is spamming our logs, disable it for errors and warnings
+    logging.getLogger("aiokafka.cluster").setLevel(logging.CRITICAL)
+
     return app
