@@ -1250,20 +1250,20 @@ def test_auto_frequency(
 ):
     # Arrange
     model = test_api.create_model(model={"task_type": TaskType.MULTICLASS.value})
-    curr_time = pdl.now().set(minute=0, second=0, microsecond=0).in_tz("UTC")
+    start_time = pdl.datetime(2022, 11, 23)
     # Create 2 model versions
     model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
     upload_classification_data(
         model_version_id=model_version["id"],
         api=test_api,
-        daterange=[curr_time.subtract(days=x) for x in [1, 2, 3, 10, 20, 22, 40, 51, 53]],
+        daterange=[start_time.subtract(days=x) for x in [1, 2, 3, 10, 20, 22, 40, 51, 53]],
         model_id=model["id"]
     )
     model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
     upload_classification_data(
         model_version_id=model_version["id"],
         api=test_api,
-        daterange=[curr_time.subtract(days=x) for x in [0, 1, 2, 3]],
+        daterange=[start_time.subtract(days=x) for x in [0, 1, 2, 3]],
         model_id=model["id"]
     )
 
@@ -1271,13 +1271,13 @@ def test_auto_frequency(
     request = client.get(f"/api/v1/models/{model['id']}/auto-frequency")
 
     # Assert
-    expected_end = round_off_datetime(curr_time, Frequency.MONTH)
+    expected_end = round_off_datetime(start_time, Frequency.WEEK).subtract(microseconds=1)
 
     assert request.status_code == 200
     assert request.json() == {
-        "frequency": Frequency.MONTH.value,
-        "end": expected_end.subtract(microseconds=1).int_timestamp,
-        "start": curr_time.subtract(days=53, microseconds=1).int_timestamp,
+        "frequency": Frequency.WEEK.value,
+        "end": expected_end.int_timestamp,
+        "start": start_time.subtract(days=53, microseconds=1).int_timestamp,
     }
 
 
