@@ -92,7 +92,11 @@ export const AlertRules = () => {
               />
             ))
           ) : (
-            <NoResults marginTop="184px" handleReset={() => resetAlertFilters(setAlertFilters)} />
+            <>
+              <br />
+              <NoResults margin="184px auto" handleReset={() => resetAlertFilters(setAlertFilters)} />
+              <br />
+            </>
           )}
         </StyledAlertRulesContainer>
       </StyledContainer>
@@ -117,11 +121,11 @@ const StyledContainer = styled(Box)({
 });
 
 const StyledAlertRulesContainer = styled(Box)({
-  padding: 0,
-  marginTop: '40px',
   display: 'grid',
-  'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
-  gap: '20px'
+  'grid-template-columns': 'repeat(auto-fill, minmax(300px, 1fr))',
+  gap: '20px',
+  marginTop: '40px',
+  padding: 0
 });
 
 export default AlertRules;

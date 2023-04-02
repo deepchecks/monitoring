@@ -67,7 +67,7 @@ export const AlertRuleDialogStepThree = ({ handleNext, handleBack }: AlertRuleSt
       frequency: monitor.frequency,
       aggregation_window: monitor.aggregation_window
     });
-  }, [monitor, endTime, handleGraphLookBack]);
+  }, []);
 
   const finish = () => {
     alertRule.condition = {

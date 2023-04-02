@@ -29,9 +29,7 @@ export const UserInfo = () => {
   const handleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     setAnchorEl(event.currentTarget);
   };
-  // const handleMyAccount = () => {
-  //   handleClose();
-  // };
+
   const handleLogout = () => {
     cancelPendingRequests();
     logoutApiV1AuthLogoutGet().then(() => {

@@ -6,10 +6,8 @@ import {
 } from '../../api/generated';
 import { setLineGraphOptions } from '../setGraphOptions';
 import useModels from './useModels';
-import useStatsTime from './useStatsTime';
 
-const useDataIngestion = (modelId: number | null = null, selectedPointType?: string) => {
-  const [statsTime] = useStatsTime();
+const useDataIngestion = (modelId: number | null = null, selectedPointType?: string, timeValue?: number) => {
   const { modelsMap } = useModels();
 
   const latestTime = modelId
@@ -20,7 +18,7 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
       modelId as number,
       {
         end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined,
-        time_filter: statsTime.value
+        time_filter: timeValue
       },
       {
         query: {
@@ -31,7 +29,7 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
   const { data: allModelsData = [], isLoading: allLoading } =
     useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet(
       {
-        time_filter: statsTime.value,
+        time_filter: timeValue,
         end_time: latestTime > 0 ? dayjs.unix(latestTime).toISOString() : undefined
       },
       {

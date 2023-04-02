@@ -82,9 +82,10 @@ export const Sidebar = () => {
                 paddingBottom: '20px'
               }}
             >
-              <Logo />
+              <a href="/dashboard">
+                <Logo />
+              </a>
             </Box>
-
             <Box sx={{ mt: '40px', pl: { xs: '11px', lg: '11px', xl: '14px' } }}>
               {pathsInfo.map((info: PathInfo) =>
                 info.ignoreLink ? (
@@ -100,7 +101,6 @@ export const Sidebar = () => {
               )}
             </Box>
           </Box>
-
           <Box sx={{ padding: '30px 20px' }}>
             <UserInfo />
             <SidebarInviteButton onClick={handleInviteToOrgClick}>Invite members</SidebarInviteButton>

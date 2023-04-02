@@ -82,6 +82,9 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
       runCheckBody.data.additional_kwargs = additionalKwargs as MonitorCheckConfSchema;
 
       response = await runCheck(runCheckBody);
+
+      setIsItemLoading(false);
+      setData({ datasets: [], labels: [] });
     }
 
     const parsedChartData = parseDataForLineChart(response as CheckResultSchema);

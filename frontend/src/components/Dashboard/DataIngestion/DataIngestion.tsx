@@ -29,11 +29,11 @@ interface DataIngestionProps {
 
 export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   const [selectedPointType, setSelectedPointType] = useState<string>('Samples');
-  const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType);
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
-
   const [minTimeUnit, setMinTimeUnit] = useState<TimeUnit>('day');
   const [timeValue, setTimeValue] = useState(frequencyValues.DAY);
+
+  const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType, timeValue);
 
   const labelsArr = ['Samples', 'Labels', 'Missing Labels'];
 
@@ -65,11 +65,11 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
       const parsedCurrentTime = JSON.parse(storageCurrentTime);
 
       setCurrentTime(parsedCurrentTime.id);
+      setTimeValue(parsedCurrentTime.value);
     }
   }, []);
 
   useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
-
   return (
     <StyledContainer>
       <StyledHeader>

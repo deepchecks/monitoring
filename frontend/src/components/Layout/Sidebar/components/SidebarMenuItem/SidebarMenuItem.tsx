@@ -195,7 +195,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
       ) : (
         <StyledLinkWrapper
           onClick={e => goToLink(e, link)}
-          to="#"
+          to={link}
           active={active}
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}
@@ -206,12 +206,11 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
           {MenuItem}
         </StyledLinkWrapper>
       )}
-
       {submenuIsOpen &&
         info.children?.map(childInfo => (
           <StyledLinkWrapper
             onClick={e => goToLink(e, childInfo.link)}
-            to="#"
+            to={childInfo.link}
             key={childInfo.link}
             active={location.pathname === childInfo.link}
             sx={{

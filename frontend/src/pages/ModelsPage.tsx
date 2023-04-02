@@ -15,12 +15,7 @@ import {
   TextField,
   Autocomplete,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   DialogContentText,
-  DialogActions,
-  Button,
   Snackbar,
   Alert
 } from '@mui/material';
@@ -39,6 +34,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import { resError } from 'helpers/types/resError';
 
 import { theme } from 'theme';
+import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
@@ -73,7 +69,7 @@ export const ModelsPage = () => {
   const [anchorElSortMenu, setAnchorElSortMenu] = useState<HTMLElement | null>(null);
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     reportEvent(events.modelsPage.modelsPageView);
@@ -152,17 +148,13 @@ export const ModelsPage = () => {
 
   const handleDeleteModel = async () => {
     if (modelIdToDelete) {
-      const res = await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
-
-      if ((res as resError).error_message) {
-        setError((res as resError).error_message);
-      } else {
-        await refetchModels();
-        await refetchAvailableModels();
-      }
-
-      handleModalClose();
       reportEvent(events.modelsPage.clickedDeleteModel);
+      refetchModels();
+      refetchAvailableModels();
+      handleModalClose();
+
+      const res = await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
+      setError((res as resError).error_message);
     }
   };
 
@@ -263,24 +255,16 @@ export const ModelsPage = () => {
           )}
         </StyledModelsContainer>
       </Box>
-
-      <Dialog open={!!modelIdToDelete} onClose={handleModalClose}>
-        <Box>
-          <DialogTitle>{'Delete Model'}</DialogTitle>
-          <DialogContent>
-            <DialogContentText>Are you sure you want to delete this model?</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleModalClose} autoFocus>
-              No
-            </Button>
-            <Button onClick={handleDeleteModel} variant="outlined">
-              Yes
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
-
+      <ActionDialog
+        open={!!modelIdToDelete}
+        onClose={handleModalClose}
+        title="Delete Model"
+        submitButtonAction={handleDeleteModel}
+        submitButtonLabel="Yes"
+        closeDialog={handleModalClose}
+      >
+        <DialogContentText margin={'34px auto'}>Are you sure you want to delete this model?</DialogContentText>
+      </ActionDialog>
       <Snackbar
         anchorOrigin={{
           vertical: 'top',
@@ -288,7 +272,7 @@ export const ModelsPage = () => {
         }}
         open={!!error}
         autoHideDuration={6000}
-        onClose={() => setError(null)}
+        onClose={() => setError('')}
       >
         <Alert severity="error">{error}</Alert>
       </Snackbar>

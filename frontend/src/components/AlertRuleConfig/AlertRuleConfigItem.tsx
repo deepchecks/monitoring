@@ -84,7 +84,7 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
   const handleMouseLeave = () => setIsHovered(false);
 
   return (
-    <StyledContainer onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <StyledContainer onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} maxWidth={'450px'}>
       <StyledHeaderContainer>
         {severity && <AlertCount severity={severity} setColor={setHeaderColor} />}
         <StyledHeader color={headerColor} isHovered={isHovered}>
