@@ -6,7 +6,7 @@ import { Box, Alert, Snackbar } from '@mui/material';
 
 import { MUIBaseButton } from '../base/Button/MUIBaseButton';
 
-import { StyledApiKey, StyledContainer, StyledLink, StyledTypography } from './APIKey.styles';
+import { StyledApiKey, StyledContainer, StyledTypography } from './APIKey.styles';
 
 import logger from 'helpers/services/logger';
 import { constants } from './apikey.constants';
@@ -44,7 +44,9 @@ export function APIKey() {
       <Box>
         <StyledTypography>
           {text}
-          <StyledLink>{link}</StyledLink>.
+          <a href="https://docs.deepchecks.com/stable/getting-started/welcome.html" target="_blank" rel="noreferrer">
+            {link}
+          </a>
         </StyledTypography>
         <StyledContainer>
           <StyledApiKey>{apiToken || '*'.repeat(59)}</StyledApiKey>

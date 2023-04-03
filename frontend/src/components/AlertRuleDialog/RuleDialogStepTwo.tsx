@@ -1,13 +1,13 @@
 import React, { useContext, useMemo, useState } from 'react';
 import { Box, Button, Checkbox, FormControlLabel, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material';
 
-import { MonitorCheckConfSchema } from 'api/generated';
+import { Frequency, MonitorCheckConfSchema } from 'api/generated';
 
 import useModels from 'helpers/hooks/useModels';
 import { SelectValues } from 'helpers/types';
 import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
-import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
+import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 import { SelectCheck } from 'components/SelectCheck';
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
@@ -31,8 +31,12 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   const [dashboardId, setDashboardId] = useState<number | null>(
     monitor?.dashboard_id === undefined ? 1 : monitor?.dashboard_id
   );
-  const [frequency, setFrequency] = useState<SelectValues>(freqTimeWindow[0].value);
-  const [aggregationWindow, setAggregationWindow] = useState<number>(1);
+
+  const [frequency, setFrequency] = useState<SelectValues>(
+    FrequencyMap[monitor?.frequency as Frequency] ?? freqTimeWindow[0].value
+  );
+
+  const [aggregationWindow, setAggregationWindow] = useState<number>(monitor?.aggregation_window ?? 1);
 
   const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
   const [category, setCategory] = useState<SelectValues>(() => {

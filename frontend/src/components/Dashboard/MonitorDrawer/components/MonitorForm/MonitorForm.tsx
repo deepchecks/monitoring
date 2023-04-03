@@ -5,7 +5,8 @@ import {
   useUpdateMonitorApiV1MonitorsMonitorIdPut,
   MonitorOptions,
   getAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGet,
-  MonitorCheckConfSchema
+  MonitorCheckConfSchema,
+  Frequency
 } from 'api/generated';
 
 import useModels from 'helpers/hooks/useModels';
@@ -27,7 +28,7 @@ import { SelectValues } from 'helpers/types';
 import { timeValues } from 'helpers/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
+import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 import { InitialState, MonitorFormProps } from './MonitorForm.types';
 
@@ -46,7 +47,10 @@ export const MonitorForm = ({
 }: MonitorFormProps) => {
   const [initialState, setInitialState] = useState<InitialState | null>(null);
 
-  const [frequency, setFrequency] = useState<SelectValues>(freqTimeWindow[0].value);
+  const [frequency, setFrequency] = useState<SelectValues>(
+    FrequencyMap[monitor?.frequency as Frequency] ?? freqTimeWindow[0].value
+  );
+
   useEffect(() => {
     setGraphFrequency(frequency);
   }, [frequency, setGraphFrequency]);
@@ -65,7 +69,7 @@ export const MonitorForm = ({
   );
   const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 
-  const [aggregationWindow, setAggregationWindow] = useState<number>(1);
+  const [aggregationWindow, setAggregationWindow] = useState<number>(monitor?.aggregation_window ?? 1);
   const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || timeValues.month);
 
   const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
