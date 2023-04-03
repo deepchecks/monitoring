@@ -227,6 +227,8 @@ envsubst < bin/casbin_conf/init_data/init_data.json.tmpl > bin/casbin_conf/init_
 rm docker-compose-oss.yml.tmpl bin/casbin_conf/app.conf.tmpl
 
 echo "Starting the stack!"
+# First pull the image to prevent rate throttling from aws ecr
+docker pull public.ecr.aws/deepchecks/monitoring:"$DEEPCHECKS_APP_TAG"
 if [[ "$OS" == *linux* ]]; then
   sudo -E docker-compose -f docker-compose-oss.yml up -d --build
 else
