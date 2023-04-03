@@ -1,5 +1,5 @@
 import React, { useContext, useMemo, useState } from 'react';
-import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField } from '@mui/material';
+import { Box, Button, Checkbox, FormControlLabel, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material';
 
 import { MonitorCheckConfSchema } from 'api/generated';
 
@@ -31,8 +31,8 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
   const [dashboardId, setDashboardId] = useState<number | null>(
     monitor?.dashboard_id === undefined ? 1 : monitor?.dashboard_id
   );
-  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency || '');
-  const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
+  const [frequency, setFrequency] = useState<SelectValues>(freqTimeWindow[0].value);
+  const [aggregationWindow, setAggregationWindow] = useState<number>(1);
 
   const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
   const [category, setCategory] = useState<SelectValues>(() => {
@@ -74,6 +74,12 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
       handleNext();
     }
   };
+
+  const aggregationWindowErr = aggregationWindow > 30;
+  const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']]}${
+    aggregationWindow > 1 ? 'S' : ''
+  }`;
+
   return (
     <Box
       component="form"
@@ -110,34 +116,32 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack }: AlertRuleStep
             setIsValidConfig={setIsValidConfig}
             disabled={!!alertRule.id || !model}
           />
-          <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. Day frequency and aggregation window 2 means 2 days">
-            <TextField
-              label="Aggregation window"
-              size="small"
-              value={aggregationWindow}
-              onChange={(event: any) => setAggregationWindow(event.target.value)}
-              type="number"
-              fullWidth
-              required
-            />
-          </TooltipInputWrapper>
+          <OutlinedInput
+            placeholder="Aggregation window"
+            size="small"
+            value={aggregationWindow}
+            onChange={event => setAggregationWindow(Number(event.target.value))}
+            endAdornment={aggregationWindowSuffix}
+            inputProps={{ min: 0, max: 30 }}
+            error={aggregationWindowErr}
+            type="number"
+            fullWidth
+            required
+          />
+          {aggregationWindowErr && <Typography color={'red'}>aggregation window max value is 30</Typography>}
           <TooltipInputWrapper title="The frequency of sampling the monitor data">
             <MarkedSelect
               label="Frequency"
               value={frequency}
               onChange={event => setFrequency(event.target.value as number)}
               clearValue={() => {
-                setFrequency('');
-                setAggregationWindow('');
+                setFrequency(freqTimeWindow[0].value);
+                setAggregationWindow(1);
               }}
               fullWidth
             >
               {freqTimeWindow.map(({ label, value }, index) => (
-                <MenuItem
-                  key={value + index}
-                  value={value}
-                  disabled={typeof aggregationWindow === 'number' && value > aggregationWindow}
-                >
+                <MenuItem key={value + index} value={value}>
                   {label}
                 </MenuItem>
               ))}

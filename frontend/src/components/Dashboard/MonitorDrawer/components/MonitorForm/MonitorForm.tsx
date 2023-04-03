@@ -10,7 +10,7 @@ import {
 
 import useModels from 'helpers/hooks/useModels';
 
-import { TextField, Stack, MenuItem } from '@mui/material';
+import { TextField, Stack, MenuItem, OutlinedInput, Typography } from '@mui/material';
 
 import { MarkedSelect } from 'components/MarkedSelect';
 import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
@@ -27,8 +27,9 @@ import { SelectValues } from 'helpers/types';
 import { timeValues } from 'helpers/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { InitialState, MonitorFormProps } from './MonitorForm.types';
 import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
+
+import { InitialState, MonitorFormProps } from './MonitorForm.types';
 
 export const MonitorForm = ({
   monitor,
@@ -45,7 +46,7 @@ export const MonitorForm = ({
 }: MonitorFormProps) => {
   const [initialState, setInitialState] = useState<InitialState | null>(null);
 
-  const [frequency, setFrequency] = useState<SelectValues>(monitor?.frequency);
+  const [frequency, setFrequency] = useState<SelectValues>(freqTimeWindow[0].value);
   useEffect(() => {
     setGraphFrequency(frequency);
   }, [frequency, setGraphFrequency]);
@@ -64,7 +65,7 @@ export const MonitorForm = ({
   );
   const [resConf, setResConf] = useState<string | undefined>(monitor?.additional_kwargs?.res_conf?.[0]);
 
-  const [aggregationWindow, setAggregationWindow] = useState<SelectValues>(monitor?.aggregation_window || '');
+  const [aggregationWindow, setAggregationWindow] = useState<number>(1);
   const [lookBack, setLookBack] = useState<SelectValues>(monitor?.lookback || timeValues.month);
 
   const [column, setColumn] = useState<string | undefined>(monitor?.data_filters?.filters?.[0]?.column || '');
@@ -150,7 +151,7 @@ export const MonitorForm = ({
     }
 
     if (aggregationWindow && !frequency) {
-      setFrequency(freqTimeWindow[0].label);
+      setFrequency(freqTimeWindow[0].value);
     }
   }, [aggregationWindow, frequency]);
 
@@ -250,6 +251,11 @@ export const MonitorForm = ({
     runCheckLookBack
   ]);
 
+  const aggregationWindowErr = aggregationWindow > 30;
+  const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']]}${
+    aggregationWindow > 1 ? 'S' : ''
+  }`;
+
   return (
     <Stack width={{ xs: '200px', xl: '360px' }} {...props}>
       <StyledFormContainer spacing="30px">
@@ -311,19 +317,15 @@ export const MonitorForm = ({
             value={frequency}
             required
             error={error && !frequency}
-            onChange={event => setFrequency(event.target.value as number)}
+            onChange={event => setFrequency(event.target.value as string)}
             clearValue={() => {
-              setFrequency('');
-              setAggregationWindow('');
+              setFrequency(freqTimeWindow[0].value);
+              setAggregationWindow(1);
             }}
             fullWidth
           >
             {freqTimeWindow.map(({ label, value }, index) => (
-              <MenuItem
-                key={value + index}
-                value={value}
-                disabled={advanced && typeof aggregationWindow === 'number' && value > aggregationWindow}
-              >
+              <MenuItem key={value + index} value={value}>
                 {label}
               </MenuItem>
             ))}
@@ -341,18 +343,19 @@ export const MonitorForm = ({
           </StyledLink>
         ) : (
           <Subcategory sx={{ marginTop: '0 !important' }}>
-            <TooltipInputWrapper title="The date range for calculating the monitor sample. e.g. Day frequency and aggregation window 2 means 2 days">
-              <TextField
-                label="Aggregation window"
-                size="small"
-                value={aggregationWindow}
-                onChange={event => setAggregationWindow(event.target.value)}
-                error={error && !aggregationWindow}
-                type="number"
-                fullWidth
-                required
-              />
-            </TooltipInputWrapper>
+            <OutlinedInput
+              placeholder="Aggregation window"
+              size="small"
+              value={aggregationWindow}
+              onChange={event => setAggregationWindow(Number(event.target.value))}
+              error={aggregationWindowErr}
+              endAdornment={aggregationWindowSuffix}
+              inputProps={{ min: 0, max: 30 }}
+              type="number"
+              fullWidth
+              required
+            />
+            {aggregationWindowErr && <Typography color={'red'}>aggregation window max value is 30</Typography>}
             <StyledLink
               underline="hover"
               sx={{ display: 'flex' }}

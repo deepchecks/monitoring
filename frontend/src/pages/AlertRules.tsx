@@ -79,26 +79,24 @@ export const AlertRules = () => {
       </HeaderLayout>
       <StyledContainer>
         <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
-        <StyledAlertRulesContainer>
+        <div>
           {isAlertRulesLoading ? (
-            <Loader />
+            <Loader sx={{ margin: '20vh auto' }} />
           ) : alertRules.length !== 0 ? (
-            alertRules.map(alertRule => (
-              <AlertRuleConfigItem
-                key={alertRule.id}
-                onEdit={() => onDialogOpen(alertRule)}
-                alertRule={alertRule}
-                onDelete={() => openDeleteAlertRuleDialog(alertRule)}
-              />
-            ))
+            <StyledAlertRulesContainer>
+              {alertRules.map(alertRule => (
+                <AlertRuleConfigItem
+                  key={alertRule.id}
+                  onEdit={() => onDialogOpen(alertRule)}
+                  alertRule={alertRule}
+                  onDelete={() => openDeleteAlertRuleDialog(alertRule)}
+                />
+              ))}
+            </StyledAlertRulesContainer>
           ) : (
-            <>
-              <br />
-              <NoResults margin="184px auto" handleReset={() => resetAlertFilters(setAlertFilters)} />
-              <br />
-            </>
+            <NoResults margin="20vh auto" handleReset={() => resetAlertFilters(setAlertFilters)} />
           )}
-        </StyledAlertRulesContainer>
+        </div>
       </StyledContainer>
 
       <AlertRuleDialogProvider>

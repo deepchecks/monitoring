@@ -25,7 +25,7 @@ export interface InitialState {
   check: SelectValues;
   filteredValues: FilteredValues;
   resConf: string | undefined;
-  aggregationWindow: SelectValues;
+  aggregationWindow: number;
   lookBack: SelectValues;
   column: string | undefined;
   category: SelectValues;
