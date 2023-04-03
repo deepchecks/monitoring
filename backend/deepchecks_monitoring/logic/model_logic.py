@@ -243,9 +243,18 @@ def get_results_for_model_versions_per_window(
     return model_results
 
 
-def run_deepchecks(test_data, model_version, model, top_feat, dp_check, feat_imp, with_display,
-                   reference_table_ds, reference_table_pred, reference_table_proba):
-
+def run_deepchecks(
+    test_data,
+    model_version,
+    model,
+    top_feat,
+    dp_check,
+    feat_imp,
+    with_display,
+    reference_table_ds,
+    reference_table_pred,
+    reference_table_proba
+):
     test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
         test_data,
         model_version,
@@ -284,16 +293,26 @@ def run_deepchecks(test_data, model_version, model, top_feat, dp_check, feat_imp
                 return dp_check.run(**train_test_args, run_single_dataset='Test')
         else:
             raise ValueError(f'incompatible check type {type(dp_check)}')
-
     # For not enough samples does not log the error
     except errors.NotEnoughSamplesError:
         # In case of exception in the run putting none result
         pass
     # For rest of the errors logs them
-    except errors.DeepchecksBaseError as e:
-        message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
-                  f'got exception: {e.message}'
-        logging.getLogger('monitor_run_logger').exception(message)
+    except Exception as e:  # pylint: disable=broad-except
+        # TODO: send error to sentry, needs to be done in the ee sub-package
+        error_message = (
+            str(e)
+            if not (msg := getattr(e, 'message', None))
+            else msg
+        )
+        logging.getLogger('monitor_run_logger').exception(
+            'For model(id=%s) version(id=%s) check(%s) '
+            'got exception: %s',
+            model.id,
+            model_version.id,
+            dp_check.name(),
+            error_message
+        )
 
 
 def get_results_for_model_versions_for_reference(

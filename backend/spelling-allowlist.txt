@@ -92,3 +92,4 @@ ValidationError
 exc
 isort
 pdl
+ee
