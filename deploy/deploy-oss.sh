@@ -26,7 +26,7 @@ if ! [ -z "$1" ]
 then
 export DEEPCHECKS_APP_TAG=$1
 else
-echo "What version of Deepchecks would you like to install? (Press Enter for latest release)"
+echo "What version of Deepchecks would you like to install? (Press enter for latest-release)"
 echo "You can check out available versions here: https://gallery.ecr.aws/y1h3v2p7/monitoring"
 read -r DEEPCHECKS_APP_TAG_READ
 if [ -z "$DEEPCHECKS_APP_TAG_READ" ]
@@ -46,7 +46,7 @@ echo "Let's get the exact domain Deepchecks will be installed on"
 echo "Make sure that you have a Host A DNS record pointing to this instance!"
 echo "This will be used for TLS 🔐 and for the app to know where to redirect to"
 echo "ie: test.deepchecks.net (NOT an IP address)"
-echo "Please enter the domain name (Press Enter for default: localhost)"
+echo "Please enter the domain name (Press enter for default: localhost)"
 read -r DOMAIN
 if [ -z "$DOMAIN" ]
 then
@@ -55,17 +55,23 @@ else
   export DOMAIN=$DOMAIN
 fi
 fi
-echo "Ok we'll set up certs for https://$DOMAIN"
+if [[ $ENABLE_HTTP == 'false' ]]; then
+  echo "Ok we'll set up certs for https://$DOMAIN"
+fi
 echo ""
 echo "Do you want to enable http traffic? (This is recommended for local deployments or behind private networks)"
 echo "⚠️ HTTPS won't work for localhost or inaccessible domains ⚠️"
-echo "Specify true to enable http (Press Enter for default: true)"
+echo "Specify true to enable http (Press enter for default: true)"
 read -r ENABLE_HTTP
 if [ -z "$ENABLE_HTTP" ]
 then
   export ENABLE_HTTP='true'
 else
-  export ENABLE_HTTP=$ENABLE_HTTP
+  if [[ $ENABLE_HTTP == 'true' ]]; then
+    export ENABLE_HTTP='true'
+  else
+    export ENABLE_HTTP='false'
+  fi
 fi
 echo ""
 echo "We will need sudo access so the next question is for you to give us superuser access"
