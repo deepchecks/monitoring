@@ -328,6 +328,36 @@ class TestAPI:
 
         return self.assert_model_record(response.json())
 
+    def fetch_available_models(
+        self,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, t.List[Payload]]:
+        response = self.api.session.get("available-models")
+        response = t.cast(httpx.Response, response)
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, list)
+
+        for it in data:
+            assert isinstance(it, dict)
+            assert isinstance(it["id"], int)
+            assert isinstance(it["name"], str)
+            assert isinstance(it["alerts_count"], int)
+            assert isinstance(it["monitors_count"], int)
+            assert isinstance(it["latest_time"], (int, type(None)))
+            assert isinstance(it["description"], (str, type(None)))
+            assert isinstance(it["task_type"], (str, type(None)))
+            assert isinstance(it["has_data"], bool)
+            assert isinstance(it["versions"], list)
+            assert isinstance(it["max_severity"], (str, type(None)))
+
+        return data
+
     @classmethod
     def assert_model_record(cls, data) -> Payload:
         assert isinstance(data, dict)

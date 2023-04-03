@@ -35,7 +35,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProvide
 from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
-from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, AlertSeverityMap, MonitorsCountPerModel
+from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, MonitorsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
@@ -481,7 +481,11 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
             alerts_count=record.n_of_alerts or 0,
             monitors_count=record.n_of_monitors or 0,
             has_data=record.Model.has_data(),
-            max_severity=AlertSeverityMap.get(record.max_severity),
+            max_severity=(
+                AlertSeverity.from_index(record.max_severity)
+                if record.max_severity is not None
+                else None
+            ),
             latest_time=record.Model.end_time.timestamp() if record.Model.has_data() else None,
             start_time=record.Model.start_time.timestamp() if record.Model.has_data() else None,
             versions=[

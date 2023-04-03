@@ -322,3 +322,9 @@ def test_model_note_deletion(
     created_notes = test_api.create_model_notes(model_id=classification_model["id"])
     created_notes = t.cast(t.List[Payload], created_notes)
     test_api.delete_model_note(model_id=classification_model["id"], note_id=created_notes[0]["id"])
+
+
+def test_available_models_retrieval(test_api: TestAPI, classification_model: Payload):
+    available_models = t.cast(t.List[Payload], test_api.fetch_available_models())
+    assert len(available_models) == 1
+    assert available_models[0]["name"] == classification_model["name"]
