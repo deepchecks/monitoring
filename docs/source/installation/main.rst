@@ -1,13 +1,16 @@
-===============
+.. _installation:
+
+============
 Installation
-===============
+============
 
 In order to work with Deepchecks Monitoring, you need to:
 
-1. :ref:`Install with pip <installation__deepchecks_client>` the ``deepchecks-client`` python package, which installs the SDK for interacting with the app 
+1. :ref:`Install with pip <installation__deepchecks_client>` the ``deepchecks-client`` python package, which installs the SDK for interacting with the app
    and the :doc:`Deepchecks Testing <deepchecks:getting-started/welcome>` package.
-2. Log in to the Deepchecks Monitoring app and :ref:`create an organization or join an existing organization <installation__create_or_join_organization>`
-3. :ref:`Obtain an API key <installation__obtain_api_key>` from the app
+2. Sign up to Deepchecks Cloud or self-host your own instance of Deepchecks Monitoring open-source.
+3. Log in to the Deepchecks Monitoring app and :ref:`create an organization or join an existing organization <installation__create_or_join_organization>`
+4. :ref:`Obtain an API key <installation__obtain_api_key>` from the app
 
 
 
@@ -16,8 +19,8 @@ In order to work with Deepchecks Monitoring, you need to:
 Install with pip
 =================================
 
-deepchecks-client is a python package that installs the SDK for interacting with the monitoring app and 
-the :doc:`Deepchecks Testing <deepchecks:getting-started/welcome>` package, which can be useful when exploring existing issues 
+deepchecks-client is a python package that installs the SDK for interacting with the monitoring app and
+the :doc:`Deepchecks Testing <deepchecks:getting-started/welcome>` package, which can be useful when exploring existing issues
 (e.g. when using the "download" feature to further research the issue in your local environment)
 
 It can be installed using pip:

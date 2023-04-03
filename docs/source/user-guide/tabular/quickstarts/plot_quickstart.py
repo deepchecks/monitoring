@@ -157,4 +157,4 @@ model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label
 # If we wish to remove the model do free up space for new models we can do it in the following way:
 
 # CAUTION: This will delete the model, all model versions, and all associated datasets.
-dc_client.delete_model(model_name)
+# dc_client.delete_model(model_name)

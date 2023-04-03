@@ -76,7 +76,7 @@ Get Started with Deepchecks Monitoring
 
     .. grid-item-card:: 💻  Install 💻 
         :link-type: doc
-        :link: /getting-started/installation
+        :link: /installation/index
 
         Install the deepchecks-client and get your API token
         to start working with the system.

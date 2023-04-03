@@ -8,4 +8,3 @@ Getting Started
     :maxdepth: 1
 
     welcome
-    installation

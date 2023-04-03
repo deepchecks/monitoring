@@ -8,6 +8,8 @@ Welcome to Deepchecks Monitoring!
 
    getting-started/index
 
+   installation/index
+
    user-guide/index
 
    api/index
