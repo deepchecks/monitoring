@@ -37,20 +37,22 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
 
   const labelsArr = ['Samples', 'Labels', 'Missing Labels'];
 
+  useEffect(() => {
+    if (+timeValue <= 3600) {
+      setMinTimeUnit('minute');
+    } else if (+timeValue <= frequencyValues.DAY) {
+      setMinTimeUnit('hour');
+    } else {
+      setMinTimeUnit('day');
+    }
+  }, [timeValue]);
+
   const handleTime = (newTimeValue: unknown) => {
     if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
 
     const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
 
     setTimeValue(+newTimeValue);
-
-    if (+newTimeValue <= 3600) {
-      setMinTimeUnit('minute');
-    } else if (+newTimeValue <= frequencyValues.DAY) {
-      setMinTimeUnit('hour');
-    } else {
-      setMinTimeUnit('day');
-    }
 
     setCurrentTime(timeOptions[newTimeIndex].id);
     reportEvent(events.dashboardPage.changedTimerFilterProdData, {
