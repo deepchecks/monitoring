@@ -308,7 +308,7 @@ async def get_model_auto_frequency(
     options = []
 
     for frequency, lookback in (
-        (Frequency.DAY, pdl.duration(days=30)),
+        (Frequency.DAY, pdl.duration(days=31)),
         (Frequency.HOUR, pdl.duration(days=1)),
         (Frequency.WEEK, pdl.duration(weeks=12)),
         (Frequency.MONTH, pdl.duration(years=1))
