@@ -78,7 +78,7 @@ services:
         ipv4_address: 10.5.0.7
 
   app:
-    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
     command:
       - /start/start.sh
     env_file:
@@ -103,7 +103,7 @@ services:
         ipv4_address: 10.5.0.6
 
   alert-scheduler:
-    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
     command:
       - /start/start-alert-scheduler.sh
     env_file:
@@ -124,7 +124,7 @@ services:
         ipv4_address: 10.5.0.5
 
   task-queuer:
-    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
     command:
       - /start/start-task-queuer.sh
     env_file:
@@ -144,7 +144,7 @@ services:
       default:
         ipv4_address: 10.5.0.4
   task-runner:
-    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
     command:
       - /start/start-task-runner.sh
     env_file:
@@ -164,7 +164,7 @@ services:
       default:
         ipv4_address: 10.5.0.3
   worker:
-    image: public.ecr.aws/y1h3v2p7/monitoring:${DEEPCHECKS_APP_TAG}
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
     command:
       - /start/start-worker.sh
     env_file:

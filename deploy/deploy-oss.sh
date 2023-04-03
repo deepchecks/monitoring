@@ -27,7 +27,7 @@ then
 export DEEPCHECKS_APP_TAG=$1
 else
 echo "What version of Deepchecks would you like to install? (Press enter for latest-release)"
-echo "You can check out available versions here: https://gallery.ecr.aws/y1h3v2p7/monitoring"
+echo "You can check out available versions here: https://gallery.ecr.aws/deepchecks/monitoring"
 read -r DEEPCHECKS_APP_TAG_READ
 if [ -z "$DEEPCHECKS_APP_TAG_READ" ]
 then
