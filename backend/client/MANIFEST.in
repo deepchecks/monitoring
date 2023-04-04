@@ -1,0 +1,2 @@
+include README.md
+include deepchecks_client/core/AmazonRootCA1.cer

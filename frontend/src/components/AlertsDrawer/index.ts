@@ -1,0 +1,1 @@
+export { AlertsDrawer } from './AlertsDrawer';

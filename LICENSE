@@ -1,0 +1,11 @@
+Copyright © 2021-2023 Deepchecks 
+
+Portions of this software are licensed as follows:
+
+* The sub-library under the sub-directory named "**/ee/", if exists, 
+  is licensed under the license defined in "**/ee/LICENSE".
+* All third party components incorporated into the Deepchecks Software 
+  are licensed under the original license provided by the owner of the 
+  applicable component.
+* Content outside of the above mentioned directories or restrictions above, 
+  is available under the AGPL license as set forth in "AGPL_LICENSE".

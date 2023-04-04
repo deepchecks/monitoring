@@ -1,0 +1,32 @@
+header:
+  license:
+    spdx-id: AGPL-3.0-only
+    copyright-owner: Deepchecks
+    content: |
+       ----------------------------------------------------------------------------
+       Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+
+       This file is part of Deepchecks.
+       Deepchecks is distributed under the terms of the GNU Affero General
+       Public License (version 3 or later).
+       You should have received a copy of the GNU Affero General Public License
+       along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+       ----------------------------------------------------------------------------
+  paths:
+    - '**'
+  paths-ignore:
+    - '.pylintrc'
+    - 'LICENSE'
+    - 'VERSION'
+    - 'assets/.keep'
+    - 'deepchecks_client.egg-info/PKG-INFO'
+    - 'makefile'
+    - 'migrations/script.py.mako'
+    - 'migrations/README'
+    - 'client/deepchecks_client/core/AmazonRootCA1.cer'
+    - 'client/MANIFEST.in'
+  comment: on-failure
+
+dependency:
+  files:
+    - requirements.txt

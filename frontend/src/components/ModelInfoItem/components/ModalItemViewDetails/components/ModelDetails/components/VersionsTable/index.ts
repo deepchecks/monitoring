@@ -1,0 +1,1 @@
+export { VersionsTable } from './VersionsTable';

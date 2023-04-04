@@ -1,0 +1,87 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+#
+name: Build
+
+env:
+  DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
+  DEEPCHECKS_BUCKET: deepchecks-monitoring-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    if: "!github.event.pull_request.draft"
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set Up Env
+        run: make env
+      - name: pip freeze
+        run: make freeze
+      - name: Verify migrations linearity
+        run: make check-migrations-liniarity
+      - name: Run Tests
+        run: make test
+#  coverage:
+#    runs-on: ubuntu-latest
+#    name: coveralls
+#    steps:
+#    - uses: actions/checkout@v3
+#    - uses: actions/setup-python@v3
+#      with:
+#        python-version: "3.9"
+#    - name: Set Up Env
+#      run: make env
+#      working-directory: ./backend
+#    - name: Run Coverage
+#      run: make coveralls
+#      working-directory: ./backend
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#  tests-windows:
+#    runs-on: windows-latest
+#    strategy:
+#      matrix:
+#        python-version: ["3.8"]
+#    steps:
+#    - uses: actions/checkout@v3
+#    - name: Set up Python ${{ matrix.python-version }}
+#      uses: actions/setup-python@v3
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - name: Run Tests
+#      run: make test-win
+#      working-directory: ./backend

@@ -1,0 +1,46 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+#
+name: FE Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Jest-TSC-ESLint:
+    runs-on: ubuntu-latest
+    if: "!github.event.pull_request.draft"
+    steps:
+      - uses: actions/checkout@v1
+      - name: Run Linter
+        run: |
+          npm install 
+          npm run lint
+        working-directory: ./frontend
+
+      - name: Run TS Checker
+        run: |
+          npm install 
+          npm run tsc
+        working-directory: ./frontend
+
+      - name: Run Tests
+        run: |
+          npm install 
+          npm test
+        working-directory: ./frontend

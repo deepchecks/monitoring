@@ -1,0 +1,214 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+version: '3'
+
+services:
+  db:
+    image: postgres:14-alpine
+    restart: on-failure
+    ports:
+      - '5432'
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_MULTIPLE_DATABASES: deepchecks,casdoor
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./bin/pg_multiple_databases:/docker-entrypoint-initdb.d
+    networks:
+      default:
+        ipv4_address: 10.5.0.11
+
+  casdoor:
+    restart: always
+    image: casbin/casdoor
+    entrypoint: /bin/sh -c './server --createDatabase=true'
+    depends_on:
+      - db
+    environment:
+      RUNNING_IN_DOCKER: "true"
+    ports:
+      - '4545'
+    volumes:
+      - ./bin/casbin_conf:/conf/
+      - ./bin/casbin_conf/init_data/init_data.json:/init_data.json
+    networks:
+      default:
+        ipv4_address: 10.5.0.10
+
+  zookeeper:
+    image: zookeeper:3.7.0
+    restart: on-failure
+    volumes:
+      - zookeeper-datalog:/datalog
+      - zookeeper-data:/data
+      - zookeeper-logs:/logs
+    networks:
+      default:
+        ipv4_address: 10.5.0.9
+
+  kafka:
+    image: bitnami/kafka:2.8.1-debian-10-r99
+    restart: on-failure
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1001
+      KAFKA_CFG_RESERVED_BROKER_MAX_ID: 1001
+      KAFKA_CFG_LISTENER: PLAINTEXT://kafka:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: 'true'
+    networks:
+      default:
+        ipv4_address: 10.5.0.8
+  redis:
+    image: redis:6.2.7-alpine
+    restart: on-failure
+    command: redis-server --maxmemory-policy allkeys-lru --maxmemory 200mb
+    networks:
+      default:
+        ipv4_address: 10.5.0.7
+
+  app:
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEEPCHECKS_SECRET
+      REQUESTS_CA_BUNDLE: $SSL_CERT_FILE
+      SSL_CERT_FILE: $SSL_CERT_FILE
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    extra_hosts:
+      - "$DOMAIN:10.5.0.20"
+    networks:
+      default:
+        ipv4_address: 10.5.0.6
+
+  alert-scheduler:
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-alert-scheduler.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.5
+
+  task-queuer:
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-task-queuer.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.4
+  task-runner:
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-task-runner.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.3
+  worker:
+    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
+    command:
+      - /start/start-worker.sh
+    env_file:
+      - oss-conf.env
+    environment:
+      DEPLOYMENT_URL: https://$DOMAIN
+      SECRET_KEY: $DEECHECKS_SECRET
+    restart: always
+    volumes:
+      - ./bin:/start
+    depends_on:
+      - db
+      - kafka
+      - redis
+      - casdoor
+    networks:
+      default:
+        ipv4_address: 10.5.0.2
+  caddy:
+    image: caddy:2.6.1
+    restart: unless-stopped
+    ports:
+        - '80:80'
+        - '443:443'
+        - '8443:8443'
+    volumes:
+        - ./Caddyfile:/etc/caddy/Caddyfile
+        - ./mon/deploy/local_certs/certs:/certs
+    depends_on:
+        - app
+    networks:
+      default:
+        ipv4_address: 10.5.0.20
+
+volumes:
+  zookeeper-data:
+  zookeeper-datalog:
+  zookeeper-logs:
+  postgres-data:
+
+networks:
+  default:
+    driver: bridge
+    name: deepchecks
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24

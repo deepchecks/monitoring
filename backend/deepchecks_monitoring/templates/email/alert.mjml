@@ -1,0 +1,124 @@
+<mjml>
+  <mj-body background-color="white" width="640px">
+    <mj-section>
+      <mj-column>
+        <mj-image  src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/logo_all.png"></mj-image>
+      </mj-column>
+      <mj-column>
+        <mj-button color="#9D60FB" 
+                   background-color="rgba(255, 255, 255, 0.7);" 
+                   border="1px solid #9D60FB"
+                   border-radius="4px"
+                   href="{{alert_link}}">View On Deepchecks</mj-button>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#D1D8DC" border-width="1px" />
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-image width="51px" height="82px" src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/alert_icon.png"></mj-image>
+      </mj-column>
+      <mj-column>
+        <mj-text font-family="Arial" font-style="normal" font-weight="700" font-size="24px" line-height="140%" color="#3A474E">
+          {{alert_title}}
+        </mj-text>
+        <mj-text font-family="Arial" font-style="normal" font-weight="400" font-size="16px" line-height="150%" letter-spacing="0.2px" color="#3A474E">
+          {{alert_check_value}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-divider border-color="#D1D8DC" border-width="1px" />
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-table>
+          <tr>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:400;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+                        color:#3A474E;"> Date: </td>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:700;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+                        color:#3A474E;">{{alert_date}}</td>
+          <tr>
+          <tr>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:400;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+            color:#3A474E;"> Model: </td>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:700;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+                        color:#3A474E;">{{model}}</td>
+          <tr>
+          <tr>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:400;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+                        color:#3A474E;"> Check: </td>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:700;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+                        color:#3A474E;">{{check}}</td>
+          <tr>
+          <tr>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:400;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+            color:#3A474E;"> Condition: </td>
+            <td style="font-family:Arial;
+                        font-style:normal;
+                        font-weight:700;
+                        font-size:14px;
+                        line-height:140%;
+                        letter-spacing:0.2px;
+                        color:#3A474E;">{{condition}}</td>
+          <tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="rgba(209, 216, 220, 0.5);">
+      <mj-column width="70%">
+        <mj-text>
+          <span style="vertical-align:middle;">
+            <a href='https://www.deepchecks.com' target="_blank">Deepchecks Website</a> | © 2022 Deepchecks
+          </span>
+        </mj-text>
+      </mj-column>
+      <mj-column width="90px">
+        <mj-image src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/Slack.png" href="https://deepchecks.com/slack"></mj-image>
+      </mj-column>
+      <mj-column width="90px">
+        <mj-image src="https://deepchecks-public.s3.eu-west-1.amazonaws.com/email_template_assets/github.png" href="https://github.com/deepchecks"></mj-image>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

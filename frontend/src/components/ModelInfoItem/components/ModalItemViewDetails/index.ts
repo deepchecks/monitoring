@@ -1,0 +1,1 @@
+export { ModalItemViewDetails } from './ModalItemViewDetails';

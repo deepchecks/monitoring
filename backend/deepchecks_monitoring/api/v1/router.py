@@ -1,0 +1,28 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+"""Module defining the Router for V1 API."""
+from fastapi import APIRouter
+
+from deepchecks_monitoring import __version__
+
+__all__ = ['router']
+
+
+router = APIRouter(prefix='/api/v1')
+
+
+@router.get('/say-hello')
+async def hello_world() -> str:
+    return 'Hello world'
+
+
+@router.get('/backend-version')
+async def retrieve_backend_version():
+    return {'version': __version__}
