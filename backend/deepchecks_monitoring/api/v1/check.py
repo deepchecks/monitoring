@@ -27,7 +27,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
 from deepchecks_monitoring.config import Settings, Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
                                                      SingleCheckRunOptions, complete_sessions_for_check,
@@ -43,6 +43,7 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
@@ -388,6 +389,7 @@ async def run_standalone_check_per_window_in_range(
         check_id: int,
         monitor_options: MonitorOptions,
         session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Run a check for each time window by start-end.
 
@@ -399,6 +401,8 @@ async def run_standalone_check_per_window_in_range(
         The "monitor" options.
     session : AsyncSession, optional
         SQLAlchemy session.
+    resources_provider: ResourcesProvider
+        Resources provider.
 
     Returns
     -------
@@ -409,6 +413,7 @@ async def run_standalone_check_per_window_in_range(
         check_id,
         session,
         monitor_options,
+        parallel=resources_provider.settings.is_cloud,
     )
 
 
@@ -417,6 +422,7 @@ async def get_check_window(
         check_id: int,
         monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Run a check for the time window.
 
@@ -428,6 +434,8 @@ async def get_check_window(
         The window options.
     session : AsyncSession, optional
         SQLAlchemy session.
+    resources_provider: ResourcesProvider
+        Resources provider.
 
     Returns
     -------
@@ -438,7 +446,8 @@ async def get_check_window(
     start_time = monitor_options.start_time_dt()
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check.model_id, start_time, end_time)
-    model_results = await run_check_window(check, monitor_options, session, model, model_versions)
+    model_results = await run_check_window(check, monitor_options, session, model, model_versions,
+                                           parallel=resources_provider.settings.is_cloud)
     result_per_version = reduce_check_window(model_results, monitor_options)
     return {version.name: val for version, val in result_per_version.items()}
 
@@ -560,6 +569,7 @@ async def run_check_group_by_feature(
         feature: str,
         monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Run check window with a group by on given feature.
 
@@ -574,6 +584,8 @@ async def run_check_group_by_feature(
        The monitor options.
     session : AsyncSession
         SQLAlchemy session.
+    resources_provider: ResourcesProvider
+        Resources provider.
 
     Returns
     -------
@@ -658,7 +670,7 @@ async def run_check_group_by_feature(
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
             model_version_dataframes, [model_version], model_version.model, check,
-            monitor_options.additional_kwargs, with_display=False)
+            monitor_options.additional_kwargs, with_display=False, parallel=resources_provider.settings.is_cloud)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
         if result['result'] is not None:
@@ -677,6 +689,7 @@ async def get_check_display(
         model_version_id: int,
         monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     check: Check = await fetch_or_404(session, Check, id=check_id)
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
@@ -704,7 +717,7 @@ async def get_check_display(
     # Get value from check to run
     model_results_per_window = get_results_for_model_versions_per_window(
         model_version_dataframes, [model_version], model_version.model, check,
-        monitor_options.additional_kwargs, with_display=True)
+        monitor_options.additional_kwargs, with_display=True, parallel=resources_provider.settings.is_cloud)
 
     # The function we called is more general, but we know here we have single version and window
     result = model_results_per_window[model_version][0]
