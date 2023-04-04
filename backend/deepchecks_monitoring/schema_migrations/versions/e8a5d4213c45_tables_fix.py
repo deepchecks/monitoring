@@ -14,9 +14,8 @@ Revises: ba2e7acc66c2
 Create Date: 2023-04-04 10:28:41.107291
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'e8a5d4213c45'
@@ -39,7 +38,7 @@ def upgrade() -> None:
             end
         )
      from models as m
-     where m.id = mv.model_id 
+     where m.id = mv.model_id
     """)
 
     versions = op.get_bind().execute(sa.text(f'select id, model_id from model_versions')).fetchall()
