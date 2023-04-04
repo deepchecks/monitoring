@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """V1 API of the check."""
 import typing as t
+from deepchecks_monitoring.resources import ResourcesProvider
 
 import pendulum as pdl
 import sqlalchemy as sa
@@ -22,7 +23,7 @@ from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
 from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Settings, Tags
-from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, SettingsDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
@@ -271,7 +272,8 @@ async def run_monitor_lookback(
         body: MonitorRunSchema,
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
-        user: User = Depends(CurrentActiveUser())
+        user: User = Depends(CurrentActiveUser()),
+        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Run a monitor for each time window by lookback.
 
@@ -284,6 +286,8 @@ async def run_monitor_lookback(
         SQLAlchemy session.
     cache_funcs
     user
+    resources_provider: ResourcesProvider
+        Resources provider.
 
     Returns
     -------
@@ -308,5 +312,6 @@ async def run_monitor_lookback(
         options,
         monitor_id=monitor_id,
         cache_funcs=cache_funcs,
-        organization_id=user.organization_id
+        organization_id=user.organization_id,
+        parallel=resources_provider.settings.is_cloud,
     )
