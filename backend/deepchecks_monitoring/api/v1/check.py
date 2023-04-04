@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 """V1 API of the check."""
 import typing as t
-from deepchecks_monitoring.resources import ResourcesProvider
 
 import pandas as pd
 import pendulum as pdl
@@ -44,6 +43,7 @@ from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
                                                     exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
