@@ -115,7 +115,7 @@ fi;
 # clone deepchecks
 echo "Installing Deepchecks ❤️ from Github"
 # try to clone - if folder is already there pull latest for that branch
-git clone https://github.com/deepchecks/mon.git &> /dev/null || true
+git clone https://github.com/deepchecks/monitoring.git &> /dev/null || true
 cd mon
 git pull
 cd ..
