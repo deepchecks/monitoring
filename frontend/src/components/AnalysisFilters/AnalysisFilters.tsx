@@ -41,7 +41,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
   } = useContext(AnalysisContext);
 
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
-  const selectRef = useRef<HTMLDivElement>();
+  const selectRef = useRef();
 
   const {
     data: columnsMap = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
@@ -130,14 +130,13 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
 
   return (
     <>
-      <StyledContainer {...props}>
+      <StyledContainer {...props} ref={selectRef as any}>
         <Stack
           direction="row"
           alignItems="center"
           spacing="10px"
           justifyContent={fixedHeader ? 'space-between' : 'start'}
           flex={1}
-          ref={selectRef}
         >
           <StyledDropdownTextField
             onClick={handleFiltersOpen}
