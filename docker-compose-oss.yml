@@ -195,7 +195,7 @@ services:
       - '8443:8443'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./mon/deploy/local_certs/certs:/certs
+      - ./monitoring/deploy/local_certs/certs:/certs
     depends_on:
       - app
     networks:
