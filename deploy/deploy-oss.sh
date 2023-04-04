@@ -116,7 +116,7 @@ fi;
 echo "Installing Deepchecks ❤️ from Github"
 # try to clone - if folder is already there pull latest for that branch
 git clone https://github.com/deepchecks/monitoring.git &> /dev/null || true
-cd mon
+cd monitoring
 git pull
 cd ..
 
@@ -216,9 +216,9 @@ fi;
 # start up the stack
 echo "Configuring Docker Compose...."
 rm -f docker-compose.yml
-cp mon/docker-compose-oss.yml docker-compose-oss.yml.tmpl
-envsubst <  mon/oss-conf.env > oss-conf.env
-cp -a mon/bin/. bin/
+cp monitoring/docker-compose-oss.yml docker-compose-oss.yml.tmpl
+envsubst <  monitoring/oss-conf.env > oss-conf.env
+cp -a monitoring/bin/. bin/
 
 envsubst < docker-compose-oss.yml.tmpl > docker-compose-oss.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf
