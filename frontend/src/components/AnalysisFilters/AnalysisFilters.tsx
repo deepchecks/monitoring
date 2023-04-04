@@ -41,7 +41,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
   } = useContext(AnalysisContext);
 
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
-  const selectRef = useRef();
+  const selectRef = useRef<any>();
 
   const {
     data: columnsMap = {} as GetModelColumnsApiV1ModelsModelIdColumnsGet200,
@@ -130,7 +130,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
 
   return (
     <>
-      <StyledContainer {...props} ref={selectRef as any}>
+      <StyledContainer {...props} ref={selectRef}>
         <Stack
           direction="row"
           alignItems="center"
