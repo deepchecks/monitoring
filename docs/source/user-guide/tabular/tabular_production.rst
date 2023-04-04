@@ -132,8 +132,8 @@ As this is a regression model, we do not provide the ``prediction_probas`` argum
     >>> model_version = dc_client.get_model_version('my_model', 'v1')
     >>> model_version.log_batch(
     ...     sample_ids=prod_data.index,
-    ...     data=prod_data.drop(['datestamp', 'price'], axis=1),
-    ...     timestamps=prod_data['datestamp'],
+    ...     data=prod_data.drop(['timestamp', 'price'], axis=1),
+    ...     timestamps=prod_data['timestamp'],
     ...     predictions=prod_predictions
     ... )
     10000 new samples sent.
@@ -172,7 +172,7 @@ not provide the ``prediction_proba`` argument.
    :hide:
 
     >>> values_dict = prod_data.iloc[0].to_dict()
-    >>> sample_timestamp = values_dict.pop('datestamp')
+    >>> sample_timestamp = values_dict.pop('timestamp')
     >>> sample_label = values_dict.pop('price')
     >>> sample_id = 'just_a_test_sample'
     >>> prediction = prod_predictions[0]

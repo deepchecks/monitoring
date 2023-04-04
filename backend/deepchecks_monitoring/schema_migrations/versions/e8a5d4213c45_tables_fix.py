@@ -14,9 +14,8 @@ Revises: ba2e7acc66c2
 Create Date: 2023-04-04 10:28:41.107291
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'e8a5d4213c45'
@@ -45,7 +44,7 @@ def upgrade() -> None:
     versions = op.get_bind().execute(sa.text(f'select id, model_id from model_versions')).fetchall()
     for version in versions:
         data_table = f"model_{version['model_id']}_monitor_data_{version['id']}"
-        op.execute(f"ALTER TABLE {data_table} ADD COLUMN IF NOT EXISTS _dc_logged_time TIMESTAMPTZ")
+        op.execute(f"ALTER TABLE {data_table} ADD COLUMN IF NOT EXISTS _dc_logged_time TIMESTAMPTZ default now()")
         op.execute(f"UPDATE {data_table} SET _dc_logged_time = now() WHERE _dc_logged_time IS NULL")
 
 
