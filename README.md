@@ -34,7 +34,7 @@ monitoring key performance indicators (KPIs) 📊, and alerting when anomalies a
 Deploy a hobby instance in one line on Linux/MacOS (Windows is WIP!) with Docker:
 
 ```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/mon/main/deploy/deploy-oss.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy/deploy-oss.sh)"
 ```
 
 This will automatically download the necessary dependencies and start the application locally.
@@ -49,7 +49,7 @@ The configuration file .env contains settings for the data sources, models, and 
 
 We would love to welcome new contributors that wish to help this project grow. The most helpful ways to do so are:
 1. Join our [Slack community](https://deepchecks.com/slack) and talk to us!
-2. Submit feature requests and bug reports by [opening a new issue](https://github.com/deepchecks/mon/issues/new)
+2. Submit feature requests and bug reports by [opening a new issue](https://github.com/deepchecks/monitoring/issues/new)
 3. Submit a PR (See our instructions below for [Local Development](#local-development-))
 
 ### Local Development 🛠️

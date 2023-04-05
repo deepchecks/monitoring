@@ -177,6 +177,7 @@ def get_results_for_model_versions_per_window(
         check: t.Union[Check, t.List[Check]],
         additional_kwargs: MonitorCheckConfSchema,
         with_display: bool = False,
+        parallel: bool = True,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
@@ -231,7 +232,7 @@ def get_results_for_model_versions_per_window(
 
     if jobs:
         # Do not want to use parallel for less than 3 jobs
-        if len(jobs) <= 2:
+        if parallel or len(jobs) <= 2:
             jobs = [job[0](*job[1], **job[2]) for job in jobs]
         else:
             jobs = Parallel(n_jobs=-1)(jobs)
