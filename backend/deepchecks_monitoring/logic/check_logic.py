@@ -100,6 +100,15 @@ class TimeWindowOption(TableFiltersSchema):
         """Get end time as datetime object."""
         return pdl.parse(self.end_time)
 
+    def sql_time_filter(self):
+        """Create sql filter clause on the timestamp from the defined start and end times."""
+        ts_column = Column(SAMPLE_TS_COL)
+        return and_(self.start_time_dt() <= ts_column, ts_column < self.end_time_dt())
+
+    def sql_all_filters(self):
+        """Create sql filter clause on both timestamp and data columns."""
+        return and_(self.sql_time_filter(), self.sql_columns_filter())
+
     @root_validator
     def check_dates_range(cls, values):  # pylint: disable=no-self-argument
         """Check end_time is after start_time by an hour plus."""
@@ -149,6 +158,11 @@ class MonitorOptions(SingleCheckRunOptions):
 
         return values
 
+    def sql_all_filters(self):
+        """Create sql filter clause."""
+        # overrides TimeWindowOption.sql_all_filters
+        return self.sql_columns_filter()
+
     def calculate_windows(self):
         frequency = self.frequency
         assert frequency is not None
@@ -172,6 +186,7 @@ class CheckNotebookSchema(SpecificVersionCheckRun):
     as_script: t.Optional[bool] = False
 
 
+# TODO: looks like it is not used anywhere, delete it
 class FilterWindowOptions(MonitorOptions):
     """Window with filter run schema."""
 
