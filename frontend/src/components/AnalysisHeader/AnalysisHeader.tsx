@@ -11,7 +11,7 @@ import { ShareButton } from '../ShareButton';
 import { ModelSelect } from './components/ModelSelect';
 
 import { WindowTimeout } from 'helpers/types/index';
-import { setParams } from 'helpers/utils/getParams';
+import { handleSetParams } from 'helpers/utils/getParams';
 
 import {
   StyledAnalysisHeader,
@@ -112,7 +112,7 @@ function AnalysisHeaderComponent({ models, model }: AnalysisHeaderProps) {
         <StyledAnalysisHeaderList>
           {filteredModels.map(({ id, name }) => (
             <MenuItem key={id} sx={{ padding: 0 }}>
-              <StyledAnalysisHeaderLink to={{ pathname: '/analysis', search: setParams('modelId', id, false) }}>
+              <StyledAnalysisHeaderLink to={{ pathname: '/analysis', search: handleSetParams('modelId', id, false) }}>
                 <Typography variant="subtitle2">{name}</Typography>
               </StyledAnalysisHeaderLink>
             </MenuItem>

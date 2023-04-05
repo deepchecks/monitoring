@@ -18,7 +18,7 @@ import FiltersSortButton from './components/FiltersSortButton';
 import useModels from 'helpers/hooks/useModels';
 import { reportEvent } from 'helpers/services/mixPanel';
 import { resetAlertFilters } from 'helpers/alertFilters';
-import { setParams } from 'helpers/utils/getParams';
+import { handleSetParams } from 'helpers/utils/getParams';
 
 import { theme } from 'theme';
 
@@ -82,10 +82,10 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
         delete currentParams.models;
         return currentParams;
       });
-      setParams('modelId');
+      handleSetParams('modelId');
       return;
     }
-    setParams('modelId', currentModel);
+    handleSetParams('modelId', currentModel);
     setAlertFilters(prevAlertFilters => ({ ...prevAlertFilters, models: [currentModel] }));
   };
 
@@ -101,7 +101,7 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
         delete currentParams.severity;
         return currentParams;
       });
-      setParams('severity');
+      handleSetParams('severity');
       return;
     }
 
@@ -112,7 +112,7 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
           severity: [currentSeverity]
         } as GetAlertRulesApiV1AlertRulesGetParams)
     );
-    setParams('severity', currentSeverity);
+    handleSetParams('severity', currentSeverity);
   };
 
   const handleStartDateChange = (currentStartDate: Date | null) => {

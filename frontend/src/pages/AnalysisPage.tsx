@@ -24,7 +24,7 @@ import { onDrawerOpen } from 'helpers/onDrawerOpen';
 const AnalysisPage = () => {
   const location = useLocation();
   const { models, getCurrentModel } = useModels();
-  const { period, frequency, compareWithPreviousPeriod, activeFilters } = useContext(AnalysisContext);
+  const { period, frequency, compareWithPreviousPeriod, activeFilters, resetAllFilters } = useContext(AnalysisContext);
 
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
@@ -88,9 +88,8 @@ const AnalysisPage = () => {
   }, [models, location.search]);
 
   useEffect(() => {
-    if (modelId) {
-      refetch();
-    }
+    if (modelId) refetch();
+    resetAllFilters();
   }, [modelId, refetch]);
 
   return (

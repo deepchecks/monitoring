@@ -21,7 +21,7 @@ import {
 } from './ModelItem.style';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { setParams } from 'helpers/utils/getParams';
+import { handleSetParams } from 'helpers/utils/getParams';
 import { constants } from '../../../dashboard.constants';
 
 dayjs.extend(localizedFormat);
@@ -43,7 +43,7 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
 
   const handleAlertClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    navigate({ pathname: '/alerts', search: setParams('modelId', id, false) });
+    navigate({ pathname: '/alerts', search: handleSetParams('modelId', id, false) });
   };
 
   const handleModelClick = () => {
