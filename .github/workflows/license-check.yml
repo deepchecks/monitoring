@@ -50,7 +50,7 @@ jobs:
         with:
           requirements: "backend/requirements-all.txt"
           fail: "Copyleft,Other,Error"
-          exclude: '(psycopg2.*2\.9\.3|pyzmq.*23\.2\.1|debugpy.*1\.6\.6|certifi.*2022\.12\.7|tqdm.*4\.65\.0|webencodings.*0\.5\.1|torch.*1\.10\.2.*|torch.*1\.11\.0.*|pytorch-ignite.*0\.4\.10.*|torchaudio.*0\.11\.0.*|torchvision.*0\.12\.0.*|terminado.*0\.15\.0|qudida.*0\.0\.4|expiringdict.*1\.2\.2|botocore.*1\.29\.80|orderedmultidict.*1\.0\.1|deepchecks.*)'
+          exclude: '(psycopg2.*2\.9\.3|pyzmq.*23\.2\.1|debugpy.*1\.6\.7|certifi.*2022\.12\.7|tqdm.*4\.65\.0|webencodings.*0\.5\.1|torch.*1\.10\.2.*|torch.*1\.11\.0.*|pytorch-ignite.*0\.4\.10.*|torchaudio.*0\.11\.0.*|torchvision.*0\.12\.0.*|terminado.*0\.15\.0|qudida.*0\.0\.4|expiringdict.*1\.2\.2|botocore.*1\.29\.80|orderedmultidict.*1\.0\.1|deepchecks.*)'
           # psycopg2 is LGPL 2
           # pyzmq is Revised BSD https://github.com/zeromq/pyzmq/blob/main/examples/LICENSE
           # debugpy is MIT https://github.com/microsoft/debugpy/blob/main/LICENSE
