@@ -77,9 +77,9 @@ dc_client = DeepchecksClient(host=host, token=token)
 # We'll start by downloading the training data from the deepchecks testing package. This training data will be used
 # to set the reference for the model version. We'll also download the pre-calculated predictions for this data.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data_large
+from deepchecks.tabular.datasets.regression.airbnb import load_data
 
-train_df, ref_predictions = load_data_large(data_format='DataFrame')
+train_df, ref_predictions = load_data(data_format='DataFrame')
 train_df.head(2)
 
 # %%
