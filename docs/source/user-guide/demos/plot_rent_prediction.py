@@ -112,8 +112,7 @@ train_dataset = Dataset(
     ref_df, label=label_col,
     features=['room_type', 'neighbourhood', 'neighbourhood_group', 'has_availability', 'minimum_nights',
               'number_of_reviews', 'reviews_per_month', 'calculated_host_listings_count', 'availability_365'],
-    cat_features=['neighbourhood_group', 'neighbourhood', 'room_type', 'has_availability'],
-    datetime_name=timestamp)
+    cat_features=['neighbourhood_group', 'neighbourhood', 'room_type', 'has_availability'])
 
 # %%
 # We'll create the schema file, and print it to show (and validate) the schema that was created.
@@ -177,10 +176,6 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 
 _, prod_data = load_data(data_format='DataFrame')
 _, prod_predictions = load_pre_calculated_prediction()
-timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 # Convert to second-based epoch time
-model_version.log_batch(sample_ids=prod_data.index,
-                        data=prod_data.drop([timestamp, label_col], axis=1),
-                        timestamps=timestamp_col, predictions=prod_predictions)
 
 # %%
 # Uploading a Batch of Data
@@ -192,11 +187,12 @@ model_version.log_batch(sample_ids=prod_data.index,
 #
 # Let's start by uploading the first part of the dataset
 
+prod_data[timestamp] = prod_data[timestamp].astype(int) // 10 ** 9  # Convert to second-based epoch time
 timestamps = prod_data[timestamp].unique()
 end_of_first_half = timestamps[3 * int(len(timestamps) // 4)]  # This is the first 3 weeks of the production data
 
-first_half_df = prod_data[prod_data.datestamp < end_of_first_half]
-second_half_df = prod_data[prod_data.datestamp >= end_of_first_half]
+first_half_df = prod_data[prod_data.timestamp < end_of_first_half]
+second_half_df = prod_data[prod_data.timestamp >= end_of_first_half]
 
 model_version.log_batch(sample_ids=first_half_df.index,
                         data=first_half_df.drop([timestamp, label_col], axis=1),
