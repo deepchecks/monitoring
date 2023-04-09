@@ -1,8 +1,8 @@
 .. _installation:
 
-============
-Installation
-============
+===================================
+Installation (SaaS and Open-source)
+===================================
 
 In order to work with Deepchecks Monitoring, you need to:
 

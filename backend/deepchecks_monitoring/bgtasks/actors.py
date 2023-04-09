@@ -107,7 +107,8 @@ async def _execute_monitor(
             monitor_options=options,
             session=session,
             model=model_versions_without_cache[0].model,
-            model_versions=model_versions_without_cache
+            model_versions=model_versions_without_cache,
+            parallel=resources_provider.settings.is_cloud,
         )
 
         result_per_version = reduce_check_window(result_per_version, options)
