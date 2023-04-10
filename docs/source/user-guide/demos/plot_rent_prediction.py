@@ -77,15 +77,16 @@ dc_client = DeepchecksClient(host=host, token=token)
 # We'll start by downloading the training data from the deepchecks testing package. This training data will be used
 # to set the reference for the model version. We'll also download the pre-calculated predictions for this data.
 
-from deepchecks.tabular.datasets.regression.airbnb import load_data_large
+from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction
 
-train_df, ref_predictions = load_data_large(data_format='DataFrame')
-train_df.head(2)
+ref_df, _ = load_data(data_format='Dataframe')
+ref_predictions, _ = load_pre_calculated_prediction()
+ref_df.head(2)
 
 # %%
 # So what do we have? Let's note the special columns in our data:
 #
-# 1. datestamp - The timestamp of the sample (seconds since epoch)
+# 1. timestamp - The timestamp of the sample (seconds since epoch)
 # 2. price - Our label
 #
 # All the other columns are features that can be used by our model to predict the price. We note that there are some
@@ -106,13 +107,12 @@ train_df.head(2)
 # together with metadata about the role of each column.
 
 from deepchecks.tabular import Dataset
-timestamp, label_col = 'datestamp', 'price'
+timestamp, label_col = 'timestamp', 'price'
 train_dataset = Dataset(
-    train_df, label=label_col,
+    ref_df, label=label_col,
     features=['room_type', 'neighbourhood', 'neighbourhood_group', 'has_availability', 'minimum_nights',
               'number_of_reviews', 'reviews_per_month', 'calculated_host_listings_count', 'availability_365'],
-    cat_features=['neighbourhood_group', 'neighbourhood', 'room_type', 'has_availability'],
-    datetime_name=timestamp)
+    cat_features=['neighbourhood_group', 'neighbourhood', 'room_type', 'has_availability'])
 
 # %%
 # We'll create the schema file, and print it to show (and validate) the schema that was created.
@@ -174,14 +174,8 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # read more, refer to the :doc:`Production Data Guide </user-guide/tabular/tabular-production>`. Here we'll
 # show how to use the batch upload method.
 
-prod_data, prod_predictions = load_data_large(data_format='DataFrame', load_train=False)
-
-# %%
-# We'll change the original timestamps so the samples are recent
-
-import datetime
-yesterdays_timestamp = int(datetime.datetime.now().timestamp()) - 3600*24
-prod_data[timestamp] = prod_data[timestamp] + (yesterdays_timestamp - prod_data[timestamp].max())
+_, prod_data = load_data(data_format='DataFrame')
+_, prod_predictions = load_pre_calculated_prediction()
 
 # %%
 # Uploading a Batch of Data
@@ -193,11 +187,12 @@ prod_data[timestamp] = prod_data[timestamp] + (yesterdays_timestamp - prod_data[
 #
 # Let's start by uploading the first part of the dataset
 
+prod_data[timestamp] = prod_data[timestamp].astype(int) // 10 ** 9  # Convert to second-based epoch time
 timestamps = prod_data[timestamp].unique()
 end_of_first_half = timestamps[3 * int(len(timestamps) // 4)]  # This is the first 3 weeks of the production data
 
-first_half_df = prod_data[prod_data.datestamp < end_of_first_half]
-second_half_df = prod_data[prod_data.datestamp >= end_of_first_half]
+first_half_df = prod_data[prod_data.timestamp < end_of_first_half]
+second_half_df = prod_data[prod_data.timestamp >= end_of_first_half]
 
 model_version.log_batch(sample_ids=first_half_df.index,
                         data=first_half_df.drop([timestamp, label_col], axis=1),
