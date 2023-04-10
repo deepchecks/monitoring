@@ -11,7 +11,7 @@
 name: PR Tests
 
 env:
-  DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: "true"
+  DISABLE_DEEPCHECKS_ANONYMOUS_TELEMETRY: 'true'
 
 on:
   pull_request:
@@ -32,7 +32,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest-4-cores
-    if: "!github.event.pull_request.draft"
+    if: '!github.event.pull_request.draft'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -106,7 +106,7 @@ jobs:
           docker push ${{ secrets.PUBLIC_IMAGE_NAME }}:latest
       - name: Logout from Amazon ECR
         if: always()
-        run: | 
+        run: |
           docker logout ${{ steps.login-ecr.outputs.registry }}
           docker logout ${{ steps.login-ecr-public.outputs.registry }}
   dev-deploy:
@@ -183,6 +183,10 @@ jobs:
           docker tag ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }} deepchecks-enterprise-testing
           docker image ls -a
       - name: Run e2e tests
+        env:
+          LAUCHDARKLY_SDK_KEY: ${{ secrets.LAUCHDARKLY_SDK_KEY }}
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
         run: make cypress
       - name: Upload artifact
         if: always()
@@ -203,7 +207,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.9"
+          python-version: '3.9'
       - name: Install pandoc
         run: |
           sudo apt-get update
@@ -236,6 +240,9 @@ jobs:
           DEEPCHECKS_CI_TOKEN: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
           DEEPCHECKS_API_TOKEN: ${{ env.DEEPCHECKS_API_TOKEN }}
           DEEPCHECKS_API_HOST: ${{ env.DEEPCHECKS_API_HOST }}
+          LAUCHDARKLY_SDK_KEY: ${{ secrets.LAUCHDARKLY_SDK_KEY }}
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
         run: |
           make env-setup
           make docs

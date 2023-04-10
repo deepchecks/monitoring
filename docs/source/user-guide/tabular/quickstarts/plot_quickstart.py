@@ -74,8 +74,12 @@ read_schema(schema_file_path)
 # Creating a model version
 # ------------------------
 # In order to create a model version we must first create an organization in the
-# `deepchecks system <https://app.deepchecks.com/>`_ and generate a personal
-# API token using the application's dashboard.
+# `deepchecks app <https://app.deepchecks.com/>`_. If you are using the SaaS version of Deepchecks, you can
+# find the app at `https://app.deepchecks.com <https://app.deepchecks.com/>`_ and if you are using deepchecks
+# 'open-source deployment <https://docs.deepchecks.com/monitoring/stable/installation/self_host.html>'_
+# you can find the app at your specified deployment address (`here <https://localhost>`_. by default).
+#
+# After creating an organization you can generate a personal API token using the application's dashboard.
 #
 # .. image:: /_static/images/quickstart/get_api_token.png
 #    :width: 600
@@ -87,13 +91,13 @@ read_schema(schema_file_path)
 
 import os
 
-# Point the host to deepchecks app
-host = os.environ.get('DEEPCHECKS_API_HOST')  # Replace this with https://app.deepchecks.com
+# Point the host to deepchecks app. Can be either https://app.deepchecks.com or https://localhost
+host = os.environ.get('DEEPCHECKS_API_HOST') # Replace with your host
 # note to put the API token in your environment variables. Or alternatively (less recommended):
 # os.environ['DEEPCHECKS_API_TOKEN'] = 'uncomment-this-line-and-insert-your-api-token-here'
 dc_client = DeepchecksClient(host=host, token=os.getenv('DEEPCHECKS_API_TOKEN'))
-model_name = 'Airbnb'
 
+model_name = 'Airbnb'
 model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name='ver_1',
                                                        schema=schema_file_path,
                                                        feature_importance=feature_importance,
@@ -114,12 +118,13 @@ model_version = dc_client.create_tabular_model_version(model_name=model_name, ve
 # Same as with the reference data, for classification tasks also predicted probabilities can be sent
 # enabling computation of probability based metrics such as AUC, log_loss, brier scorer and more.
 
-timestamp, label_col = 'datestamp', 'price'
+timestamp, label_col = 'timestamp', 'price'
 _, prod_data = load_data(data_format='DataFrame')
 _, prod_predictions = load_pre_calculated_prediction()
+timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 # Convert to second-based epoch time
 model_version.log_batch(sample_ids=prod_data.index,
                         data=prod_data.drop([timestamp, label_col], axis=1),
-                        timestamps=prod_data[timestamp], predictions=prod_predictions)
+                        timestamps=timestamp_col, predictions=prod_predictions)
 
 #%%
 # Updating the Labels

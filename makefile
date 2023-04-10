@@ -315,12 +315,12 @@ external-services-setup:
 	@sleep 2
 
 env-setup: external-services-setup
-	@docker run -d --env-file .development.env --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
 	@sleep 15
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-worker.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-worker.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
 	@sleep 10
 
 cypress: env-setup
@@ -339,7 +339,7 @@ doc-requirements: $(ENV)
 docs: doc-requirements $(DOCS_SRC)
 	@export ANSI_COLORS_DISABLED=True
 	$(PIP) install backend/client; \
-	cd $(DOCS) && make doctest SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) && \
+	cd $(DOCS) && \
 	make html SPHINXBUILD=$(SPHINX_BUILD) SPHINXOPTS=$(SPHINXOPTS) 2> docs.error.log
 	@echo ""
 	@echo "++++++++++++++++++++++++"

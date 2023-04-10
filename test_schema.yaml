@@ -1,0 +1,11 @@
+# Automatically inferred schema.
+# Some inferred types may be incorrect, please check carefully as it cannot be changed.
+# Possible values are: "numeric", "integer", "categorical", "datetime", "boolean", "text", "array_float", "array_float_2d".
+# Please note that "integer" type cannot receive float types, so if it may be needed in the future change the type to "numeric".
+# None values are inserted if we failed to infer, please update the values manually.
+additional_data:
+  bool_feature: boolean
+  index_col: integer
+features:
+  binary_feature: categorical
+  fake_bool_feature: categorical
