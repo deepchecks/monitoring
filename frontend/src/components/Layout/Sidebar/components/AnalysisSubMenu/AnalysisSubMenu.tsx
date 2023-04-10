@@ -1,5 +1,5 @@
 import { alpha, Box, ClickAwayListener, List, ListItem, styled, Typography } from '@mui/material';
-import { getParams, setParams } from 'helpers/utils/getParams';
+import { getParams, handleSetParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -112,7 +112,7 @@ export function AnalysisSubMenu({ onClose, open }: AnalysisSubMenuProps) {
               >
                 <StyledLink
                   active={+modelId === id}
-                  to={{ pathname: '/analysis', search: setParams('modelId', id, false) }}
+                  to={{ pathname: '/analysis', search: handleSetParams('modelId', id, false) }}
                 >
                   <Typography variant="subtitle2">{name}</Typography>
                 </StyledLink>

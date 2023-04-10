@@ -1,4 +1,4 @@
-import { setParams } from 'helpers/utils/getParams';
+import { handleSetParams } from 'helpers/utils/getParams';
 
 export function getAlertFilters() {
   const urlSearchParams = new URLSearchParams(window.location.search);
@@ -13,6 +13,6 @@ export function getAlertFilters() {
 
 export function resetAlertFilters(setAlertFilters: any) {
   setAlertFilters({ models: [], severity: [] });
-  setParams('modelId');
-  setParams('severity');
+  handleSetParams('modelId');
+  handleSetParams('severity');
 }

@@ -25,7 +25,7 @@ import { StyledTextInput } from 'components/base/Input/Input.styles';
 
 import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
 
-import { setParams } from 'helpers/utils/getParams';
+import { handleSetParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
 import { constants } from '../dashboard.constants';
 
@@ -61,7 +61,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
   const onReset = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     setSelectedModelId(null);
-    setParams('modelId');
+    handleSetParams('modelId');
     setSelectedModelAlerts(null);
   };
 
@@ -77,7 +77,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
 
   const handleModelClick = (model: ModelManagmentSchema) => {
     setSelectedModelId(model.id);
-    setParams('modelId', model.id);
+    handleSetParams('modelId', model.id);
     setSelectedModelAlerts(
       model.max_severity ? { ...ZERO_ALERTS, [model.max_severity]: model.alerts_count } : ZERO_ALERTS
     );

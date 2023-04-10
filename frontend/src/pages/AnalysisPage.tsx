@@ -24,7 +24,7 @@ import { onDrawerOpen } from 'helpers/onDrawerOpen';
 const AnalysisPage = () => {
   const location = useLocation();
   const { models, getCurrentModel } = useModels();
-  const { period, frequency, compareWithPreviousPeriod, activeFilters } = useContext(AnalysisContext);
+  const { period, frequency, compareWithPreviousPeriod, activeFilters, resetAllFilters } = useContext(AnalysisContext);
 
   const [modelId, setModelId] = useState(+getParams()?.modelId || models[0]?.id || -1);
   const [isGroupByOpen, setIsGroupByOpen] = useState(false);
@@ -97,7 +97,12 @@ const AnalysisPage = () => {
     <>
       <Box>
         <Stack sx={{ marginBottom: '20px' }}>
-          <AnalysisHeader changeModel={setModelId} models={models} model={currentModel} />
+          <AnalysisHeader
+            changeModel={setModelId}
+            models={models}
+            model={currentModel}
+            resetAllFilters={resetAllFilters}
+          />
           <AnalysisFilters model={currentModel} />
         </Stack>
         <Stack spacing="30px" mb="30px">
