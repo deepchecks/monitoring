@@ -70,11 +70,8 @@ function calculateActiveFilters(filters: ColumnsFilters) {
     }
   });
 
-  console.log('1');
-
   if (activeFilters.length > 0 && getParams()?.modelId) {
     const data: { [k: string]: string } = {};
-    console.log('2');
 
     activeFilters.forEach(activeFilter => {
       if (activeFilter.operator === OperatorsEnum.greater_than_equals) {
@@ -190,7 +187,6 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
     setFiltersLength(0);
     setFilters(initialFilters);
     setReset(false);
-    console.log('reset filters');
     Object.keys(getParams()).forEach(key => {
       if (!STANDALONE_FILTERS.includes(key)) setParams(key);
     });
