@@ -104,7 +104,7 @@ class DatabaseSettings(BaseSettings):
     postgres_secret_name: str = None
     amazon_region_name: str = None
 
-    database_uri: str
+    database_uri: PostgresDsn
     echo_sql: bool = False
 
     @property
