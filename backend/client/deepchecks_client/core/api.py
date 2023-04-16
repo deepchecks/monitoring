@@ -15,12 +15,13 @@ import warnings
 from copy import copy
 from datetime import datetime
 
-import deepchecks_client
 import httpx
 import packaging.version
 import pandas as pd
-from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
 from httpx import URL
+
+import deepchecks_client
+from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
 
 __all__ = ['API']
 
@@ -220,10 +221,10 @@ class API:
             return self.session.post(f'model-versions/{model_version_id}/data', json=samples)
 
     def log_labels(
-        self,
-        model_id: int,
-        data: t.List[t.Dict[str, t.Any]],
-        raise_on_status: bool = True,
+            self,
+            model_id: int,
+            data: t.List[t.Dict[str, t.Any]],
+            raise_on_status: bool = True,
     ) -> t.Optional[httpx.Response]:
         """Update production samples.
 
@@ -508,10 +509,8 @@ class API:
             The response object.
         """
         if raise_on_status:
-            return maybe_raise(
-                self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'}),
-                msg=f'Failed to obtain Model(name:{model_name}).\n{{error}}'
-            ).json()
+            return maybe_raise(self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'}),
+                               msg=f'Failed to obtain Model(name:{model_name}).\n{{error}}').json()
         else:
             return self.session.get(f'models/{model_name}', params={'identifier_kind': 'name'})
 
@@ -974,6 +973,51 @@ class API:
             ).json()
         else:
             return self.session.get(url=f'alert-rules/{alert_rule_id}')
+
+    def create_alert_webhook(self, name: str, https_url: str, http_method: str, description: str = '',
+                             http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
+                             raise_on_status: bool = True) -> httpx.Response:
+        """Create alert webhook.
+
+        Parameters
+        ----------
+        name : str
+            The name of the webhook
+        https_url : str
+            The url of the webhook
+        http_method : str
+            The http method of the webhook
+            expected: GET, POST
+        description : str, optional
+            The description of the webhook
+        http_headers : dict, optional
+            The http headers of the webhook
+        notification_levels : list, optional
+            The notification levels of the webhook
+        raise_on_status : bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        httpx.Response
+            The response from the server
+        """
+        webhook = {
+            'name': name,
+            'http_url': https_url,
+            'http_method': http_method,
+            'description': description,
+            'http_headers': http_headers,
+            'notification_levels': notification_levels,
+            'kind': 'STANDART'
+        }
+        if raise_on_status:
+            return maybe_raise(
+                self.session.post(url='alert-webhooks', json=webhook),
+                msg='Failed to create new alert webhook.\n{error}'
+            ).json()
+        else:
+            return self.session.post(url='alert-webhooks', json=webhook)
 
     def create_monitor(
             self,
