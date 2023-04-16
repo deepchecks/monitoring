@@ -154,7 +154,7 @@ export const ModelsPage = () => {
       handleModalClose();
 
       const res = await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
-      setError((res as resError).error_message);
+      setError((res as resError)?.error_message);
     }
   };
 

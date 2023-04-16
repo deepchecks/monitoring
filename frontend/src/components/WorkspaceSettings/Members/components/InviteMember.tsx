@@ -48,7 +48,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
 
   const handleInviteMember = async () => {
     const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
-    setErr((res as resError).error_message ?? 'none');
+    setErr((res as resError)?.error_message ?? 'none');
   };
 
   useEffect(() => {
