@@ -136,7 +136,7 @@ requirements: $(ENV)
 
 dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
-	@$(PIP) install -U pip
+	@$(PIP) install -U pip==22.0.4 setuptools==58.3.0
 	@$(PIP) install -q -e ./client
 	@$(PIP) install -q -r ./dev-requirements.txt
 
@@ -172,7 +172,7 @@ test: requirements dev-requirements
 test-win:
 	@test -d $(WIN_ENV) || python -m venv $(WIN_ENV)
 	@$(WIN_ENV)\Scripts\activate.bat
-	@$(PIP_WIN) install -U pip
+	@$(PIP_WIN) install -U pip==22.0.4 setuptools==58.3.0
 	@$(PIP_WIN) install -q -r ./requirements.txt -r ./dev-requirements.txt
 	python -m pytest $(WIN_TESTDIR)
 
