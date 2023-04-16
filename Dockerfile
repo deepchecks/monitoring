@@ -44,8 +44,8 @@ COPY backend/requirements.txt ./
 # TODO: not secure, use docker build-kit instead
 ARG DEEPCHECKS_CI_TOKEN
 
-RUN pip install -U pip \
-    && pip install -q -r requirements.txt --compile --no-cache-dir
+RUN pip install -U pip setuptools==58.3.0 && \
+    pip install -q -r requirements.txt --compile --no-cache-dir
     # && apk del .build-deps
 
 RUN pip install pyinstrument
