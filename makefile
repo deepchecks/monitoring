@@ -127,7 +127,7 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-	@$(PIP) install -U pip setuptools==58.3.0
+	@$(PIP) install -U pip==22.0.4 setuptools==58.3.0
 
 
 requirements: $(ENV)
@@ -173,7 +173,7 @@ test:
 test-win:
 	@test -d $(WIN_ENV) || python -m venv $(WIN_ENV)
 	@$(WIN_ENV)\Scripts\activate.bat
-	@$(PIP_WIN) install -U pip setuptools==58.3.0
+	@$(PIP_WIN) install -U pip==22.0.4 setuptools==58.3.0
 	@$(PIP_WIN) install -q -r ./requirements.txt -r ./dev-requirements.txt
 	python -m pytest $(WIN_TESTDIR)
 
