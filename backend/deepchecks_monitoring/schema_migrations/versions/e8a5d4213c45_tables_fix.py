@@ -38,7 +38,7 @@ def upgrade() -> None:
             end
         )
      from models as m
-     where m.id = mv.model_id 
+     where m.id = mv.model_id
     """)
 
     versions = op.get_bind().execute(sa.text(f'select id, model_id from model_versions')).fetchall()

@@ -21,10 +21,16 @@ from deepchecks_monitoring.schema_models.column_type import ColumnType
 __all__ = ['bins_for_feature']
 
 
-async def bins_for_feature(model_version: ModelVersion, table, feature: str, session: AsyncSession,
-                           monitor_options: SingleCheckRunOptions, numeric_bins=10, categorical_bins=30,
-                           filter_labels_exist: bool = False) \
-        -> t.Tuple[ColumnType, t.List[t.Dict]]:
+async def bins_for_feature(
+    model_version: ModelVersion,
+    table,
+    feature: str,
+    session: AsyncSession,
+    monitor_options: SingleCheckRunOptions,
+    numeric_bins=10,
+    categorical_bins=30,
+    filter_labels_exist: bool = False
+) -> t.Tuple[ColumnType, t.List[t.Dict]]:
     """Query from the database given number of bins.
 
     Parameters
