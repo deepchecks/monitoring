@@ -8,16 +8,11 @@ describe("Alert Rules Screen", () => {
     Critical: "Critical",
   };
 
-  const AggregationWindow = {
-    Hour: "1 hour",
-    Day: "1 day",
-    Week: "1 week",
-    Month: "1 month",
-    ThreeMonths: "3 month",
-  };
-
   const Frequency = {
-    ...AggregationWindow,
+    Hour: "Hour",
+    Day: "Day",
+    Week: "Week",
+    Month: "Month",
   };
 
   const AlertRuleOperator = {
@@ -53,7 +48,7 @@ describe("Alert Rules Screen", () => {
       monitorData: {
         model: availableModels[0].name,
         check: availableModels[0].checkName,
-        aggregationWindow: AggregationWindow.Day,
+        aggregationWindow: 1,
         frequency: Frequency.Hour,
         filterBy: availableModels[0].features[0],
       },
@@ -70,7 +65,7 @@ describe("Alert Rules Screen", () => {
       monitorData: {
         model: availableModels[1].name,
         check: availableModels[1].checkName,
-        aggregationWindow: AggregationWindow.Day,
+        aggregationWindow: 1,
         frequency: Frequency.Day,
         filterBy: availableModels[1].features[1],
       },
@@ -137,7 +132,7 @@ describe("Alert Rules Screen", () => {
   type MonitorData = {
     model?: string;
     check?: string;
-    aggregationWindow?: string;
+    aggregationWindow?: number;
     frequency?: string;
     filterBy?: string;
     // TODO: value for filter by
@@ -170,11 +165,10 @@ describe("Alert Rules Screen", () => {
           .click();
       }
       if (monitorData.aggregationWindow !== undefined) {
-        cy.wrap(form).contains("label", "Aggregation window").next().click();
-        cy.get("div[role=presentation]#menu- li")
-          .should(containsExactly(Object.values(AggregationWindow)))
-          .then(findOption(monitorData.aggregationWindow))
-          .click();
+        cy.get("input[placeholder='Aggregation window']")
+          .should("exist")
+          .clear()
+          .type(monitorData.aggregationWindow)
       }
       if (monitorData.frequency !== undefined) {
         cy.wrap(form).contains("label", "Frequency").next().click();
@@ -297,16 +291,8 @@ describe("Alert Rules Screen", () => {
       .should("exist")
       .parent()
       .parent()
-      .parent()
-      .should((container) => {
-        if (rule.details.severity !== undefined)
-          expect(container).to.contain(rule.details.severity?.toLowerCase());
-        if (
-          rule.monitorData !== undefined &&
-          rule.monitorData.check !== undefined
-        )
-          expect(container).to.contain(rule.monitorData.check);
-      });
+      .contains("p", rule.details.severity?.toLowerCase() as any)
+      .should('exist')
   }
 
   function updateAlertRule({
@@ -325,8 +311,8 @@ describe("Alert Rules Screen", () => {
   }) {
     return findAlertRule(oldRule)
       .then((container) => {
-        cy.wrap(container).trigger("mouseover");
-        cy.wrap(container)
+        cy.wrap(container.parent().parent().parent()).trigger("mouseover");
+        cy.wrap(container.parent().parent().parent())
           .contains("p", "Edit rule")
           .should("exist")
           .parent()
@@ -433,8 +419,8 @@ describe("Alert Rules Screen", () => {
     cy.visit("/configuration/alert-rules")
       .then(() => findAlertRule(availableAlertRules[0]))
       .then((container) => {
-        cy.wrap(container).trigger("mouseover");
-        cy.wrap(container)
+        cy.wrap(container.parent().parent().parent()).trigger("mouseover");
+        cy.wrap(container.parent().parent().parent())
           .contains("p", "Delete rule")
           .should("exist")
           .parent()

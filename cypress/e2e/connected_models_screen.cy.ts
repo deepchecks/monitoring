@@ -90,6 +90,7 @@ describe("Connected Models Screen", () => {
     cy.contains("h2", "Delete Model")
       .should("exist")
       .parent()
+      .parent()
       .as("modelDeletionConfirmationDialog");
 
     cy.get("@modelDeletionConfirmationDialog")
@@ -232,7 +233,7 @@ describe("Connected Models Screen", () => {
       cy.wrap(container).contains("button", "Delete").should("exist").click();
 
       findModelDeletionConfirmationDialog()
-        .contains("button", "No")
+        .contains("button", "Cancel")
         .should("exist")
         .click();
 
