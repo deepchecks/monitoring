@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { ChartData } from 'chart.js';
 
 import {
@@ -49,10 +49,11 @@ export const MonitorDrawer = ({
   const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
   const [reset, setReset] = useState(false);
 
-  const timeFreq =
-    (graphFrequency && +graphFrequency) || monitor
-      ? FrequencyMap[monitor?.frequency as Frequency]
-      : frequencyValues.DAY;
+  const timeFreq = useMemo(() => {
+    if (graphFrequency) return +graphFrequency;
+    if (monitor) return FrequencyMap[monitor?.frequency as Frequency];
+    return frequencyValues.DAY;
+  }, [graphFrequency])
 
   const handleGraphLookBack = useCallback(
     async (checkId: SelectValues, data: MonitorOptions) => {
