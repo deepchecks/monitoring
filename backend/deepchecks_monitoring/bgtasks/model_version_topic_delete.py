@@ -48,7 +48,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         if self.kafka_admin is None:
             with self.lock:
                 if self.kafka_admin is None:
-                    self.kafka_admin = AIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_params)
+                    self.kafka_admin = AIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_admin_params)
                     await self.kafka_admin.start()
 
         # Backward compatibility, remove in next release and replace with:
