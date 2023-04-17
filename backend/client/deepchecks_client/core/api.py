@@ -1019,6 +1019,65 @@ class API:
         else:
             return self.session.post(url='alert-webhooks', json=webhook)
 
+    def create_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str, api_access_key: str,
+                                        event_routing_key: str, description: str = '',
+                                        http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
+                                        event_group: str = "deepchecks", event_class: str = "",
+                                        raise_on_status: bool = True) -> httpx.Response:
+        """Create alert webhook.
+
+        Parameters
+        ----------
+        name : str
+            The name of the webhook
+        https_url : str
+            The url of the webhook
+        http_method : str
+            The http method of the webhook
+            expected: GET, POST
+        api_access_key : str
+            The api access key of the webhook in PagerDuty
+        event_routing_key : str
+            The event routing key of the webhook in PagerDuty
+        description : str, optional
+            The description of the webhook
+        http_headers : dict, optional
+            The http headers of the webhook
+        notification_levels : list, optional
+            The notification levels of the webhook
+        event_group : str
+            The event group of the webhook in PagerDuty
+        event_class : str
+            The event class of the webhook in PagerDuty
+        raise_on_status : bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        httpx.Response
+            The response from the server
+        """
+        webhook = {
+            'name': name,
+            'http_url': https_url,
+            'http_method': http_method,
+            'description': description,
+            'http_headers': http_headers,
+            'notification_levels': notification_levels,
+            'kind': 'PAGER_DUTY',
+            "event_group": event_group,
+            "event_class": event_class,
+            "api_access_key": api_access_key,
+            "event_routing_key": event_routing_key
+        }
+        if raise_on_status:
+            return maybe_raise(
+                self.session.post(url='alert-webhooks', json=webhook),
+                msg='Failed to create new alert webhook.\n{error}'
+            ).json()
+        else:
+            return self.session.post(url='alert-webhooks', json=webhook)
+
     def create_monitor(
             self,
             check_id: int,

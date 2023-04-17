@@ -63,3 +63,4 @@ def test_create_alert_webhook(regression_model_client: DeepchecksModelClient):
                                                      notification_levels=notification_levels)
     assert webhook_id is not None
     assert webhook_id == 1
+    #TODO: Add asserts for notification levels

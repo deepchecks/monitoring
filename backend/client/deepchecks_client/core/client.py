@@ -546,6 +546,62 @@ class DeepchecksModelClient:
         webhook_response = t.cast(t.Dict[str, t.Any], webhook_response)
         return webhook_response['id']
 
+    def add_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str, api_access_key: str,
+                                     event_routing_key: str, description: str = '',
+                                     http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
+                                     event_group: str = "deepchecks", event_class: str = "") -> int:
+        """Create a PagerDuty alert webhook.
+
+        Parameters
+        ----------
+        name : str
+            The name of the webhook
+        https_url : str
+            The url of the webhook
+        http_method : str
+            The http method of the webhook
+            expected: POST
+        api_access_key : str
+            The api access key of the webhook in PagerDuty
+        event_routing_key : str
+            The event routing key of the webhook in PagerDuty
+        description : str, optional
+            The description of the webhook
+        http_headers : dict, optional
+            The http headers of the webhook
+        notification_levels : list, optional
+            The notification levels of the webhook
+        event_group : str
+            The event group of the webhook in PagerDuty
+        event_class : str
+            The event class of the webhook in PagerDuty
+        raise_on_status : bool
+            Whether to raise error on bad status code or not
+
+        Returns
+        -------
+        int
+            The created webhook id
+        """
+        if http_method not in ['GET', 'POST']:
+            raise ValueError(f'Invalid http method {http_method}, must be GET or POST')
+        for notification_level in notification_levels:
+            if notification_level not in ['critical', 'high', 'medium', 'low']:
+                raise ValueError(f'Invalid notification level {notification_level}, must be one of critical, high,'
+                                 f' medium or low')
+
+        webhook_response = self.api.create_pager_duty_alert_webhook(name=name, https_url=https_url,
+                                                                    http_method=http_method, description=description,
+                                                                    http_headers=http_headers,
+                                                                    notification_levels=notification_levels,
+                                                                    raise_on_status=True,
+                                                                    api_access_key=api_access_key,
+                                                                    event_routing_key=event_routing_key,
+                                                                    event_group=event_group,
+                                                                    event_class=event_class)
+        webhook_response = t.cast(t.Dict[str, t.Any], webhook_response)
+        return webhook_response['id']
+
     @docstrings
     def add_monitor(
             self,

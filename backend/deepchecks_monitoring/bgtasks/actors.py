@@ -236,7 +236,7 @@ class WorkerSettings(
 
 
 class WorkerBootstrap:
-    """Worer initialization script."""
+    """Worker initialization script."""
 
     resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]]
     settings_type: t.ClassVar[t.Type[WorkerSettings]]
