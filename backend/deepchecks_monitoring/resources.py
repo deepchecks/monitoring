@@ -18,6 +18,7 @@ from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
+from pydantic import BaseSettings
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -129,7 +130,7 @@ class ResourcesProvider(BaseResourcesProvider):
     @property
     def settings(self) -> config.Settings:
         """Get settings."""
-        if not isinstance(self._settings, config.Settings):
+        if not isinstance(self._settings, BaseSettings):
             raise AssertionError(
                 f"Settings instance of unknown type was provided - {type(self._settings)}, "
                 "you need to provide instance of 'Settings' "

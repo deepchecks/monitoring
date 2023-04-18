@@ -17,6 +17,7 @@ from collections import defaultdict
 import anyio
 import sqlalchemy as sa
 import uvloop
+from pydantic import AnyHttpUrl
 from sqlalchemy import func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
@@ -233,6 +234,7 @@ class WorkerSettings(
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
+    deployment_url: AnyHttpUrl = 'http://localhost:8000'
 
 
 class WorkerBootstrap:
