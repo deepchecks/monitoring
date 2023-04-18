@@ -975,7 +975,8 @@ class API:
             return self.session.get(url=f'alert-rules/{alert_rule_id}')
 
     def create_alert_webhook(self, name: str, https_url: str, http_method: str, description: str = '',
-                             http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
+                             http_headers: t.Optional[t.Dict[str, str]] = None,
+                             notification_levels: t.Optional[t.List[str]] = None,
                              raise_on_status: bool = True) -> httpx.Response:
         """Create alert webhook.
 
@@ -1021,7 +1022,8 @@ class API:
 
     def create_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str,
                                         event_routing_key: str, description: str = '',
-                                        http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
+                                        http_headers: t.Optional[t.Dict[str, str]] = None,
+                                        notification_levels: t.Optional[t.List[str]] = None,
                                         event_group: str = 'deepchecks', event_class: str = '',
                                         api_access_key: t.Optional[str] = None,
                                         raise_on_status: bool = True) -> httpx.Response:
