@@ -15,7 +15,8 @@ describe("Analysis screen drilldown", () => {
         cy.contains("span", "Compare data with previous period").click({
           force: true,
         });
-        cy.get('input[value="11/05/2022 - 11/08/2022"]')
+        cy.get("input")
+          .contains("2022")
           .parent()
           .first()
           .trigger("mouseover", { force: true })

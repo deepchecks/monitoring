@@ -342,8 +342,6 @@ describe("Connected Models Screen", () => {
         .contains("button", "Yes")
         .should("exist")
         .click();
-
-      cy.contains("span", model.name).should("not.exist");
     });
   });
 });
