@@ -54,7 +54,8 @@
     "lint": "eslint . --fix",
     "format": "npx prettier --write .",
     "tsc": "node_modules/typescript/bin/tsc",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "update-ds": "rm -rf src/components/designSystem && git clone --branch lib https://github.com/deepchecks/deepchecks-design-system.git src/components/designSystem"
   },
   "eslintConfig": {
     "extends": [

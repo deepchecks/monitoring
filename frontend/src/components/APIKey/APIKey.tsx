@@ -4,11 +4,12 @@ import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated
 
 import { Box, Alert, Snackbar } from '@mui/material';
 
-import { MUIBaseButton } from '../base/Button/MUIBaseButton';
-
 import { StyledApiKey, StyledContainer, StyledTypography } from './APIKey.styles';
 
+import { StyledButton } from 'components/designSystem';
+
 import logger from 'helpers/services/logger';
+
 import { constants } from './apikey.constants';
 
 const { copied, copy, link, regenerate, text } = constants;
@@ -50,9 +51,7 @@ export function APIKey() {
         </StyledTypography>
         <StyledContainer>
           <StyledApiKey>{apiToken || '*'.repeat(59)}</StyledApiKey>
-          <MUIBaseButton onClick={handleClick} sx={{ height: '42px' }}>
-            {apiToken ? copy : regenerate}
-          </MUIBaseButton>
+          <StyledButton onClick={handleClick} label={apiToken ? copy : regenerate} />
         </StyledContainer>
       </Box>
       <Snackbar
