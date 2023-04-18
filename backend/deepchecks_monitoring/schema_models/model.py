@@ -16,6 +16,7 @@ import sqlalchemy as sa
 from sqlalchemy import MetaData, PrimaryKeyConstraint, Table, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, Query, relationship
+from backend.deepchecks_monitoring.schema_models.monitor import Frequency
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
@@ -61,6 +62,11 @@ class Model(Base, MetadataMixin):
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
     topic_end_offset = sa.Column(sa.BigInteger, default=-1)
     timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
+
+    data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency), nullable=False, default=Frequency.DAY)
+    data_ingestion_alert_label_ratio = sa.Column(sa.Float)
+    data_ingestion_alert_label_count = sa.Column(sa.Integer)
+    data_ingestion_alert_sample_count = sa.Column(sa.Integer)
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
