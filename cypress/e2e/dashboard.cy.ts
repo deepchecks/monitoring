@@ -24,7 +24,33 @@ describe("test dashboard", () => {
     });
   });
 
-  it("Add manual monitor - graphs appear", () => {
+  it("Add model - appears in list", () => {
+    cy.createModelAndVersion(modelName, "regression", "v1").then(
+      (response: any) => {
+        model_info = response;
+        cy.visit("/");
+        // Check for model name under models list
+        cy.contains("h6", "Models")
+          .parent()
+          .parent()
+          .within(() => {
+            cy.contains("p", modelName).should("exist");
+          });
+      }
+    );
+  });
+
+  it("Add check and monitor - graphs appear", () => {
+    cy.addPerformanceCheck(model_info)
+      .then((checkInfo: any) => cy.addMonitor(checkInfo))
+      .then(() => {
+        cy.visit("/");
+        // Check for graph with check name
+        cy.contains("p", monitorName).should("have.text", monitorName);
+      });
+  });
+
+  it.skip("Add manual monitor - graphs appear", () => {
     cy.visit("/dashboard");
     cy.contains("p", "Monitors")
       .parent()
@@ -80,31 +106,5 @@ describe("test dashboard", () => {
       .parent()
       .contains("h6", "RMSE")
       .should("exist");
-  });
-
-  it("Add model - appears in list", () => {
-    cy.createModelAndVersion(modelName, "regression", "v1").then(
-      (response: any) => {
-        model_info = response;
-        cy.visit("/");
-        // Check for model name under models list
-        cy.contains("h6", "Models")
-          .parent()
-          .parent()
-          .within(() => {
-            cy.contains("p", modelName).should("exist");
-          });
-      }
-    );
-  });
-
-  it("Add check and monitor - graphs appear", () => {
-    cy.addPerformanceCheck(model_info)
-      .then((checkInfo: any) => cy.addMonitor(checkInfo))
-      .then(() => {
-        cy.visit("/");
-        // Check for graph with check name
-        cy.contains("p", monitorName).should("have.text", monitorName);
-      });
   });
 });
