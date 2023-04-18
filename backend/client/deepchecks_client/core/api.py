@@ -1022,7 +1022,7 @@ class API:
     def create_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str, api_access_key: str,
                                         event_routing_key: str, description: str = '',
                                         http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
-                                        event_group: str = "deepchecks", event_class: str = "",
+                                        event_group: str = 'deepchecks', event_class: str = '',
                                         raise_on_status: bool = True) -> httpx.Response:
         """Create alert webhook.
 
@@ -1065,10 +1065,10 @@ class API:
             'http_headers': http_headers,
             'notification_levels': notification_levels,
             'kind': 'PAGER_DUTY',
-            "event_group": event_group,
-            "event_class": event_class,
-            "api_access_key": api_access_key,
-            "event_routing_key": event_routing_key
+            'event_group': event_group,
+            'event_class': event_class,
+            'api_access_key': api_access_key,
+            'event_routing_key': event_routing_key
         }
         if raise_on_status:
             return maybe_raise(

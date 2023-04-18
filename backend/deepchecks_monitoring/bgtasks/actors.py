@@ -234,7 +234,7 @@ class WorkerSettings(
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
-    deployment_url: AnyHttpUrl = 'http://localhost:8000'
+    deployment_url: AnyHttpUrl = "http://localhost:8000"
 
 
 class WorkerBootstrap:

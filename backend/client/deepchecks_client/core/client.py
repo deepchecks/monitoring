@@ -549,7 +549,7 @@ class DeepchecksModelClient:
     def add_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str, api_access_key: str,
                                      event_routing_key: str, description: str = '',
                                      http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
-                                     event_group: str = "deepchecks", event_class: str = "") -> int:
+                                     event_group: str = 'deepchecks', event_class: str = '') -> int:
         """Create a PagerDuty alert webhook.
 
         Parameters
