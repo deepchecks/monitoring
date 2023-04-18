@@ -51,7 +51,7 @@ describe("test dashboard", () => {
   });
 
   it("Add manual monitor - graphs appear", () => {
-    cy.visit("/");
+    cy.visit("/dashboard");
     cy.contains("p", "Monitors")
       .parent()
       .within(() => {

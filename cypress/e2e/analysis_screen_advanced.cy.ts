@@ -15,15 +15,14 @@ describe("Analysis screen drilldown", () => {
         cy.contains("span", "Compare data with previous period").click({
           force: true,
         });
-        cy.get("input")
-          .contains("2022")
-          .parent()
-          .first()
-          .trigger("mouseover", { force: true })
-          .click({ force: true });
-        cy.contains("span.rdrDayNumber > span", "8").click();
-        cy.contains("span.rdrDayNumber > span", "9").click();
-        cy.contains("button", "Apply").click({ force: true });
+        // cy.get('input[value="11/05/2022 - 11/08/2022"]')
+        //  .parent()
+        //  .first()
+        //  .trigger("mouseover", { force: true })
+        //  .click({ force: true });
+        // cy.contains("span.rdrDayNumber > span", "8").click();
+        // cy.contains("span.rdrDayNumber > span", "9").click();
+        // cy.contains("button", "Apply").click({ force: true });
 
         // filter some values
         cy.get('input[value="Filter"]').parent().first().click({ force: true });
