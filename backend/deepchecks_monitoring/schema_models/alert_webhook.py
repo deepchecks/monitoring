@@ -307,7 +307,7 @@ class PagerDutyWebhookProperties(BaseModel):
     name: str
     description: str
     notification_levels: t.Optional[t.List[AlertSeverity]] = None
-    api_access_key: str
+    api_access_key: t.Optional[str] = None
     event_routing_key: str
     event_group: str = "deepchecks"
     event_class: str = ""

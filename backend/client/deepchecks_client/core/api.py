@@ -1019,10 +1019,11 @@ class API:
         else:
             return self.session.post(url='alert-webhooks', json=webhook)
 
-    def create_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str, api_access_key: str,
+    def create_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str,
                                         event_routing_key: str, description: str = '',
                                         http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
                                         event_group: str = 'deepchecks', event_class: str = '',
+                                        api_access_key: t.Optional[str] = None,
                                         raise_on_status: bool = True) -> httpx.Response:
         """Create alert webhook.
 
@@ -1035,8 +1036,6 @@ class API:
         http_method : str
             The http method of the webhook
             expected: GET, POST
-        api_access_key : str
-            The api access key of the webhook in PagerDuty
         event_routing_key : str
             The event routing key of the webhook in PagerDuty
         description : str, optional
@@ -1051,7 +1050,9 @@ class API:
             The event class of the webhook in PagerDuty
         raise_on_status : bool
             Whether to raise error on bad status code or not
-
+        api_access_key : str, optional
+            The api access key of PagerDuty
+            REMARK: this might not be needed for webhooks at all, and we might remove it in the future
         Returns
         -------
         httpx.Response

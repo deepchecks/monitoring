@@ -546,10 +546,11 @@ class DeepchecksModelClient:
         webhook_response = t.cast(t.Dict[str, t.Any], webhook_response)
         return webhook_response['id']
 
-    def add_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str, api_access_key: str,
+    def add_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str,
                                      event_routing_key: str, description: str = '',
                                      http_headers: t.Dict[str, str] = None, notification_levels: t.List[str] = None,
-                                     event_group: str = 'deepchecks', event_class: str = '') -> int:
+                                     event_group: str = 'deepchecks', event_class: str = '',
+                                     api_access_key: t.Optional[str] = None) -> int:
         """Create a PagerDuty alert webhook.
 
         Parameters
@@ -561,8 +562,6 @@ class DeepchecksModelClient:
         http_method : str
             The http method of the webhook
             expected: POST
-        api_access_key : str
-            The api access key of the webhook in PagerDuty
         event_routing_key : str
             The event routing key of the webhook in PagerDuty
         description : str, optional
@@ -577,6 +576,9 @@ class DeepchecksModelClient:
             The event class of the webhook in PagerDuty
         raise_on_status : bool
             Whether to raise error on bad status code or not
+        api_access_key : str, optional
+            The api access key of PagerDuty
+            REMARK: This might not be needed at all for webhooks, and we might remove it in the future
 
         Returns
         -------
