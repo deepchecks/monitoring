@@ -1,31 +1,29 @@
 describe("Analysis screen drilldown", () => {
-  it.skip("check analysis values", () => {
+  it("check analysis values", () => {
     cy.createModelAndVersion("analysis model", "multiclass", "v1")
-      .then((modelInfo) => {
+      .then((modelInfo: any) => {
         cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21]);
-        cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21], 86400);
+        cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21], "DAY");
         cy.addReferenceToVersion(modelInfo);
         cy.addPerformanceCheck(modelInfo);
         cy.wait(3000);
       })
       .then(() => {
         cy.visit("/analysis");
+
         // toggle comparison mode
         cy.contains("span", "Compare data with previous period").click({
           force: true,
         });
-        // select frequency hourly
-        // cy.contains('div', 'Daily').trigger('mouseover', { force: true }).click({ force: true });
-        // cy.contains('li', 'Hourly').click();
-        // Select time range
-        cy.get('input[value="11/05/2022 - 11/08/2022"]')
-          .parent()
-          .first()
-          .trigger("mouseover", { force: true })
-          .click({ force: true });
-        cy.contains("span.rdrDayNumber > span", "8").click();
-        cy.contains("span.rdrDayNumber > span", "9").click();
-        cy.contains("button", "Apply").click({ force: true });
+        // cy.get('input[value="11/05/2022 - 11/08/2022"]')
+        //  .parent()
+        //  .first()
+        //  .trigger("mouseover", { force: true })
+        //  .click({ force: true });
+        // cy.contains("span.rdrDayNumber > span", "8").click();
+        // cy.contains("span.rdrDayNumber > span", "9").click();
+        // cy.contains("button", "Apply").click({ force: true });
+
         // filter some values
         cy.get('input[value="Filter"]').parent().first().click({ force: true });
         cy.contains("div", "categorical_feature").click();
