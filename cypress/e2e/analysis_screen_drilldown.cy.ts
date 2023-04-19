@@ -1,7 +1,7 @@
 describe("Analysis screen drilldown", () => {
   it("check analysis values", () => {
     cy.createModelAndVersion("analysis model", "multiclass", "v1")
-      .then((modelInfo) => {
+      .then((modelInfo: any) => {
         cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21]);
         return cy.addNullsCheck(modelInfo);
       })
@@ -30,7 +30,7 @@ describe("Analysis screen drilldown", () => {
           });
         cy.contains("h6", "Max Null Ratio").should("exist");
         // select frequency weekly
-        cy.contains("div", "Weekly")
+        cy.contains("div", "Daily")
           .trigger("mouseover", { force: true })
           .click({ force: true });
         cy.contains("li", "Hourly").click();
