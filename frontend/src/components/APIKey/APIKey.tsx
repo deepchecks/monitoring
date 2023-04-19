@@ -6,7 +6,7 @@ import { Box, Alert, Snackbar } from '@mui/material';
 
 import { StyledApiKey, StyledContainer, StyledTypography } from './APIKey.styles';
 
-import { StyledButton } from 'components/designSystem';
+import { StyledButton } from 'components/lib';
 
 import logger from 'helpers/services/logger';
 
