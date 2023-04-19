@@ -14,7 +14,10 @@ import useModels from 'helpers/hooks/useModels';
 import { TextField, Stack, MenuItem, OutlinedInput, Typography } from '@mui/material';
 
 import { MarkedSelect } from 'components/MarkedSelect';
-import { ControlledMarkedSelect, ControlledMarkedSelectDisabledCallback } from 'components/MarkedSelect/ControlledMarkedSelect';
+import {
+  ControlledMarkedSelect,
+  ControlledMarkedSelectDisabledCallback
+} from 'components/MarkedSelect/ControlledMarkedSelect';
 import { SelectCheck as Check } from 'components/SelectCheck';
 import { SelectColumn as Column } from 'components/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
@@ -226,19 +229,22 @@ export const MonitorForm = ({
     setColumn('');
   };
 
-  const isDisabledLookback = useCallback((lookbackSelect: { label: string; value: number }) => {
-    if (frequency === undefined) return false;
-    if (lookbackSelect.value < frequency ) return true;
-    if (lookbackSelect.value > +frequency * 31 ) return true;
-    return false;
-  }, [frequency]);
+  const isDisabledLookback = useCallback(
+    (lookbackSelect: { label: string; value: number }) => {
+      if (frequency === undefined) return false;
+      if (lookbackSelect.value < +frequency) return true;
+      if (lookbackSelect.value > +frequency * 31) return true;
+      return false;
+    },
+    [frequency]
+  );
 
   useEffect(() => {
     const filteredLookbacks = lookbackTimeWindow.filter(val => !isDisabledLookback(val)).map(val => val.value);
     if (lookBack && !filteredLookbacks.includes(+lookBack)) {
       setLookBack(filteredLookbacks.at(-1));
     }
-  }, [frequency])
+  }, [frequency]);
 
   useEffect(() => {
     if (isDrawerOpen) {
@@ -270,8 +276,8 @@ export const MonitorForm = ({
   ]);
 
   const aggregationWindowErr = aggregationWindow > 30;
-  const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']]}${
-    aggregationWindow > 1 ? 'S' : ''
+  const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']].toLowerCase()}${
+    aggregationWindow > 1 ? 's' : ''
   }`;
 
   return (
@@ -361,6 +367,7 @@ export const MonitorForm = ({
           </StyledLink>
         ) : (
           <Subcategory sx={{ marginTop: '0 !important' }}>
+            <Typography sx={{ color: 'gray' }}>Aggregation value</Typography>
             <OutlinedInput
               placeholder="Aggregation window"
               size="small"
