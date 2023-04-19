@@ -7,12 +7,15 @@ import { Box, Tooltip } from '@mui/material';
 import { ColumnChip } from './ColumnChip';
 
 import { buildFiltersChipLabel, cutFiltersChipLabel, MAX_CHARACTERS } from './ActiveColumnsFilters.utils';
+import { setParams } from 'helpers/utils/getParams';
 
 export function ActiveColumnsFilters() {
   const { filters, setFilters } = useContext(AnalysisContext);
 
   const deleteFilter = useCallback(
     (column: string, value: FilterValue) => () => {
+      setParams(column);
+
       if (value) {
         setFilters(prevFilters => {
           if (Array.isArray(value)) {

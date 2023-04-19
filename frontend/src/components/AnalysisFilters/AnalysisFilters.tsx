@@ -7,7 +7,7 @@ import {
   useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet
 } from 'api/generated';
 
-import { AnalysisContext, ColumnsFilters } from 'helpers/context/AnalysisProvider';
+import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
 import { styled, Stack, StackProps } from '@mui/material';
 
@@ -15,13 +15,13 @@ import { DropDownFilter } from './components/DropDownFilter';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
 import { DropdownTextField } from 'components/DropdownTextField';
 import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
+import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 
 import { ColumnType } from 'helpers/types/model';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 // import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { FrequencyMap } from 'helpers/utils/frequency';
-
-import { DropdownEndAdornment } from './components/DropdownEndAdornment';
+import { calculateInitialActiveFilters, calculateCurrentFilters } from './AnalysisFilters.helpers';
 
 interface AnalysisFiltersProps extends StackProps {
   model: ModelManagmentSchema;
@@ -36,7 +36,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
     setInitialFilters,
     filtersLength,
     reset,
-    resetAll,
+    resetAllFilters,
     setDefaultFrequency
   } = useContext(AnalysisContext);
 
@@ -100,33 +100,12 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
 
   useEffect(() => {
     if (Object.keys(columns).length) {
-      const currentFilters: ColumnsFilters = {};
+      const currentFilters = calculateCurrentFilters(columns);
 
-      Object.entries(columns).forEach(([key, value]) => {
-        if (value.type === ColumnType.categorical) {
-          if (value.stats.values) {
-            const categories: Record<string, boolean> = {};
-
-            value.stats.values.forEach(filter => {
-              categories[filter] = false;
-            });
-
-            currentFilters[key] = categories;
-            return;
-          }
-
-          currentFilters[key] = {};
-        }
-
-        if (value.type === ColumnType.numeric) {
-          currentFilters[key] = null;
-        }
-      });
-
-      setFilters(currentFilters);
+      setFilters(calculateInitialActiveFilters(currentFilters));
       setInitialFilters(currentFilters);
     }
-  }, [columns, setFilters, setInitialFilters]);
+  }, [columns]);
 
   return (
     <>
@@ -151,7 +130,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
           {reset && (
             <FiltersResetButton
               title="Reset all filters"
-              handleReset={resetAll}
+              handleReset={resetAllFilters}
               isLoading={isLoading}
               divider={false}
             />
