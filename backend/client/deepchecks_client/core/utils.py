@@ -243,6 +243,7 @@ def validate_additional_data_schema(additional_data: t.Dict[str, ColumnTypeName]
                 raise ValueError(
                     f'value of additional_data_schema must be one of {ColumnType.values()} but got {value}')
 
+
 class DeepchecksEncoder:
     """Deepchecks encoder."""
 
