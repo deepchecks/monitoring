@@ -8,13 +8,15 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the configuration for the deepchecks_monitoring package."""
+import json
 import pathlib
 import secrets
 import typing as t
 from enum import Enum
 
+import boto3
 from aiokafka.helpers import create_ssl_context
-from pydantic import BaseSettings, PostgresDsn, RedisDsn
+from pydantic import BaseSettings, PostgresDsn, RedisDsn, validator
 from pydantic.networks import AnyHttpUrl
 
 __all__ = [
@@ -27,7 +29,6 @@ __all__ = [
     'BaseDeepchecksSettings',
     'EmailSettings'
 ]
-
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 
@@ -90,8 +91,28 @@ class KafkaSettings(BaseDeepchecksSettings):
         }
 
 
-class DatabaseSettings(BaseDeepchecksSettings):
+def get_postgres_uri(postgres_secret_name, amazon_region_name) -> str:
+    """Get postgres uri from AWS secrets manager."""
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=amazon_region_name
+    )
+
+    get_secret_value_response = client.get_secret_value(SecretId=postgres_secret_name)
+
+    secret_dict = json.loads(get_secret_value_response['SecretString'])
+    database_uri = f'postgresql://{secret_dict["username"]}:{secret_dict["password"]}@{secret_dict["host"]}:' \
+                   f'{secret_dict["port"]}/{secret_dict["dbname"]}'
+    return database_uri
+
+
+class DatabaseSettings(BaseSettings):
     """Database settings."""
+
+    # The following two fields are used to get the database_uri from AWS secrets manager.
+    postgres_secret_name: str = None
+    amazon_region_name: str = None
 
     database_uri: PostgresDsn
     echo_sql: bool = False
@@ -103,6 +124,22 @@ class DatabaseSettings(BaseDeepchecksSettings):
             'postgresql',
             'postgresql+asyncpg'
         ))
+
+    @validator('database_uri', pre=True)
+    def validate_database_uri(cls, v, values):  # pylint: disable=no-self-argument
+        """
+        Validate allows us to try to get the database_uri from AWS secrets manager.
+
+        The validator allows us to check if postgres_secret_name and amazon_region_name are set in current environment
+        if they are, we should be able to get the database_uri from AWS secrets manager,
+        otherwise, we should get the database_uri from the environment variables.
+        """
+        postgres_secret_name = values.get('postgres_secret_name')
+        amazon_region_name = values.get('amazon_region_name')
+        if postgres_secret_name is not None and amazon_region_name is not None:
+            return get_postgres_uri(postgres_secret_name, amazon_region_name)
+        else:
+            return v
 
 
 class RedisSettings(BaseDeepchecksSettings):

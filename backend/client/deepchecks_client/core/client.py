@@ -19,18 +19,17 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
+
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
                                           classification_label_formatter, parse_timestamp, pretty_print,
                                           validate_frequency)
-
 from .api import API
 
 if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime  # pylint: disable=unused-import
 
 __all__ = ['DeepchecksModelVersionClient', 'DeepchecksModelClient', 'MAX_REFERENCE_SAMPLES']
-
 
 MAX_REFERENCE_SAMPLES = 100_000
 
@@ -158,9 +157,9 @@ class DeepchecksModelVersionClient:
             self.api.upload_reference(self.model_version_id, content.to_json(orient='split', index=False))
 
     def time_window_statistics(
-        self,
-        start_time: t.Union['PendulumDateTime', int, None] = None,
-        end_time: t.Union['PendulumDateTime', int, None] = None
+            self,
+            start_time: t.Union['PendulumDateTime', int, None] = None,
+            end_time: t.Union['PendulumDateTime', int, None] = None
     ) -> t.Dict[str, float]:
         """Get statistics on uploaded samples for the model version in a provided time window.
 
@@ -207,9 +206,9 @@ class DeepchecksModelVersionClient:
                 raise ValueError('Existing model version does not match received label_map')
 
     def get_reference_data(
-        self,
-        rows_count: int = 10_000,
-        filters: t.List[DataFilter] = None,
+            self,
+            rows_count: int = 10_000,
+            filters: t.List[DataFilter] = None,
     ) -> pd.DataFrame:
         """Get the reference data.
 
@@ -231,11 +230,11 @@ class DeepchecksModelVersionClient:
         return self.api.get_model_version_reference_data(self.model_version_id, rows_count, filters)
 
     def get_production_data(
-        self,
-        start_time: t.Union[datetime, str, int],
-        end_time: t.Union[datetime, str, int],
-        rows_count: int = 10_000,
-        filters: t.List[DataFilter] = None,
+            self,
+            start_time: t.Union[datetime, str, int],
+            end_time: t.Union[datetime, str, int],
+            rows_count: int = 10_000,
+            filters: t.List[DataFilter] = None,
     ) -> pd.DataFrame:
         """Get the production data on a specific window.
 
@@ -297,9 +296,9 @@ class DeepchecksModelClient:
         )
 
     def __init__(
-        self,
-        model: t.Dict[str, t.Any],
-        api: API
+            self,
+            model: t.Dict[str, t.Any],
+            api: API
     ):
         self.api = api
         self.model = model
@@ -418,11 +417,11 @@ class DeepchecksModelClient:
         return {it['name']: BaseCheck.from_config(it['config']) for it in checks}
 
     def add_alert_rule_on_existing_monitor(
-        self,
-        monitor_id: int,
-        threshold: float,
-        alert_severity: str = 'medium',
-        greater_than: bool = True
+            self,
+            monitor_id: int,
+            threshold: float,
+            alert_severity: str = 'medium',
+            greater_than: bool = True
     ) -> int:
         """Create an alert based on an existing monitor.
 
@@ -464,16 +463,16 @@ class DeepchecksModelClient:
 
     @docstrings
     def add_alert_rule(
-        self,
-        check_name: str,
-        threshold: float,
-        frequency: t.Union[int, str],
-        alert_severity: str = 'medium',
-        aggregation_window: t.Optional[int] = None,
-        greater_than: bool = True,
-        kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None,
-        monitor_name: t.Optional[str] = None,
-        add_monitor_to_dashboard: bool = False
+            self,
+            check_name: str,
+            threshold: float,
+            frequency: t.Union[int, str],
+            alert_severity: str = 'medium',
+            aggregation_window: t.Optional[int] = None,
+            greater_than: bool = True,
+            kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None,
+            monitor_name: t.Optional[str] = None,
+            add_monitor_to_dashboard: bool = False
     ) -> int:
         """{add_alert_rule_desc}
 
@@ -508,17 +507,116 @@ class DeepchecksModelClient:
             greater_than=greater_than
         )
 
+    def add_alert_webhook(self, name: str, https_url: str, http_method: str, description: str = '',
+                          http_headers: t.Optional[t.Dict[str, str]] = None,
+                          notification_levels: t.Optional[t.List[str]] = None) -> int:
+        """Create an alert webhook.
+
+        Parameters
+        ----------
+        name : str
+            The name of the webhook
+        https_url : str
+            The url of the webhook
+        http_method : str
+            The http method of the webhook
+            expected: GET, POST
+        description : str, optional
+            The description of the webhook
+        http_headers : dict, optional
+            The http headers of the webhook
+        notification_levels : list, optional
+            The notification levels of the webhook
+            expected: critical, high, medium, low
+
+        Returns
+        -------
+        int
+            The created webhook id
+        """
+        if http_method not in ['GET', 'POST']:
+            raise ValueError(f'Invalid http method {http_method}, must be GET or POST')
+        for notification_level in notification_levels:
+            if notification_level not in ['critical', 'high', 'medium', 'low']:
+                raise ValueError(f'Invalid notification level {notification_level}, must be one of critical, high,'
+                                 f' medium or low')
+
+        webhook_response = self.api.create_alert_webhook(name=name, https_url=https_url, http_method=http_method,
+                                                         description=description, http_headers=http_headers,
+                                                         notification_levels=notification_levels, raise_on_status=True)
+        webhook_response = t.cast(t.Dict[str, t.Any], webhook_response)
+        return webhook_response['id']
+
+    def add_pager_duty_alert_webhook(self, name: str, https_url: str, http_method: str,
+                                     event_routing_key: str, description: str = '',
+                                     http_headers: t.Optional[t.Dict[str, str]] = None,
+                                     notification_levels: t.Optional[t.List[str]] = None,
+                                     event_group: str = 'deepchecks', event_class: str = '',
+                                     api_access_key: t.Optional[str] = None) -> int:
+        """Create a PagerDuty alert webhook.
+
+        Parameters
+        ----------
+        name : str
+            The name of the webhook
+        https_url : str
+            The url of the webhook
+        http_method : str
+            The http method of the webhook
+            expected: POST
+        event_routing_key : str
+            The event routing key of the webhook in PagerDuty
+        description : str, optional
+            The description of the webhook
+        http_headers : dict, optional
+            The http headers of the webhook
+        notification_levels : list, optional
+            The notification levels of the webhook
+        event_group : str
+            The event group of the webhook in PagerDuty
+        event_class : str
+            The event class of the webhook in PagerDuty
+        raise_on_status : bool
+            Whether to raise error on bad status code or not
+        api_access_key : str, optional
+            The api access key of PagerDuty
+            REMARK: This might not be needed at all for webhooks, and we might remove it in the future
+
+        Returns
+        -------
+        int
+            The created webhook id
+        """
+        if http_method not in ['GET', 'POST']:
+            raise ValueError(f'Invalid http method {http_method}, must be GET or POST')
+        for notification_level in notification_levels:
+            if notification_level not in ['critical', 'high', 'medium', 'low']:
+                raise ValueError(f'Invalid notification level {notification_level}, must be one of critical, high,'
+                                 f' medium or low')
+
+        webhook_response = self.api.create_pager_duty_alert_webhook(name=name, https_url=https_url,
+                                                                    http_method=http_method, description=description,
+                                                                    http_headers=http_headers,
+                                                                    notification_levels=notification_levels,
+                                                                    raise_on_status=True,
+                                                                    api_access_key=api_access_key,
+                                                                    event_routing_key=event_routing_key,
+                                                                    event_group=event_group,
+                                                                    event_class=event_class)
+        webhook_response = t.cast(t.Dict[str, t.Any], webhook_response)
+        return webhook_response['id']
+
     @docstrings
     def add_monitor(
-        self,
-        check_name: str,
-        frequency: t.Union[int, str],
-        aggregation_window: t.Optional[int] = None,
-        lookback: t.Optional[int] = None,
-        name: t.Optional[str] = None,
-        description: t.Optional[str] = None,
-        add_to_dashboard: bool = True,
-        kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None
+            self,
+            check_name: str,
+            frequency: t.Union[int, str],
+            aggregation_window: t.Optional[int] = None,
+            lookback: t.Optional[int] = None,
+            name: t.Optional[str] = None,
+            description: t.Optional[str] = None,
+            add_to_dashboard: bool = True,
+            kwargs_for_check: t.Optional[t.Dict[str, t.Any]] = None
     ) -> int:
         """{add_monitor_desc}
 
@@ -642,9 +740,9 @@ class DeepchecksModelClient:
         return t.cast(t.List[t.Dict[str, t.Any]], notes)
 
     def log_label(
-        self,
-        sample_id: str,
-        label: t.Any,
+            self,
+            sample_id: str,
+            label: t.Any,
     ):
         """Update an existing sample.
 
@@ -672,10 +770,10 @@ class DeepchecksModelClient:
         self._log_labels.append(sample)
 
     def log_batch_labels(
-        self,
-        sample_ids: t.Sequence[str],
-        labels: t.Sequence[t.Any],
-        samples_per_send: int = 10_000
+            self,
+            sample_ids: t.Sequence[str],
+            labels: t.Sequence[t.Any],
+            samples_per_send: int = 10_000
     ):
         """Update samples labels.
 

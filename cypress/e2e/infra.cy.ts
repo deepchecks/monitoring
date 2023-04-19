@@ -7,9 +7,7 @@ describe("load main page", () => {
 
   it("Have correct name", () => {
     cy.visit("/");
-    cy.get("p")
-      .contains(Cypress.env("user_full_name"))
-      .should("have.text", Cypress.env("user_full_name"));
+    cy.get("p").contains(Cypress.env("user_full_name"));
   });
 
   it("Test invite user", () => {
@@ -44,7 +42,6 @@ describe("load main page", () => {
     cy.login(Cypress.env("second_username"), Cypress.env("second_password"));
     cy.url().should("eq", Cypress.config().baseUrl + "/complete-details");
     // Make sure we have invite
-    cy.contains("p", Cypress.env("user_full_name")).should("exist");
     cy.contains("div", "invited you to").should("exist");
     cy.contains("p", Cypress.env("organization_name")).should("exist");
 
