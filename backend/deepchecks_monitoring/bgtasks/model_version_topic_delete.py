@@ -1,8 +1,11 @@
 import threading
+from ssl import SSLContext
 from typing import Optional
 
 import pendulum as pdl
 from aiokafka.admin import AIOKafkaAdminClient
+from aiokafka.admin import __version__ as aiokafka_version
+from aiokafka.client import AIOKafkaClient
 from kafka.errors import KafkaError, UnknownTopicOrPartitionError
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
@@ -23,6 +26,39 @@ QUEUE_NAME = 'model version topic delete'
 DELAY = TimeUnit.HOUR.value * 3
 
 
+class ExtandedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missing-class-docstring
+    # pylint: disable=super-init-not-called
+    def __init__(self, *, loop=None,
+                 bootstrap_servers: str = 'localhost',
+                 client_id: str = 'aiokafka-' + aiokafka_version,
+                 request_timeout_ms: int = 40000,
+                 connections_max_idle_ms: int = 540000,
+                 retry_backoff_ms: int = 100,
+                 metadata_max_age_ms: int = 300000,
+                 security_protocol: str = 'PLAINTEXT',
+                 ssl_context: Optional[SSLContext] = None,
+                 api_version: str = 'auto',
+                 sasl_mechanism='PLAIN',
+                 sasl_plain_username=None,
+                 sasl_plain_password=None):
+        self._closed = False
+        self._started = False
+        self._version_info = {}
+        self._request_timeout_ms = request_timeout_ms
+        self._client = AIOKafkaClient(
+            loop=loop, bootstrap_servers=bootstrap_servers,
+            client_id=client_id, metadata_max_age_ms=metadata_max_age_ms,
+            request_timeout_ms=request_timeout_ms,
+            retry_backoff_ms=retry_backoff_ms,
+            api_version=api_version,
+            ssl_context=ssl_context,
+            security_protocol=security_protocol,
+            connections_max_idle_ms=connections_max_idle_ms,
+            sasl_mechanism=sasl_mechanism,
+            sasl_plain_username=sasl_plain_username,
+            sasl_plain_password=sasl_plain_password)
+
+
 class ModelVersionTopicDeletionWorker(BackgroundWorker):
     """Worker to delete kafka topics when they are no longer in use.
 
@@ -36,7 +72,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.kafka_admin: Optional[AIOKafkaAdminClient] = None
+        self.kafka_admin: Optional[ExtandedAIOKafkaAdminClient] = None
 
     def queue_name(self) -> str:
         return QUEUE_NAME
@@ -48,7 +84,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         if self.kafka_admin is None:
             with self.lock:
                 if self.kafka_admin is None:
-                    self.kafka_admin = AIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_admin_params)
+                    self.kafka_admin = ExtandedAIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_params)
                     await self.kafka_admin.start()
 
         # Backward compatibility, remove in next release and replace with:
