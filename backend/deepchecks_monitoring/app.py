@@ -72,7 +72,6 @@ def create_application(
         dotenv.load_dotenv(dotenv_path=path)
 
     settings = settings or Settings()
-
     app = FastAPI(
         title=title,
         openapi_url=openapi_url,
