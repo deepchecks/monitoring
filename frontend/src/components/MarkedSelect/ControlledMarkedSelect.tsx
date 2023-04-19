@@ -5,12 +5,15 @@ import { SelectChangeEvent, MenuItem, SelectProps } from '@mui/material';
 import { MarkedSelect } from 'components/MarkedSelect';
 
 export type ControlledMarkedSelectSelectValues = string | number | undefined;
+export type ControlledMarkedSelectSelectValueType = (ControlledMarkedSelectSelectValues | { label: string; value: number })
+export type ControlledMarkedSelectDisabledCallback = (value: ControlledMarkedSelectSelectValueType) => boolean;
 
 interface ControlledMarkedSelectProps extends SelectProps {
-  values: (ControlledMarkedSelectSelectValues | { label: string; value: number })[];
+  values: ControlledMarkedSelectSelectValueType[];
   value: ControlledMarkedSelectSelectValues;
   setValue: Dispatch<SetStateAction<ControlledMarkedSelectSelectValues>>;
   clearValue?: () => void;
+  DisabledCallback?: ControlledMarkedSelectDisabledCallback;
 }
 
 export const ControlledMarkedSelectComponent = ({
@@ -19,6 +22,7 @@ export const ControlledMarkedSelectComponent = ({
   value,
   setValue,
   clearValue,
+  DisabledCallback,
   ...props
 }: ControlledMarkedSelectProps) => {
   const handleValueChange = (event: SelectChangeEvent<unknown>) => setValue(event.target.value as string | number);
@@ -29,7 +33,7 @@ export const ControlledMarkedSelectComponent = ({
         const isObj = typeof value === 'object';
 
         return (
-          <MenuItem key={`${value}${index}`} value={isObj ? value.value : value}>
+          <MenuItem key={`${value}${index}`} value={isObj ? value.value : value} disabled={DisabledCallback !== undefined ? DisabledCallback(value) : false}>
             {isObj ? value.label : value}
           </MenuItem>
         );
