@@ -7,7 +7,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.deepchecks_monitoring.utils.other import ExtandedAIOKafkaAdminClient
+from deepchecks_monitoring.utils.other import ExtandedAIOKafkaAdminClient
 from deepchecks_monitoring.logic.keys import get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.public_models import Organization
