@@ -4,26 +4,6 @@ describe("test dashboard", () => {
   const modelName = "my model";
   const checkName = "checky v1";
 
-  it("Add data - graphs appear", () => {
-    cy.addDataToVersion(model_info).then(() => {
-      cy.visit("/");
-      // Check for labels under graph
-      cy.contains("p", monitorName)
-        .parent()
-        .parent()
-        .within(() => {
-          cy.contains("h6", "RMSE").should("exist");
-        });
-      // Check for label with model name under data status
-      cy.contains("p", "Samples status")
-        .parent()
-        .parent()
-        .within(() => {
-          cy.contains("h6", modelName).should("exist");
-        });
-    });
-  });
-
   it("Add model - appears in list", () => {
     cy.createModelAndVersion(modelName, "regression", "v1").then(
       (response: any) => {
@@ -48,6 +28,26 @@ describe("test dashboard", () => {
         // Check for graph with check name
         cy.contains("p", monitorName).should("have.text", monitorName);
       });
+  });
+
+  it("Add data - graphs appear", () => {
+    cy.addDataToVersion(model_info).then(() => {
+      cy.visit("/");
+      // Check for labels under graph
+      cy.contains("p", monitorName)
+        .parent()
+        .parent()
+        .within(() => {
+          cy.contains("h6", "RMSE").should("exist");
+        });
+      // Check for label with model name under data status
+      cy.contains("p", "Samples status")
+        .parent()
+        .parent()
+        .within(() => {
+          cy.contains("h6", modelName).should("exist");
+        });
+    });
   });
 
   it.skip("Add manual monitor - graphs appear", () => {
