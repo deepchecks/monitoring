@@ -40,6 +40,7 @@ jobs:
           python-version: "3.8"
       - name: Get explicit and transitive dependencies
         run: |
+          pip install -U pip==22.0.4 setuptools==58.3.0
           pip install -q -r requirements.txt
           pip freeze > requirements-all.txt
         working-directory: ./backend
