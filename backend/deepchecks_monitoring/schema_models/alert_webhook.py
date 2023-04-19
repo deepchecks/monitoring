@@ -327,7 +327,7 @@ class PagerDutyWebhookProperties(BaseModel):
     @property
     def access_token(self) -> str:
         """Return PagerDuty 'Authorization' header value."""
-        return f"Token token={self.api_access_key}"
+        return f"Token token={self.api_access_key}" if self.api_access_key else ""
 
     def as_webhook(self) -> "AlertWebhook":
         """Create a webhook instance from properties.
@@ -351,7 +351,7 @@ class PagerDutyWebhookProperties(BaseModel):
             "kind": self.kind,
             "http_url": self.http_url,
             "http_method": WebhookHttpMethod.POST,
-            "http_headers": {"Authorization": self.access_token},
+            "http_headers": {"Authorization": self.access_token} if self.api_access_key else {},
             "notification_levels": list(set(self.notification_levels)) if self.notification_levels else [],
             "additional_arguments": {
                 "routing_key": self.event_routing_key,
