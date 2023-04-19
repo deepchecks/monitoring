@@ -14,7 +14,7 @@ from deepchecks_monitoring.schema_models.model_version import ModelVersion
 __all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter']
 
 
-class ExtandedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missing-class-docstring
+class ExtendedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missing-class-docstring
     # pylint: disable=super-init-not-called
     def __init__(self, *, loop=None,
                  bootstrap_servers: str = 'localhost',
