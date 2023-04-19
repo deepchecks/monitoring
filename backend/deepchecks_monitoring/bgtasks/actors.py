@@ -17,12 +17,11 @@ from collections import defaultdict
 import anyio
 import sqlalchemy as sa
 import uvloop
-from pydantic import AnyHttpUrl
 from sqlalchemy import func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from deepchecks_monitoring import __version__, config
+from deepchecks_monitoring import config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
@@ -153,14 +152,14 @@ async def _execute_monitor(
 
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
 async def execute_monitor(
-    organization_id: int,
-    organization_schema: str,  # pylint: disable=unused-argument
-    monitor_id: int,
-    timestamp: str,
-    session: AsyncSession,
-    resources_provider: ResourcesProvider,
-    logger: logging.Logger,
-    **kwargs  # pylint: disable=unused-argument
+        organization_id: int,
+        organization_schema: str,  # pylint: disable=unused-argument
+        monitor_id: int,
+        timestamp: str,
+        session: AsyncSession,
+        resources_provider: ResourcesProvider,
+        logger: logging.Logger,
+        **kwargs  # pylint: disable=unused-argument
 ) -> t.List[Alert]:
     """Execute alert rule."""
     alerts = await _execute_monitor(
@@ -224,9 +223,7 @@ def assert_check_results(
 
 
 class WorkerSettings(
-    config.DatabaseSettings,
-    config.RedisSettings,
-    config.EmailSettings,
+    config.Settings,
 ):
     """Set of worker settings."""
 
@@ -234,7 +231,6 @@ class WorkerSettings(
     worker_loglevel: str = "INFO"
     worker_logfile_maxsize: int = 10000000  # 10MB
     worker_logfile_backup_count: int = 3
-    deployment_url: AnyHttpUrl = "http://localhost:8000"
 
 
 class WorkerBootstrap:
