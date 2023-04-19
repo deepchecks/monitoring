@@ -14,8 +14,6 @@ from deepchecks_monitoring.schema_models.model_version import ModelVersion
 __all__ = ['generate_random_user', 'generate_test_user', 'datetime_sample_formatter']
 
 
-
-
 class ExtandedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missing-class-docstring
     # pylint: disable=super-init-not-called
     def __init__(self, *, loop=None,
@@ -47,6 +45,7 @@ class ExtandedAIOKafkaAdminClient(AIOKafkaAdminClient):  # pylint: disable=missi
             sasl_mechanism=sasl_mechanism,
             sasl_plain_username=sasl_plain_username,
             sasl_plain_password=sasl_plain_password)
+
 
 async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with_org: bool = True):
     """Generate a random user."""
