@@ -510,7 +510,7 @@ def run_lookback(
     result = t.cast(Payload, result)
     assert len([out for out in result["output"]["v1"] if out is not None]) == 4
     assert datetime.fromisoformat(result["time_labels"][-1]) >= \
-           datetime.fromisoformat(end_time) - timedelta(microseconds=1)
+        datetime.fromisoformat(end_time) - timedelta(microseconds=1)
 
 
 def test_run_lookback_empty_filters(
@@ -1310,3 +1310,26 @@ def test_label_check_runs_only_on_data_with_label(
 
     # Assert
     assert result == {"v1": None}
+
+
+def test_run_reference(
+    test_api: TestAPI,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+):
+    upload_multiclass_reference_data(
+        api=test_api,
+        classification_model_version=classification_model_version
+    )
+
+    check_id = classification_model_check["id"]
+    result = test_api.execute_check_for_reference(check_id, {
+                              "filter": {
+                                  "filters": [
+                                      {"column": "a", "operator": "greater_than", "value": 12}
+                                  ]
+                              }
+                          })
+    result = t.cast(Payload, result)
+
+    assert result == {"v1": {"Accuracy": 1.0, "Precision - Macro Average": 1.0, "Recall - Macro Average": 1.0}}

@@ -620,7 +620,8 @@ async def run_check_window(
     model_results = {}
     for model_version, results_per_window in model_results_per_window.items():
         # the original function is more general and runs it per window, we have only 1 window here
-        model_results[model_version] = results_per_window[0]
+        if results_per_window is not None:
+            model_results[model_version] = results_per_window[0]
 
     return model_results
 
