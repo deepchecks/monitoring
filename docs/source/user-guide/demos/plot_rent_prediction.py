@@ -303,6 +303,6 @@ model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label
 # If you wish to delete this model from your environment, you can do that using the ``delete_model`` function.
 # CAUTION: This will delete the model, all model versions, and all associated datasets.
 
-dc_client.delete_model(model_name)
+# dc_client.delete_model(model_name)
 
 # sphinx_gallery_thumbnail_path = '_static/images/examples/rent/manhattan.png'
