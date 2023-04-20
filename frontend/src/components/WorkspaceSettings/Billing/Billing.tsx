@@ -22,7 +22,7 @@ const Billing = () => {
     getSubscription();
   }, []);
 
-  const isPaid = subscriptions.length > 0;
+  const isPaid = subscriptions.length > 0 && subscriptions[0]?.status === 'active';
 
   if (isLoading) {
     return <BillingPaidSkeleton />;
