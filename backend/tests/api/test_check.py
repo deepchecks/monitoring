@@ -1332,4 +1332,4 @@ def test_run_reference(
                           })
     result = t.cast(Payload, result)
 
-    assert result == {'v1': {'Accuracy': 1.0, 'Precision - Macro Average': 1.0, 'Recall - Macro Average': 1.0}}
+    assert result == {"v1": {"Accuracy": 1.0, "Precision - Macro Average": 1.0, "Recall - Macro Average": 1.0}}
