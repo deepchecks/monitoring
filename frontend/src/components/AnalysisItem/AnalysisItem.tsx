@@ -28,7 +28,8 @@ const AnalysisItem = ({
   frequency,
   activeFilters,
   height,
-  graphHeight
+  graphHeight,
+  compareByReference
 }: AnalysisItemProps) => {
   const { observedContainerRef, isVisible } = useElementOnScreen();
   const { mutateAsync: runCheck, chartData } = useRunCheckLookback('line');
@@ -44,6 +45,7 @@ const AnalysisItem = ({
   const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
   const [isMostWorstActive, setIsMostWorstActive] = useState(false);
   const [runLookBack, setRunLookBack] = useState(false);
+  const [alertRules, setAlertRules] = useState([]);
 
   const checkConf = useMemo(() => checkInfo && checkInfo.check_conf, [checkInfo?.check_conf]);
   const additionalKwargs = useMemo(() => {
@@ -91,6 +93,8 @@ const AnalysisItem = ({
       isMostWorstActive,
       compareWithPreviousPeriod,
       ascending,
+      compareByReference,
+      setAlertRules,
       setIsItemLoading,
       runCheck,
       setData,
@@ -113,7 +117,8 @@ const AnalysisItem = ({
     initialData,
     checksWithCustomProps,
     isVisible,
-    runLookBack
+    runLookBack,
+    compareByReference
   ]);
 
   const diagramLineProps = {
@@ -124,7 +129,8 @@ const AnalysisItem = ({
     timeFreq: frequency,
     previousPeriodLabels: perviousPeriodLabels,
     analysis: true,
-    height: { lg: graphHeight - 104, xl: graphHeight }
+    height: { lg: graphHeight - 104, xl: graphHeight },
+    alertRules: alertRules
   };
 
   const chartItemProps = {

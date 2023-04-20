@@ -72,6 +72,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   }, []);
 
   useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
+
   return (
     <StyledContainer>
       <StyledHeader>
@@ -107,12 +108,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
         </StyledLoaderBox>
       ) : (
         <DiagramTutorialTooltip>
-          <DiagramLine
-            data={graphData}
-            minTimeUnit={minTimeUnit}
-            timeFreq={timeValue}
-            height={{ lg: 259, xl: 362 }}
-          ></DiagramLine>
+          <DiagramLine data={graphData} minTimeUnit={minTimeUnit} timeFreq={timeValue} height={{ lg: 259, xl: 362 }} />
         </DiagramTutorialTooltip>
       )}
     </StyledContainer>

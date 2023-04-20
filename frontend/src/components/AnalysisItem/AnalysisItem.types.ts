@@ -43,6 +43,7 @@ export interface AnalysisItemProps {
   ) => void;
   height: number;
   graphHeight: number;
+  compareByReference?: boolean;
 }
 
 export interface RunCheckBody {
