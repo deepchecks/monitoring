@@ -22,7 +22,7 @@ const BillingHistory = () => {
     try {
       const response = await listAllChargesApiV1BillingChargesGet();
 
-      setTransactions([...response]);
+      response && setTransactions([...response]);
       setLoading(false);
     } catch (err) {
       logger.error(err);

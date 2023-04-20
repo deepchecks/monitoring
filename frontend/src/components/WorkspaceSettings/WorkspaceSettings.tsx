@@ -25,11 +25,13 @@ const WorkspaceSettings = () => {
   const [memberSettings, setMemberSettings] = useState<MemberSchema[]>();
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAdmin = memberSettings && memberSettings[0].is_admin;
+  const isAdmin = memberSettings && memberSettings[0]?.is_admin;
 
   const getMemberSettings = async () => {
     const response = await retrieveOrganizationMembersApiV1OrganizationMembersGet();
-    setMemberSettings(response);
+
+    response && setMemberSettings(response);
+
     setIsLoading(false);
   };
 
