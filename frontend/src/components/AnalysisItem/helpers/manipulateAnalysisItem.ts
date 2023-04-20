@@ -65,6 +65,36 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
 
   setIsItemLoading(true);
 
+  if (compareByReference) {
+    const getReferenceData = async () => {
+      const response = await getCheckReferenceApiV1ChecksCheckIdRunReferencePost(check.id, {
+        additional_kwargs: additionalKwargs
+      });
+
+      if (response && (response as any[])[0]) {
+        setAlertRules(response);
+      } // else { Delete !
+      //   setAlertRules([
+      //     {
+      //       alert_severity: 'high',
+      //       id: 1169,
+      //       is_active: true,
+      //       monitor_id: 2199,
+      //       start_time: null,
+      //       condition: {
+      //         operator: 'greater_than',
+      //         value: 0.25
+      //       }
+      //     }
+      //   ]);
+      // }
+    };
+
+    getReferenceData();
+  } else {
+    setAlertRules([]);
+  }
+
   const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0;
   // Update the checksWithCustomProps set which indicates to the parent component if it needs to load this check data
   hasCustomProps ? checksWithCustomProps?.current.add(check.id) : checksWithCustomProps?.current.delete(check.id);
@@ -98,36 +128,6 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
     }
 
     const parsedChartData = parseDataForLineChart(response as CheckResultSchema);
-
-    if (compareByReference) {
-      const getReferenceData = async () => {
-        const response = await getCheckReferenceApiV1ChecksCheckIdRunReferencePost(check.id, {
-          additional_kwargs: additionalKwargs
-        });
-
-        if (response && (response as any[])[0]) {
-          setAlertRules(response);
-        } // else { Delete once server is fixed!
-        //   setAlertRules([
-        //     {
-        //       alert_severity: 'high',
-        //       id: 1169,
-        //       is_active: true,
-        //       monitor_id: 2199,
-        //       start_time: null,
-        //       condition: {
-        //         operator: 'greater_than',
-        //         value: 0.25
-        //       }
-        //     }
-        //   ]);
-        // }
-      };
-
-      getReferenceData();
-    } else {
-      setAlertRules([]);
-    }
 
     if (compareWithPreviousPeriod) {
       const periodsTimeDifference = period[1].getTime() - period[0].getTime();
