@@ -342,7 +342,7 @@ def get_results_for_model_versions_for_reference(
             dataset_name='Reference'
         )
         try:
-            if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
+            if isinstance(dp_check, tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,
                                            y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                                            with_display=False)
