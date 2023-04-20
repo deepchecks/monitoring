@@ -320,10 +320,11 @@ def get_results_for_model_versions_for_reference(
         model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
         model_versions: t.List[ModelVersion],
         model: Model,
-        dp_check: BaseCheck,
+        check: Check,
         additional_kwargs: MonitorCheckConfSchema,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions for reference."""
+    dp_check = initialize_check(check, model_version, additional_kwargs)
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
     model_reduces = {}
