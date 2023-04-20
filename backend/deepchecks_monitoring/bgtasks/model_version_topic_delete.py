@@ -100,7 +100,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         await session.execute(delete(Task).where(Task.id == task.id))
 
         if reinsert_task:
-            await insert_model_version_topic_delete_task(org_id, id, entity, session)
+            await insert_model_version_topic_delete_task(org_id, entity_id, entity, session)
 
 
 async def insert_model_version_topic_delete_task(organization_id, entity_id, entity, session):
