@@ -324,7 +324,6 @@ def get_results_for_model_versions_for_reference(
         additional_kwargs: MonitorCheckConfSchema,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions for reference."""
-    dp_check = initialize_check(check, model_version, additional_kwargs)
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
     model_reduces = {}
@@ -342,6 +341,8 @@ def get_results_for_model_versions_for_reference(
             top_feat,
             dataset_name='Reference'
         )
+
+        dp_check = initialize_check(check, model_version, additional_kwargs)
         try:
             if isinstance(dp_check,  tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,
@@ -353,7 +354,7 @@ def get_results_for_model_versions_for_reference(
         # In case of exception in the run putting none result
         except errors.DeepchecksBaseError as e:
             message = f'For model(id={model.id}) version(id={model_version.id}) check({dp_check.name()}) ' \
-                        f'got exception: {e.message}'
+                f'got exception: {e.message}'
             logging.getLogger('monitor_run_logger').error(message)
             curr_result = None
 
