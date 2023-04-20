@@ -65,4 +65,4 @@ Visit the README of each folder to understand more about their structure.
 
 
 ## License 📜
-DeepChecks Monitoring is released under the AGPL 3.0 license, except for the ee/ folder in the frontend and backend directories which are under a commercial license. See the LICENSE file for more details.
+Deepchecks Monitoring is released under the AGPL 3.0 license. Please note there is a folder that is not used by default (see [backend/deepchecks_monitoring/ee](backend/deepchecks_monitoring/ee)) that is subject to a commercial license and is packaged as part of the repository simply to support upgrading to the commercial edition without downtime. See the LICENSE file for more details.
