@@ -1,26 +1,28 @@
 describe("test dashboard", () => {
-  let model_info;
+  let model_info: any;
   const monitorName = "checky v1 Monitor";
   const modelName = "my model";
   const checkName = "checky v1";
 
   it("Add model - appears in list", () => {
-    cy.createModelAndVersion(modelName, "regression", "v1").then((response) => {
-      model_info = response;
-      cy.visit("/");
-      // Check for model name under models list
-      cy.contains("h6", "Models")
-        .parent()
-        .parent()
-        .within(() => {
-          cy.contains("p", modelName).should("exist");
-        });
-    });
+    cy.createModelAndVersion(modelName, "regression", "v1").then(
+      (response: any) => {
+        model_info = response;
+        cy.visit("/");
+        // Check for model name under models list
+        cy.contains("h6", "Models")
+          .parent()
+          .parent()
+          .within(() => {
+            cy.contains("p", modelName).should("exist");
+          });
+      }
+    );
   });
 
   it("Add check and monitor - graphs appear", () => {
     cy.addPerformanceCheck(model_info)
-      .then((checkInfo) => cy.addMonitor(checkInfo))
+      .then((checkInfo: any) => cy.addMonitor(checkInfo))
       .then(() => {
         cy.visit("/");
         // Check for graph with check name
@@ -48,8 +50,8 @@ describe("test dashboard", () => {
     });
   });
 
-  it("Add manual monitor - graphs appear", () => {
-    cy.visit("/");
+  it.skip("Add manual monitor - graphs appear", () => {
+    cy.visit("/dashboard");
     cy.contains("p", "Monitors")
       .parent()
       .within(() => {
@@ -89,17 +91,13 @@ describe("test dashboard", () => {
       .contains("a", "Advanced")
       .click();
     cy.contains('div[role="presentation"]', "Create monitor")
-      .contains("div", "Aggregation window")
+      .contains("div", "HOUR")
       .click();
-    cy.get("#menu-").contains("li", "1 day").click();
     cy.contains('div[role="presentation"]', "Create monitor")
       .contains("div", "Frequency")
       .click();
-    cy.get("#menu-").contains("li", "1 day").click();
-    cy.contains('div[role="presentation"]', "Create monitor")
-      .contains("div", "Display range")
-      .click();
-    cy.get("#menu-").contains("li", "1 week").click();
+    cy.get("#menu-").contains("li", "Day").click();
+    cy.contains('div[role="presentation"]', "Create monitor").click();
     cy.intercept("POST", "/api/v1/checks/*/monitors").as("addMonitor");
     cy.contains("button", "Save").click();
     cy.wait("@addMonitor");

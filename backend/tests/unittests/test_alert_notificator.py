@@ -53,8 +53,8 @@ async def test_alert_email_notification(
 
     deepchecks_email = t.cast(Settings, resources_provider.settings).deepchecks_email
     email = smtp_server.handler.mailbox[0]
-    assert email["From"] == f"Deepchecks App <{deepchecks_email}>"
     assert email["To"] == user.email
+    assert email["From"] == f"Deepchecks App <{deepchecks_email}>"
     assert email["Subject"].startswith("Alert")
 
 

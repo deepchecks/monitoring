@@ -158,6 +158,11 @@ class MonitorOptions(SingleCheckRunOptions):
 
         return values
 
+    def sql_all_filters(self):
+        """Create sql filter clause."""
+        # overrides TimeWindowOption.sql_all_filters
+        return self.sql_columns_filter()
+
     def calculate_windows(self):
         frequency = self.frequency
         assert frequency is not None
@@ -181,6 +186,7 @@ class CheckNotebookSchema(SpecificVersionCheckRun):
     as_script: t.Optional[bool] = False
 
 
+# TODO: looks like it is not used anywhere, delete it
 class FilterWindowOptions(MonitorOptions):
     """Window with filter run schema."""
 

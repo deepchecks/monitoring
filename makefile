@@ -127,7 +127,7 @@ $(ENV):
 	@echo "#### Creating Python Vertual Enviroment [ $(ENV) ] ####"
 	@test -d $(ENV) || $(ext_py) -m venv $(ENV)
 	@$(PIP) install -e backend/
-	@$(PIP) install -U pip
+	@$(PIP) install -U pip==22.0.4 setuptools==58.3.0
 
 
 requirements: $(ENV)
@@ -173,7 +173,7 @@ test:
 test-win:
 	@test -d $(WIN_ENV) || python -m venv $(WIN_ENV)
 	@$(WIN_ENV)\Scripts\activate.bat
-	@$(PIP_WIN) install -U pip
+	@$(PIP_WIN) install -U pip==22.0.4 setuptools==58.3.0
 	@$(PIP_WIN) install -q -r ./requirements.txt -r ./dev-requirements.txt
 	python -m pytest $(WIN_TESTDIR)
 
@@ -315,12 +315,12 @@ external-services-setup:
 	@sleep 2
 
 env-setup: external-services-setup
-	@docker run -d --env-file .development.env --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
 	@sleep 15
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-worker.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
-	@docker run -d --env-file .development.env --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-worker.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
+	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
 	@sleep 10
 
 cypress: env-setup

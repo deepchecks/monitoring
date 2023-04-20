@@ -5,10 +5,11 @@ import { DataFilter, AutoFrequencyResponse, OperatorsEnum } from 'api/generated'
 import { timeMap, timeValues } from 'helpers/time';
 import { SetStateType } from 'helpers/types';
 import { setStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { getParams, setParams } from 'helpers/utils/getParams';
 
 export type FilterValue = Record<string, boolean> | [number, number] | null;
-
 export type ColumnsFilters = Record<string, FilterValue>;
+export type CategoricalFilters = Record<string, boolean>;
 
 export interface AnalysisContextValues {
   compareWithPreviousPeriod: boolean;
@@ -24,7 +25,7 @@ export interface AnalysisContextValues {
   setInitialFilters: SetStateType<ColumnsFilters>;
   activeFilters: DataFilter[];
   reset: boolean;
-  resetAll: () => void;
+  resetAllFilters: () => void;
   defaultFrequency: AutoFrequencyResponse | null;
   setDefaultFrequency: SetStateType<AutoFrequencyResponse | null>;
 }
@@ -32,6 +33,8 @@ export interface AnalysisContextValues {
 interface AnalysisProviderProps {
   children: ReactNode;
 }
+
+export const STANDALONE_FILTERS = ['modelId', 'start', 'end'];
 
 function calculateActiveFilters(filters: ColumnsFilters) {
   const activeFilters: DataFilter[] = [];
@@ -53,19 +56,44 @@ function calculateActiveFilters(filters: ColumnsFilters) {
       }
 
       if (typeof value === 'object') {
-        const cateogires = Object.entries(value)
+        const categories = Object.entries(value)
           .filter(([, is_marked]) => is_marked)
           .map(entry => entry[0]);
-        if (cateogires.length > 0) {
+        if (categories.length > 0) {
           activeFilters.push({
             column,
             operator: OperatorsEnum.in,
-            value: cateogires
+            value: categories
           });
         }
       }
     }
   });
+
+  if (activeFilters.length > 0 && getParams()?.modelId) {
+    const data: { [k: string]: string } = {};
+
+    activeFilters.forEach(activeFilter => {
+      if (activeFilter.operator === OperatorsEnum.greater_than_equals) {
+        const lessThanEquals = activeFilters.find(
+          f => f.column === activeFilter.column && f.operator === OperatorsEnum.less_than_equals
+        );
+        if (lessThanEquals) data[activeFilter.column] = `${activeFilter.value},${lessThanEquals.value}`;
+      }
+
+      if (activeFilter.operator === OperatorsEnum.in) {
+        const result: string[] = [];
+
+        activeFilters.forEach(f => {
+          if (f.column === activeFilter.column) result.push(f.value as string);
+        });
+
+        data[activeFilter.column] = result.join(',');
+      }
+    });
+
+    Object.entries(data).forEach(([key, value]) => setParams(key, value));
+  }
 
   return activeFilters;
 }
@@ -110,7 +138,7 @@ export const AnalysisContext = createContext<AnalysisContextValues>({
   setInitialFilters: () => 1,
   activeFilters: [],
   reset: false,
-  resetAll: () => 1,
+  resetAllFilters: () => 1,
   defaultFrequency: null,
   setDefaultFrequency: () => 1
 });
@@ -155,10 +183,13 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
     filtersLength > 0 ? setReset(true) : setReset(false);
   }, [filtersLength]);
 
-  const resetAll = useCallback(() => {
+  const resetAllFilters = useCallback(() => {
     setFiltersLength(0);
     setFilters(initialFilters);
     setReset(false);
+    Object.keys(getParams()).forEach(key => {
+      if (!STANDALONE_FILTERS.includes(key)) setParams(key);
+    });
   }, [initialFilters, defaultFrequency]);
 
   const value = useMemo(
@@ -176,7 +207,7 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       setInitialFilters,
       activeFilters,
       reset,
-      resetAll,
+      resetAllFilters,
       defaultFrequency,
       setDefaultFrequency
     }),
@@ -189,7 +220,7 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       activeFilters,
       period,
       reset,
-      resetAll,
+      resetAllFilters,
       defaultFrequency,
       setDefaultFrequency
     ]

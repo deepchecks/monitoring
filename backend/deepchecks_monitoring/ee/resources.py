@@ -18,9 +18,9 @@ from ldclient.config import Config as LDConfig
 from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
 from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
+from deepchecks_monitoring.ee.notifications import AlertNotificator as EEAlertNotificator
 from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
-from deepchecks_monitoring.notifications import AlertNotificator as EEAlertNotificator
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider as OpenSourceResourcesProvider
 
