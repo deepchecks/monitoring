@@ -130,7 +130,7 @@ const AnalysisItem = ({
     previousPeriodLabels: perviousPeriodLabels,
     analysis: true,
     height: { lg: graphHeight - 104, xl: graphHeight },
-    alertRules: alertRules
+    alert_rules: alertRules
   };
 
   const chartItemProps = {

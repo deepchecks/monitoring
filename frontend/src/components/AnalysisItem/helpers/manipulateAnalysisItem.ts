@@ -107,7 +107,7 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
 
         if (response && (response as any[])[0]) {
           setAlertRules(response);
-        } // else { Delete! An example until server will fix the endpoint
+        } // else { Delete once server is fixed!
         //   setAlertRules([
         //     {
         //       alert_severity: 'high',
@@ -125,6 +125,8 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
       };
 
       getReferenceData();
+    } else {
+      setAlertRules([]);
     }
 
     if (compareWithPreviousPeriod) {

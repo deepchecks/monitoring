@@ -149,7 +149,7 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
           </CustomStyledSelect>
         </>
       )}
-      <StyledDivider orientation="vertical" flexItem sx={{ marginRight: '29px', marginTop: '4px' }} />
+      <StyledDivider orientation="vertical" flexItem sx={{ marginRight: '29px' }} />
       <Box display="flex" flexDirection="column" gap="8px">
         <SwitchButton
           checked={compareWithPreviousPeriod}
@@ -163,7 +163,6 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
           sx={{ marginRight: 'auto' }}
         />
       </Box>
-      <StyledDivider orientation="vertical" flexItem sx={{ marginRight: '29px', marginTop: '4px' }} />
     </>
   );
 };
