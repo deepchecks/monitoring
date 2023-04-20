@@ -10,6 +10,7 @@ import { AnalysisItemProps } from './AnalysisItem.types';
 import { CheckFilterTypes, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { manipulateAnalysisItem } from './helpers/manipulateAnalysisItem';
+import { getReference } from './helpers/getReference';
 
 import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters';
 import { AnalysisChartItem } from './components/AnalysisChartItem';
@@ -80,6 +81,10 @@ const AnalysisItem = ({
   }, [check.id, refetch]);
 
   useEffect(() => {
+    getReference({ check, compareByReference, additionalKwargs, setAlertRules });
+  }, [compareByReference]);
+
+  useEffect(() => {
     manipulateAnalysisItem({
       isVisible,
       runLookBack,
@@ -93,8 +98,6 @@ const AnalysisItem = ({
       isMostWorstActive,
       compareWithPreviousPeriod,
       ascending,
-      compareByReference,
-      setAlertRules,
       setIsItemLoading,
       runCheck,
       setData,

@@ -1,11 +1,5 @@
 import { MutableRefObject } from 'react';
-import {
-  CheckResultSchema,
-  CheckSchema,
-  DataFilter,
-  MonitorCheckConfSchema,
-  getCheckReferenceApiV1ChecksCheckIdRunReferencePost
-} from 'api/generated';
+import { CheckResultSchema, CheckSchema, DataFilter, MonitorCheckConfSchema } from 'api/generated';
 
 import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
@@ -26,8 +20,6 @@ interface ManipulateData {
   initialData: CheckResultSchema | undefined;
   isMostWorstActive: boolean;
   compareWithPreviousPeriod: boolean;
-  compareByReference?: boolean;
-  setAlertRules: (arg: any) => void;
   setIsItemLoading: (loading: boolean) => void;
   setPerviousPeriodLabels: (labels: any) => void;
   runCheck: (checkBody: RunCheckBody) => void;
@@ -51,8 +43,6 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
     activeFilters,
     period,
     ascending,
-    compareByReference,
-    setAlertRules,
     runCheck,
     setData,
     setPerviousPeriodLabels,
@@ -64,36 +54,6 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
   }
 
   setIsItemLoading(true);
-
-  if (compareByReference) {
-    const getReferenceData = async () => {
-      const response = await getCheckReferenceApiV1ChecksCheckIdRunReferencePost(check.id, {
-        additional_kwargs: additionalKwargs
-      });
-
-      if (response && (response as any[])[0]) {
-        setAlertRules(response);
-      } // else { Delete !
-      //   setAlertRules([
-      //     {
-      //       alert_severity: 'high',
-      //       id: 1169,
-      //       is_active: true,
-      //       monitor_id: 2199,
-      //       start_time: null,
-      //       condition: {
-      //         operator: 'greater_than',
-      //         value: 0.25
-      //       }
-      //     }
-      //   ]);
-      // }
-    };
-
-    getReferenceData();
-  } else {
-    setAlertRules([]);
-  }
 
   const hasCustomProps = additionalKwargs != undefined || activeFilters.length > 0;
   // Update the checksWithCustomProps set which indicates to the parent component if it needs to load this check data
