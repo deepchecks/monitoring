@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 import pytest
-from deepchecks_client import DeepchecksClient
+from deepchecks_client import DeepchecksClient, DeepchecksModelClient
 
 
 def test_create_delete_model(deepchecks_sdk: DeepchecksClient):
@@ -49,3 +49,17 @@ def test_model_notes_functionality(deepchecks_sdk: DeepchecksClient):
     assert len(model_notes) == len(notes)
     assert {it['title'] for it in model_notes} == {it['title'] for it in notes}
     assert {it['text'] for it in model_notes} == {it['text'] for it in notes}
+
+
+def test_create_alert_webhook(regression_model_client: DeepchecksModelClient):
+    name = 'test_alert_webhook'
+    url = 'https://www.google.com'
+    http_method = 'GET'
+    description = 'test alert webhook'
+    http_headers = {'header1': 'value1', 'header2': 'value2'}
+    notification_levels = ['critical', 'high']
+    webhook_id = regression_model_client.add_alert_webhook(name=name, https_url=url, http_method=http_method,
+                                                     description=description, http_headers=http_headers,
+                                                     notification_levels=notification_levels)
+    assert webhook_id is not None
+    assert webhook_id == 1

@@ -32,7 +32,9 @@ export const StyledMenuItem = styled(MenuItem)({
 });
 
 export const StyledText = styled(Typography)({
-  marginTop: 'auto',
   fontSize: '14px',
+  lineHeight: '32px',
+  marginTop: 'auto',
+  paddingTop: '16px',
   color: theme.palette.grey[600]
 });

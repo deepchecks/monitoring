@@ -31,6 +31,7 @@ from pendulum.datetime import DateTime as PendulumDateTime
 from termcolor import cprint
 from typing_extensions import TypeAlias, TypedDict
 
+
 __all__ = ['ColumnType', 'ColumnTypeName', 'TaskType', 'DeepchecksColumns',
            'validate_additional_data_schema', 'describe_dataset', 'DataSchema',
            'DataFilter', 'OperatorsEnum', 'classification_label_formatter', 'validate_frequency']
@@ -258,13 +259,6 @@ class DeepchecksEncoder:
             return tuple(cls.encode(v) for v in obj)
         if pd.isna(obj):
             return None
-
-        try:
-            import torch
-            if isinstance(obj, torch.Tensor):
-                return obj.tolist()
-        except ImportError:
-            pass
 
         return obj
 
