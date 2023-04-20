@@ -2,7 +2,6 @@ import threading
 from typing import Optional
 
 import pendulum as pdl
-from aiokafka.admin import AIOKafkaAdminClient
 from kafka.errors import KafkaError, UnknownTopicOrPartitionError
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
@@ -15,6 +14,7 @@ from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
 
 __all__ = ['ModelVersionTopicDeletionWorker', 'insert_model_version_topic_delete_task']
 
@@ -36,7 +36,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.kafka_admin: Optional[AIOKafkaAdminClient] = None
+        self.kafka_admin: Optional[ExtendedAIOKafkaAdminClient] = None
 
     def queue_name(self) -> str:
         return QUEUE_NAME
@@ -48,7 +48,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         if self.kafka_admin is None:
             with self.lock:
                 if self.kafka_admin is None:
-                    self.kafka_admin = AIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_admin_params)
+                    self.kafka_admin = ExtendedAIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_params)
                     await self.kafka_admin.start()
 
         # Backward compatibility, remove in next release and replace with:
