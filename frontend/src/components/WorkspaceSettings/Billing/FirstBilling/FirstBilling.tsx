@@ -5,8 +5,6 @@ import {
   listAllProductsApiV1BillingAvailableProductsGet
 } from 'api/generated';
 
-import logger from 'helpers/services/logger';
-
 import BillingPlanCard from '../BillingPlanCard/BillingPlanCard';
 import BillingPaymentWrapper from '../BillingPaymentWrapper';
 import FirstBillingPayment from './FirstBillingPayment';
@@ -14,6 +12,8 @@ import FirstBillingPayment from './FirstBillingPayment';
 import { BillingText, FirstBillingContainer } from '../Billing.styles';
 
 import { constants } from '../billing.constants';
+
+import { resError } from 'helpers/types/resError';
 
 interface ProductsResponseType {
   default_price: string;
@@ -34,20 +34,21 @@ const FirstBilling = () => {
   };
 
   const handleUpgradeClick = async (quantity: number) => {
-    try {
-      const payload = { price_id: product.default_price, quantity: quantity as number };
-      const response = (await createSubscriptionApiV1BillingSubscriptionPost(payload)) as { client_secret: string };
+    const payload = { price_id: product.default_price, quantity: quantity as number };
+    const response = (await createSubscriptionApiV1BillingSubscriptionPost(payload)) as { client_secret: string };
 
-      setClientSecret(response.client_secret);
-    } catch (err) {
-      logger.error(err);
-      setErrorMassage(constants.firstBilling.errorMassageContent);
-    }
+    response && setClientSecret(response.client_secret);
   };
 
   useEffect(() => {
     getProductDetails();
   }, []);
+
+  useEffect(() => {
+    if (clientSecret && (clientSecret as unknown as resError).error_message) {
+      setErrorMassage(constants.firstBilling.errorMassageContent);
+    }
+  }, [clientSecret]);
 
   return (
     <FirstBillingContainer>

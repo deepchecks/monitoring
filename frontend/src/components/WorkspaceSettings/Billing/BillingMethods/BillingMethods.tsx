@@ -32,7 +32,7 @@ const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
   const getPaymentMethods = async () => {
     try {
       const response = await getPaymentMethodApiV1BillingPaymentMethodGet();
-      setPaymentMethods(response as any[]);
+      response && setPaymentMethods(response as any[]);
     } catch (err) {
       logger.error(err);
     }
