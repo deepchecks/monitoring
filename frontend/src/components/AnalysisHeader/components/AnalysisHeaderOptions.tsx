@@ -27,9 +27,9 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     period,
     setPeriod,
     frequency,
-    setFrequency,
-    compareByReference,
-    setCompareByReference
+    setFrequency
+    // compareByReference,
+    // setCompareByReference
   } = useContext(AnalysisContext);
 
   const [minDate, setMinDate] = useState<Date | null>(
@@ -156,12 +156,12 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
           setChecked={setCompareWithPreviousPeriod}
           label="Compare with previous period"
         />
-        <SwitchButton
+        {/* <SwitchButton
           checked={compareByReference}
           setChecked={setCompareByReference}
           label="Compare by reference"
           sx={{ marginRight: 'auto' }}
-        />
+            /> */}
       </Box>
     </>
   );
