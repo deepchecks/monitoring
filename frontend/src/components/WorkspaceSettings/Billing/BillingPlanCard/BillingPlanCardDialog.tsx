@@ -46,8 +46,8 @@ const BillingPlanCardDialog = (props: BillingPlanCardDialogProps) => {
       if ((response as unknown as resError).error_message) {
         setErrorMsg(constants.firstBilling.errorMassageContent);
         setLoading(false);
-      } else {
-        response && response.client_secret && window.location.reload();
+      } else if (response && response.client_secret) {
+        window.location.reload();
       }
     }
   };
