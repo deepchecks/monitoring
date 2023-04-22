@@ -37,18 +37,18 @@ const FirstBilling = () => {
     const payload = { price_id: product.default_price, quantity: quantity as number };
     const response = (await createSubscriptionApiV1BillingSubscriptionPost(payload)) as { client_secret: string };
 
-    response && setClientSecret(response.client_secret);
+    if (response) {
+      if (response && (response as unknown as resError).error_message) {
+        setErrorMassage(constants.firstBilling.errorMassageContent);
+      } else {
+        setClientSecret(response.client_secret);
+      }
+    }
   };
 
   useEffect(() => {
     getProductDetails();
   }, []);
-
-  useEffect(() => {
-    if (clientSecret && (clientSecret as unknown as resError).error_message) {
-      setErrorMassage(constants.firstBilling.errorMassageContent);
-    }
-  }, [clientSecret]);
 
   return (
     <FirstBillingContainer>

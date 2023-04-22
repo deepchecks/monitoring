@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { ModelManagmentSchema, useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet } from 'api/generated';
 import { AnalysisContext, frequencyData } from 'helpers/context/AnalysisProvider';
 
-import { MenuItem, SelectChangeEvent } from '@mui/material';
+import { Box, MenuItem, SelectChangeEvent } from '@mui/material';
 
 import { DateRange } from 'components/DateRange';
 import { CustomStyledSelect } from 'components/CustomStyledSelect';
@@ -17,12 +17,20 @@ interface AnalysisHeaderOptions {
   model: ModelManagmentSchema;
 }
 
-const MAX_WINDOWS_COUNT = 31
+const MAX_WINDOWS_COUNT = 31;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
-  const { compareWithPreviousPeriod, setCompareWithPreviousPeriod, period, setPeriod, frequency, setFrequency } =
-    useContext(AnalysisContext);
+  const {
+    compareWithPreviousPeriod,
+    setCompareWithPreviousPeriod,
+    period,
+    setPeriod,
+    frequency,
+    setFrequency
+    // compareByReference,
+    // setCompareByReference
+  } = useContext(AnalysisContext);
 
   const [minDate, setMinDate] = useState<Date | null>(
     model.start_time && frequency ? dayjs.unix(model.start_time).toDate() : null
@@ -33,10 +41,10 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
 
   useEffect(() => {
     if (frequency) {
-      model.start_time && setMinDate(dayjs.unix(model.start_time).toDate())
-      model.latest_time && setMaxDate(dayjs.unix(model.latest_time + frequencyValues.DAY).toDate())
+      model.start_time && setMinDate(dayjs.unix(model.start_time).toDate());
+      model.latest_time && setMaxDate(dayjs.unix(model.latest_time + frequencyValues.DAY).toDate());
     }
-  }, [model, frequency])
+  }, [model, frequency]);
 
   const { data: defaultFrequency } = useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet(model.id, undefined, {
     query: {
@@ -48,8 +56,8 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     if (startTime && endTime) {
       if (dayjs(startTime).isSame(dayjs(endTime))) {
         startTime.setDate(startTime.getDate() - 1);
-        startTime.setHours(0,0,0,0);
-        endTime.setHours(23,59,59,999);
+        startTime.setHours(0, 0, 0, 0);
+        endTime.setHours(23, 59, 59, 999);
       }
       setPeriod([startTime, endTime]);
     }
@@ -65,7 +73,9 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
       windows_count = 31;
     }
     if (period) {
-      let start_date = dayjs(period[1]).subtract(value * windows_count, 'second').toDate();
+      let start_date = dayjs(period[1])
+        .subtract(value * windows_count, 'second')
+        .toDate();
       if (model.start_time) {
         const model_start_date = dayjs.unix(model.start_time).toDate();
         if (model_start_date > start_date) {
@@ -79,11 +89,17 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
   const handleDateChange = (startTime: Date | undefined, endTime: Date | undefined) => {
     // limit selection to only 30 windows
     if (frequency && dayjs(startTime).isSame(dayjs(endTime))) {
-      const newMin = dayjs(startTime).subtract(frequency * MAX_WINDOWS_COUNT, 'second').toDate();
-      const newMax = dayjs(startTime).add(frequency * MAX_WINDOWS_COUNT, 'second').toDate();
-      
+      const newMin = dayjs(startTime)
+        .subtract(frequency * MAX_WINDOWS_COUNT, 'second')
+        .toDate();
+
+      const newMax = dayjs(startTime)
+        .add(frequency * MAX_WINDOWS_COUNT, 'second')
+        .toDate();
+
       if (model.start_time) {
         const modelStart = dayjs.unix(model.start_time).toDate();
+
         if (modelStart > newMin) {
           setMinDate(modelStart);
         } else {
@@ -92,6 +108,7 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
       }
       if (model.latest_time) {
         const modelEnd = dayjs.unix(model.latest_time + frequencyValues.DAY).toDate();
+
         if (modelEnd < newMax) {
           setMaxDate(modelEnd);
         } else {
@@ -132,14 +149,20 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
           </CustomStyledSelect>
         </>
       )}
-
       <StyledDivider orientation="vertical" flexItem sx={{ marginRight: '29px' }} />
-
-      <SwitchButton
-        checked={compareWithPreviousPeriod}
-        setChecked={setCompareWithPreviousPeriod}
-        label="Compare data with previous period"
-      />
+      <Box display="flex" flexDirection="column" gap="8px">
+        <SwitchButton
+          checked={compareWithPreviousPeriod}
+          setChecked={setCompareWithPreviousPeriod}
+          label="Compare with previous period"
+        />
+        {/* <SwitchButton
+          checked={compareByReference}
+          setChecked={setCompareByReference}
+          label="Compare by reference"
+          sx={{ marginRight: 'auto' }}
+            /> */}
+      </Box>
     </>
   );
 };
