@@ -4,14 +4,14 @@ import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 
 import { updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut } from 'api/generated';
 
-import logger from 'helpers/services/logger';
-
 import { BillingText } from '../Billing.styles';
 import { FlexContainer } from 'components/base/Container/Container.styles';
 
 import { Loader } from 'components/Loader';
 
 import { constants } from '../billing.constants';
+
+import { resError } from 'helpers/types/resError';
 
 interface BillingPlanCardDialogProps {
   isDialogOpen: boolean;
@@ -37,18 +37,18 @@ const BillingPlanCardDialog = (props: BillingPlanCardDialogProps) => {
   const handleSubmit = async () => {
     setLoading(true);
 
-    try {
-      await updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut(subscriptionId, {
-        price_id: priceId,
-        quantity: quantity
-      });
+    const response = await updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut(subscriptionId, {
+      price_id: priceId,
+      quantity: quantity
+    });
 
-      window.location.reload();
-    } catch (err) {
-      setErrorMsg(constants.firstBilling.errorMassageContent);
-      setLoading(false);
-
-      logger.error(err);
+    if (response) {
+      if ((response as unknown as resError).error_message) {
+        setErrorMsg(constants.firstBilling.errorMassageContent);
+        setLoading(false);
+      } else if (response.client_secret) {
+        window.location.reload();
+      }
     }
   };
 

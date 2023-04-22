@@ -80,16 +80,6 @@ class KafkaSettings(BaseDeepchecksSettings):
             'metadata_max_age_ms': self.kafka_max_metadata_age
         }
 
-    @property
-    def kafka_admin_params(self):
-        """Get connection parameters for kafka admin."""
-        return {
-            'bootstrap_servers': self.kafka_host,
-            'security_protocol': self.kafka_security_protocol,
-            'ssl_context': create_ssl_context(),
-            'metadata_max_age_ms': self.kafka_max_metadata_age
-        }
-
 
 def get_postgres_uri(postgres_secret_name, amazon_region_name) -> str:
     """Get postgres uri from AWS secrets manager."""

@@ -26,6 +26,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
   const { ActiveIcon, Icon, IconHover, link } = info;
   const active = location?.pathname.startsWith(link);
   const activeHover = hover && !active;
+  const LinkWithParams = `${link}${window.location.search ?? ''}`;
 
   const toggleSubMenu = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
@@ -195,7 +196,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
       ) : (
         <StyledLinkWrapper
           onClick={e => goToLink(e, link)}
-          to={link}
+          to={LinkWithParams}
           active={active}
           onMouseLeave={onMouseLeave}
           onMouseOver={onMouseOver}

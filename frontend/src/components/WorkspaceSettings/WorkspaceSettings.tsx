@@ -13,6 +13,7 @@ import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
 import { StyledH1 } from 'components/base/Text/Header.styles';
 
 import useConfig from 'helpers/hooks/useConfig';
+import { resError } from 'helpers/types/resError';
 
 const constants = {
   title: 'Workspace Settings',
@@ -25,12 +26,19 @@ const WorkspaceSettings = () => {
   const [memberSettings, setMemberSettings] = useState<MemberSchema[]>();
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAdmin = memberSettings && memberSettings[0].is_admin;
+  const isAdmin = memberSettings && memberSettings[0]?.is_admin;
 
   const getMemberSettings = async () => {
     const response = await retrieveOrganizationMembersApiV1OrganizationMembersGet();
-    setMemberSettings(response);
-    setIsLoading(false);
+
+    if (response) {
+      if ((response as unknown as resError).error_message) {
+        setIsLoading(false);
+      } else {
+        setMemberSettings(response);
+        setIsLoading(false);
+      }
+    }
   };
 
   const { is_cloud } = useConfig();

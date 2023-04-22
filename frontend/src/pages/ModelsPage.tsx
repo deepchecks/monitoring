@@ -29,7 +29,7 @@ import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButt
 
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
 import useModels from '../helpers/hooks/useModels';
-import { getParams, setParams } from 'helpers/utils/getParams';
+import { getParams, handleSetParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { resError } from 'helpers/types/resError';
 
@@ -170,7 +170,7 @@ export const ModelsPage = () => {
     setModelsList(models);
     setFilteredAndSortedModelsList(models);
     setSearchValue(null);
-    setParams('modelId');
+    handleSetParams('modelId');
     setSearchInputValue('');
     setSort('');
   };
@@ -179,9 +179,9 @@ export const ModelsPage = () => {
     setSearchValue(newValue);
     const model = models?.filter(val => val.name == newValue)?.[0];
     if (model) {
-      setParams('modelId', model.id);
+      handleSetParams('modelId', model.id);
     } else {
-      setParams('modelId');
+      handleSetParams('modelId');
     }
   };
 

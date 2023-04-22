@@ -31,6 +31,7 @@ monitoring key performance indicators (KPIs) 📊, and alerting when anomalies a
 
 
 ### Deepchecks Open-source deployment
+
 Deploy a hobby instance in one line on Linux/MacOS (Windows is WIP!) with Docker:
 
 ```
@@ -42,6 +43,7 @@ Installing our open-source service is an excellent way to test the service local
 real-time production usage.
 
 ## Configuration ⚙️
+
 The DeepChecks Monitoring application can be configured by environment variables. 
 The configuration file .env contains settings for the data sources, models, and KPIs that should be monitored.
 
@@ -62,7 +64,9 @@ The application has the following folder structure:
 
 Visit the README of each folder to understand more about their structure.
 
+## Open Source vs Paid 📜
 
+Deepchecks Monitoring open source installation is released under the AGPL 3.0. Please note there is a folder that is not used by default (see [backend/deepchecks_monitoring/ee](backend/deepchecks_monitoring/ee)) that is subject to a commercial license (see the license [here](https://deepchecks.com/terms-and-conditions)) and is packaged as part of the repository simply to support upgrading to the commercial edition without downtime.
 
-## License 📜
-DeepChecks Monitoring is released under the AGPL 3.0 license, except for the ee/ folder in the frontend and backend directories which are under a commercial license. See the LICENSE file for more details.
+Using premium features (contained in the `backend/deepchecks_monitoring/ee` directory) with a self-hosted instance requires a Deepchecks license. To learn more, [book a demo](https://deepchecks.com/book-demo/) or see our [pricing page](https://deepchecks.com/pricing).
+

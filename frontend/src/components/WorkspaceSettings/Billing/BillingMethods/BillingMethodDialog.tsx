@@ -3,6 +3,7 @@ import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { StripeCardElement } from '@stripe/stripe-js';
 
 import { updatePaymentMethodApiV1BillingPaymentMethodPost } from 'api/generated';
+
 import logger from 'helpers/services/logger';
 
 import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
@@ -41,10 +42,12 @@ const BillingMethodDialog = ({ isDialogOpen, handleCloseDialog }: BillingMethodD
 
     if (paymentMethod.error) {
       setErrorMessage(paymentMethod.error.message as string);
+
       logger.error(paymentMethod.error);
     } else {
       updatePaymentMethodApiV1BillingPaymentMethodPost({ payment_method_id: paymentMethod.paymentMethod.id });
-      handleCloseDialog();
+
+      window.location.reload();
     }
   };
 
