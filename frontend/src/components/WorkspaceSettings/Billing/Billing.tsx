@@ -21,7 +21,7 @@ const Billing = () => {
       if ((response as unknown as resError).error_message) {
         setIsLoading(false);
       } else {
-        response && setSubscriptions([...response]);
+        setSubscriptions([...response]);
         setIsLoading(false);
       }
     }
