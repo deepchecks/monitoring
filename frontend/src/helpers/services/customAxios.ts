@@ -8,12 +8,10 @@ export const AXIOS_INSTANCE = Axios.create({ baseURL: process.env.REACT_APP_BASE
 
 AXIOS_INSTANCE.defaults.paramsSerializer = params => qs.stringify(params, { arrayFormat: 'repeat' });
 
-// Adding an axios interceptor that will handle unauthorized users & users with incomplete details:
 AXIOS_INSTANCE.interceptors.response.use(
   response => response,
   error => {
     const { response } = error;
-    const logErr = () => error && logger.error('Error occurred in Axios -', error);
 
     if (response) {
       if (response.status === 401) {
@@ -30,13 +28,13 @@ AXIOS_INSTANCE.interceptors.response.use(
       } else if (response.status === 451 && window.location.pathname !== '/license-agreement') {
         window.location.href = '/license-agreement';
       } else {
-        logErr();
+        logger.warn('Error from client on axios request', response); // 400...
 
         return response;
       }
     }
 
-    return logErr();
+    return logger.error('Server error from client on axios request', error); // 500...
   }
 );
 
