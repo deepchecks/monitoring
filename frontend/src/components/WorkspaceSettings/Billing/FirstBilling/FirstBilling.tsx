@@ -28,6 +28,10 @@ const FirstBilling = () => {
     default_price: ''
   });
 
+  const storageVars = localStorage.getItem('environment');
+  const parsedVars = storageVars && JSON.parse(storageVars);
+  const stripeApiKey = parsedVars && parsedVars?.stripeApiKey;
+
   const getProductDetails = async () => {
     const res = (await listAllProductsApiV1BillingAvailableProductsGet()) as ProductsResponseType[];
     setProduct(res[0]);
@@ -42,6 +46,10 @@ const FirstBilling = () => {
         setErrorMassage(constants.firstBilling.errorMassageContent);
       } else {
         setClientSecret(response.client_secret);
+
+        if (!stripeApiKey || !clientSecret) {
+          setErrorMassage(constants.firstBilling.errorMassageContent);
+        }
       }
     }
   };
@@ -50,12 +58,18 @@ const FirstBilling = () => {
     getProductDetails();
   }, []);
 
+  useEffect(() => {
+    if (stripeApiKey && clientSecret) {
+      setErrorMassage('');
+    }
+  }, [stripeApiKey, clientSecret]);
+
   return (
     <FirstBillingContainer>
       <BillingPlanCard handleUpgradeClick={handleUpgradeClick} productQuantity={1} />
       <BillingText color="red">{errorMassage}</BillingText>
-      {clientSecret && (
-        <BillingPaymentWrapper clientSecret={clientSecret}>
+      {clientSecret && stripeApiKey && (
+        <BillingPaymentWrapper clientSecret={clientSecret} stripeApiKey={stripeApiKey}>
           <FirstBillingPayment />
         </BillingPaymentWrapper>
       )}
