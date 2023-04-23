@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import logger from 'helpers/services/logger';
+import { storageKeys } from 'helpers/utils/localStorage';
 
 import { applicationConfigurationsApiV1ConfigurationsGet } from 'api/generated';
 
@@ -34,7 +35,7 @@ const useConfig = () => {
     !initialize && void getConfiguration();
   }, []);
 
-  localStorage.setItem('environment', JSON.stringify(envVariables));
+  localStorage.setItem(storageKeys.environment, JSON.stringify(envVariables));
 
   return envVariables;
 };
