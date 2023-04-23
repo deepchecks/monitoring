@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import BillingPaymentWrapper from '../BillingPaymentWrapper';
 import BillingMethodDialog from './BillingMethodDialog';
@@ -17,32 +17,15 @@ import {
 
 import { constants } from '../billing.constants';
 
-import { getPaymentMethodApiV1BillingPaymentMethodGet } from 'api/generated';
-
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
-  const [paymentMethods, setPaymentMethods] = useState([{ card: { last4: Number(null) } }]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { stripeApiKey } = getStorageItem(storageKeys.environment);
 
-  const cardLast4 = paymentMethods && paymentMethods[0] && paymentMethods[0].card.last4;
-
   const handleOpenDialog = () => setIsDialogOpen(true);
   const handleCloseDialog = () => setIsDialogOpen(false);
-
-  const getPaymentMethods = async () => {
-    const response = await getPaymentMethodApiV1BillingPaymentMethodGet();
-
-    if (response && response[0]) {
-      setPaymentMethods(response as any[]);
-    }
-  };
-
-  useEffect(() => {
-    getPaymentMethods();
-  }, []);
 
   return (
     <BillingCardContainer border>
@@ -53,7 +36,7 @@ const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
           <Row16Gap>
             <BillingMethodImg src={creditCard} alt={constants.paymentMethod.imageAlt} />
             <BillingText color="gray" weight="600">
-              {constants.paymentMethod.last4Text(cardLast4)}
+              {constants.paymentMethod.last4Text}
             </BillingText>
           </Row16Gap>
           <BillingCardButton onClick={handleOpenDialog}>{constants.paymentMethod.buttonLabel}</BillingCardButton>
