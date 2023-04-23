@@ -59,7 +59,7 @@ async def generate_user(
             await session.commit()
             await session.refresh(u)
             await session.refresh(org)
-            await session.execute(sa.insert(Billing).values(bought_models=8, organization_id=u.organization_id))
+            await session.execute(sa.insert(Billing).values(bought_models=7, organization_id=u.organization_id))
             await session.commit()
     else:
         await session.commit()
