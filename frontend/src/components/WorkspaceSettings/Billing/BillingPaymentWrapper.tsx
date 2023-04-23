@@ -9,6 +9,7 @@ interface Props {
 
 const BillingPaymentWrapper = ({ children, clientSecret }: Props) => {
   const storageVars = localStorage.getItem('environment');
+
   const stripeApiKey = storageVars && JSON.parse(storageVars).stripeApiKey;
 
   const stripePromise = stripeApiKey && loadStripe(`${stripeApiKey}`);
