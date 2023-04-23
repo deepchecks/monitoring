@@ -15,6 +15,8 @@ import { constants } from '../billing.constants';
 
 import { resError } from 'helpers/types/resError';
 
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+
 interface ProductsResponseType {
   default_price: string;
   id: string;
@@ -28,9 +30,7 @@ const FirstBilling = () => {
     default_price: ''
   });
 
-  const storageVars = localStorage.getItem('environment');
-  const parsedVars = storageVars && JSON.parse(storageVars);
-  const stripeApiKey = parsedVars && parsedVars?.stripeApiKey;
+  const { stripeApiKey } = getStorageItem(storageKeys.environment);
 
   const getProductDetails = async () => {
     const res = (await listAllProductsApiV1BillingAvailableProductsGet()) as ProductsResponseType[];

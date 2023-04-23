@@ -19,13 +19,13 @@ import { constants } from '../billing.constants';
 
 import { getPaymentMethodApiV1BillingPaymentMethodGet } from 'api/generated';
 
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+
 const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
   const [paymentMethods, setPaymentMethods] = useState([{ card: { last4: Number(null) } }]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const storageVars = localStorage.getItem('environment');
-  const parsedVars = storageVars && JSON.parse(storageVars);
-  const stripeApiKey = parsedVars && parsedVars?.stripeApiKey;
+  const { stripeApiKey } = getStorageItem(storageKeys.environment);
 
   const cardLast4 = paymentMethods && paymentMethods[0] && paymentMethods[0].card.last4;
 

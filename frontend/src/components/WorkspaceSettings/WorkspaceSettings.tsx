@@ -12,8 +12,8 @@ import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
 
 import { StyledH1 } from 'components/base/Text/Header.styles';
 
-import useConfig from 'helpers/hooks/useConfig';
 import { resError } from 'helpers/types/resError';
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 const constants = {
   title: 'Workspace Settings',
@@ -41,7 +41,7 @@ const WorkspaceSettings = () => {
     }
   };
 
-  const { is_cloud } = useConfig();
+  const { is_cloud } = getStorageItem(storageKeys.environment);
 
   useEffect(() => void getMemberSettings(), []);
 
