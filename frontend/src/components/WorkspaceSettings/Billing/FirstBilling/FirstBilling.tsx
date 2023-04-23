@@ -14,6 +14,7 @@ import { BillingText, FirstBillingContainer } from '../Billing.styles';
 import { constants } from '../billing.constants';
 
 import { resError } from 'helpers/types/resError';
+import { storageKeys } from 'helpers/utils/localStorage';
 
 interface ProductsResponseType {
   default_price: string;
@@ -28,7 +29,7 @@ const FirstBilling = () => {
     default_price: ''
   });
 
-  const storageVars = localStorage.getItem('environment');
+  const storageVars = localStorage.getItem(storageKeys.environment);
   const parsedVars = storageVars && JSON.parse(storageVars);
   const stripeApiKey = parsedVars && parsedVars?.stripeApiKey;
 

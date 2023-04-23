@@ -46,7 +46,7 @@ const AnalysisItem = ({
   const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
   const [isMostWorstActive, setIsMostWorstActive] = useState(false);
   const [runLookBack, setRunLookBack] = useState(false);
-  const [alertRules, setAlertRules] = useState([]);
+  const [reference, setReference] = useState([]);
 
   const checkConf = useMemo(() => checkInfo && checkInfo.check_conf, [checkInfo?.check_conf]);
   const additionalKwargs = useMemo(() => {
@@ -81,7 +81,7 @@ const AnalysisItem = ({
   }, [check.id, refetch]);
 
   useEffect(() => {
-    getReference({ check, compareByReference, additionalKwargs, setAlertRules });
+    getReference({ check, compareByReference, additionalKwargs, setReference });
   }, [compareByReference]);
 
   useEffect(() => {
@@ -133,7 +133,7 @@ const AnalysisItem = ({
     previousPeriodLabels: perviousPeriodLabels,
     analysis: true,
     height: { lg: graphHeight - 104, xl: graphHeight },
-    alert_rules: alertRules
+    alert_rules: reference
   };
 
   const chartItemProps = {
