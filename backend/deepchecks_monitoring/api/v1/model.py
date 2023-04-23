@@ -177,8 +177,8 @@ async def get_create_model(
                     raise PaymentRequired("Adding more than 1 model requires to set up a subscription. "
                                           f"Set up through {resources_provider.settings.deployment_url}"
                                           f"/workspace-settings")
-                if allowed_models < model_count:
-                    raise PaymentRequired(f"Subscription currently configured for {allowed_models} models. "
+                if allowed_models - 1 < model_count:
+                    raise PaymentRequired(f"Subscription currently configured for {allowed_models - 1} models. "
                                           f"Current model amount is {model_count}. "
                                           "please update your subscription if you wish to add more models. "
                                           f"Update through {resources_provider.settings.deployment_url}"
