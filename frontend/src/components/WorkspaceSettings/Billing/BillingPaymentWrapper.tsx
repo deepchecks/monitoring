@@ -5,13 +5,10 @@ import { loadStripe } from '@stripe/stripe-js';
 interface Props {
   children: ReactNode | ReactNode[];
   clientSecret?: string;
+  stripeApiKey?: any;
 }
 
-const BillingPaymentWrapper = ({ children, clientSecret }: Props) => {
-  const storageVars = localStorage.getItem('environment');
-
-  const stripeApiKey = storageVars && JSON.parse(storageVars).stripeApiKey;
-
+const BillingPaymentWrapper = ({ children, clientSecret, stripeApiKey }: Props) => {
   const stripePromise = stripeApiKey && loadStripe(`${stripeApiKey}`);
 
   if (!stripeApiKey) {
