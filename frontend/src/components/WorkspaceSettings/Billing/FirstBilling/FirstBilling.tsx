@@ -42,10 +42,10 @@ const FirstBilling = () => {
     const response = (await createSubscriptionApiV1BillingSubscriptionPost(payload)) as { client_secret: string };
 
     if (response) {
-      if (response && (response as unknown as resError).error_message) {
+      if (response && (response as unknown as resError)?.error_message) {
         setErrorMassage(constants.firstBilling.errorMassageContent);
       } else {
-        setClientSecret(response.client_secret);
+        setClientSecret(response?.client_secret);
 
         if (!stripeApiKey || !clientSecret) {
           setErrorMassage(constants.firstBilling.errorMassageContent);

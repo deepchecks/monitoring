@@ -26,7 +26,7 @@ const BillingHistory = () => {
       if (response[0]) {
         setTransactions([...response]);
         setLoading(false);
-      } else if ((response as unknown as resError).error_message) {
+      } else if ((response as unknown as resError)?.error_message) {
         setLoading(false);
       }
     }
