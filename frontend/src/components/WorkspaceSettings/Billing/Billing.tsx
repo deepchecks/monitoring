@@ -14,6 +14,9 @@ const Billing = () => {
   const [subscriptions, setSubscriptions] = useState<Subscriptions[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const subStatuses = subscriptions && subscriptions?.map((sub: Subscriptions) => sub?.status);
+  const isPaid = subStatuses && subStatuses?.includes('active');
+
   const getSubscription = async () => {
     const response = (await getSubscriptionsApiV1BillingSubscriptionGet()) as Subscriptions[];
 
@@ -30,8 +33,6 @@ const Billing = () => {
   useEffect(() => {
     getSubscription();
   }, []);
-
-  const isPaid = subscriptions.length > 0 && subscriptions[0]?.status === 'active';
 
   if (isLoading) {
     return <BillingPaidSkeleton />;

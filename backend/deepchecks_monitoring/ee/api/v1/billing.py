@@ -257,7 +257,7 @@ def update_subscription(
             items=[{
                 "id": subscription["items"]["data"][0].id,
                 "price": body.price_id,
-                "quantity": body.quantity
+                "quantity": body.quantity - 1
             }],
             expand=["latest_invoice.payment_intent"]
         )
