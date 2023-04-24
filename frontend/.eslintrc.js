@@ -55,9 +55,8 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['warn'],
     'react/react-in-jsx-scope': ['warn'],
     'react-hooks/exhaustive-deps': 0,
-    '@typescript-eslint/no-explicit-any': 0, // Todo - remove all any types from the code and than remove this line!
-    '@typescript-eslint/no-var-requires': 0,
-    'arrow-body-style': 0
+    '@typescript-eslint/no-explicit-any': 0,
+    '@typescript-eslint/no-var-requires': 0
   },
 
   ignorePatterns: ['generated.ts']
