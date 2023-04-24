@@ -13,9 +13,9 @@ jobs:
         uses: wei/git-sync@v3
         with:
           source_repo: 'https://${{ secrets.DEEPCHECKS_CI_TOKEN }}@github.com/deepchecks/monitoring.git'
-          source_branch: 'master'
+          source_branch: 'main'
           destination_repo: 'https://${{ secrets.DEEPCHECKS_CI_TOKEN }}@github.com/deepchecks/monitoring-oss.git'
-          destination_branch: 'master'
+          destination_branch: 'main'
       - name: Sync repositories 1 to 1 – tags
         uses: wei/git-sync@v3
         with:
