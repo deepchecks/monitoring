@@ -14,7 +14,7 @@ const BillingPaidView = ({ subscriptions }: { subscriptions: Subscriptions[] }) 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogQuantity, setDialogQuantity] = useState(1);
 
-  const productQuantity = Number(subscriptions[0].quantity);
+  const productQuantity = Number(subscriptions[0].quantity) + 1;
   const subscriptionId = subscriptions[0].id;
   const priceId = subscriptions[0].items.data[0].price.id;
   const clientSecret = subscriptions[0].latest_invoice.payment_intent.client_secret;

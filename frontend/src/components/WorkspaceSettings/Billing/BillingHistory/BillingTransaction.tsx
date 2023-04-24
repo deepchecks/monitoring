@@ -22,10 +22,11 @@ const BillingTransaction = (props: BillingTransactionProps) => {
   const bg = index % 2 !== 0 ? `${theme.palette.grey[100]}` : `${theme.palette.common.white}`;
   const activeColor = paid ? `${theme.palette.success.main}` : 'gray';
   const paidText = paid ? 'PAID' : 'INCOMPLETE';
+  const modelsNumber = models && models + 1;
 
   return (
     <BillingTransactionContainer bg={bg}>
-      <BillingText width="25%">{models}</BillingText>
+      <BillingText width="25%">{modelsNumber}</BillingText>
       <BillingText width="25%">{plan}</BillingText>
       <BillingText color={activeColor} weight={'600'} width="25%">
         {paidText}

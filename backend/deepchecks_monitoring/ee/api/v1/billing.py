@@ -211,7 +211,7 @@ async def create_subscription(
             items=[
                 {
                     "price": body.price_id,
-                    "quantity": body.quantity
+                    "quantity": body.quantity - 1
                 }
             ],
             payment_behavior="default_incomplete",

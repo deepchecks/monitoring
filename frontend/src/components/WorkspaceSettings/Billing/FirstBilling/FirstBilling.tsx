@@ -14,6 +14,7 @@ import { BillingText, FirstBillingContainer } from '../Billing.styles';
 import { constants } from '../billing.constants';
 
 import { resError } from 'helpers/types/resError';
+import { storageKeys } from 'helpers/utils/localStorage';
 
 interface ProductsResponseType {
   default_price: string;
@@ -27,6 +28,10 @@ const FirstBilling = () => {
   const [product, setProduct] = useState({
     default_price: ''
   });
+
+  const storageVars = localStorage.getItem(storageKeys.environment);
+  const parsedVars = storageVars && JSON.parse(storageVars);
+  const stripeApiKey = parsedVars && parsedVars?.stripeApiKey;
 
   const getProductDetails = async () => {
     const res = (await listAllProductsApiV1BillingAvailableProductsGet()) as ProductsResponseType[];
@@ -42,6 +47,10 @@ const FirstBilling = () => {
         setErrorMassage(constants.firstBilling.errorMassageContent);
       } else {
         setClientSecret(response.client_secret);
+
+        if (!stripeApiKey || !clientSecret) {
+          setErrorMassage(constants.firstBilling.errorMassageContent);
+        }
       }
     }
   };
@@ -50,12 +59,18 @@ const FirstBilling = () => {
     getProductDetails();
   }, []);
 
+  useEffect(() => {
+    if (stripeApiKey && clientSecret) {
+      setErrorMassage('');
+    }
+  }, [stripeApiKey, clientSecret]);
+
   return (
     <FirstBillingContainer>
       <BillingPlanCard handleUpgradeClick={handleUpgradeClick} productQuantity={1} />
       <BillingText color="red">{errorMassage}</BillingText>
-      {clientSecret && (
-        <BillingPaymentWrapper clientSecret={clientSecret}>
+      {clientSecret && stripeApiKey && (
+        <BillingPaymentWrapper clientSecret={clientSecret} stripeApiKey={stripeApiKey}>
           <FirstBillingPayment />
         </BillingPaymentWrapper>
       )}

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 
 import logger from 'helpers/services/logger';
+import { storageKeys } from 'helpers/utils/localStorage';
 
 import { applicationConfigurationsApiV1ConfigurationsGet } from 'api/generated';
 
 const initialVars = {
   sentryDsn: `${process.env.REACT_APP_SENTRY_DSN}`,
-  stripeApiKey: `${process.env.REACT_APP_STRIPE_KEY}`,
+  // stripeApiKey: `${process.env.REACT_APP_STRIPE_KEY}`,
   environment: `${process.env.REACT_APP_BASE_API}`,
   mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`,
   sentryEnv: `${process.env.REACT_APP_SENTRY_ENV}`,
@@ -33,6 +34,8 @@ const useConfig = () => {
   useEffect(() => {
     !initialize && void getConfiguration();
   }, []);
+
+  localStorage.setItem(storageKeys.environment, JSON.stringify(envVariables));
 
   return envVariables;
 };
