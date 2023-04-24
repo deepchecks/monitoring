@@ -157,8 +157,8 @@ class SlackAlertNotification(BaseSlackNotification):
         self.check_config = t.cast(CheckConfig, self.check.config)
         self.model = t.cast(Model, self.check.model)
 
-        self.alert_link = (furl(deepchecks_host) / "alert-rules").add({
-            "models": self.model.id,
+        self.alert_link = (furl(deepchecks_host) / "alerts").add({
+            "modelId": self.model.id,
             "severity": self.rule.alert_severity.value
         })
         self.monitor_config = t.cast(
@@ -215,11 +215,13 @@ class SlackAlertNotification(BaseSlackNotification):
 
     def prepare_check_result_status_section(self) -> t.Dict[str, t.Any]:
         """Prepare the check result section."""
+        # Take first failed value (can be failed values for multiple versions)
+        fail_value = list(self.alert.failed_values.values())[0]
         return {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"{self.check.name}={{Value}}"  # TODO:
+                "text": f"{self.check.name}={fail_value}"
             },
             "accessory": {
                 "type": "button",
