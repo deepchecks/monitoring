@@ -14,7 +14,8 @@ import { BillingText, FirstBillingContainer } from '../Billing.styles';
 import { constants } from '../billing.constants';
 
 import { resError } from 'helpers/types/resError';
-import { storageKeys } from 'helpers/utils/localStorage';
+
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 interface ProductsResponseType {
   default_price: string;
@@ -29,9 +30,7 @@ const FirstBilling = () => {
     default_price: ''
   });
 
-  const storageVars = localStorage.getItem(storageKeys.environment);
-  const parsedVars = storageVars && JSON.parse(storageVars);
-  const stripeApiKey = parsedVars && parsedVars?.stripeApiKey;
+  const { stripeApiKey } = getStorageItem(storageKeys.environment);
 
   const getProductDetails = async () => {
     const res = (await listAllProductsApiV1BillingAvailableProductsGet()) as ProductsResponseType[];
@@ -43,10 +42,10 @@ const FirstBilling = () => {
     const response = (await createSubscriptionApiV1BillingSubscriptionPost(payload)) as { client_secret: string };
 
     if (response) {
-      if (response && (response as unknown as resError).error_message) {
+      if (response && (response as unknown as resError)?.error_message) {
         setErrorMassage(constants.firstBilling.errorMassageContent);
       } else {
-        setClientSecret(response.client_secret);
+        setClientSecret(response?.client_secret);
 
         if (!stripeApiKey || !clientSecret) {
           setErrorMassage(constants.firstBilling.errorMassageContent);

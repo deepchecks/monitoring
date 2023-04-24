@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 
 import { useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from 'react-router-dom';
 
@@ -13,45 +13,45 @@ import { BrowserTracing } from '@sentry/tracing';
 import useConfig from '../hooks/useConfig';
 
 const InitializationProvider = ({ children }: { children: ReactNode | ReactNode[] }) => {
-  const envVariables = useConfig() as { [key: string]: string };
+  const { hotjar_sv, hotjar_id, sentryDsn, enviroment, mixpanel_id } = useConfig() as { [key: string]: string };
 
-  if (envVariables) {
-    // Sentry
-    Sentry.init({
-      dsn: envVariables.sentryDsn,
-      integrations: [
-        new BrowserTracing({
-          routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-            React.useEffect,
-            useLocation,
-            useNavigationType,
-            createRoutesFromChildren,
-            matchRoutes
-          )
-        }),
-        new CaptureConsole({
-          levels: ['warn', 'error', 'info']
-        })
-      ],
-      tracesSampleRate: 1,
-      environment: envVariables.enviroment,
-      denyUrls: [new RegExp('https?://localhost*'), new RegExp('https?://127.0.0.1*')]
-    });
+  // HotJar
+  const hotJarId = Number(hotjar_sv);
+  const hotJarSv = Number(hotjar_id);
 
-    // HotJar
-    const hotJarId = Number(envVariables.hotjar_sv);
-    const hotJarSv = Number(envVariables.hotjar_id);
-
+  useEffect(() => {
     if (hotJarSv && hotJarId) {
       hotjar.initialize(+hotJarId, +hotJarSv);
     }
+  }, [hotJarId, hotJarSv]);
 
-    // MixPanel
-    const mixpanelId = envVariables.mixpanel_id;
+  // Sentry
+  Sentry.init({
+    dsn: sentryDsn,
+    integrations: [
+      new BrowserTracing({
+        routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+          React.useEffect,
+          useLocation,
+          useNavigationType,
+          createRoutesFromChildren,
+          matchRoutes
+        )
+      }),
+      new CaptureConsole({
+        levels: ['warn', 'error', 'info']
+      })
+    ],
+    tracesSampleRate: 1,
+    environment: enviroment,
+    denyUrls: [new RegExp('https?://localhost*'), new RegExp('https?://127.0.0.1*')]
+  });
 
-    if (mixpanelId) {
-      mixpanel.init(mixpanelId, { ignore_dnt: true });
-    }
+  // MixPanel
+  const mixpanelId = mixpanel_id;
+
+  if (mixpanelId) {
+    mixpanel.init(mixpanelId, { ignore_dnt: true });
   }
 
   return <>{children}</>;
