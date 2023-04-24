@@ -39,7 +39,7 @@ const BillingPlanCardDialog = (props: BillingPlanCardDialogProps) => {
 
     const response = await updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut(subscriptionId, {
       price_id: priceId,
-      quantity: quantity
+      quantity: quantity - 1
     });
 
     if (response) {
