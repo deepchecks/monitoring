@@ -4,11 +4,9 @@ import { DialogProps } from '@mui/material';
 
 import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
 
-import { Row16Gap, RowAutoGap } from '../../Container/Container.styles';
-import { StyledDialog, StyledDialogCloseIconButton } from './ActionDialog.styles';
-import { StyledH2 } from 'components/base/Text/Header.styles';
-
-import { CloseIcon } from 'assets/icon/icon';
+import { ActionDialogHeader } from './ActionDialogHeader';
+import { Row16Gap } from '../../Container/Container.styles';
+import { StyledDialog } from './ActionDialog.styles';
 
 export interface ActionDialogProps extends DialogProps {
   open: boolean;
@@ -38,12 +36,7 @@ const ActionDialog = (props: ActionDialogProps) => {
 
   return (
     <StyledDialog open={open} onClose={closeDialog} {...otherProps}>
-      <RowAutoGap>
-        <StyledH2>{title}</StyledH2>
-        <StyledDialogCloseIconButton onClick={closeDialog}>
-          <CloseIcon />
-        </StyledDialogCloseIconButton>
-      </RowAutoGap>
+      <ActionDialogHeader title={title} onClose={closeDialog} />
       {children}
       <Row16Gap>
         <MUIBaseButton

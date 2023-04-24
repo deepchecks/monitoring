@@ -1,4 +1,5 @@
-import { Dialog, DialogProps } from '@mui/material';
+import React, { useContext, useEffect } from 'react';
+
 import {
   AlertRuleConfigSchema,
   useCreateAlertRuleApiV1MonitorsMonitorIdAlertRulesPost,
@@ -8,11 +9,14 @@ import {
   useUpdateAlertApiV1AlertRulesAlertRuleIdPut,
   useUpdateMonitorApiV1MonitorsMonitorIdPut
 } from 'api/generated';
-import { Loader } from 'components/Loader';
-import React, { useContext, useEffect } from 'react';
+
 import { AlertRuleDialogContent } from './AlertRuleDialogContent';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';
-import { DialogTopBar } from './DialogTopBar';
+
+import { Dialog, DialogProps } from '@mui/material';
+
+import { ActionDialogHeader } from 'components/base/Dialog/ActionDialog/ActionDialogHeader';
+import { Loader } from 'components/Loader';
 
 interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
   alertRuleId?: AlertRuleConfigSchema['id'];
@@ -21,11 +25,14 @@ interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
 }
 
 export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...props }: AlertRuleDialogProps) => {
+  const { setAlertRule, setMonitor, resetState, monitor, alertRule } = useContext(AlertRuleDialogContext);
+
   const { data: fetchedAlertRule, isLoading: isAlertRuleLoading } =
     useGetAlertRuleApiV1AlertRulesAlertRuleIdGet(alertRuleId);
   const { data: fetchedMonitor, isLoading: isMonitorLoading } = useGetMonitorApiV1MonitorsMonitorIdGet(
     fetchedAlertRule?.monitor_id || 0
   );
+
   const { mutateAsync: createMonitor, isLoading: isCreateMonitorLoading } =
     useCreateMonitorApiV1ChecksCheckIdMonitorsPost();
   const { mutateAsync: createAlertRule, isLoading: isCreateAlertRuleLoading } =
@@ -34,16 +41,14 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
   const { mutateAsync: updateMonitor, isLoading: isUpdateMonitorLoading } = useUpdateMonitorApiV1MonitorsMonitorIdPut();
   const { mutateAsync: updateAlertRule, isLoading: isUpdateAlertRuleLoading } =
     useUpdateAlertApiV1AlertRulesAlertRuleIdPut();
-  const { setAlertRule, setMonitor, resetState, monitor, alertRule } = useContext(AlertRuleDialogContext);
 
   useEffect(() => {
-    if (fetchedAlertRule) {
-      setAlertRule(fetchedAlertRule);
-    }
-    if (fetchedMonitor) {
-      setMonitor(fetchedMonitor);
-    }
-  }, [fetchedAlertRule, fetchedMonitor, setAlertRule, setMonitor]);
+    if (fetchedAlertRule) setAlertRule(fetchedAlertRule);
+  }, [fetchedAlertRule, setAlertRule]);
+
+  useEffect(() => {
+    if (fetchedMonitor) setMonitor(fetchedMonitor);
+  }, [fetchedMonitor, setMonitor]);
 
   const handleClose = () => {
     onClose(false);
@@ -51,7 +56,6 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
   };
 
   const handleComplete = async () => {
-    // Edit mode
     if (alertRuleId !== 0) {
       const { id: monitorId, ...editedMonitor } = monitor;
 
@@ -59,15 +63,11 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
         updateMonitor({ monitorId, data: editedMonitor }),
         updateAlertRule({ alertRuleId, data: alertRule })
       ]);
-
-      // trackAddEditRuleSavedSuccessfully(monitor);
     } else {
       const { check, ...addedMonitor } = monitor;
       const { id: monitorId } = await createMonitor({ checkId: check.id, data: addedMonitor });
 
       await createAlertRule({ monitorId, data: alertRule });
-
-      // trackAddEditRuleSavedSuccessfully(monitor);
     }
 
     onClose(true);
@@ -80,20 +80,21 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
     isCreateAlertRuleLoading ||
     isUpdateMonitorLoading ||
     isUpdateAlertRuleLoading;
+
   return (
     <Dialog
-      fullWidth={true}
-      maxWidth={false}
-      // TransitionComponent={Transition}
-      onClose={() => handleClose()}
+      onClose={handleClose}
+      sx={{ '& .MuiDialog-paper': { width: '603px', padding: '40px 32px', borderRadius: '20px' } }}
       {...props}
-      sx={{ '& .MuiDialog-paper': { p: '0 40px' } }}
     >
       {isLoading ? (
         <Loader />
       ) : (
         <>
-          <DialogTopBar handleClose={handleClose} />
+          <ActionDialogHeader
+            title={monitor?.name ? `Edit Alert Rule: ${monitor?.name}` : 'Create New Alert Rule'}
+            onClose={handleClose}
+          />
           <AlertRuleDialogContent startingStep={startingStep} handleComplete={handleComplete} />
         </>
       )}

@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Box, Button, Stack } from '@mui/material';
-import Divider from '@mui/material/Divider';
 import { ChartData } from 'chart.js';
 import dayjs from 'dayjs';
+
+import { Box, Stack } from '@mui/material';
 
 import {
   MonitorOptions,
@@ -10,8 +10,11 @@ import {
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from 'api/generated';
 
+import { AlertRuleDialogContext } from './AlertRuleDialogContext';
+
 import { SelectCondition } from 'components/Dashboard/MonitorDrawer/components/CreateAlertForm/SelectCondition';
 import { MonitorDrawerGraph } from 'components/Dashboard/MonitorDrawer/components/MonitorDrawerGraph';
+import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { GraphData } from 'helpers/types';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
@@ -19,15 +22,14 @@ import useModels from 'helpers/hooks/useModels';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
-import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 
-export const AlertRuleDialogStepThree = ({ handleNext, handleBack }: AlertRuleStepBaseProps) => {
+export const AlertRuleDialogStepThree = ({ handleNext, handleBack, activeStep }: AlertRuleStepBaseProps) => {
   const { monitor, alertRule, setAlertRule } = useContext(AlertRuleDialogContext);
+  const { modelsMap } = useModels();
 
   const [numericValue, setNumericValue] = useState<string | number>(alertRule.condition.value || 0);
   const [operator, setOperator] = useState<OperatorsEnum | ''>(alertRule.condition.operator);
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
-  const { modelsMap } = useModels();
 
   useEffect(() => {
     setOperator(alertRule.condition.operator);
@@ -77,34 +79,30 @@ export const AlertRuleDialogStepThree = ({ handleNext, handleBack }: AlertRuleSt
     setAlertRule(alertRule);
     handleNext();
   };
+
   return (
-    <Box component="form" sx={{ mt: 5, mb: 5 }}>
-      <Box sx={{ width: '100%' }}>
-        <Stack direction="row" alignItems="center" gap={{ xs: '100px', xl: '155px' }} justifyContent="center">
-          <Box width={0.3} marginTop="25px">
-            <SelectCondition
-              operator={operator}
-              setOperator={setOperator}
-              value={+numericValue}
-              setValue={setNumericValue}
-            />
-            <Box sx={{ width: '100%', textAlign: 'end', mt: '60px' }}>
-              <Button onClick={handleBack} sx={{ mr: '20px' }} variant="outlined">
-                {'Back'}
-              </Button>
-              <Button onClick={finish} sx={{ mr: 0 }} disabled={!operator || numericValue === undefined}>
-                {'Save'}
-              </Button>
-            </Box>
-          </Box>
-          <Divider orientation="vertical" flexItem light />
-          <MonitorDrawerGraph
-            graphData={graphData}
-            isLoading={isRunCheckLoading}
-            timeFreq={FrequencyMap[monitor?.frequency]}
-          />
-        </Stack>
+    <Stack alignItems="center" gap={2} justifyContent="center">
+      <Box marginBottom="25px">
+        <SelectCondition
+          operator={operator}
+          setOperator={setOperator}
+          value={+numericValue}
+          setValue={setNumericValue}
+        />
       </Box>
-    </Box>
+      <Box width="536px" height="350px">
+        <MonitorDrawerGraph
+          graphData={graphData}
+          isLoading={isRunCheckLoading}
+          timeFreq={FrequencyMap[monitor?.frequency]}
+        />
+      </Box>
+      <AlertRuleDialogButtons
+        disabled={!operator || !numericValue}
+        activeStep={activeStep}
+        handleNext={finish}
+        handleBack={handleBack}
+      />
+    </Stack>
   );
 };

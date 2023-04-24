@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Box, Step, StepLabel, Stepper, styled } from '@mui/material';
 
@@ -8,79 +8,98 @@ import { AlertRuleDialogStepTwo } from './RuleDialogStepTwo';
 
 const steps = ['Basic Info', 'Monitor Data', 'Rule'];
 
+export interface AlertRuleStepBaseProps {
+  activeStep: number;
+  handleNext: () => void;
+  handleBack?: () => void;
+}
+
 interface AlertRuleDialogContentProps {
   handleComplete: () => void;
   startingStep?: number;
 }
 
-export interface AlertRuleStepBaseProps {
-  handleNext: () => void;
-  handleBack?: () => void;
-}
-
 export const AlertRuleDialogContent = ({ handleComplete, startingStep }: AlertRuleDialogContentProps) => {
-  const [activeStep, setActiveStep] = React.useState(startingStep ? startingStep : 0);
+  const [activeStep, setActiveStep] = useState(startingStep || 0);
 
   const handleNext = () => {
-    activeStep === steps.length - 1 ? handleComplete() : setActiveStep(activeStep + 1);
+    activeStep === steps.length - 1 ? handleComplete() : setActiveStep(prevActiveStep => prevActiveStep + 1);
   };
 
   const handleBack = () => setActiveStep(prevActiveStep => prevActiveStep - 1);
 
   const renderStep = () => {
+    const renderStepProps = {
+      activeStep,
+      handleNext,
+      handleBack
+    };
+
     switch (activeStep) {
       case 0:
-        return <AlertRuleDialogStepOne handleNext={handleNext} />;
+        return <AlertRuleDialogStepOne {...renderStepProps} />;
       case 1:
-        return <AlertRuleDialogStepTwo handleNext={handleNext} handleBack={handleBack} />;
+        return <AlertRuleDialogStepTwo {...renderStepProps} />;
       case 2:
-        return <AlertRuleDialogStepThree handleNext={handleNext} handleBack={handleBack} />;
+        return <AlertRuleDialogStepThree {...renderStepProps} />;
       default:
         return null;
     }
   };
+
   return (
-    <Box
-      sx={{
-        width: '100%',
-        maxWidth: '1200px',
-        ml: 'auto',
-        mr: 'auto',
-        justifyContent: 'start',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        height: '90vh'
-      }}
-    >
-      <Stepper activeStep={activeStep} sx={{ width: '440px' }}>
+    <StyledContainer>
+      <Stepper activeStep={activeStep} sx={{ width: '476px' }}>
         {steps.map(label => (
           <StyledStep key={label}>
             <StepLabel color="inherit">{label}</StepLabel>
           </StyledStep>
         ))}
       </Stepper>
-      <>
-        <Box sx={{ pt: 2, width: '100%' }}>
-          <Box>{renderStep()}</Box>
-        </Box>
-      </>
-    </Box>
+      <Box component="form" sx={{ marginTop: '50px', width: 1 }}>
+        {renderStep()}
+      </Box>
+    </StyledContainer>
   );
 };
 
+const StyledContainer = styled(Box)({
+  marginTop: '38px',
+  justifyContent: 'start',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center'
+});
+
 const StyledStep = styled(Step)(({ theme }) => ({
   '& .MuiStepIcon-root': {
-    color: '#3A474E' // circle color
+    color: theme.palette.grey.light
   },
-  '& .MuiStepLabel-root .Mui-active': {
-    color: theme.palette.primary.main // circle color (ACTIVE)
+
+  '& .MuiStepLabel-root': {
+    color: theme.palette.primary.main,
+
+    '& .Mui-active': {
+      color: theme.palette.primary.main,
+
+      '& .MuiStepIcon-text': {
+        fill: theme.palette.common.white
+      }
+    },
+
+    '& .Mui-completed': {
+      color: theme.palette.grey.light
+    },
+
+    '& .MuiStepIcon-text': {
+      fill: theme.palette.text.disabled,
+      fontSize: '14px',
+      fontWeight: 600
+    }
   },
-  '& .MuiStepLabel-root .Mui-completed': {
-    color: '#3A474E' // circle color (COMPLETED)
-  },
-  '& .MuiStepLabel-root .MuiStepIcon-text': {
-    fill: '#ffffff',
-    fontSize: '14px' // circle's number
+
+  '& .MuiStepLabel-label': {
+    color: theme.palette.text.disabled,
+    fontWeight: 600
   }
 }));
