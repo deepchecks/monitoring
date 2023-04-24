@@ -14,6 +14,7 @@ import typing as t
 import warnings
 
 import numpy as np
+from xxhash import xxh3_64
 import pandas as pd
 import pendulum as pdl
 from deepchecks.core import BaseCheck, errors
@@ -122,8 +123,9 @@ def dataframe_to_dataset_and_pred(
             df = df.rename(columns={SAMPLE_LABEL_COL: 'label'})
             dataset_params['label'] = 'label'
 
+    # TODO: add support in deepchecks for train/test without both having a datetime column
     if SAMPLE_TS_COL in df.columns:
-        dataset_params['datetime_name'] = SAMPLE_TS_COL
+        df = df.drop(SAMPLE_TS_COL, axis=1)
 
     dataset = Dataset(df, **dataset_params)
     return dataset, y_pred, y_proba
@@ -171,12 +173,13 @@ def initialize_check(check: Check, model_version, additional_kwargs=None) -> Bas
 
 
 def get_results_for_model_versions_per_window(
-        model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
+        model_versions_data: t.Dict,
         model_versions: t.List[ModelVersion],
         model: Model,
         check: t.Union[Check, t.List[Check]],
         additional_kwargs: MonitorCheckConfSchema,
         with_display: bool = False,
+        n_samples=DEFAULT_N_SAMPLES,
         parallel: bool = True,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
@@ -187,9 +190,10 @@ def get_results_for_model_versions_per_window(
     need_ref = check.is_reference_required if isinstance(check, Check) else \
         any((c.is_reference_required for c in check))
 
-    for (reference_table_dataframe, test_infos), model_version in zip(model_versions_dataframes, model_versions):
+    for model_version in model_versions:
+        data_dict = model_versions_data[model_version.id]
         # If this is a train test check then we require reference data in order to run
-        missing_reference = need_ref and (reference_table_dataframe is None or reference_table_dataframe.empty)
+        missing_reference = need_ref and data_dict['reference'].empty
 
         if isinstance(check, Check):
             dp_check = initialize_check(check, model_version, additional_kwargs)
@@ -202,7 +206,7 @@ def get_results_for_model_versions_per_window(
             dp_check = Suite('', *all_checks)
 
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference_table_dataframe,
+            data_dict['reference'],
             model_version,
             model,
             top_feat,
@@ -210,25 +214,29 @@ def get_results_for_model_versions_per_window(
         )
 
         model_results[model_version] = []
-        for curr_test_info in test_infos:
-            result = {'start': curr_test_info['start'], 'end': curr_test_info['end'], 'from_cache': False,
-                      'result': None}
+        for curr_window in data_dict['windows']:
+            start = curr_window.get('start')
+            end = curr_window.get('end')
+            result = {'start': start, 'end': end, 'from_cache': False, 'result': None}
             model_results[model_version].append(result)
             # If we already loaded result from the cache, then no need to run the check again
-            if 'result' in curr_test_info:
+            if 'result' in curr_window:
                 result['from_cache'] = True
-                result['result'] = curr_test_info['result']
-            # If the check needs reference to run, but it is missing then skip the check and put none result.
+                result['result'] = curr_window['result']
+                continue
+            # If the check needs reference to run, but it is missing then skip the check and leave none result.
+            if missing_reference:
+                continue
             # If there is no result then must have a dataframe data. If the dataframe is empty, skipping the
             # run and putting none result
-            elif missing_reference or curr_test_info['data'].empty:
+            data = get_data_for_window(data_dict['data'], start, end, n_samples)
+            if data.empty:
                 continue
-            else:
-                jobs.append(delayed(run_deepchecks)(curr_test_info['data'], model_version, model, top_feat, dp_check,
-                                                    feat_imp, with_display, reference_table_ds, reference_table_pred,
-                                                    reference_table_proba))
-                # Map index of the job to location in dict
-                result['job_index'] = len(jobs) - 1
+            jobs.append(delayed(run_deepchecks)(data, model_version, model, top_feat, dp_check,
+                                                feat_imp, with_display, reference_table_ds, reference_table_pred,
+                                                reference_table_proba))
+            # Map index of the job to location in dict
+            result['job_index'] = len(jobs) - 1
 
     if jobs:
         # Do not want to use parallel for less than 3 jobs
@@ -242,6 +250,15 @@ def get_results_for_model_versions_per_window(
                 if 'job_index' in result:
                     result['result'] = jobs[result.pop('job_index')]
     return model_results
+
+
+def get_data_for_window(df, start, end, limit):
+    """Get data for a specific window."""
+    if start and end:
+        df = df[(df[SAMPLE_TS_COL] >= start) & (df[SAMPLE_TS_COL] < end)]
+    if len(df) > limit:
+        return df.sort_values(by=SAMPLE_ID_COL, key=lambda x: xxh3_64(x).digest()).head(limit)
+    return df
 
 
 def run_deepchecks(
@@ -317,7 +334,7 @@ def run_deepchecks(
 
 
 def get_results_for_model_versions_for_reference(
-        model_versions_dataframes: t.List[t.Tuple[pd.DataFrame, t.List[t.Dict]]],
+        model_versions_dataframes: t.Dict,
         model_versions: t.List[ModelVersion],
         model: Model,
         check: Check,
@@ -327,15 +344,15 @@ def get_results_for_model_versions_for_reference(
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
     model_reduces = {}
-    # there is not test_info objects as in the run check per window because test isn't used here
-    for (reference_table_dataframe, _), model_version in zip(model_versions_dataframes, model_versions):
-        if reference_table_dataframe.empty:
+    for model_version in model_versions:
+        version_data = model_versions_dataframes[model_version.id]
+        if version_data['reference'].empty:
             model_reduces[model_version] = None
             continue
 
         reduced_outs = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference_table_dataframe,
+            version_data['reference'],
             model_version,
             model,
             top_feat,
