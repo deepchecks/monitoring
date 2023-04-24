@@ -5,7 +5,9 @@ import { SelectChangeEvent, MenuItem, SelectProps } from '@mui/material';
 import { MarkedSelect } from 'components/MarkedSelect';
 
 export type ControlledMarkedSelectSelectValues = string | number | undefined;
-export type ControlledMarkedSelectSelectValueType = (ControlledMarkedSelectSelectValues | { label: string; value: number })
+export type ControlledMarkedSelectSelectValueType =
+  | ControlledMarkedSelectSelectValues
+  | { label: string; value: number };
 export type ControlledMarkedSelectDisabledCallback = (value: ControlledMarkedSelectSelectValueType) => boolean;
 
 interface ControlledMarkedSelectProps extends SelectProps {
@@ -33,7 +35,11 @@ export const ControlledMarkedSelectComponent = ({
         const isObj = typeof value === 'object';
 
         return (
-          <MenuItem key={`${value}${index}`} value={isObj ? value.value : value} disabled={DisabledCallback !== undefined ? DisabledCallback(value) : false}>
+          <MenuItem
+            key={`${value}${index}`}
+            value={isObj ? value.value : value}
+            disabled={DisabledCallback !== undefined ? DisabledCallback(value) : false}
+          >
             {isObj ? value.label : value}
           </MenuItem>
         );

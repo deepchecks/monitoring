@@ -53,7 +53,7 @@ export const MonitorDrawer = ({
     if (graphFrequency) return +graphFrequency;
     if (monitor) return FrequencyMap[monitor?.frequency as Frequency];
     return frequencyValues.DAY;
-  }, [graphFrequency])
+  }, [graphFrequency]);
 
   const handleGraphLookBack = useCallback(
     async (checkId: SelectValues, data: MonitorOptions) => {
