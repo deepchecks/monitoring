@@ -2,15 +2,16 @@ import React, { useContext, useEffect, useState } from 'react';
 
 import { AlertSeverity } from 'api/generated';
 
-import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
-import { AlertRuleDialogContext } from './AlertRuleDialogContext';
+import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 
 import { Stack, TextField } from '@mui/material';
 
 import { SelectSeverity } from 'components/SelectSeverity';
-
-import { StyledContentContainer } from './AlertRuleDialog.styles';
 import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
+
+import { StyledContentContainer } from '../AlertRuleDialog.styles';
+
+import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 
 export const AlertRuleDialogStepOne = ({ activeStep, handleNext }: AlertRuleStepBaseProps) => {
   const { alertRule, setAlertRule, monitor, setMonitor } = useContext(AlertRuleDialogContext);

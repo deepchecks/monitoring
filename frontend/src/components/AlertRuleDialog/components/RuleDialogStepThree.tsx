@@ -10,7 +10,7 @@ import {
   useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost
 } from 'api/generated';
 
-import { AlertRuleDialogContext } from './AlertRuleDialogContext';
+import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 
 import { SelectCondition } from 'components/Dashboard/MonitorDrawer/components/CreateAlertForm/SelectCondition';
 import { MonitorDrawerGraph } from 'components/Dashboard/MonitorDrawer/components/MonitorDrawerGraph';
@@ -21,7 +21,7 @@ import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import useModels from 'helpers/hooks/useModels';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
-import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
+import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 
 export const AlertRuleDialogStepThree = ({ handleNext, handleBack, activeStep }: AlertRuleStepBaseProps) => {
   const { monitor, alertRule, setAlertRule } = useContext(AlertRuleDialogContext);

@@ -2,9 +2,9 @@ import React from 'react';
 
 import { Box } from '@mui/material';
 
-import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
+import { StyledButton } from '../AlertRuleDialog.styles';
 
-import { StyledButton } from './AlertRuleDialog.styles';
+import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 
 interface AlertRuleDialogButtonsProps extends AlertRuleStepBaseProps {
   disabled: boolean;

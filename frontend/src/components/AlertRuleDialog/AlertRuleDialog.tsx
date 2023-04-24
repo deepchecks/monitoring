@@ -10,13 +10,15 @@ import {
   useUpdateMonitorApiV1MonitorsMonitorIdPut
 } from 'api/generated';
 
-import { AlertRuleDialogContent } from './AlertRuleDialogContent';
+import { AlertRuleDialogContent } from './components/AlertRuleDialogContent';
 import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 
-import { Dialog, DialogProps } from '@mui/material';
+import { DialogProps } from '@mui/material';
 
 import { ActionDialogHeader } from 'components/base/Dialog/ActionDialog/ActionDialogHeader';
 import { Loader } from 'components/Loader';
+
+import { StyledDialog } from './AlertRuleDialog.styles';
 
 interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
   alertRuleId?: AlertRuleConfigSchema['id'];
@@ -82,11 +84,7 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
     isUpdateAlertRuleLoading;
 
   return (
-    <Dialog
-      onClose={handleClose}
-      sx={{ '& .MuiDialog-paper': { width: '603px', padding: '40px 32px', borderRadius: '20px' } }}
-      {...props}
-    >
+    <StyledDialog onClose={handleClose} {...props}>
       {isLoading ? (
         <Loader />
       ) : (
@@ -98,6 +96,6 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
           <AlertRuleDialogContent startingStep={startingStep} handleComplete={handleComplete} />
         </>
       )}
-    </Dialog>
+    </StyledDialog>
   );
 };

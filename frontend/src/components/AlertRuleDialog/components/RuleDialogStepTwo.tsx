@@ -11,14 +11,15 @@ import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 import { SelectCheck } from 'components/SelectCheck';
-import { AlertRuleStepBaseProps } from './AlertRuleDialogContent';
 import { MarkedSelect } from 'components/MarkedSelect';
-import { AlertRuleDialogContext } from './AlertRuleDialogContext';
+import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { SelectColumn } from 'components/SelectColumn';
-
-import { StyledContentContainer } from './AlertRuleDialog.styles';
 import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
+
+import { StyledContentContainer } from '../AlertRuleDialog.styles';
+
+import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 
 export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: AlertRuleStepBaseProps) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
