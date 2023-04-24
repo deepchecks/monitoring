@@ -1,31 +1,25 @@
 import { useEffect, useState } from 'react';
 
-import logger from 'helpers/services/logger';
 import { storageKeys } from 'helpers/utils/localStorage';
 
 import { applicationConfigurationsApiV1ConfigurationsGet } from 'api/generated';
 
+import { resError } from 'helpers/types/resError';
+
 const initialVars = {
   sentryDsn: `${process.env.REACT_APP_SENTRY_DSN}`,
-  // stripeApiKey: `${process.env.REACT_APP_STRIPE_KEY}`,
   environment: `${process.env.REACT_APP_BASE_API}`,
-  mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`,
-  sentryEnv: `${process.env.REACT_APP_SENTRY_ENV}`,
-  hotjar_id: `${process.env.REACT_APP_HJ_ID}`,
-  hotjar_sv: `${process.env.REACT_APP_HJ_SV}`,
-  is_cloud: true
+  mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`
 };
 
 const useConfig = () => {
   const [envVariables, setEnvVariables] = useState<{ [key: string]: string | boolean }>(initialVars);
 
   const getConfiguration = async () => {
-    try {
-      const res = (await applicationConfigurationsApiV1ConfigurationsGet()) as unknown;
+    const res = (await applicationConfigurationsApiV1ConfigurationsGet()) as unknown;
 
+    if (res && !(res as unknown as resError).error_message) {
       setEnvVariables(res as { [key: string]: string | boolean });
-    } catch (err) {
-      logger.error('error on get configurations', err);
     }
   };
 
