@@ -30,7 +30,7 @@ export const typographyOptions: TypographyOptions = {
     lineHeight: '12px',
     color: paletteOptions.grey?.[500]
   },
-  caption: {
+  h6: {
     fontWeight: 500,
     fontSize: '10px',
     lineHeight: '140%'

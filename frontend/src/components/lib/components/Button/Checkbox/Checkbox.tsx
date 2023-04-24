@@ -44,23 +44,21 @@ export const Checkbox = (props: CheckboxProps) => {
 
   return (
     <FormControl>
-      {formTitle && <Text variant="body2" text={formTitle} color={(paletteOptions.primary as any).main} />}
+      {formTitle && <Text type="bodyBold" text={formTitle} color={(paletteOptions.primary as any).main} />}
       <FormGroup row={direction === 'row'}>
-        {options.map((option, i) => {
-          return (
+        {options.map((option, i) => (
             <FormControlLabel
               key={i}
               value={option.value}
               control={<MUICheckbox disabled={disabled} checked={state.includes(option.value)} />}
               label={
-                option.label && <Text color={() => labelColor(option.value)} text={option.label} variant="body2" />
+                option.label && <Text color={() => labelColor(option.value)} text={option.label} type="bodyBold" />
               }
               onChange={() => handleCheckboxClick(option.value)}
             />
-          );
-        })}
+          ))}
       </FormGroup>
-      {err && <Text color={(paletteOptions.error as any).main} variant="h3" text={`Limited to ${limit} selections`} />}
+      {err && <Text color={(paletteOptions.error as any).main} type="h3" text={`Limited to ${limit} selections`} />}
     </FormControl>
   );
 };

@@ -51,12 +51,12 @@ export const Notification = (props: NotificationProps) => {
         onClick={() => onNotificationClick()}
       />
       <Container marginRight="auto">
-        <Text text={title} color={paletteOptions.common?.white} whiteSpace="nowrap" variant="h3" width="200px" />
+        <Text text={title} color={paletteOptions.common?.white} whiteSpace="nowrap" type="h3" width="200px" />
         {content && <Text text={content} color={paletteOptions.common?.white} whiteSpace="nowrap" width="225px" />}
       </Container>
       {onDelete && (
         <Container flexDirection="row" width="120px" padding="0">
-          <Text text="Delete" color={paletteOptions.common?.white} variant="h3" />
+          <Text text="Delete" color={paletteOptions.common?.white} type="h3" />
           <CancelRounded sx={{ color: paletteOptions.common?.white, cursor: 'pointer' }} onClick={() => onDelete()} />
         </Container>
       )}

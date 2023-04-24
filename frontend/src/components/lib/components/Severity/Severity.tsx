@@ -62,7 +62,7 @@ export const Severity = ({ severity, number }: SeverityProps) => {
       </Container>
       {severity && (
         <Container margin={'0'} gap={'0'} marginTop={'-12px'}>
-          <Text text={number ? number.toString() : '#'} color={severityLevel().color} variant="h2" fontWeight={900} />
+          <Text text={number ? number.toString() : '#'} color={severityLevel().color} type="h2" fontWeight={900} />
           <Text text={severity} color={severityLevel().color} fontWeight={900} textTransform={'capitalize'} />
         </Container>
       )}

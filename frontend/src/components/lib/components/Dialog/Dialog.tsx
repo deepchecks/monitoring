@@ -36,7 +36,7 @@ export const Dialog = (props: DialogProps) => {
     <MUIDialog open={open} onClose={closeDialog} {...otherProps}>
       <DialogContent sx={{ padding: '8px 12px', minWidth: '600px' }}>
         <Container flexDirection="row" justifyContent="space-between">
-          <Text text={title} variant="h1" />
+          <Text text={title} type="h1" />
           <CloseIcon onClick={closeDialog} color="primary" fontSize="large" sx={{ cursor: 'pointer' }} />
         </Container>
         <Container textAlign="center">{children}</Container>

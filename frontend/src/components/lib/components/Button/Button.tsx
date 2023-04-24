@@ -20,7 +20,7 @@ export const Button = (props: ButtonProps) => {
       sx={{
         padding: '8px 24px',
         borderRadius: '28px',
-        transition: '0.5s',
+        transition: '0.6s',
         width: width,
         margin: margin,
         color: theme.palette.common.white

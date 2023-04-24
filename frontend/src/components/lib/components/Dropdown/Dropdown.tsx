@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { FormControl, MenuItem, Typography } from '@mui/material';
+import { FormControl, MenuItem } from '@mui/material';
 import { SelectChangeEvent, SelectProps } from '@mui/material/Select';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -97,15 +97,17 @@ export const Dropdown = (props: DropdownProps) => {
         {state.length > 0 ? (
           state.map(({ name, amount }, i) => (
             <MenuItem key={i + name} value={name}>
-              <Typography variant="button" sx={{ marginRight: '20px', color: 'white' }}>
-                {inputValue ? highlightText(name, inputValue) : name}
-              </Typography>
-              <Text text={amount} variant="caption" sx={{ marginLeft: 'auto', color: 'white' }} />
+              <Text
+                text={inputValue ? highlightText(name, inputValue) : name}
+                type="button"
+                sx={{ marginRight: '20px', color: 'white' }}
+              />
+              <Text text={amount} type="tiny" sx={{ marginLeft: 'auto', color: 'white' }} />
             </MenuItem>
           ))
         ) : (
           <Text
-            variant="h5"
+            type="smallNormal"
             text={NO_RESULTS_STRING}
             sx={theme => ({ color: theme.palette.common.white, margin: '2px 16px 8px 16px' })}
           />

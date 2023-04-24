@@ -4,7 +4,13 @@ import dayjs, { Dayjs } from 'dayjs';
 import { Box, Popover } from '@mui/material';
 
 import { DropdownArrowComponent } from './DropdownArrowComponent';
-import { StyledButtonContainer, StyledTextField, StyledButton } from './DateTimePicker.styles';
+import {
+  StyledButtonContainer,
+  // StyledStaticDateTimePicker,
+  StyledTextField,
+  StyledButton
+  // StyledStaticDatePicker
+} from './DateTimePicker.styles';
 
 import { convertDate } from './DateTimePicker.utils';
 
@@ -17,7 +23,10 @@ interface DateTimePickerProps {
 }
 
 export const DateTimePicker = (props: DateTimePickerProps) => {
-  const { value, setValue } = props;
+  const { value, setValue /* ,dateTime, maxDate: max, minDate: min */ } = props;
+
+  // const maxDate = max ? dayjs(max) : max;
+  // const minDate = min ? dayjs(min) : min;
 
   const [tempValue, setTempValue] = useState<Dayjs | null>(dayjs(value));
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
@@ -57,6 +66,23 @@ export const DateTimePicker = (props: DateTimePickerProps) => {
         open={openDatePicker}
         onClose={closeDateTimePicker}
       >
+        {/* dateTime ? (
+          <StyledStaticDateTimePicker
+            value={tempValue}
+            onChange={newValue => setTempValue(newValue)}
+            onAccept={onApply}
+            maxDate={maxDate}
+            minDate={minDate}
+          />
+        ) : (
+          <StyledStaticDatePicker
+            value={tempValue}
+            onChange={newValue => setTempValue(newValue)}
+            onAccept={onApply}
+            maxDate={maxDate}
+            minDate={minDate}
+          />
+        ) */}
         <StyledButtonContainer>
           <StyledButton variant="text" onClick={onApply}>
             Apply

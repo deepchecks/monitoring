@@ -45,21 +45,19 @@ export const Radio = (props: RadioProps) => {
 
   return (
     <FormControl>
-      {formTitle && <Text variant="body2" text={formTitle} color={(paletteOptions.primary as any).main} />}
+      {formTitle && <Text type="bodyBold" text={formTitle} color={(paletteOptions.primary as any).main} />}
       <RadioGroup value={state} defaultValue={defaultValue} row={isRow}>
-        {options.map((option, i) => {
-          return (
+        {options.map((option, i) => (
             <FormControlLabel
               key={i}
               value={option.value}
               control={<MUIRadio disabled={disabled} />}
               label={
-                option.label && <Text color={() => labelColor(option.value)} text={option.label} variant="body2" />
+                option.label && <Text color={() => labelColor(option.value)} text={option.label} type="bodyBold" />
               }
               onChange={() => setState(option.value)}
             />
-          );
-        })}
+          ))}
       </RadioGroup>
     </FormControl>
   );

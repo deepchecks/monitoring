@@ -26,7 +26,6 @@ export const Select = (props: SelectProps) => {
   };
 
   const colorsToUse = (isSelected: boolean) => {
-    // eslint-disable-next-line default-case
     switch (isSelected) {
       case true:
         return {
@@ -46,6 +45,12 @@ export const Select = (props: SelectProps) => {
               color: theme.palette.primary.main,
               border: theme.palette.primary.main
             };
+      default:
+        return {
+          background: theme.palette.common.white,
+          color: theme.palette.primary.main,
+          border: theme.palette.primary.main
+        };
     }
   };
 

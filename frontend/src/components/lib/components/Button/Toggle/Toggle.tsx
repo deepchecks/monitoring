@@ -63,7 +63,7 @@ export const Toggle = (props: ToggleProps) => {
   return (
     <FormControlLabel
       control={<CustomSwitch onChange={() => setState(!state)} checked={state} />}
-      label={label && <Text text={label} color={labelColor} variant="h2" />}
+      label={label && <Text text={label} color={labelColor} type="h2" />}
       labelPlacement={labelPlacement}
       disabled={disabled}
     />
