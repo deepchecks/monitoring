@@ -571,8 +571,9 @@ def create_execution_data_query(
         # If frequency is defined, partitioning the data by the defined frequency and selecting n_samples
         # samples per partition
         if frequency is not None:
+            ts = func.timezone(model_version.model.timezone, table.c[SAMPLE_TS_COL])
             window_query = select(table.c[SAMPLE_ID_COL],
-                                  func.rank().over(partition_by=func.date_trunc(frequency, table.c[SAMPLE_TS_COL]),
+                                  func.rank().over(partition_by=func.date_trunc(frequency, ts),
                                                    order_by=func.md5(table.c[SAMPLE_ID_COL])).label('rank')) \
                 .filter(options.sql_columns_filter()) \
                 .filter(table.c[SAMPLE_TS_COL] >= period.start, table.c[SAMPLE_TS_COL] < period.end).cte(
