@@ -34,7 +34,9 @@ AXIOS_INSTANCE.interceptors.response.use(
       }
     }
 
-    return logger.error('Server error from client on axios request', error); // 500...
+    logger.warn('Server error from client on axios request', error); // 500...
+
+    return { error_message: 'Internal server error', additional_information: {} };
   }
 );
 
