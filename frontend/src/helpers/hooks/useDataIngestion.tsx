@@ -1,5 +1,6 @@
-import dayjs from 'dayjs';
 import { useMemo } from 'react';
+import dayjs from 'dayjs';
+
 import {
   useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet,
   useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet
@@ -7,12 +8,15 @@ import {
 import { setLineGraphOptions } from '../setGraphOptions';
 import useModels from './useModels';
 
+import { resError } from 'helpers/types/resError';
+
 const useDataIngestion = (modelId: number | null = null, selectedPointType?: string, timeValue?: number) => {
   const { modelsMap } = useModels();
 
   const latestTime = modelId
     ? modelsMap?.[modelId]?.latest_time ?? 0
     : Math.max(...Object.values(modelsMap).map(o => (o.latest_time ? o.latest_time : 0)));
+
   const { data: singleModelData = [], isLoading: singleLoading } =
     useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet(
       modelId as number,
@@ -26,6 +30,7 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
         }
       }
     );
+
   const { data: allModelsData = [], isLoading: allLoading } =
     useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet(
       {
@@ -39,7 +44,8 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
       }
     );
 
-  const data = modelId ? singleModelData : allModelsData;
+  const apiData = modelId ? singleModelData : allModelsData;
+  const data = (apiData as unknown as resError).error_message ? allModelsData : apiData; // Data validation for wrong model Id
   const isLoading = modelId ? singleLoading : allLoading;
 
   const yCalculator = (count: number, label_count: number) => {

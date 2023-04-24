@@ -233,7 +233,7 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
                   label="Start Date"
                   disableMaskedInput
                   disabled={isModelsLoading}
-                  renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
+                  renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
                 />
                 -
                 <DatePicker
@@ -243,7 +243,7 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
                   label="End Date"
                   disableMaskedInput
                   disabled={isModelsLoading}
-                  renderInput={alertFilters => <TextField {...alertFilters} size="small" />}
+                  renderInput={(alertFilters: any) => <TextField {...alertFilters} size="small" />}
                 />
               </StyledDateWrapper>
               <StyledDivider orientation="vertical" flexItem />

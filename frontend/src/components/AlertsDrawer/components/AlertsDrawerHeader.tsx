@@ -141,7 +141,7 @@ export const AlertsDrawerHeader = ({
       monitor?.additional_kwargs?.res_conf ? monitor?.additional_kwargs?.res_conf[0] : 'N/A',
       monitor?.data_filters ? `${monitor?.data_filters.filters[0].column}` : 'N/A',
       monitor?.frequency ? processFrequency(dayjs.duration(FrequencyMap[monitor.frequency], 'seconds')) : 'N/A',
-      monitor?.aggregation_window ? processFrequency(dayjs.duration(monitor.aggregation_window, 'seconds')) : 'N/A'
+      monitor?.aggregation_window ?? 'N/A'
     ],
     [
       condition.operator,

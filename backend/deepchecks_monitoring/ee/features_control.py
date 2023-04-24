@@ -47,7 +47,7 @@ class CloudFeaturesControl(FeaturesControl):
         if self._allowed_models is None:
             return 1
 
-        return self._allowed_models
+        return self._allowed_models + 1
 
     @property
     def signup_enabled(self) -> bool:

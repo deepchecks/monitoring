@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-import logger from 'helpers/services/logger';
-
 import BillingPaymentWrapper from '../BillingPaymentWrapper';
 import BillingMethodDialog from './BillingMethodDialog';
 
@@ -18,29 +16,35 @@ import {
 } from '../Billing.styles';
 
 import { constants } from '../billing.constants';
+
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { getPaymentMethodApiV1BillingPaymentMethodGet } from 'api/generated';
+import { resError } from 'helpers/types/resError';
 
 const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
-  const [paymentMethods, setPaymentMethods] = useState([{ card: { last4: Number(null) } }]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [last4, setLast4] = useState('');
 
-  const cardLast4 = paymentMethods && paymentMethods[0] && paymentMethods[0].card.last4;
-
-  const handleOpenDialog = () => setIsDialogOpen(true);
-  const handleCloseDialog = () => setIsDialogOpen(false);
+  const { stripeApiKey } = getStorageItem(storageKeys.environment);
 
   const getPaymentMethods = async () => {
-    try {
-      const response = await getPaymentMethodApiV1BillingPaymentMethodGet();
-      response && setPaymentMethods(response as any[]);
-    } catch (err) {
-      logger.error(err);
+    const response = await getPaymentMethodApiV1BillingPaymentMethodGet();
+
+    if (response) {
+      if ((response as unknown as resError)?.error_message) {
+        setLast4('');
+      } else if ((response[0] as any)?.card?.last4) {
+        setLast4(`${(response[0] as any)?.card?.last4}`);
+      }
     }
   };
 
   useEffect(() => {
     getPaymentMethods();
   }, []);
+
+  const handleOpenDialog = () => setIsDialogOpen(true);
+  const handleCloseDialog = () => setIsDialogOpen(false);
 
   return (
     <BillingCardContainer border>
@@ -51,14 +55,14 @@ const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
           <Row16Gap>
             <BillingMethodImg src={creditCard} alt={constants.paymentMethod.imageAlt} />
             <BillingText color="gray" weight="600">
-              {constants.paymentMethod.last4Text(cardLast4)}
+              {constants.paymentMethod.last4Text(last4)}
             </BillingText>
           </Row16Gap>
           <BillingCardButton onClick={handleOpenDialog}>{constants.paymentMethod.buttonLabel}</BillingCardButton>
         </BillingMethodBorderContainer>
       </Col8Gap>
-      {clientSecret && (
-        <BillingPaymentWrapper clientSecret={clientSecret}>
+      {clientSecret && stripeApiKey && (
+        <BillingPaymentWrapper clientSecret={clientSecret} stripeApiKey={stripeApiKey}>
           <BillingMethodDialog handleCloseDialog={handleCloseDialog} isDialogOpen={isDialogOpen} />
         </BillingPaymentWrapper>
       )}

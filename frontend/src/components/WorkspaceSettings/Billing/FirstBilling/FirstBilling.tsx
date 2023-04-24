@@ -15,6 +15,8 @@ import { constants } from '../billing.constants';
 
 import { resError } from 'helpers/types/resError';
 
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+
 interface ProductsResponseType {
   default_price: string;
   id: string;
@@ -28,6 +30,8 @@ const FirstBilling = () => {
     default_price: ''
   });
 
+  const { stripeApiKey } = getStorageItem(storageKeys.environment);
+
   const getProductDetails = async () => {
     const res = (await listAllProductsApiV1BillingAvailableProductsGet()) as ProductsResponseType[];
     setProduct(res[0]);
@@ -37,7 +41,17 @@ const FirstBilling = () => {
     const payload = { price_id: product.default_price, quantity: quantity as number };
     const response = (await createSubscriptionApiV1BillingSubscriptionPost(payload)) as { client_secret: string };
 
-    response && setClientSecret(response.client_secret);
+    if (response) {
+      if (response && (response as unknown as resError)?.error_message) {
+        setErrorMassage(constants.firstBilling.errorMassageContent);
+      } else {
+        setClientSecret(response?.client_secret);
+
+        if (!stripeApiKey || !clientSecret) {
+          setErrorMassage(constants.firstBilling.errorMassageContent);
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -45,17 +59,17 @@ const FirstBilling = () => {
   }, []);
 
   useEffect(() => {
-    if (clientSecret && (clientSecret as unknown as resError).error_message) {
-      setErrorMassage(constants.firstBilling.errorMassageContent);
+    if (stripeApiKey && clientSecret) {
+      setErrorMassage('');
     }
-  }, [clientSecret]);
+  }, [stripeApiKey, clientSecret]);
 
   return (
     <FirstBillingContainer>
       <BillingPlanCard handleUpgradeClick={handleUpgradeClick} productQuantity={1} />
       <BillingText color="red">{errorMassage}</BillingText>
-      {clientSecret && (
-        <BillingPaymentWrapper clientSecret={clientSecret}>
+      {clientSecret && stripeApiKey && (
+        <BillingPaymentWrapper clientSecret={clientSecret} stripeApiKey={stripeApiKey}>
           <FirstBillingPayment />
         </BillingPaymentWrapper>
       )}

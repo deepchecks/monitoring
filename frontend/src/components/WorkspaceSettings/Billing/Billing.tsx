@@ -8,21 +8,31 @@ import FirstBilling from './FirstBilling/FirstBilling';
 
 import { Subscriptions } from './billing.types';
 
+import { resError } from 'helpers/types/resError';
+
 const Billing = () => {
   const [subscriptions, setSubscriptions] = useState<Subscriptions[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const subStatuses = subscriptions && subscriptions?.map((sub: Subscriptions) => sub?.status);
+  const isPaid = subStatuses && subStatuses?.includes('active');
+
   const getSubscription = async () => {
     const response = (await getSubscriptionsApiV1BillingSubscriptionGet()) as Subscriptions[];
-    response && setSubscriptions([...response]);
-    setIsLoading(false);
+
+    if (response) {
+      if ((response as unknown as resError).error_message) {
+        setIsLoading(false);
+      } else {
+        setSubscriptions([...response]);
+        setIsLoading(false);
+      }
+    }
   };
 
   useEffect(() => {
     getSubscription();
   }, []);
-
-  const isPaid = subscriptions.length > 0 && subscriptions[0]?.status === 'active';
 
   if (isLoading) {
     return <BillingPaidSkeleton />;

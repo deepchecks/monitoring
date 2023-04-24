@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-import logger from 'helpers/services/logger';
 import { ChargeSchema, listAllChargesApiV1BillingChargesGet } from 'api/generated';
 
 import BillingTransaction from './BillingTransaction';
@@ -12,6 +11,8 @@ import { Col16Gap } from 'components/base/Container/Container.styles';
 
 import { constants } from '../billing.constants';
 
+import { resError } from 'helpers/types/resError';
+
 const BillingHistory = () => {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<ChargeSchema[]>([]);
@@ -19,13 +20,15 @@ const BillingHistory = () => {
   const tableHeaders = ['models', 'plan', 'status', 'created'];
 
   const getBillingHistory = async () => {
-    try {
-      const response = await listAllChargesApiV1BillingChargesGet();
+    const response = await listAllChargesApiV1BillingChargesGet();
 
-      response && setTransactions([...response]);
-      setLoading(false);
-    } catch (err) {
-      logger.error(err);
+    if (response) {
+      if (response[0]) {
+        setTransactions([...response]);
+        setLoading(false);
+      } else if ((response as unknown as resError)?.error_message) {
+        setLoading(false);
+      }
     }
   };
 

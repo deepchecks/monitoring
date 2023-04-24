@@ -64,7 +64,11 @@ export const UserInfo = () => {
         <Typography
           sx={{
             fontSize: 14,
-            marginLeft: '8px'
+            marginLeft: '8px',
+            width: '130px',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis'
           }}
         >
           {user.full_name}
@@ -79,7 +83,11 @@ export const UserInfo = () => {
         <Typography
           sx={{
             fontSize: 14,
-            fontWeight: 800
+            fontWeight: 800,
+            width: '130px',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis'
           }}
         >
           {user.organization?.name}
