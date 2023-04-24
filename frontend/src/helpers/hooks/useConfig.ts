@@ -9,9 +9,7 @@ import { resError } from 'helpers/types/resError';
 const initialVars = {
   sentryDsn: `${process.env.REACT_APP_SENTRY_DSN}`,
   environment: `${process.env.REACT_APP_BASE_API}`,
-  mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`,
-  hotjar_id: `${process.env.REACT_APP_HJ_ID}`,
-  hotjar_sv: `${process.env.REACT_APP_HJ_SV}`
+  mixpanel_id: `${process.env.REACT_APP_MIXPANEL_ID}`
 };
 
 const useConfig = () => {
