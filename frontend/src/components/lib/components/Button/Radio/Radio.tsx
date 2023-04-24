@@ -48,16 +48,14 @@ export const Radio = (props: RadioProps) => {
       {formTitle && <Text type="bodyBold" text={formTitle} color={(paletteOptions.primary as any).main} />}
       <RadioGroup value={state} defaultValue={defaultValue} row={isRow}>
         {options.map((option, i) => (
-            <FormControlLabel
-              key={i}
-              value={option.value}
-              control={<MUIRadio disabled={disabled} />}
-              label={
-                option.label && <Text color={() => labelColor(option.value)} text={option.label} type="bodyBold" />
-              }
-              onChange={() => setState(option.value)}
-            />
-          ))}
+          <FormControlLabel
+            key={i}
+            value={option.value}
+            control={<MUIRadio disabled={disabled} />}
+            label={option.label && <Text color={() => labelColor(option.value)} text={option.label} type="bodyBold" />}
+            onChange={() => setState(option.value)}
+          />
+        ))}
       </RadioGroup>
     </FormControl>
   );

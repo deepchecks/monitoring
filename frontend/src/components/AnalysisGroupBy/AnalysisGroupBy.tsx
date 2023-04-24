@@ -70,7 +70,7 @@ const AnalysisGroupByComponent = ({
       }
     }
     return featuresNames;
-  }
+  };
 
   useEffect(() => {
     async function getData() {
@@ -78,7 +78,7 @@ const AnalysisGroupByComponent = ({
         setGlobalLoading(true);
 
         const { featuresNames, featureImportance } = await getAvailableFeatures(modelVersionId, sortByFi);
-        setFeatureImportance(featureImportance)
+        setFeatureImportance(featureImportance);
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
           start_time: new Date(timeLabel - frequency * 1000).toISOString(),
@@ -88,8 +88,6 @@ const AnalysisGroupByComponent = ({
         };
 
         setSingleCheckRunOptions(SingleCheckRunOptions);
-
-
 
         setFeaturesArray(filterFeatureNames(featuresNames));
         setSelectedFeature(featuresNames[0]);
@@ -141,15 +139,13 @@ const AnalysisGroupByComponent = ({
   const updateFeaturesSort = (checked: boolean) => {
     let featuresNames;
     if (checked && featureImportance != null && Object.keys(featureImportance).length > 0) {
-      featuresNames = Object.keys(featureImportance).sort(
-        (a, b) => featureImportance[b] - featureImportance[a]
-      );
+      featuresNames = Object.keys(featureImportance).sort((a, b) => featureImportance[b] - featureImportance[a]);
     } else {
       featuresNames = (Object.values(featuresArray) as string[]).sort();
     }
     setFeaturesArray(filterFeatureNames(featuresNames));
     setSortByFi(checked);
-  }
+  };
 
   return (
     <CustomDrawer loading={globalLoading} {...props}>
@@ -171,12 +167,14 @@ const AnalysisGroupByComponent = ({
               disabled={loading}
               setValue={setSelectedFeature}
             />
-            {featureImportance && <SwitchButton
-              sx={{ marginLeft: '16px', height: '38px' }}
-              checked={sortByFi}
-              setChecked={checked => updateFeaturesSort(checked as boolean)}
-              label="Sort by feature importance"
-            />}
+            {featureImportance && (
+              <SwitchButton
+                sx={{ marginLeft: '16px', height: '38px' }}
+                checked={sortByFi}
+                setChecked={checked => updateFeaturesSort(checked as boolean)}
+                label="Sort by feature importance"
+              />
+            )}
           </StyledHeaderContainer>
           {loading ? (
             <Loader />
