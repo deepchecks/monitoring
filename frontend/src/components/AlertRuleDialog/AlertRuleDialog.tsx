@@ -19,6 +19,7 @@ import { ActionDialogHeader } from 'components/base/Dialog/ActionDialog/ActionDi
 import { Loader } from 'components/Loader';
 
 import { StyledDialog } from './AlertRuleDialog.styles';
+import { constants } from './alertRuleDialog.constants';
 
 interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
   alertRuleId?: AlertRuleConfigSchema['id'];
@@ -89,10 +90,7 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
         <Loader />
       ) : (
         <>
-          <ActionDialogHeader
-            title={monitor?.name ? `Edit Alert Rule: ${monitor?.name}` : 'Create New Alert Rule'}
-            onClose={handleClose}
-          />
+          <ActionDialogHeader title={constants.dialogHeader(monitor?.name)} onClose={handleClose} />
           <AlertRuleDialogContent startingStep={startingStep} handleComplete={handleComplete} />
         </>
       )}

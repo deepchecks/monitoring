@@ -7,8 +7,11 @@ import { AlertRuleDialogStepThree } from './RuleDialogStepThree';
 import { AlertRuleDialogStepTwo } from './RuleDialogStepTwo';
 
 import { StyledStepContainer, StyledStep } from '../AlertRuleDialog.styles';
+import { constants } from '../alertRuleDialog.constants';
 
-const steps = ['Basic Info', 'Monitor Data', 'Rule'];
+const { basic, monitor, rule } = constants.content.stepTitles;
+
+const steps = [basic, monitor, rule];
 
 interface AlertRuleDialogContentProps {
   handleComplete: () => void;

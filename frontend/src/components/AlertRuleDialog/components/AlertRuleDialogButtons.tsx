@@ -5,6 +5,11 @@ import { Box } from '@mui/material';
 import { StyledButton } from '../AlertRuleDialog.styles';
 
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
+import { constants } from '../alertRuleDialog.constants';
+
+const {
+  buttons: { back, next }
+} = constants;
 
 interface AlertRuleDialogButtonsProps extends AlertRuleStepBaseProps {
   disabled: boolean;
@@ -23,11 +28,11 @@ export const AlertRuleDialogButtons = ({
         onClick={handleBack}
         variant="text"
       >
-        Back
+        {back}
       </StyledButton>
     )}
     <StyledButton onClick={handleNext} disabled={disabled}>
-      {activeStep === 2 ? 'Save' : 'Next'}
+      {next(activeStep === 2)}
     </StyledButton>
   </Box>
 );

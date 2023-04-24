@@ -18,8 +18,14 @@ import { SelectColumn } from 'components/SelectColumn';
 import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';
-
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
+import { constants } from '../alertRuleDialog.constants';
+
+const {
+  aggregationPlaceholder,
+  frequency: { tooltipTitle: frequencyTooltipTitle, label: frequencyLabel },
+  checkBoxLabel
+} = constants.stepTwo;
 
 export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: AlertRuleStepBaseProps) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
@@ -125,7 +131,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: A
           size="medium"
         />
         <OutlinedInput
-          placeholder="Aggregation window"
+          placeholder={aggregationPlaceholder}
           size="medium"
           value={aggregationWindow}
           onChange={event => setAggregationWindow(Number(event.target.value))}
@@ -137,9 +143,9 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: A
           required
         />
         {aggregationWindowErr && <Typography color="red">aggregation window max value is 30</Typography>}
-        <TooltipInputWrapper title="The frequency of sampling the monitor data">
+        <TooltipInputWrapper title={frequencyTooltipTitle}>
           <MarkedSelect
-            label="Frequency"
+            label={frequencyLabel}
             value={frequency}
             onChange={event => setFrequency(event.target.value as number)}
             clearValue={() => {
@@ -169,7 +175,7 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: A
         <FormControlLabel
           style={{ marginTop: '50px' }}
           control={<Checkbox checked={!!dashboardId} onChange={e => setDashboardId(e.target.checked ? 1 : null)} />}
-          label="Show in dashboard"
+          label={checkBoxLabel}
         />
       </Stack>
       <AlertRuleDialogButtons

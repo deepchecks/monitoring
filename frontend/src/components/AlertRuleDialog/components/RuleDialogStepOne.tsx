@@ -10,8 +10,8 @@ import { SelectSeverity } from 'components/SelectSeverity';
 import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';
-
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
+import { constants } from '../alertRuleDialog.constants';
 
 export const AlertRuleDialogStepOne = ({ activeStep, handleNext }: AlertRuleStepBaseProps) => {
   const { alertRule, setAlertRule, monitor, setMonitor } = useContext(AlertRuleDialogContext);
@@ -41,7 +41,7 @@ export const AlertRuleDialogStepOne = ({ activeStep, handleNext }: AlertRuleStep
       <Stack spacing={2} width={1}>
         <TextField
           required
-          label="Alert rule name"
+          label={constants.stepOne.nameLabel}
           size="medium"
           value={name}
           onChange={event => setName(event.target.value)}
