@@ -132,7 +132,7 @@ class MonitorOptions(SingleCheckRunOptions):
     """Add to single window monitor options frequency and aggregation window to make it multi window."""
 
     frequency: t.Optional[Frequency] = None
-    aggregation_window: t.Optional[int] = None
+    aggregation_window: t.Optional[int] = 1
 
     @root_validator()
     def set_missing_values(cls, values: dict) -> dict:  # pylint: disable=no-self-argument
@@ -148,9 +148,6 @@ class MonitorOptions(SingleCheckRunOptions):
                 values["frequency"] = Frequency.WEEK
             else:
                 values["frequency"] = Frequency.MONTH
-
-        if values.get("aggregation_window") is None:
-            values["aggregation_window"] = 1
 
         return values
 
