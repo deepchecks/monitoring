@@ -270,6 +270,23 @@ async def enqueue_tasks(monitor, schedules, organization, session):
     await session.execute(insert(Task).values(tasks).on_conflict_do_nothing(constraint='name_uniqueness'))
 
 
+async def enqueue_ingestion_tasks(model, schedules, organization, session):
+    tasks = []
+    for schedule in schedules:
+        tasks.append(dict(
+            name=f'Model:{model.id}:ts:{schedule.int_timestamp}',
+            executor='execute_model',
+            queue='monitors',
+            params={'model_id': model.id, 'timestamp': schedule.to_iso8601_string(),
+                     'organization_id': organization.id, 'organization_schema': organization.schema_name},
+            priority=1,
+            description='Monitor alert rules execution task',
+            reference=f'Monitor:{monitor.id}',
+            execute_after=schedule
+         ))
+
+    await session.execute(insert(Task).values(tasks).on_conflict_do_nothing(constraint='name_uniqueness'))
+
 def is_serialization_error(error: DBAPIError):
     orig = getattr(error, 'orig', None)
     orig_code = getattr(orig, 'pgcode', -1)
