@@ -30,10 +30,10 @@ from deepchecks_monitoring.config import Settings, Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
-                                                     SingleCheckRunOptions, complete_sessions_for_check,
-                                                     get_feature_property_info, get_metric_class_info,
-                                                     load_data_for_check, reduce_check_result, reduce_check_window,
-                                                     run_check_per_window_in_range, run_check_window)
+                                                     SingleCheckRunOptions, get_feature_property_info,
+                                                     get_metric_class_info, load_data_for_check, reduce_check_result,
+                                                     reduce_check_window, run_check_per_window_in_range,
+                                                     run_check_window)
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
@@ -633,21 +633,21 @@ async def run_check_group_by_feature(
                                                         with_labels=check.is_label_required,
                                                         filter_labels_exist=check.is_label_required)
         # Create data object to pass to calculate the check. Single window without start/end times
-        session_info = {"data": session.execute(test_session), "windows": [{}]}
+        session_info = {'data': session.execute(test_session), 'windows': [{}]}
         if ref_session is not None:
-            session_info["reference"] = session.execute(ref_session)
+            session_info['reference'] = session.execute(ref_session)
         sessions.append(session_info)
 
     # Now wait for sessions and run the check
     for f, model_version_session in zip(filters, sessions):
-        results = await model_version_session["data"]
-        model_version_session["data"] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
-        if "reference" in model_version_session:
-            results = model_version_session["reference"]
-            model_version_session["reference"] = pd.DataFrame(results.all(),
+        results = await model_version_session['data']
+        model_version_session['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+        if 'reference' in model_version_session:
+            results = model_version_session['reference']
+            model_version_session['reference'] = pd.DataFrame(results.all(),
                                                               columns=[str(key) for key in results.keys()])
         else:
-            model_version_session["reference"] = pd.DataFrame()
+            model_version_session['reference'] = pd.DataFrame()
 
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
@@ -688,7 +688,7 @@ async def get_check_display(
 
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
-    model_version_data = {"windows": [{}]}
+    model_version_data = {'windows': [{}]}
     test_session, ref_session = load_data_for_check(model_version, top_feat, monitor_options,
                                                     with_reference=check.is_reference_required, with_test=True,
                                                     with_labels=check.is_label_required,
@@ -696,12 +696,12 @@ async def get_check_display(
     test_session = session.execute(test_session)
     ref_session = session.execute(ref_session) if ref_session is not None else None
     results = await test_session
-    model_version_data["data"] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+    model_version_data['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
     if ref_session:
         results = await ref_session
-        model_version_data["reference"] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+        model_version_data['reference'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
     else:
-        model_version_data["reference"] = pd.DataFrame()
+        model_version_data['reference'] = pd.DataFrame()
 
     # Get value from check to run
     model_results_per_window = get_results_for_model_versions_per_window(

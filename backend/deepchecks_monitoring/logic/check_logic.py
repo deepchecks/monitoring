@@ -22,26 +22,26 @@ from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, root_validator
-from sqlalchemy import Column, and_, select, func, VARCHAR
+from sqlalchemy import VARCHAR, Column, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
-                                                     get_top_features_or_from_conf, random_sample)
+                                                     get_top_features_or_from_conf)
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
                                                     MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum, TimeUnit,
                                                     fetch_or_404, make_oparator_func)
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.check import Check
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_TS_COL, REFERENCE_SAMPLE_ID_COL)
+from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
+                                                             SAMPLE_PRED_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
-from sqlalchemy.orm import joinedload
 
 MAX_FEATURES_TO_RETURN = 1000
 
@@ -573,18 +573,18 @@ def create_execution_data_query(
             # NOTE: the below query changes the distribution of the data over the frequency period. Later on we are
             # using the aggregation window to get random samples for a join of a multiple frequency periods. This means
             # we give each period the same weight in sampling, although it might not be the case in the original data.
-            # For example, if we have 2 periods, one with 5k, and second one with 500k, the sampling for the aggregation
-            # window will take equal number of samples from each period, and will change the time distribution of the
-            # data.
+            # For example, if we have 2 periods, one with 5000 samples, and second with 500000 samples, the sampling for
+            # the aggregation window will take equal number of samples from each period, and will change the time
+            # distribution of the data.
             ts = func.timezone(model_version.model.timezone, table.c[SAMPLE_TS_COL])
             window_query = select(table.c[SAMPLE_ID_COL],
                                   func.rank().over(partition_by=func.date_trunc(frequency, ts),
-                                                   order_by=func.md5(table.c[SAMPLE_ID_COL])).label('rank')) \
+                                                   order_by=func.md5(table.c[SAMPLE_ID_COL])).label("rank")) \
                 .filter(options.sql_columns_filter()) \
                 .filter(table.c[SAMPLE_TS_COL] >= period.start, table.c[SAMPLE_TS_COL] < period.end).cte(
-                'window_query')
+                "window_query")
             limit_query = select(window_query.c[SAMPLE_ID_COL]).where(window_query.c.rank <= n_samples).cte(
-                'limit_query')
+                "limit_query")
             return data_query.filter(table.c[SAMPLE_ID_COL].in_(limit_query))
         else:
             return data_query.filter(options.sql_columns_filter())\
@@ -657,32 +657,6 @@ def load_data_for_check(
         test_query = None
 
     return test_query, reference_query
-
-
-async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]]):
-    """Complete all the async queries and transforms them into dataframes."""
-    model_version_dataframes = []
-    for (reference_query, test_infos) in model_versions_sessions:
-        for curr_test_info in test_infos:
-            if "query" in curr_test_info:
-                # the test info query may be none if there was no data after the filtering
-                if curr_test_info["query"] is not None:
-                    test_query = await curr_test_info["query"]
-                    curr_test_info["data"] = pd.DataFrame(test_query.all(),
-                                                          columns=[str(key) for key in test_query.keys()])
-                    del curr_test_info["query"]
-                else:
-                    curr_test_info["data"] = pd.DataFrame()
-        if reference_query is not None:
-            reference_query = (await reference_query)
-            reference_table_data_dataframe = pd.DataFrame(reference_query.all(),
-                                                          columns=[str(key) for key in reference_query.keys()])
-        else:
-            # We mark reference as "None" if it's not needed (a single dataset check)
-            reference_table_data_dataframe = None
-
-        model_version_dataframes.append((reference_table_data_dataframe, test_infos))
-    return model_version_dataframes
 
 
 def reduce_check_result(result: CheckResult, additional_kwargs) -> t.Optional[t.Dict[str, Number]]:

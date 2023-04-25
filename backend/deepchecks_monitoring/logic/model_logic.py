@@ -11,26 +11,23 @@
 """Module defining utility functions for specific db objects."""
 import logging
 import typing as t
-import warnings
 
 import numpy as np
-from xxhash import xxh3_64
 import pandas as pd
 import pendulum as pdl
 from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
 from joblib import Parallel, delayed
-from sqlalchemy import VARCHAR, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy.sql.selectable import Select
+from xxhash import xxh3_64
 
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
-                                                             SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL,
-                                                             ColumnType)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
+                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
 
 DEFAULT_N_SAMPLES = 5000
 
@@ -50,29 +47,6 @@ async def get_model_versions_for_time_range(session: AsyncSession,
         model_versions: t.List[ModelVersion] = model.versions
         return model, model_versions
     return await fetch_or_404(session, Model, id=model_id), []
-
-
-def random_sample(select_obj: Select, table, n_samples: int = DEFAULT_N_SAMPLES) -> Select:
-    """Sample randomly on a select object by id/row number md5."""
-    sampled_select_obj = select_obj
-
-    if SAMPLE_ID_COL in table.c:
-        order_func = func.md5(table.c[SAMPLE_ID_COL])
-    elif REFERENCE_SAMPLE_ID_COL in table.c:
-        order_func = func.md5(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR))
-    else:
-        name = (
-            table.schema
-            if not table.schema
-            else f'{table.schema}.{table.name}'
-        )
-        warnings.warn(
-            f'Table "{name}" does not contain neither "{SAMPLE_ID_COL}" '
-            f'column nor "{REFERENCE_SAMPLE_ID_COL}" column'
-        )
-        order_func = func.md5(func.cast(func.row_number().over(), VARCHAR))
-
-    return sampled_select_obj.order_by(order_func).limit(n_samples)
 
 
 def dataframe_to_dataset_and_pred(
