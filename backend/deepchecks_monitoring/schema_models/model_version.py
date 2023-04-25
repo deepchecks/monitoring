@@ -123,7 +123,7 @@ class ModelVersion(Base, MetadataMixin):
         """Get name of monitor table."""
         return get_monitor_table_name(self.model_id, self.id)
 
-    def get_monitor_table(self, connection) -> Table:
+    def get_monitor_table(self, connection=None) -> Table:
         """Get table object of the monitor table."""
         metadata = MetaData(bind=connection)
         columns = {**self.features_columns, **self.additional_data_columns, **self.model_columns, **self.meta_columns,
@@ -145,7 +145,7 @@ class ModelVersion(Base, MetadataMixin):
             return [feat[0] for feat in most_important_features], pd.Series(dict(most_important_features))
         return list(sorted(self.features_columns.keys()))[:n_top], None
 
-    def get_reference_table(self, connection) -> Table:
+    def get_reference_table(self, connection=None) -> Table:
         """Get table object of the reference table."""
         metadata = MetaData(bind=connection)
         columns_in_ref = {

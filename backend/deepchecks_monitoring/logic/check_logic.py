@@ -16,27 +16,29 @@ from numbers import Number
 
 import pandas as pd
 import pendulum as pdl
+import sqlalchemy
 from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, root_validator
-from sqlalchemy import Column, and_, select
+from sqlalchemy import VARCHAR, Column, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
-                                                     get_top_features_or_from_conf, random_sample)
+                                                     get_top_features_or_from_conf)
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
                                                     MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum, TimeUnit,
                                                     fetch_or_404, make_oparator_func)
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.check import Check
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_TS_COL)
+from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
+                                                             SAMPLE_PRED_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
@@ -75,10 +77,6 @@ class TableFiltersSchema(BaseModel):
             ])
         return True
 
-    def sql_all_filters(self):
-        """Create sql filter clause on data columns (used for overloading)."""
-        return self.sql_columns_filter()
-
 
 class CheckRunOptions(TableFiltersSchema):
     """Basic schema for running a check."""
@@ -104,10 +102,6 @@ class TimeWindowOption(TableFiltersSchema):
         """Create sql filter clause on the timestamp from the defined start and end times."""
         ts_column = Column(SAMPLE_TS_COL)
         return and_(self.start_time_dt() <= ts_column, ts_column < self.end_time_dt())
-
-    def sql_all_filters(self):
-        """Create sql filter clause on both timestamp and data columns."""
-        return and_(self.sql_time_filter(), self.sql_columns_filter())
 
     @root_validator
     def check_dates_range(cls, values):  # pylint: disable=no-self-argument
@@ -138,15 +132,14 @@ class MonitorOptions(SingleCheckRunOptions):
     """Add to single window monitor options frequency and aggregation window to make it multi window."""
 
     frequency: t.Optional[Frequency] = None
-    aggregation_window: t.Optional[int] = None
+    aggregation_window: t.Optional[int] = 1
 
     @root_validator()
-    def set_missing_frequency(cls, values: dict) -> dict:  # pylint: disable=no-self-argument
+    def set_missing_values(cls, values: dict) -> dict:  # pylint: disable=no-self-argument
         """Set missing frequency based on start and end times."""
         if values.get("frequency") is None:
             start_time = as_pendulum_datetime(pdl.parser.parse(values["start_time"]))
             end_time = as_pendulum_datetime(pdl.parser.parse(values["end_time"]))
-
             if (n := (end_time - start_time) // pdl.duration(days=1)) <= 3:
                 values["frequency"] = Frequency.HOUR
             elif n <= 30:
@@ -158,19 +151,12 @@ class MonitorOptions(SingleCheckRunOptions):
 
         return values
 
-    def sql_all_filters(self):
-        """Create sql filter clause."""
-        # overrides TimeWindowOption.sql_all_filters
-        return self.sql_columns_filter()
-
-    def calculate_windows(self):
+    def calculate_windows(self, tz):
         frequency = self.frequency
         assert frequency is not None
 
-        end_time = round_off_datetime(self.end_time_dt(), frequency)
-        # Not sure if need to reduce another frequency unit, don't remember if
-        # the first window is before start time or after
-        start_time = round_off_datetime(self.start_time_dt(), frequency)
+        end_time = round_off_datetime(self.end_time_dt().in_tz(tz), frequency)
+        start_time = round_off_datetime(self.start_time_dt().in_tz(tz), frequency)
         return list((end_time - start_time).range(frequency.to_pendulum_duration_unit()))
 
 
@@ -294,18 +280,13 @@ async def run_check_per_window_in_range(
         A dictionary containing the output of the check and the time labels.
     """
     # get the relevant objects from the db
-    check: Check = await fetch_or_404(session, Check, id=check_id)
-    all_windows = monitor_options.calculate_windows()[-31:]
+    check: Check = await fetch_or_404(session, Check, id=check_id,
+                                      options=joinedload(Check.model).load_only(Model.timezone))
+    all_windows = monitor_options.calculate_windows(check.model.timezone)[-31:]
     frequency = monitor_options.frequency
 
     assert frequency is not None
-
-    aggregation_window = (
-        frequency.to_pendulum_duration() * monitor_options.aggregation_window
-        if monitor_options.aggregation_window
-        else frequency.to_pendulum_duration()
-    )
-
+    aggregation_window = frequency.to_pendulum_duration() * monitor_options.aggregation_window
     model, model_versions = await get_model_versions_for_time_range(
         session,
         check.model_id,
@@ -320,9 +301,9 @@ async def run_check_per_window_in_range(
     model_columns = list(model_versions[0].model_columns.keys())
     columns = top_feat + model_columns
 
-    # execute an async session per each model version
-    model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
+    model_versions_data = {}
     for model_version in model_versions:
+        query_start_time, query_end_time = None, None
         # If filter does not fit the model version, skip it
         if not model_version.is_filter_fit(monitor_options.filter):
             continue
@@ -341,29 +322,36 @@ async def run_check_per_window_in_range(
                     curr_test_info["result"] = cache_result.value
                     continue
             if model_version.is_in_range(window_start, window_end):
-                options_with_time_filter = monitor_options.add_filters(_times_to_data_filter(window_start, window_end))
-                curr_test_info["query"] = create_execution_data_query(model_version, session, options_with_time_filter,
-                                                                      columns, with_labels=check.is_label_required,
-                                                                      is_ref=False)
-            else:
-                curr_test_info["data"] = pd.DataFrame()
-        # Query reference if the check use it, and there are results not from cache
-        if check.is_reference_required and any(("query" in x for x in test_info)):
-            reference_query = create_execution_data_query(model_version, session, monitor_options,
-                                                          columns, with_labels=check.is_label_required,
-                                                          is_ref=True)
+                # Save only the first window start and the last window end
+                query_start_time = query_start_time or window_start
+                query_end_time = window_end
+
+        if query_start_time:
+            period = query_end_time - query_start_time
+            query = create_execution_data_query(model_version, monitor_options, period=period, columns=columns,
+                                                frequency=monitor_options.frequency,
+                                                with_labels=check.is_label_required,
+                                                is_ref=False)
+            results = await session.execute(query)
+            results_df = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+
+            # Reference query
+            query = create_execution_data_query(model_version, monitor_options, columns=columns,
+                                                with_labels=check.is_label_required,
+                                                is_ref=True)
+            results = await session.execute(query)
+            reference_df = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
         else:
-            reference_query = None
+            results_df = pd.DataFrame()
+            reference_df = pd.DataFrame()
 
-        model_versions_sessions.append((reference_query, test_info))
+        model_versions_data[model_version.id] = {"data": results_df, "reference": reference_df, "windows": test_info}
 
-    # Complete queries and then commit the connection, to release back to the pool (since the check might take long time
-    # to run, and we don't want to unnecessarily hold the connection)
-    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    # Closing connections to db after we have all the data
     await session.commit()
 
     # get result from active sessions and run the check per each model version
-    check_results = get_results_for_model_versions_per_window(model_version_dataframes,
+    check_results = get_results_for_model_versions_per_window(model_versions_data,
                                                               model_versions,
                                                               model,
                                                               check,
@@ -392,139 +380,6 @@ async def run_check_per_window_in_range(
         # therefore reducing the end time by 1 microsecond
         "time_labels": [d.subtract(microseconds=1).isoformat() for d in all_windows]
     }
-
-
-async def run_suite_per_window_in_range(
-        check_ids: t.List[int],
-        session: AsyncSession,
-        monitor_options: MonitorOptions,
-        parallel: bool = True,
-) -> t.Union[t.Dict[int, t.Dict], t.Dict]:
-    """Run a suite on a monitor table per time window in the time range.
-
-    The function gets the relevant model versions and the task type of the check.
-    Then, it creates a session per model version and per time window.
-    The sessions are executed and the results are returned.
-    The results are then used to run the suite.
-    The function returns the results of each check and the time windows that were used.
-
-    Parameters
-    ----------
-    check_ids: t.Union[int, t.List[int]]
-        The id of the check to run.
-    session : AsyncSession
-        The database session to use.
-    monitor_options: MonitorOptions
-    parallel : bool, default True
-        Whether to run the checks in parallel with joblib.
-
-    Returns
-    -------
-    dict
-        A dictionary containing the output of the check and the time labels.
-    """
-    if len(check_ids) == 0:
-        return {}
-
-    # get the relevant objects from the db
-    checks: t.List[Check] = (await session.scalars(select(Check).where(Check.id.in_(set(check_ids))))).all()
-    if len(checks) == 0:
-        raise NotFound(f"Could not find checks with ids {check_ids}")
-    if len(set(check.model_id for check in checks)) > 1:
-        raise ValueError(f"Checks {check_ids} belong to different models")
-    model_id = checks[0].model_id
-
-    uses_reference_data = any((check.is_reference_required for check in checks))
-    all_windows = monitor_options.calculate_windows()[-31:]
-    frequency = monitor_options.frequency
-
-    assert frequency is not None
-
-    aggregation_window = (
-        frequency.to_pendulum_duration() * monitor_options.aggregation_window
-        if monitor_options.aggregation_window is not None
-        else frequency.to_pendulum_duration()
-    )
-
-    model, model_versions = await get_model_versions_for_time_range(
-        session,
-        model_id,
-        all_windows[0] - aggregation_window,
-        all_windows[-1]
-    )
-
-    if len(model_versions) == 0:
-        raise NotFound("No relevant model versions found")
-
-    top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
-    model_columns = list(model_versions[0].model_columns.keys())
-    columns = top_feat + model_columns
-
-    # execute an async session per each model version
-    model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
-    for model_version in model_versions:
-        # If filter does not fit the model version, skip it
-        if not model_version.is_filter_fit(monitor_options.filter):
-            continue
-
-        test_info: t.List[t.Dict] = []
-        # create the session per time window
-        for window_end in all_windows:
-            window_start = window_end - aggregation_window
-            curr_test_info = {"start": window_start, "end": window_end}
-            test_info.append(curr_test_info)
-            if model_version.is_in_range(window_start, window_end):
-                options_with_time_filter = monitor_options.add_filters(_times_to_data_filter(window_start, window_end))
-                curr_test_info["query"] = create_execution_data_query(model_version, session, options_with_time_filter,
-                                                                      columns, with_labels=True, is_ref=False)
-            else:
-                curr_test_info["data"] = pd.DataFrame()
-        # Query reference if the check use it
-        if uses_reference_data:
-            reference_query = create_execution_data_query(model_version, session, monitor_options,
-                                                          columns, with_labels=True, is_ref=True)
-        else:
-            reference_query = None
-
-        model_versions_sessions.append((reference_query, test_info))
-
-    # Complete queries and then commit the connection, to release back to the pool (since the check might take long time
-    # to run, and we don't want to unnecessarily hold the connection)
-    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
-    await session.commit()
-
-    # run the checks
-    # get result from active sessions and run the check per each model version
-    windows_results = get_results_for_model_versions_per_window(model_version_dataframes,
-                                                                model_versions,
-                                                                model,
-                                                                checks,
-                                                                monitor_options.additional_kwargs,
-                                                                parallel=parallel)
-
-    all_checks_results = {}
-    for check in checks:
-        all_checks_results[check.id] = {"output": defaultdict(list),
-                                        "time_labels": [d.isoformat() for d in all_windows]}
-
-    for model_version, model_version_results in windows_results.items():
-        for window_result in model_version_results:
-            suite_result = window_result["result"]
-            # If there was no production data for the window we will have no result
-            if suite_result is not None:
-                for check_result in suite_result.results:
-                    if isinstance(check_result, CheckResult):
-                        result_value = reduce_check_result(check_result, monitor_options.additional_kwargs)
-                    else:
-                        result_value = None
-                    # HACK: check_id is assigned manually in `get_results_for_model_versions_per_window` in order to
-                    # reserve the relation between the dp check and the check entity
-                    all_checks_results[check_result.check.check_id]["output"][model_version.name].append(result_value)
-            else:
-                for check in checks:
-                    all_checks_results[check.id]["output"][model_version.name].append(None)
-
-    return all_checks_results
 
 
 async def run_check_window(
@@ -577,30 +432,38 @@ async def run_check_window(
                          f"for single dataset checks, received {check.name}")
 
     # execute an async session per each model version
-    model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]] = []
+    model_versions_data = {}
     for model_version in model_versions:
-        test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
+        test_session, ref_session = load_data_for_check(model_version, top_feat, monitor_options,
                                                         with_reference=is_train_test_check or reference_only,
                                                         with_test=not reference_only,
                                                         n_samples=n_samples,
                                                         with_labels=check.is_label_required,
                                                         filter_labels_exist=check.is_label_required)
-        if test_session is None:
-            info = {}
+
+        if not reference_only:
+            info = {"windows": [
+                {"start": monitor_options.start_time_dt(), "end": monitor_options.end_time_dt()}
+            ]}
         else:
-            info = {"start": monitor_options.start_time_dt(),
-                    "end": monitor_options.end_time_dt(),
-                    "query": test_session}
-
-        model_versions_sessions.append((ref_session, [info]))
-
-    # Complete queries
-    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+            # Single window without times
+            info = {"windows": [{}]}
+        if test_session is not None:
+            results = await session.execute(test_session)
+            info["data"] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+        else:
+            info["data"] = pd.DataFrame()
+        if ref_session is not None:
+            results = await session.execute(ref_session)
+            info["reference"] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+        else:
+            info["reference"] = pd.DataFrame()
+        model_versions_data[model_version.id] = info
 
     # get result from active sessions and run the check per each model version
     if not reference_only:
         model_results_per_window = get_results_for_model_versions_per_window(
-            model_version_dataframes,
+            model_versions_data,
             model_versions,
             model,
             check,
@@ -610,7 +473,7 @@ async def run_check_window(
         )
     else:
         model_results_per_window = get_results_for_model_versions_for_reference(
-            model_version_dataframes,
+            model_versions_data,
             model_versions,
             model,
             check,
@@ -628,22 +491,24 @@ async def run_check_window(
 
 def create_execution_data_query(
         model_version: ModelVersion,
-        session: AsyncSession,
         options: TableFiltersSchema,
+        frequency: Frequency = None,
+        period: pdl.Period = None,
         columns: t.List[str] = None,
         n_samples: int = DEFAULT_N_SAMPLES,
         with_labels: bool = False,
         filter_labels_exist: bool = False,
         is_ref: bool = False
-) -> t.Coroutine:
+) -> sqlalchemy.select:
     """Return sessions of the data load for the given model version.
 
     Parameters
     ----------
     model_version: Table
-    session
-    columns
     options
+    frequency
+    period
+    columns
     n_samples: int
         The number of samples to collect
     with_labels: bool, default False
@@ -661,7 +526,7 @@ def create_execution_data_query(
         raise ValueError("filter_labels_exist is True but with_labels is False")
 
     if is_ref:
-        table = model_version.get_reference_table(session)
+        table = model_version.get_reference_table()
         if columns is None:
             if with_labels is False:
                 columns = [col.name for col in table.c if col.name != SAMPLE_LABEL_COL]
@@ -674,14 +539,24 @@ def create_execution_data_query(
 
         if filter_labels_exist:
             data_query = data_query.where(table.c[SAMPLE_LABEL_COL].isnot(None))
+
+        return data_query.filter(options.sql_columns_filter())\
+            .order_by(func.md5(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR)))\
+            .limit(n_samples)
     else:
-        table = model_version.get_monitor_table(session)
+        if period is None:
+            raise ValueError("period must be provided for monitor table")
+        table = model_version.get_monitor_table()
+
         if columns is None:
             columns = [col.name for col in table.c]
 
+        # Forcefully add the sample id and ts columns
+        columns = set(columns + [SAMPLE_ID_COL, SAMPLE_TS_COL])
+
         # For monitoring tables, we join the labels table if needed
         if with_labels:
-            sample_labels_table = model_version.model.get_sample_labels_table(session)
+            sample_labels_table = model_version.model.get_sample_labels_table()
             data_query = select([table.c[col] for col in columns] + [sample_labels_table.c[SAMPLE_LABEL_COL]])
             data_query = data_query.join(sample_labels_table,
                                          onclause=table.c[SAMPLE_ID_COL] == sample_labels_table.c[SAMPLE_ID_COL],
@@ -692,15 +567,33 @@ def create_execution_data_query(
         else:
             data_query = select([table.c[col] for col in columns])
 
-    # Apply filters and sampling
-    filters = options.sql_all_filters() if SAMPLE_TS_COL in table.c else options.sql_columns_filter()
-    data_query = data_query.filter(filters)
-    return session.execute(random_sample(data_query, table, n_samples=n_samples))
+        # If frequency is defined, partitioning the data by the defined frequency and selecting n_samples
+        # samples per partition
+        if frequency is not None:
+            # NOTE: the below query changes the distribution of the data over the frequency period. Later on we are
+            # using the aggregation window to get random samples for a join of a multiple frequency periods. This means
+            # we give each period the same weight in sampling, although it might not be the case in the original data.
+            # For example, if we have 2 periods, one with 5000 samples, and second with 500000 samples, the sampling for
+            # the aggregation window will take equal number of samples from each period, and will change the time
+            # distribution of the data.
+            ts = func.timezone(model_version.model.timezone, table.c[SAMPLE_TS_COL])
+            window_query = select(table.c[SAMPLE_ID_COL],
+                                  func.rank().over(partition_by=func.date_trunc(frequency, ts),
+                                                   order_by=func.md5(table.c[SAMPLE_ID_COL])).label("rank")) \
+                .filter(options.sql_columns_filter()) \
+                .filter(table.c[SAMPLE_TS_COL] >= period.start, table.c[SAMPLE_TS_COL] < period.end).cte(
+                "window_query")
+            limit_query = select(window_query.c[SAMPLE_ID_COL]).where(window_query.c.rank <= n_samples).cte(
+                "limit_query")
+            return data_query.filter(table.c[SAMPLE_ID_COL].in_(limit_query))
+        else:
+            return data_query.filter(options.sql_columns_filter())\
+                .order_by(func.md5(func.cast(table.c[SAMPLE_ID_COL], VARCHAR)))\
+                .limit(n_samples)
 
 
 def load_data_for_check(
         model_version: ModelVersion,
-        session: AsyncSession,
         features: t.List[str],
         options: TimeWindowOption,
         with_reference: bool = True,
@@ -714,7 +607,6 @@ def load_data_for_check(
     Parameters
     ----------
     model_version
-    session
     features
     options
     with_reference: bool
@@ -739,7 +631,6 @@ def load_data_for_check(
 
     if with_reference:
         reference_query = create_execution_data_query(model_version,
-                                                      session=session,
                                                       columns=columns,
                                                       options=options,
                                                       n_samples=n_samples,
@@ -751,9 +642,10 @@ def load_data_for_check(
 
     if with_test:
         if model_version.is_in_range(options.start_time_dt(), options.end_time_dt()):
+            period = options.end_time_dt() - options.start_time_dt()
             test_query = create_execution_data_query(model_version,
-                                                     session=session,
                                                      columns=columns,
+                                                     period=period,
                                                      options=options,
                                                      n_samples=n_samples,
                                                      with_labels=with_labels,
@@ -765,32 +657,6 @@ def load_data_for_check(
         test_query = None
 
     return test_query, reference_query
-
-
-async def complete_sessions_for_check(model_versions_sessions: t.List[t.Tuple[t.Coroutine, t.List[t.Dict]]]):
-    """Complete all the async queries and transforms them into dataframes."""
-    model_version_dataframes = []
-    for (reference_query, test_infos) in model_versions_sessions:
-        for curr_test_info in test_infos:
-            if "query" in curr_test_info:
-                # the test info query may be none if there was no data after the filtering
-                if curr_test_info["query"] is not None:
-                    test_query = await curr_test_info["query"]
-                    curr_test_info["data"] = pd.DataFrame(test_query.all(),
-                                                          columns=[str(key) for key in test_query.keys()])
-                    del curr_test_info["query"]
-                else:
-                    curr_test_info["data"] = pd.DataFrame()
-        if reference_query is not None:
-            reference_query = (await reference_query)
-            reference_table_data_dataframe = pd.DataFrame(reference_query.all(),
-                                                          columns=[str(key) for key in reference_query.keys()])
-        else:
-            # We mark reference as "None" if it's not needed (a single dataset check)
-            reference_table_data_dataframe = None
-
-        model_version_dataframes.append((reference_table_data_dataframe, test_infos))
-    return model_version_dataframes
 
 
 def reduce_check_result(result: CheckResult, additional_kwargs) -> t.Optional[t.Dict[str, Number]]:

@@ -728,38 +728,6 @@ def test_run_lookback_no_fi(
     )
 
 
-def test_run_many_checks(
-    test_api: TestAPI,
-    client: TestClient
-):
-    # Arrange
-    model = test_api.create_model(model={"task_type": TaskType.MULTICLASS.value})
-    model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
-    check1 = test_api.create_check(model["id"])
-    check2 = test_api.create_check(model["id"])
-    check3 = test_api.create_check(model["id"])
-    _, start_time, end_time = upload_classification_data(
-        model_version_id=model_version["id"],
-        api=test_api,
-        model_id=model["id"],
-    )
-    upload_multiclass_reference_data(
-        api=test_api,
-        classification_model_version=model_version
-    )
-
-    start_time = start_time.isoformat()
-    end_time = end_time.add(hours=1).isoformat()
-
-    # Act
-    request = client.post(f"/api/v1/checks/run-many?check_id={check1['id']}&check_id={check2['id']}"
-                          f"&check_id={check3['id']}",
-                          json={"start_time": start_time, "end_time": end_time})
-
-    # Assert
-    assert request.status_code == 200
-
-
 # TODO: rename or add description
 def test_metric_check_w_features(
     test_api: TestAPI,

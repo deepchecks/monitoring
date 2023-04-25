@@ -61,7 +61,7 @@ async def bins_for_feature(
         feature_quantiles_cte = (select([feature_column,
                                         func.cume_dist().over(order_by=feature_column).label('quantile')])
                                  .select_from(table)
-                                 .where(monitor_options.sql_all_filters()))
+                                 .where(monitor_options.sql_time_filter(), monitor_options.sql_columns_filter()))
         if filter_labels_exist:
             feature_quantiles_cte = model_version.model.filter_labels_exist(feature_quantiles_cte, table)
         feature_quantiles_cte = feature_quantiles_cte.cte('feature_with_quantile')
@@ -86,7 +86,7 @@ async def bins_for_feature(
             feature_column.label('value'),
             func.count().label('count')
         ]).select_from(table)
-            .where(monitor_options.sql_all_filters())
+            .where(monitor_options.sql_time_filter(), monitor_options.sql_columns_filter())
             .group_by(feature_column)
             .order_by(desc(text('count'))).limit(num_bins))
         if filter_labels_exist:
