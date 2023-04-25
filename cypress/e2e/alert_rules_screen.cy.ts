@@ -230,7 +230,7 @@ describe("Alert Rules Screen", () => {
 
       if (alertRuleLogic.value !== undefined)
         cy.wrap(form)
-          .contains("label", "Value")
+          .contains("label", "Threshold")
           .next()
           .find("input")
           .should("exist")
@@ -360,7 +360,7 @@ describe("Alert Rules Screen", () => {
   it("Test closure of rule creation form", () => {
     cy.visit("/configuration/alert-rules");
     cy.contains("button", "New Alert Rule").should("exist").click();
-    cy.contains("h1", "Create New Alert").should("exist").next().click();
+    cy.contains("h2", "Create New Alert Rule").should("exist").next().click();
     cy.get("div[role=presentation] > div[role=dialog]").should("not.exist");
   });
 
