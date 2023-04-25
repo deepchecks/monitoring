@@ -303,7 +303,7 @@ async def run_check_per_window_in_range(
 
     model_versions_data = {}
     for model_version in model_versions:
-        requires_query = False
+        query_start_time, query_end_time = None, None
         # If filter does not fit the model version, skip it
         if not model_version.is_filter_fit(monitor_options.filter):
             continue
@@ -322,10 +322,12 @@ async def run_check_per_window_in_range(
                     curr_test_info["result"] = cache_result.value
                     continue
             if model_version.is_in_range(window_start, window_end):
-                requires_query = True
+                # Save only the first window start and the last window end
+                query_start_time = query_start_time or window_start
+                query_end_time = window_end
 
-        if requires_query:
-            period = all_windows[-1] - (all_windows[0] - aggregation_window)
+        if query_start_time:
+            period = query_end_time - query_start_time
             query = create_execution_data_query(model_version, monitor_options, period=period, columns=columns,
                                                 frequency=monitor_options.frequency,
                                                 with_labels=check.is_label_required,
