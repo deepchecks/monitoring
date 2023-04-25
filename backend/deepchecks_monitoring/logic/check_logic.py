@@ -570,6 +570,12 @@ def create_execution_data_query(
         # If frequency is defined, partitioning the data by the defined frequency and selecting n_samples
         # samples per partition
         if frequency is not None:
+            # NOTE: the below query changes the distribution of the data over the frequency period. Later on we are
+            # using the aggregation window to get random samples for a join of a multiple frequency periods. This means
+            # we give each period the same weight in sampling, although it might not be the case in the original data.
+            # For example, if we have 2 periods, one with 5k, and second one with 500k, the sampling for the aggregation
+            # window will take equal number of samples from each period, and will change the time distribution of the
+            # data.
             ts = func.timezone(model_version.model.timezone, table.c[SAMPLE_TS_COL])
             window_query = select(table.c[SAMPLE_ID_COL],
                                   func.rank().over(partition_by=func.date_trunc(frequency, ts),
