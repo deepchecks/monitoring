@@ -38,7 +38,7 @@ class DataIngestionAlert(Base):
 
     model_id = sa.Column(
         sa.Integer,
-        sa.ForeignKey(" models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        sa.ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
     model: Mapped["Model"] = relationship(

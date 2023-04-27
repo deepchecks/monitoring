@@ -162,6 +162,41 @@ class AlertsScheduler:
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
 
+    async def run_organization_data_ingestion_alert(self, organization):
+        """Try enqueue monitor execution tasks."""
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
+            models: t.List[Model] = await session.scalars(
+                select(Model)
+            ).where(Model.data_ingestion_alert_label_count.isnot(None) or
+                    Model.data_ingestion_alert_label_ratio.isnot(None) or
+                    Model.data_ingestion_alert_sample_count.isnot(None))
+
+            for model in models:
+                schedules = []
+                frequency = model.data_ingestion_alert_frequency.to_pendulum_duration()
+                schedule_time = model.next_data_ingestion_alert_schedule
+
+                while (schedule_time <= model.end_time):
+                    schedules.append(schedule_time)
+                    schedule_time = schedule_time + frequency
+
+                if schedules:
+                    try:
+                        await enqueue_ingestion_tasks(model, schedules, frequency, organization, session)
+                        model.data_ingestion_alert_latest_schedule = schedules[-1]
+                        await session.commit()
+                    # NOTE:
+                    # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
+                    # error is possible. In that case we just skip the monitor and try again next time.
+                    except (SerializationError, DBAPIError) as error:
+                        if isinstance(error, DBAPIError) and not is_serialization_error(error):
+                            self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
+                            raise
+
 
 async def get_versions_hour_windows(
     model: Model,
@@ -259,33 +294,36 @@ async def enqueue_tasks(monitor, schedules, organization, session):
             name=f'Monitor:{monitor.id}:ts:{schedule.int_timestamp}',
             executor='execute_monitor',
             queue='monitors',
-            params={'monitor_id': monitor.id, 'timestamp': schedule.to_iso8601_string(),
+            params={'monitor_id': monitor.id, 'end_time': schedule.to_iso8601_string(),
                      'organization_id': organization.id, 'organization_schema': organization.schema_name},
             priority=1,
             description='Monitor alert rules execution task',
             reference=f'Monitor:{monitor.id}',
             execute_after=schedule
-         ))
+        ))
 
     await session.execute(insert(Task).values(tasks).on_conflict_do_nothing(constraint='name_uniqueness'))
 
 
-async def enqueue_ingestion_tasks(model, schedules, organization, session):
+async def enqueue_ingestion_tasks(model, schedules, duration, organization, session):
     tasks = []
     for schedule in schedules:
         tasks.append(dict(
             name=f'Model:{model.id}:ts:{schedule.int_timestamp}',
-            executor='execute_model',
-            queue='monitors',
-            params={'model_id': model.id, 'timestamp': schedule.to_iso8601_string(),
-                     'organization_id': organization.id, 'organization_schema': organization.schema_name},
+            executor='execute_model_data_ingestion_task',
+            queue='models',
+            params={'model_id': model.id,
+                    'end_time': schedule.to_iso8601_string(),
+                    'start_time': (schedule - duration).to_iso8601_string(),
+                    'organization_id': organization.id, 'organization_schema': organization.schema_name},
             priority=1,
-            description='Monitor alert rules execution task',
-            reference=f'Monitor:{monitor.id}',
+            description='Model data ingestion execution task',
+            reference=f'Model:{model.id}',
             execute_after=schedule
-         ))
+        ))
 
     await session.execute(insert(Task).values(tasks).on_conflict_do_nothing(constraint='name_uniqueness'))
+
 
 def is_serialization_error(error: DBAPIError):
     orig = getattr(error, 'orig', None)

@@ -15,6 +15,8 @@ import typing as t
 from collections import defaultdict
 
 import anyio
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.model import Model
 import sqlalchemy as sa
 import uvloop
 from sqlalchemy import func, update
@@ -25,7 +27,7 @@ from deepchecks_monitoring import config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
-from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
+from deepchecks_monitoring.monitoring_utils import DataFilterList, TimeUnit, configure_logger, make_oparator_func
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
@@ -150,6 +152,79 @@ async def _execute_monitor(
     return []
 
 
+@actor(queue_name="models", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
+async def execute_model_data_ingestion_task(
+        organization_id: int,
+        organization_schema: str,  # pylint: disable=unused-argument
+        model_id: int,
+        end_time: str,
+        start_time: str,
+        session: AsyncSession,
+        resources_provider: ResourcesProvider,
+        logger: logging.Logger,
+        **kwargs  # pylint: disable=unused-argument
+) -> t.List[Alert]:
+    """Execute alert rule."""
+    model: Model = (await session.execute(sa.select(Model).where(Model.id == model_id))).scalars().first()
+    freq = model.data_ingestion_alert_frequency
+
+    def truncate_date(col, agg_time_unit: str = "day"):
+        return func.cast(func.extract("epoch", func.date_trunc(agg_time_unit, col)), sa.Integer)
+
+    def sample_id(columns):
+        return getattr(columns, SAMPLE_ID_COL)
+
+    def sample_timestamp(columns):
+        return getattr(columns, SAMPLE_TS_COL)
+
+    def sample_label(columns):
+        return getattr(columns, SAMPLE_LABEL_COL)
+
+    if freq == TimeUnit.HOUR:
+        agg_time_unit = "minute"
+    elif freq == TimeUnit.DAY:
+        agg_time_unit = "hour"
+    else:
+        agg_time_unit = "day"
+
+    tables = [version.get_monitor_table(session) for version in model.versions]
+    if not tables:
+        return
+
+    labels_table = model.get_sample_labels_table(session)
+    # Get all samples within time window from all the versions
+    data_query = sa.union_all(*(
+        sa.select(
+            sample_id(table.c).label("sample_id"),
+            truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
+        ).where(sample_timestamp(table.c) <= end_time, sample_timestamp(table.c) > start_time
+                ).distinct()
+        for table in tables)
+    )
+    joined_query = sa.select(sa.literal(model_id).label("model_id"),
+                             data_query.c.sample_id,
+                             data_query.c.timestamp,
+                             func.cast(sample_label(labels_table.c), sa.String).label("label")) \
+        .join(labels_table, onclause=data_query.c.sample_id == sample_id(labels_table.c), isouter=True)
+
+    rows = (await session.execute(
+        sa.select(
+            joined_query.c.model_id,
+            joined_query.c.timestamp,
+            func.count(joined_query.c.sample_id).label("count"),
+            func.count(func.cast(joined_query.c.label, sa.String)).label("label_count"))
+        .group_by(joined_query.c.model_id, joined_query.c.timestamp)
+        .order_by(joined_query.c.model_id, joined_query.c.timestamp, "count"),
+    )).fetchall()
+
+    result = defaultdict(list)
+
+    for row in rows:
+        print(row)
+
+    return result
+
+
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
 async def execute_monitor(
         organization_id: int,
@@ -239,7 +314,7 @@ class WorkerBootstrap:
     resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]]
     settings_type: t.ClassVar[t.Type[WorkerSettings]]
     task_broker_type: t.ClassVar[t.Type[TasksBroker]] = TasksBroker
-    actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor]
+    actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor, execute_model_data_ingestion_task]
 
     try:
         from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel

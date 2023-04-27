@@ -20,6 +20,7 @@ from .model import Model, ModelNote, TaskType
 from .model_version import ModelVersion
 from .monitor import Monitor
 from .slack import SlackInstallation, SlackInstallationState
+from .data_ingestion_alert import DataIngestionAlert
 
 __all__ = [
     'Base',
@@ -38,5 +39,6 @@ __all__ = [
     'AlertSeverity',
     'SlackInstallation',
     'SlackInstallationState',
-    'AlertWebhook'
+    'AlertWebhook',
+    'DataIngestionAlert'
 ]
