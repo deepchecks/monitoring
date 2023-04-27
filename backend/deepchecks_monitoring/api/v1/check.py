@@ -643,7 +643,7 @@ async def run_check_group_by_feature(
         results = await model_version_session['data']
         model_version_session['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
         if 'reference' in model_version_session:
-            results = model_version_session['reference']
+            results = await model_version_session['reference']
             model_version_session['reference'] = pd.DataFrame(results.all(),
                                                               columns=[str(key) for key in results.keys()])
         else:
