@@ -28,13 +28,11 @@ AXIOS_INSTANCE.interceptors.response.use(
       } else if (response.status === 451 && window.location.pathname !== '/license-agreement') {
         window.location.href = '/license-agreement';
       } else {
-        logger.warn('Error from client on axios request', response); // 400...
-
         return response;
       }
     }
 
-    logger.warn('Server error from client on axios request', error); // 500...
+    logger.error('Err on axios request', { err_details: error });
 
     return { error_message: 'Internal server error', additional_information: {} };
   }
