@@ -41,7 +41,3 @@ class DataIngestionAlert(Base):
         sa.ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
-    model: Mapped["Model"] = relationship(
-        "Model",
-        back_populates="models"
-    )

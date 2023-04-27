@@ -63,7 +63,7 @@ class Model(Base, MetadataMixin):
     topic_end_offset = sa.Column(sa.BigInteger, default=-1)
     timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
 
-    data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency))
+    data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency), nullable=False, default=Frequency.DAY)
     data_ingestion_alert_latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
                                                      default=func.date_trunc('day', sa.func.now()))
     data_ingestion_alert_label_ratio = sa.Column(sa.Float)

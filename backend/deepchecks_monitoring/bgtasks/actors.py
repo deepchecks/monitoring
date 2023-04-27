@@ -165,8 +165,12 @@ async def execute_model_data_ingestion_task(
         **kwargs  # pylint: disable=unused-argument
 ) -> t.List[Alert]:
     """Execute alert rule."""
-    model: Model = (await session.execute(sa.select(Model).where(Model.id == model_id))).scalars().first()
-    freq = model.data_ingestion_alert_frequency
+    model: Model = (
+        await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
+    ).scalars().first()
+    freq: Frequency = model.data_ingestion_alert_frequency
+    pdl_start_time = as_pendulum_datetime(start_time)
+    pdl_end_time = as_pendulum_datetime(end_time)
 
     def truncate_date(col, agg_time_unit: str = "day"):
         return func.cast(func.extract("epoch", func.date_trunc(agg_time_unit, col)), sa.Integer)
@@ -180,13 +184,6 @@ async def execute_model_data_ingestion_task(
     def sample_label(columns):
         return getattr(columns, SAMPLE_LABEL_COL)
 
-    if freq == TimeUnit.HOUR:
-        agg_time_unit = "minute"
-    elif freq == TimeUnit.DAY:
-        agg_time_unit = "hour"
-    else:
-        agg_time_unit = "day"
-
     tables = [version.get_monitor_table(session) for version in model.versions]
     if not tables:
         return
@@ -196,9 +193,11 @@ async def execute_model_data_ingestion_task(
     data_query = sa.union_all(*(
         sa.select(
             sample_id(table.c).label("sample_id"),
-            truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
-        ).where(sample_timestamp(table.c) <= end_time, sample_timestamp(table.c) > start_time
-                ).distinct()
+            truncate_date(sample_timestamp(table.c), freq.value.lower()).label("timestamp")
+        ).where(
+            sample_timestamp(table.c) <= pdl_end_time,
+            sample_timestamp(table.c) > pdl_start_time
+        ).distinct()
         for table in tables)
     )
     joined_query = sa.select(sa.literal(model_id).label("model_id"),
@@ -222,7 +221,7 @@ async def execute_model_data_ingestion_task(
     for row in rows:
         print(row)
 
-    return result
+    return rows
 
 
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)

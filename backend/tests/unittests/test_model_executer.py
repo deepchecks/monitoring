@@ -51,6 +51,7 @@ async def test_model_executor(
             Model.data_ingestion_alert_label_ratio: 2,
             Model.data_ingestion_alert_sample_count: 3,
         }))
+    await async_session.flush()
     await async_session.commit()
 
     versions = [
@@ -77,4 +78,4 @@ async def test_model_executor(
         logger=logging.Logger("test")
     )
 
-    assert len(result) == 1, result
+    assert len(result) == 2, result
