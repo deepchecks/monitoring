@@ -214,7 +214,7 @@ def get_results_for_model_versions_per_window(
 
     if jobs:
         # Do not want to use parallel for less than 3 jobs
-        if parallel or len(jobs) <= 2:
+        if not parallel or len(jobs) <= 2:
             jobs = [job[0](*job[1], **job[2]) for job in jobs]
         else:
             jobs = Parallel(n_jobs=-1)(jobs)
