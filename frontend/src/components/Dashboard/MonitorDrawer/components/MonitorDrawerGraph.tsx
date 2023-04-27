@@ -28,20 +28,17 @@ export const MonitorDrawerGraph = ({
   timeFreq,
   monitor,
   setReset
-}: MonitorDrawerGraphViewGraphProps) => (
-  <Box width={{ xs: '520px', xl: '630px' }} height="350px">
-    {isLoading ? (
-      <Loader />
-    ) : graphData?.datasets.length ? (
-      <DiagramLine data={graphData} height={{ lg: 350, xl: 350 }} timeFreq={timeFreq} />
-    ) : (
-      <Box sx={{ transform: 'translateX(25px)' }}>
-        <NoDataToShow title={title} />
-        {monitor && setReset && <StyledReset onClick={() => setReset(true)}>{reset}</StyledReset>}
-      </Box>
-    )}
-  </Box>
-);
+}: MonitorDrawerGraphViewGraphProps) =>
+  isLoading ? (
+    <Loader />
+  ) : graphData?.datasets.length ? (
+    <DiagramLine data={graphData} height={{ lg: 350, xl: 350 }} timeFreq={timeFreq} />
+  ) : (
+    <Box sx={{ transform: 'translateX(25px)' }}>
+      <NoDataToShow title={title} />
+      {monitor && setReset && <StyledReset onClick={() => setReset(true)}>{reset}</StyledReset>}
+    </Box>
+  );
 
 const StyledReset = styled(Typography)(({ theme }) => ({
   color: theme.palette.primary.main,

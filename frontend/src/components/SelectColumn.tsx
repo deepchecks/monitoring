@@ -20,6 +20,7 @@ interface SelectColumnProps {
   setCategory: SetStateType<SelectValues>;
   numericValue: number[] | undefined;
   setNumericValue: SetStateType<number[] | undefined>;
+  size?: 'small' | 'medium';
 }
 
 const SelectColumnComponent = ({
@@ -29,7 +30,8 @@ const SelectColumnComponent = ({
   category,
   setCategory,
   numericValue,
-  setNumericValue
+  setNumericValue,
+  size = 'small'
 }: SelectColumnProps) => {
   const { data: columnsMap = {}, isLoading } = useGetModelColumnsApiV1ModelsModelIdColumnsGet(model);
   const columns = useMemo(
@@ -66,6 +68,7 @@ const SelectColumnComponent = ({
           resetSubcategory();
         }}
         disabled={disabled}
+        size={size}
       >
         {Object.keys(columns).map(col => (
           <MenuItem key={col} value={col}>
@@ -83,6 +86,7 @@ const SelectColumnComponent = ({
               value={category}
               setValue={setCategory}
               clearValue={() => setCategory('')}
+              size={size}
             />
           </Subcategory>
         ) : (

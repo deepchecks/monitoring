@@ -260,5 +260,16 @@ export const componentOptions: Components<Theme> = {
         }
       })
     }
+  },
+  MuiTextField: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        '& .MuiInputBase-root': { borderRadius: '5px' },
+
+        '& .MuiOutlinedInput-notchedOutline': {
+          borderColor: theme.palette.grey.light
+        }
+      })
+    }
   }
 };
