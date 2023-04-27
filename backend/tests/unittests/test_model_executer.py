@@ -47,6 +47,7 @@ async def test_model_executor(
 ):
     await async_session.execute(
         sa.update(Model).where(Model.id == classification_model["id"]).values({
+            Model.data_ingestion_alert_frequency: Frequency.HOUR,
             Model.data_ingestion_alert_label_count: 5,
             Model.data_ingestion_alert_label_ratio: 2,
             Model.data_ingestion_alert_sample_count: 3,
