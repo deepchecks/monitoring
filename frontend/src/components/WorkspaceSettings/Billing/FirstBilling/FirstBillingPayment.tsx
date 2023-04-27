@@ -37,7 +37,7 @@ const FirstBillingPayment = () => {
     if (error) {
       setIsLoading(false);
       setErrorMessage(error.message as string);
-      logger.error(error);
+      logger.error('Error on confirm stripe payment', error);
     }
 
     setIsLoading(false);
