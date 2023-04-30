@@ -29,7 +29,8 @@ interface SelectCheckProps {
   setResConf: SetStateType<string | undefined>;
   setIsValidConfig: SetStateType<boolean>;
   disabled: boolean;
-  error?: boolean | undefined;
+  error?: boolean;
+  size?: 'small' | 'medium';
 }
 
 const PER_FEATURE = 'none';
@@ -45,7 +46,8 @@ export const SelectCheckComponent = ({
   setResConf,
   setIsValidConfig,
   disabled,
-  error
+  error,
+  size = 'small'
 }: SelectCheckProps) => {
   const { data: checksList = [] } = useGetChecksApiV1ModelsModelIdChecksGet(model);
   const { data: checkInfo } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(
@@ -163,6 +165,7 @@ export const SelectCheckComponent = ({
           setCheck('');
         }}
         disabled={disabled}
+        size={size}
       />
       {check && !checkInfoDisabled && (
         <>
@@ -183,6 +186,7 @@ export const SelectCheckComponent = ({
                 })()}
                 required={!isDisabled(conf)}
                 error={error && !isDisabled(conf) && !getSelectedVal(conf)}
+                size={size}
               >
                 {(conf.type as CheckFilterTypes) == CheckFilterTypes.AGGREGATION && (
                   <MenuItem value={PER_FEATURE}>Per feature</MenuItem>
@@ -211,6 +215,7 @@ export const SelectCheckComponent = ({
                 value={resConf || ''}
                 required={!isAgg}
                 error={error && !isAgg && !resConf}
+                size={size}
               >
                 {checkInfo?.res_conf.values?.map((value, index) => (
                   <MenuItem key={value.name + index} value={value.name}>

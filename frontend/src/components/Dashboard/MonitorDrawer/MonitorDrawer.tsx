@@ -8,7 +8,7 @@ import {
   Frequency
 } from 'api/generated';
 
-import { Stack, DrawerProps } from '@mui/material';
+import { Stack, DrawerProps, Box } from '@mui/material';
 
 import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
 import { MonitorDrawerGraph as GraphView } from './components/MonitorDrawerGraph';
@@ -108,13 +108,15 @@ export const MonitorDrawer = ({
             setReset={setReset}
           />
         )}
-        <GraphView
-          graphData={graphData}
-          isLoading={isRunCheckLoading}
-          timeFreq={timeFreq}
-          monitor={monitor}
-          setReset={setReset}
-        />
+        <Box width={{ xs: '520px', xl: '630px' }} height="350px">
+          <GraphView
+            graphData={graphData}
+            isLoading={isRunCheckLoading}
+            timeFreq={timeFreq}
+            monitor={monitor}
+            setReset={setReset}
+          />
+        </Box>
       </Stack>
     </CustomDrawer>
   );

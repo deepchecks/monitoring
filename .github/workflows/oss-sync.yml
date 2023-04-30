@@ -1,0 +1,48 @@
+name: Sync OSS Repo
+on:
+  push:
+    branches:
+      - main
+jobs:
+  repo-sync:
+    name: Sync monitoring-oss with monitoring
+    if: github.repository == 'deepchecks/monitoring'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync repositories 1 to 1 - main branch
+        uses: wei/git-sync@v3
+        with:
+          source_repo: 'https://${{ secrets.DEEPCHECKS_CI_TOKEN }}@github.com/deepchecks/monitoring.git'
+          source_branch: 'main'
+          destination_repo: 'https://${{ secrets.DEEPCHECKS_CI_TOKEN }}@github.com/deepchecks/monitoring-oss.git'
+          destination_branch: 'main'
+      - name: Sync repositories 1 to 1 – tags
+        uses: wei/git-sync@v3
+        with:
+          source_repo: 'https://${{ secrets.DEEPCHECKS_CI_TOKEN }}@github.com/deepchecks/monitoring.git'
+          source_branch: 'refs/tags/*'
+          destination_repo: 'https://${{ secrets.DEEPCHECKS_CI_TOKEN }}@github.com/deepchecks/monitoring-oss.git'
+          destination_branch: 'refs/tags/*'
+      - name: Checkout monitoring-oss
+        uses: actions/checkout@v3
+        with:
+          repository: 'deepchecks/monitoring-oss'
+          ref: main
+          token: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
+      - name: Change LICENSE to pure AGPL
+        run: |
+          rm -f LICENSE
+          mv AGPL_LICENSE LICENSE
+      - name: Remove unused GitHub workflows
+        run: |
+          cd .github/workflows
+          ls | grep -v oss-sync.yml | xargs rm
+
+      - name: Commit "Sync and remove all non-OSS parts"
+        uses: EndBug/add-and-commit@v7
+        with:
+          message: 'Sync and remove all non-OSS parts'
+          remove: '["-r backend/deepchecks_monitoring/ee/"]'
+          default_author: github_actions
+          github_token: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
+      - run: echo # Empty step so that GitHub doesn't complain about an empty job on forks
