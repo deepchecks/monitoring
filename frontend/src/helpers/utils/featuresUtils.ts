@@ -32,14 +32,12 @@ export async function getAvailableFeatures(modelVersionId: number, sortByFi: boo
 
   let featuresNames;
   if (sortByFi && feature_importance != null && Object.keys(feature_importance).length > 0) {
-    featuresNames = Object.keys(feature_importance).sort(
-      (a, b) => feature_importance[b] - feature_importance[a]
-    );
+    featuresNames = Object.keys(feature_importance).sort((a, b) => feature_importance[b] - feature_importance[a]);
   } else {
     featuresNames = Object.keys(features).sort();
   }
   return {
-    featuresNames: (featuresNames = featuresNames.filter(val => features?.[val] in ColumnType)), 
+    featuresNames: (featuresNames = featuresNames.filter(val => features?.[val] in ColumnType)),
     featureImportance: feature_importance
   };
 }

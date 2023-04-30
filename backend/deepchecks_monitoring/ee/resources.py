@@ -123,7 +123,7 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             settings = cast(Settings, self.settings)
             return {
                 "sentryDsn": settings.sentry_dsn,
-                "stripeApiKey": settings.stripe_api_key,
+                "stripeApiKey": settings.stripe_public_api_key,
                 "lauchdarklySdkKey": settings.lauchdarkly_sdk_key,
                 "environment": settings.enviroment,
                 "mixpanel_id": settings.mixpanel_id,

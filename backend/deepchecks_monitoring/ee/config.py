@@ -38,7 +38,8 @@ class TelemetrySettings(BaseDeepchecksSettings):
 class StripeSettings(BaseDeepchecksSettings):
     """Stripe settings."""
 
-    stripe_api_key: str = ''
+    stripe_secret_api_key: str = ''
+    stripe_public_api_key: str = ''
     stripe_webhook_secret: str = ''
 
 

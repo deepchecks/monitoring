@@ -25,6 +25,6 @@ export const constants = {
     description: 'Change how you can pay for your plan',
     buttonLabel: 'Edit',
     imageAlt: 'Credit card',
-    last4Text: (last4: number) => `**** **** **** ${last4 !== undefined ? last4 : '****'}`
+    last4Text: (last4: string) => `**** **** **** ${last4 !== '' ? last4 : '****'}`
   }
 };

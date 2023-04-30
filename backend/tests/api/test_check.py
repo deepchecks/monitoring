@@ -510,7 +510,7 @@ def run_lookback(
     result = t.cast(Payload, result)
     assert len([out for out in result["output"]["v1"] if out is not None]) == 4
     assert datetime.fromisoformat(result["time_labels"][-1]) >= \
-           datetime.fromisoformat(end_time) - timedelta(microseconds=1)
+        datetime.fromisoformat(end_time) - timedelta(microseconds=1)
 
 
 def test_run_lookback_empty_filters(
@@ -726,38 +726,6 @@ def test_run_lookback_no_fi(
         classification_model_version=classification_model_version_without_feature_importance,
         classification_model=classification_model
     )
-
-
-def test_run_many_checks(
-    test_api: TestAPI,
-    client: TestClient
-):
-    # Arrange
-    model = test_api.create_model(model={"task_type": TaskType.MULTICLASS.value})
-    model_version = test_api.create_model_version(model_id=model["id"], model_version={"classes": ["0", "1", "2"]})
-    check1 = test_api.create_check(model["id"])
-    check2 = test_api.create_check(model["id"])
-    check3 = test_api.create_check(model["id"])
-    _, start_time, end_time = upload_classification_data(
-        model_version_id=model_version["id"],
-        api=test_api,
-        model_id=model["id"],
-    )
-    upload_multiclass_reference_data(
-        api=test_api,
-        classification_model_version=model_version
-    )
-
-    start_time = start_time.isoformat()
-    end_time = end_time.add(hours=1).isoformat()
-
-    # Act
-    request = client.post(f"/api/v1/checks/run-many?check_id={check1['id']}&check_id={check2['id']}"
-                          f"&check_id={check3['id']}",
-                          json={"start_time": start_time, "end_time": end_time})
-
-    # Assert
-    assert request.status_code == 200
 
 
 # TODO: rename or add description
@@ -1310,3 +1278,26 @@ def test_label_check_runs_only_on_data_with_label(
 
     # Assert
     assert result == {"v1": None}
+
+
+def test_run_reference(
+    test_api: TestAPI,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+):
+    upload_multiclass_reference_data(
+        api=test_api,
+        classification_model_version=classification_model_version
+    )
+
+    check_id = classification_model_check["id"]
+    result = test_api.execute_check_for_reference(check_id, {
+                              "filter": {
+                                  "filters": [
+                                      {"column": "a", "operator": "greater_than", "value": 12}
+                                  ]
+                              }
+                          })
+    result = t.cast(Payload, result)
+
+    assert result == {"v1": {"Accuracy": 1.0, "Precision - Macro Average": 1.0, "Recall - Macro Average": 1.0}}

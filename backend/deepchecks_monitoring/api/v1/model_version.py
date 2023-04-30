@@ -486,15 +486,18 @@ async def _get_data(model_version_id: int,
                list(model_version.model_columns.keys()))
     if not is_ref:
         columns += list(model_version.meta_columns.keys())
+        period = monitor_options.end_time_dt() - monitor_options.start_time_dt()
+    else:
+        period = None
 
     data_query = create_execution_data_query(model_version,
-                                             session=session,
                                              options=monitor_options,
+                                             period=period,
                                              columns=columns,
                                              n_samples=monitor_options.rows_count,
                                              is_ref=is_ref,
                                              with_labels=True)
-    data_query = await data_query
+    data_query = await session.execute(data_query)
     df = pd.DataFrame(data_query.all(), columns=[str(key) for key in data_query.keys()])
 
     if SAMPLE_TS_COL in df.columns:

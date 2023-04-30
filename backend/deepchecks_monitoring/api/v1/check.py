@@ -30,11 +30,10 @@ from deepchecks_monitoring.config import Settings, Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
-                                                     SingleCheckRunOptions, complete_sessions_for_check,
-                                                     get_feature_property_info, get_metric_class_info,
-                                                     load_data_for_check, reduce_check_result, reduce_check_window,
-                                                     run_check_per_window_in_range, run_check_window,
-                                                     run_suite_per_window_in_range)
+                                                     SingleCheckRunOptions, get_feature_property_info,
+                                                     get_metric_class_info, load_data_for_check, reduce_check_result,
+                                                     reduce_check_window, run_check_per_window_in_range,
+                                                     run_check_window)
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
@@ -355,35 +354,6 @@ async def get_model_auto_frequency(
     return max_option[1]
 
 
-@router.post('/checks/run-many', response_model=t.Dict[int, CheckResultSchema], tags=[Tags.CHECKS])
-async def run_many_checks_together(
-        monitor_options: MonitorOptions,
-        check_ids: t.List[int] = Query(alias='check_id'),
-        session: AsyncSession = AsyncSessionDep,
-):
-    """Run a check for each time window by start-end.
-
-    Parameters
-    ----------
-    check_ids : List[int]
-        ID of the check.
-    monitor_options : MonitorOptions
-        The "monitor" options.
-    session : AsyncSession, optional
-        SQLAlchemy session.
-
-    Returns
-    -------
-    CheckResultSchema
-        Check run result.
-    """
-    return await run_suite_per_window_in_range(
-        check_ids,
-        session,
-        monitor_options,
-    )
-
-
 @router.post('/checks/{check_id}/run/lookback', response_model=CheckResultSchema, tags=[Tags.CHECKS])
 async def run_standalone_check_per_window_in_range(
         check_id: int,
@@ -601,7 +571,8 @@ async def run_check_group_by_feature(
 
     # Get all data count
     data_table = model_version.get_monitor_table(session)
-    count_query = select(func.count()).where(monitor_options.sql_all_filters()).select_from(data_table)
+    count_query = select(func.count()).where(monitor_options.sql_time_filter(),
+                                             monitor_options.sql_columns_filter()).select_from(data_table)
     if check.is_label_required:
         count_query = model_version.model.filter_labels_exist(count_query, data_table)
     count = (await session.execute(count_query)).scalar()
@@ -655,21 +626,32 @@ async def run_check_group_by_feature(
     # First create all session for the db to start simultaneously
     sessions = []
     for f in filters:
-        test_session, ref_session = load_data_for_check(model_version, session, top_feat,
+        test_session, ref_session = load_data_for_check(model_version, top_feat,
                                                         monitor_options.add_filters(f['filters']),
-                                                        with_reference=check.is_reference_required, with_test=True,
+                                                        with_reference=check.is_reference_required,
+                                                        with_test=True,
                                                         with_labels=check.is_label_required,
                                                         filter_labels_exist=check.is_label_required)
-        # The test info is used for caching purposes so need to fill it here
-        test_session_info = {'start': None, 'end': None, 'query': test_session}
-        sessions.append([(ref_session, [test_session_info])])
+        # Create data object to pass to calculate the check. Single window without start/end times
+        session_info = {'data': session.execute(test_session), 'windows': [{}]}
+        if ref_session is not None:
+            session_info['reference'] = session.execute(ref_session)
+        sessions.append(session_info)
 
     # Now wait for sessions and run the check
-    for f, model_versions_sessions in zip(filters, sessions):
-        model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    for f, model_version_session in zip(filters, sessions):
+        results = await model_version_session['data']
+        model_version_session['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+        if 'reference' in model_version_session:
+            results = await model_version_session['reference']
+            model_version_session['reference'] = pd.DataFrame(results.all(),
+                                                              columns=[str(key) for key in results.keys()])
+        else:
+            model_version_session['reference'] = pd.DataFrame()
+
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
-            model_version_dataframes, [model_version], model_version.model, check,
+            {model_version.id : model_version_session}, [model_version], model_version.model, check,
             monitor_options.additional_kwargs, with_display=False, parallel=resources_provider.settings.is_cloud)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
@@ -706,17 +688,24 @@ async def get_check_display(
 
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
-    test_session, ref_session = load_data_for_check(model_version, session, top_feat, monitor_options,
+    model_version_data = {'windows': [{}]}
+    test_session, ref_session = load_data_for_check(model_version, top_feat, monitor_options,
                                                     with_reference=check.is_reference_required, with_test=True,
                                                     with_labels=check.is_label_required,
                                                     filter_labels_exist=check.is_label_required)
-    # The test info is used for caching purposes so need to fill it here
-    test_session_info = {'start': None, 'end': None, 'query': test_session}
-    model_versions_sessions = [(ref_session, [test_session_info])]
-    model_version_dataframes = await complete_sessions_for_check(model_versions_sessions)
+    test_session = session.execute(test_session)
+    ref_session = session.execute(ref_session) if ref_session is not None else None
+    results = await test_session
+    model_version_data['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+    if ref_session:
+        results = await ref_session
+        model_version_data['reference'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+    else:
+        model_version_data['reference'] = pd.DataFrame()
+
     # Get value from check to run
     model_results_per_window = get_results_for_model_versions_per_window(
-        model_version_dataframes, [model_version], model_version.model, check,
+        {model_version.id: model_version_data}, [model_version], model_version.model, check,
         monitor_options.additional_kwargs, with_display=True, parallel=resources_provider.settings.is_cloud)
 
     # The function we called is more general, but we know here we have single version and window

@@ -1,9 +1,10 @@
 import React from 'react';
-import { DesktopDatePicker, DesktopDatePickerProps } from '@mui/x-date-pickers';
+import { DesktopDatePicker } from '@mui/x-date-pickers';
 import { Calendar } from '../../assets/icon/icon';
 import { DesktopDatePickerStyle, InputStyle } from './DatePicker.style';
 
-export function DatePicker({ ...props }: DesktopDatePickerProps<Date, Date>) {
+// TODO - This Implementation relevant to @mui/x-date-pickers version ^5.0.0-beta.7, need to be replaced with the new one
+export function DatePicker({ ...props }: any) {
   return (
     <DesktopDatePicker
       components={{

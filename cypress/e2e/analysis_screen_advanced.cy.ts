@@ -10,9 +10,7 @@ describe("Analysis screen drilldown", () => {
       })
       .then(() => {
         cy.visit("/analysis");
-
-        // toggle comparison mode
-        cy.contains("span", "Compare data with previous period").click({
+        cy.contains("span", "Compare with previous period").click({
           force: true,
         });
         // cy.get('input[value="11/05/2022 - 11/08/2022"]')

@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import pick from 'lodash/pick';
+
 import {
   Select,
   SelectProps,
@@ -8,9 +9,10 @@ import {
   InputLabelProps,
   FormHelperText,
   FormHelperTextProps,
-  MenuItem
+  MenuItem,
+  styled
 } from '@mui/material';
-import { styled } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 export interface SelectPrimaryProps extends SelectProps {
   children: ReactNode;
@@ -34,7 +36,19 @@ export const SelectPrimary = ({
   return (
     <StyledFormControl fullWidth={fullWidth}>
       <StyledInputLabel {...labelProps}>{label}</StyledInputLabel>
-      <Select size={size} label={label} {...props}>
+      <Select
+        size={size}
+        label={label}
+        IconComponent={ArrowDropDownIcon}
+        {...props}
+        sx={theme => ({
+          borderRadius: '5px',
+
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: theme.palette.grey.light
+          }
+        })}
+      >
         {children}
       </Select>
       {helperText && <FormHelperText {...helperTextProps}>{helperText}</FormHelperText>}

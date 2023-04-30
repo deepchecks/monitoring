@@ -28,6 +28,8 @@ export interface AnalysisContextValues {
   resetAllFilters: () => void;
   defaultFrequency: AutoFrequencyResponse | null;
   setDefaultFrequency: SetStateType<AutoFrequencyResponse | null>;
+  setCompareByReference: SetStateType<boolean>;
+  compareByReference: boolean;
 }
 
 interface AnalysisProviderProps {
@@ -140,11 +142,14 @@ export const AnalysisContext = createContext<AnalysisContextValues>({
   reset: false,
   resetAllFilters: () => 1,
   defaultFrequency: null,
-  setDefaultFrequency: () => 1
+  setDefaultFrequency: () => 1,
+  compareByReference: false,
+  setCompareByReference: () => 1
 });
 
 export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   const [compareWithPreviousPeriod, setCompareWithPreviousPeriod] = useState(false);
+  const [compareByReference, setCompareByReference] = useState(false);
 
   const [period, setPeriod] = useState<[Date, Date] | null>(null);
 
@@ -209,7 +214,9 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       reset,
       resetAllFilters,
       defaultFrequency,
-      setDefaultFrequency
+      setDefaultFrequency,
+      setCompareByReference,
+      compareByReference
     }),
     [
       filters,
@@ -222,7 +229,9 @@ export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
       reset,
       resetAllFilters,
       defaultFrequency,
-      setDefaultFrequency
+      setDefaultFrequency,
+      setCompareByReference,
+      compareByReference
     ]
   );
 

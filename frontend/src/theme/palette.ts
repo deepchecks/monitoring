@@ -12,7 +12,7 @@ declare module '@mui/material' {
   }
 
   interface PaletteOptions {
-    severity: Record<AlertSeverity, string>;
+    severity?: Record<AlertSeverity, string>;
   }
 }
 

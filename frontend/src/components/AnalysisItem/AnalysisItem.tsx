@@ -10,6 +10,7 @@ import { AnalysisItemProps } from './AnalysisItem.types';
 import { CheckFilterTypes, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { manipulateAnalysisItem } from './helpers/manipulateAnalysisItem';
+import { getReference } from './helpers/getReference';
 
 import { AnalysisChartItemWithFilters } from './components/AnalysisChartItemWithFilters';
 import { AnalysisChartItem } from './components/AnalysisChartItem';
@@ -28,7 +29,8 @@ const AnalysisItem = ({
   frequency,
   activeFilters,
   height,
-  graphHeight
+  graphHeight,
+  compareByReference
 }: AnalysisItemProps) => {
   const { observedContainerRef, isVisible } = useElementOnScreen();
   const { mutateAsync: runCheck, chartData } = useRunCheckLookback('line');
@@ -44,6 +46,7 @@ const AnalysisItem = ({
   const [filteredValues, setFilteredValues] = useState<FilteredValues>({} as FilteredValues);
   const [isMostWorstActive, setIsMostWorstActive] = useState(false);
   const [runLookBack, setRunLookBack] = useState(false);
+  const [reference, setReference] = useState([]);
 
   const checkConf = useMemo(() => checkInfo && checkInfo.check_conf, [checkInfo?.check_conf]);
   const additionalKwargs = useMemo(() => {
@@ -76,6 +79,10 @@ const AnalysisItem = ({
       refetch();
     }
   }, [check.id, refetch]);
+
+  useEffect(() => {
+    getReference({ check, compareByReference, additionalKwargs, setReference });
+  }, [compareByReference]);
 
   useEffect(() => {
     manipulateAnalysisItem({
@@ -113,7 +120,8 @@ const AnalysisItem = ({
     initialData,
     checksWithCustomProps,
     isVisible,
-    runLookBack
+    runLookBack,
+    compareByReference
   ]);
 
   const diagramLineProps = {
@@ -124,7 +132,8 @@ const AnalysisItem = ({
     timeFreq: frequency,
     previousPeriodLabels: perviousPeriodLabels,
     analysis: true,
-    height: { lg: graphHeight - 104, xl: graphHeight }
+    height: { lg: graphHeight - 104, xl: graphHeight },
+    alert_rules: reference
   };
 
   const chartItemProps = {

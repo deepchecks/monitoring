@@ -48,15 +48,14 @@ async def run_suite_for_model_version(model_version: ModelVersion, window_option
     """
     top_feat, feat_imp = model_version.get_top_features()
     model: Model = model_version.model
-    test_session, ref_session = load_data_for_check(model_version, session, top_feat, window_options,
-                                                    with_labels=True)
-    if test_session:
-        test_session = await test_session
+    test_session, ref_session = load_data_for_check(model_version, top_feat, window_options, with_labels=True)
+    if test_session is not None:
+        test_session = await session.execute(test_session)
         test_df = DataFrame(test_session.all(), columns=[str(key) for key in test_session.keys()])
     else:
         test_df = DataFrame()
-    if ref_session:
-        ref_session = await ref_session
+    if ref_session is not None:
+        ref_session = await session.execute(ref_session)
         ref_df = DataFrame(ref_session.all(), columns=[str(key) for key in ref_session.keys()])
     else:
         ref_df = DataFrame()

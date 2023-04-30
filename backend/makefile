@@ -136,7 +136,7 @@ requirements: $(ENV)
 
 dev-requirements: $(ENV)
 	@echo "####  installing development dependencies, it could take some time, please wait! ####"
-	@$(PIP) install -U pip==22.0.4 setuptools==58.3.0
+	@$(PIP) install -U pip setuptools
 	@$(PIP) install -q -e ./client
 	@$(PIP) install -q -r ./dev-requirements.txt
 

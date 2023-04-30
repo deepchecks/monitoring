@@ -28,7 +28,7 @@ export const SelectCondition = ({
   setValue
 }: SelectConditionProps) => (
   <>
-    <StyledTitle variant="body1">{title}</StyledTitle>
+    <StyledTitle>{title}</StyledTitle>
     <Stack
       direction="row"
       divider={<ArrowForwardIcon />}
@@ -40,6 +40,7 @@ export const SelectCondition = ({
         label="Select Operator"
         value={operator}
         onChange={event => setOperator(event.target.value as OperatorsEnum)}
+        sx={{ width: '268px' }}
       >
         {OPERATORS.map(({ label, value }) => (
           <SelectPrimaryItem value={value} key={value}>
@@ -48,9 +49,10 @@ export const SelectCondition = ({
         ))}
       </SelectPrimary>
       <TextField
+        sx={{ width: '200px' }}
         placeholder="0"
         type="number"
-        label="Value"
+        label="Threshold"
         value={value}
         onChange={event => setValue(event.target.value)}
       />
@@ -59,8 +61,8 @@ export const SelectCondition = ({
 );
 
 export const StyledTitle = styled(Typography)({
-  fontWeight: 600,
+  fontWeight: 700,
   fontSize: '16px',
   letterSpacing: '0.2px',
-  marginBottom: '40px'
+  marginBottom: '23px'
 });
