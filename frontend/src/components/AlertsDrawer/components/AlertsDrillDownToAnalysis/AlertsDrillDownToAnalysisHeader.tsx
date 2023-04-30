@@ -12,7 +12,7 @@ import { Checks, Research } from 'assets/icon/icon';
 
 import { SetStateType } from 'helpers/types';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 function a11yProps(index: number) {
   return {

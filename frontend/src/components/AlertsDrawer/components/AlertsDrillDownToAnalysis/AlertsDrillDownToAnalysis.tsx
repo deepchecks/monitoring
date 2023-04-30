@@ -22,7 +22,7 @@ import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/Cont
 import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface AlertsDrillDownToAnalysisProps {
   modelId: number;

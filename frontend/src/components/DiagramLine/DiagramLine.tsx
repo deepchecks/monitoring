@@ -16,7 +16,7 @@ import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
 import { Loader } from '../Loader';
 
 import { DiagramLineProps } from './DiagramLine.types';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 import { constants } from './diagramLine.constants';
 
 Chart.register(...registerables, zoomPlugin);

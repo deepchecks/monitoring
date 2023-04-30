@@ -13,7 +13,7 @@ import { constants } from 'components/Dashboard/dashboard.constants';
 
 import { MenuVertical, InfoIcon } from 'assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface MonitorInfoWidgetProps {
   monitor: MonitorSchema;

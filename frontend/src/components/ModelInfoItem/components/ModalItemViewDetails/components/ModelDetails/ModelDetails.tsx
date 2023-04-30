@@ -13,7 +13,7 @@ import TabPanel from '@mui/lab/TabPanel';
 import { TabContext } from '@mui/lab';
 import { Loader } from 'components/Loader';
 import { ModelNotes } from './components/ModelNotes';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface ModelDetailsProps {
   model: ConnectedModelSchema;

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 
 import { BillingText, BillingTransactionContainer, BillingTransactionDownloadIcon } from '../Billing.styles';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface BillingTransactionProps {
   id: string;

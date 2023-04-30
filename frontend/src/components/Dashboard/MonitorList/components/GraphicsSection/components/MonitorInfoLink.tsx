@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, Typography, Stack, styled } from '@mui/material';
 
 import { InfoIconFilled } from 'assets/icon/icon';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface MonitorInfoLinkProps {
   docsLink: string;

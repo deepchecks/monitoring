@@ -15,7 +15,7 @@ import { resError } from 'helpers/types/resError';
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 function convertEmailsIntoAnArray(emails: string) {
   return emails

@@ -9,7 +9,7 @@ import { Monitor } from './Monitor';
 
 import { SetStateType } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 import { StyledContainer } from 'components/lib';
 
 interface MonitorsGroupProps {

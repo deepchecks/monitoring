@@ -1,6 +1,6 @@
 import { Box, Menu, MenuItem, styled, Typography } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const StyledContainer = styled(Box)({
   padding: '32px 24px',

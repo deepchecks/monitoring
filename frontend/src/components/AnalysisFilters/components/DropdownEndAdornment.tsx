@@ -4,7 +4,7 @@ import { styled, Typography, InputAdornment } from '@mui/material';
 
 import { DropdownArrowComponent } from 'components/DropdownArrowComponent';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface DropdownEndAdornmentProps {
   filtersLength: number;

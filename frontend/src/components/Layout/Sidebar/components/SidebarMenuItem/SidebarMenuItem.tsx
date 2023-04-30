@@ -8,7 +8,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Arrow } from 'assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 import { StyledNavLink } from 'components/lib';
 
 interface SidebarMenuItemProps {

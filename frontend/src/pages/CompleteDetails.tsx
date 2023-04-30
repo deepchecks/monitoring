@@ -20,7 +20,7 @@ import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../help
 import { Loader } from 'components/Loader';
 import { StyledLogo } from 'components/lib';
 
-import { theme } from '../theme';
+import { theme } from '../components/lib/theme';
 
 export const CompleteDetails = () => {
   const { data: completeDetailsData, isLoading } = useGetCompleteDetailsApiV1UsersCompleteDetailsGet();

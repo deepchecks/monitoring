@@ -34,7 +34,7 @@ import { getParams, handleSetParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { resError } from 'helpers/types/resError';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 

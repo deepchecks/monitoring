@@ -11,7 +11,7 @@ import NoResults from 'components/NoResults';
 import { VersionErrorsTable } from './components/VersionErrorsTable';
 import { NoDataToShow } from 'components/NoDataToShow';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface VersionDetailsProps {
   version: ConnectedModelVersionSchema;

@@ -1,4 +1,4 @@
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 import { styled, Box, List, Typography, Stack } from '@mui/material';
 

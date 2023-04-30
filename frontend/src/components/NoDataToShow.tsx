@@ -4,7 +4,7 @@ import { Box, styled, Typography, BoxProps } from '@mui/material';
 
 import { NoDataToShowIcon } from 'assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface NoDataToShowProps extends BoxProps {
   title: string;

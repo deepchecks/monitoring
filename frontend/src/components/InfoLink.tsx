@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useState } from 'react';
 import { Link } from '@mui/material';
 import { InfoIcon } from 'assets/icon/icon';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface InfoLinkItemProps {
   docsLink: string;

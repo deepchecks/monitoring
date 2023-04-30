@@ -15,7 +15,7 @@ import {
   ThemeProvider
 } from '@mui/material';
 import EULAImage from '../assets/bg/eulaBG.png';
-import { theme } from '../theme';
+import { theme } from '../components/lib/theme';
 import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
 import { termsAndConditions } from 'helpers/termsAndConditions';
 

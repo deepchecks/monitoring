@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { Button } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 import { FlexColumnContainer, Row16Gap, RowAutoGap } from 'components/base/Container/Container.styles';
 

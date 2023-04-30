@@ -8,7 +8,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { FastForward as Next, Rewind as Prev } from 'assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 function setAlertCountWidgetButtonOpacity(isDisabled: boolean) {
   return isDisabled ? 0.3 : 1;

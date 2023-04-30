@@ -4,7 +4,7 @@ import { styled, TextField, TextFieldProps } from '@mui/material';
 
 import { DropdownArrowComponent } from './DropdownArrowComponent';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 type DropdownTextFieldProps = {
   isDropdownOpen?: boolean;

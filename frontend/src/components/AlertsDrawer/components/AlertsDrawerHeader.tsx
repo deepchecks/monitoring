@@ -30,7 +30,7 @@ import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { CloseIcon, Check, Sync } from 'assets/icon/icon';
 import { useLocation } from 'react-router-dom';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 dayjs.extend(localizedFormat);
 

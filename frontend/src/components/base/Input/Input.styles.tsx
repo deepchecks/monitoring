@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { Input } from '@mui/material';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 const StyledTextInput = styled(Input)`
   font-size: 1rem;

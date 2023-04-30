@@ -20,7 +20,7 @@ import { reportEvent } from 'helpers/services/mixPanel';
 import { resetAlertFilters } from 'helpers/alertFilters';
 import { handleSetParams } from 'helpers/utils/getParams';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;

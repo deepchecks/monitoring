@@ -4,7 +4,7 @@ import { InputAdornment, TextField, TextFieldProps, Typography } from '@mui/mate
 
 import { SearchIcon } from '../assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 type SearchFieldComponentProps = {
   onReset?: () => void;

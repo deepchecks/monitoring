@@ -1,6 +1,6 @@
 import { styled, Typography, Stack, Button, Box } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const StyledContainer = styled(Stack)({
   flexDirection: 'row',

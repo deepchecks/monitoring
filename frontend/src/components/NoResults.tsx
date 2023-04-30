@@ -4,7 +4,7 @@ import { Box, Typography, BoxProps, styled } from '@mui/material';
 
 import { NoResultsImage } from 'assets/bg/backgrounds';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface NoResultsProps extends BoxProps {
   handleReset: () => void;

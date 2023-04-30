@@ -1,6 +1,6 @@
 import { styled, Stack, Typography, Button, IconButton } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const StyledModelInfoItemContainer = styled(Stack)({
   position: 'relative',

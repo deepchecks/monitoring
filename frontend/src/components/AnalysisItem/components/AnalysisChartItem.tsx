@@ -4,7 +4,7 @@ import { styled, Box, Stack, Typography, BoxProps } from '@mui/material';
 
 import { InfoLink } from 'components/InfoLink';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface AnalysisChartItemProps extends BoxProps {
   title: string;

@@ -4,7 +4,7 @@ import { styled, alpha, Box, List, Divider } from '@mui/material';
 
 import { SearchField } from '../SearchField';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const StyledAnalysisHeader = styled(Box)({
   position: 'relative',

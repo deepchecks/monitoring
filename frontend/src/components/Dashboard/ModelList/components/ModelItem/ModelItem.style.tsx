@@ -1,7 +1,7 @@
 import { AlertSeverity } from 'api/generated';
 import { alpha, Box, ListItemButton, styled, Typography, Stack } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface StyledContainerProps {
   active: boolean;
