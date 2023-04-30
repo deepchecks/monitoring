@@ -3,9 +3,9 @@ import { alpha, Button, Stack, Typography, styled } from '@mui/material';
 const StyledContainer = styled(Stack)(({ theme }) => ({
   position: 'relative',
   borderRadius: '10px',
-  boxShadow: ' 0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
+  boxShadow: ' 0 0 15px 5px lightgray',
   lineHeight: '34px',
-  outline: '6px solid transparent',
+  outline: '1px solid transparent',
 
   '&:hover': {
     transition: 'outline-color .4s',

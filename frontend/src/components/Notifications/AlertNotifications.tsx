@@ -7,16 +7,17 @@ import {
   useUpdateOrganizationApiV1OrganizationPut
 } from 'api/generated';
 
-import { Box, Button, Checkbox, styled, Typography } from '@mui/material';
+import { Box, Checkbox } from '@mui/material';
 import { Stack } from '@mui/system';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { featuresList, TierControlWrapper } from 'helpers/tierControl';
 
-import { Loader } from './Loader';
+import { Loader } from '../Loader';
+import { StyledButton, StyledText } from 'components/lib';
 
-import { Email, Slack } from '../assets/icon/icon';
-import connectSlackBG from '../assets/bg/connectSlackBG.svg';
+import { Email, Slack } from '../../assets/icon/icon';
+import connectSlackBG from '../../assets/bg/connectSlackBG.svg';
 
 import { theme } from 'theme';
 
@@ -67,20 +68,6 @@ const notificationsMap: NotificationsMap = {
 };
 
 const notificationsItems = [NotificationDictionary.slack, NotificationDictionary.email] as const;
-
-const StyledTypography = styled(Typography)({
-  fontSize: '16px',
-  letterSpacing: 1,
-  textTransform: 'capitalize',
-  margin: '6px 0 0',
-  color: 'inherit',
-  lineHeight: '13px'
-});
-
-const StyledTypographyHeader = styled(StyledTypography)({
-  margin: '0',
-  fontWeight: '500'
-});
 
 export function AlertNotifications() {
   const navigate = useNavigate();
@@ -153,20 +140,20 @@ export function AlertNotifications() {
     );
 
   return (
-    <Box width={888}>
+    <Box width="100%" maxWidth="900px">
       <Box
         sx={theme => ({
           display: 'flex',
-
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '10px 16px',
           backgroundColor: theme.palette.grey[100],
-          color: theme.palette.text.primary
+          color: theme.palette.text.primary,
+          width: 'calc(100% - 12px)'
         })}
       >
-        <StyledTypographyHeader paragraph={true}>Alert Notifications</StyledTypographyHeader>
-        <Stack direction="row" spacing="34px">
+        <StyledText text="Alert Notifications" type="bodyBold" />
+        <Stack direction="row" spacing="60px">
           {icons.map(({ label, Icon }, index) => {
             const condition =
               !data?.is_slack_connected && NotificationDictionary[label] === NotificationDictionary.slack;
@@ -184,7 +171,7 @@ export function AlertNotifications() {
                 onClick={linkToConnectSlack}
               >
                 <Icon />
-                <StyledTypography paragraph={true}>{label}</StyledTypography>
+                <StyledText text={label} />
               </Box>
             );
           })}
@@ -205,7 +192,7 @@ export function AlertNotifications() {
             }}
             key={index}
           >
-            <Typography variant="body1">{label}</Typography>
+            <StyledText text={label} type="bodyNormal" />
             <Stack direction="row" spacing="40px">
               {notificationsItems.map(notification => (
                 <Box padding="9px" key={notification}>
@@ -224,26 +211,20 @@ export function AlertNotifications() {
       <TierControlWrapper feature={featuresList.slack_enabled}>
         {!data?.is_slack_connected && (
           <Box
-            sx={() => ({
+            sx={{
               padding: '20px 30px',
               background: `url(${connectSlackBG}) no-repeat right`,
               backgroundColor: theme.palette.primary.light,
-              borderRadius: '10px',
-              marginTop: '124px'
-            })}
+              borderRadius: '16px',
+              marginTop: '124px',
+              gap: '24px'
+            }}
           >
-            <Typography variant="subtitle1">Get notified on slack</Typography>
-            <Typography variant="body2" mt="2px">
-              Get DeepChecks alerts and communications via slack integrations.
-            </Typography>
-            <Button
-              size="small"
-              variant="contained"
-              sx={{ marginTop: '24px', height: 30, width: 144 }}
-              onClick={linkToConnectSlack}
-            >
-              Connect
-            </Button>
+            <StyledText type="h2" text="Get notified on slack" />
+            <Box margin="10px 0 16px">
+              <StyledText type="bodyNormal" text="Get DeepChecks alerts and communications via slack integrations" />
+            </Box>
+            <StyledButton label="Connect" onClick={linkToConnectSlack} />
           </Box>
         )}
       </TierControlWrapper>

@@ -9,7 +9,7 @@ const StyledApiKeyContainer = styled(StyledContainer)(({ theme }) => ({
   width: '100%',
   maxWidth: '900px',
   padding: '20px',
-  borderRadius: '5px',
+  borderRadius: '16px',
   border: `1px solid ${theme.palette.grey.light}`,
   background: theme.palette.grey[100]
 }));

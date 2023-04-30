@@ -26,15 +26,15 @@ import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
-
+import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
+
 import useModels from '../helpers/hooks/useModels';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { resError } from 'helpers/types/resError';
 
 import { theme } from 'theme';
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
@@ -196,14 +196,13 @@ export const ModelsPage = () => {
               value={searchValue}
               onChange={updateSearch}
               inputValue={searchInputValue}
-              onInputChange={(event, newInputValue) => {
+              onInputChange={(_event, newInputValue) => {
                 setSearchInputValue(newInputValue);
               }}
               options={modelNamesArray}
               sx={{ width: 300 }}
               renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
             />
-
             {searchInputValue || searchValue || sort ? (
               <Stack direction="row" spacing="11px">
                 <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
@@ -212,7 +211,6 @@ export const ModelsPage = () => {
             ) : (
               <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
             )}
-
             <Menu
               anchorEl={anchorElSortMenu}
               open={Boolean(anchorElSortMenu)}
@@ -241,7 +239,6 @@ export const ModelsPage = () => {
               ))}
             </Menu>
           </Stack>
-
           {isLoading || !filteredAndSortedModelsList ? (
             <Loader />
           ) : filteredAndSortedModelsList.length !== 0 ? (

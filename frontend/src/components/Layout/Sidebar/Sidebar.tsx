@@ -12,9 +12,7 @@ import { SidebarMenuItem } from './components/SidebarMenuItem';
 import { UserInfo } from './components/UserInfo';
 import { InviteMember } from 'components/WorkspaceSettings/Members/components/InviteMember';
 
-import { SidebarInviteButton } from './Sidebar.styles';
-
-import { StyledContainer, StyledLogo } from 'components/lib';
+import { StyledButton, StyledContainer, StyledLogo } from 'components/lib';
 
 export const Sidebar = () => {
   const width = useWindowResize();
@@ -102,7 +100,13 @@ export const Sidebar = () => {
           </Box>
           <Box sx={{ padding: '30px 20px' }}>
             <UserInfo />
-            <SidebarInviteButton onClick={handleInviteToOrgClick}>Invite members</SidebarInviteButton>
+            <StyledButton
+              onClick={handleInviteToOrgClick}
+              variant="outlined"
+              label="Invite members"
+              margin="0 auto"
+              width="100%"
+            />
           </Box>
         </Box>
       </StyledContainer>

@@ -11,10 +11,10 @@ import { alpha, Box, Stack } from '@mui/material';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
-import { StyledButton, StyledImage, StyledLoader, StyledText } from './lib';
+import { NotificationDictionary, NotificationsResponse } from '../Notifications/AlertNotifications';
+import { StyledButton, StyledImage, StyledLoader, StyledText } from '../lib';
 
-import slack from '../assets/icon/slack.png';
+import slack from '../../assets/icon/slack.png';
 
 interface App {
   id: number;
@@ -71,7 +71,7 @@ export function ConnectSlack() {
   return (
     <Box
       sx={{
-        borderRadius: '10px',
+        borderRadius: '16px',
         padding: '20px 20px 30px 40px',
         display: 'flex',
         justifyContent: 'space-between',
