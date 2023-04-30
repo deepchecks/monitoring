@@ -91,7 +91,7 @@ class AlertsScheduler:
 
         for org in organizations:
             await self.run_organization(org)
-            # await self.run_organization_data_ingestion_alert(org)
+            await self.run_organization_data_ingestion_alert(org)
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -172,19 +172,22 @@ class AlertsScheduler:
             )
             models: t.List[Model] = await session.scalars(
                 select(Model)
-            ).where(Model.data_ingestion_alert_label_count.isnot(None) or
-                    Model.data_ingestion_alert_label_ratio.isnot(None) or
-                    Model.data_ingestion_alert_sample_count.isnot(None))
+                .where(sa.or_(
+                    Model.data_ingestion_alert_label_count.isnot(None),
+                    Model.data_ingestion_alert_label_ratio.isnot(None),
+                    Model.data_ingestion_alert_sample_count.isnot(None)
+                )))
 
             for model in models:
                 schedules = []
                 frequency = model.data_ingestion_alert_frequency.to_pendulum_duration()
                 schedule_time = model.next_data_ingestion_alert_schedule
-
+                import sys
+                sys.stderr.write(f"{schedule_time}, {model.end_time}\n")
                 while (schedule_time <= model.end_time):
                     schedules.append(schedule_time)
                     schedule_time = schedule_time + frequency
-
+                print(schedules)
                 if schedules:
                     try:
                         await enqueue_ingestion_tasks(model, schedules, frequency, organization, session)

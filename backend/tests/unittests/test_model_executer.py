@@ -113,12 +113,12 @@ async def test_alert_scheduling(
         test_api.create_model_version(classification_model["id"], dict(name="v3", classes=["0", "1", "2"])),
     ]
 
-    now = pdl.datetime(2023, 1, 9, 10).set(minute=0, second=0, microsecond=0)
-    day_before = now - pdl.duration(days=1)
+    now = pdl.now("utc").set(minute=0, second=0, microsecond=0)
+    day_before = now - pdl.duration(days=1, hours=-7)
     daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
     no_label_daterange = [day_before.add(hours=hours) for hours in [3, 4]]
     extra_count_daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5]]
-
+    print(day_before)
     for version in versions[:2]:
         upload_classification_data(test_api, version["id"],
                                    daterange=daterange, model_id=classification_model["id"])
@@ -161,6 +161,6 @@ async def test_alert_scheduling(
         .execution_options(schema_translate_map=schema_translate_map)
     )).all()
 
-    alert_per_rule = defaultdict(list)
-
+    assert len(tasks) == 5
+    assert len(alerts) == 3
     
