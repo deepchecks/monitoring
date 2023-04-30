@@ -295,7 +295,7 @@ async def enqueue_tasks(monitor, schedules, organization, session):
             name=f'Monitor:{monitor.id}:ts:{schedule.int_timestamp}',
             executor='execute_monitor',
             queue='monitors',
-            params={'monitor_id': monitor.id, 'end_time': schedule.to_iso8601_string(),
+            params={'monitor_id': monitor.id, 'timestamp': schedule.to_iso8601_string(),
                      'organization_id': organization.id, 'organization_schema': organization.schema_name},
             priority=1,
             description='Monitor alert rules execution task',
