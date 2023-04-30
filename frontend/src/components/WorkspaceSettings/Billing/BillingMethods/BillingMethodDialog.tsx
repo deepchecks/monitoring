@@ -42,8 +42,7 @@ const BillingMethodDialog = ({ isDialogOpen, handleCloseDialog }: BillingMethodD
 
     if (paymentMethod.error) {
       setErrorMessage(paymentMethod.error.message as string);
-
-      logger.error(paymentMethod.error);
+      logger.error('Error on create stripe payment method', paymentMethod.error);
     } else {
       updatePaymentMethodApiV1BillingPaymentMethodPost({ payment_method_id: paymentMethod.paymentMethod.id });
 

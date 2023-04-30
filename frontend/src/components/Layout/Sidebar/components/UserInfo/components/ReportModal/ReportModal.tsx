@@ -32,21 +32,27 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
     e.preventDefault();
     if (inputDescription !== '' && selectedFile !== undefined) {
       const reader = new FileReader();
+
       reader.onloadend = function () {
         const result = reader.result as string;
         const [imageData, path] = result.split(';');
         const [type] = imageData.split(':');
         const [currentPath] = path.split(',');
+
         Sentry.configureScope(scope => {
           scope.addAttachment({ filename: 'screenshot', data: currentPath, contentType: type });
         });
-        logger.warn(`The report was sent by a user, message: ${inputDescription}`);
+
+        logger.info(`The report was sent by a user, message: ${inputDescription}`);
+
         Sentry.configureScope(scope => {
           scope.clearAttachments();
         });
+
         setInputDescription('');
         onClose();
       };
+
       reader.readAsDataURL(selectedFile);
     }
   };

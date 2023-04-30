@@ -1,8 +1,8 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 
-import logger from './services/logger';
-
 import { getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet } from 'api/generated';
+
+import { resError } from './types/resError';
 
 interface Dict {
   type: { [key: string]: number | boolean };
@@ -20,12 +20,10 @@ export const featuresList = {
 };
 
 const getFeaturesStatus = async ({ setFeatures }: { setFeatures: (arg: Dict['type']) => void }) => {
-  try {
-    const response = (await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet()) as unknown as Dict['type'];
+  const response = (await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet()) as unknown as Dict['type'];
 
+  if (response && !(response as unknown as resError).error_message) {
     setFeatures(response);
-  } catch (err) {
-    logger.error(err);
   }
 };
 
