@@ -182,12 +182,11 @@ class AlertsScheduler:
                 schedules = []
                 frequency = model.data_ingestion_alert_frequency.to_pendulum_duration()
                 schedule_time = model.next_data_ingestion_alert_schedule
-                import sys
-                sys.stderr.write(f"{schedule_time}, {model.end_time}\n")
+
                 while (schedule_time <= model.end_time):
                     schedules.append(schedule_time)
                     schedule_time = schedule_time + frequency
-                print(schedules)
+
                 if schedules:
                     try:
                         await enqueue_ingestion_tasks(model, schedules, frequency, organization, session)

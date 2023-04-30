@@ -118,7 +118,7 @@ async def test_alert_scheduling(
     daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
     no_label_daterange = [day_before.add(hours=hours) for hours in [3, 4]]
     extra_count_daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5]]
-    print(day_before)
+
     for version in versions[:2]:
         upload_classification_data(test_api, version["id"],
                                    daterange=daterange, model_id=classification_model["id"])

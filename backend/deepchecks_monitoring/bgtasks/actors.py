@@ -231,7 +231,6 @@ async def execute_model_data_ingestion_task(
                 (model.data_ingestion_alert_label_ratio and model.data_ingestion_alert_label_ratio < label_ratio):
             alert = DataIngestionAlert(model_id=model_id, start_time=start_time, end_time=end_time,
                                        sample_count=sample_count, label_count=label_count, label_ratio=label_ratio)
-            print(start_time, sample_count, label_count, label_ratio)
             alerts.append(alert)
             session.add(alert)
     await session.commit()
