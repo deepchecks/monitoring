@@ -5,7 +5,7 @@ import { Box, Button } from '@mui/material';
 
 import { ShareButton } from './ShareButton';
 
-import { Settings } from 'assets/icon/icon';
+import { Settings } from '@mui/icons-material';
 
 interface AlertsHeaderProps {
   resolved?: number;
@@ -49,7 +49,7 @@ export const AlertsHeader = ({ resolved }: AlertsHeaderProps) => {
           <ShareButton />
           <Button
             sx={{ width: 136, marginLeft: '1em' }}
-            startIcon={<Settings fill="#fff" width={20} height={20} />}
+            startIcon={<Settings width={20} height={20} />}
             onClick={linkToSettings}
           >
             Configure
