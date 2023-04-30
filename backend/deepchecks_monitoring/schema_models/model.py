@@ -17,11 +17,11 @@ from sqlalchemy import MetaData, PrimaryKeyConstraint, Table, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, Query, relationship
 
-from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
+from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:

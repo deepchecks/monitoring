@@ -15,8 +15,7 @@ import typing as t
 from collections import defaultdict
 
 import anyio
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
-from deepchecks_monitoring.schema_models.model import Model
+import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
 from sqlalchemy import func, update
@@ -31,6 +30,9 @@ from deepchecks_monitoring.monitoring_utils import DataFilterList, TimeUnit, con
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 
@@ -216,12 +218,25 @@ async def execute_model_data_ingestion_task(
         .order_by(joined_query.c.model_id, joined_query.c.timestamp, "count"),
     )).fetchall()
 
-    result = defaultdict(list)
-
+    pendulum_freq = freq.to_pendulum_duration()
+    alerts = []
     for row in rows:
-        print(row)
+        sample_count = row.count
+        label_count = row.label_count
+        label_ratio = sample_count / label_count
+        start_time = as_pendulum_datetime(row.timestamp)
+        end_time = start_time + pendulum_freq
+        if (model.data_ingestion_alert_label_count and model.data_ingestion_alert_label_count > label_count) or \
+            (model.data_ingestion_alert_sample_count and model.data_ingestion_alert_sample_count > sample_count) or \
+                (model.data_ingestion_alert_label_ratio and model.data_ingestion_alert_label_ratio < label_ratio):
+            alert = DataIngestionAlert(model_id=model_id, start_time=start_time, end_time=end_time,
+                                       sample_count=sample_count, label_count=label_count, label_ratio=label_ratio)
+            print(start_time, sample_count, label_count, label_ratio)
+            alerts.append(alert)
+            session.add(alert)
+    await session.commit()
 
-    return rows
+    return alerts
 
 
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)

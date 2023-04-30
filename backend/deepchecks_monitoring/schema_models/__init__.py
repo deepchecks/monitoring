@@ -15,12 +15,12 @@ from .alert_webhook import AlertWebhook
 from .check import Check
 from .column_type import ColumnType
 from .dashboard import Dashboard
+from .data_ingestion_alert import DataIngestionAlert
 from .ingestion_errors import IngestionError
 from .model import Model, ModelNote, TaskType
 from .model_version import ModelVersion
 from .monitor import Monitor
 from .slack import SlackInstallation, SlackInstallationState
-from .data_ingestion_alert import DataIngestionAlert
 
 __all__ = [
     'Base',

@@ -11,25 +11,18 @@
 # pylint: disable=protected-access
 import logging
 import typing as t
-from collections import defaultdict
-from deepchecks_monitoring.schema_models.model import Model
 
 import pendulum as pdl
 import pytest
 import sqlalchemy as sa
-from deepchecks.tabular.checks import SingleDatasetPerformance
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.bgtasks.actors import execute_model_data_ingestion_task
-from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
-from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.monitoring_utils import TimeUnit
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import Alert
-from deepchecks_monitoring.schema_models.monitor import (Frequency, calculate_initial_latest_schedule,
-                                                         monitor_execution_range, round_off_datetime)
-from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.schema_models import DataIngestionAlert
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.monitor import Frequency
 from tests.common import Payload, TestAPI, upload_classification_data
 
 
@@ -48,8 +41,8 @@ async def test_model_executor(
     await async_session.execute(
         sa.update(Model).where(Model.id == classification_model["id"]).values({
             Model.data_ingestion_alert_frequency: Frequency.HOUR,
-            Model.data_ingestion_alert_label_count: 5,
-            Model.data_ingestion_alert_label_ratio: 2,
+            Model.data_ingestion_alert_label_count: 2,
+            Model.data_ingestion_alert_label_ratio: 1,
             Model.data_ingestion_alert_sample_count: 3,
         }))
     await async_session.flush()
@@ -64,11 +57,21 @@ async def test_model_executor(
     now = pdl.datetime(2023, 1, 9, 10).set(minute=0, second=0, microsecond=0)
     day_before = now - pdl.duration(days=1)
     daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
+    no_label_daterange = [day_before.add(hours=hours) for hours in [3, 4]]
+    extra_count_daterange = [day_before.add(hours=hours) for hours in [1, 3, 4, 5]]
 
     for version in versions[:2]:
-        upload_classification_data(test_api, version["id"], daterange=daterange, model_id=classification_model["id"])
+        upload_classification_data(test_api, version["id"],
+                                   daterange=daterange, model_id=classification_model["id"])
+        upload_classification_data(test_api, version["id"],
+                                   daterange=no_label_daterange, model_id=classification_model["id"],
+                                   is_labeled=False,
+                                   id_prefix='no_label')
+        upload_classification_data(test_api, version["id"],
+                                   daterange=extra_count_daterange, model_id=classification_model["id"],
+                                   id_prefix='extra')
 
-    result: t.List[Alert] = await execute_model_data_ingestion_task(
+    result: t.List[DataIngestionAlert] = await execute_model_data_ingestion_task(
         model_id=classification_model["id"],
         start_time=str(day_before),
         end_time=str(now),
@@ -79,4 +82,4 @@ async def test_model_executor(
         logger=logging.Logger("test")
     )
 
-    assert len(result) == 2, result
+    assert len(result) == 3, result
