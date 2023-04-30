@@ -7,12 +7,12 @@ import {
   useUpdateOrganizationApiV1OrganizationPut
 } from 'api/generated';
 
-import { alpha, Box, Button, Stack, Typography } from '@mui/material';
+import { alpha, Box, Stack } from '@mui/material';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
-import { Loader } from './Loader';
+import { StyledButton, StyledImage, StyledLoader, StyledText } from './lib';
 
 import slack from '../assets/icon/slack.png';
 
@@ -62,8 +62,8 @@ export function ConnectSlack() {
 
   if (isLoading) {
     return (
-      <Box sx={{ width: 888 }}>
-        <Loader />
+      <Box sx={{ width: '100%' }}>
+        <StyledLoader margin="10vh auto" />
       </Box>
     );
   }
@@ -72,11 +72,12 @@ export function ConnectSlack() {
     <Box
       sx={{
         borderRadius: '10px',
-        padding: '30px 30px 40px 50px',
+        padding: '20px 20px 30px 40px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'start',
-        width: 888,
+        width: '100%',
+        maxWidth: '888px',
         boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
         position: 'relative',
         overflow: 'hidden',
@@ -96,27 +97,20 @@ export function ConnectSlack() {
     >
       <Box maxWidth={620}>
         <Stack spacing="16px" pt="10px">
-          <Typography variant="h5">Slack</Typography>
-          <Typography variant="body2">
-            Get DeepChecks alerts and communications via slack integrations. Get DeepChecks alerts and communications
-            via slack integrations.
-          </Typography>
+          <StyledText text="Slack" type="h1" />
+          <StyledText
+            text="Get DeepChecks alerts and communications via slack integrations. Get DeepChecks alerts and communications
+            via slack integrations."
+            type="h3"
+          />
         </Stack>
         {slackConnect?.is_slack_connected ? (
-          <Button
-            onClick={removeSlack}
-            variant="outlined"
-            sx={{ marginTop: '33px', width: 144, height: 42, borderColor: 'primary.main' }}
-          >
-            Uninstall
-          </Button>
+          <StyledButton onClick={removeSlack} label="Uninstall" margin="24px 0 0" />
         ) : (
-          <Button onClick={connectSlack} variant="contained" sx={{ marginTop: '33px', width: 144, height: 42 }}>
-            Connect
-          </Button>
+          <StyledButton onClick={connectSlack} label="Connect" margin="24px 0 0" />
         )}
       </Box>
-      <img alt="slack" src={slack} />
+      <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="25px" />
     </Box>
   );
 }

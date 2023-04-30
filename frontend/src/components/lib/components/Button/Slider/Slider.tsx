@@ -4,6 +4,9 @@ import { Slider as MUISlider, SliderProps as MUISliderProps, styled } from '@mui
 const StyledSlider = styled(MUISlider)(({ theme }) => ({
   color: theme.palette.primary.main,
   height: 2,
+  '& .MuiSlider-rail': {
+    height: '4px'
+  },
   '& .MuiSlider-thumb': {
     height: 12,
     width: 12

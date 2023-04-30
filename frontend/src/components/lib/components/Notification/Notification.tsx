@@ -45,18 +45,19 @@ export const Notification = (props: NotificationProps) => {
       borderRadius="12px"
       alignItems="center"
       justifyContent="space-between"
+      padding="24px"
     >
       <InfoRounded
         sx={{ color: paletteOptions.common?.white, cursor: 'pointer' }}
         onClick={() => onNotificationClick()}
       />
-      <Container marginRight="auto">
+      <Container marginRight="auto" padding="2px 2px 0" gap="2px">
         <Text text={title} color={paletteOptions.common?.white} whiteSpace="nowrap" type="h3" width="200px" />
-        {content && <Text text={content} color={paletteOptions.common?.white} whiteSpace="nowrap" width="225px" />}
+        {content && <Text text={content} color={paletteOptions.common?.white} whiteSpace="nowrap" width="200px" />}
       </Container>
       {onDelete && (
         <Container flexDirection="row" width="120px" padding="0">
-          <Text text="Delete" color={paletteOptions.common?.white} type="h3" />
+          <Text text="Delete" color={paletteOptions.common?.white} type="h3" padding="2px 0 0" />
           <CancelRounded sx={{ color: paletteOptions.common?.white, cursor: 'pointer' }} onClick={() => onDelete()} />
         </Container>
       )}

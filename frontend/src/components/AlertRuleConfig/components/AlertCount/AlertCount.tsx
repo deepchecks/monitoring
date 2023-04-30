@@ -23,19 +23,19 @@ const AlertCountComponent = ({ severity = AlertSeverity.high, setColor }: AlertC
 
     const severityMap = {
       [low]: {
-        color: theme.palette.error.contrastText,
+        color: theme.palette.severity.low,
         Icon: LowSeverityIcon
       },
       [medium]: {
-        color: theme.palette.error.light,
+        color: theme.palette.severity.medium,
         Icon: MediumSeverityIcon
       },
       [high]: {
-        color: theme.palette.error.dark,
+        color: theme.palette.severity.high,
         Icon: HighSeverityIcon
       },
       [critical]: {
-        color: theme.palette.error.main,
+        color: theme.palette.severity.critical,
         Icon: CriticalSeverityIcon
       }
     };

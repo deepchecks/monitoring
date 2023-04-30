@@ -14,6 +14,15 @@ const StyledTextField = styled(TextField)({
 });
 
 const sharedDatePickerStyles = (primaryColor: string, secondaryColor: string) => ({
+  '& .MuiPickersToolbar-root': {
+    display: 'none'
+  },
+
+  '& .MuiPickersCalendarHeader-label': {
+    fontWeight: 600,
+    color: secondaryColor
+  },
+
   '& .MuiButtonBase-root': {
     fontWeight: 700,
     color: secondaryColor
@@ -50,7 +59,8 @@ const sharedDatePickerStyles = (primaryColor: string, secondaryColor: string) =>
 
       '& .MuiButtonBase-root:hover, .MuiPickersDay-today, .Mui-selected': {
         border: '1px solid',
-        borderColor: secondaryColor
+        borderColor: secondaryColor,
+        fontWeight: 800
       },
 
       '& .MuiPickersDay-today': {
@@ -120,7 +130,8 @@ const StyledStaticDateTimePicker = styled(StaticDateTimePicker)(({ theme }) => {
       },
 
       '& .Mui-selected': {
-        opacity: 1
+        opacity: 1,
+        fontWeight: 800
       }
     },
 

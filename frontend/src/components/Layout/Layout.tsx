@@ -5,6 +5,7 @@ import { Box } from '@mui/system';
 
 import { Sidebar } from 'components/Layout/Sidebar';
 import useUser from 'helpers/hooks/useUser';
+import { StyledContainer } from 'components/lib';
 
 const Layout = () => {
   const { isUserDetailsComplete } = useUser();
@@ -27,15 +28,15 @@ const Layout = () => {
           }}
         >
           <Sidebar />
-          <Box
+          <StyledContainer
             sx={{
-              background: 'linear-gradient(180deg, #F3F5F8 0%, #FFFFFF 29.64%, #FFFFFF,100% )',
               padding: { xs: '0 30px', lg: '0 30px', xl: '0 35px' },
               width: { xs: 'calc(100% - 196px)', lg: 'calc(100% - 196px)', xl: 'calc(100% - 237px)' }
             }}
+            type="bg"
           >
             <Outlet />
-          </Box>
+          </StyledContainer>
         </Box>
       </Box>
     </main>

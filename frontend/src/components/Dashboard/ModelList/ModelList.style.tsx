@@ -1,7 +1,10 @@
-import { styled, Box, List, Typography, Stack } from '@mui/material';
 import { theme } from 'theme';
 
-export const StyledContainer = styled(Box)({
+import { styled, Box, List, Typography, Stack } from '@mui/material';
+
+import { StyledContainer } from 'components/lib';
+
+export const StyledModelListContainer = styled(StyledContainer)({
   overflow: 'hidden',
   height: '502px',
   border: `1px solid ${theme.palette.grey.light}`,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Typography, TypographyProps } from '@mui/material';
 import { Variant } from '@mui/material/styles/createTypography';
 
@@ -15,7 +15,7 @@ type TextTypes =
   | 'button';
 
 export interface TextProps extends Omit<TypographyProps, 'variant'> {
-  text: React.ReactNode;
+  text: ReactNode;
   type?: TextTypes;
 }
 

@@ -26,9 +26,6 @@ const StyledSearch = styled(SearchField)(({ theme }) => ({
   },
   '& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
     borderColor: theme.palette.primary.main
-  },
-  '&.MuiFormControl-root.MuiFormControl-fullWidth svg': {
-    fill: theme.palette.primary.main
   }
 }));
 
@@ -89,7 +86,7 @@ export function AnalysisSubMenu({ onClose, open }: AnalysisSubMenuProps) {
           width: '410px',
           height: '100vh',
           padding: '100px 20px 60px 20px',
-          backgroundColor: '#17003E',
+          backgroundColor: theme => theme.palette.grey[200],
           position: 'absolute',
           top: 0,
           right: '-410px',

@@ -38,7 +38,9 @@ export const Input = (props: InputProps) => {
     setValue(event.target.value);
   };
 
-  const CloseIconAdornment = <CloseIcon onClick={() => setValue('')} cursor="pointer" />;
+  const CloseIconAdornment = (
+    <CloseIcon onClick={() => setValue('')} cursor="pointer" sx={{ width: '18px', height: '18px' }} />
+  );
 
   return searchField ? (
     <>

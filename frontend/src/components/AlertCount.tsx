@@ -46,31 +46,25 @@ const AlertCountComponent: FC<AlertCountComponentProps> = ({
 
     const severityMap = {
       [LOW]: {
-        color: theme.palette.error.contrastText,
+        color: theme.palette.severity.low,
         Icon: LowSeverityIcon
       },
       [MEDIUM]: {
-        color: theme.palette.error.light,
+        color: theme.palette.severity.medium,
         Icon: MediumSeverityIcon
       },
       [HIGH]: {
-        color: theme.palette.error.dark,
+        color: theme.palette.severity.high,
         Icon: HighSeverityIcon
       },
       [CRITICAL]: {
-        color: theme.palette.error.main,
+        color: theme.palette.severity.critical,
         Icon: CriticalSeverityIcon
       }
     };
 
     return severityMap[severity];
-  }, [
-    severity,
-    theme.palette.error.contrastText,
-    theme.palette.error.dark,
-    theme.palette.error.light,
-    theme.palette.error.main
-  ]);
+  }, [severity, theme.palette.severity]);
 
   return (
     <StyledContainer onClick={linkToAlerts}>

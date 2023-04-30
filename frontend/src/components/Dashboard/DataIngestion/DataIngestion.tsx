@@ -16,7 +16,7 @@ import { Loader } from 'components/Loader';
 import { CustomStyledSelect } from 'components/CustomStyledSelect';
 
 import {
-  StyledContainer,
+  StyledDataIngestionContainer,
   StyledFiltersContainer,
   StyledHeader,
   StyledLoaderBox,
@@ -74,7 +74,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   useEffect(() => setStorageItem(storageKeys.dataIngestionTimeFilter, JSON.stringify(currentTime)), [currentTime]);
 
   return (
-    <StyledContainer>
+    <StyledDataIngestionContainer type="card">
       <StyledHeader>
         <StyledTitle>Samples status</StyledTitle>
         <StyledFiltersContainer>
@@ -111,6 +111,6 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
           <DiagramLine data={graphData} minTimeUnit={minTimeUnit} timeFreq={timeValue} height={{ lg: 259, xl: 362 }} />
         </DiagramTutorialTooltip>
       )}
-    </StyledContainer>
+    </StyledDataIngestionContainer>
   );
 };

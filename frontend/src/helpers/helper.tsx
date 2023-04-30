@@ -3,16 +3,12 @@ import React, { ComponentType, FC, lazy } from 'react';
 import { AnalysisProvider } from 'helpers/context/AnalysisProvider';
 
 import {
-  Alarm,
   AlarmActive,
   AlarmHover,
-  Analysis,
   AnalysisActive,
   AnalysisHover,
-  Configuration,
   ConfigurationActive,
   ConfigurationHover,
-  Dashboard,
   DashboardActive,
   DashboardHover
 } from '../assets/icon/icon';
@@ -68,7 +64,7 @@ export const pathsInfo: PathInfo[] = [
     title: 'Dashboard',
     link: '/dashboard',
     element: () => <DashboardPage />,
-    Icon: Dashboard,
+    Icon: DashboardActive,
     IconHover: DashboardHover,
     ActiveIcon: DashboardActive
   },
@@ -85,9 +81,9 @@ export const pathsInfo: PathInfo[] = [
     title: 'Alerts',
     link: '/alerts',
     element: () => <AlertsPage />,
-    Icon: Alarm,
+    Icon: AlarmActive,
     IconHover: AlarmHover,
-    ActiveIcon: AlarmActive,
+    ActiveIcon: AlarmHover,
     children: [
       {
         title: 'Resolved Alerts',
@@ -107,17 +103,17 @@ export const pathsInfo: PathInfo[] = [
         <AnalysisPage />
       </AnalysisProvider>
     ),
-    Icon: Analysis,
+    Icon: AnalysisActive,
     IconHover: AnalysisHover,
-    ActiveIcon: AnalysisActive
+    ActiveIcon: AnalysisHover
   },
   {
     title: 'Configuration',
     link: '/configuration',
     element: () => <DashboardPage />,
-    Icon: Configuration,
+    Icon: ConfigurationActive,
     IconHover: ConfigurationHover,
-    ActiveIcon: ConfigurationActive,
+    ActiveIcon: ConfigurationHover,
     children: [
       {
         title: 'Alerts Rules',

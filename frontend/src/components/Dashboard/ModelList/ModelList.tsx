@@ -12,7 +12,7 @@ import { ModelItem } from './components/ModelItem';
 import { AlertsCountWidget } from './components/AlertsCountWidget';
 
 import {
-  StyledContainer,
+  StyledModelListContainer,
   StyledHeading,
   StyledHeadingContainer,
   StyledList,
@@ -84,7 +84,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
   };
 
   return (
-    <StyledContainer>
+    <StyledModelListContainer type="card">
       {isLoading ? (
         <Loader />
       ) : (
@@ -124,6 +124,6 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
           </StyledList>
         </>
       )}
-    </StyledContainer>
+    </StyledModelListContainer>
   );
 }

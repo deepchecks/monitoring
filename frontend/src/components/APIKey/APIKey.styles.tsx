@@ -1,26 +1,20 @@
-import { Box, Typography, styled } from '@mui/material';
+import { styled } from '@mui/material';
 
-const StyledTypography = styled(Typography)({
-  marginBottom: '40px'
-});
+import { StyledContainer, StyledText } from 'components/lib';
 
-const StyledLink = styled(Typography)({
-  display: 'inline-block',
-  textDecoration: 'underline',
-  cursor: 'pointer'
-});
-
-const StyledContainer = styled(Box)(({ theme }) => ({
+const StyledApiKeyContainer = styled(StyledContainer)(({ theme }) => ({
   display: 'flex',
+  flexDirection: 'row',
   alignItems: 'center',
-  width: '1100px',
-  padding: '30px',
+  width: '100%',
+  maxWidth: '900px',
+  padding: '20px',
   borderRadius: '5px',
   border: `1px solid ${theme.palette.grey.light}`,
   background: theme.palette.grey[100]
 }));
 
-const StyledApiKey = styled(Typography)({
+const StyledApiKey = styled(StyledText)({
   fontWeight: 700,
   fontSize: '24px',
   lineHeight: '140%',
@@ -29,4 +23,4 @@ const StyledApiKey = styled(Typography)({
   wordBreak: 'break-all'
 });
 
-export { StyledApiKey, StyledContainer, StyledLink, StyledTypography };
+export { StyledApiKey, StyledApiKeyContainer };

@@ -9,6 +9,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import { Arrow } from 'assets/icon/icon';
 
 import { theme } from 'theme';
+import { StyledNavLink } from 'components/lib';
 
 interface SidebarMenuItemProps {
   width: number;
@@ -80,26 +81,12 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
 
   const MenuItem = (
     <>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center'
-        }}
-        onClick={() => handleClick(info.link)}
-      >
-        {Icon && IconHover && ActiveIcon ? hover && !active ? <IconHover /> : active ? <ActiveIcon /> : <Icon /> : null}
-        <Typography
-          sx={{
-            fontSize: '14px',
-            lineHeight: '120%',
-            marginLeft: { xs: '6px', lg: '6px', xl: '14px' },
-            fontWeight: active ? 500 : 400
-          }}
-          variant="subtitle1"
-        >
-          {info.title}
-        </Typography>
-      </Box>
+      <StyledNavLink
+        linkLabel={info.title}
+        icon={
+          Icon && IconHover && ActiveIcon ? hover && !active ? <IconHover /> : active ? <ActiveIcon /> : <Icon /> : null
+        }
+      />
       {info.title === 'Analysis' && (
         <Box
           onClick={onOpenSubMenu}

@@ -1,7 +1,10 @@
-import { Box, styled, Typography } from '@mui/material';
 import { theme } from 'theme';
 
-export const StyledContainer = styled(Box)({
+import { Box, styled, Typography } from '@mui/material';
+
+import { StyledContainer } from 'components/lib';
+
+export const StyledDataIngestionContainer = styled(StyledContainer)({
   height: '502px',
   padding: '32px 24px',
   borderRadius: '10px',

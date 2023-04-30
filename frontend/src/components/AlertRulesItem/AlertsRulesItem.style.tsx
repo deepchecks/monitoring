@@ -32,22 +32,22 @@ export const StyledCriticality = styled(Box, {
 })<StyledCriticalityProps>(({ criticality = 'low', resolved, theme }) => {
   const getColor = (filed: AlertSeverity): string => {
     if (filed === 'low') {
-      return alpha(theme.palette.error.contrastText, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
+      return alpha(theme.palette.severity.low, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'medium') {
-      return alpha(theme.palette.error.light, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
+      return alpha(theme.palette.severity.medium, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'high') {
-      return alpha(theme.palette.error.dark, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
+      return alpha(theme.palette.severity.high, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
     if (filed === 'critical') {
-      return alpha(theme.palette.error.main, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
+      return alpha(theme.palette.severity.critical, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
     }
 
-    return alpha(theme.palette.error.main, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
+    return alpha(theme.palette.severity.critical, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
   };
 
   return {

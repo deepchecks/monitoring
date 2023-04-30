@@ -14,7 +14,7 @@ import { InviteMember } from 'components/WorkspaceSettings/Members/components/In
 
 import { SidebarInviteButton } from './Sidebar.styles';
 
-import { Logo } from '../../Logo';
+import { StyledContainer, StyledLogo } from 'components/lib';
 
 export const Sidebar = () => {
   const width = useWindowResize();
@@ -53,13 +53,16 @@ export const Sidebar = () => {
         left: 0,
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#17003E',
         width: { xs: '196px', lg: '196px', xl: '237px' },
         height: '100vh',
-        zIndex: 100
+        zIndex: 100,
+        background: '#D8DDE1'
       }}
     >
-      <Box ref={contentRef} sx={{ height: 1, width: 1, overflow: 'auto', ...style }}>
+      <StyledContainer
+        ref={contentRef}
+        sx={{ height: 1, width: 1, overflow: 'auto', ...style, padding: 0, borderRadius: 0 }}
+      >
         <Box
           sx={{
             height: 1,
@@ -69,24 +72,20 @@ export const Sidebar = () => {
             justifyContent: 'space-between',
             position: 'relative',
             zIndex: 10,
-            background: '#17003E'
+            background: '#D8DDE1'
           }}
         >
           <Box>
             <Box
               sx={{
                 position: 'sticky',
-                top: 0,
                 zIndex: 3,
-                background: '#17003E',
-                paddingBottom: '20px'
+                padding: { xs: '26px 12px', lg: '26px 12px', xl: '26px' }
               }}
             >
-              <a href="/dashboard">
-                <Logo />
-              </a>
+              <StyledLogo withLabel />
             </Box>
-            <Box sx={{ mt: '40px', pl: { xs: '11px', lg: '11px', xl: '14px' } }}>
+            <Box sx={{ mt: '40px', pl: { xs: 0, lg: 0, xl: '14px' } }}>
               {pathsInfo.map((info: PathInfo) =>
                 info.ignoreLink ? (
                   <></>
@@ -106,7 +105,7 @@ export const Sidebar = () => {
             <SidebarInviteButton onClick={handleInviteToOrgClick}>Invite members</SidebarInviteButton>
           </Box>
         </Box>
-      </Box>
+      </StyledContainer>
       <AnalysisSubMenu open={openAnalysisSubMenu} onClose={closeAnalysisSubMenu} />
       <InviteMember open={userInviteOpen} closeDialog={handleInviteToOrgClose} />
     </AppBar>
