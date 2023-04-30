@@ -21,7 +21,6 @@ export const StyledRoundedSelectContainer = styled(FormControl)(({ theme }) => (
   position: 'relative',
   minHeight: 30,
   height: 30,
-
   color: theme.palette.primary.main,
   '&:hover': {
     color: theme.palette.common.white
@@ -37,7 +36,7 @@ export const StyledRoundedSelectInputLabel = styled(InputLabel)({
   }
 });
 
-export const StyledRoundedSelect = styled(Select)<IsActive>(({ active, theme }) => ({
+export const StyledRoundedSelect = styled(Select)(({ theme }) => ({
   minWidth: 192,
   minHeight: 30,
   fontSize: 12,
@@ -60,7 +59,7 @@ export const StyledRoundedSelect = styled(Select)<IsActive>(({ active, theme }) 
     color: 'inherit'
   },
 
-  backgroundColor: active ? theme.palette.primary.light : theme.palette.common.white,
+  backgroundColor: theme.palette.common.white,
   '&:hover, &:hover svg': {
     fill: theme.palette.common.white,
     color: theme.palette.common.white,

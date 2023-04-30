@@ -16,7 +16,7 @@ export const StyledContainer = styled(ListItemButton, {
   },
   cursor: 'pointer',
   position: 'relative',
-  backgroundColor: active ? 'rgba(209, 216, 220, 0.5)' : theme.palette.common.white,
+  backgroundColor: active ? theme.palette.grey[100] : 'transparent',
   ':hover': {
     backgroundColor: theme.palette.grey[100]
   },

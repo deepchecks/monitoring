@@ -40,10 +40,6 @@ const StyledHeaderWrapper = styled(Stack, {
   top: 0,
   left: '236px',
   width: 'calc(100% - 236px)',
-  '@media (max-width: 1536px)': {
-    left: '196px',
-    width: 'calc(100% - 156px)'
-  },
   height: '76px',
   background: theme.palette.grey[100],
   transition: 'all 0.35s ease-in-out',
@@ -56,8 +52,5 @@ const StyledSelectContainer = styled(Stack)({
   alignItems: 'center',
   height: '36px',
   width: '100%',
-  margin: '0 38px',
-  '@media (max-width: 1536px)': {
-    margin: '0 30px'
-  }
+  margin: '0 38px'
 });

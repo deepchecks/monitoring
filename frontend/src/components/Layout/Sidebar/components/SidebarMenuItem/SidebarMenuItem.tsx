@@ -84,21 +84,17 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
       <StyledNavLink
         linkLabel={info.title}
         icon={Icon && ActiveIcon ? hover || active ? <ActiveIcon /> : <Icon /> : null}
+        isActive={active}
+        activeIcon={ActiveIcon ? <ActiveIcon /> : null}
       />
       {info.title === 'Analysis' && (
         <Box
           onClick={onOpenSubMenu}
           sx={theme => ({
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            marginRight: { xs: '20px', lg: '20px', xl: '30px' },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: activeHover ? theme.palette.primary.main : theme.palette.primary.contrastText,
+            width: 24,
+            paddingTop: '4px',
             '& svg': {
-              fill: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black
+              fill: activeHover ? theme.palette.primary.main : theme.palette.common.black
             }
           })}
         >
@@ -109,15 +105,11 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
         <Box
           onClick={info.title === 'Alerts' ? toggleSubMenu : () => 1}
           sx={theme => ({
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            marginRight: { xs: '20px', lg: '20px', xl: '30px' },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-            backgroundColor: activeHover ? theme.palette.primary.main : theme.palette.primary.contrastText
+            width: '30px',
+            padding: '2px',
+            '& svg': {
+              fill: activeHover ? theme.palette.primary.main : theme.palette.common.black
+            }
           })}
         >
           {submenuIsOpen ? (
@@ -125,7 +117,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
               sx={theme => ({
                 height: 2,
                 width: 8,
-                background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black
+                background: activeHover ? theme.palette.primary.main : theme.palette.common.black
               })}
             />
           ) : (

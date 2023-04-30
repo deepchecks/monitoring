@@ -68,14 +68,7 @@ const SingleSelect = ({
   return (
     <>
       <StyledRoundedSelectContainer fullWidth>
-        <StyledRoundedSelect
-          active={value.length > 0 ? 1 : 0}
-          size={size}
-          label={label}
-          labelId={label}
-          value={value}
-          onChange={handleSelectValueChange}
-        >
+        <StyledRoundedSelect size={size} label={label} labelId={label} value={value} onChange={handleSelectValueChange}>
           <MenuItem value={PER_FEATURE}>Per feature</MenuItem>
           {data
             ?.filter(({ name }) => name !== PER_FEATURE)

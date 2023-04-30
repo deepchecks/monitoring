@@ -181,7 +181,6 @@ const MultiSelect = ({
       <StyledRoundedSelectContainer fullWidth>
         <InputLabel id={label} label={`Select ${label}`} size={size} />
         <StyledRoundedSelect
-          active={multiValue.length > 0 ? 1 : 0}
           size={size}
           label={label}
           labelId={label}

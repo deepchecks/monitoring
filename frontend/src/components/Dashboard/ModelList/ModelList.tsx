@@ -84,7 +84,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
   };
 
   return (
-    <StyledModelListContainer type="card">
+    <StyledModelListContainer>
       {isLoading ? (
         <Loader />
       ) : (

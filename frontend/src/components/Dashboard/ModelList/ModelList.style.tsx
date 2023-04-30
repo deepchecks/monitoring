@@ -63,7 +63,7 @@ export const StyledResetSelectionContainer = styled(StyledStack)({
   bottom: 0,
   height: '50px',
   padding: '0 24px',
-  background: theme.palette.common.white,
+  background: theme.palette.grey[100],
   borderTop: `1px solid ${theme.palette.grey.light}`,
   backdropFilter: 'blur(5px)',
 
