@@ -247,15 +247,10 @@ function DiagramLine({
             unit: minTimeUnit
           }
         },
-        y: analysis
-          ? {
-              min: range.current.min,
-              max: range.current.max === 0 ? 1 : undefined
-            }
-          : {
-              min: range.current.min,
-              max: range.current.max <= 1 ? 1 : undefined
-            }
+        y: {
+          min: range.current.min,
+          max: range.current.max <= 1 ? 1 : undefined
+        }
       }
     }),
     [
