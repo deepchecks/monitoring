@@ -95,7 +95,12 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
     <Loader />
   ) : (
     <>
-      <StyledMainWrapper onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} onClick={handleOpenDrawer}>
+      <StyledMainWrapper
+        onMouseOver={onMouseOver}
+        onMouseLeave={onMouseLeave}
+        onClick={handleOpenDrawer}
+        sx={{ background: 'white' }}
+      >
         <StyledCriticality criticality={alert_severity} resolved={resolved}>
           <Typography variant="h4">{alerts_count}</Typography>
           <Typography variant="subtitle2">{alert_severity}</Typography>

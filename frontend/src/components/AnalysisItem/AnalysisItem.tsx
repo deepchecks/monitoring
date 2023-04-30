@@ -144,7 +144,7 @@ const AnalysisItem = ({
   };
 
   return (
-    <div ref={observedContainerRef}>
+    <div ref={observedContainerRef} style={{ background: 'white', borderRadius: '16px' }}>
       {checkConf && checkConf.length ? (
         <AnalysisChartItemWithFilters
           {...chartItemProps}
