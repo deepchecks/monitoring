@@ -29,10 +29,10 @@ jobs:
           repository: 'deepchecks/monitoring-oss'
           ref: main
           token: ${{ secrets.DEEPCHECKS_CI_TOKEN }}
-#      - name: Change LICENSE to pure AGPL
-#        run: |
-#          echo "TODO"
-#          echo -e "MIT License\n\n$(cat LICENSE)" > LICENSE
+      - name: Change LICENSE to pure AGPL
+        run: |
+          rm -f LICENSE
+          mv AGPL_LICENSE LICENSE
       - name: Remove unused GitHub workflows
         run: |
           cd .github/workflows
