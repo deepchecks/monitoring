@@ -5,7 +5,7 @@ import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/materi
 export const StyledMainWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  borderRadius: '10px',
+  borderRadius: '16px',
   boxShadow: '0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
   height: 100,
   width: '100%',
@@ -56,7 +56,7 @@ export const StyledCriticality = styled(Box, {
     minWidth: 80,
     padding: '22px 11px 20px 11px',
     textAlign: 'center',
-    borderRadius: '10px 0px 0px 10px',
+    borderRadius: '16px 0px 0px 16px',
     color: theme.palette.common.white,
     '@media (max-width: 1536px)': {
       minWidth: 65,
