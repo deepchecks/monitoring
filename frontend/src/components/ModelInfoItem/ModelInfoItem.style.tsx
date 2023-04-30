@@ -4,20 +4,22 @@ import { theme } from 'theme';
 
 export const StyledModelInfoItemContainer = styled(Stack)({
   position: 'relative',
-  borderRadius: '10px',
+  borderRadius: '16px',
   boxShadow: ' 0px 4px 13px 2px rgba(0, 0, 0, 0.12)',
   fontSize: '16px',
   fontWeight: 400,
   lineHeight: '150%',
   outline: '6px solid transparent',
-  paddingBottom: '10px'
+  paddingBottom: '10px',
+  background: 'white'
 });
 
 export const StyledModelInfoItemHeader = styled(Stack)(({ theme }) => ({
-  backgroundColor: theme.palette.grey[100],
+  backgroundColor: theme.palette.grey[200],
   color: theme.palette.text.primary,
   height: '83px',
-  padding: '12px 20px'
+  padding: '12px 20px',
+  borderRadius: '16px 16px 0 0'
 }));
 
 export const StyledModelInfoItemName = styled(Typography)({

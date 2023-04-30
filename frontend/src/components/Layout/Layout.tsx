@@ -28,13 +28,7 @@ const Layout = () => {
           }}
         >
           <Sidebar />
-          <StyledContainer
-            sx={{
-              padding: { xs: '0 30px', lg: '0 30px', xl: '0 35px' },
-              width: { xs: 'calc(100% - 196px)', lg: 'calc(100% - 196px)', xl: 'calc(100% - 237px)' }
-            }}
-            type="bg"
-          >
+          <StyledContainer padding="0 35px" width="calc(100% - 237px)" type="bg">
             <Outlet />
           </StyledContainer>
         </Box>

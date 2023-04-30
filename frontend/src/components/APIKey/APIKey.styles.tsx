@@ -10,8 +10,7 @@ const StyledApiKeyContainer = styled(StyledContainer)(({ theme }) => ({
   maxWidth: '900px',
   padding: '20px',
   borderRadius: '16px',
-  border: `1px solid ${theme.palette.grey.light}`,
-  background: theme.palette.grey[100]
+  border: `1px solid ${theme.palette.grey.light}`
 }));
 
 const StyledApiKey = styled(StyledText)({

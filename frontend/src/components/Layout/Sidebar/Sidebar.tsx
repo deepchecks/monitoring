@@ -51,7 +51,7 @@ export const Sidebar = () => {
         left: 0,
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: { xs: '196px', lg: '196px', xl: '237px' },
+        width: '237px',
         height: '100vh',
         zIndex: 100,
         background: '#D8DDE1'
@@ -78,12 +78,12 @@ export const Sidebar = () => {
               sx={{
                 position: 'sticky',
                 zIndex: 3,
-                padding: { xs: '26px 12px', lg: '26px 12px', xl: '26px' }
+                padding: '26px'
               }}
             >
               <StyledLogo withLabel />
             </Box>
-            <Box sx={{ mt: '40px', pl: { xs: 0, lg: 0, xl: '14px' } }}>
+            <Box sx={{ mt: '40px', pl: '14px' }}>
               {pathsInfo.map((info: PathInfo) =>
                 info.ignoreLink ? (
                   <></>

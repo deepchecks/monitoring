@@ -75,7 +75,7 @@ export function GraphicsSection({
 
   return (
     <>
-      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props}>
+      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props} sx={{ background: 'white' }}>
         {isLoading ? (
           <Loader />
         ) : (

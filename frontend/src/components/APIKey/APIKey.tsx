@@ -48,7 +48,7 @@ export function APIKey() {
           {link}
         </a>
       </StyledContainer>
-      <StyledApiKeyContainer>
+      <StyledApiKeyContainer type="card">
         <StyledApiKeyContainer>
           <StyledApiKey text={apiToken || '*'.repeat(59)} />
           <StyledButton onClick={handleClick} label={apiToken ? copy : regenerate} />

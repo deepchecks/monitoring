@@ -147,7 +147,7 @@ export function AlertNotifications() {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '10px 16px',
-          backgroundColor: theme.palette.grey[100],
+          backgroundColor: theme.palette.grey[200],
           color: theme.palette.text.primary,
           width: 'calc(100% - 12px)'
         })}
@@ -216,6 +216,7 @@ export function AlertNotifications() {
               background: `url(${connectSlackBG}) no-repeat right`,
               backgroundColor: theme.palette.primary.light,
               borderRadius: '16px',
+              boxShadow: `0 0 3px 0.5px ${theme.palette.primary.main}`,
               marginTop: '124px',
               gap: '24px'
             }}

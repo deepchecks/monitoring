@@ -2,13 +2,12 @@ import { alpha, Button, Stack, Typography, styled } from '@mui/material';
 
 const StyledContainer = styled(Stack)(({ theme }) => ({
   position: 'relative',
-  borderRadius: '10px',
+  borderRadius: '16px',
   boxShadow: ' 0 0 15px 5px lightgray',
   lineHeight: '34px',
-  outline: '1px solid transparent',
+  background: 'white',
 
   '&:hover': {
-    transition: 'outline-color .4s',
     outlineColor: theme.palette.primary.contrastText
   }
 }));
@@ -70,7 +69,7 @@ const StyledHoverContainer = styled(Stack)({
   alignItems: 'center',
   justifyContent: 'flex-end',
   flexDirection: 'row',
-  borderRadius: '10px',
+  borderRadius: '16px',
   height: '100px',
   width: '100%',
   position: 'absolute',
@@ -84,7 +83,7 @@ const StyledButton = styled(Button)({
   flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
-  borderRadius: '10px',
+  borderRadius: '16px',
   padding: '5px'
 });
 

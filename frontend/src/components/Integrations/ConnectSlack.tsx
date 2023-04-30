@@ -71,6 +71,7 @@ export function ConnectSlack() {
   return (
     <Box
       sx={{
+        background: 'white',
         borderRadius: '16px',
         padding: '20px 20px 30px 40px',
         display: 'flex',

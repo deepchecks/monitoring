@@ -34,7 +34,7 @@ export const MonitorsGroup = ({
   if (!monitors.length) return <></>;
 
   return (
-    <StyledGroupContainer type="card">
+    <StyledGroupContainer>
       <StyledHeadingContainer>
         <StyledModelName>{model.name}</StyledModelName>
         <StyledModelLatestTime>
