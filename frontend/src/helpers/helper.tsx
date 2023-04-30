@@ -1,24 +1,13 @@
 import React, { ComponentType, FC, lazy } from 'react';
 
 import { AnalysisProvider } from 'helpers/context/AnalysisProvider';
-
-import {
-  AlarmActive,
-  AlarmHover,
-  AnalysisActive,
-  AnalysisHover,
-  ConfigurationActive,
-  ConfigurationHover,
-  DashboardActive,
-  DashboardHover
-} from '../assets/icon/icon';
+import { Alarm, AnalyticsSharp, Dashboard, Settings } from '@mui/icons-material';
 
 export interface PathInfo {
   title: string;
   link: string;
   element: () => JSX.Element;
   Icon: FC | null;
-  IconHover: FC | null;
   ActiveIcon: FC | null;
   children?: PathInfo[];
   ignoreLink?: boolean;
@@ -64,16 +53,14 @@ export const pathsInfo: PathInfo[] = [
     title: 'Dashboard',
     link: '/dashboard',
     element: () => <DashboardPage />,
-    Icon: DashboardActive,
-    IconHover: DashboardHover,
-    ActiveIcon: DashboardActive
+    Icon: Dashboard,
+    ActiveIcon: Dashboard
   },
   {
     title: 'Suite View',
     link: '/suite-view',
     element: () => <SuiteViewPage />,
     Icon: null,
-    IconHover: null,
     ActiveIcon: null,
     ignoreLink: true
   },
@@ -81,16 +68,14 @@ export const pathsInfo: PathInfo[] = [
     title: 'Alerts',
     link: '/alerts',
     element: () => <AlertsPage />,
-    Icon: AlarmActive,
-    IconHover: AlarmHover,
-    ActiveIcon: AlarmHover,
+    Icon: Alarm,
+    ActiveIcon: Alarm,
     children: [
       {
         title: 'Resolved Alerts',
         link: '/resolved-alerts',
         Icon: null,
         element: () => <AlertsPage resolved />,
-        IconHover: null,
         ActiveIcon: null
       }
     ]
@@ -103,24 +88,21 @@ export const pathsInfo: PathInfo[] = [
         <AnalysisPage />
       </AnalysisProvider>
     ),
-    Icon: AnalysisActive,
-    IconHover: AnalysisHover,
-    ActiveIcon: AnalysisHover
+    Icon: AnalyticsSharp,
+    ActiveIcon: AnalyticsSharp
   },
   {
     title: 'Configuration',
     link: '/configuration',
     element: () => <DashboardPage />,
-    Icon: ConfigurationActive,
-    IconHover: ConfigurationHover,
-    ActiveIcon: ConfigurationHover,
+    Icon: Settings,
+    ActiveIcon: Settings,
     children: [
       {
         title: 'Alerts Rules',
         link: '/configuration/alert-rules',
         Icon: null,
         element: () => <AlertRules />,
-        IconHover: null,
         ActiveIcon: null
       },
       {
@@ -128,7 +110,6 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/models',
         Icon: null,
         element: () => <ModelsPage />,
-        IconHover: null,
         ActiveIcon: null
       },
       {
@@ -136,7 +117,6 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/notifications',
         Icon: null,
         element: () => <NotificationsPage />,
-        IconHover: null,
         ActiveIcon: null
       },
       {
@@ -144,7 +124,6 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/integrations',
         Icon: null,
         element: () => <IntegrationsPage />,
-        IconHover: null,
         ActiveIcon: null
       },
       {
@@ -152,7 +131,6 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/api-key',
         Icon: null,
         element: () => <APIKeyPage />,
-        IconHover: null,
         ActiveIcon: null
       }
     ]
@@ -162,7 +140,6 @@ export const pathsInfo: PathInfo[] = [
     link: '/workspace-settings',
     element: () => <WorkspaceSettingsPage />,
     Icon: null,
-    IconHover: null,
     ActiveIcon: null,
     ignoreLink: true
   }

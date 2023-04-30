@@ -24,7 +24,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
   const [hover, setHover] = useState(false);
   const [submenuIsOpen, setSubmenuIsOpen] = useState(false);
 
-  const { ActiveIcon, Icon, IconHover, link } = info;
+  const { ActiveIcon, Icon, link } = info;
   const active = location?.pathname.startsWith(link);
   const activeHover = hover && !active;
   const LinkWithParams = `${link}${window.location.search ?? ''}`;
@@ -83,9 +83,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
     <>
       <StyledNavLink
         linkLabel={info.title}
-        icon={
-          Icon && IconHover && ActiveIcon ? hover && !active ? <IconHover /> : active ? <ActiveIcon /> : <Icon /> : null
-        }
+        icon={Icon && ActiveIcon ? hover || active ? <ActiveIcon /> : <Icon /> : null}
       />
       {info.title === 'Analysis' && (
         <Box

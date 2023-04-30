@@ -1,9 +1,3 @@
-import { ReactComponent as Alarm } from './alarm.svg';
-import { ReactComponent as AlarmActive } from './alarmActiv.svg';
-import { ReactComponent as AlarmHover } from './alarmHover.svg';
-import { ReactComponent as Analysis } from './analysis.svg';
-import { ReactComponent as AnalysisActive } from './analysisActiv.svg';
-import { ReactComponent as AnalysisHover } from './analysisHover.svg';
 import { ReactComponent as Arrow } from './arow.svg';
 import { ReactComponent as ArrowDropDown } from './arrowDropDown.svg';
 import { ReactComponent as Calendar } from './calendar.svg';
@@ -14,12 +8,6 @@ import { ReactComponent as Clear } from './clear.svg';
 import { ReactComponent as CloseIcon } from './close.svg';
 import { ReactComponent as CollapseArrowLeft } from './collapseArrowLeft.svg';
 import { ReactComponent as CollapseArrowRight } from './collapseArrowRight.svg';
-import { ReactComponent as Configuration } from './configuration.svg';
-import { ReactComponent as ConfigurationActive } from './configurationActiv.svg';
-import { ReactComponent as ConfigurationHover } from './configurationHover.svg';
-import { ReactComponent as Dashboard } from './dashboard.svg';
-import { ReactComponent as DashboardActive } from './dashboardActiv.svg';
-import { ReactComponent as DashboardHover } from './dashboardHover.svg';
 import { ReactComponent as DeleteIcon } from './delete.svg';
 import { ReactComponent as Email } from './email.svg';
 import { ReactComponent as EmailIcon } from './emailIcon.svg';
@@ -77,12 +65,6 @@ import { ReactComponent as WorkspaceSettings } from './workspace-settings.svg';
 import { ReactComponent as ExclamationMarkRhombus } from './exclamationMarkRhombus.svg';
 
 export {
-  Alarm,
-  AlarmActive,
-  AlarmHover,
-  Analysis,
-  AnalysisActive,
-  AnalysisHover,
   Arrow,
   ArrowDropDown,
   Calendar,
@@ -93,12 +75,6 @@ export {
   CloseIcon,
   CollapseArrowLeft,
   CollapseArrowRight,
-  Configuration,
-  ConfigurationActive,
-  ConfigurationHover,
-  Dashboard,
-  DashboardActive,
-  DashboardHover,
   Email,
   EmailIcon,
   ExpandMore,
