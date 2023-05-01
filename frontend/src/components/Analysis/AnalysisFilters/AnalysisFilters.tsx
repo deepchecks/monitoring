@@ -13,7 +13,7 @@ import { styled, Stack, StackProps } from '@mui/material';
 
 import { DropDownFilter } from './components/DropDownFilter';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
-import { DropdownTextField } from 'components/DropdownTextField';
+import { DropdownTextField } from 'components/base/Input/DropdownTextField';
 import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 

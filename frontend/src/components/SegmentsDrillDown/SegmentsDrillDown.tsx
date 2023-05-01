@@ -16,7 +16,7 @@ import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
 import { ClassOrFeature } from 'components/Analysis/AnalysisGroupBy/AnalysisGroupBy.types';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
 

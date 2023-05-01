@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 
 import HeaderLayout from 'components/HeaderLayout';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';

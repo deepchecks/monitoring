@@ -11,7 +11,7 @@ import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 import { styled, Box } from '@mui/material';
 
 import { AnalysisGroupByInfo } from './components/AnalysisGroupByInfo';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
 import {
   ControlledMarkedSelect,
@@ -23,7 +23,7 @@ import { RunDownloadSuite } from 'components/RunDownloadSuite';
 import { CheckTypeOptions } from 'helpers/types/check';
 import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
 import { getAvailableFeatures } from 'helpers/utils/featuresUtils';
-import { SwitchButton } from 'components/SwitchButton';
+import { SwitchButton } from 'components/base/Button/SwitchButton';
 
 const AnalysisGroupByComponent = ({
   datasetName,

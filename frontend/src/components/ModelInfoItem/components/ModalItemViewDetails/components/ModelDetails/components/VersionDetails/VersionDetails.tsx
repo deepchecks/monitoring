@@ -6,10 +6,10 @@ import {
 } from 'api/generated';
 import { Autocomplete, Button, Divider, Stack, styled, TextField, Typography } from '@mui/material';
 import { CollapseArrowLeft } from 'assets/icon/icon';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
 import { VersionErrorsTable } from './components/VersionErrorsTable';
-import { NoDataToShow } from 'components/NoDataToShow';
+import { NoDataToShow } from 'components/DiagramLine/NoData/NoDataToShow';
 
 import { theme } from 'components/lib/theme';
 

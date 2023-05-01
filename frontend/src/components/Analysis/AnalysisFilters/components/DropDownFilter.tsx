@@ -4,7 +4,7 @@ import { ColumnType, GetModelColumnsApiV1ModelsModelIdColumnsGet200 } from 'api/
 import { List, Popover, PopoverProps, Box, styled } from '@mui/material';
 
 import { NestedMenu } from 'components/NestedMenu';
-import { SearchField } from 'components/SearchField';
+import { SearchField } from 'components/base/Input/SearchField';
 import { CategoricalFilter } from './CategoricalFilter';
 import { NumericFilter } from './NumericFilter';
 

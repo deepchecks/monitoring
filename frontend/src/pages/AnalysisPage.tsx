@@ -11,7 +11,7 @@ import {
 import useModels from 'helpers/hooks/useModels';
 import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { AnalysisFilters } from 'components/Analysis/AnalysisFilters/AnalysisFilters';
 import { AnalysisHeader } from 'components/Analysis/AnalysisHeader/AnalysisHeader';
 import { AnalysisGroupBy } from 'components/Analysis/AnalysisGroupBy';

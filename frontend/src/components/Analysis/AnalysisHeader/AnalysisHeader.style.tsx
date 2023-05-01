@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 import { styled, alpha, Box, List, Divider } from '@mui/material';
 
-import { SearchField } from '../../SearchField';
+import { SearchField } from '../../base/Input/SearchField';
 
 import { theme } from 'components/lib/theme';
 

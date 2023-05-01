@@ -7,8 +7,8 @@ import { AnalysisContext, frequencyData } from 'helpers/context/AnalysisProvider
 import { Box, MenuItem, SelectChangeEvent } from '@mui/material';
 
 import { DateRange } from 'components/DateRange';
-import { CustomStyledSelect } from 'components/CustomStyledSelect';
-import { SwitchButton } from 'components/SwitchButton';
+import { CustomStyledSelect } from 'components/Select/CustomStyledSelect';
+import { SwitchButton } from 'components/base/Button/SwitchButton';
 
 import { StyledDivider } from '../AnalysisHeader.style';
 import { frequencyValues } from 'helpers/utils/frequency';

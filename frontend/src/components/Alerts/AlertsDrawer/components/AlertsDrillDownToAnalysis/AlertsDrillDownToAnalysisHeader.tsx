@@ -2,7 +2,7 @@ import React, { SyntheticEvent, memo } from 'react';
 
 import { Stack, styled, Tabs, Tab, Typography, Box } from '@mui/material';
 
-import { SwitchButton } from 'components/SwitchButton';
+import { SwitchButton } from 'components/base/Button/SwitchButton';
 import {
   ControlledMarkedSelect,
   ControlledMarkedSelectSelectValues

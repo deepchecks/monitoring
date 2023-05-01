@@ -11,7 +11,7 @@ import { Box, styled, Tab } from '@mui/material';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { TabContext } from '@mui/lab';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { ModelNotes } from './components/ModelNotes';
 import { theme } from 'components/lib/theme';
 

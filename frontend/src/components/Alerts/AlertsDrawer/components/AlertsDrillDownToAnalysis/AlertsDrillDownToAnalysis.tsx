@@ -14,7 +14,7 @@ import { Box, Stack, styled } from '@mui/material';
 
 import { AlertsDrillDownToAnalysisHeader } from './AlertsDrillDownToAnalysisHeader';
 import { TabPanel } from 'components/TabPanel';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
 import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 

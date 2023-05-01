@@ -14,7 +14,7 @@ import {
   styled
 } from '@mui/material';
 
-import { SearchField } from 'components/SearchField';
+import { SearchField } from 'components/base/Input/SearchField';
 
 import { theme } from 'components/lib/theme';
 

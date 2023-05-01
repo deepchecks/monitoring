@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 
 import { InputAdornment, TextField, TextFieldProps, Typography } from '@mui/material';
 
-import { SearchIcon } from '../assets/icon/icon';
+import { SearchIcon } from '../../../assets/icon/icon';
 
 import { theme } from 'components/lib/theme';
 

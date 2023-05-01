@@ -7,7 +7,7 @@ import {
   ConnectedModelSchema
 } from 'api/generated';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { ModelItem } from './components/ModelItem';
 import { AlertsCountWidget } from './components/AlertsCountWidget';
 

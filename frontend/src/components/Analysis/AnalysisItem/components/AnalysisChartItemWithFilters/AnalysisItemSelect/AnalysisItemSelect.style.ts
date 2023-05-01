@@ -11,7 +11,7 @@ import {
   Typography
 } from '@mui/material';
 
-import { SearchField } from 'components/SearchField';
+import { SearchField } from 'components/base/Input/SearchField';
 
 interface IsActive {
   active: boolean | number;

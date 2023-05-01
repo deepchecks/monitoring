@@ -8,7 +8,7 @@ import { StyledAlertBadge } from '../ModelItem.style';
 import { NoDataErrorImg, NoDataErrorToolTip, NoDataLoaderContained } from './NoDataError.styles';
 
 import { constants } from 'components/Dashboard/dashboard.constants';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 
 const { noDataErrorImageAlt, noDataDataUpdate } = constants.modelList.modelItem;
 

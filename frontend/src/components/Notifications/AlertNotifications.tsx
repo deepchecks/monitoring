@@ -13,7 +13,7 @@ import { Stack } from '@mui/system';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { featuresList, TierControlWrapper } from 'helpers/tierControl';
 
-import { Loader } from '../Loader';
+import { Loader } from '../base/Loader/Loader';
 import { StyledButton, StyledText } from 'components/lib';
 
 import { Email, Slack } from '../../assets/icon/icon';

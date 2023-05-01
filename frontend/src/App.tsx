@@ -12,7 +12,7 @@ import { GlobalStateProvider } from './helpers/context/GlobalProvider';
 import { StatsTimeProvider } from './helpers/hooks/useStatsTime';
 import { UserProvider } from './helpers/hooks/useUser';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import Layout from 'components/Layout/Layout';
 
 import 'overlayscrollbars/overlayscrollbars.css';

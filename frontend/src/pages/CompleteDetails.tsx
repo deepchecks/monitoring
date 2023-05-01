@@ -17,7 +17,7 @@ import {
 } from '../api/generated';
 
 import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../helpers/services/userService';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { StyledLogo } from 'components/lib';
 
 import { theme } from '../components/lib/theme';

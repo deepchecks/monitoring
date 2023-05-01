@@ -13,7 +13,7 @@ import { alpha, Box, Typography, styled } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
 import DiagramTutorialTooltip from './DiagramTutorialTooltip/DiagramTutorialTooltip';
-import { Loader } from '../Loader';
+import { Loader } from '../base/Loader/Loader';
 
 import { DiagramLineProps } from './DiagramLine.types';
 import { theme } from 'components/lib/theme';

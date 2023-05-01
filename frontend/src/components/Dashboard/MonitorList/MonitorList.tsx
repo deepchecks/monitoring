@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MonitorSchema, useDeleteMonitorApiV1MonitorsMonitorIdDelete, DashboardSchema } from 'api/generated';
 import useModels from 'helpers/hooks/useModels';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { MonitorsGroup } from './components/MonitorsGroup';
 
 import { DeleteMonitor } from './components/DeleteMonitor';

@@ -18,7 +18,7 @@ import { getAlertFilters } from 'helpers/alertFilters';
 import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, Tooltip } from '@mui/material';
 
 import { RunDownloadSuite } from 'components/RunDownloadSuite';
-import { ShareButton } from 'components/ShareButton';
+import { ShareButton } from 'components/base/Button/ShareButton';
 import { AlertsBadge } from './AlertBadge';
 import { DiagramAlertCountWidget } from 'components/DiagramLine/DiagramAlertCountWidget/DiagramAlertCountWidget';
 import { FullLengthTooltip } from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';

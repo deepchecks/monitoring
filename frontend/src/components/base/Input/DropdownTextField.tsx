@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled, TextField, TextFieldProps } from '@mui/material';
 
-import { DropdownArrowComponent } from './DropdownArrowComponent';
+import { DropdownArrowComponent } from '../../DropdownArrowComponent';
 
 import { theme } from 'components/lib/theme';
 

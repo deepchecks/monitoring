@@ -12,8 +12,8 @@ import { frequencyValues } from 'helpers/utils/frequency';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
 import DiagramTutorialTooltip from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';
-import { Loader } from 'components/Loader';
-import { CustomStyledSelect } from 'components/CustomStyledSelect';
+import { Loader } from 'components/base/Loader/Loader';
+import { CustomStyledSelect } from 'components/Select/CustomStyledSelect';
 
 import {
   StyledDataIngestionContainer,

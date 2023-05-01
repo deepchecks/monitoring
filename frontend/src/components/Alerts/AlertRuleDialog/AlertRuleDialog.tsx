@@ -16,7 +16,7 @@ import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 import { DialogProps } from '@mui/material';
 
 import { ActionDialogHeader } from 'components/base/Dialog/ActionDialog/ActionDialogHeader';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 
 import { StyledDialog } from './AlertRuleDialog.styles';
 import { constants } from './alertRuleDialog.constants';

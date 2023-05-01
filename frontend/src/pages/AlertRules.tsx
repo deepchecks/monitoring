@@ -14,7 +14,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/Alerts/AlertRuleConfig/AlertRuleConfigItem';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 import { AlertRuleDialog } from 'components/Alerts/AlertRuleDialog/AlertRuleDialog';

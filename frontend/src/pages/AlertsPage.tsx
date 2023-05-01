@@ -21,7 +21,7 @@ import { AlertsHeader } from 'components/Alerts/AlertsHeader';
 import { AlertsResolveDialog } from 'components/Alerts/AlertsResolveDialog';
 import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
 import useModels from '../helpers/hooks/useModels';
 
