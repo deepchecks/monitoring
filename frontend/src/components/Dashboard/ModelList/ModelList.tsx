@@ -13,7 +13,6 @@ import { AlertsCountWidget } from './components/AlertsCountWidget';
 
 import {
   StyledModelListContainer,
-  StyledHeading,
   StyledHeadingContainer,
   StyledList,
   StyledSearchFieldContainer,
@@ -28,6 +27,7 @@ import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
 import { handleSetParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
 import { constants } from '../dashboard.constants';
+import { StyledText } from 'components/lib';
 
 export type SelectedModelAlerts = { [key in AlertSeverity]: number };
 
@@ -90,7 +90,7 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
       ) : (
         <>
           <StyledHeadingContainer>
-            <StyledHeading variant="subtitle1">{heading}</StyledHeading>
+            <StyledText type="h1" text={heading} />
             <AlertsCountWidget selectedModelAlerts={selectedModelAlerts} />
           </StyledHeadingContainer>
           <StyledSearchFieldContainer>

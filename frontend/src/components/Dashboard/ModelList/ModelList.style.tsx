@@ -26,14 +26,6 @@ export const StyledHeadingContainer = styled(Stack)({
   }
 });
 
-export const StyledHeading = styled(Typography)({
-  fontSize: 20,
-  fontWeight: 700,
-  lineHeight: '20px',
-  textAlign: 'left',
-  color: theme.palette.text.primary
-});
-
 export const StyledSearchFieldContainer = styled(Box)({
   padding: '0 20px 4px 20px',
 
