@@ -42,6 +42,7 @@ schema.
 - Install all the requirements for the server:
 ```bash
 pip install -r requirements.txt dev-requirements.txt
+pip install -e .
 ```
 - Run the migrations for the public schema. For more info on migrations see below.
 ```bash
