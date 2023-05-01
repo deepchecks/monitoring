@@ -9,11 +9,12 @@ import useUser from 'helpers/hooks/useUser';
 import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
 
 import { StyledMenuItem } from 'components/Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
-import { RowAutoGap } from 'components/base/Container/Container.styles';
 
 import { ReportModal } from './components/ReportModal';
 
-import { WorkspaceSettings } from 'assets/icon/icon';
+import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
+
+import { StyledText } from 'components/lib';
 
 export const UserInfo = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -47,53 +48,45 @@ export const UserInfo = () => {
 
   return (
     <>
-      <Box
-        sx={{ mt: 4, pt: '7px', pb: '27px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-        onClick={handleClick}
-      >
+      <Box onClick={handleClick} display="flex" flexDirection="row" alignItems="center" gap="8px" margin="16px 0">
         <Avatar
           sx={{
-            width: { xs: '24px', lg: '24px', xl: '36px' },
-            height: { xs: '24px', lg: '24px', xl: '36px' },
-            flexGrow: 0,
+            width: '36px',
+            height: '36px',
             border: theme => `2px solid ${alpha(theme.palette.common.white, 0.2)}`
           }}
           alt={full_name}
           src={picture_url}
-        ></Avatar>
-        <Typography
+        />
+        <StyledText
+          text={user.full_name}
+          type="bodyBold"
           sx={{
-            fontSize: 14,
-            marginLeft: '8px',
             width: '130px',
             overflow: 'hidden',
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis'
           }}
-        >
-          {user.full_name}
-        </Typography>
+        />
       </Box>
       <Divider
         sx={{
-          border: `1px dashed rgba(255, 255, 255, 0.4)`
+          border: `1px dashed gray`
         }}
       />
-      <RowAutoGap>
-        <Typography
+      <Box display="flex" flexDirection="row" alignItems="center" justifyContent="space-between" margin={'20px 0'}>
+        <StyledText
+          text={user.organization?.name}
+          type="bodyBold"
           sx={{
-            fontSize: 14,
-            fontWeight: 800,
             width: '130px',
             overflow: 'hidden',
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis'
           }}
-        >
-          {user.organization?.name}
-        </Typography>
-        <WorkspaceSettings onClick={() => navigate('/workspace-settings')} cursor="pointer" height={70} />
-      </RowAutoGap>
+        />
+        <SettingsSuggestIcon onClick={() => navigate('/workspace-settings')} cursor="pointer" sx={{ color: 'gray' }} />
+      </Box>
       <Menu
         id="basic-menu"
         anchorEl={anchorEl}

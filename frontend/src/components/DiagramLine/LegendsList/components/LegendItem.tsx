@@ -52,7 +52,7 @@ const LegendItem = ({ item, lineIndexMap, analysis, current, version, indexInVer
             />
           )}
 
-          <Typography variant="subtitle2" marginLeft="10px">
+          <Typography variant="subtitle2" marginLeft="10px" sx={{ color: color }}>
             {legendLabel}
           </Typography>
         </StyledLegendItem>

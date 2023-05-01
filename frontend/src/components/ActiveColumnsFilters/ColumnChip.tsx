@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Chip, ChipProps, styled } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const ColumnChip = (props: ChipProps) => <StyledChip {...props} />;
 

@@ -17,6 +17,7 @@ import { DateTimePicker as StyledDateTimePicker } from './components/DateTimePic
 import { Notification as StyledNotification } from './components/Notification/Notification';
 import { Input as StyledInput } from './components/Input/Input';
 import { Dropdown as StyledDropdown } from './components/Dropdown/Dropdown';
+import { NavLink as StyledNavLink } from './components/NavLink/NavLink';
 
 export {
   StyledThemeProvider,
@@ -37,5 +38,6 @@ export {
   StyledDateTimePicker,
   StyledNotification,
   StyledInput,
-  StyledDropdown
+  StyledDropdown,
+  StyledNavLink
 };

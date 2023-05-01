@@ -63,7 +63,7 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
         </Box>
         {!has_data && <NoDataError pendingRows={pendingRows} />}
         <StyledAlertBadge severity={max_severity} alertsCount={alerts_count} onClick={handleAlertClick}>
-          <StyledAlertsCount>{alerts_count}</StyledAlertsCount>
+          <StyledAlertsCount variant="h4">{alerts_count}</StyledAlertsCount>
         </StyledAlertBadge>
       </StyledModelInfo>
     </StyledContainer>

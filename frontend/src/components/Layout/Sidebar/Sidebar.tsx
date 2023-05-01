@@ -3,7 +3,7 @@ import { AppBar, Box } from '@mui/material';
 
 import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
-import { PathInfo } from '../../../helpers/helper';
+import { PathInfo } from '../../../helpers/routes';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import useWindowResize from '../../../helpers/hooks/windowResize';
 
@@ -12,9 +12,7 @@ import { SidebarMenuItem } from './components/SidebarMenuItem';
 import { UserInfo } from './components/UserInfo';
 import { InviteMember } from 'components/WorkspaceSettings/Members/components/InviteMember';
 
-import { SidebarInviteButton } from './Sidebar.styles';
-
-import { Logo } from '../../Logo';
+import { StyledButton, StyledContainer, StyledLogo } from 'components/lib';
 
 export const Sidebar = () => {
   const width = useWindowResize();
@@ -53,13 +51,16 @@ export const Sidebar = () => {
         left: 0,
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#17003E',
-        width: { xs: '196px', lg: '196px', xl: '237px' },
+        width: '237px',
         height: '100vh',
-        zIndex: 100
+        zIndex: 100,
+        background: '#D8DDE1'
       }}
     >
-      <Box ref={contentRef} sx={{ height: 1, width: 1, overflow: 'auto', ...style }}>
+      <StyledContainer
+        ref={contentRef}
+        sx={{ height: 1, width: 1, overflow: 'auto', ...style, padding: 0, borderRadius: 0 }}
+      >
         <Box
           sx={{
             height: 1,
@@ -69,24 +70,20 @@ export const Sidebar = () => {
             justifyContent: 'space-between',
             position: 'relative',
             zIndex: 10,
-            background: '#17003E'
+            background: '#D8DDE1'
           }}
         >
           <Box>
             <Box
               sx={{
                 position: 'sticky',
-                top: 0,
                 zIndex: 3,
-                background: '#17003E',
-                paddingBottom: '20px'
+                padding: '26px'
               }}
             >
-              <a href="/dashboard">
-                <Logo />
-              </a>
+              <StyledLogo withLabel />
             </Box>
-            <Box sx={{ mt: '40px', pl: { xs: '11px', lg: '11px', xl: '14px' } }}>
+            <Box sx={{ mt: '40px', pl: '14px' }}>
               {pathsInfo.map((info: PathInfo) =>
                 info.ignoreLink ? (
                   <></>
@@ -103,10 +100,16 @@ export const Sidebar = () => {
           </Box>
           <Box sx={{ padding: '30px 20px' }}>
             <UserInfo />
-            <SidebarInviteButton onClick={handleInviteToOrgClick}>Invite members</SidebarInviteButton>
+            <StyledButton
+              onClick={handleInviteToOrgClick}
+              variant="outlined"
+              label="Invite members"
+              margin="0 auto"
+              width="100%"
+            />
           </Box>
         </Box>
-      </Box>
+      </StyledContainer>
       <AnalysisSubMenu open={openAnalysisSubMenu} onClose={closeAnalysisSubMenu} />
       <InviteMember open={userInviteOpen} closeDialog={handleInviteToOrgClose} />
     </AppBar>

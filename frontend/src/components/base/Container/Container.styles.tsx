@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { breakpointOptions } from 'theme/breakpoints';
 
 interface ContainerProps {
   width?: string;
@@ -70,11 +69,8 @@ const ImageContainer = styled.div<ImageContainerProps>`
 
 const ShadowContainer = styled(FlexColumnContainer)`
   padding: 16px;
-
-  ${breakpointOptions.values?.lg} {
-    box-shadow: 0px 3px 8px 2px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-  }
+  box-shadow: 0px 3px 8px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
 `;
 
 export {

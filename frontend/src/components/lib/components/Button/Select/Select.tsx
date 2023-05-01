@@ -67,7 +67,7 @@ export const Select = (props: SelectProps) => {
             sx={{
               borderWidth: '1px',
               borderStyle: 'solid',
-              padding: '8px 24px',
+              padding: '7px 24px',
               borderRadius: '28px',
               transition: '0.5s',
               backgroundColor: colorsToUse(isSelected).background,

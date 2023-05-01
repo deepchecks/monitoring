@@ -7,13 +7,12 @@ import {
   ConnectedModelSchema
 } from 'api/generated';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { ModelItem } from './components/ModelItem';
 import { AlertsCountWidget } from './components/AlertsCountWidget';
 
 import {
-  StyledContainer,
-  StyledHeading,
+  StyledModelListContainer,
   StyledHeadingContainer,
   StyledList,
   StyledSearchFieldContainer,
@@ -28,6 +27,7 @@ import { CloseIcon, Rotate, SearchIcon } from 'assets/icon/icon';
 import { handleSetParams } from 'helpers/utils/getParams';
 import useModels from 'helpers/hooks/useModels';
 import { constants } from '../dashboard.constants';
+import { StyledText } from 'components/lib';
 
 export type SelectedModelAlerts = { [key in AlertSeverity]: number };
 
@@ -84,13 +84,13 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
   };
 
   return (
-    <StyledContainer>
+    <StyledModelListContainer>
       {isLoading ? (
         <Loader />
       ) : (
         <>
           <StyledHeadingContainer>
-            <StyledHeading variant="subtitle1">{heading}</StyledHeading>
+            <StyledText type="h1" text={heading} />
             <AlertsCountWidget selectedModelAlerts={selectedModelAlerts} />
           </StyledHeadingContainer>
           <StyledSearchFieldContainer>
@@ -124,6 +124,6 @@ export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProp
           </StyledList>
         </>
       )}
-    </StyledContainer>
+    </StyledModelListContainer>
   );
 }

@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { Button } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 import { FlexColumnContainer, Row16Gap, RowAutoGap } from 'components/base/Container/Container.styles';
 
@@ -26,10 +26,11 @@ const BillingCardsContainer = styled(Row16Gap)`
 `;
 
 const BillingCardContainer = styled(FlexColumnContainer)<BillingUIProps>`
-  border: ${p => p.border && `1px solid ${theme.palette.grey[200]}`};
+  border: ${`1px solid ${theme.palette.grey[200]}`};
   padding: 24px;
   border-radius: 14px;
   margin-top: 24px;
+  background: white;
 `;
 
 const BillingText = styled.p<BillingUIProps>`

@@ -4,7 +4,7 @@ import { CheckGroupBySchema, CheckGroupBySchemaValue } from 'api/generated';
 
 import { alpha } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 const NULL_VALUE_BAR_COLOR = theme.palette.grey[100];
 const NULL_VALUE_ACTIVE_BAR_COLOR = theme.palette.grey[300];

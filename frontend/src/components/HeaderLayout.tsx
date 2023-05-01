@@ -6,7 +6,7 @@ import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 
 import { Stack, Typography } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface HeaderLayoutProps {
   title?: string;

@@ -52,7 +52,16 @@ export const Radio = (props: RadioProps) => {
             key={i}
             value={option.value}
             control={<MUIRadio disabled={disabled} />}
-            label={option.label && <Text color={() => labelColor(option.value)} text={option.label} type="bodyBold" />}
+            label={
+              option.label && (
+                <Text
+                  color={() => labelColor(option.value)}
+                  text={option.label}
+                  type="bodyBold"
+                  margin="2px 0 0 -2px"
+                />
+              )
+            }
             onChange={() => setState(option.value)}
           />
         ))}

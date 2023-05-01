@@ -41,7 +41,7 @@ const BillingHistory = () => {
   }
 
   return (
-    <BillingCardContainer border>
+    <BillingCardContainer>
       <Col16Gap>
         <StyledH3>{constants.billingHistory.title}</StyledH3>
         <BillingText color="gray">{constants.billingHistory.description}</BillingText>

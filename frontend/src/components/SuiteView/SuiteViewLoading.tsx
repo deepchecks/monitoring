@@ -2,20 +2,16 @@ import React from 'react';
 
 import loadingImg from '../../assets/icon/loading-suite.svg';
 
-import { constants } from 'components/SuiteView/helpers/suiteViewPage.constants';
+import { StyledImage, StyledText } from 'components/lib';
+import { SuiteViewLoadingBar, SuiteViewLoadingContainer } from './SuiteView.styles';
 
-import {
-  SuiteViewLoadingBar,
-  SuiteViewLoadingContainer,
-  SuiteViewLoadingImg,
-  SuiteViewLoadingText
-} from './SuiteView.styles';
+import { constants } from 'components/SuiteView/helpers/suiteViewPage.constants';
 
 const SuiteViewLoading = () => (
   <SuiteViewLoadingContainer>
-    <SuiteViewLoadingImg src={loadingImg} alt={constants.loadingImgAlt} />
-    <h1>{constants.loadingHeader}</h1>
-    <SuiteViewLoadingText>{constants.loadingDescription}</SuiteViewLoadingText>
+    <StyledImage src={loadingImg} alt={constants.loadingImgAlt} width="400px" />
+    <StyledText type="h1" text={constants.loadingHeader} margin="24px" />
+    <StyledText text={constants.loadingDescription} />
     <SuiteViewLoadingBar />
   </SuiteViewLoadingContainer>
 );

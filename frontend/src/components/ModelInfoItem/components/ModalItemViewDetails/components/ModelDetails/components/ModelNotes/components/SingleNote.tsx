@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { ModelNoteSchema } from 'api/generated';
 import { DeleteIcon } from 'assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface SingleNoteProps {
   note: ModelNoteSchema;

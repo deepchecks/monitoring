@@ -1,5 +1,5 @@
 import { Box, IconButton, Modal, Stack, styled, Typography } from '@mui/material';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const StyledModal = styled(Modal)({
   display: 'flex',

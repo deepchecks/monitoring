@@ -2,7 +2,7 @@ import React, { FormEvent, useState } from 'react';
 import { Box, Button, Stack, styled, TextField, Typography } from '@mui/material';
 import { ModelNoteCreationSchema } from 'api/generated';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface CreateNoteProps {
   onCreate: (note: ModelNoteCreationSchema) => void;

@@ -63,7 +63,7 @@ export const typographyOptions: TypographyOptions = {
   button: {
     fontSize: 14,
     fontWeight: 700,
-    lineHeight: '19.6px',
+    lineHeight: '19px',
     textTransform: 'none'
   }
 };

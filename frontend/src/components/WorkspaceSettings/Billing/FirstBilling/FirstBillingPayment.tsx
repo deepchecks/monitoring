@@ -6,7 +6,7 @@ import logger from 'helpers/services/logger';
 import { FirstBillingPaymentForm, BillingText, FirstBillingPaymentButton } from '../Billing.styles';
 
 import { constants } from '../billing.constants';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 
 const FirstBillingPayment = () => {
   const stripe = useStripe();

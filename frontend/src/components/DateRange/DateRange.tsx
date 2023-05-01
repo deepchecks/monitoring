@@ -7,7 +7,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { Box, Button, Popover } from '@mui/material';
 
-import { DropdownTextField } from 'components/DropdownTextField';
+import { DropdownTextField } from 'components/base/Input/DropdownTextField';
 
 import { StyledButtonContainer } from './DateRange.style';
 

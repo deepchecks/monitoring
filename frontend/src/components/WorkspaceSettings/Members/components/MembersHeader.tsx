@@ -4,7 +4,7 @@ import { MemberSchema } from 'api/generated';
 
 import { Box, Stack } from '@mui/material';
 
-import { SearchField } from 'components/SearchField';
+import { SearchField } from 'components/base/Input/SearchField';
 import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
 
 import { MembersActionDialogOptions } from '../Members.type';

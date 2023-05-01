@@ -10,24 +10,29 @@ export interface ButtonProps extends MUIBtnProps {
 }
 
 export const Button = (props: ButtonProps) => {
-  const { label, loading, width = 'auto', margin = '0' } = props;
+  const { label, loading, width = 'auto', margin = '0', variant = 'contained' } = props;
 
   const theme = useTheme();
 
+  const isHollow = variant === 'outlined';
+  const buttonTextColor = !isHollow ? theme.palette.common.white : '';
+  const loaderColor = !isHollow ? theme.palette.grey[100] : '';
+
   return (
     <MUIButton
-      variant="contained"
+      variant={variant}
       sx={{
-        padding: '8px 24px',
+        padding: '7px 24px',
         borderRadius: '28px',
         transition: '0.6s',
         width: width,
         margin: margin,
-        color: theme.palette.common.white
+        color: buttonTextColor,
+        BorderWidth: '2px'
       }}
       {...props}
     >
-      {loading ? <CircularProgress sx={{ color: theme.palette.grey[100] }} size={20} /> : label}
+      {loading ? <CircularProgress sx={{ color: loaderColor }} size={20} /> : label}
     </MUIButton>
   );
 };

@@ -6,7 +6,7 @@ import { Grid } from '@mui/material';
 
 import { ModelList } from 'components/Dashboard/ModelList';
 import { DataIngestion } from 'components/Dashboard/DataIngestion';
-import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader';
+import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader/MonitorListHeader';
 import { MonitorList } from 'components/Dashboard/MonitorList';
 import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 

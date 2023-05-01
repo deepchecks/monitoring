@@ -1,6 +1,6 @@
 import { IconButton, styled, TableCell, TableRow } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface StyledTableCellProps {
   width: number | string;

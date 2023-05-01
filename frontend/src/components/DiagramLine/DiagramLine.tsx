@@ -12,11 +12,11 @@ import { frequencyValues } from 'helpers/utils/frequency';
 import { alpha, Box, Typography, styled } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
-import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
-import { Loader } from '../Loader';
+import DiagramTutorialTooltip from './DiagramTutorialTooltip/DiagramTutorialTooltip';
+import { Loader } from '../base/Loader/Loader';
 
 import { DiagramLineProps } from './DiagramLine.types';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 import { constants } from './diagramLine.constants';
 
 Chart.register(...registerables, zoomPlugin);

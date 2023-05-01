@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { Tooltip } from '@mui/material';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 const NoDataErrorToolTip = styled(Tooltip)`
   margin: 0 16px 0 auto;
