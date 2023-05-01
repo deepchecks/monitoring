@@ -65,7 +65,7 @@ class Model(Base, MetadataMixin):
 
     data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency), nullable=False, default=Frequency.DAY)
     data_ingestion_alert_latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
-                                                     default=func.date_trunc('day', sa.func.now()))
+                                                     server_default=func.date_trunc('day', sa.func.now()))
     data_ingestion_alert_label_ratio = sa.Column(sa.Float)
     data_ingestion_alert_label_count = sa.Column(sa.Integer)
     data_ingestion_alert_sample_count = sa.Column(sa.Integer)
@@ -149,7 +149,11 @@ class Model(Base, MetadataMixin):
     def next_data_ingestion_alert_schedule(self):
         latest_schedule = pdl.instance(t.cast("datetime", self.data_ingestion_alert_latest_schedule))
         frequency = t.cast("Frequency", self.data_ingestion_alert_frequency).to_pendulum_duration()
-        return latest_schedule + frequency
+        next_schedule = latest_schedule + frequency
+        curr_day = pdl.now(self.timezone).set(hour=0, minute=0, second=0, microsecond=0)
+        if next_schedule < curr_day:
+            return curr_day
+        return next_schedule
 
 
 class ModelNote(Base, MetadataMixin):
