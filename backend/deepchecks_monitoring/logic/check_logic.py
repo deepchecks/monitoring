@@ -541,7 +541,7 @@ def create_execution_data_query(
             data_query = data_query.where(table.c[SAMPLE_LABEL_COL].isnot(None))
 
         return data_query.filter(options.sql_columns_filter())\
-            .order_by(func.md5(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR)))\
+            .order_by(func.hashtext(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR)))\
             .limit(n_samples)
     else:
         if period is None:
@@ -554,19 +554,6 @@ def create_execution_data_query(
         # Forcefully add the sample id and ts columns
         columns = set(columns + [SAMPLE_ID_COL, SAMPLE_TS_COL])
 
-        # For monitoring tables, we join the labels table if needed
-        if with_labels:
-            sample_labels_table = model_version.model.get_sample_labels_table()
-            data_query = select([table.c[col] for col in columns] + [sample_labels_table.c[SAMPLE_LABEL_COL]])
-            data_query = data_query.join(sample_labels_table,
-                                         onclause=table.c[SAMPLE_ID_COL] == sample_labels_table.c[SAMPLE_ID_COL],
-                                         isouter=True)
-            # Filter only samples with labels
-            if filter_labels_exist:
-                data_query = data_query.where(sample_labels_table.c[SAMPLE_LABEL_COL].isnot(None))
-        else:
-            data_query = select([table.c[col] for col in columns])
-
         # If frequency is defined, partitioning the data by the defined frequency and selecting n_samples
         # samples per partition
         if frequency is not None:
@@ -577,19 +564,31 @@ def create_execution_data_query(
             # the aggregation window will take equal number of samples from each period, and will change the time
             # distribution of the data.
             ts = func.timezone(model_version.model.timezone, table.c[SAMPLE_TS_COL])
-            window_query = select(table.c[SAMPLE_ID_COL],
+            window_query = select(*[table.c[col] for col in columns],
                                   func.rank().over(partition_by=func.date_trunc(frequency, ts),
-                                                   order_by=func.md5(table.c[SAMPLE_ID_COL])).label("rank")) \
+                                                   order_by=func.hashtext(table.c[SAMPLE_ID_COL])).label("_dc_rank")) \
                 .filter(options.sql_columns_filter()) \
                 .filter(table.c[SAMPLE_TS_COL] >= period.start, table.c[SAMPLE_TS_COL] < period.end).cte(
                 "window_query")
-            limit_query = select(window_query.c[SAMPLE_ID_COL]).where(window_query.c.rank <= n_samples).cte(
-                "limit_query")
-            return data_query.filter(table.c[SAMPLE_ID_COL].in_(limit_query))
+            data_query = select([window_query.c[col] for col in columns]).where(window_query.c["_dc_rank"] <= n_samples)
         else:
-            return data_query.filter(options.sql_columns_filter())\
-                .order_by(func.md5(func.cast(table.c[SAMPLE_ID_COL], VARCHAR)))\
+            data_query = select([table.c[col] for col in columns]).filter(options.sql_columns_filter())\
+                .order_by(func.hashtext(func.cast(table.c[SAMPLE_ID_COL], VARCHAR)))\
                 .limit(n_samples)
+
+        # For monitoring tables, we join the labels table if needed
+        if with_labels:
+            sample_labels_table = model_version.model.get_sample_labels_table()
+            data_query = select([*data_query.c, sample_labels_table.c[SAMPLE_LABEL_COL]]).select_from(data_query).join(
+                sample_labels_table,
+                onclause=data_query.c[SAMPLE_ID_COL] == sample_labels_table.c[SAMPLE_ID_COL],
+                isouter=True
+            )
+            # Filter only samples with labels
+            if filter_labels_exist:
+                data_query = data_query.where(sample_labels_table.c[SAMPLE_LABEL_COL].isnot(None))
+
+        return data_query
 
 
 def load_data_for_check(

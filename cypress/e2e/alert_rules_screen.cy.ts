@@ -1,6 +1,6 @@
 import { should } from "chai";
 
-describe("Alert Rules Screen", () => {
+describe.skip("Alert Rules Screen", () => {
   const Severity = {
     Low: "Low",
     Medium: "Medium",

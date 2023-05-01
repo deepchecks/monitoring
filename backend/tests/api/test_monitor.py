@@ -376,8 +376,8 @@ async def test_update_monitor_freq(
 ):
     # Arrange
     now = pdl.now("utc")
-    day_before = as_pendulum_datetime(now - pdl.duration(days=1))
-    daterange = list(pdl.period(day_before, day_before + pdl.duration(hours=5)).range(unit="hours", amount=1))
+    days_before = as_pendulum_datetime(now - pdl.duration(days=2))
+    daterange = list(pdl.period(days_before, days_before + pdl.duration(hours=25)).range(unit="hours", amount=1))
 
     upload_classification_data(
         api=test_api,
@@ -385,7 +385,7 @@ async def test_update_monitor_freq(
         is_labeled=False,
         daterange=daterange
     )
-    frequency = Frequency.DAY
+    frequency = Frequency.HOUR
     monitor = test_api.create_monitor(check_id=classification_model_check["id"], monitor={"frequency": frequency.value})
     monitor = t.cast(Payload, monitor)
     monitor = await async_session.get(Monitor, monitor["id"])
@@ -393,10 +393,11 @@ async def test_update_monitor_freq(
     # Assert the latest schedule is by defined frequency
     latest_schedule = pdl.instance(monitor.latest_schedule)
     assert monitor.frequency == frequency
-    assert latest_schedule == round_off_datetime(daterange[-1], frequency)
+    # for the number of windows in the past we calculate
+    assert latest_schedule == round_off_datetime(daterange[-15], frequency)
 
     # Act
-    frequency = Frequency.HOUR
+    frequency = Frequency.DAY
     test_api.update_monitor(monitor_id=monitor.id, monitor={"frequency": frequency.value})
 
     await async_session.refresh(monitor)
