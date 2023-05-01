@@ -39,6 +39,8 @@ class ProfilingMiddleware:
         if not profiling:
             return await self.app(scope, receive, send)
 
+        timeline = request.query_params.get("timeline", "false").lower() == "true"
+
         profiler = Profiler()
         output_html = None
 
@@ -48,8 +50,7 @@ class ProfilingMiddleware:
             # For start message, editing the response headers
             if message["type"] == "http.response.start":
                 profiler.stop()
-                profiler.print(show_all=True)
-                output_html = profiler.output_html(timeline=True).encode()
+                output_html = profiler.output_html(timeline=timeline).encode()
                 # This modifies the "message" Dict in place, which is used by the "send" function below
                 response_headers = MutableHeaders(scope=message)
                 response_headers["content-encoding"] = ""
