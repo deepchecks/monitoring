@@ -125,7 +125,7 @@ export const StyledBlur = styled(Box)({
   top: 0,
   height: '100%',
   width: 262,
-  background: 'linear-gradient(90deg, rgba(241, 233, 254, 0) -12.12%, #F1E9FE 28.76%)',
+  background: 'linear-gradient(90deg, rgba(241, 233, 254, 0) -12.12%, #ffffff 40%)',
   borderRadius: '10px',
   padding: '21px 25px 21px 87px',
   display: 'flex',

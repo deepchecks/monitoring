@@ -15,7 +15,7 @@ import { Box, List, ListItem, styled } from '@mui/material';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { AlertsDrawer } from 'components/AlertsDrawer';
+import { AlertsDrawer } from 'components/Alerts/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import { AlertsHeader } from 'components/Alerts/AlertsHeader';
 import { AlertsResolveDialog } from 'components/Alerts/AlertsResolveDialog';

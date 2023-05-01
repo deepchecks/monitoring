@@ -15,7 +15,7 @@ import { styled, Box } from '@mui/material';
 import { SegmentTests } from './components/SegmentTests';
 import { NoGraphDataToShow } from './components/NoGraphDataToShow';
 import { CheckPerSegment } from './components/CheckPerSegment';
-import { ClassOrFeature } from 'components/AnalysisGroupBy/AnalysisGroupBy.types';
+import { ClassOrFeature } from 'components/Analysis/AnalysisGroupBy/AnalysisGroupBy.types';
 import { Loader } from 'components/Loader';
 
 import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';

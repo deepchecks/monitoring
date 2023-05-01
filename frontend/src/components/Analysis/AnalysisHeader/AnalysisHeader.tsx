@@ -7,7 +7,7 @@ import { MenuItem, Popover, Typography, Stack } from '@mui/material';
 
 import { FixedAnalysisHeader } from './components/FixedAnalysisHeader';
 import { AnalysisHeaderOptions } from './components/AnalysisHeaderOptions';
-import { ShareButton } from '../ShareButton';
+import { ShareButton } from '../../ShareButton';
 import { ModelSelect } from './components/ModelSelect';
 
 import { WindowTimeout } from 'helpers/types/index';

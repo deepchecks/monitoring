@@ -7,7 +7,7 @@ import { styled, Stack } from '@mui/material';
 import { ModelSelect } from './ModelSelect';
 import { AnalysisHeaderOptions } from './AnalysisHeaderOptions';
 import { StyledDivider } from '../AnalysisHeader.style';
-import { AnalysisFilters } from 'components/AnalysisFilters';
+import { AnalysisFilters } from 'components/Analysis/AnalysisFilters';
 
 interface FixedAnalysisHeaderProps {
   model: ModelManagmentSchema;

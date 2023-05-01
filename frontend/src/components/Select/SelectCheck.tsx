@@ -15,7 +15,7 @@ import { Subcategory } from 'components/Subcategory';
 
 import { SetStateType, SelectValues } from 'helpers/types';
 import { CheckFilterTypes, FilteredValues, initFilteredValues, TypeMap, unionCheckConf } from 'helpers/utils/checkUtil';
-import { getNameFromData } from '../AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
+import { getNameFromData } from '../Analysis/AnalysisItem/components/AnalysisChartItemWithFilters/AnalysisItemSelect/MultiSelect';
 import { CheckTypeOptions } from 'helpers/types/check';
 
 interface SelectCheckProps {

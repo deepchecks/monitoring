@@ -13,7 +13,7 @@ import { useModels } from 'helpers/hooks/useModels';
 import { Box, DrawerProps, styled, Typography } from '@mui/material';
 
 import { AlertsDrawerHeader } from './components/AlertsDrawerHeader';
-import { CustomDrawer } from '../CustomDrawer';
+import { CustomDrawer } from '../../CustomDrawer';
 import { AlertsDrillDownToAnalysis } from './components/AlertsDrillDownToAnalysis';
 import { AlertsDrawerDiagram } from './components/AlertsDrawerDiagram';
 import { unionCheckConf } from 'helpers/utils/checkUtil';

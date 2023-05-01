@@ -103,7 +103,9 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
       >
         <StyledCriticality criticality={alert_severity} resolved={resolved}>
           <Typography variant="h4">{alerts_count}</Typography>
-          <Typography variant="subtitle2">{alert_severity}</Typography>
+          <Typography variant="subtitle2" color="white">
+            {alert_severity}
+          </Typography>
         </StyledCriticality>
         <StyledDescription>
           <Tooltip title={monitor?.name ? monitor?.name : 'N/A'}>
