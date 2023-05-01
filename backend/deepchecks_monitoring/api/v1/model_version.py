@@ -227,12 +227,12 @@ async def get_or_create_version(
     monitor_table_columns_sqlalchemy = column_types_to_table_columns({**monitor_table_columns, **private_columns})
     monitor_table_name = model_version.get_monitor_table_name()
 
-    # using md5 hash index in queries to get random order of samples, so adding index for it
+    # using hash index in queries to get random order of samples, so adding index for it
     monitor_table = Table(
         monitor_table_name,
         MetaData(),
         *monitor_table_columns_sqlalchemy,
-        Index(f'_{monitor_table_name}_md5_index', text(f'md5({SAMPLE_ID_COL})'))
+        Index(f'_{monitor_table_name}_hashtext_index', text(f'hashtext({SAMPLE_ID_COL})'))
     )
     await session.execute(CreateTable(monitor_table))
     # Create indices
@@ -255,7 +255,7 @@ async def get_or_create_version(
         # TODO:
         # another possible solution is to use UUID type
         # with reference table 'SAMPLE_ID_COL' column
-        Index(f'_{reference_table_name}_md5_index', text(f'md5({REFERENCE_SAMPLE_ID_COL}::varchar)'))
+        Index(f'_{reference_table_name}_hashtext_index', text(f'hashtext({REFERENCE_SAMPLE_ID_COL}::varchar)'))
     )
     await session.execute(CreateTable(reference_table))
     # Create indices

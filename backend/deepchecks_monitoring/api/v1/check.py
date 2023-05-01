@@ -298,7 +298,7 @@ async def get_model_auto_frequency(
                 select(ts_column)
                 .select_from(text(monitor_table_name))
                 .where(ts_column <= end_time, ts_column >= start_time)
-                .order_by(func.md5(id_column))
+                .order_by(func.hashtext(id_column))
                 .limit(timestamps_per_version)
             )).all()
         )

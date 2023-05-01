@@ -541,7 +541,7 @@ def create_execution_data_query(
             data_query = data_query.where(table.c[SAMPLE_LABEL_COL].isnot(None))
 
         return data_query.filter(options.sql_columns_filter())\
-            .order_by(func.md5(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR)))\
+            .order_by(func.hashtext(func.cast(table.c[REFERENCE_SAMPLE_ID_COL], VARCHAR)))\
             .limit(n_samples)
     else:
         if period is None:
@@ -566,14 +566,14 @@ def create_execution_data_query(
             ts = func.timezone(model_version.model.timezone, table.c[SAMPLE_TS_COL])
             window_query = select(*[table.c[col] for col in columns],
                                   func.rank().over(partition_by=func.date_trunc(frequency, ts),
-                                                   order_by=func.md5(table.c[SAMPLE_ID_COL])).label("_dc_rank")) \
+                                                   order_by=func.hashtext(table.c[SAMPLE_ID_COL])).label("_dc_rank")) \
                 .filter(options.sql_columns_filter()) \
                 .filter(table.c[SAMPLE_TS_COL] >= period.start, table.c[SAMPLE_TS_COL] < period.end).cte(
                 "window_query")
             data_query = select([window_query.c[col] for col in columns]).where(window_query.c["_dc_rank"] <= n_samples)
         else:
             data_query = select([table.c[col] for col in columns]).filter(options.sql_columns_filter())\
-                .order_by(func.md5(func.cast(table.c[SAMPLE_ID_COL], VARCHAR)))\
+                .order_by(func.hashtext(func.cast(table.c[SAMPLE_ID_COL], VARCHAR)))\
                 .limit(n_samples)
 
         # For monitoring tables, we join the labels table if needed
