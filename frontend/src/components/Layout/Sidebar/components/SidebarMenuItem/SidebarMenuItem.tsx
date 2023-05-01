@@ -3,7 +3,7 @@ import { Link, LinkProps, useLocation, useNavigate } from 'react-router-dom';
 
 import { Box, styled, Typography } from '@mui/material';
 
-import { PathInfo } from 'helpers/helper';
+import { PathInfo } from 'helpers/routes';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Arrow } from 'assets/icon/icon';

@@ -3,7 +3,7 @@ import { AppBar, Box } from '@mui/material';
 
 import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
-import { PathInfo } from '../../../helpers/helper';
+import { PathInfo } from '../../../helpers/routes';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import useWindowResize from '../../../helpers/hooks/windowResize';
 

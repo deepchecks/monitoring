@@ -17,7 +17,7 @@ import Layout from 'components/Layout/Layout';
 
 import 'overlayscrollbars/overlayscrollbars.css';
 
-import { lazyRetry, pathsInfo } from 'helpers/helper';
+import { lazyRetry, pathsInfo } from 'helpers/routes';
 
 import { StyledThemeProvider } from 'components/lib';
 
