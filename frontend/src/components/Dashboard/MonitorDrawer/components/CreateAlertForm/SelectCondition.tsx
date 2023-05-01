@@ -5,7 +5,7 @@ import { OperatorsEnum } from 'api/generated';
 import { Stack, Typography, TextField, styled } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { SelectPrimary, SelectPrimaryItem } from 'components/SelectPrimary/SelectPrimary';
+import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
 
 import mapToOptionsList from 'helpers/utils/mapToOptionsList';
 import { SetStateType } from 'helpers/types';

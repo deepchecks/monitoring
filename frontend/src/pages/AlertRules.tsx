@@ -13,13 +13,13 @@ import { Box, styled } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import HeaderLayout from 'components/HeaderLayout';
-import { AlertRuleConfigItem } from 'components/AlertRuleConfig/AlertRuleConfigItem';
+import { AlertRuleConfigItem } from 'components/Alerts/AlertRuleConfig/AlertRuleConfigItem';
 import { Loader } from 'components/Loader';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
-import { AlertRuleDialog } from 'components/AlertRuleDialog/AlertRuleDialog';
-import { AlertRuleDialogProvider } from 'components/AlertRuleDialog/AlertRuleDialogContext';
-import { DeleteAlertRule } from 'components/AlertRuleConfig/components/DeleteAlertRule';
+import { AlertRuleDialog } from 'components/Alerts/AlertRuleDialog/AlertRuleDialog';
+import { AlertRuleDialogProvider } from 'components/Alerts/AlertRuleDialog/AlertRuleDialogContext';
+import { DeleteAlertRule } from 'components/Alerts/AlertRuleConfig/components/DeleteAlertRule';
 import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
 
 import { reportEvent } from 'helpers/services/mixPanel';

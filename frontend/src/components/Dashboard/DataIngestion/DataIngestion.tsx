@@ -11,7 +11,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import { frequencyValues } from 'helpers/utils/frequency';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
-import DiagramTutorialTooltip from 'components/DiagramTutorialTooltip';
+import DiagramTutorialTooltip from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';
 import { Loader } from 'components/Loader';
 import { CustomStyledSelect } from 'components/CustomStyledSelect';
 

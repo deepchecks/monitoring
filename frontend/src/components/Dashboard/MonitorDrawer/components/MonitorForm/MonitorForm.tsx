@@ -18,8 +18,8 @@ import {
   ControlledMarkedSelect,
   ControlledMarkedSelectDisabledCallback
 } from 'components/MarkedSelect/ControlledMarkedSelect';
-import { SelectCheck as Check } from 'components/SelectCheck';
-import { SelectColumn as Column } from 'components/SelectColumn';
+import { SelectCheck as Check } from 'components/Select/SelectCheck';
+import { SelectColumn as Column } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { Subcategory } from 'components/Subcategory';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';

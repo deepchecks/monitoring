@@ -11,7 +11,7 @@ import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogConte
 import { Tooltip, Typography, Stack } from '@mui/material';
 
 import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
-import { Loader } from '../Loader';
+import { Loader } from '../../Loader';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';

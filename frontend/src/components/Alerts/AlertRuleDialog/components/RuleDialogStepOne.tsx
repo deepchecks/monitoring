@@ -6,7 +6,7 @@ import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 
 import { Stack, TextField } from '@mui/material';
 
-import { SelectSeverity } from 'components/SelectSeverity';
+import { SelectSeverity } from 'components/Select/SelectSeverity';
 import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';

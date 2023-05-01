@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Box, Button } from '@mui/material';
 
-import { ShareButton } from './ShareButton';
+import { ShareButton } from '../ShareButton';
 
 import { Settings } from '@mui/icons-material';
 

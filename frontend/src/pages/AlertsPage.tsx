@@ -17,10 +17,10 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { AlertsDrawer } from 'components/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
-import { AlertsHeader } from 'components/AlertsHeader';
-import { AlertsResolveDialog } from 'components/AlertsResolveDialog';
-import { AlertsRulesItem } from 'components/AlertRulesItem';
-import { AlertsSnackbar } from 'components/AlertsSnackbar';
+import { AlertsHeader } from 'components/Alerts/AlertsHeader';
+import { AlertsResolveDialog } from 'components/Alerts/AlertsResolveDialog';
+import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
+import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/Loader';
 import NoResults from 'components/NoResults';
 import useModels from '../helpers/hooks/useModels';

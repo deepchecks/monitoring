@@ -12,7 +12,7 @@ import { frequencyValues } from 'helpers/utils/frequency';
 import { alpha, Box, Typography, styled } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
-import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
+import DiagramTutorialTooltip from './DiagramTutorialTooltip/DiagramTutorialTooltip';
 import { Loader } from '../Loader';
 
 import { DiagramLineProps } from './DiagramLine.types';

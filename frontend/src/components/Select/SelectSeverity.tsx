@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
+import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary';
 import { AlertSeverity } from 'api/generated';
-import mapToOptionsList from '../helpers/utils/mapToOptionsList';
+import mapToOptionsList from '../../helpers/utils/mapToOptionsList';
 
 export const severityAll = 'all';
 export type SeverityAll = 'all';

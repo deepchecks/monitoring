@@ -20,9 +20,9 @@ import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, 
 import { RunDownloadSuite } from 'components/RunDownloadSuite';
 import { ShareButton } from 'components/ShareButton';
 import { AlertsBadge } from './AlertBadge';
-import { DiagramAlertCountWidget } from 'components/DiagramAlertCountWidget';
-import { FullLengthTooltip } from 'components/DiagramTutorialTooltip';
-import { AlertsSnackbar } from 'components/AlertsSnackbar';
+import { DiagramAlertCountWidget } from 'components/DiagramLine/DiagramAlertCountWidget/DiagramAlertCountWidget';
+import { FullLengthTooltip } from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';
+import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';

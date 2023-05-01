@@ -10,11 +10,11 @@ import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
-import { SelectCheck } from 'components/SelectCheck';
+import { SelectCheck } from 'components/Select/SelectCheck';
 import { MarkedSelect } from 'components/MarkedSelect';
 import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
-import { SelectColumn } from 'components/SelectColumn';
+import { SelectColumn } from 'components/Select/SelectColumn';
 import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';

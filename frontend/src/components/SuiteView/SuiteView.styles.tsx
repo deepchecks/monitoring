@@ -2,8 +2,12 @@ import styled from 'styled-components';
 import { LinearProgress } from '@mui/material';
 
 const SuiteViewPageContainer = styled.div`
-  width: 100%;
+  margin-left: -36px;
+  width: calc(100% + 72px);
+  height: 100%;
   align-items: center;
+  background: white;
+  padding: 36px;
 `;
 
 const SuiteViewPageIFrame = styled.iframe`
@@ -18,15 +22,6 @@ const SuiteViewLoadingContainer = styled.div`
   max-width: 500px;
   text-align: center;
   margin: 20vh auto;
-`;
-
-const SuiteViewLoadingText = styled.p`
-  color: gray;
-`;
-
-const SuiteViewLoadingImg = styled.img`
-  width: 100%;
-  max-width: 480px;
 `;
 
 const SuiteViewLoadingBar = styled(LinearProgress)`
@@ -92,12 +87,10 @@ const SuiteViewHeaderImg = styled.img`
 export {
   SuiteViewPageContainer,
   SuiteViewLoadingContainer,
-  SuiteViewLoadingImg,
   SuiteViewLoadingBar,
   SuiteViewHeaderContainer,
   SuiteViewHeaderInnerFlex,
   SuiteViewHeaderTag,
-  SuiteViewLoadingText,
   SuiteViewHeaderText,
   SuiteViewPageIFrame,
   SuiteViewHeaderDatesText,

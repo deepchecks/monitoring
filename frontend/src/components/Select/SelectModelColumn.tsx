@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
-import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
+import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary';
 import {
   ColumnMetadata,
   ModelSchema,
   OperatorsEnum,
   ColumnType,
   useGetModelColumnsApiV1ModelsModelIdColumnsGet
-} from '../api/generated';
-import { ColumnStatsCategorical, ColumnStatsNumeric } from '../helpers/types/model';
-import { RangePicker } from './RangePicker';
+} from '../../api/generated';
+import { ColumnStatsCategorical, ColumnStatsNumeric } from '../../helpers/types/model';
+import { RangePicker } from '../RangePicker';
 import { Box, styled, Typography } from '@mui/material';
 import { Subcategory } from 'components/Subcategory';
 import { SelectChangeEvent } from '@mui/material/Select';

@@ -28,7 +28,7 @@ const Layout = () => {
           }}
         >
           <Sidebar />
-          <StyledContainer padding="0 35px" width="calc(100% - 237px)" type="bg">
+          <StyledContainer padding="0 35px" width="calc(100% - 237px)" type="bg" borderRadius={0}>
             <Outlet />
           </StyledContainer>
         </Box>

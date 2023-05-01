@@ -1,10 +1,10 @@
 import React, { ReactNode } from 'react';
-import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary/SelectPrimary';
+import { SelectPrimary, SelectPrimaryProps, SelectPrimaryItem } from './SelectPrimary';
 import { Stack, TextFieldProps, Typography } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import RangePickerInput from './RangePickerInput';
-import { OperatorsEnum } from '../api/generated';
-import mapToOptionsList from '../helpers/utils/mapToOptionsList';
+import RangePickerInput from '../RangePickerInput';
+import { OperatorsEnum } from '../../api/generated';
+import mapToOptionsList from '../../helpers/utils/mapToOptionsList';
 
 type BaseSelectProps = Omit<SelectPrimaryProps, 'children' | 'label'> & Partial<Pick<SelectPrimaryProps, 'label'>>;
 type BaseTextFieldProps = TextFieldProps;

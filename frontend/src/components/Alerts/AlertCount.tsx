@@ -5,10 +5,10 @@ import { AlertSeverity } from 'api/generated';
 
 import { alpha, Box, Typography, useTheme, styled, Stack } from '@mui/material';
 
-import { ReactComponent as CriticalSeverityIcon } from '../assets/icon/severity/critical.svg';
-import { ReactComponent as HighSeverityIcon } from '../assets/icon/severity/high.svg';
-import { ReactComponent as LowSeverityIcon } from '../assets/icon/severity/low.svg';
-import { ReactComponent as MediumSeverityIcon } from '../assets/icon/severity/medium.svg';
+import { ReactComponent as CriticalSeverityIcon } from '../../assets/icon/severity/critical.svg';
+import { ReactComponent as HighSeverityIcon } from '../../assets/icon/severity/high.svg';
+import { ReactComponent as LowSeverityIcon } from '../../assets/icon/severity/low.svg';
+import { ReactComponent as MediumSeverityIcon } from '../../assets/icon/severity/medium.svg';
 import { setParams } from 'helpers/utils/getParams';
 
 export enum SEVERITY {

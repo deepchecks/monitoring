@@ -1,7 +1,7 @@
 import React, { Box, Button, Dialog, DialogProps, IconButton, Stack, styled, Typography } from '@mui/material';
-import { AlertRuleInfoSchema } from '../api/generated';
-import { CloseIcon } from '../assets/icon/icon';
-import { Loader } from './Loader';
+import { AlertRuleInfoSchema } from '../../api/generated';
+import { CloseIcon } from '../../assets/icon/icon';
+import { Loader } from '../Loader';
 
 interface AlertsResolveDialogProps extends DialogProps {
   alertRule: AlertRuleInfoSchema | null;

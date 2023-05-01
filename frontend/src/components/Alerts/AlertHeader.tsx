@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack, Box } from '@mui/material';
-import { useCountAlertsApiV1AlertsCountActiveGet } from '../api/generated';
+import { useCountAlertsApiV1AlertsCountActiveGet } from '../../api/generated';
 import { AlertCount, SEVERITY } from './AlertCount';
 
 export const AlertHeader = () => {
