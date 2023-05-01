@@ -109,7 +109,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
         </StyledCriticality>
         <StyledDescription>
           <Tooltip title={monitor?.name ? monitor?.name : 'N/A'}>
-            <StyledMonitorName noWrap={true} variant="h5">
+            <StyledMonitorName noWrap={true} variant="h2">
               {monitor?.name}
             </StyledMonitorName>
           </Tooltip>
@@ -120,7 +120,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
           {titles.map((title, index) => (
             <StyledProperty key={title}>
               <StyledTitle>{title}</StyledTitle>
-              <Typography noWrap={true} variant="body2">
+              <Typography noWrap={true} variant="h3">
                 {data[index]}
               </Typography>
             </StyledProperty>

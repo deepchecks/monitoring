@@ -19,8 +19,6 @@ import { StyledButton, StyledText } from 'components/lib';
 import { Email, Slack } from '../../assets/icon/icon';
 import connectSlackBG from '../../assets/bg/connectSlackBG.svg';
 
-import { theme } from 'components/lib/theme';
-
 export enum NotificationDictionary {
   email = 'email_notification_levels',
   slack = 'slack_notification_levels'
@@ -216,7 +214,7 @@ export function AlertNotifications() {
               background: `url(${connectSlackBG}) no-repeat right`,
               backgroundColor: '#F1E9FE',
               borderRadius: '16px',
-              boxShadow: `0 0 3px 0.5px ${theme.palette.primary.main}`,
+              boxShadow: `0 0 15px 5px lightgray`,
               marginTop: '124px',
               gap: '24px'
             }}

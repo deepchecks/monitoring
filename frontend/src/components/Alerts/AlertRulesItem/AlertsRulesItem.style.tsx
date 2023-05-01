@@ -112,10 +112,10 @@ export const StyledProperty = styled(Box)({
 });
 
 export const StyledTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 500,
+  fontWeight: 700,
   fontSize: 12,
   lineHeight: '140%',
-  color: theme.palette.text.disabled,
+  color: theme.palette.grey[400],
   textTransform: 'uppercase'
 }));
 
