@@ -1,7 +1,8 @@
 import { createTheme, Theme } from '@mui/material';
-import { typographyOptions } from 'components/lib/theme/typography';
-import { paletteOptions } from 'components/lib/theme/palette';
-import { breakpointOptions } from 'components/lib/theme/breakpoints';
+
+import { typographyOptions } from './typography';
+import { paletteOptions } from './palette';
+import { breakpointOptions } from './breakpoints';
 
 const theme: Theme = createTheme({
   palette: paletteOptions,

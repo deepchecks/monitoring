@@ -26,10 +26,11 @@ const BillingCardsContainer = styled(Row16Gap)`
 `;
 
 const BillingCardContainer = styled(FlexColumnContainer)<BillingUIProps>`
-  border: ${p => p.border && `1px solid ${theme.palette.grey[200]}`};
+  border: ${`1px solid ${theme.palette.grey[200]}`};
   padding: 24px;
   border-radius: 14px;
   margin-top: 24px;
+  background: white;
 `;
 
 const BillingText = styled.p<BillingUIProps>`

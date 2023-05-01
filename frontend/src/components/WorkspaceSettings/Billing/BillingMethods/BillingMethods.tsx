@@ -47,7 +47,7 @@ const BillingMethods = ({ clientSecret }: { clientSecret: string }) => {
   const handleCloseDialog = () => setIsDialogOpen(false);
 
   return (
-    <BillingCardContainer border>
+    <BillingCardContainer>
       <Col8Gap>
         <StyledH3>{constants.paymentMethod.title}</StyledH3>
         <BillingText color="gray">{constants.paymentMethod.description}</BillingText>
