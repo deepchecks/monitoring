@@ -94,7 +94,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
             width: 24,
             paddingTop: '4px',
             '& svg': {
-              fill: activeHover ? theme.palette.primary.main : theme.palette.common.black
+              fill: activeHover ? theme.palette.primary.main : theme.palette.grey[500]
             }
           })}
         >
@@ -108,7 +108,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
             width: '30px',
             padding: '2px',
             '& svg': {
-              fill: activeHover ? theme.palette.primary.main : theme.palette.common.black
+              fill: activeHover ? theme.palette.primary.main : theme.palette.grey[500]
             }
           })}
         >
@@ -117,7 +117,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
               sx={theme => ({
                 height: 2,
                 width: 8,
-                background: activeHover ? theme.palette.primary.main : theme.palette.common.black
+                background: activeHover ? theme.palette.primary.main : theme.palette.grey[500]
               })}
             />
           ) : (
@@ -125,7 +125,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
               sx={theme => ({
                 height: 2,
                 width: 8,
-                background: activeHover ? theme.palette.primary.main : theme.palette.common.black,
+                background: activeHover ? theme.palette.primary.main : theme.palette.grey[500],
                 position: 'relative',
                 ':after': {
                   content: "''",
@@ -135,7 +135,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
-                  background: activeHover ? theme.palette.primary.main : theme.palette.common.black,
+                  background: activeHover ? theme.palette.primary.main : theme.palette.grey[500],
                   transform: 'translate(-50%, -50%)'
                 }
               })}
