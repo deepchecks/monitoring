@@ -1,7 +1,7 @@
 import React, { ComponentType, FC, lazy } from 'react';
+import { Notifications, BarChart, Dashboard, Settings } from '@mui/icons-material';
 
 import { AnalysisProvider } from 'helpers/context/AnalysisProvider';
-import { Alarm, AnalyticsSharp, Dashboard, Settings } from '@mui/icons-material';
 
 export interface PathInfo {
   title: string;
@@ -48,13 +48,22 @@ const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
 const WorkspaceSettingsPage = lazy(() => lazyRetry(() => import('pages/WorkspaceSettingsPage')));
 
+const DashboardIcon = () => <Dashboard sx={{ color: 'grey' }} />;
+const DashboardActiveIcon = () => <Dashboard sx={{ color: '#7964FF' }} />;
+const AlertsIcon = () => <Notifications sx={{ color: 'grey' }} />;
+const AlertsActiveIcon = () => <Notifications sx={{ color: '#7964FF' }} />;
+const AnalysisIcon = () => <BarChart sx={{ color: 'grey' }} />;
+const AnalysisActiveIcon = () => <BarChart sx={{ color: '#7964FF' }} />;
+const ConfigurationsIcon = () => <Settings sx={{ color: 'grey' }} />;
+const ConfigurationsActiveIcon = () => <Settings sx={{ color: '#7964FF' }} />;
+
 export const pathsInfo: PathInfo[] = [
   {
     title: 'Dashboard',
     link: '/dashboard',
     element: () => <DashboardPage />,
-    Icon: Dashboard,
-    ActiveIcon: Dashboard
+    Icon: DashboardIcon,
+    ActiveIcon: DashboardActiveIcon
   },
   {
     title: 'Suite View',
@@ -68,8 +77,8 @@ export const pathsInfo: PathInfo[] = [
     title: 'Alerts',
     link: '/alerts',
     element: () => <AlertsPage />,
-    Icon: Alarm,
-    ActiveIcon: Alarm,
+    Icon: AlertsIcon,
+    ActiveIcon: AlertsActiveIcon,
     children: [
       {
         title: 'Resolved Alerts',
@@ -88,15 +97,15 @@ export const pathsInfo: PathInfo[] = [
         <AnalysisPage />
       </AnalysisProvider>
     ),
-    Icon: AnalyticsSharp,
-    ActiveIcon: AnalyticsSharp
+    Icon: AnalysisIcon,
+    ActiveIcon: AnalysisActiveIcon
   },
   {
     title: 'Configuration',
     link: '/configuration',
     element: () => <DashboardPage />,
-    Icon: Settings,
-    ActiveIcon: Settings,
+    Icon: ConfigurationsIcon,
+    ActiveIcon: ConfigurationsActiveIcon,
     children: [
       {
         title: 'Alerts Rules',

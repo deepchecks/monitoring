@@ -21,6 +21,8 @@ import { lazyRetry, pathsInfo } from 'helpers/helper';
 
 import { StyledThemeProvider } from 'components/lib';
 
+import './components/lib/assets/css/fonts.css';
+
 const DashboardPage = lazy(() => lazyRetry(() => import('./pages/DashboardPage')));
 const CompleteDetails = lazy(() => lazyRetry(() => import('./pages/CompleteDetails')));
 const LicenseAgreementPage = lazy(() => lazyRetry(() => import('./pages/LicenseAgreement')));

@@ -83,7 +83,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
     <>
       <StyledNavLink
         linkLabel={info.title}
-        icon={Icon && ActiveIcon ? hover || active ? <ActiveIcon /> : <Icon /> : null}
+        icon={Icon ? <Icon /> : null}
         isActive={active}
         activeIcon={ActiveIcon ? <ActiveIcon /> : null}
       />
@@ -125,7 +125,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
               sx={theme => ({
                 height: 2,
                 width: 8,
-                background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black,
+                background: activeHover ? theme.palette.primary.main : theme.palette.common.black,
                 position: 'relative',
                 ':after': {
                   content: "''",
@@ -135,7 +135,7 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
-                  background: activeHover ? theme.palette.primary.contrastText : theme.palette.common.black,
+                  background: activeHover ? theme.palette.primary.main : theme.palette.common.black,
                   transform: 'translate(-50%, -50%)'
                 }
               })}
