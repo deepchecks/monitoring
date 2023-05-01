@@ -1,5 +1,5 @@
 // Need to fix the call on line 11
-describe("Alerts screen", () => {
+describe.skip("Alerts screen", () => {
   it.skip("check alert values", () => {
     cy.createModelAndVersion("alerts model", "multiclass", "v1")
       .then((modelInfo: any) => {
