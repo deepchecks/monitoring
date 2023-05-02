@@ -38,45 +38,43 @@ const parseDataForChart = (
   const labels = graph.time_labels?.map(date => dayjs(date).valueOf());
 
   return {
-    datasets:
-      graph.output &&
-      Object.keys(graph.output)
-        .map(key => {
-          if (!graph.output[key]) {
-            return [];
-          }
+    datasets: Object.keys(graph.output)
+      .map(key => {
+        if (!graph.output[key]) {
+          return [];
+        }
 
-          const lines: LinesType = {};
+        const lines: LinesType = {};
 
-          for (let i = 0; i < graph.output[key].length; i++) {
-            graph.output[key].forEach((item: GraphOutputType) => {
-              if (item) {
-                Object.keys(item).forEach(itemKey => {
-                  lines[itemKey] = [];
-                });
-              }
-            });
-          }
-
+        for (let i = 0; i < graph.output[key].length; i++) {
           graph.output[key].forEach((item: GraphOutputType) => {
             if (item) {
               Object.keys(item).forEach(itemKey => {
-                lines[itemKey].push(item[itemKey]);
+                lines[itemKey] = [];
               });
-              return;
             }
-
-            Object.keys(lines).forEach(itemKey => {
-              lines[itemKey].push(null);
-            });
           });
+        }
 
-          return Object.keys(lines).map(lineKey => ({
-            data: lines[lineKey],
-            ...setChartOptions(`${lineKey}|${key}`, counter++, dashed, alerts, labels)
-          }));
-        })
-        .flat(2),
+        graph.output[key].forEach((item: GraphOutputType) => {
+          if (item) {
+            Object.keys(item).forEach(itemKey => {
+              lines[itemKey].push(item[itemKey]);
+            });
+            return;
+          }
+
+          Object.keys(lines).forEach(itemKey => {
+            lines[itemKey].push(null);
+          });
+        });
+
+        return Object.keys(lines).map(lineKey => ({
+          data: lines[lineKey],
+          ...setChartOptions(`${lineKey}|${key}`, counter++, dashed, alerts, labels)
+        }));
+      })
+      .flat(2),
     labels
   };
 };
