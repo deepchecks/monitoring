@@ -166,10 +166,10 @@ class SlackAlertNotification(BaseSlackNotification):
             self.monitor.additional_kwargs
         )
         self.features = (
-            t.cast(t.List[str], self.monitor_config.check_conf.get(CheckParameterKind.FEATURE, []))
+            t.cast(t.List[str], self.monitor_config.check_conf.get(CheckParameterKind.FEATURE))
             if self.monitor_config is not None
-            else []
-        )
+            else None
+        ) or []
 
     def prepare_header(self) -> t.Dict[str, t.Any]:
         """Prepare the header for the notification."""
