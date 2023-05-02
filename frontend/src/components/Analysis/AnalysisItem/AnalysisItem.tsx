@@ -33,7 +33,7 @@ const AnalysisItem = ({
   compareByReference
 }: AnalysisItemProps) => {
   const { observedContainerRef, isVisible } = useElementOnScreen();
-  const { mutateAsync: runCheck, chartData } = useRunCheckLookback('line');
+  const { mutateAsync: runCheck, chartData, isLoading } = useRunCheckLookback('line');
   const { data: checkInfo, refetch } = useGetCheckInfoApiV1ChecksCheckIdInfoGet(check.id, {
     query: {
       enabled: false
@@ -126,7 +126,7 @@ const AnalysisItem = ({
 
   const diagramLineProps = {
     data: data,
-    isLoading: isItemLoading,
+    isLoading: isItemLoading || isLoading,
     comparison: compareWithPreviousPeriod,
     onPointCLick: handlePointClick,
     timeFreq: frequency,

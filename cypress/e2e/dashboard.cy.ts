@@ -1,4 +1,4 @@
-describe.skip("test dashboard", () => {
+describe("test dashboard", () => {
   let model_info: any;
   const monitorName = "checky v1 Monitor";
   const modelName = "my model";
