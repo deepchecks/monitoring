@@ -156,14 +156,14 @@ async def _execute_monitor(
 
 @actor(queue_name="models", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
 async def execute_model_data_ingestion_task(
-        organization_id: int,
+        organization_id: int,  # pylint: disable=unused-argument
         organization_schema: str,  # pylint: disable=unused-argument
         model_id: int,
         end_time: str,
         start_time: str,
         session: AsyncSession,
         resources_provider: ResourcesProvider,
-        logger: logging.Logger,
+        logger: logging.Logger,  # pylint: disable=unused-argument
         **kwargs  # pylint: disable=unused-argument
 ) -> t.List[Alert]:
     """Execute alert rule."""
