@@ -11,9 +11,6 @@
 # pylint: disable=protected-access
 import logging
 import typing as t
-from deepchecks_monitoring.bgtasks.core import Task, Worker
-from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.utils import database
 
 import pendulum as pdl
 import pytest
@@ -21,11 +18,14 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.bgtasks.actors import execute_model_data_ingestion_task
+from deepchecks_monitoring.bgtasks.core import Task, Worker
+from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import DataIngestionAlert
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.utils import database
 from tests.common import Payload, TestAPI, upload_classification_data
 
 
