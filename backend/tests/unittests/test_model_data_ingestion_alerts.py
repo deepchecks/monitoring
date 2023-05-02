@@ -9,10 +9,9 @@
 # ----------------------------------------------------------------------------
 #
 # pylint: disable=protected-access
-from collections import defaultdict
 import logging
 import typing as t
-from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
+from deepchecks_monitoring.bgtasks.core import Task, Worker
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.utils import database
 
@@ -87,6 +86,7 @@ async def test_model_executor(
     )
 
     assert len(result) == 3, result
+
 
 @pytest.mark.asyncio
 async def test_alert_scheduling(
@@ -163,4 +163,3 @@ async def test_alert_scheduling(
 
     assert len(tasks) == 5
     assert len(alerts) == 3
-    
