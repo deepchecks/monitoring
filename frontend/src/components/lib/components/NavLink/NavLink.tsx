@@ -48,7 +48,7 @@ export const NavLink = (props: NavLinkProps) => {
           {linkLabel}
         </Link>
       ) : (
-        <Text text={linkLabel} sx={{ ...sxStyles }} />
+        <Text text={linkLabel} sx={{ ...sxStyles, height: '19px' }} />
       )}
       {endIcon && isActive ? activeEndIcon : endIcon && endIcon}
     </Container>
