@@ -193,14 +193,17 @@ def get_results_for_model_versions_per_window(
             end = curr_window.get('end')
             result = {'start': start, 'end': end, 'from_cache': False, 'result': None}
             model_results[model_version].append(result)
+
             # If we already loaded result from the cache, then no need to run the check again
             if 'result' in curr_window:
                 result['from_cache'] = True
                 result['result'] = curr_window['result']
                 continue
-            # If the check needs reference to run, but it is missing then skip the check and leave none result.
-            if missing_reference:
+
+            # if reference is missing in train-test check or no data - skip
+            if data_dict['data'].empty or missing_reference:
                 continue
+
             # If there is no result then must have a dataframe data. If the dataframe is empty, skipping the
             # run and putting none result
             data = get_data_for_window(data_dict['data'], start, end, n_samples)
