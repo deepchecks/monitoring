@@ -167,8 +167,7 @@ def get_results_for_model_versions_per_window(
     for model_version in model_versions:
         data_dict = model_versions_data[model_version.id]
         # If this is a train test check then we require reference data in order to run
-        if data_dict['data'].empty or (need_ref and data_dict['reference'].empty):
-            continue
+        missing_reference = need_ref and data_dict['reference'].empty
 
         if isinstance(check, Check):
             dp_check = initialize_check(check, model_version, additional_kwargs)
@@ -194,11 +193,17 @@ def get_results_for_model_versions_per_window(
             end = curr_window.get('end')
             result = {'start': start, 'end': end, 'from_cache': False, 'result': None}
             model_results[model_version].append(result)
+
             # If we already loaded result from the cache, then no need to run the check again
             if 'result' in curr_window:
                 result['from_cache'] = True
                 result['result'] = curr_window['result']
                 continue
+
+            # if refrence is missing in train-test check or no data - skip
+            if data_dict['data'].empty or missing_reference:
+                continue
+
             # If there is no result then must have a dataframe data. If the dataframe is empty, skipping the
             # run and putting none result
             data = get_data_for_window(data_dict['data'], start, end, n_samples)
