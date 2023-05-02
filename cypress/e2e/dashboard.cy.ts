@@ -1,4 +1,4 @@
-describe.skip("test dashboard", () => {
+describe("test dashboard", () => {
   let model_info: any;
   const monitorName = "checky v1 Monitor";
   const modelName = "my model";
@@ -50,7 +50,7 @@ describe.skip("test dashboard", () => {
     });
   });
 
-  it.skip("Add manual monitor - graphs appear", () => {
+  it("Add manual monitor - graphs appear", () => {
     cy.visit("/dashboard");
     cy.contains("p", "Monitors")
       .parent()

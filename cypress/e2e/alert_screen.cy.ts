@@ -1,6 +1,6 @@
 // Need to fix the call on line 11
-describe.skip("Alerts screen", () => {
-  it.skip("check alert values", () => {
+describe("Alerts screen", () => {
+  it("check alert values", () => {
     cy.createModelAndVersion("alerts model", "multiclass", "v1")
       .then((modelInfo: any) => {
         cy.addDataToVersion(modelInfo, undefined, [13, 15, 18, 21]);

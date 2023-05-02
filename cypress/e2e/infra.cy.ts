@@ -1,4 +1,4 @@
-describe.skip("load main page", () => {
+describe("load main page", () => {
   it("Have authorization cookie", () => {
     cy.visit("/");
     cy.url().should("eq", Cypress.config().baseUrl + "/");

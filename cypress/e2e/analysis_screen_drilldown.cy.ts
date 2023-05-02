@@ -1,4 +1,4 @@
-describe.skip("Analysis screen drilldown", () => {
+describe("Analysis screen drilldown", () => {
   it("check analysis values", () => {
     cy.createModelAndVersion("analysis model", "multiclass", "v1")
       .then((modelInfo: any) => {

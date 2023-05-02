@@ -1,6 +1,4 @@
-import { should } from "chai";
-
-describe.skip("Alert Rules Screen", () => {
+describe("Alert Rules Screen", () => {
   const Severity = {
     Low: "Low",
     Medium: "Medium",
@@ -168,7 +166,7 @@ describe.skip("Alert Rules Screen", () => {
         cy.get("input[placeholder='Aggregation window']")
           .should("exist")
           .clear()
-          .type(monitorData.aggregationWindow)
+          .type(monitorData.aggregationWindow);
       }
       if (monitorData.frequency !== undefined) {
         cy.wrap(form).contains("label", "Frequency").next().click();
@@ -292,7 +290,7 @@ describe.skip("Alert Rules Screen", () => {
       .parent()
       .parent()
       .contains("p", rule.details.severity?.toLowerCase() as any)
-      .should('exist')
+      .should("exist");
   }
 
   function updateAlertRule({

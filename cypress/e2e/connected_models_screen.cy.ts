@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-describe.skip("Connected Models Screen", () => {
+describe("Connected Models Screen", () => {
   // NOTE:
   // - be carefull modifying number of models or models properties, that will affect tests
   // - during tests execution this list might be modified
