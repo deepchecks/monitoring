@@ -200,7 +200,7 @@ def get_results_for_model_versions_per_window(
                 result['result'] = curr_window['result']
                 continue
 
-            # if refrence is missing in train-test check or no data - skip
+            # if reference is missing in train-test check or no data - skip
             if data_dict['data'].empty or missing_reference:
                 continue
 
