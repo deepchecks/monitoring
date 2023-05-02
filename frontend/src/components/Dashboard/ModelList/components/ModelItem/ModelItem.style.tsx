@@ -16,10 +16,11 @@ export const StyledContainer = styled(ListItemButton, {
   },
   cursor: 'pointer',
   position: 'relative',
-  backgroundColor: active ? theme.palette.grey[100] : 'transparent',
+  backgroundColor: active ? theme.palette.grey[200] : 'transparent',
   ':hover': {
-    backgroundColor: theme.palette.grey[100]
+    backgroundColor: theme.palette.grey[200]
   },
+  borderRadius: '16px',
   transition: 'background-color 0.3s ease',
   borderBottom: `1px solid ${theme.palette.grey.light}`,
   ':last-of-type': {
