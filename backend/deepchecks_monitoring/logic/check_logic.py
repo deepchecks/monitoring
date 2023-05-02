@@ -347,8 +347,8 @@ async def run_check_per_window_in_range(
 
         model_versions_data[model_version.id] = {"data": results_df, "reference": reference_df, "windows": test_info}
 
-    # Closing connections to db after we have all the data
-    await session.commit()
+    # Closing connection to return it to the pool, since running the check is slow and we don't need the db anymore
+    await session.close()
 
     # get result from active sessions and run the check per each model version
     check_results = get_results_for_model_versions_per_window(model_versions_data,
