@@ -40,6 +40,7 @@ WORKDIR /code
 #     "xmlsec"
 
 COPY backend/requirements.txt ./
+COPY backend/addon-requirements.txt ./
 
 # TODO: not secure, use docker build-kit instead
 ARG DEEPCHECKS_CI_TOKEN
@@ -47,6 +48,8 @@ ARG DEEPCHECKS_CI_TOKEN
 RUN pip install -U pip==22.0.4 setuptools==58.3.0 && \
     pip install -q -r requirements.txt --compile --no-cache-dir
     # && apk del .build-deps
+
+RUN pip install -q -r addon-equirements.txt --compile --no-cache-dir
 
 RUN pip install pyinstrument
 
