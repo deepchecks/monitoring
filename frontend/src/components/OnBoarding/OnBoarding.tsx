@@ -10,9 +10,13 @@ import Typography from '@mui/material/Typography';
 
 import { constants } from './onBoarding.constants';
 
-export default function OnBoarding() {
-  const [activeStep, setActiveStep] = useState(1);
+interface OnBoardingProps {
+  dataType?: 'demo' | 'user';
+}
 
+const OnBoarding = ({ dataType }: OnBoardingProps) => {
+  const [activeStep, setActiveStep] = useState(1);
+  console.log(dataType);
   const handleNext = () => setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
 
   return (
@@ -38,4 +42,6 @@ export default function OnBoarding() {
       </Stepper>
     </Box>
   );
-}
+};
+
+export default OnBoarding;
