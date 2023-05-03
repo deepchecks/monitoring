@@ -65,7 +65,7 @@ class Model(Base, MetadataMixin):
 
     data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency), nullable=False, default=Frequency.DAY)
     data_ingestion_alert_latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
-                                                     server_default=func.date_trunc('day', sa.func.now()))
+                                                     server_default=func.date_trunc("day", sa.func.now()))
     data_ingestion_alert_label_ratio = sa.Column(sa.Float)
     data_ingestion_alert_label_count = sa.Column(sa.Integer)
     data_ingestion_alert_sample_count = sa.Column(sa.Integer)

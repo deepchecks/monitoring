@@ -12,12 +12,8 @@ import typing as t
 
 import pendulum as pdl
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
-
-if t.TYPE_CHECKING:
-    from deepchecks_monitoring.schema_models.model import Model  # pylint: disable=unused-import
 
 __all__ = ["DataIngestionAlert"]
 

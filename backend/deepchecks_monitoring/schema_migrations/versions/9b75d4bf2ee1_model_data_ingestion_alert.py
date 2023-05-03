@@ -41,7 +41,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.add_column('models', sa.Column('data_ingestion_alert_frequency', sa.Enum('HOUR', 'DAY', 'WEEK', 'MONTH', name='frequency'), nullable=False))
-    op.add_column('models', sa.Column('data_ingestion_alert_latest_schedule', sa.DateTime(timezone=True), nullable=False))
+    op.add_column('models', sa.Column('data_ingestion_alert_latest_schedule', sa.DateTime(timezone=True), server_default=sa.text('date_trunc(\'day\', now())'), nullable=False))
     op.add_column('models', sa.Column('data_ingestion_alert_label_ratio', sa.Float(), nullable=True))
     op.add_column('models', sa.Column('data_ingestion_alert_label_count', sa.Integer(), nullable=True))
     op.add_column('models', sa.Column('data_ingestion_alert_sample_count', sa.Integer(), nullable=True))

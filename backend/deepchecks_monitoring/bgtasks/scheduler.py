@@ -183,7 +183,7 @@ class AlertsScheduler:
                 frequency = model.data_ingestion_alert_frequency.to_pendulum_duration()
                 schedule_time = model.next_data_ingestion_alert_schedule
 
-                while (schedule_time <= model.end_time):
+                while schedule_time <= model.end_time:
                     schedules.append(schedule_time)
                     schedule_time = schedule_time + frequency
 

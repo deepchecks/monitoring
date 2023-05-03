@@ -69,10 +69,10 @@ async def test_model_executor(
         upload_classification_data(test_api, version["id"],
                                    daterange=no_label_daterange, model_id=classification_model["id"],
                                    is_labeled=False,
-                                   id_prefix='no_label')
+                                   id_prefix="no_label")
         upload_classification_data(test_api, version["id"],
                                    daterange=extra_count_daterange, model_id=classification_model["id"],
-                                   id_prefix='extra')
+                                   id_prefix="extra")
 
     result: t.List[DataIngestionAlert] = await execute_model_data_ingestion_task(
         model_id=classification_model["id"],

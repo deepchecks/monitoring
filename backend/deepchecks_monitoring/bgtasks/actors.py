@@ -15,7 +15,6 @@ import typing as t
 from collections import defaultdict
 
 import anyio
-import pendulum as pdl
 import sqlalchemy as sa
 import uvloop
 from sqlalchemy import func, update
@@ -26,7 +25,7 @@ from deepchecks_monitoring import config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
 from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
-from deepchecks_monitoring.monitoring_utils import DataFilterList, TimeUnit, configure_logger, make_oparator_func
+from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
@@ -36,7 +35,7 @@ from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 
-__all__ = ["execute_monitor"]
+__all__ = ["execute_monitor", "execute_model_data_ingestion_task"]
 
 
 async def _execute_monitor(
