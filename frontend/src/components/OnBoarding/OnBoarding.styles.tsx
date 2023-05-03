@@ -21,7 +21,8 @@ const OnBoardingSnippetContainer = styled(Box)(({ theme }) => ({
   border: `1px solid ${theme.palette.grey[400]}`,
   background: theme.palette.grey[200],
   padding: '24px',
-  margin: '24px 0 18px'
+  margin: '24px 0 18px',
+  whiteSpace: 'pre-line'
 }));
 
 const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
@@ -33,4 +34,24 @@ const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
   cursor: 'pointer'
 }));
 
-export { FirstOnBoardingTitle, FirstOnBoardingBoxLabel, OnBoardingSnippetContainer, OnBoardingDocsLink };
+const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
+  margin: '44px auto 0 0',
+  '& .MuiSvgIcon-root': {
+    width: '32px',
+    height: '32px',
+    marginRight: 4
+  },
+
+  '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
+  '& .MuiStepConnector-root, .MuiStepContent-root': { marginLeft: 16 },
+  '& .MuiStepLabel-label': { fontWeight: 700, color: theme.palette.grey[500] },
+  '& .Mui-disabled': { fontWeight: 500 }
+}));
+
+export {
+  FirstOnBoardingTitle,
+  FirstOnBoardingBoxLabel,
+  OnBoardingSnippetContainer,
+  OnBoardingDocsLink,
+  OnBoardingStepperContainer
+};

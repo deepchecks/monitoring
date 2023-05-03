@@ -9,7 +9,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
 import { constants } from './onBoarding.constants';
-import { OnBoardingDocsLink, OnBoardingSnippetContainer } from './OnBoarding.styles';
+import { OnBoardingDocsLink, OnBoardingSnippetContainer, OnBoardingStepperContainer } from './OnBoarding.styles';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
@@ -17,13 +17,15 @@ interface OnBoardingProps {
 
 const OnBoarding = ({ dataType }: OnBoardingProps) => {
   const [activeStep, setActiveStep] = useState(1);
-  console.log(dataType);
+
   const handleNext = () => setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
 
+  const buttonLabel = (i: number) => (i === constants.steps.length - 1 ? `Finish ${dataType}` : 'Continue');
+
   return (
-    <Box margin="44px auto">
+    <OnBoardingStepperContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map((step, index) => (
+        {constants.steps.map((step, i) => (
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
@@ -35,7 +37,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
               <Box>
                 <div>
                   <Button variant="contained" onClick={handleNext}>
-                    {index === constants.steps.length - 1 ? 'Finish' : 'Continue'}
+                    {buttonLabel(i)}
                   </Button>
                 </div>
               </Box>
@@ -43,7 +45,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
           </Step>
         ))}
       </Stepper>
-    </Box>
+    </OnBoardingStepperContainer>
   );
 };
 
