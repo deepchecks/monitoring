@@ -11,21 +11,15 @@ import InitializationProvider from 'helpers/context/InitializationProvider';
 import { GlobalStateProvider } from './helpers/context/GlobalProvider';
 import { StatsTimeProvider } from './helpers/hooks/useStatsTime';
 import { UserProvider } from './helpers/hooks/useUser';
+import { lazyRetry, outLayoutRoutes, pathsInfo } from 'helpers/routes';
 
 import { Loader } from 'components/base/Loader/Loader';
+import { StyledThemeProvider } from 'components/lib';
 import Layout from 'components/Layout/Layout';
 
 import 'overlayscrollbars/overlayscrollbars.css';
-
-import { lazyRetry, pathsInfo } from 'helpers/routes';
-
-import { StyledThemeProvider } from 'components/lib';
-
 import './components/lib/assets/css/fonts.css';
 
-const DashboardPage = lazy(() => lazyRetry(() => import('./pages/DashboardPage')));
-const CompleteDetails = lazy(() => lazyRetry(() => import('./pages/CompleteDetails')));
-const LicenseAgreementPage = lazy(() => lazyRetry(() => import('./pages/LicenseAgreement')));
 const NotFoundPage = lazy(() => lazyRetry(() => import('./pages/NotFoundPage')));
 
 const LazyWrapper = ({ children }: { children: ReactNode }) => <Suspense fallback={<Loader />}>{children}</Suspense>;
@@ -49,14 +43,6 @@ const App = () => {
                     <StatsTimeProvider>
                       <SentryRoutes>
                         <Route element={<Layout />}>
-                          <Route
-                            path="/"
-                            element={
-                              <LazyWrapper>
-                                <DashboardPage />
-                              </LazyWrapper>
-                            }
-                          />
                           {flatPathsInfo.map(({ link, element: PageElement }) => (
                             <Route
                               key={link}
@@ -69,30 +55,17 @@ const App = () => {
                             />
                           ))}
                         </Route>
-                        <Route
-                          path="/complete-details"
-                          element={
-                            <LazyWrapper>
-                              <CompleteDetails />
-                            </LazyWrapper>
-                          }
-                        />
-                        <Route
-                          path="/license-agreement"
-                          element={
-                            <LazyWrapper>
-                              <LicenseAgreementPage />
-                            </LazyWrapper>
-                          }
-                        />
-                        <Route
-                          path="*"
-                          element={
-                            <LazyWrapper>
-                              <NotFoundPage />
-                            </LazyWrapper>
-                          }
-                        />
+                        {outLayoutRoutes.map(({ link, element: PageElement }) => (
+                          <Route
+                            key={link}
+                            path={link}
+                            element={
+                              <LazyWrapper>
+                                <PageElement />
+                              </LazyWrapper>
+                            }
+                          />
+                        ))}
                       </SentryRoutes>
                     </StatsTimeProvider>
                   </UserProvider>

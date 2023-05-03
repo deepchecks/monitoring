@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 
 import {
-  Box,
   Button,
   Checkbox,
   CssBaseline,
@@ -14,10 +13,12 @@ import {
   Grid,
   ThemeProvider
 } from '@mui/material';
-import EULAImage from '../assets/bg/eulaBG.png';
-import { theme } from '../components/lib/theme';
+
 import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
+
 import { termsAndConditions } from 'helpers/termsAndConditions';
+
+import { theme } from '../components/lib/theme';
 
 export const LicenseAgreementPage = function () {
   const descriptionElementRef = React.useRef<HTMLElement>(null);
@@ -40,20 +41,15 @@ export const LicenseAgreementPage = function () {
     <ThemeProvider theme={theme}>
       <Grid container component="main" sx={{ height: '100vh' }}>
         <CssBaseline />
-        <Box
-          sx={{
-            backgroundImage: `url(${EULAImage})`,
-            width: '100%',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center top',
-            backgroundSize: 'cover'
-          }}
-        />
       </Grid>
       <Dialog open={true} scroll="paper" fullWidth={true} maxWidth="xl">
         <DialogTitle sx={{ ml: '45px' }}>Please review and approve our service terms and conditions</DialogTitle>
         <DialogContent>
-          <DialogContentText id="scroll-dialog-description" ref={descriptionElementRef} tabIndex={-1}>
+          <DialogContentText
+            id="scroll-dialog-description"
+            ref={descriptionElementRef}
+            sx={{ padding: '24px', width: 'calc(100% - 48px)' }}
+          >
             <div dangerouslySetInnerHTML={{ __html: termsAndConditions }} />
           </DialogContentText>
         </DialogContent>
