@@ -2,6 +2,7 @@ import React, { ComponentType, FC, lazy } from 'react';
 import { Notifications, BarChart, Dashboard, Settings } from '@mui/icons-material';
 
 import { AnalysisProvider } from 'helpers/context/AnalysisProvider';
+import OnBoardingPage from 'pages/OnBoardingPage';
 
 export interface PathInfo {
   title: string;
@@ -148,6 +149,14 @@ export const pathsInfo: PathInfo[] = [
     title: 'Workspace Settings',
     link: '/workspace-settings',
     element: () => <WorkspaceSettingsPage />,
+    Icon: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  },
+  {
+    title: 'OnBoarding',
+    link: '/onboarding',
+    element: () => <OnBoardingPage />,
     Icon: null,
     ActiveIcon: null,
     ignoreLink: true
