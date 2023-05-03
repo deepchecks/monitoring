@@ -19,7 +19,10 @@ const FirstOnBoarding = () => {
         <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
         {dataType && (
           <StyledSelect
-            selections={[constants.first.userDataToggleLabel, constants.first.demoDataToggleLabel]}
+            selections={[
+              { label: constants.first.userDataToggleLabel, value: 'user' },
+              { label: constants.first.demoDataToggleLabel, value: 'demo' }
+            ]}
             state={dataType}
             setState={setDataType}
           />

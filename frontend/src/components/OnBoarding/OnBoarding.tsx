@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
 import { constants } from './onBoarding.constants';
+import { OnBoardingDocsLink, OnBoardingSnippetContainer } from './OnBoarding.styles';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
@@ -27,8 +28,10 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <Typography>{step.description}</Typography>
-              <Typography>{step.codeSnippet}</Typography>
-              <Typography>{step.docLink}</Typography>
+              <OnBoardingSnippetContainer>
+                <Typography>{step.codeSnippet}</Typography>
+              </OnBoardingSnippetContainer>
+              <OnBoardingDocsLink href={step.docLink.url}>{step.docLink.label}</OnBoardingDocsLink>
               <Box>
                 <div>
                   <Button variant="contained" onClick={handleNext}>
