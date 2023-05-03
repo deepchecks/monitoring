@@ -1,9 +1,9 @@
 import React from 'react';
 
-import OnBoarding from 'components/OnBoarding/OnBoarding';
+import FirstOnBoarding from 'components/OnBoarding/FirstOnBoarding/FirstOnBoarding';
 
 const OnBoardingPage = () => {
-  return <OnBoarding />;
+  return <FirstOnBoarding />;
 };
 
 export default OnBoardingPage;
