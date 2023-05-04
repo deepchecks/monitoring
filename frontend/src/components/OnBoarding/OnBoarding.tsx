@@ -37,7 +37,10 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
             <StepContent>
               <Typography>{step.description}</Typography>
               <StyledCodeSnippet code={step.codeSnippet} />
-              <OnBoardingDocsLink href={step.docLink.url}>{step.docLink.label}</OnBoardingDocsLink>
+              {step?.secondCodeSnippet && <StyledCodeSnippet code={step.secondCodeSnippet} />}
+              <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
+                {step.docLink.label}
+              </OnBoardingDocsLink>
               <Box>
                 <div>
                   <Button variant="contained" onClick={() => handleNext(i)}>
