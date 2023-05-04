@@ -149,7 +149,7 @@ export const AnalysisContext = createContext<AnalysisContextValues>({
 
 export const AnalysisProvider = ({ children }: AnalysisProviderProps) => {
   const [compareWithPreviousPeriod, setCompareWithPreviousPeriod] = useState(false);
-  const [compareByReference, setCompareByReference] = useState(false);
+  const [compareByReference, setCompareByReference] = useState(true);
 
   const [period, setPeriod] = useState<[Date, Date] | null>(null);
 

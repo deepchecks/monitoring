@@ -1,17 +1,17 @@
 import React, { useState, useContext, useEffect } from 'react';
+import { MenuItem, SelectChangeEvent } from '@mui/material';
 import dayjs from 'dayjs';
 
 import { ModelManagmentSchema, useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet } from 'api/generated';
 import { AnalysisContext, frequencyData } from 'helpers/context/AnalysisProvider';
-
-import { Box, MenuItem, SelectChangeEvent } from '@mui/material';
+import { frequencyValues } from 'helpers/utils/frequency';
 
 import { DateRange } from 'components/DateRange';
 import { CustomStyledSelect } from 'components/Select/CustomStyledSelect';
-import { SwitchButton } from 'components/base/Button/SwitchButton';
 
 import { StyledDivider } from '../AnalysisHeader.style';
-import { frequencyValues } from 'helpers/utils/frequency';
+
+import { constants } from 'components/Analysis/analysis.constants';
 
 interface AnalysisHeaderOptions {
   model: ModelManagmentSchema;
@@ -22,14 +22,14 @@ const MAX_WINDOWS_COUNT = 31;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
   const {
-    compareWithPreviousPeriod,
-    setCompareWithPreviousPeriod,
     period,
     setPeriod,
     frequency,
-    setFrequency
-    // compareByReference,
-    // setCompareByReference
+    setFrequency,
+    compareByReference,
+    setCompareByReference,
+    compareWithPreviousPeriod,
+    setCompareWithPreviousPeriod
   } = useContext(AnalysisContext);
 
   const [minDate, setMinDate] = useState<Date | null>(
@@ -38,6 +38,10 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
   const [maxDate, setMaxDate] = useState<Date | null>(
     model.latest_time && frequency ? dayjs.unix(model.latest_time + frequencyValues.DAY).toDate() : null
   );
+
+  const periodComparison = constants.header.periodComparison;
+  const referenceComparison = constants.header.referenceComparison;
+  const comparisonDropdownVal = compareByReference ? referenceComparison : periodComparison;
 
   useEffect(() => {
     if (frequency) {
@@ -123,6 +127,16 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     }
   };
 
+  const handleComparison = () => {
+    if (compareByReference) {
+      setCompareByReference(false);
+      setCompareWithPreviousPeriod(true);
+    } else if (compareWithPreviousPeriod) {
+      setCompareByReference(true);
+      setCompareWithPreviousPeriod(false);
+    }
+  };
+
   return (
     <>
       {defaultFrequency && (
@@ -150,19 +164,19 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
         </>
       )}
       <StyledDivider orientation="vertical" flexItem sx={{ marginRight: '29px' }} />
-      <Box display="flex" flexDirection="column" gap="8px">
-        <SwitchButton
-          checked={compareWithPreviousPeriod}
-          setChecked={setCompareWithPreviousPeriod}
-          label="Compare with previous period"
-        />
-        {/* <SwitchButton
-          checked={compareByReference}
-          setChecked={setCompareByReference}
-          label="Compare by reference"
-          sx={{ marginRight: 'auto' }}
-            /> */}
-      </Box>
+      <CustomStyledSelect
+        sx={{ minWidth: '115px', marginRight: '12px' }}
+        size="small"
+        value={comparisonDropdownVal}
+        onChange={handleComparison}
+      >
+        <MenuItem key={referenceComparison} value={referenceComparison}>
+          {referenceComparison}
+        </MenuItem>
+        <MenuItem key={periodComparison} value={periodComparison}>
+          {periodComparison}
+        </MenuItem>
+      </CustomStyledSelect>
     </>
   );
 };
