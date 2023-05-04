@@ -12,7 +12,7 @@ const BillingPaymentWrapper = ({ children, clientSecret, stripeApiKey }: Props) 
   const stripePromise = loadStripe(`${stripeApiKey}`);
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret: clientSecret }}>
+    <Elements key={stripeApiKey} stripe={stripePromise} options={{ clientSecret: clientSecret }}>
       {children}
     </Elements>
   );

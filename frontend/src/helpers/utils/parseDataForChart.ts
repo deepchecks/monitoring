@@ -31,23 +31,24 @@ const parseDataForChart = (
   dashed = false,
   alerts?: AlertSchema[]
 ) => {
-  if (!graph) return { datasets: [], labels: [] };
+  if (!graph || !graph?.output) return { datasets: [], labels: [] };
 
   let counter = 0;
 
   const labels = graph.time_labels?.map(date => dayjs(date).valueOf());
+  const output = graph.output;
 
   return {
-    datasets: Object.keys(graph.output)
+    datasets: Object.keys(output)
       .map(key => {
-        if (!graph.output[key]) {
+        if (!output[key]) {
           return [];
         }
 
         const lines: LinesType = {};
 
-        for (let i = 0; i < graph.output[key].length; i++) {
-          graph.output[key].forEach((item: GraphOutputType) => {
+        for (let i = 0; i < output[key].length; i++) {
+          output[key].forEach((item: GraphOutputType) => {
             if (item) {
               Object.keys(item).forEach(itemKey => {
                 lines[itemKey] = [];
@@ -56,7 +57,7 @@ const parseDataForChart = (
           });
         }
 
-        graph.output[key].forEach((item: GraphOutputType) => {
+        output[key].forEach((item: GraphOutputType) => {
           if (item) {
             Object.keys(item).forEach(itemKey => {
               lines[itemKey].push(item[itemKey]);
