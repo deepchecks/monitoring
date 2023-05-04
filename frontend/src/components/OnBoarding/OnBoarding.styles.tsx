@@ -1,5 +1,7 @@
 import { Box, Link, styled, Typography } from '@mui/material';
 
+import { StyledContainer } from 'components/lib';
+
 const FirstOnBoardingTitle = styled(Typography)(({ theme }) => ({
   fontSize: 32,
   fontWeight: 600,
@@ -12,6 +14,12 @@ const FirstOnBoardingBoxLabel = styled(Typography)(({ theme }) => ({
   fontWeight: 800,
   color: theme.palette.primary.main,
   margin: '0 auto 20px'
+}));
+
+const FirstOnBoardingOutlinedBox = styled(StyledContainer)(({ theme }) => ({
+  border: `2px solid ${theme.palette.primary.main}`,
+  borderRadius: '16px',
+  cursor: 'pointer'
 }));
 
 const OnBoardingSnippetContainer = styled(Box)(({ theme }) => ({
@@ -52,5 +60,6 @@ export {
   FirstOnBoardingBoxLabel,
   OnBoardingSnippetContainer,
   OnBoardingDocsLink,
-  OnBoardingStepperContainer
+  OnBoardingStepperContainer,
+  FirstOnBoardingOutlinedBox
 };
