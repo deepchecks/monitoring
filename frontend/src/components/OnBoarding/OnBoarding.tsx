@@ -8,8 +8,10 @@ import StepContent from '@mui/material/StepContent';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
+import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
+import { StyledCodeSnippet } from 'components/lib';
+
 import { constants } from './onBoarding.constants';
-import { OnBoardingDocsLink, OnBoardingSnippetContainer, OnBoardingStepperContainer } from './OnBoarding.styles';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
@@ -20,7 +22,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
 
   const handleNext = () => setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
 
-  const buttonLabel = (i: number) => (i === constants.steps.length - 1 ? `Finish ${dataType}` : 'Continue');
+  const buttonLabel = (i: number) => (i === constants.steps.length - 1 ? `Finish (${dataType})` : 'Continue');
 
   return (
     <OnBoardingStepperContainer>
@@ -30,9 +32,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <Typography>{step.description}</Typography>
-              <OnBoardingSnippetContainer>
-                <Typography>{step.codeSnippet}</Typography>
-              </OnBoardingSnippetContainer>
+              <StyledCodeSnippet code={step.codeSnippet} />
               <OnBoardingDocsLink href={step.docLink.url}>{step.docLink.label}</OnBoardingDocsLink>
               <Box>
                 <div>
