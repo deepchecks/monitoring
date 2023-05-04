@@ -20,6 +20,7 @@ const NotFoundTitle = styled(StyledH1)`
   color: ${theme.palette.primary.dark};
   font-weight: 900;
   font-size: 3rem;
+  margin: 24px auto;
 `;
 
 const NotFoundDescription = styled.p`

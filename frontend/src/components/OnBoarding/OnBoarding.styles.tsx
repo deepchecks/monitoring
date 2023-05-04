@@ -4,8 +4,7 @@ const FirstOnBoardingTitle = styled(Typography)(({ theme }) => ({
   fontSize: 32,
   fontWeight: 600,
   color: theme.palette.primary.main,
-  margin: '40px 0',
-  minWidth: '400px'
+  margin: '40px 0'
 }));
 
 const FirstOnBoardingBoxLabel = styled(Typography)(({ theme }) => ({

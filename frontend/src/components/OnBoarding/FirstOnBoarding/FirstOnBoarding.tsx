@@ -15,7 +15,7 @@ const FirstOnBoarding = () => {
 
   return (
     <StyledContainer maxWidth={770} margin="84px auto">
-      <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" alignItems="center">
+      <StyledContainer display="grid" gridTemplateColumns="auto 275px" alignItems="center">
         <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
         {dataType && (
           <StyledSelect

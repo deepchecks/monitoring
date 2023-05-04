@@ -20,9 +20,13 @@ interface OnBoardingProps {
 const OnBoarding = ({ dataType }: OnBoardingProps) => {
   const [activeStep, setActiveStep] = useState(1);
 
-  const handleNext = () => setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
-
   const buttonLabel = (i: number) => (i === constants.steps.length - 1 ? `Finish (${dataType})` : 'Continue');
+
+  const handleNext = (i: number) => {
+    i === constants.steps.length - 1
+      ? window.location.replace('/')
+      : setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
+  };
 
   return (
     <OnBoardingStepperContainer>
@@ -36,7 +40,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
               <OnBoardingDocsLink href={step.docLink.url}>{step.docLink.label}</OnBoardingDocsLink>
               <Box>
                 <div>
-                  <Button variant="contained" onClick={handleNext}>
+                  <Button variant="contained" onClick={() => handleNext(i)}>
                     {buttonLabel(i)}
                   </Button>
                 </div>
