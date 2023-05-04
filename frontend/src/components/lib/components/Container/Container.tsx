@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Box, BoxProps, useTheme } from '@mui/material';
+
 import { isDarkMode } from '../../theme/darkMode.helpers';
 
 export interface ContainerProps extends BoxProps {
