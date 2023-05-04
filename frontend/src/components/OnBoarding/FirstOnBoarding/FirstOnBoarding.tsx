@@ -3,7 +3,12 @@ import React, { useState } from 'react';
 import OnBoarding from '../OnBoarding';
 
 import { StyledContainer, StyledImage, StyledSelect, StyledText } from 'components/lib';
-import { FirstOnBoardingBoxLabel, FirstOnBoardingOutlinedBox, FirstOnBoardingTitle } from '../OnBoarding.styles';
+import {
+  FirstOnBoardingBoxLabel,
+  FirstOnBoardingOutlinedBox,
+  FirstOnBoardingSelectContainer,
+  FirstOnBoardingTitle
+} from '../OnBoarding.styles';
 
 import demoDataImg from '../../../assets/onBoarding/demo.svg';
 import userDataImg from '../../../assets/onBoarding/user.svg';
@@ -15,7 +20,7 @@ const FirstOnBoarding = () => {
 
   return (
     <StyledContainer maxWidth={770} margin="84px auto">
-      <StyledContainer display="grid" gridTemplateColumns="auto 275px" alignItems="center">
+      <FirstOnBoardingSelectContainer>
         <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
         {dataType && (
           <StyledSelect
@@ -27,7 +32,7 @@ const FirstOnBoarding = () => {
             setState={setDataType}
           />
         )}
-      </StyledContainer>
+      </FirstOnBoardingSelectContainer>
       {dataType ? (
         <OnBoarding dataType={dataType} />
       ) : (

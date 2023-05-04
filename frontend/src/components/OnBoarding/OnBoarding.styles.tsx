@@ -22,6 +22,15 @@ const FirstOnBoardingOutlinedBox = styled(StyledContainer)(({ theme }) => ({
   cursor: 'pointer'
 }));
 
+const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
+  display: 'grid',
+  gridTemplateColumns: 'auto 250px',
+  alignItems: 'center',
+
+  '& .MuiButtonBase-root': { borderRadius: 0 },
+  '& .MuiBox-root': { gap: 0, padding: 0 }
+}));
+
 const OnBoardingSnippetContainer = styled(Box)(({ theme }) => ({
   width: '100%',
   borderRadius: 16,
@@ -43,23 +52,24 @@ const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
 
 const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
   margin: '44px auto 0 0',
-  '& .MuiSvgIcon-root': {
-    width: '32px',
-    height: '32px',
-    marginRight: 4
-  },
 
   '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
   '& .MuiStepConnector-root, .MuiStepContent-root': { marginLeft: 16 },
   '& .MuiStepLabel-label': { fontWeight: 700, color: theme.palette.grey[500] },
-  '& .Mui-disabled': { fontWeight: 500 }
+  '& .Mui-disabled': { fontWeight: 500 },
+  '& .MuiSvgIcon-root': {
+    width: '32px',
+    height: '32px',
+    marginRight: 4
+  }
 }));
 
 export {
   FirstOnBoardingTitle,
   FirstOnBoardingBoxLabel,
+  FirstOnBoardingOutlinedBox,
+  FirstOnBoardingSelectContainer,
   OnBoardingSnippetContainer,
   OnBoardingDocsLink,
-  OnBoardingStepperContainer,
-  FirstOnBoardingOutlinedBox
+  OnBoardingStepperContainer
 };
