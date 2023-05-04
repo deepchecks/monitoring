@@ -25,7 +25,8 @@ function setStep(data: ColumnStatistics) {
 export function NumericFilter({ data, column, onClose }: NumericFilterProps) {
   const { filters, setFilters } = useContext(AnalysisContext);
 
-  const minValue = typeof data.min === 'number' ? (data.min === data.max ? -data.min : data.min) : -999;
+  const minValue =
+    typeof data.min === 'number' ? (data.min === data.max ? (data.max > 0 ? 0 : data.max / 10) : data.min) : -999;
   const maxValue = typeof data.max === 'number' ? data.max : 999;
 
   const [numericValue, setNumericValue] = useState<number[] | undefined>(() => {
