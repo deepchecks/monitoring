@@ -86,7 +86,7 @@ export const Sidebar = () => {
             <Box sx={{ mt: '40px', pl: '14px' }}>
               {pathsInfo.map((info: PathInfo) =>
                 info.ignoreLink ? (
-                  <></>
+                  <React.Fragment key={info.link}></React.Fragment>
                 ) : (
                   <SidebarMenuItem
                     key={info.link}

@@ -38,7 +38,9 @@ const MonitorAlertRuleWidgetComponent = ({ monitor, alertRules }: MonitorAlertRu
       <ExclamationMarkRhombus fill={color} />
       <StyledTypography>
         {alertRuleString}
-        <StyledSeverity color={color}>{severity}</StyledSeverity>
+        <StyledSeverity component="span" color={color}>
+          {severity}
+        </StyledSeverity>
         {' - '}
         {title} {OperatorsEnumMap[operator]} {value}
       </StyledTypography>

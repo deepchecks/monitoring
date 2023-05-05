@@ -22,6 +22,6 @@ const StyledSeverity = styled(Typography, {
   fontWeight: 600,
   color,
   fontSize: '14px'
-}));
+})) as typeof Typography;
 
 export { StyledContainer, StyledTypography, StyledSeverity };
