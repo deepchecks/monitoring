@@ -383,6 +383,7 @@ async def run_standalone_check_per_window_in_range(
         check_id,
         session,
         monitor_options,
+        resources_provider.redis_client,
         parallel=resources_provider.settings.is_cloud,
     )
 

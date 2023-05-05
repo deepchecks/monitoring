@@ -310,6 +310,7 @@ async def run_monitor_lookback(
         monitor.check_id,
         session,
         options,
+        resources_provider.redis_client,
         monitor_id=monitor_id,
         cache_funcs=cache_funcs,
         organization_id=user.organization_id,

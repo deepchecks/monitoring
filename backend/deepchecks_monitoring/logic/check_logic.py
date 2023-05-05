@@ -9,6 +9,8 @@
 # ----------------------------------------------------------------------------
 
 """Module defining utility functions for check running."""
+import asyncio
+import json
 import typing as t
 from collections import defaultdict
 from copy import deepcopy
@@ -17,11 +19,14 @@ from numbers import Number
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy
+import pyarrow as pa
+import hashlib
 from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, root_validator
+from redis.client import Redis
 from sqlalchemy import VARCHAR, Column, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -250,6 +255,7 @@ async def run_check_per_window_in_range(
         check_id: int,
         session: AsyncSession,
         monitor_options: MonitorOptions,
+        redis: Redis,
         monitor_id: int = None,
         cache_funcs: CacheFunctions = None,
         organization_id: int = None,
@@ -268,6 +274,7 @@ async def run_check_per_window_in_range(
     session : AsyncSession
         The database session to use.
     monitor_options: MonitorOptions
+    redis: Redis
     monitor_id
     cache_funcs
     organization_id
@@ -328,19 +335,15 @@ async def run_check_per_window_in_range(
 
         if query_start_time:
             period = query_end_time - query_start_time
-            query = create_execution_data_query(model_version, monitor_options, period=period, columns=columns,
-                                                frequency=monitor_options.frequency,
-                                                with_labels=check.is_label_required,
-                                                is_ref=False)
-            results = await session.execute(query)
-            results_df = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+            data_coroutine = get_query_with_cache(redis, session, model_version, monitor_options, period=period,
+                                                  columns=columns, frequency=monitor_options.frequency,
+                                                  with_labels=check.is_label_required, is_ref=False)
 
             # Reference query
-            query = create_execution_data_query(model_version, monitor_options, columns=columns,
-                                                with_labels=check.is_label_required,
-                                                is_ref=True)
-            results = await session.execute(query)
-            reference_df = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+            ref_coroutine = get_query_with_cache(redis, session, model_version, monitor_options, columns=columns,
+                                                 with_labels=check.is_label_required, is_ref=True)
+            results_df = await data_coroutine
+            reference_df = await ref_coroutine
         else:
             results_df = pd.DataFrame()
             reference_df = pd.DataFrame()
@@ -694,3 +697,60 @@ def reduce_check_window(model_results, monitor_options):
         if it is not None else None
         for model_version, it in model_results.items()
     }
+
+
+async def get_query_with_cache(
+        redis: Redis,
+        session,
+        model_version: ModelVersion,
+        options: TableFiltersSchema,
+        frequency: Frequency = None,
+        period: pdl.Period = None,
+        columns: t.List[str] = None,
+        n_samples: int = DEFAULT_N_SAMPLES,
+        with_labels: bool = False,
+        filter_labels_exist: bool = False,
+        is_ref: bool = False):
+    """Get query from cache or create it if not exists."""
+    m = hashlib.md5()
+    m.update(str(model_version.id).encode())
+    filters = options.filter.dict() if options.filter else {}
+    m.update(json.dumps(filters, sort_keys=True).encode())
+    m.update(str(frequency).encode())
+    m.update(str(period).encode())
+    m.update(str(sorted(columns)).encode())
+    m.update(str(n_samples).encode())
+    m.update(str(with_labels).encode())
+    m.update(str(filter_labels_exist).encode())
+    m.update(str(is_ref).encode())
+    key = m.hexdigest()
+
+    lock = redis.lock(f'lock:{key}')
+    value = None
+    while value is None:
+        value = redis.get(key)
+        if value is not None:
+            return pa.deserialize_pandas(value)
+        lock.acquire(blocking=False)
+        if lock.locked() and lock.owned():
+            value = redis.get(key)
+            if value is not None:
+                value = pa.deserialize_pandas(value)
+            else:
+                # Do query
+                query = create_execution_data_query(model_version, options, frequency=frequency, period=period,
+                                                    columns=columns, n_samples=n_samples,
+                                                    with_labels=with_labels, filter_labels_exist=filter_labels_exist,
+                                                    is_ref=is_ref)
+                results = await session.execute(query)
+                results_df = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
+                pipe = redis.pipeline()
+                pipe.set(key, pa.serialize_pandas(results_df).to_pybytes())
+                pipe.expire(key, 60)
+                pipe.execute()
+                value = results_df
+            lock.release()
+            return value
+        else:
+            # Wait for query to finish and try again to get value or lock
+            await asyncio.sleep(0.1)
