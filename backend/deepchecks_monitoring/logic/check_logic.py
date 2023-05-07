@@ -10,6 +10,7 @@
 
 """Module defining utility functions for check running."""
 import asyncio
+import hashlib
 import json
 import typing as t
 from collections import defaultdict
@@ -18,9 +19,8 @@ from numbers import Number
 
 import pandas as pd
 import pendulum as pdl
-import sqlalchemy
 import pyarrow as pa
-import hashlib
+import sqlalchemy
 from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
