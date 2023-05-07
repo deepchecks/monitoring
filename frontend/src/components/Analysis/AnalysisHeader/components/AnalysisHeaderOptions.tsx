@@ -41,7 +41,12 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
 
   const periodComparison = constants.header.periodComparison;
   const referenceComparison = constants.header.referenceComparison;
-  const comparisonDropdownVal = compareByReference ? referenceComparison : periodComparison;
+  const noComparison = constants.header.noComparison;
+  const comparisonDropdownVal = compareByReference
+    ? referenceComparison
+    : compareWithPreviousPeriod
+    ? periodComparison
+    : noComparison;
 
   useEffect(() => {
     if (frequency) {
@@ -127,12 +132,18 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     }
   };
 
-  const handleComparison = () => {
-    if (compareByReference) {
+  const handleSelectChange = (event: any) => {
+    const selectedValue = event.target.value;
+
+    if (selectedValue === referenceComparison) {
+      console.log(compareByReference);
+      setCompareByReference(true);
+      setCompareWithPreviousPeriod(false);
+    } else if (selectedValue === periodComparison) {
       setCompareByReference(false);
       setCompareWithPreviousPeriod(true);
-    } else if (compareWithPreviousPeriod) {
-      setCompareByReference(true);
+    } else {
+      setCompareByReference(false);
       setCompareWithPreviousPeriod(false);
     }
   };
@@ -168,8 +179,11 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
         sx={{ minWidth: '115px', marginRight: '12px' }}
         size="small"
         value={comparisonDropdownVal}
-        onChange={handleComparison}
+        onChange={e => handleSelectChange(e)}
       >
+        <MenuItem key={noComparison} value={noComparison}>
+          {noComparison}
+        </MenuItem>
         <MenuItem key={referenceComparison} value={referenceComparison}>
           {referenceComparison}
         </MenuItem>
