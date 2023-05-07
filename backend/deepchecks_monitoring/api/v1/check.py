@@ -652,7 +652,8 @@ async def run_check_group_by_feature(
         # Get value from check to run
         model_results_per_window = get_results_for_model_versions_per_window(
             {model_version.id : model_version_session}, [model_version], model_version.model, check,
-            monitor_options.additional_kwargs, with_display=False, parallel=resources_provider.settings.parallel_enabled)
+            monitor_options.additional_kwargs, with_display=False,
+            parallel=resources_provider.settings.parallel_enabled)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
         if result['result'] is not None:
