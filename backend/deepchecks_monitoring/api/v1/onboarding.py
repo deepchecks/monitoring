@@ -44,7 +44,7 @@ class StepSchema(BaseModel):
     step: Step
 
 @router.get(
-    "/api/v1/onboarding",
+    "/onboarding",
     response_model=StepSchema,
     tags=[Tags.CONFIG],
     summary="Get onboarding state")
@@ -68,7 +68,7 @@ async def get_onboarding_state(
         )).scalars().first()
     else:
         model: Model = (await session.execute(
-            sa.select(Model).where(Model.name == model_name).sort(Model.created_at.desc()).limit(1)
+            sa.select(Model).order_by(Model.created_at.desc()).limit(1)
         )).scalars().first()
     if model is None:
         return {'step': Step.REGISTERED}
