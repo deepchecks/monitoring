@@ -11,9 +11,11 @@ import Typography from '@mui/material/Typography';
 import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
 import { StyledCodeSnippet } from 'components/lib';
 
-import { constants } from './onBoarding.constants';
-
 import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
+
+import { events, reportEvent } from 'helpers/services/mixPanel';
+
+import { constants } from './onBoarding.constants';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
@@ -40,6 +42,10 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
   useEffect(() => {
     regenerateApiToken();
   }, []);
+
+  useEffect(() => {
+    reportEvent(events.onBoarding.movedStep, { step: constants.steps[activeStep].title, dataType: 'Demo' });
+  }, [activeStep]);
 
   return (
     <OnBoardingStepperContainer>
