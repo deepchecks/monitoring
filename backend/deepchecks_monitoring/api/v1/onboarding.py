@@ -12,11 +12,15 @@
 """V1 API of the model."""
 import enum
 import typing as t
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_LABEL_COL
+from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
 from pydantic import BaseModel
-from fastapi import Depends
+from fastapi import Query
 import sqlalchemy as sa
+from sqlalchemy.orm import selectinload
+import pendulum as pdl
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
@@ -31,18 +35,6 @@ from deepchecks_monitoring.utils import auth
 
 from .router import router
 
-
-class ModelNoteCreationSchema(BaseModel):
-    """Note schema."""
-
-    title: str
-    text: t.Optional[str] = None
-
-    class Config:
-        """Config."""
-
-        orm_mode = True
-
 class Step(int, enum.Enum):
     """Sort order of ingestion errors output."""
 
@@ -53,18 +45,15 @@ class Step(int, enum.Enum):
     LABELS = 4
 
 @router.get(
-    "/models",
-    response_model=IdResponse,
-    tags=[Tags.MODELS],
+    "/api/v1/onboarding",
+    response_model=Step,
+    tags=[Tags.CONFIG],
     summary="Create a new model if does not exist.",
-    description="Create a new model with its name, task type, and description. Returns the ID of the model. "
-                "If the model already exists, returns the ID of the existing model."
+    description="Create a new model with its name, task type, and description."
 )
-async def get_create_model(
-        model_schema: ModelCreationSchema,
-        user: User = Depends(auth.CurrentUser()),
+async def get_onboarding_state(
+        model_name: t.Optional[str] = Query(default=None),
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Create a new model.
 
@@ -79,5 +68,29 @@ async def get_create_model(
         Resources provider.
 
     """
-
-    return {}
+    if model_name is not None:
+        model: Model = (await session.execute(
+            sa.select(Model).where(Model.name == model_name)
+        )).scalars().first()
+    else:
+        model: Model = (await session.execute(
+            sa.select(Model).where(Model.name == model_name).sort(Model.created_at.desc()).limit(1)
+        )).scalars().first()
+    if model is None:
+        return Step.REGISTERED
+    latest_version_query = (sa.select(ModelVersion)
+                            .where(ModelVersion.model_id == model.id)
+                            .order_by(ModelVersion.end_time.desc()).limit(1)
+                            .options(selectinload(ModelVersion.model)))
+    latest_version: ModelVersion = (await session.execute(latest_version_query)).scalars().first()
+    if not latest_version:
+        return Step.MODEL
+    if latest_version.start_time == pdl.datetime(3000, 1, 1):
+        return Step.VERSION
+    labels_table = model.get_sample_labels_table(session)
+    has_labels = (await session.execute(
+        sa.select(labels_table.c[SAMPLE_LABEL_COL]).where(labels_table.c[SAMPLE_LABEL_COL].isnot(None)).limit(1)
+    )).scalars().first() is not None
+    if has_labels:
+        return Step.LABELS
+    return Step.DATA
