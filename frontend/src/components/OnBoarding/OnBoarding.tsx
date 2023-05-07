@@ -50,7 +50,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
             <StepContent>
               <Typography>{step.description}</Typography>
               <StyledCodeSnippet code={step.codeSnippet} />
-              {step?.secondCodeSnippet && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
+              {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
