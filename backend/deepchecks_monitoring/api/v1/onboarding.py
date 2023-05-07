@@ -16,6 +16,7 @@ import typing as t
 import pendulum as pdl
 import sqlalchemy as sa
 from fastapi import Query
+from pydantic import BaseModel
 from sqlalchemy.orm import selectinload
 
 from deepchecks_monitoring.config import Tags
@@ -37,29 +38,28 @@ class Step(int, enum.Enum):
     DATA = 3
     LABELS = 4
 
+class StepSchema(BaseModel):
+    """Schema for onboarding steps."""
+
+    step: Step
 
 @router.get(
     "/api/v1/onboarding",
-    response_model=Step,
+    response_model=StepSchema,
     tags=[Tags.CONFIG],
-    summary="Create a new model if does not exist.",
-    description="Create a new model with its name, task type, and description."
-)
+    summary="Get onboarding state")
 async def get_onboarding_state(
         model_name: t.Optional[str] = Query(default=None),
         session: AsyncSession = AsyncSessionDep,
 ):
-    """Create a new model.
+    """Get onboarding state.
 
     Parameters
     ----------
-    model_schema : ModelCreationSchema
-        Schema of model to create.
-    user
+    model_name : t.Optional[str]
+        Optional to specify a specific model.
     session : AsyncSession
         SQLAlchemy session.
-    resources_provider: ResourcesProvider
-        Resources provider.
 
     """
     if model_name is not None:
@@ -71,20 +71,20 @@ async def get_onboarding_state(
             sa.select(Model).where(Model.name == model_name).sort(Model.created_at.desc()).limit(1)
         )).scalars().first()
     if model is None:
-        return Step.REGISTERED
+        return {'step': Step.REGISTERED}
     latest_version_query = (sa.select(ModelVersion)
                             .where(ModelVersion.model_id == model.id)
                             .order_by(ModelVersion.end_time.desc()).limit(1)
                             .options(selectinload(ModelVersion.model)))
     latest_version: ModelVersion = (await session.execute(latest_version_query)).scalars().first()
     if not latest_version:
-        return Step.MODEL
+        return {'step': Step.MODEL}
     if latest_version.start_time == pdl.datetime(3000, 1, 1):
-        return Step.VERSION
+        return {'step': Step.VERSION}
     labels_table = model.get_sample_labels_table(session)
     has_labels = (await session.execute(
         sa.select(labels_table.c[SAMPLE_LABEL_COL]).where(labels_table.c[SAMPLE_LABEL_COL].isnot(None)).limit(1)
     )).scalars().first() is not None
     if has_labels:
-        return Step.LABELS
-    return Step.DATA
+        return {'step': Step.LABELS}
+    return {'step': Step.DATA}
