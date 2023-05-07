@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 
 import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
-import { Box, Alert, Snackbar } from '@mui/material';
+import { Alert, Snackbar } from '@mui/material';
 
-import { StyledApiKey, StyledContainer, StyledTypography } from './APIKey.styles';
+import { StyledApiKey, StyledApiKeyContainer } from './APIKey.styles';
 
-import { StyledButton } from 'components/lib';
+import { StyledButton, StyledText, StyledContainer } from 'components/lib';
 
 import logger from 'helpers/services/logger';
 
@@ -42,18 +42,18 @@ export function APIKey() {
 
   return (
     <>
-      <Box>
-        <StyledTypography>
-          {text}
-          <a href="https://docs.deepchecks.com/stable/getting-started/welcome.html" target="_blank" rel="noreferrer">
-            {link}
-          </a>
-        </StyledTypography>
-        <StyledContainer>
-          <StyledApiKey>{apiToken || '*'.repeat(59)}</StyledApiKey>
+      <StyledContainer flexDirection="row">
+        <StyledText text={text} />
+        <a href="https://docs.deepchecks.com/stable/getting-started/welcome.html" target="_blank" rel="noreferrer">
+          {link}
+        </a>
+      </StyledContainer>
+      <StyledApiKeyContainer type="card">
+        <StyledApiKeyContainer>
+          <StyledApiKey text={apiToken || '*'.repeat(59)} />
           <StyledButton onClick={handleClick} label={apiToken ? copy : regenerate} />
-        </StyledContainer>
-      </Box>
+        </StyledApiKeyContainer>
+      </StyledApiKeyContainer>
       <Snackbar
         open={snackOpen}
         onClose={closeSnackbar}

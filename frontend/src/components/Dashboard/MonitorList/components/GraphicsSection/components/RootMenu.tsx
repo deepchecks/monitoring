@@ -8,7 +8,7 @@ import { Bell, Edit, Trash } from 'assets/icon/icon';
 
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface RootMenuProps extends MenuProps {
   handleOpenMonitor: (drawerName: DrawerNames) => void;

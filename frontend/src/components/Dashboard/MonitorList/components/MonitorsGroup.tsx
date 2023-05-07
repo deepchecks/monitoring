@@ -9,7 +9,8 @@ import { Monitor } from './Monitor';
 
 import { SetStateType } from 'helpers/types';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
+import { StyledContainer } from 'components/lib';
 
 interface MonitorsGroupProps {
   model: ModelManagmentSchema;
@@ -33,7 +34,7 @@ export const MonitorsGroup = ({
   if (!monitors.length) return <></>;
 
   return (
-    <StyledContainer>
+    <StyledGroupContainer>
       <StyledHeadingContainer>
         <StyledModelName>{model.name}</StyledModelName>
         <StyledModelLatestTime>
@@ -58,11 +59,11 @@ export const MonitorsGroup = ({
           />
         ))}
       </Grid>
-    </StyledContainer>
+    </StyledGroupContainer>
   );
 };
 
-const StyledContainer = styled(Box)({
+const StyledGroupContainer = styled(StyledContainer)({
   marginBottom: '20px',
 
   ':last-of-type': {

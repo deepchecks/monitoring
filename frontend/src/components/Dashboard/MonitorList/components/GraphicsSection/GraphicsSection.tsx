@@ -6,7 +6,7 @@ import { Frequency, MonitorSchema } from 'api/generated';
 import { BoxProps, Stack } from '@mui/material';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { RootMenu } from './components/RootMenu';
 import { MonitorInfoWidget } from './components/MonitorInfoWidget';
 import { MonitorAlertRuleWidget } from './components/MonitorAlertRuleWidget';
@@ -75,7 +75,7 @@ export function GraphicsSection({
 
   return (
     <>
-      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props}>
+      <StyledContainer onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} {...props} sx={{ background: 'white' }}>
         {isLoading ? (
           <Loader />
         ) : (

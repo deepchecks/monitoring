@@ -4,7 +4,7 @@ import { Stack, Button, Divider, styled } from '@mui/material';
 
 import { CloseIcon } from 'assets/icon/icon';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface FiltersResetButtonProps {
   title?: string;

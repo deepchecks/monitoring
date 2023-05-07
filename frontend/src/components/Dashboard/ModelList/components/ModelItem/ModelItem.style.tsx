@@ -1,7 +1,7 @@
 import { AlertSeverity } from 'api/generated';
 import { alpha, Box, ListItemButton, styled, Typography, Stack } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface StyledContainerProps {
   active: boolean;
@@ -16,10 +16,11 @@ export const StyledContainer = styled(ListItemButton, {
   },
   cursor: 'pointer',
   position: 'relative',
-  backgroundColor: active ? 'rgba(209, 216, 220, 0.5)' : theme.palette.common.white,
+  backgroundColor: active ? theme.palette.grey[200] : 'transparent',
   ':hover': {
-    backgroundColor: theme.palette.grey[100]
+    backgroundColor: theme.palette.grey[200]
   },
+  borderRadius: '16px',
   transition: 'background-color 0.3s ease',
   borderBottom: `1px solid ${theme.palette.grey.light}`,
   ':last-of-type': {

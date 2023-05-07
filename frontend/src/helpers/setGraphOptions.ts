@@ -1,6 +1,6 @@
 import { AlertSchema } from 'api/generated';
 import { alpha } from '@mui/material';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export const PREVIOUS_PERIOD = '|previous_period';
 

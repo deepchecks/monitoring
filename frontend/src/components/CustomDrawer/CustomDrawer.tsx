@@ -2,7 +2,7 @@ import React, { PropsWithChildren } from 'react';
 
 import { Drawer, DrawerProps, styled } from '@mui/material';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 
 interface CustomDrawerProps extends DrawerProps {
   loading?: boolean;

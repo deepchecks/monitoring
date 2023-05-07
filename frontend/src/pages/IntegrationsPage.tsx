@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Box, Stack } from '@mui/material';
 
-import { ConnectSlack } from '../components/ConnectSlack';
+import { ConnectSlack } from '../components/Integrations/ConnectSlack';
 import HeaderLayout from 'components/HeaderLayout';
 
 import { featuresList, TierControlWrapper } from 'helpers/tierControl';

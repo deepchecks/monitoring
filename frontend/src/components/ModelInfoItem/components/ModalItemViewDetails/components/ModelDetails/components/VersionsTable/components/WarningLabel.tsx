@@ -2,7 +2,7 @@ import React from 'react';
 import { WarningIcon } from 'assets/icon/icon';
 import { Stack, styled, Typography } from '@mui/material';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface WarningLabelProps {
   numberOfAlerts: number;

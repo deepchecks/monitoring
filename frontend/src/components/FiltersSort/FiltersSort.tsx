@@ -10,8 +10,8 @@ import {
 import { Box, Divider, Menu, MenuItem, SelectChangeEvent, Stack, styled, TextField, Typography } from '@mui/material';
 
 import { DatePicker } from '../DatePicker/DatePicker';
-import { SelectPrimary } from '../SelectPrimary/SelectPrimary';
-import { SelectSeverity, SeverityAll, severityAll } from '../SelectSeverity';
+import { SelectPrimary } from '../Select/SelectPrimary';
+import { SelectSeverity, SeverityAll, severityAll } from '../Select/SelectSeverity';
 import { FiltersResetButton } from './components/FiltersResetButton';
 import FiltersSortButton from './components/FiltersSortButton';
 
@@ -20,7 +20,7 @@ import { reportEvent } from 'helpers/services/mixPanel';
 import { resetAlertFilters } from 'helpers/alertFilters';
 import { handleSetParams } from 'helpers/utils/getParams';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;

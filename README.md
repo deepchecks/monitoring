@@ -70,3 +70,4 @@ Deepchecks Monitoring open source installation is released under the AGPL 3.0. P
 
 Using premium features (contained in the `backend/deepchecks_monitoring/ee` directory) with a self-hosted instance requires a Deepchecks license. To learn more, [book a demo](https://deepchecks.com/book-demo/) or see our [pricing page](https://deepchecks.com/pricing).
 
+Looking for a 💯% open-source solution? Check out the [Monitoring OSS](https://github.com/deepchecks/monitoring-oss) repository, which is purged of all proprietary code and features.

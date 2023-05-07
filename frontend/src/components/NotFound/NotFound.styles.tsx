@@ -1,7 +1,7 @@
 import { FlexColumnContainer } from 'components/base/Container/Container.styles';
 import { StyledH1 } from 'components/base/Text/Header.styles';
 import styled from 'styled-components';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 const NotFoundContainer = styled(FlexColumnContainer)`
   width: 100vw;

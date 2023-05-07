@@ -40,7 +40,7 @@ const BillingPlanCard = (props: BillingPlanCardProps) => {
   const handleClick = () => handleUpgradeClick(quantity);
 
   return (
-    <BillingCardContainer border>
+    <BillingCardContainer>
       <RowAutoGap>
         <Col16Gap>
           <StyledH3>{title(tierName as string)}</StyledH3>

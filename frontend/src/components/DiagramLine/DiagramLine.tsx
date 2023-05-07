@@ -12,11 +12,11 @@ import { frequencyValues } from 'helpers/utils/frequency';
 import { alpha, Box, Typography, styled } from '@mui/material';
 
 import LegendsList from './LegendsList/LegendsList';
-import DiagramTutorialTooltip from '../DiagramTutorialTooltip';
-import { Loader } from '../Loader';
+import DiagramTutorialTooltip from './DiagramTutorialTooltip/DiagramTutorialTooltip';
+import { Loader } from '../base/Loader/Loader';
 
 import { DiagramLineProps } from './DiagramLine.types';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 import { constants } from './diagramLine.constants';
 
 Chart.register(...registerables, zoomPlugin);
@@ -247,15 +247,10 @@ function DiagramLine({
             unit: minTimeUnit
           }
         },
-        y: analysis
-          ? {
-              min: range.current.min,
-              max: range.current.max === 0 ? 1 : undefined
-            }
-          : {
-              min: range.current.min,
-              max: range.current.max <= 1 ? 1 : undefined
-            }
+        y: {
+          min: range.current.min,
+          max: range.current.max <= 1 ? 1 : undefined
+        }
       }
     }),
     [
@@ -321,7 +316,7 @@ function DiagramLine({
 
   return isLoading ? (
     <Loader sx={{ transform: 'translate(0, -16%)' }} />
-  ) : !data.datasets.length || data.datasets.every(d => !d) ? (
+  ) : !data.datasets?.length || data.datasets.every(d => !d) ? (
     <StyledNoDataWarningContainer>
       <StyledNoDataWarning variant="h4">{noDataMessage}</StyledNoDataWarning>
     </StyledNoDataWarningContainer>

@@ -51,7 +51,16 @@ export const Checkbox = (props: CheckboxProps) => {
             key={i}
             value={option.value}
             control={<MUICheckbox disabled={disabled} checked={state.includes(option.value)} />}
-            label={option.label && <Text color={() => labelColor(option.value)} text={option.label} type="bodyBold" />}
+            label={
+              option.label && (
+                <Text
+                  color={() => labelColor(option.value)}
+                  text={option.label}
+                  type="bodyBold"
+                  margin="2px 0 0 -2px"
+                />
+              )
+            }
             onChange={() => handleCheckboxClick(option.value)}
           />
         ))}

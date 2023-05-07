@@ -4,7 +4,7 @@ import { styled, Tooltip, Typography } from '@mui/material';
 import { StyledTableCell, StyledTableRow } from '../../../ModelDetails.style';
 import dayjs from 'dayjs';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface SingleErrorProps {
   error: IngestionErrorSchema;

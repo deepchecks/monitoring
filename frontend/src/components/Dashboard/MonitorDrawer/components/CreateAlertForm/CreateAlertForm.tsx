@@ -17,7 +17,7 @@ import { SelectCondition } from './SelectCondition';
 
 import { checkInfoInitValue, monitorInfo } from './CreateAlertForm.helpers';
 
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface EditMonitorProps {
   monitor: MonitorSchema;

@@ -7,7 +7,7 @@ import {
   useDeleteModelNoteApiV1ModelsNotesNoteIdDelete,
   useRetrieveModelNotesApiV1ModelsModelIdNotesGet
 } from 'api/generated';
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { CreateNote } from './components/CreateNote';
 import { NotesList } from './components/NotesList';
 

@@ -19,8 +19,8 @@ const SuiteViewPage = () => {
   const runSuitePayload = JSON.parse(`${queryParams.get('dataToSend')}`) as SingleCheckRunOptions;
   const formattedPayload = {
     ...runSuitePayload,
-    start_time: runSuitePayload.start_time.replace('plus', '+'),
-    end_time: runSuitePayload.end_time.replace('plus', '+')
+    start_time: runSuitePayload?.start_time?.replace('plus', '+'),
+    end_time: runSuitePayload?.end_time?.replace('plus', '+')
   };
 
   const getSuite = async () => {

@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
@@ -12,14 +12,16 @@ import { GlobalStateProvider } from './helpers/context/GlobalProvider';
 import { StatsTimeProvider } from './helpers/hooks/useStatsTime';
 import { UserProvider } from './helpers/hooks/useUser';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import Layout from 'components/Layout/Layout';
 
 import 'overlayscrollbars/overlayscrollbars.css';
 
-import { lazyRetry, pathsInfo } from 'helpers/helper';
+import { lazyRetry, pathsInfo } from 'helpers/routes';
 
-import { theme } from 'theme';
+import { StyledThemeProvider } from 'components/lib';
+
+import './components/lib/assets/css/fonts.css';
 
 const DashboardPage = lazy(() => lazyRetry(() => import('./pages/DashboardPage')));
 const CompleteDetails = lazy(() => lazyRetry(() => import('./pages/CompleteDetails')));
@@ -37,7 +39,7 @@ const App = () => {
   return (
     <InitializationProvider>
       <BrowserRouter>
-        <ThemeProvider theme={theme}>
+        <StyledThemeProvider>
           <Sentry.ErrorBoundary fallback={<NotFoundPage />}>
             <QueryClientProvider client={queryClient}>
               <CssBaseline />
@@ -98,7 +100,7 @@ const App = () => {
               </LocalizationProvider>
             </QueryClientProvider>
           </Sentry.ErrorBoundary>
-        </ThemeProvider>
+        </StyledThemeProvider>
       </BrowserRouter>
     </InitializationProvider>
   );

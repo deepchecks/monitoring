@@ -1,6 +1,6 @@
 import React, { createContext, FC, useContext } from 'react';
 
-import { PathInfo, pathsInfo } from 'helpers/helper';
+import { PathInfo, pathsInfo } from 'helpers/routes';
 
 export interface IContext {
   dashboard_id: number;

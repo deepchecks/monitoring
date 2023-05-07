@@ -10,7 +10,7 @@ describe("test dashboard", () => {
         model_info = response;
         cy.visit("/");
         // Check for model name under models list
-        cy.contains("h6", "Models")
+        cy.contains("h1", "Models")
           .parent()
           .parent()
           .within(() => {

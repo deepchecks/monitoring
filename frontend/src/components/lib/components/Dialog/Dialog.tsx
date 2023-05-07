@@ -34,20 +34,20 @@ export const Dialog = (props: DialogProps) => {
 
   return (
     <MUIDialog open={open} onClose={closeDialog} {...otherProps}>
-      <DialogContent sx={{ padding: '8px 12px', minWidth: '600px' }}>
-        <Container flexDirection="row" justifyContent="space-between">
+      <DialogContent sx={{ padding: '16px 14px', minWidth: '600px' }}>
+        <Container flexDirection="row" justifyContent="space-between" padding="12px 16px">
           <Text text={title} type="h1" />
-          <CloseIcon onClick={closeDialog} color="primary" fontSize="large" sx={{ cursor: 'pointer' }} />
+          <CloseIcon onClick={closeDialog} color="primary" sx={{ cursor: 'pointer' }} />
         </Container>
         <Container textAlign="center">{children}</Container>
-        <Container gap="24px" flexDirection="row">
+        <Container gap="24px" flexDirection="row" justifyContent="center">
           <Button
             label={submitButtonLabel}
             onClick={submitButtonAction}
             disabled={submitButtonDisabled}
             color={submitButtonAlertType ? 'error' : 'primary'}
           />
-          <Button label={cancelButtonLabel} onClick={closeDialog} color="info" />
+          <Button label={cancelButtonLabel} onClick={closeDialog} variant="outlined" />
         </Container>
       </DialogContent>
     </MUIDialog>

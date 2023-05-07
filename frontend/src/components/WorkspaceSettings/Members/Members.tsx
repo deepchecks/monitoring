@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { MemberSchema, useRetrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 import { MembersListActionDialog } from './components/MembersListActionDialog';
 import { MembersHeader } from './components/MembersHeader';
 import { MembersTable } from './components/MembersTable/MembersTable';

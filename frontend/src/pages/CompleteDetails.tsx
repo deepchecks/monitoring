@@ -6,9 +6,8 @@ import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
+import { Alert } from '@mui/material';
 
-import { Logo } from '../components/Logo';
-import { theme } from '../theme';
 import Typography from '@mui/material/Typography';
 import { ThemeProvider } from '@mui/material/styles';
 
@@ -18,8 +17,10 @@ import {
 } from '../api/generated';
 
 import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../helpers/services/userService';
-import { Loader } from 'components/Loader';
-import { Alert } from '@mui/material';
+import { Loader } from 'components/base/Loader/Loader';
+import { StyledLogo } from 'components/lib';
+
+import { theme } from '../components/lib/theme';
 
 export const CompleteDetails = () => {
   const { data: completeDetailsData, isLoading } = useGetCompleteDetailsApiV1UsersCompleteDetailsGet();
@@ -78,7 +79,7 @@ export const CompleteDetails = () => {
             justifyContent: 'center'
           }}
         >
-          <Logo isColored={true} />
+          <StyledLogo withLabel />
           <Typography sx={{ fontWeight: 700, my: 8 }}>
             At this point, Deepchecks Hub will only be available by invitation. Please contact us at info@deepchecks.com
             to get an invite.
@@ -98,7 +99,7 @@ export const CompleteDetails = () => {
             alignItems: 'center'
           }}
         >
-          <Logo isColored={true} />
+          <StyledLogo withLabel />
           <Typography sx={{ fontWeight: 300 }}>Some extra details so we can help you better.</Typography>
           {acceptInvite ? (
             <Alert

@@ -7,7 +7,7 @@ import { updateSubscriptionApiV1BillingSubscriptionSubscriptionIdPut } from 'api
 import { BillingText } from '../Billing.styles';
 import { FlexContainer } from 'components/base/Container/Container.styles';
 
-import { Loader } from 'components/Loader';
+import { Loader } from 'components/base/Loader/Loader';
 
 import { constants } from '../billing.constants';
 

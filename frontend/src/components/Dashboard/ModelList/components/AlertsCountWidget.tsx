@@ -4,7 +4,7 @@ import { useCountAlertsApiV1AlertsCountActiveGet } from 'api/generated';
 
 import { Stack } from '@mui/material';
 
-import { AlertCount, SEVERITY } from 'components/AlertCount';
+import { AlertCount, SEVERITY } from 'components/Alerts/AlertCount';
 import { SelectedModelAlerts } from '../ModelList';
 
 interface AlertsCountWidgetProps {

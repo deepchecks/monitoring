@@ -1,25 +1,22 @@
 import React from 'react';
 
-import { StyledContainer, StyledHeading, StyledButton, StyledLine } from './MonitorListHeader.style';
+import { StyledButton, StyledContainer, StyledText } from 'components/lib';
 
 import { NativePlus } from 'assets/icon/icon';
+
+import { DrawerNames } from '../Dashboard.types';
 
 interface MonitorListHeaderProps {
   onClick: (monitorName: DrawerNames) => void;
 }
 
-import { DrawerNames } from '../Dashboard.types';
-
 export const MonitorListHeader = ({ onClick }: MonitorListHeaderProps) => {
   const handleClick = () => onClick(DrawerNames.CreateMonitor);
 
   return (
-    <StyledContainer>
-      <StyledHeading>Monitors</StyledHeading>
-      <StyledLine />
-      <StyledButton onClick={handleClick} startIcon={<NativePlus />}>
-        Add monitor
-      </StyledButton>
+    <StyledContainer width="100%" flexDirection="row" justifyContent="space-between" alignItems="center">
+      <StyledText text="Monitors" type="h2" />
+      <StyledButton onClick={handleClick} label="Add monitor" startIcon={<NativePlus />} width="170px" />
     </StyledContainer>
   );
 };

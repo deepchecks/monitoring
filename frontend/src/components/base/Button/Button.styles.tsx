@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { Button } from '@mui/material';
-import { theme } from 'theme';
+import { theme } from 'components/lib/theme';
 
 interface ButtonProps {
   fontSize?: string;
