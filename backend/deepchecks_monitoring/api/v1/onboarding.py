@@ -37,6 +37,7 @@ class Step(int, enum.Enum):
     DATA = 3
     LABELS = 4
 
+
 @router.get(
     "/api/v1/onboarding",
     response_model=Step,
