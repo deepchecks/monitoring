@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Stepper from '@mui/material/Stepper';
@@ -13,12 +13,21 @@ import { StyledCodeSnippet } from 'components/lib';
 
 import { constants } from './onBoarding.constants';
 
+import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
+
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
 }
 
 const OnBoarding = ({ dataType }: OnBoardingProps) => {
   const [activeStep, setActiveStep] = useState(1);
+  const [apiToken, setApiToken] = useState('');
+
+  const regenerateApiToken = () => {
+    regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
+      value ? setApiToken(value) : setApiToken('API_TOKEN');
+    });
+  };
 
   const buttonLabel = (i: number) => (i === constants.steps.length - 1 ? `Finish (${dataType})` : 'Continue');
 
@@ -27,6 +36,10 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
       ? window.location.replace('/')
       : setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
   };
+
+  useEffect(() => {
+    regenerateApiToken();
+  }, []);
 
   return (
     <OnBoardingStepperContainer>
@@ -37,7 +50,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
             <StepContent>
               <Typography>{step.description}</Typography>
               <StyledCodeSnippet code={step.codeSnippet} />
-              {step?.secondCodeSnippet && <StyledCodeSnippet code={step.secondCodeSnippet} />}
+              {step?.secondCodeSnippet && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
