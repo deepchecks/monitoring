@@ -725,7 +725,7 @@ async def get_query_with_cache(
     m.update(str(is_ref).encode())
     key = m.hexdigest()
 
-    lock = redis.lock(f'lock:{key}')
+    lock = redis.lock(f"lock:{key}")
     value = None
     while value is None:
         value = redis.get(key)
