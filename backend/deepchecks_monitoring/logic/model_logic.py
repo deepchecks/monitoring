@@ -220,7 +220,7 @@ def get_results_for_model_versions_per_window(
         if not parallel or len(jobs) <= 2:
             jobs = [job[0](*job[1], **job[2]) for job in jobs]
         else:
-            jobs = Parallel(n_jobs=2)(jobs)
+            jobs = Parallel(n_jobs=8)(jobs)
 
         for model_version, version_results in model_results.items():
             for result in version_results:
