@@ -38,16 +38,18 @@ class Step(int, enum.Enum):
     DATA = 3
     LABELS = 4
 
+
 class StepSchema(BaseModel):
     """Schema for onboarding steps."""
 
     step: Step
 
+
 @router.get(
-    "/onboarding",
+    '/onboarding',
     response_model=StepSchema,
     tags=[Tags.CONFIG],
-    summary="Get onboarding state")
+    summary='Get onboarding state')
 async def get_onboarding_state(
         model_name: t.Optional[str] = Query(default=None),
         session: AsyncSession = AsyncSessionDep,
