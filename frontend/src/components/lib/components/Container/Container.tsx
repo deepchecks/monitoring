@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, forwardRef } from 'react';
 import { Box, BoxProps, useTheme } from '@mui/material';
 import { isDarkMode } from '../../theme/darkMode.helpers';
 
@@ -8,7 +8,7 @@ export interface ContainerProps extends BoxProps {
   background?: string;
 }
 
-export const Container = (props: ContainerProps) => {
+export const Container = forwardRef((props: ContainerProps, ref) => {
   const {
     children,
     type,
@@ -18,7 +18,8 @@ export const Container = (props: ContainerProps) => {
     padding = '12px',
     width = '100%',
     gap = '8px',
-    borderRadius = '12px'
+    borderRadius = '12px',
+    ...otherProps
   } = props;
 
   const theme = useTheme();
@@ -45,9 +46,12 @@ export const Container = (props: ContainerProps) => {
       gap={gap}
       borderRadius={borderRadius}
       sx={{ background: bgToUse() }}
-      {...props}
+      ref={ref}
+      {...otherProps}
     >
       {children}
     </Box>
   );
-};
+});
+
+Container.displayName = 'Container';

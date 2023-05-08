@@ -42,10 +42,10 @@ const { heading, reset, searchFieldPlaceholder } = constants.modelList;
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
   const { models, isLoading } = useModels();
 
-  const { data: connectedModels = [] } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const { data: connectedModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
   const connectedModelsMap = useMemo(() => {
     const map: Record<string, ConnectedModelSchema> = {};
-    connectedModels.forEach(model => (map[model.id] = model));
+    (Array.isArray(connectedModels) ? connectedModels : []).forEach(model => (map[model.id] = model));
     return map;
   }, [connectedModels]);
 

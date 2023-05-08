@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const BillingPaymentWrapper = ({ children, clientSecret, stripeApiKey }: Props) => {
-  const stripePromise = loadStripe(`${stripeApiKey}`);
+  const stripePromise = useMemo(() => loadStripe(stripeApiKey), [stripeApiKey]);
 
   return (
     <Elements key={stripeApiKey} stripe={stripePromise} options={{ clientSecret: clientSecret }}>
