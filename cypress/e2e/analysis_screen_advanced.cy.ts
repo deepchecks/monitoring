@@ -10,7 +10,7 @@ describe("Analysis screen drilldown", () => {
       })
       .then(() => {
         cy.visit("/analysis");
-        cy.contains("span", "No comparison");
+        cy.contains("div", "No comparison");
         // cy.get('input[value="11/05/2022 - 11/08/2022"]')
         //  .parent()
         //  .first()
