@@ -45,7 +45,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
     const handleUserStep = setInterval(async () => {
       const res = await getOnboardingStateApiV1OnboardingGet();
 
-      if (res?.step < 3) {
+      if (res?.step < 4) {
         setActiveStep(res?.step);
       } else if (res?.step === 4) {
         redirectToDashboard();
