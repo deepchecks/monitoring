@@ -7,7 +7,7 @@ import { Container } from '../../Container/Container';
 import { isDarkMode } from '../../../theme/darkMode.helpers';
 
 export interface SelectProps {
-  selections: any[];
+  selections: { value: any; label: string }[];
   state: any;
   setState: (state: any) => void;
 }
@@ -56,14 +56,14 @@ export const Select = (props: SelectProps) => {
 
   return (
     <Container flexDirection="row" gap="16px">
-      {selections.map((value: any, i) => {
-        const isSelected = value === state;
+      {selections.map((selection, i) => {
+        const isSelected = selection.value === state;
 
         return (
           <Button
             key={i}
-            value={value}
-            onClick={() => handleSelect(value)}
+            value={selection.value}
+            onClick={() => handleSelect(selection.value)}
             sx={{
               borderWidth: '1px',
               borderStyle: 'solid',
@@ -81,7 +81,7 @@ export const Select = (props: SelectProps) => {
               }
             }}
           >
-            {value}
+            {selection.label}
           </Button>
         );
       })}
