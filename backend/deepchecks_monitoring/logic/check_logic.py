@@ -535,7 +535,7 @@ def create_execution_data_query(
         elif with_labels:
             columns = columns + [SAMPLE_LABEL_COL]
 
-        data_query = select([table.c[col] for col in columns])
+        data_query = select([table.c[col] for col in sorted(columns)])
 
         if filter_labels_exist:
             data_query = data_query.where(table.c[SAMPLE_LABEL_COL].isnot(None))
@@ -553,6 +553,8 @@ def create_execution_data_query(
 
         # Forcefully add the sample id and ts columns
         columns = set(columns + [SAMPLE_ID_COL, SAMPLE_TS_COL])
+        # Sort the columns to create a deterministic query for profiling purposes
+        columns = sorted(columns)
 
         # If frequency is defined, partitioning the data by the defined frequency and selecting n_samples
         # samples per partition
