@@ -18,19 +18,15 @@ interface AnalysisHeaderOptions {
 }
 
 const MAX_WINDOWS_COUNT = 31;
+const periodComparison = constants.header.periodComparison;
+const referenceComparison = constants.header.referenceComparison;
+const noComparison = constants.header.noComparison;
+const comparisonDropdownValues = [noComparison, referenceComparison, periodComparison];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
-  const {
-    period,
-    setPeriod,
-    frequency,
-    setFrequency,
-    compareByReference,
-    setCompareByReference,
-    compareWithPreviousPeriod,
-    setCompareWithPreviousPeriod
-  } = useContext(AnalysisContext);
+  const { period, setPeriod, frequency, setFrequency, setCompareByReference, setCompareWithPreviousPeriod } =
+    useContext(AnalysisContext);
 
   const [minDate, setMinDate] = useState<Date | null>(
     model.start_time && frequency ? dayjs.unix(model.start_time).toDate() : null
@@ -39,14 +35,7 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     model.latest_time && frequency ? dayjs.unix(model.latest_time + frequencyValues.DAY).toDate() : null
   );
 
-  const periodComparison = constants.header.periodComparison;
-  const referenceComparison = constants.header.referenceComparison;
-  const noComparison = constants.header.noComparison;
-  const comparisonDropdownVal = compareByReference
-    ? referenceComparison
-    : compareWithPreviousPeriod
-    ? periodComparison
-    : noComparison;
+  const [comparisonDropdownVal, setComparisonDropdownVal] = useState(noComparison);
 
   useEffect(() => {
     if (frequency) {
@@ -132,20 +121,18 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     }
   };
 
-  const handleSelectChange = (event: SelectChangeEvent) => {
-    const selectedValue = event.target.value;
-
-    if (selectedValue === referenceComparison) {
+  useEffect(() => {
+    if (comparisonDropdownVal === referenceComparison) {
       setCompareByReference(true);
       setCompareWithPreviousPeriod(false);
-    } else if (selectedValue === periodComparison) {
+    } else if (comparisonDropdownVal === periodComparison) {
       setCompareByReference(false);
       setCompareWithPreviousPeriod(true);
     } else {
       setCompareByReference(false);
       setCompareWithPreviousPeriod(false);
     }
-  };
+  }, [comparisonDropdownVal]);
 
   return (
     <>
@@ -178,9 +165,9 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
         sx={{ minWidth: '115px', marginRight: '12px' }}
         size="small"
         value={comparisonDropdownVal}
-        onChange={e => handleSelectChange(e as SelectChangeEvent)}
+        onChange={e => setComparisonDropdownVal(e.target.value as string)}
       >
-        {[noComparison, referenceComparison, periodComparison].map((itemVal: string) => (
+        {comparisonDropdownValues.map((itemVal: string) => (
           <MenuItem key={itemVal} value={itemVal}>
             {itemVal}
           </MenuItem>
