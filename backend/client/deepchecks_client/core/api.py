@@ -15,13 +15,12 @@ import warnings
 from copy import copy
 from datetime import datetime
 
+import deepchecks_client
 import httpx
 import packaging.version
 import pandas as pd
-from httpx import URL
-
-import deepchecks_client
 from deepchecks_client.core.utils import DataFilter, maybe_raise, parse_timestamp
+from httpx import URL
 
 __all__ = ['API']
 

@@ -19,11 +19,11 @@ import pandas as pd
 import pendulum as pdl
 from deepchecks.core.checks import BaseCheck
 from deepchecks.core.reduce_classes import ReduceMixin
-
 from deepchecks_client._shared_docs import docstrings
 from deepchecks_client.core.utils import (ColumnType, DataFilter, DeepchecksColumns, DeepchecksEncoder, TaskType,
                                           classification_label_formatter, parse_timestamp, pretty_print,
                                           validate_frequency)
+
 from .api import API
 
 if t.TYPE_CHECKING:

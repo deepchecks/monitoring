@@ -21,7 +21,7 @@ const Billing = () => {
     const response = (await getSubscriptionsApiV1BillingSubscriptionGet()) as Subscriptions[];
 
     if (response) {
-      if ((response as unknown as resError).error_message) {
+      if (!Array.isArray(response) || (response as unknown as resError).error_message) {
         setIsLoading(false);
       } else {
         setSubscriptions([...response]);
