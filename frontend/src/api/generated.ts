@@ -17,6 +17,8 @@ import { customInstance } from '../helpers/services/customAxios';
 import type { ErrorType } from '../helpers/services/customAxios';
 export type SlackInstallationCallbackApiV1SlackInstallGetParams = { code: string; error?: string; state?: string };
 
+export type GetOnboardingStateApiV1OnboardingGetParams = { model_name?: string };
+
 export type GetOrCreateVersionApiV1ModelsModelIdVersionPostParams = { identifier_kind?: IdentifierKind };
 
 export type CreateModelNotesApiV1ModelsModelIdNotesPostParams = { identifier_kind?: IdentifierKind };
@@ -75,10 +77,6 @@ export type GetAllAlertRulesApiV1ConfigAlertRulesGetParams = {
 };
 
 export type GetCheckDisplayApiV1ChecksCheckIdDisplayModelVersionIdPost200Item = { [key: string]: any };
-
-export type RunManyChecksTogetherApiV1ChecksRunManyPost200 = { [key: string]: CheckResultSchema };
-
-export type RunManyChecksTogetherApiV1ChecksRunManyPostParams = { check_id: number[] };
 
 export type GetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGetParams = { identifier_kind?: IdentifierKind };
 
@@ -260,6 +258,26 @@ export interface SubscriptionCreationResponse {
   subscription_id: string;
 }
 
+/**
+ * Sort order of ingestion errors output.
+ */
+export type Step = typeof Step[keyof typeof Step];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Step = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+  NUMBER_3: 3,
+  NUMBER_4: 4
+} as const;
+
+/**
+ * Schema for onboarding steps.
+ */
+export interface StepSchema {
+  step: Step;
+}
+
 export type StandartWebhookPropertiesHttpHeaders = { [key: string]: string };
 
 export type StandartWebhookPropertiesKind =
@@ -339,7 +357,7 @@ export interface PagerDutyWebhookProperties {
   name: string;
   description: string;
   notification_levels?: AlertSeverity[];
-  api_access_key: string;
+  api_access_key?: string;
   event_routing_key: string;
   event_group?: string;
   event_class?: string;
@@ -472,6 +490,19 @@ export interface MonitorNotebookSchema {
 }
 
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
+
+/**
+ * Monitor execution frequency.
+ */
+export type Frequency = typeof Frequency[keyof typeof Frequency];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Frequency = {
+  HOUR: 'HOUR',
+  DAY: 'DAY',
+  WEEK: 'WEEK',
+  MONTH: 'MONTH'
+} as const;
 
 /**
  * Schema defines the parameters for creating new monitor.
@@ -724,19 +755,6 @@ export interface IdResponse {
 export interface HTTPValidationError {
   detail?: ValidationError[];
 }
-
-/**
- * Monitor execution frequency.
- */
-export type Frequency = typeof Frequency[keyof typeof Frequency];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const Frequency = {
-  HOUR: 'HOUR',
-  DAY: 'DAY',
-  WEEK: 'WEEK',
-  MONTH: 'MONTH'
-} as const;
 
 /**
  * Schema to be returned to the client for the features control.
@@ -2460,79 +2478,14 @@ export const useGetModelAutoFrequencyApiV1ModelsModelIdAutoFrequencyGet = <
 
 Parameters
 ----------
-check_ids : List[int]
-    ID of the check.
-monitor_options : MonitorOptions
-    The "monitor" options.
-session : AsyncSession, optional
-    SQLAlchemy session.
-
-Returns
--------
-CheckResultSchema
-    Check run result.
- * @summary Run Many Checks Together
- */
-export const runManyChecksTogetherApiV1ChecksRunManyPost = (
-  monitorOptions: MonitorOptions,
-  params: RunManyChecksTogetherApiV1ChecksRunManyPostParams
-) => {
-  return customInstance<RunManyChecksTogetherApiV1ChecksRunManyPost200>({
-    url: `/api/v1/checks/run-many`,
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    data: monitorOptions,
-    params
-  });
-};
-
-export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>
->;
-export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationBody = MonitorOptions;
-export type RunManyChecksTogetherApiV1ChecksRunManyPostMutationError = ErrorType<HTTPValidationError>;
-
-export const useRunManyChecksTogetherApiV1ChecksRunManyPost = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>,
-    TError,
-    { data: MonitorOptions; params: RunManyChecksTogetherApiV1ChecksRunManyPostParams },
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>,
-    { data: MonitorOptions; params: RunManyChecksTogetherApiV1ChecksRunManyPostParams }
-  > = props => {
-    const { data, params } = props ?? {};
-
-    return runManyChecksTogetherApiV1ChecksRunManyPost(data, params);
-  };
-
-  return useMutation<
-    Awaited<ReturnType<typeof runManyChecksTogetherApiV1ChecksRunManyPost>>,
-    TError,
-    { data: MonitorOptions; params: RunManyChecksTogetherApiV1ChecksRunManyPostParams },
-    TContext
-  >(mutationFn, mutationOptions);
-};
-
-/**
- * Run a check for each time window by start-end.
-
-Parameters
-----------
 check_id : int
     ID of the check.
 monitor_options : MonitorOptions
     The "monitor" options.
 session : AsyncSession, optional
     SQLAlchemy session.
+resources_provider: ResourcesProvider
+    Resources provider.
 
 Returns
 -------
@@ -2600,6 +2553,8 @@ monitor_options : MonitorOptions
     The window options.
 session : AsyncSession, optional
     SQLAlchemy session.
+resources_provider: ResourcesProvider
+    Resources provider.
 
 Returns
 -------
@@ -2856,6 +2811,8 @@ monitor_options : SingleCheckRunOptions
    The monitor options.
 session : AsyncSession
     SQLAlchemy session.
+resources_provider: ResourcesProvider
+    Resources provider.
 
 Returns
 -------
@@ -3338,6 +3295,8 @@ session : AsyncSession, optional
     SQLAlchemy session.
 cache_funcs
 user
+resources_provider: ResourcesProvider
+    Resources provider.
 
 Returns
 -------
@@ -5467,6 +5426,58 @@ export const useGetCountSamplesApiV1ModelVersionsModelVersionIdCountSamplesGet =
   >(queryKey, queryFn, { enabled: !!modelVersionId, ...queryOptions }) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
   };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Get onboarding state.
+
+Parameters
+----------
+model_name : t.Optional[str]
+    Optional to specify a specific model.
+session : AsyncSession
+    SQLAlchemy session.
+ * @summary Get onboarding state
+ */
+export const getOnboardingStateApiV1OnboardingGet = (
+  params?: GetOnboardingStateApiV1OnboardingGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<StepSchema>({ url: `/api/v1/onboarding`, method: 'get', params, signal });
+};
+
+export const getGetOnboardingStateApiV1OnboardingGetQueryKey = (
+  params?: GetOnboardingStateApiV1OnboardingGetParams
+) => [`/api/v1/onboarding`, ...(params ? [params] : [])];
+
+export type GetOnboardingStateApiV1OnboardingGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOnboardingStateApiV1OnboardingGet>>
+>;
+export type GetOnboardingStateApiV1OnboardingGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useGetOnboardingStateApiV1OnboardingGet = <
+  TData = Awaited<ReturnType<typeof getOnboardingStateApiV1OnboardingGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  params?: GetOnboardingStateApiV1OnboardingGetParams,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOnboardingStateApiV1OnboardingGet>>, TError, TData> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOnboardingStateApiV1OnboardingGetQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOnboardingStateApiV1OnboardingGet>>> = ({ signal }) =>
+    getOnboardingStateApiV1OnboardingGet(params, signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getOnboardingStateApiV1OnboardingGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
   query.queryKey = queryKey;
 
