@@ -81,7 +81,8 @@ async def get_onboarding_state(
     latest_version: ModelVersion = (await session.execute(latest_version_query)).scalars().first()
     if not latest_version:
         return {'step': Step.MODEL}
-    if latest_version.start_time == pdl.datetime(3000, 1, 1):
+   # if start time is after end time, it means no data has been ingested yet
+    if latest_version.start_time > latest_version.end_time:
         return {'step': Step.VERSION}
     labels_table = model.get_sample_labels_table(session)
     has_labels = (await session.execute(
