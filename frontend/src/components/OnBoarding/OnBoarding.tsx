@@ -23,6 +23,10 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
   const [activeStep, setActiveStep] = useState(1);
   const [apiToken, setApiToken] = useState('API_TOKEN');
 
+  const isLastStep = activeStep === 3;
+
+  const redirectToDashboard = () => window.location.replace('/');
+
   const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
       value && setApiToken(value);
@@ -44,7 +48,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
       if (res?.step < 3) {
         setActiveStep(res?.step);
       } else if (res?.step === 4) {
-        () => window.location.replace('/');
+        redirectToDashboard();
       }
     }, 5000);
 
@@ -64,7 +68,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
-              {activeStep === 3 && <StyledButton label={'Skip'} onClick={() => window.location.replace('/')} />}
+              {isLastStep && <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} />}
             </StepContent>
           </Step>
         ))}

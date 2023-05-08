@@ -53,5 +53,6 @@ export const constants = {
         url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#updating-the-labels'
       }
     }
-  ]
+  ],
+  skipBtnLabel: 'Skip'
 };
