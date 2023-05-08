@@ -6,7 +6,7 @@ import { MemberSchema } from 'api/generated';
 
 import { StyledTableRow, StyledTableCell, StyledIconButton } from './MembersTable.style';
 
-import { Edit, Trash } from 'assets/icon/icon';
+import { ModeEdit, Trashcan } from 'assets/icon/icon';
 
 dayjs.extend(localizedFormat);
 
@@ -28,10 +28,10 @@ export const MembersTableRow = ({ member, editMember, removeMember }: MembersTab
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
       <StyledTableCell align="right">
         <StyledIconButton onClick={() => editMember(member)}>
-          <Edit />
+          <ModeEdit />
         </StyledIconButton>
         <StyledIconButton onClick={() => removeMember(member)}>
-          <Trash />
+          <Trashcan />
         </StyledIconButton>
       </StyledTableCell>
     </StyledTableRow>

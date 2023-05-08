@@ -9,8 +9,7 @@ import Billing from './Billing/Billing';
 import Members from './Members/Members';
 import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
 import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
-
-import { StyledH1 } from 'components/base/Text/Header.styles';
+import { Text } from 'components/lib/components/Text/Text';
 
 import { resError } from 'helpers/types/resError';
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
@@ -63,10 +62,14 @@ const WorkspaceSettings = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <StyledH1 margin="24px 0 8px">{constants.title}</StyledH1>
-      <Box sx={{ borderBottom: 1 }}>
+      <Text type="h1" margin="36px 0 27px" lineHeight="32.78px" text={constants.title} />
+      <Box sx={{ borderBottom: 1, borderColor: theme => theme.palette.grey[200] }}>
         {is_cloud && (
-          <Tabs value={value} onChange={handleTabChange}>
+          <Tabs
+            sx={{ '& .MuiTabs-indicator': { height: '4px' }, '& .MuiTab-root': { textTransform: 'uppercase' } }}
+            value={value}
+            onChange={handleTabChange}
+          >
             <Tab label={constants.billingTabLabel} />
             <Tab label={constants.membersTabLabel} />
           </Tabs>

@@ -26,7 +26,7 @@ export const MembersTable = ({ members, handleOpenActionDialog }: MembersTablePr
   const removeMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.remove, member);
 
   return (
-    <TableContainer component={Paper} sx={{ boxShadow: 'none', maxHeight: 'calc(100vh - 237px)' }}>
+    <TableContainer component={Paper} sx={{ boxShadow: 'none', maxHeight: 'calc(100vh - 265px)' }}>
       <Table stickyHeader sx={{ minWidth: 650 }} aria-label={constants.table.ariaLabel}>
         <TableHead>
           <StyledTableRow>
