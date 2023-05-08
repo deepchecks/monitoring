@@ -30,6 +30,7 @@ from tests.common import Payload, TestAPI, upload_classification_data
 def as_payload(v):
     return t.cast(Payload, v)
 
+
 @pytest.mark.asyncio
 async def test_alert_scheduling(
     async_session: AsyncSession,
@@ -39,12 +40,16 @@ async def test_alert_scheduling(
     resources_provider: ResourcesProvider,
     test_api: TestAPI
 ):
+    now = pdl.now().set(minute=0, second=0, microsecond=0)
+    start = now - pdl.duration(hours=10)
+
     await async_session.execute(
         sa.update(Model).where(Model.id == classification_model["id"]).values({
             Model.data_ingestion_alert_frequency: Frequency.HOUR,
             Model.data_ingestion_alert_label_count: 2,
             Model.data_ingestion_alert_label_ratio: 1,
             Model.data_ingestion_alert_sample_count: 3,
+            Model.data_ingestion_alert_latest_schedule: start,
         }))
     await async_session.flush()
     await async_session.commit()
@@ -55,8 +60,6 @@ async def test_alert_scheduling(
         test_api.create_model_version(classification_model["id"], dict(name="v3", classes=["0", "1", "2"])),
     ]
 
-    now = pdl.now("utc").set(minute=0, second=0, microsecond=0)
-    start = now - pdl.duration(hours=8)
     daterange = [start.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
     no_label_daterange = [start.add(hours=hours) for hours in [3, 4]]
     extra_count_daterange = [start.add(hours=hours) for hours in [1, 3, 4, 5]]
@@ -79,7 +82,7 @@ async def test_alert_scheduling(
         sa.select(Task).where(Task.bg_worker_task == ModelDataIngestionAlerter.queue_name())
     )).all()
 
-    assert len(tasks) == now.hour
+    assert len(tasks) == 7
 
     worker = ModelDataIngestionAlerter()
     for task in tasks:
