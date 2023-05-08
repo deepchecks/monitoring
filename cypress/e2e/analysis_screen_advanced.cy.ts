@@ -10,7 +10,9 @@ describe("Analysis screen drilldown", () => {
       })
       .then(() => {
         cy.visit("/analysis");
-        cy.contains("div", "No comparison");
+        cy.contains("div", "No comparison").click({
+          force: true,
+        });
         cy.contains("li", "Compare with previous period").click({
           force: true,
         });
