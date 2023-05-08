@@ -70,10 +70,10 @@ async def test_alert_scheduling(
         upload_classification_data(test_api, version["id"],
                                    daterange=no_label_daterange, model_id=classification_model["id"],
                                    is_labeled=False,
-                                   id_prefix='no_label')
+                                   id_prefix="no_label")
         upload_classification_data(test_api, version["id"],
                                    daterange=extra_count_daterange, model_id=classification_model["id"],
-                                   id_prefix='extra')
+                                   id_prefix="extra")
 
     # == Act
     await AlertsScheduler(engine=async_engine).run_all_organizations()

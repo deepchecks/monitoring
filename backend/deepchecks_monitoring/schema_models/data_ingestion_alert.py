@@ -8,8 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the data-ingestion alert ORM model."""
-import typing as t
-
 import pendulum as pdl
 import sqlalchemy as sa
 
