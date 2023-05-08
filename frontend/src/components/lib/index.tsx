@@ -18,6 +18,7 @@ import { Notification as StyledNotification } from './components/Notification/No
 import { Input as StyledInput } from './components/Input/Input';
 import { Dropdown as StyledDropdown } from './components/Dropdown/Dropdown';
 import { NavLink as StyledNavLink } from './components/NavLink/NavLink';
+import { CodeSnippet as StyledCodeSnippet } from './components/Container/CodeSnippet/CodeSnippet';
 
 export {
   StyledThemeProvider,
@@ -39,5 +40,6 @@ export {
   StyledNotification,
   StyledInput,
   StyledDropdown,
-  StyledNavLink
+  StyledNavLink,
+  StyledCodeSnippet
 };
