@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
-import Box from '@mui/material/Box';
 import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
 import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
-import { StyledCodeSnippet } from 'components/lib';
+import { StyledButton, StyledCodeSnippet } from 'components/lib';
 
-import { regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
+import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
@@ -23,20 +21,12 @@ interface OnBoardingProps {
 
 const OnBoarding = ({ dataType }: OnBoardingProps) => {
   const [activeStep, setActiveStep] = useState(1);
-  const [apiToken, setApiToken] = useState('');
+  const [apiToken, setApiToken] = useState('API_TOKEN');
 
-  const regenerateApiToken = () => {
+  const regenerateApiToken = async () => {
     regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
-      value ? setApiToken(value) : setApiToken('API_TOKEN');
+      value && setApiToken(value);
     });
-  };
-
-  const buttonLabel = (i: number) => (i === constants.steps.length - 1 ? `Finish (${dataType})` : 'Continue');
-
-  const handleNext = (i: number) => {
-    i === constants.steps.length - 1
-      ? window.location.replace('/')
-      : setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
   };
 
   useEffect(() => {
@@ -44,13 +34,27 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
   }, []);
 
   useEffect(() => {
-    reportEvent(events.onBoarding.movedStep, { step: constants.steps[activeStep].title, dataType: 'Demo' });
+    reportEvent(events.onBoarding.movedStep, { step: constants.steps[activeStep].title, dataType: `${dataType}` });
+  }, [activeStep]);
+
+  useEffect((): void | (() => void) => {
+    const handleUserStep = setInterval(async () => {
+      const res = await getOnboardingStateApiV1OnboardingGet();
+
+      if (res?.step < 3) {
+        setActiveStep(res?.step);
+      } else if (res?.step === 4) {
+        () => window.location.replace('/');
+      }
+    }, 5000);
+
+    return () => clearInterval(handleUserStep);
   }, [activeStep]);
 
   return (
     <OnBoardingStepperContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map((step, i) => (
+        {constants.steps.map(step => (
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
@@ -60,13 +64,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
-              <Box>
-                <div>
-                  <Button variant="contained" onClick={() => handleNext(i)}>
-                    {buttonLabel(i)}
-                  </Button>
-                </div>
-              </Box>
+              {activeStep === 3 && <StyledButton label={'Skip'} onClick={() => window.location.replace('/')} />}
             </StepContent>
           </Step>
         ))}

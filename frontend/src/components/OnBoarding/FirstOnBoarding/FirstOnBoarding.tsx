@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import OnBoarding from '../OnBoarding';
 
-import { StyledContainer, StyledImage, StyledSelect, StyledText } from 'components/lib';
+import { StyledContainer, StyledImage, /* StyledSelect,*/ StyledText } from 'components/lib';
 import {
   FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
@@ -22,7 +22,7 @@ const FirstOnBoarding = () => {
     <StyledContainer maxWidth={770} margin="84px auto">
       <FirstOnBoardingSelectContainer>
         <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
-        {dataType && (
+        {/* dataType && (
           <StyledSelect
             selections={[
               { label: constants.first.userDataToggleLabel, value: 'user' },
@@ -31,7 +31,7 @@ const FirstOnBoarding = () => {
             state={dataType}
             setState={setDataType}
           />
-        )}
+          )*/}
       </FirstOnBoardingSelectContainer>
       {dataType ? (
         <OnBoarding dataType={dataType} />
