@@ -36,3 +36,5 @@ stripe==5.2.0
 jupytext>=1.14.5
 uvicorn==0.21.1
 xxhash==3.2.0
+ddtrace>=1.0,<2
+
