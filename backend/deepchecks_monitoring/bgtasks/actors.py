@@ -29,13 +29,10 @@ from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_log
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
-from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
-from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
-from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 
-__all__ = ["execute_monitor", "execute_model_data_ingestion_task"]
+__all__ = ["execute_monitor"]
 
 
 async def _execute_monitor(
@@ -153,90 +150,6 @@ async def _execute_monitor(
     return []
 
 
-@actor(queue_name="models", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
-async def execute_model_data_ingestion_task(
-        organization_id: int,  # pylint: disable=unused-argument
-        organization_schema: str,  # pylint: disable=unused-argument
-        model_id: int,
-        end_time: str,
-        start_time: str,
-        session: AsyncSession,
-        resources_provider: ResourcesProvider,
-        logger: logging.Logger,  # pylint: disable=unused-argument
-        **kwargs  # pylint: disable=unused-argument
-) -> t.List[Alert]:
-    """Execute alert rule."""
-    model: Model = (
-        await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
-    ).scalars().first()
-    freq: Frequency = model.data_ingestion_alert_frequency
-    pdl_start_time = as_pendulum_datetime(start_time)
-    pdl_end_time = as_pendulum_datetime(end_time)
-
-    def truncate_date(col, agg_time_unit: str = "day"):
-        return func.cast(func.extract("epoch", func.date_trunc(agg_time_unit, col)), sa.Integer)
-
-    def sample_id(columns):
-        return getattr(columns, SAMPLE_ID_COL)
-
-    def sample_timestamp(columns):
-        return getattr(columns, SAMPLE_TS_COL)
-
-    def sample_label(columns):
-        return getattr(columns, SAMPLE_LABEL_COL)
-
-    tables = [version.get_monitor_table(session) for version in model.versions]
-    if not tables:
-        return
-
-    labels_table = model.get_sample_labels_table(session)
-    # Get all samples within time window from all the versions
-    data_query = sa.union_all(*(
-        sa.select(
-            sample_id(table.c).label("sample_id"),
-            truncate_date(sample_timestamp(table.c), freq.value.lower()).label("timestamp")
-        ).where(
-            sample_timestamp(table.c) <= pdl_end_time,
-            sample_timestamp(table.c) > pdl_start_time
-        ).distinct()
-        for table in tables)
-    )
-    joined_query = sa.select(sa.literal(model_id).label("model_id"),
-                             data_query.c.sample_id,
-                             data_query.c.timestamp,
-                             func.cast(sample_label(labels_table.c), sa.String).label("label")) \
-        .join(labels_table, onclause=data_query.c.sample_id == sample_id(labels_table.c), isouter=True)
-
-    rows = (await session.execute(
-        sa.select(
-            joined_query.c.model_id,
-            joined_query.c.timestamp,
-            func.count(joined_query.c.sample_id).label("count"),
-            func.count(func.cast(joined_query.c.label, sa.String)).label("label_count"))
-        .group_by(joined_query.c.model_id, joined_query.c.timestamp)
-        .order_by(joined_query.c.model_id, joined_query.c.timestamp, "count"),
-    )).fetchall()
-
-    pendulum_freq = freq.to_pendulum_duration()
-    alerts = []
-    for row in rows:
-        sample_count = row.count
-        label_count = row.label_count
-        label_ratio = sample_count / label_count
-        start_time = as_pendulum_datetime(row.timestamp)
-        end_time = start_time + pendulum_freq
-        if (model.data_ingestion_alert_label_count and model.data_ingestion_alert_label_count > label_count) or \
-            (model.data_ingestion_alert_sample_count and model.data_ingestion_alert_sample_count > sample_count) or \
-                (model.data_ingestion_alert_label_ratio and model.data_ingestion_alert_label_ratio < label_ratio):
-            alert = DataIngestionAlert(model_id=model_id, start_time=start_time, end_time=end_time,
-                                       sample_count=sample_count, label_count=label_count, label_ratio=label_ratio)
-            alerts.append(alert)
-            session.add(alert)
-    await session.commit()
-
-    return alerts
-
-
 @actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
 async def execute_monitor(
         organization_id: int,
@@ -326,7 +239,7 @@ class WorkerBootstrap:
     resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]]
     settings_type: t.ClassVar[t.Type[WorkerSettings]]
     task_broker_type: t.ClassVar[t.Type[TasksBroker]] = TasksBroker
-    actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor, execute_model_data_ingestion_task]
+    actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor]
 
     try:
         from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel

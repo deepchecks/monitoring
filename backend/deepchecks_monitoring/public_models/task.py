@@ -26,13 +26,15 @@ UNIQUE_NAME_TASK_CONSTRAINT = 'task_unique_constraint'
 class BackgroundWorker(abc.ABC):
     """Base class for background workers."""
 
+    @classmethod
     @abc.abstractmethod
-    def queue_name(self) -> str:
+    def queue_name(cls) -> str:
         """Queue name."""
         pass
 
+    @classmethod
     @abc.abstractmethod
-    def delay_seconds(self) -> int:
+    def delay_seconds(cls) -> int:
         """The delay in seconds between the time task is queued to when it is executed."""
         pass
 

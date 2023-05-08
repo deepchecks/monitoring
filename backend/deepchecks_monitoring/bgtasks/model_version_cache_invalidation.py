@@ -15,10 +15,12 @@ DELAY = 60
 class ModelVersionCacheInvalidation(BackgroundWorker):
     """Worker to remove monitor cache entries which data has been updated."""
 
-    def queue_name(self) -> str:
+    @classmethod
+    def queue_name(cls) -> str:
         return QUEUE_NAME
 
-    def delay_seconds(self) -> int:
+    @classmethod
+    def delay_seconds(cls) -> int:
         return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider):

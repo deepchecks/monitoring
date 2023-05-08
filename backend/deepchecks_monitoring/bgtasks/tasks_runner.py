@@ -20,6 +20,7 @@ from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
+from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
 from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
@@ -172,7 +173,7 @@ def execute_worker():
                 sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
-                   DeleteDbTableTask()]
+                   ModelDataIngestionAlerter(), DeleteDbTableTask()]
 
         # AIOKafka is spamming our logs, disable it for errors and warnings
         logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)

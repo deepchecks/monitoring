@@ -17,10 +17,12 @@ class DeleteDbTableTask(BackgroundWorker):
 
     """
 
-    def queue_name(self) -> str:
+    @classmethod
+    def queue_name(cls) -> str:
         return QUEUE_NAME
 
-    def delay_seconds(self) -> int:
+    @classmethod
+    def delay_seconds(cls) -> int:
         return 0
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider):
