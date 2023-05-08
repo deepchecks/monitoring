@@ -65,7 +65,7 @@ const useDataIngestion = (modelId: number | null = null, selectedPointType?: str
     () => ({
       datasets:
         Object.entries(data).map(([key, item], index) => ({
-          data: item
+          data: (Array.isArray(item) ? item : [])
             .sort((a, b) => a.timestamp - b.timestamp)
             .map(({ timestamp, count, label_count }) => ({
               x: dayjs(timestamp * 1000).valueOf(),
