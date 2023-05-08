@@ -28,14 +28,13 @@ async def test_start_onboarding(
     test_api: TestAPI,
     client: TestClient,
 ):
-    assert get_onboarding_step(client)["step"] == Step.REGISTERED.value
-    assert get_onboarding_step(client, model_name="moodel")["step"] == Step.REGISTERED.value
-    model = t.cast(Payload, test_api.create_model(model={"name": "moodel", "task_type": TaskType.MULTICLASS.value}))
     assert get_onboarding_step(client)["step"] == Step.MODEL.value
+    assert get_onboarding_step(client, model_name="moodel")["step"] == Step.MODEL.value
+    model = t.cast(Payload, test_api.create_model(model={"name": "moodel", "task_type": TaskType.MULTICLASS.value}))
     test_api.create_model_version(model_id=model["id"])
-    assert get_onboarding_step(client)["step"] == Step.VERSION.value
-    assert get_onboarding_step(client, model_name="moodel")["step"] == Step.VERSION.value
-    assert get_onboarding_step(client, model_name="moodel2")["step"] == Step.REGISTERED.value
+    assert get_onboarding_step(client)["step"] == Step.DATA.value
+    assert get_onboarding_step(client, model_name="moodel")["step"] == Step.DATA.value
+    assert get_onboarding_step(client, model_name="moodel2")["step"] == Step.MODEL.value
 
 
 @pytest.mark.asyncio
@@ -52,11 +51,11 @@ async def test_model_onboarding(
         is_labeled=False
     )
     assert resp.status_code == 200, resp
-    assert get_onboarding_step(client)["step"] == Step.DATA.value
+    assert get_onboarding_step(client)["step"] == Step.LABELS.value
     resp, _, _ = upload_classification_data(
         api=test_api,
         model_version_id=classification_model_version["id"],
         model_id=classification_model["id"]
     )
     assert resp.status_code == 200, resp
-    assert get_onboarding_step(client)["step"] == Step.LABELS.value
+    assert get_onboarding_step(client)["step"] == Step.DONE.value

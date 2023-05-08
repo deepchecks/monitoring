@@ -13,7 +13,6 @@
 import enum
 import typing as t
 
-import pendulum as pdl
 import sqlalchemy as sa
 from fastapi import Query
 from pydantic import BaseModel
@@ -32,11 +31,10 @@ from .router import router
 class Step(int, enum.Enum):
     """Sort order of ingestion errors output."""
 
-    REGISTERED = 0
     MODEL = 1
-    VERSION = 2
-    DATA = 3
-    LABELS = 4
+    DATA = 2
+    LABELS = 3
+    DONE = 4
 
 
 class StepSchema(BaseModel):
@@ -73,7 +71,7 @@ async def get_onboarding_state(
             sa.select(Model).order_by(Model.created_at.desc()).limit(1)
         )).scalars().first()
     if model is None:
-        return {'step': Step.REGISTERED}
+        return {'step': Step.MODEL}
     latest_version_query = (sa.select(ModelVersion)
                             .where(ModelVersion.model_id == model.id)
                             .order_by(ModelVersion.end_time.desc()).limit(1)
@@ -83,11 +81,11 @@ async def get_onboarding_state(
         return {'step': Step.MODEL}
    # if start time is after end time, it means no data has been ingested yet
     if latest_version.start_time > latest_version.end_time:
-        return {'step': Step.VERSION}
+        return {'step': Step.DATA}
     labels_table = model.get_sample_labels_table(session)
     has_labels = (await session.execute(
         sa.select(labels_table.c[SAMPLE_LABEL_COL]).where(labels_table.c[SAMPLE_LABEL_COL].isnot(None)).limit(1)
     )).scalars().first() is not None
     if has_labels:
-        return {'step': Step.LABELS}
-    return {'step': Step.DATA}
+        return {'step': Step.DONE}
+    return {'step': Step.LABELS}
