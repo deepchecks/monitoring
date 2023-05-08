@@ -48,10 +48,12 @@ export const MonitorList = ({
   const [isDeleteMonitorDialogOpen, setIsDeleteMonitorDialogOpen] = useState(false);
 
   useEffect(() => {
-    const filtered = currentModelId
-      ? dashboardMonitors.filter(mon => mon.check.model_id === currentModelId)
-      : dashboardMonitors;
-    setMonitors(filtered);
+    if (dashboardMonitors.length) {
+      const filtered = currentModelId
+        ? dashboardMonitors.filter(mon => mon.check.model_id === currentModelId)
+        : dashboardMonitors;
+      setMonitors(filtered);
+    }
   }, [currentModelId, dashboardMonitors]);
 
   const handleDeleteMonitor = async () => {

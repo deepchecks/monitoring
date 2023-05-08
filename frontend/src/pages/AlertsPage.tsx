@@ -34,6 +34,36 @@ interface AlertsPageProps {
   resolved?: boolean;
 }
 
+function checkIsTwoWeeksOlder(
+  models: ModelManagmentSchema[],
+  alertFilters: GetAlertRulesApiV1AlertRulesGetParams,
+  alertRules: AlertRuleInfoSchema[] | undefined
+): boolean | undefined {
+  if (alertRules?.length === 0 && alertFilters?.models) {
+    const twoWeeksTimestamp = 1209600000;
+    const currentTimestamp = Number(new Date());
+    let selectedTimestamp: number | undefined;
+    // with selected model
+    if (alertFilters.models.length > 0) {
+      const selectedModelId = alertFilters.models[0];
+      const selectedModel = models.find(model => model.id === selectedModelId);
+      // response in seconds from server
+      selectedTimestamp = selectedModel?.latest_time && selectedModel.latest_time * 1000;
+    }
+    // without selected models
+    if (alertFilters.models.length === 0) {
+      // get all models' timestamps and find max of them in 1 loop
+      selectedTimestamp = models.reduce((max, cur) => {
+        if (cur.latest_time) return Math.max(cur.latest_time, max);
+        else return Math.max(0, max);
+      }, 0);
+    }
+
+    const modelEndTimeGap = selectedTimestamp && currentTimestamp - selectedTimestamp;
+    return modelEndTimeGap !== undefined ? modelEndTimeGap >= twoWeeksTimestamp : undefined;
+  }
+}
+
 export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
     getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams
@@ -97,7 +127,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
           {alertRulesIsLoading || isModelsLoading ? (
             <Loader />
           ) : alertRules?.length ? (
-            (alertRules || []).map(alertRule => (
+            (Array.isArray(alertRules) ? alertRules : []).map(alertRule => (
               <StyledListItem key={alertRule.id}>
                 <AlertsRulesItem
                   alertRule={alertRule}
@@ -143,36 +173,6 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     </>
   );
 };
-
-function checkIsTwoWeeksOlder(
-  models: ModelManagmentSchema[],
-  alertFilters: GetAlertRulesApiV1AlertRulesGetParams,
-  alertRules: AlertRuleInfoSchema[] | undefined
-): boolean | undefined {
-  if (alertRules?.length === 0 && alertFilters?.models) {
-    const twoWeeksTimestamp = 1209600000;
-    const currentTimestamp = Number(new Date());
-    let selectedTimestamp: number | undefined;
-    // with selected model
-    if (alertFilters.models.length > 0) {
-      const selectedModelId = alertFilters.models[0];
-      const selectedModel = models.find(model => model.id === selectedModelId);
-      // response in seconds from server
-      selectedTimestamp = selectedModel?.latest_time && selectedModel.latest_time * 1000;
-    }
-    // without selected models
-    if (alertFilters.models.length === 0) {
-      // get all models' timestamps and find max of them in 1 loop
-      selectedTimestamp = models.reduce((max, cur) => {
-        if (cur.latest_time) return Math.max(cur.latest_time, max);
-        else return Math.max(0, max);
-      }, 0);
-    }
-
-    const modelEndTimeGap = selectedTimestamp && currentTimestamp - selectedTimestamp;
-    return modelEndTimeGap !== undefined ? modelEndTimeGap >= twoWeeksTimestamp : undefined;
-  }
-}
 
 const StyledList = styled(List)({
   padding: 0,
