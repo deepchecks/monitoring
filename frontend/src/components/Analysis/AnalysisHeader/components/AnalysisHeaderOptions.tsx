@@ -180,15 +180,11 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
         value={comparisonDropdownVal}
         onChange={e => handleSelectChange(e as SelectChangeEvent)}
       >
-        <MenuItem key={noComparison} value={noComparison}>
-          {noComparison}
-        </MenuItem>
-        <MenuItem key={referenceComparison} value={referenceComparison}>
-          {referenceComparison}
-        </MenuItem>
-        <MenuItem key={periodComparison} value={periodComparison}>
-          {periodComparison}
-        </MenuItem>
+        {[noComparison, referenceComparison, periodComparison].map((itemVal: string) => (
+          <MenuItem key={itemVal} value={itemVal}>
+            {itemVal}
+          </MenuItem>
+        ))}
       </CustomStyledSelect>
     </>
   );
