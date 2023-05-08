@@ -132,11 +132,10 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
     }
   };
 
-  const handleSelectChange = (event: any) => {
+  const handleSelectChange = (event: SelectChangeEvent) => {
     const selectedValue = event.target.value;
 
     if (selectedValue === referenceComparison) {
-      console.log(compareByReference);
       setCompareByReference(true);
       setCompareWithPreviousPeriod(false);
     } else if (selectedValue === periodComparison) {
@@ -179,7 +178,7 @@ export const AnalysisHeaderOptions = ({ model }: AnalysisHeaderOptions) => {
         sx={{ minWidth: '115px', marginRight: '12px' }}
         size="small"
         value={comparisonDropdownVal}
-        onChange={e => handleSelectChange(e)}
+        onChange={e => handleSelectChange(e as SelectChangeEvent)}
       >
         <MenuItem key={noComparison} value={noComparison}>
           {noComparison}
