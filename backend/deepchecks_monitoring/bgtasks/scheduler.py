@@ -30,9 +30,9 @@ from sqlalchemy.orm import joinedload, load_only, sessionmaker
 from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
-from deepchecks_monitoring.public_models.task import Task as GlobalTask
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
+from deepchecks_monitoring.public_models.task import Task as GlobalTask
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL,
