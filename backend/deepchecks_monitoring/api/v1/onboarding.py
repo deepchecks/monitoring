@@ -43,15 +43,11 @@ class StepSchema(BaseModel):
     step: Step
 
 
-@router.get(
-    '/onboarding',
-    response_model=StepSchema,
-    tags=[Tags.CONFIG],
-    summary='Get onboarding state')
+@router.get('/onboarding', response_model=StepSchema, tags=[Tags.CONFIG], summary='Get onboarding state')
 async def get_onboarding_state(
         model_name: t.Optional[str] = Query(default=None),
         session: AsyncSession = AsyncSessionDep,
-):
+) -> StepSchema:
     """Get onboarding state.
 
     Parameters
@@ -71,21 +67,21 @@ async def get_onboarding_state(
             sa.select(Model).order_by(Model.created_at.desc()).limit(1)
         )).scalars().first()
     if model is None:
-        return {'step': Step.MODEL}
+        return StepSchema(step=Step.MODEL)
     latest_version_query = (sa.select(ModelVersion)
                             .where(ModelVersion.model_id == model.id)
                             .order_by(ModelVersion.end_time.desc()).limit(1)
                             .options(selectinload(ModelVersion.model)))
     latest_version: ModelVersion = (await session.execute(latest_version_query)).scalars().first()
     if not latest_version:
-        return {'step': Step.MODEL}
+        return StepSchema(step=Step.MODEL)
    # if start time is after end time, it means no data has been ingested yet
     if latest_version.start_time > latest_version.end_time:
-        return {'step': Step.DATA}
+        return StepSchema(step=Step.DATA)
     labels_table = model.get_sample_labels_table(session)
     has_labels = (await session.execute(
         sa.select(labels_table.c[SAMPLE_LABEL_COL]).where(labels_table.c[SAMPLE_LABEL_COL].isnot(None)).limit(1)
     )).scalars().first() is not None
     if has_labels:
-        return {'step': Step.DONE}
-    return {'step': Step.LABELS}
+        return StepSchema(step=Step.DONE)
+    return StepSchema(step=Step.LABELS)
