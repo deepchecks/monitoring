@@ -24,7 +24,7 @@ from deepchecks_monitoring.utils import database
 __all__ = ["ModelDataIngestionAlerter"]
 
 
-QUEUE_NAME = "model_data_ingestion alerter"
+QUEUE_NAME = "model data ingestion alerter"
 DELAY = 60
 
 
