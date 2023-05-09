@@ -26,7 +26,7 @@ export const constants = {
         `from deepchecks.tabular.datasets.regression.airbnb import load_data,\\ \n load_pre_calculated_prediction, load_pre_calculated_feature_importance \n\n ref_dataset, _ = load_data(data_format="Dataset") \n ref_predictions, _ = load_pre_calculated_prediction() \n feature_importance = load_pre_calculated_feature_importance() # Optional \n feature_importance \n\n from deepchecks_client import DeepchecksClient, create_schema, read_schema \n\n schema_file_path = "schema_file.yaml"\n create_schema(dataset=ref_dataset, schema_output_file=schema_file_path) \n read_schema(schema_file_path) \n\n import os \n\n host = "${window.location.origin}" \n dc_client = DeepchecksClient(host=host, token="${token}") \n\n model_name = "Airbnb"\n model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name="ver_1",\n schema=schema_file_path,\n feature_importance=feature_importance,\n reference_dataset=ref_dataset,\n reference_predictions=ref_predictions,\n task_type="regression")`,
       docLink: {
         label: 'Docs link >',
-        url: 'https://Docs link.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#creating-a-new-model-version'
+        url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#creating-a-new-model-version'
       }
     },
     {
@@ -38,7 +38,7 @@ export const constants = {
       secondCodeSnippet: (_token?: string) => ``,
       docLink: {
         label: 'Docs link >',
-        url: 'https://Docs link.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#uploading-production-data'
+        url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#uploading-production-data'
       }
     },
     {
@@ -50,7 +50,7 @@ export const constants = {
       secondCodeSnippet: (_token?: string) => '',
       docLink: {
         label: 'Docs link >',
-        url: 'https://Docs link.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#updating-the-labels'
+        url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#updating-the-labels'
       }
     }
   ],
