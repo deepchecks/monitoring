@@ -7,7 +7,7 @@ import { Stack } from '@mui/material';
 import { Input } from 'components/lib/components/Input/Input';
 import { Button } from 'components/lib/components/Button/Button';
 
-import { AddCircleOutline } from 'assets/icon/icon';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { MembersActionDialogOptions } from '../Members.type';
 import { constants } from '../members.constants';
@@ -40,7 +40,7 @@ export const MembersHeader = ({ organizationMembers, setMembersList, handleOpenA
         fullWidth
         sx={{ flex: 1 }}
       />
-      <Button startIcon={<AddCircleOutline fill="white" />} label="Invite Members" onClick={inviteMember} />
+      <Button startIcon={<AddCircleOutlineIcon fill="white" />} label="Invite Members" onClick={inviteMember} />
     </Stack>
   );
 };

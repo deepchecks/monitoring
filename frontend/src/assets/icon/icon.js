@@ -60,7 +60,6 @@ import { ReactComponent as Trash } from './trash.svg';
 import { ReactComponent as InfoIconFilled } from './infoIconFilled.svg';
 import { ReactComponent as NoDataToShowIcon } from './noDataToShowIcon.svg';
 import { ReactComponent as ExclamationMarkRhombus } from './exclamationMarkRhombus.svg';
-import { ReactComponent as AddCircleOutline } from './addCircleOutline.svg';
 
 export {
   Arrow,
@@ -124,6 +123,5 @@ export {
   Trash,
   InfoIconFilled,
   NoDataToShowIcon,
-  ExclamationMarkRhombus,
-  AddCircleOutline
+  ExclamationMarkRhombus
 };
