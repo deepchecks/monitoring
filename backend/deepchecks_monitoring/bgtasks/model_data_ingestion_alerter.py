@@ -140,24 +140,3 @@ class ModelDataIngestionAlerter(BackgroundWorker):
 
         await session.execute(sa.delete(Task).where(Task.id == task.id))
         await session.commit()
-
-
-async def insert_model_version_topic_delete_task(organization_id, entity_id, entity, session):
-    """Insert task to check delete kafka topics.
-
-    We do this when new topic is created in the data ingestion, and inside the worker itself if there was kafka error
-    or conditions to delete was not met (data is still being sent)
-    """
-    now = pdl.now().int_timestamp
-    # To avoid edge case where we:
-    # 1. worker: delete topic
-    # 2. server: create the topic + create task
-    # 3. worker: delete task
-    # By adding the floored timestamp the "created task" in server will have different name than the task being deleted
-    # by the worker
-    floored_now = now - now % DELAY
-    params = {"organization_id": organization_id, "id": entity_id, "entity": entity}
-    values = dict(name=f"{organization_id}:{entity}:{entity_id}:{floored_now}", bg_worker_task=QUEUE_NAME,
-                  params=params)
-
-    await session.execute(insert(Task).values(values).on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
