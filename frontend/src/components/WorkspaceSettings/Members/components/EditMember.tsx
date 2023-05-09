@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
-import { Dialog } from 'components/lib/components/Dialog/Dialog';
+import { Dialog as StyledDialog } from 'components/lib/components/Dialog/Dialog';
 
 import { MembersActionDialogWithInputs } from '../Members.type';
 import { constants } from '../members.constants';
@@ -20,7 +20,7 @@ export const EditMember = ({ member, open, closeDialog }: MembersActionDialogWit
   };
 
   return (
-    <Dialog
+    <StyledDialog
       open={open}
       title={constants.editMember.title}
       closeDialog={closeDialog}
@@ -40,6 +40,6 @@ export const EditMember = ({ member, open, closeDialog }: MembersActionDialogWit
           onChange={handleEmailChange}
         />
       </MembersActionDialogContentLayout>
-    </Dialog>
+    </StyledDialog>
   );
 };

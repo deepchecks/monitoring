@@ -11,7 +11,7 @@ interface DeletionDialogProps extends DialogProps {
 
 export const DeletionDialog = ({ messageStart, messageEnd, itemToDelete, ...otherProps }: DeletionDialogProps) => {
   return (
-    <Dialog submitButtonAlertType {...otherProps}>
+    <Dialog alertTypeButtons {...otherProps}>
       <Text
         type="h3"
         text={

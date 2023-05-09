@@ -13,7 +13,8 @@ export interface DialogProps extends MUIDialogProps {
   submitButtonLabel: string;
   submitButtonAction: () => void;
   submitButtonDisabled?: boolean;
-  submitButtonAlertType?: boolean;
+  alertTypeButtons?: boolean;
+  cancelButtonAction?: () => void;
   cancelButtonLabel?: string;
   children?: ReactNode | ReactNode[];
 }
@@ -25,12 +26,15 @@ export const Dialog = (props: DialogProps) => {
     title,
     submitButtonAction,
     submitButtonLabel,
+    cancelButtonAction,
     cancelButtonLabel = 'Cancel',
     submitButtonDisabled,
-    submitButtonAlertType,
+    alertTypeButtons,
     children,
     ...otherProps
   } = props;
+
+  const buttonColor = alertTypeButtons ? 'error' : 'primary';
 
   return (
     <MUIDialog open={open} onClose={closeDialog} {...otherProps}>
@@ -45,9 +49,14 @@ export const Dialog = (props: DialogProps) => {
             label={submitButtonLabel}
             onClick={submitButtonAction}
             disabled={submitButtonDisabled}
-            color={submitButtonAlertType ? 'error' : 'primary'}
+            color={buttonColor}
           />
-          <Button label={cancelButtonLabel} onClick={closeDialog} variant="outlined" />
+          <Button
+            label={cancelButtonLabel}
+            onClick={cancelButtonAction || closeDialog}
+            variant="outlined"
+            color={buttonColor}
+          />
         </Container>
       </DialogContent>
     </MUIDialog>

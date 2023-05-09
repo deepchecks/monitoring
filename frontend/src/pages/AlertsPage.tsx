@@ -23,7 +23,7 @@ import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
 import useModels from '../helpers/hooks/useModels';
-import { DeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
+import { DeletionDialog as StyledDeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
 
 const snackbarPosition = {
   vertical: 'bottom',
@@ -156,14 +156,14 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
       >
         <Box>{isError ? 'Something went wrong' : 'Success'}</Box>
       </AlertsSnackbar>
-      <DeletionDialog
+      <StyledDeletionDialog
         open={!!resolveAlertRule}
         title="Resolve All"
         closeDialog={() => setResolveAlertRule(null)}
         submitButtonLabel="Yes, continue"
         submitButtonAction={() => onResolve(resolveAlertRule)}
-        submitButtonAlertType={false}
         cancelButtonLabel="No, cancel"
+        alertTypeButtons={false}
         messageStart="You are about to resolve "
         itemToDelete={(resolveAlertRule?.alerts_count || 'all') + ' active alerts'}
         messageEnd=" for all the system blah blah blah. Are you sure you want to do this?"

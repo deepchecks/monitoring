@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete } from 'api/generated';
 
-import { DeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
+import { DeletionDialog as StyledDeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
@@ -24,7 +24,7 @@ export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: Memb
   };
 
   return (
-    <DeletionDialog
+    <StyledDeletionDialog
       open={open}
       title={title}
       closeDialog={closeDialog}
