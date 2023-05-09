@@ -325,7 +325,9 @@ async def enqueue_ingestion_tasks(model, schedules, duration, organization, sess
                     },
         ))
 
-    await session.execute(insert(GlobalTask).values(tasks))
+    # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
+    for i in range(0, len(tasks), 10):
+        await session.execute(insert(GlobalTask).values(tasks[i:i+10]))
 
 
 def is_serialization_error(error: DBAPIError):
