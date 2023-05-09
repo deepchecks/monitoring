@@ -15,7 +15,6 @@ import {
   TextField,
   Autocomplete,
   Typography,
-  DialogContentText,
   Snackbar,
   Alert
 } from '@mui/material';
@@ -26,8 +25,8 @@ import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
+import { DeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
 
 import useModels from '../helpers/hooks/useModels';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
@@ -252,16 +251,16 @@ export const ModelsPage = () => {
           )}
         </StyledModelsContainer>
       </Box>
-      <ActionDialog
+      <DeletionDialog
         open={!!modelIdToDelete}
         onClose={handleModalClose}
         title="Delete Model"
         submitButtonAction={handleDeleteModel}
         submitButtonLabel="Yes"
         closeDialog={handleModalClose}
-      >
-        <DialogContentText margin={'34px auto'}>Are you sure you want to delete this model?</DialogContentText>
-      </ActionDialog>
+        messageStart="Are you sure you want to delete this model?"
+      />
+
       <Snackbar
         anchorOrigin={{
           vertical: 'top',

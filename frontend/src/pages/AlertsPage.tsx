@@ -18,12 +18,12 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import { AlertsDrawer } from 'components/Alerts/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import { AlertsHeader } from 'components/Alerts/AlertsHeader';
-import { AlertsResolveDialog } from 'components/Alerts/AlertsResolveDialog';
 import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
 import useModels from '../helpers/hooks/useModels';
+import { DeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
 
 const snackbarPosition = {
   vertical: 'bottom',
@@ -79,16 +79,10 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     isLoading: alertRulesIsLoading,
     isError: isAlertRulesError
   } = useGetAlertRulesApiV1AlertRulesGet({ ...alertFilters, resolved: resolved });
-  const {
-    mutateAsync: resolveAllAlerts,
-    isError: resolveAllAlertsError,
-    isLoading: resolveAllAlertsIsLoading
-  } = useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost();
-  const {
-    mutateAsync: reactivateAllAlerts,
-    isError: reactivateAllAlertsError,
-    isLoading: reactivateAllAlertsIsLoading
-  } = useReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost();
+  const { mutateAsync: resolveAllAlerts, isError: resolveAllAlertsError } =
+    useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost();
+  const { mutateAsync: reactivateAllAlerts, isError: reactivateAllAlertsError } =
+    useReactivateResolvedAlertsApiV1AlertRulesAlertRuleIdAlertsReactivateResolvedPost();
   const { models, isLoading: isModelsLoading } = useModels();
 
   const onResolve = useCallback(
@@ -109,7 +103,6 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const handleCloseSuccess = () => setIsNotification(false);
 
   const isError = isAlertRulesError || resolveAllAlertsError || reactivateAllAlertsError;
-  const isLoading = reactivateAllAlertsIsLoading || resolveAllAlertsIsLoading;
 
   // checking if the end time of a selected model is older than 2 week
   // if there are no alerts to show
@@ -163,12 +156,17 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
       >
         <Box>{isError ? 'Something went wrong' : 'Success'}</Box>
       </AlertsSnackbar>
-      <AlertsResolveDialog
+      <DeletionDialog
         open={!!resolveAlertRule}
-        onClose={() => setResolveAlertRule(null)}
-        alertRule={resolveAlertRule}
-        onResolve={() => onResolve(resolveAlertRule)}
-        isLoading={isLoading}
+        title="Resolve All"
+        closeDialog={() => setResolveAlertRule(null)}
+        submitButtonLabel="Yes, continue"
+        submitButtonAction={() => onResolve(resolveAlertRule)}
+        submitButtonAlertType={false}
+        cancelButtonLabel="No, cancel"
+        messageStart="You are about to resolve "
+        itemToDelete={(resolveAlertRule?.alerts_count || 'all') + ' active alerts'}
+        messageEnd=" for all the system blah blah blah. Are you sure you want to do this?"
       />
     </>
   );
