@@ -8,14 +8,12 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-import pendulum as pdl
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from deepchecks_monitoring.public_models.organization import Organization
-from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, BackgroundWorker, Task
+from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
