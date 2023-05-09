@@ -160,7 +160,7 @@ async def add_checks(
             raise BadRequest(f'Check {check_creation_schema.name} is not compatible with the model task type')
         dp_check = BaseCheck.from_config(check_creation_schema.config)
         if not isinstance(dp_check, (SingleDatasetBaseCheck, TrainTestBaseCheck)):
-            raise ValueError('incompatible check type')
+            raise BadRequest('incompatible check type')
         check_object = Check(model_id=model.id, is_label_required=isinstance(dp_check, ReduceLabelMixin),
                              is_reference_required=isinstance(dp_check, TrainTestBaseCheck), created_by=user.id,
                              updated_by=user.id, **check_creation_schema.dict(exclude_none=True))
