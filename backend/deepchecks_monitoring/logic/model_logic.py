@@ -343,7 +343,7 @@ def get_results_for_model_versions_for_reference(
                                            y_pred_train=reference_table_pred, y_proba_train=reference_table_proba,
                                            with_display=False)
             else:
-                raise ValueError('incompatible check type')
+                curr_result = None
 
         # In case of exception in the run putting none result
         except errors.DeepchecksBaseError as e:
