@@ -314,7 +314,7 @@ async def enqueue_ingestion_tasks(model, schedules, duration, organization, sess
     tasks = []
     for schedule in schedules:
         tasks.append(dict(
-            name=f'Model:{model.id}:ts:{schedule.int_timestamp}',
+            name=f'Org:{organization.id}:Model:{model.id}:ts:{schedule.int_timestamp}',
             bg_worker_task=ModelDataIngestionAlerter.queue_name(),
             params={'model_id': model.id,
                     'end_time': schedule.to_iso8601_string(),

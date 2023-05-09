@@ -31,7 +31,7 @@ DELAY = 60
 
 
 class ModelDataIngestionAlerter(BackgroundWorker):
-    """Worker to delete kafka topics when they are no longer in use."""
+    """Worker that alerts about data ingestion stats in relation to a model."""
 
     @classmethod
     def queue_name(cls) -> str:
@@ -53,8 +53,10 @@ class ModelDataIngestionAlerter(BackgroundWorker):
             sa.select(Organization.schema_name).where(Organization.id == org_id)
         )).scalar_one_or_none()
 
-        # If organization was removed doing nothing
+        # If organization was removed - doing nothing
         if organization_schema is None:
+            await session.execute(sa.delete(Task).where(Task.id == task.id))
+            await session.commit()
             return
 
         await database.attach_schema_switcher_listener(
@@ -65,6 +67,13 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         model: Model = (
             await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
         ).scalars().first()
+
+        # in case it was deleted
+        if model is None:
+            await session.execute(sa.delete(Task).where(Task.id == task.id))
+            await session.commit()
+            return
+
         freq: Frequency = model.data_ingestion_alert_frequency
         pdl_start_time = as_pendulum_datetime(start_time)
         pdl_end_time = as_pendulum_datetime(end_time)
@@ -128,7 +137,6 @@ class ModelDataIngestionAlerter(BackgroundWorker):
                                            sample_count=sample_count, label_count=label_count, label_ratio=label_ratio)
                 alerts.append(alert)
                 session.add(alert)
-        await session.commit()
 
         await session.execute(sa.delete(Task).where(Task.id == task.id))
         await session.commit()
