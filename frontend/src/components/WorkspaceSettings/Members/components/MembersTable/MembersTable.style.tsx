@@ -20,11 +20,6 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => ({
     backgroundColor: theme.palette.grey[100]
   },
   border: 0
-
-  // '& th': {
-  //   // borderRadius: '4px',
-  //   backgroundColor: theme.palette.grey[600]
-  // }
 }));
 
 export const StyledIconButton = styled(IconButton)(({ theme }) => ({
