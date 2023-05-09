@@ -42,6 +42,11 @@ def upgrade() -> None:
     )
     op.add_column('models', sa.Column('data_ingestion_alert_frequency', sa.Enum('HOUR', 'DAY', 'WEEK', 'MONTH', name='frequency'), nullable=True))
     op.add_column('models', sa.Column('data_ingestion_alert_latest_schedule', sa.DateTime(timezone=True), nullable=True))
+    op.execute(sa.text('update models set data_ingestion_alert_frequency = \'DAY\''))
+    op.execute(sa.text('update models set data_ingestion_alert_latest_schedule = date_trunc(\'day\', timezone("timezone", now()))'))
+    op.alter_column('models', 'data_ingestion_alert_frequency', nullable=False)
+    op.alter_column('models', 'data_ingestion_alert_latest_schedule', nullable=False)
+
     op.add_column('models', sa.Column('data_ingestion_alert_label_ratio', sa.Float(), nullable=True))
     op.add_column('models', sa.Column('data_ingestion_alert_label_count', sa.Integer(), nullable=True))
     op.add_column('models', sa.Column('data_ingestion_alert_sample_count', sa.Integer(), nullable=True))
