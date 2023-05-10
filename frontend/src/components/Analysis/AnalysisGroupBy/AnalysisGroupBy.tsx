@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useContext, useState } from 'react';
 import dayjs, { ManipulateType } from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 
 import {
   CheckGroupBySchema,
@@ -25,6 +26,8 @@ import { CheckTypeOptions } from 'helpers/types/check';
 import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
 import { getAvailableFeatures } from 'helpers/utils/featuresUtils';
 import { SwitchButton } from 'components/base/Button/SwitchButton';
+
+dayjs.extend(utc);
 
 function getDayJsManipulateType(frequency: number): ManipulateType {
   switch (frequency) {
@@ -101,7 +104,7 @@ const AnalysisGroupByComponent = ({
         setFeatureImportance(featureImportance);
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
-          start_time: dayjs(timeLabel).subtract(1, getDayJsManipulateType(frequency)).toISOString(),
+          start_time: dayjs.utc(timeLabel).subtract(1, getDayJsManipulateType(frequency)).toISOString(),
           end_time: new Date(timeLabel).toISOString(),
           filter: { filters: activeFilters.length ? activeFilters : [] },
           ...(additionalKwargs && { additional_kwargs: additionalKwargs })
