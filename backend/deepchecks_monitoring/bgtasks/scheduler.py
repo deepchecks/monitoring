@@ -29,8 +29,10 @@ from sqlalchemy.orm import joinedload, load_only, sessionmaker
 
 from deepchecks_monitoring import __version__, config
 from deepchecks_monitoring.bgtasks.core import Task
+from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
+from deepchecks_monitoring.public_models.task import Task as GlobalTask
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL,
@@ -91,6 +93,7 @@ class AlertsScheduler:
 
         for org in organizations:
             await self.run_organization(org)
+            await self.run_organization_data_ingestion_alert(org)
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -161,6 +164,43 @@ class AlertsScheduler:
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
+
+    async def run_organization_data_ingestion_alert(self, organization):
+        """Try enqueue monitor execution tasks."""
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
+            models: t.List[Model] = await session.scalars(
+                select(Model)
+                .where(sa.or_(
+                    Model.data_ingestion_alert_label_count.isnot(None),
+                    Model.data_ingestion_alert_label_ratio.isnot(None),
+                    Model.data_ingestion_alert_sample_count.isnot(None)
+                )))
+
+            for model in models:
+                schedules = []
+                frequency = model.data_ingestion_alert_frequency.to_pendulum_duration()
+                schedule_time = model.next_data_ingestion_alert_schedule
+
+                while schedule_time <= model.end_time:
+                    schedules.append(schedule_time)
+                    schedule_time = schedule_time + frequency
+
+                if schedules:
+                    try:
+                        await enqueue_ingestion_tasks(model, schedules, frequency, organization, session)
+                        model.data_ingestion_alert_latest_schedule = schedules[-1]
+                        await session.commit()
+                    # NOTE:
+                    # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
+                    # error is possible. In that case we just skip the monitor and try again next time.
+                    except (SerializationError, DBAPIError) as error:
+                        if isinstance(error, DBAPIError) and not is_serialization_error(error):
+                            self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
+                            raise
 
 
 async def get_versions_hour_windows(
@@ -265,9 +305,29 @@ async def enqueue_tasks(monitor, schedules, organization, session):
             description='Monitor alert rules execution task',
             reference=f'Monitor:{monitor.id}',
             execute_after=schedule
-         ))
+        ))
 
-    await session.execute(insert(Task).values(tasks).on_conflict_do_nothing(constraint='name_uniqueness'))
+    # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
+    for i in range(0, len(tasks), 10):
+        await session.execute(insert(Task).values(tasks[i:i+10]).on_conflict_do_nothing(constraint='name_uniqueness'))
+
+
+async def enqueue_ingestion_tasks(model, schedules, duration, organization, session):
+    tasks = []
+    for schedule in schedules:
+        tasks.append(dict(
+            name=f'Org:{organization.id}:Model:{model.id}:ts:{schedule.int_timestamp}',
+            bg_worker_task=ModelDataIngestionAlerter.queue_name(),
+            params={'model_id': model.id,
+                    'end_time': schedule.to_iso8601_string(),
+                    'start_time': (schedule - duration).to_iso8601_string(),
+                    'organization_id': organization.id
+                    },
+        ))
+
+    # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
+    for i in range(0, len(tasks), 10):
+        await session.execute(insert(GlobalTask).values(tasks[i:i+10]))
 
 
 def is_serialization_error(error: DBAPIError):
