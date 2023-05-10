@@ -1245,7 +1245,7 @@ def test_auto_frequency(
     assert request.json() == {
         "frequency": Frequency.WEEK.value,
         "end": expected_end.int_timestamp,
-        "start": start_time.subtract(days=53, microseconds=1).int_timestamp,
+        "start": start_time.subtract(days=53).int_timestamp,
     }
 
 
