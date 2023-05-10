@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { Dialog, DialogProps } from './Dialog';
-import { Text } from '../Text/Text';
+import { Dialog, DialogProps } from '../Dialog';
+import { Text } from '../../Text/Text';
 
 interface DeletionDialogProps extends DialogProps {
   messageStart?: string;

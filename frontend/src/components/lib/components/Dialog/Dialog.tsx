@@ -41,7 +41,7 @@ export const Dialog = (props: DialogProps) => {
       <DialogContent sx={{ padding: '16px 14px', minWidth: '600px' }}>
         <Container flexDirection="row" justifyContent="space-between" padding="12px 16px">
           <Text text={title} type="h1" />
-          <CloseIcon onClick={closeDialog} color="primary" sx={{ cursor: 'pointer' }} />
+          <CloseIcon onClick={closeDialog} color={buttonColor} sx={{ cursor: 'pointer' }} />
         </Container>
         <Container textAlign="center">{children}</Container>
         <Container gap="24px" flexDirection="row" justifyContent="center">

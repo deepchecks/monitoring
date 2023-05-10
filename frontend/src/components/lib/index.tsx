@@ -10,6 +10,7 @@ import { Radio as StyledRadio } from './components/Button/Radio/Radio';
 import { Text as StyledText } from './components/Text/Text';
 import { Image as StyledImage } from './components/Image/Image';
 import { Dialog as StyledDialog } from './components/Dialog/Dialog';
+import { DeletionDialog as StyledDeletionDialog } from './components/Dialog/DeletionDialog/DeletionDialog';
 import { Severity as StyledSeverity } from './components/Severity/Severity';
 import { Logo as StyledLogo } from './components/Logo/Logo';
 import { Loader as StyledLoader } from './components/Loader/Loader';
@@ -19,7 +20,6 @@ import { Input as StyledInput } from './components/Input/Input';
 import { Dropdown as StyledDropdown } from './components/Dropdown/Dropdown';
 import { NavLink as StyledNavLink } from './components/NavLink/NavLink';
 import { CodeSnippet as StyledCodeSnippet } from './components/Container/CodeSnippet/CodeSnippet';
-import { DeletionDialog as StyledDeletionDialog } from './components/Dialog/DeletionDialog';
 
 export {
   StyledThemeProvider,
@@ -34,6 +34,7 @@ export {
   StyledText,
   StyledImage,
   StyledDialog,
+  StyledDeletionDialog,
   StyledSeverity,
   StyledLogo,
   StyledLoader,
@@ -42,6 +43,5 @@ export {
   StyledInput,
   StyledDropdown,
   StyledNavLink,
-  StyledCodeSnippet,
-  StyledDeletionDialog
+  StyledCodeSnippet
 };
