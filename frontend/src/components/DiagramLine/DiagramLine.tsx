@@ -99,6 +99,7 @@ function DiagramLine({
 
     return {
       ...data,
+      labels: data?.labels?.map(l => (l as number) - 1) || [],
       datasets: data.datasets.map(el => {
         el.data.forEach(item => {
           if (typeof item === 'number') {
