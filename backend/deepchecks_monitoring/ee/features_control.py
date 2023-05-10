@@ -116,4 +116,4 @@ class CloudFeaturesControl(FeaturesControl):
         self._monthly_predictions_limit = tier_conf.monthly_predictions_limit
         self._sso_enabled = tier_conf.sso
         self._rows_per_minute = tier_conf.rows_per_minute
-        self._onboarding_enabled = self.ld_client.variation("onBoardingEnabled", ld_user, default=True)
+        self._onboarding_enabled = self.ld_client.variation("onBoardingEnabled", ld_user, default=False)
