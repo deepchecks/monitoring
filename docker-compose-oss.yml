@@ -165,27 +165,6 @@ services:
       default:
         ipv4_address: 10.5.0.3
 
-  worker:
-    image: public.ecr.aws/deepchecks/monitoring:${DEEPCHECKS_APP_TAG}
-    command:
-      - /start/start-worker.sh
-    env_file:
-      - oss-conf.env
-    environment:
-      DEPLOYMENT_URL: https://$DOMAIN
-      SECRET_KEY: $DEECHECKS_SECRET
-    restart: always
-    volumes:
-      - ./bin:/start
-    depends_on:
-      - db
-      - kafka
-      - redis
-      - casdoor
-    networks:
-      default:
-        ipv4_address: 10.5.0.2
-
   caddy:
     image: caddy:2.6.1
     restart: unless-stopped

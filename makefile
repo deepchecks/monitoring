@@ -318,7 +318,6 @@ env-setup: external-services-setup
 	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
 	@sleep 15
 	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
-	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-worker.sh
 	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
 	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
 	@sleep 10
