@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 import asyncio
 import typing as t
-from datetime import datetime
 
 import pendulum as pdl
 import pytest
