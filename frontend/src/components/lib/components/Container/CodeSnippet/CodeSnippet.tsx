@@ -5,15 +5,14 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export interface CodeSnippetProps extends BoxProps {
   code: string;
+  copyBtn?: boolean;
 }
 
-export const CodeSnippet = ({ code }: CodeSnippetProps) => {
+export const CodeSnippet = ({ code, copyBtn }: CodeSnippetProps) => {
   const theme = useTheme();
 
   const handleCopy = () => {
-    const formattedCode = code.replace('\n', '');
-
-    navigator.clipboard.writeText(formattedCode);
+    navigator.clipboard.writeText(code);
   };
 
   return (
@@ -28,10 +27,12 @@ export const CodeSnippet = ({ code }: CodeSnippetProps) => {
         whiteSpace: 'pre-line'
       }}
     >
-      <ContentCopyIcon
-        sx={{ cursor: 'pointer', float: 'right', width: '24px', height: '24px', color: theme.palette.grey[500] }}
-        onClick={handleCopy}
-      />
+      {copyBtn && (
+        <ContentCopyIcon
+          sx={{ cursor: 'pointer', float: 'right', width: '24px', height: '24px', color: theme.palette.grey[500] }}
+          onClick={handleCopy}
+        />
+      )}
       <Typography variant="body1">{code}</Typography>
     </Box>
   );

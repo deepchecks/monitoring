@@ -8,8 +8,6 @@ import { StyledApiKey, StyledApiKeyContainer } from './APIKey.styles';
 
 import { StyledButton, StyledText, StyledContainer } from 'components/lib';
 
-import logger from 'helpers/services/logger';
-
 import { constants } from './apikey.constants';
 
 const { copied, copy, link, regenerate, text } = constants;
@@ -19,14 +17,9 @@ export function APIKey() {
   const [snackOpen, setSnackOpen] = useState(false);
 
   const regenerateApiToken = () => {
-    regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(
-      value => {
-        setApiToken(value);
-      },
-      reason => {
-        logger.info(reason);
-      }
-    );
+    regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
+      setApiToken(value);
+    });
   };
 
   const handleClick = () => {

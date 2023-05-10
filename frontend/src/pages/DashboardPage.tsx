@@ -10,9 +10,10 @@ import { DataIngestion } from 'components/Dashboard/DataIngestion';
 import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader/MonitorListHeader';
 import { MonitorList } from 'components/Dashboard/MonitorList';
 import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
-
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+
 import { getParams } from 'helpers/utils/getParams';
+import { featuresList, useTierControl } from 'helpers/tierControl';
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export const DashboardPage = () => {
       refetchOnWindowFocus: false
     }
   });
+  const onboardingEnabled = useTierControl({ feature: featuresList.onboarding_enabled });
 
   function refetchMonitors() {
     refetch();
@@ -48,10 +50,10 @@ export const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    if (dashboard?.monitors?.length === 0) {
+    if (dashboard?.monitors?.length === 0 && onboardingEnabled) {
       navigate({ pathname: '/onboarding' });
     }
-  }, [dashboard]);
+  }, [dashboard, onboardingEnabled]);
 
   return (
     <>
