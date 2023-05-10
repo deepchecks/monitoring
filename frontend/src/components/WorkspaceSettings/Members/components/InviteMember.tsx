@@ -4,7 +4,7 @@ import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
 import { Snackbar, Typography } from '@mui/material';
 
-import { Dialog as StyledDialog } from 'components/lib/components/Dialog/Dialog';
+import { StyledDialog } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
 
