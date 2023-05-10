@@ -5,7 +5,7 @@ import { MemberSchema } from 'api/generated';
 import { Stack } from '@mui/material';
 
 import { Input } from 'components/lib/components/Input/Input';
-import { Button } from 'components/lib/components/Button/Button';
+import { StyledButton } from 'components/lib';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
