@@ -40,7 +40,7 @@ export const MembersHeader = ({ organizationMembers, setMembersList, handleOpenA
         fullWidth
         sx={{ flex: 1 }}
       />
-      <Button startIcon={<AddCircleOutlineIcon fill="white" />} label="Invite Members" onClick={inviteMember} />
+      <StyledButton startIcon={<AddCircleOutlineIcon fill="white" />} label="Invite Members" onClick={inviteMember} />
     </Stack>
   );
 };
