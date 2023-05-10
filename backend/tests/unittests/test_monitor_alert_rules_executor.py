@@ -121,7 +121,6 @@ async def test_alert_scheduling(
     async_session: AsyncSession,
     async_engine: AsyncEngine,
     classification_model: dict,
-    user: User,
     resources_provider: ResourcesProvider,
     test_api: TestAPI,
 ):

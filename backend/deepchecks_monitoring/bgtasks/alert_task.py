@@ -31,7 +31,7 @@ from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 from deepchecks_monitoring.utils import database
 
-QUEUE_NAME = 'alerts'
+QUEUE_NAME = "alerts"
 
 
 class AlertsTask(BackgroundWorker):
@@ -49,9 +49,9 @@ class AlertsTask(BackgroundWorker):
         return 0
 
     async def run(self, task: Task, session: AsyncSession, resources_provider: ResourcesProvider):
-        organization_id = task.params['organization_id']
-        monitor_id = task.params['monitor_id']
-        timestamp = task.params['timestamp']
+        organization_id = task.params["organization_id"]
+        monitor_id = task.params["monitor_id"]
+        timestamp = task.params["timestamp"]
 
         organization_schema = (await session.execute(
             select(Organization.schema_name).where(Organization.id == organization_id)
@@ -61,7 +61,7 @@ class AlertsTask(BackgroundWorker):
         if organization_schema is not None:
             await database.attach_schema_switcher_listener(
                 session=session,
-                schema_search_path=[organization_schema, 'public']
+                schema_search_path=[organization_schema, "public"]
             )
 
             alerts = await execute_monitor(

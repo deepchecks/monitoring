@@ -73,8 +73,8 @@ async def delete_monitor_tasks(
         monitor_ids = [monitor_ids]
     await session.execute(
         sa.delete(Task).where(
-            sa.cast(Task.params["timestamp"].astext, TIMESTAMP(True)) > schedule,
-            sa.cast(Task.params["monitor_id"].astext, Integer).in_(monitor_ids),
+            sa.cast(Task.params['timestamp'].astext, TIMESTAMP(True)) > schedule,
+            sa.cast(Task.params['monitor_id'].astext, Integer).in_(monitor_ids),
         ),
-        execution_options={"synchronize_session": False}
+        execution_options={'synchronize_session': False}
     )
