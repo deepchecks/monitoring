@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
-import { Dialog as StyledDialog } from 'components/lib/components/Dialog/Dialog';
+import { StyledDialog } from 'components/lib';
 
 import { MembersActionDialogWithInputs } from '../Members.type';
 import { constants } from '../members.constants';
