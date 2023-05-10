@@ -26,7 +26,7 @@ import NoResults from 'components/NoResults';
 import { FiltersResetButton } from 'components/FiltersSort/components/FiltersResetButton';
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
-import { DeletionDialog as StyledDeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
+import { StyledDeletionDialog } from 'components/lib';
 
 import useModels from '../helpers/hooks/useModels';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';

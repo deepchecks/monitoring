@@ -23,7 +23,7 @@ import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
 import useModels from '../helpers/hooks/useModels';
-import { DeletionDialog as StyledDeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
+import { StyledDeletionDialog } from 'components/lib';
 
 const snackbarPosition = {
   vertical: 'bottom',
