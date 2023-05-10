@@ -317,7 +317,7 @@ async def get_model_auto_frequency(
         start_time = as_pendulum_datetime(end_time - lookback)
 
         if model.start_time > start_time:
-            start_time = pdl.instance(model.start_time).subtract(microseconds=1)
+            start_time = pdl.instance(model.start_time)
 
         period = pdl.period(start_time, end_time)
 

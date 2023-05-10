@@ -1239,7 +1239,7 @@ def test_auto_frequency(
     request = client.get(f"/api/v1/models/{model['id']}/auto-frequency")
 
     # Assert
-    expected_end = round_off_datetime(start_time, Frequency.WEEK).subtract(microseconds=1)
+    expected_end = round_off_datetime(start_time, Frequency.WEEK)
 
     assert request.status_code == 200
     assert request.json() == {
