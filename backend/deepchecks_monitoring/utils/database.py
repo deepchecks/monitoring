@@ -13,7 +13,6 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema, DDLElement
 
-
 __all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_switcher",
            "sqlalchemy_exception_to_asyncpg_exception"]
 

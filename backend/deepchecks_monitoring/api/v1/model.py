@@ -51,8 +51,8 @@ from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, Mo
 from deepchecks_monitoring.schema_models.monitor import Monitor, round_off_datetime
 from deepchecks_monitoring.utils import auth
 
-from .router import router
 from ...public_models.task import delete_monitor_tasks
+from .router import router
 
 
 class ModelNoteCreationSchema(BaseModel):

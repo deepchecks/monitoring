@@ -27,6 +27,7 @@ from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, Monitor
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
                                                     MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
 from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_off_datetime
@@ -36,7 +37,6 @@ from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 from deepchecks_monitoring.utils.typing import as_datetime
 
 from .router import router
-from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 
 
 class MonitorCreationSchema(BaseModel):

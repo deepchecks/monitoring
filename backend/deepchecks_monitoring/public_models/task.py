@@ -13,7 +13,7 @@ import typing as t
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import func, Integer
+from sqlalchemy import Integer, func
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
 

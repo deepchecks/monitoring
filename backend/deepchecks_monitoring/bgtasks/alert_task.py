@@ -15,7 +15,7 @@ import typing as t
 from collections import defaultdict
 
 import sqlalchemy as sa
-from sqlalchemy import func, update, select, delete
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
