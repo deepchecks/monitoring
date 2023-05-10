@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
 
@@ -14,6 +15,7 @@ import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 import { getParams } from 'helpers/utils/getParams';
 
 export const DashboardPage = () => {
+  const navigate = useNavigate();
   const {
     data: dashboard,
     isLoading: isDashboardLoading,
@@ -44,6 +46,12 @@ export const DashboardPage = () => {
     setCurrentMonitor(null);
     setIsDrawerOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (dashboard?.monitors?.length === 0) {
+      navigate({ pathname: '/onboarding' });
+    }
+  }, [dashboard]);
 
   return (
     <>

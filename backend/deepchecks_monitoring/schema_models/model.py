@@ -21,6 +21,7 @@ from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
+from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
@@ -29,6 +30,11 @@ if t.TYPE_CHECKING:
 
 
 __all__ = ["Model", "ModelNote"]
+
+
+def _current_date_by_timezone(context):
+    timezone = context.get_current_parameters().get("timezone", "UTC")
+    return pdl.now(timezone).set(hour=0, minute=0, second=0, microsecond=0)
 
 
 class Model(Base, MetadataMixin):
@@ -61,6 +67,13 @@ class Model(Base, MetadataMixin):
     # Indicates the total offset in the topic. The lag of messages is `topic_end_offset - ingestion_offset`
     topic_end_offset = sa.Column(sa.BigInteger, default=-1)
     timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
+
+    data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency), nullable=False, default=Frequency.DAY)
+    data_ingestion_alert_latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
+                                                     default=_current_date_by_timezone)
+    data_ingestion_alert_label_ratio = sa.Column(sa.Float)
+    data_ingestion_alert_label_count = sa.Column(sa.Integer)
+    data_ingestion_alert_sample_count = sa.Column(sa.Integer)
 
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
@@ -136,6 +149,16 @@ class Model(Base, MetadataMixin):
             query = query.where(labels_table.c[SAMPLE_LABEL_COL].isnot(None))
         query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
         return query
+
+    @property
+    def next_data_ingestion_alert_schedule(self):
+        latest_schedule = pdl.instance(t.cast("datetime", self.data_ingestion_alert_latest_schedule))
+        frequency = t.cast("Frequency", self.data_ingestion_alert_frequency).to_pendulum_duration()
+        next_schedule = latest_schedule + frequency
+        curr_day = pdl.now(self.timezone).set(hour=0, minute=0, second=0, microsecond=0)
+        if next_schedule < curr_day:
+            return curr_day
+        return next_schedule
 
 
 class ModelNote(Base, MetadataMixin):

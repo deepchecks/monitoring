@@ -13,14 +13,10 @@ export interface PathInfo {
   ignoreLink?: boolean;
 }
 
-// a function to retry loading a chunk to avoid chunk load error for out of date code
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const lazyRetry = function (componentImport: () => Promise<any>) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Promise<{ default: ComponentType<any> }>((resolve, reject) => {
-    // check if the window has already been refreshed
     const hasRefreshed = JSON.parse(window.sessionStorage.getItem('retry-lazy-refreshed') || 'false');
-    // try to import the component
+
     componentImport()
       .then(component => {
         window.sessionStorage.setItem('retry-lazy-refreshed', 'false'); // success so reset the refresh
@@ -28,11 +24,11 @@ export const lazyRetry = function (componentImport: () => Promise<any>) {
       })
       .catch(error => {
         if (!hasRefreshed) {
-          // not been refreshed yet
           window.sessionStorage.setItem('retry-lazy-refreshed', 'true'); // we are now going to refresh
           return window.location.reload(); // refresh the page
         }
-        reject(error); // Default error behaviour as already tried refresh
+
+        reject(error);
       });
   });
 };
@@ -47,6 +43,10 @@ const ModelsPage = lazy(() => lazyRetry(() => import('pages/ModelsPage')));
 const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
 const WorkspaceSettingsPage = lazy(() => lazyRetry(() => import('pages/WorkspaceSettingsPage')));
+const OnBoardingPage = lazy(() => lazyRetry(() => import('pages/OnBoardingPage')));
+const CompleteDetails = lazy(() => lazyRetry(() => import('pages/CompleteDetails')));
+const LicenseAgreementPage = lazy(() => lazyRetry(() => import('pages/LicenseAgreement')));
+const NotFoundPage = lazy(() => lazyRetry(() => import('pages/NotFoundPage')));
 
 const DashboardIcon = () => <Dashboard sx={{ color: 'grey' }} />;
 const DashboardActiveIcon = () => <Dashboard sx={{ color: '#7964FF' }} />;
@@ -58,6 +58,14 @@ const ConfigurationsIcon = () => <Settings sx={{ color: 'grey' }} />;
 const ConfigurationsActiveIcon = () => <Settings sx={{ color: '#7964FF' }} />;
 
 export const pathsInfo: PathInfo[] = [
+  {
+    title: 'Dashboard',
+    link: '/',
+    element: () => <DashboardPage />,
+    Icon: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  },
   {
     title: 'Dashboard',
     link: '/dashboard',
@@ -148,6 +156,41 @@ export const pathsInfo: PathInfo[] = [
     title: 'Workspace Settings',
     link: '/workspace-settings',
     element: () => <WorkspaceSettingsPage />,
+    Icon: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  }
+];
+
+export const outLayoutRoutes: PathInfo[] = [
+  {
+    title: 'OnBoarding',
+    link: '/onboarding',
+    element: () => <OnBoardingPage />,
+    Icon: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  },
+  {
+    title: 'Complete Details',
+    link: '/complete-details',
+    element: () => <CompleteDetails />,
+    Icon: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  },
+  {
+    title: 'License Agreement',
+    link: '/license-agreement',
+    element: () => <LicenseAgreementPage />,
+    Icon: null,
+    ActiveIcon: null,
+    ignoreLink: true
+  },
+  {
+    title: '404',
+    link: '/*',
+    element: () => <NotFoundPage />,
     Icon: null,
     ActiveIcon: null,
     ignoreLink: true

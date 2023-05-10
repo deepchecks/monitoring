@@ -45,11 +45,7 @@ const WorkspaceSettings = () => {
   useEffect(() => void getMemberSettings(), []);
 
   useEffect(() => {
-    if (!is_cloud) {
-      setValue(1);
-    } else {
-      setValue(0);
-    }
+    setValue(!is_cloud ? 1 : 0);
   }, [is_cloud]);
 
   if (!isAdmin) {

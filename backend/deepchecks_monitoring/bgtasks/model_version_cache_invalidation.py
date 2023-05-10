@@ -1,3 +1,13 @@
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+#
 import bisect
 
 import pendulum as pdl
@@ -15,10 +25,12 @@ DELAY = 60
 class ModelVersionCacheInvalidation(BackgroundWorker):
     """Worker to remove monitor cache entries which data has been updated."""
 
-    def queue_name(self) -> str:
+    @classmethod
+    def queue_name(cls) -> str:
         return QUEUE_NAME
 
-    def delay_seconds(self) -> int:
+    @classmethod
+    def delay_seconds(cls) -> int:
         return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider):

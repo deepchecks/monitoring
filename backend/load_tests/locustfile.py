@@ -7,8 +7,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-from locust import FastHttpUser, between, task
 from gevent.pool import Group
+from locust import FastHttpUser, between, task
 
 
 class User(FastHttpUser):

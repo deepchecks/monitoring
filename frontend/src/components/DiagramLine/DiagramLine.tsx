@@ -316,7 +316,7 @@ function DiagramLine({
 
   return isLoading ? (
     <Loader sx={{ transform: 'translate(0, -16%)' }} />
-  ) : !data.datasets.length || data.datasets.every(d => !d) ? (
+  ) : !data.datasets?.length || data.datasets.every(d => !d) ? (
     <StyledNoDataWarningContainer>
       <StyledNoDataWarning variant="h4">{noDataMessage}</StyledNoDataWarning>
     </StyledNoDataWarningContainer>
@@ -343,7 +343,7 @@ function DiagramLine({
 
 export default DiagramLine;
 
-const StyledNoDataWarningContainer = styled(Typography)({
+const StyledNoDataWarningContainer = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   height: '100%',

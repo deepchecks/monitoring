@@ -58,5 +58,8 @@ export const events = {
     clickedIntegrations: 'Clicked the Integrations',
     clickedAPIKey: 'Clicked the API Key',
     clickedInviteWorkspace: 'Clicked the Invite to workspace'
+  },
+  onBoarding: {
+    movedStep: 'On Boarding Step'
   }
 };
