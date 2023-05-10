@@ -23,6 +23,8 @@ from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multicl
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, root_validator
 from sqlalchemy import VARCHAR, Column, and_, func, select
+from pydantic import BaseModel, Field, ValidationError, root_validator
+from sqlalchemy import Column, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -108,9 +110,9 @@ class TimeWindowOption(TableFiltersSchema):
         """Check end_time is after start_time by an hour plus."""
         seconds_range = (pdl.parse(values["end_time"]) - pdl.parse(values["start_time"])).in_seconds()
         if seconds_range < 0:
-            raise ValueError("end_time must be after start_time")
-        if seconds_range < TimeUnit.HOUR:
-            raise ValueError("end_time must be at least an hour after start_time")
+            raise ValidationError("end_time must be after start_time")
+        # if seconds_range < TimeUnit.HOUR:
+        #     raise ValueError("end_time must be at least an hour after start_time")
         return values
 
 
