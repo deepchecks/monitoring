@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """Organiztaion entity model."""
 import enum
+import hashlib
 import logging
 import time
 import typing as t
@@ -95,7 +96,8 @@ class Organization(Base):
         """Generate a schema name for organization."""
         value = slugify(org_name, separator="_")
         value = value if value else "".join(choice(ascii_lowercase) for _ in range(10))
-        return f"org_{value}_ts_{int(time.time_ns())}"
+        # postgres schema name has limit of 63 characters, so truncate the hash and org name
+        return f"org_{value[:20]}_{hashlib.md5().hexdigest()[:20]}"
 
     @classmethod
     def generate_stripe_customer_id(cls, org_name: str) -> t.Optional[str]:
