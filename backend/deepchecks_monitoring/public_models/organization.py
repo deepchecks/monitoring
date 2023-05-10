@@ -7,11 +7,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-"""Organiztaion entity model."""
+"""Organization entity model."""
 import enum
 import hashlib
 import logging
-import time
 import typing as t
 from random import choice
 from string import ascii_lowercase
