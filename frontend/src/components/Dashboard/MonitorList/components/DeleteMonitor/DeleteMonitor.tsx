@@ -2,7 +2,7 @@ import React from 'react';
 
 import { MonitorSchema } from 'api/generated';
 
-import { DeletionDialog as StyledDeletionDialog } from 'components/lib/components/Dialog/DeletionDialog';
+import { StyledDeletionDialog } from 'components/lib';
 
 import { constants } from '../../../dashboard.constants';
 
