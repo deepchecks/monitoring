@@ -28,7 +28,6 @@ from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
-from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.bgtasks.delete_db_table_task import insert_delete_db_table_task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
@@ -53,6 +52,7 @@ from deepchecks_monitoring.schema_models.monitor import Monitor, round_off_datet
 from deepchecks_monitoring.utils import auth
 
 from .router import router
+from ...public_models.task import delete_monitor_tasks
 
 
 class ModelNoteCreationSchema(BaseModel):
@@ -943,7 +943,7 @@ async def set_schedule_time(
         monitor.updated_by = user.id
 
     # Delete monitors tasks
-    await Task.delete_monitor_tasks(monitor_ids, timestamp, session)
+    await delete_monitor_tasks(monitor_ids, timestamp, session)
 
     # Resolving all alerts which are connected to this monitors
     await session.execute(

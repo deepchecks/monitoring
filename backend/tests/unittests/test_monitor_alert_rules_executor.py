@@ -19,16 +19,16 @@ import sqlalchemy as sa
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from deepchecks_monitoring.bgtasks.actors import execute_monitor
-from deepchecks_monitoring.bgtasks.core import Task, TaskStatus, Worker
+from deepchecks_monitoring.bgtasks.alert_task import execute_monitor, AlertsTask
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
+from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
 from deepchecks_monitoring.monitoring_utils import TimeUnit
-from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.public_models import User, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert
 from deepchecks_monitoring.schema_models.monitor import (Frequency, calculate_initial_latest_schedule,
                                                          monitor_execution_range, round_off_datetime)
-from deepchecks_monitoring.utils import database
 from tests.common import Payload, TestAPI, upload_classification_data
 
 
@@ -87,7 +87,6 @@ async def test_monitor_executor(
         timestamp=str(now),
         session=async_session,
         organization_id=user.organization.id,
-        organization_schema=user.organization.schema_name,
         resources_provider=resources_provider,
         logger=logging.Logger("test")
     )
@@ -185,42 +184,13 @@ async def test_alert_scheduling(
     # == Act
     await AlertsScheduler(engine=async_engine).run_all_organizations()
 
-    schema_translate_map = {None: user.organization.schema_name}
-    worker = Worker.create(
-        engine=async_engine,
-        actors=[execute_monitor],
-        additional_params={"resources_provider": resources_provider}
-    )
-    async with worker.create_database_session() as session:
-        async for task in worker.tasks_broker._next_task(
-            session=session,
-            execution_options={"schema_translate_map": schema_translate_map}
-        ):
-            async with database.attach_schema_switcher(
-                session=session,
-                schema_search_path=[user.organization.schema_name, "public"]
-            ):
-                await worker.execute_task(session=session, task=task)
-
     # == Assert
-    alerts = (await async_session.scalars(
-        sa.select(Alert)
-        .execution_options(schema_translate_map=schema_translate_map)
-    )).all()
-
-    tasks = (await async_session.scalars(
-        sa.select(Task)
-        .execution_options(schema_translate_map=schema_translate_map)
-    )).all()
-
-    alert_per_rule = defaultdict(list)
-
-    for it in alerts:
-        alert_per_rule[it.alert_rule_id].append(it)
-
     for monitor in monitors:
-        reference = f"Monitor:{monitor['id']}"
         monitor_frequency = Frequency(monitor["frequency"])
+        tasks = (await async_session.scalars(sa.select(Task)
+                 .where(Task.bg_worker_task == AlertsTask.queue_name(),
+                        sa.cast(Task.params["monitor_id"].astext, sa.Integer) == monitor["id"]))
+         ).all()
 
         initial_latest_schedule = calculate_initial_latest_schedule(
             frequency=monitor_frequency,
@@ -233,15 +203,34 @@ async def test_alert_scheduling(
             until=daterange[-1]
         ))
         tasks_timestamps = [
-            pdl.instance(it.execute_after)
+            pdl.parse(it.params["timestamp"])
             for it in tasks
-            if it.reference == reference
         ]
         assert sorted(expected_tasks_timestamps) == sorted(tasks_timestamps)
 
+    # Run worker
+    workers = [AlertsTask()]
+    logger = logging.getLogger("test")
+    queuer = TasksQueuer(resources_provider, workers, logger)
+    runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
+
+    await queuer.move_tasks_to_queue(async_session)
+    for _ in range(30):
+        task = await runner.wait_for_task(timeout=1)
+        if task:
+            task_id, queued_time = task
+            await runner.run_single_task(task_id, async_session, queued_time)
+
+    alert_per_rule = defaultdict(list)
+    alerts = (await async_session.scalars(sa.select(Alert))).all()
+    task_count = (await async_session.execute(sa.select(sa.func.count(Task.id))
+                                              .where(Task.bg_worker_task == AlertsTask.queue_name()))).scalar()
+
+    for it in alerts:
+        alert_per_rule[it.alert_rule_id].append(it)
 
     # assert all(len(v) == 14 for v in tasks_per_monitor.values())
-    assert all(it.status == TaskStatus.COMPLETED for it in tasks)
+    assert task_count == 0
     assert len(alert_per_rule[rules[0]["id"]]) == 13
     assert len(alert_per_rule[rules[1]["id"]]) == 7
 
@@ -290,7 +279,6 @@ async def test_monitor_executor_with_unactive_alert_rules(
         timestamp=str(now),
         session=async_session,
         organization_id=user.organization.id,
-        organization_schema=user.organization.schema_name,
         resources_provider=resources_provider,
         logger=logger
     )
@@ -363,7 +351,6 @@ async def test_monitor_executor_is_using_cache(
         timestamp=str(window_end),
         session=async_session,
         organization_id=organization_id,
-        organization_schema=user.organization.schema_name,
         resources_provider=resources_provider,
         logger=logging.Logger("test")
     )

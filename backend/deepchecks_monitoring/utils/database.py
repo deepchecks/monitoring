@@ -13,7 +13,6 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema, DDLElement
 
-from deepchecks_monitoring.bgtasks import core as bgtasks_core
 
 __all__ = ["SchemaBuilder", "attach_schema_switcher_listener", "attach_schema_switcher",
            "sqlalchemy_exception_to_asyncpg_exception"]
@@ -162,11 +161,6 @@ class SchemaBuilder:
             try:
                 await connection.execute(SessionParameter(name="search_path", local=True, value=self.name))
                 await connection.run_sync(*args)
-                # TODO:
-                # below statements should not be here
-                # it should be done via migrations
-                await connection.execute(bgtasks_core.PGTaskNotificationFunc)
-                await connection.execute(bgtasks_core.PGTaskNotificationTrigger)
             except Exception as error:
                 msg = "Failed to populate organisation schema with tables"
                 self.logger.exception("%s. Org schema name: %s", msg, self.name)
@@ -187,9 +181,6 @@ class SchemaBuilder:
             try:
                 await connection.execute(SessionParameter(name="search_path", local=True, value=self.name))
                 await connection.run_sync(self.do_upgrade, self.migrations_location)
-                # TODO: should be done via migrations
-                await connection.execute(bgtasks_core.PGTaskNotificationFunc)
-                await connection.execute(bgtasks_core.PGTaskNotificationTrigger)
             except Exception as error:
                 msg = "Failed to populate upgrade schema"
                 self.logger.exception("%s. Org schema name: %s", msg, self.name)

@@ -20,7 +20,6 @@ from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
-from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Settings, Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
@@ -37,6 +36,7 @@ from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 from deepchecks_monitoring.utils.typing import as_datetime
 
 from .router import router
+from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 
 
 class MonitorCreationSchema(BaseModel):
@@ -190,7 +190,7 @@ async def update_monitor(
         )
 
         # Delete monitor tasks
-        await Task.delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
+        await delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
 
         # Resolving all alerts which are connected to this monitor
         await session.execute(
