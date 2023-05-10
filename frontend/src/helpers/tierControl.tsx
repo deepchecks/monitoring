@@ -16,7 +16,8 @@ export const featuresList = {
   custom_checks_enabled: 'custom_checks_enabled',
   data_retention_months: 'data_retention_months',
   monthly_predictions_limit: 'monthly_predictions_limit',
-  sso_enabled: 'sso_enabled'
+  sso_enabled: 'sso_enabled',
+  onboarding_enabled: 'onboarding_enabled'
 };
 
 const getFeaturesStatus = async ({ setFeatures }: { setFeatures: (arg: Dict['type']) => void }) => {

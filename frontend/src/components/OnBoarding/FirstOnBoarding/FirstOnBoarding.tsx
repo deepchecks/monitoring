@@ -19,7 +19,7 @@ const FirstOnBoarding = () => {
   const [dataType, setDataType] = useState<'demo' | 'user'>();
 
   return (
-    <StyledContainer maxWidth={770} margin="84px auto">
+    <StyledContainer maxWidth={770} margin="16px auto">
       <FirstOnBoardingSelectContainer>
         <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
         {/* dataType && (
