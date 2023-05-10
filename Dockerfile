@@ -49,7 +49,7 @@ RUN pip install -U pip setuptools==58.3.0 && \
     pip install -q -r requirements.txt --compile --no-cache-dir
     # && apk del .build-deps
 
-RUN pip install -q -r addon-requirements.txt --compile --no-cache-dir
+RUN if [[ -z "$DEEPCHECKS_CI_TOKEN" ]] ; then true ; else pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
 
 RUN pip install pyinstrument
 
