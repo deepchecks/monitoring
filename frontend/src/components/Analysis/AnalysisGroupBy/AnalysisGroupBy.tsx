@@ -26,7 +26,7 @@ import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
 import { getAvailableFeatures } from 'helpers/utils/featuresUtils';
 import { SwitchButton } from 'components/base/Button/SwitchButton';
 
-function getDayJsManipulateTime(frequency: number): ManipulateType {
+function getDayJsManipulateType(frequency: number): ManipulateType {
   switch (frequency) {
     case 3600:
       return 'hour';
@@ -101,7 +101,7 @@ const AnalysisGroupByComponent = ({
         setFeatureImportance(featureImportance);
 
         const SingleCheckRunOptions: SingleCheckRunOptions = {
-          start_time: dayjs(timeLabel).subtract(1, getDayJsManipulateTime(frequency)).toISOString(),
+          start_time: dayjs(timeLabel).subtract(1, getDayJsManipulateType(frequency)).toISOString(),
           end_time: new Date(timeLabel).toISOString(),
           filter: { filters: activeFilters.length ? activeFilters : [] },
           ...(additionalKwargs && { additional_kwargs: additionalKwargs })
