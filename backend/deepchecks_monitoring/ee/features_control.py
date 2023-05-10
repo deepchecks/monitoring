@@ -32,6 +32,7 @@ class CloudFeaturesControl(FeaturesControl):
         self._monthly_predictions_limit = None
         self._sso_enabled = None
         self._signup_enabled = None
+        self._onboarding_enabled = None
 
     @property
     def max_models(self) -> int:
@@ -54,6 +55,12 @@ class CloudFeaturesControl(FeaturesControl):
         if self._signup_enabled is None:
             self._load_tier()
         return self._signup_enabled
+
+    @property
+    def onboarding_enabled(self) -> bool:
+        if self._onboarding_enabled is None:
+            self._load_tier()
+        return self._onboarding_enabled
 
     @property
     def slack_enabled(self) -> bool:
@@ -109,3 +116,4 @@ class CloudFeaturesControl(FeaturesControl):
         self._monthly_predictions_limit = tier_conf.monthly_predictions_limit
         self._sso_enabled = tier_conf.sso
         self._rows_per_minute = tier_conf.rows_per_minute
+        self._onboarding_enabled = self.ld_client.variation("onBoardingEnabled", ld_user, default=False)

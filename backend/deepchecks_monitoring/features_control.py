@@ -24,6 +24,7 @@ class FeaturesSchema(BaseModel):
     data_retention_months: int
     monthly_predictions_limit: int
     sso_enabled: bool
+    onboarding_enabled: bool
 
 
 class FeaturesControl:
@@ -49,6 +50,11 @@ class FeaturesControl:
     @property
     def slack_enabled(self) -> bool:
         """Whether slack is enabled."""
+        return False
+
+    @property
+    def onboarding_enabled(self) -> bool:
+        """Whether onBoarding is enabled."""
         return False
 
     @property
@@ -92,4 +98,5 @@ class FeaturesControl:
             data_retention_months=self.data_retention_months,
             monthly_predictions_limit=self.monthly_predictions_limit,
             sso_enabled=self.sso_enabled,
+            onboarding_enabled=self.onboarding_enabled,
         )
