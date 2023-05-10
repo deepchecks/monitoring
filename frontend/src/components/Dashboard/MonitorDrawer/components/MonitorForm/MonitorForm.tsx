@@ -23,7 +23,7 @@ import { SelectColumn as Column } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { Subcategory } from 'components/Subcategory';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
-import { Button as StyledButton } from 'components/lib/components/Button/Button';
+import { StyledButton } from 'components/lib';
 
 import { StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
 
@@ -414,7 +414,7 @@ export const MonitorForm = ({
           onClick={handleMonitorSave}
           disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack || !isValidConfig}
           color="primary"
-          sx={{ margin: 'auto auto 20px auto' }}
+          sx={{ margin: 'auto auto 20px auto', width: '200px' }}
         />
       </span>
       <ActiveAlertsModal
