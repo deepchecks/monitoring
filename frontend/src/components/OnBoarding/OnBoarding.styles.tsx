@@ -51,7 +51,7 @@ const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
 }));
 
 const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
-  margin: '44px auto 0 0',
+  margin: '8px auto 0 0',
 
   '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
   '& .MuiStepConnector-root, .MuiStepContent-root': { marginLeft: 16 },

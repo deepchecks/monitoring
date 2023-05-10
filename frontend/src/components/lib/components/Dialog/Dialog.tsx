@@ -33,7 +33,7 @@ export const Dialog = (props: DialogProps) => {
   } = props;
 
   return (
-    <MUIDialog open={open} onClose={closeDialog} {...otherProps}>
+    <MUIDialog open={open} onClose={closeDialog} {...otherProps} sx={{ '.MuiDialog-paper': { borderRadius: '16px' } }}>
       <DialogContent sx={{ padding: '16px 14px', minWidth: '600px' }}>
         <Container flexDirection="row" justifyContent="space-between" padding="12px 16px">
           <Text text={title} type="h1" />

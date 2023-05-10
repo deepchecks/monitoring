@@ -14,7 +14,6 @@ import {
 import { CloseIcon, FileUploadIcon } from '../../../../../../../assets/icon/icon';
 import { Button } from '@mui/material';
 import * as Sentry from '@sentry/react';
-import logger from 'helpers/services/logger';
 
 interface ReportModalProps {
   open: boolean;
@@ -42,8 +41,6 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
         Sentry.configureScope(scope => {
           scope.addAttachment({ filename: 'screenshot', data: currentPath, contentType: type });
         });
-
-        logger.info(`The report was sent by a user, message: ${inputDescription}`);
 
         Sentry.configureScope(scope => {
           scope.clearAttachments();
