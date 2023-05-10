@@ -9,7 +9,6 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-from deepchecks_monitoring.bgtasks.core import PGTaskNotificationFunc, PGTaskNotificationTrigger
 
 # revision identifiers, used by Alembic.
 revision = 'd8aad956e10c'
@@ -47,8 +46,6 @@ def upgrade() -> None:
     op.create_foreign_key(None, 'invitations', 'organizations', ['organization_id'], ['id'], source_schema='public', referent_schema='public')
     op.drop_constraint('users_organization_id_fkey', 'users', type_='foreignkey')
     op.create_foreign_key(None, 'users', 'organizations', ['organization_id'], ['id'], source_schema='public', referent_schema='public')
-    PGTaskNotificationFunc.execute(bind=op.get_bind())
-    PGTaskNotificationTrigger.execute(bind=op.get_bind())
     # ### end Alembic commands ###
 
 
