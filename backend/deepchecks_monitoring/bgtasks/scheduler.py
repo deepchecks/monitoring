@@ -267,7 +267,9 @@ async def enqueue_tasks(monitor, schedules, organization, session):
             execute_after=schedule
          ))
 
-    await session.execute(insert(Task).values(tasks).on_conflict_do_nothing(constraint='name_uniqueness'))
+    # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
+    for i in range(0, len(tasks), 10):
+        await session.execute(insert(Task).values(tasks[i:i+10]).on_conflict_do_nothing(constraint='name_uniqueness'))
 
 
 def is_serialization_error(error: DBAPIError):
