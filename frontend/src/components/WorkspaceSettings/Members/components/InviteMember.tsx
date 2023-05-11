@@ -4,7 +4,7 @@ import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
 import { Snackbar, Typography } from '@mui/material';
 
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
+import { StyledDialog } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
 
@@ -65,7 +65,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
 
   return (
     <>
-      <ActionDialog
+      <StyledDialog
         open={open}
         title={constants.inviteMember.title}
         closeDialog={handleCloseDialog}
@@ -82,7 +82,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
           />
           <Typography sx={{ margin: '8px', color: theme.palette.error.main }}>{err !== 'none' && err}</Typography>
         </MembersActionDialogContentLayout>
-      </ActionDialog>
+      </StyledDialog>
       <Snackbar
         open={success}
         onClose={handleCloseSnackBar}

@@ -1,9 +1,5 @@
-import { styled, Stack, Dialog, Box, Step } from '@mui/material';
+import { styled, Stack, Box, Step } from '@mui/material';
 import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
-
-const StyledDialog = styled(Dialog)({
-  '& .MuiDialog-paper': { width: '603px', padding: '40px 32px', borderRadius: '20px' }
-});
 
 const StyledContentContainer = styled(Stack)({
   justifyContent: 'center',
@@ -57,4 +53,4 @@ const StyledStep = styled(Step)(({ theme }) => ({
   }
 }));
 
-export { StyledContentContainer, StyledButton, StyledDialog, StyledStepContainer, StyledStep };
+export { StyledContentContainer, StyledButton, StyledStepContainer, StyledStep };
