@@ -183,7 +183,7 @@ async def remove_organization(
         await user.organization.drop_organization(session)
         await session.commit()
     else:
-        return BadRequest('User is nor associated with an organization.')
+        return BadRequest('User is not associated with an organization.')
     return Response()
 
 
