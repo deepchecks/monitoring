@@ -110,7 +110,7 @@ class TimeWindowOption(TableFiltersSchema):
         if seconds_range < 0:
             raise ValidationError("end_time must be after start_time")
         # if seconds_range < TimeUnit.HOUR:
-        #     raise ValueError("end_time must be at least an hour after start_time")
+        #     raise ("end_time must be at least an hour after start_time")
         return values
 
 
