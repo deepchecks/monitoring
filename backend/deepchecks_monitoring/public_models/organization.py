@@ -17,9 +17,7 @@ from string import ascii_lowercase
 
 import sqlalchemy as sa
 import stripe
-from sqlalchemy import delete, update
 from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.sql.ddl import DropSchema
 from typing_extensions import Self
 
 from deepchecks_monitoring.public_models import Base
