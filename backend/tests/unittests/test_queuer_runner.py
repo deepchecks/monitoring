@@ -48,7 +48,8 @@ async def test_task_queue(resources_provider, async_session):
     num_pushed = await queuer.move_tasks_to_queue(async_session)
     assert num_pushed == 1
 
-    await runner.wait_for_task(timeout=1)
+    task_id, queued_time = await runner.wait_for_task(timeout=1)
+    await runner.run_single_task(task_id, async_session, queued_time)
 
     task = await async_session.execute(sa.select(Task).where(Task.name == 'test'))
     assert task.scalars().first().params['run'] is True

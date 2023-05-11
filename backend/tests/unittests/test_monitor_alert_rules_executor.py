@@ -36,6 +36,18 @@ def as_payload(v):
     return t.cast(Payload, v)
 
 
+async def run_alerts_worker(resources_provider: ResourcesProvider, async_session: AsyncSession):
+    workers = [AlertsTask()]
+    logger = logging.getLogger("test")
+    queuer = TasksQueuer(resources_provider, workers, logger)
+    runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
+
+    await queuer.move_tasks_to_queue(async_session)
+    while task := await runner.wait_for_task(timeout=1):
+        task_id, queued_time = task
+        await runner.run_single_task(task_id, async_session, queued_time)
+
+
 @pytest.mark.asyncio
 async def test_monitor_executor(
     async_session: AsyncSession,
@@ -208,17 +220,7 @@ async def test_alert_scheduling(
         assert sorted(expected_tasks_timestamps) == sorted(tasks_timestamps)
 
     # Run worker
-    workers = [AlertsTask()]
-    logger = logging.getLogger("test")
-    queuer = TasksQueuer(resources_provider, workers, logger)
-    runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
-
-    await queuer.move_tasks_to_queue(async_session)
-    for _ in range(30):
-        task = await runner.wait_for_task(timeout=1)
-        if task:
-            task_id, queued_time = task
-            await runner.run_single_task(task_id, async_session, queued_time)
+    await run_alerts_worker(resources_provider, async_session)
 
     alert_per_rule = defaultdict(list)
     alerts = (await async_session.scalars(sa.select(Alert))).all()
