@@ -16,9 +16,25 @@ export const StyledTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 export const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(even)': {
-    backgroundColor: theme.palette.grey[100]
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.grey[100],
+
+    '& th, td': {
+      borderRadius: 0
+    }
   },
+
+  '& th': {
+    borderTopLeftRadius: '14px',
+    borderBottomLeftRadius: '14px'
+  },
+
+  '& td:last-child': {
+    borderTopRightRadius: '14px',
+    borderBottomRightRadius: '14px'
+  },
+
+  backgroundColor: theme.palette.common.white,
   border: 0
 }));
 
