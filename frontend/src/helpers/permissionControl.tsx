@@ -23,6 +23,8 @@ export const featuresList = {
 const getFeaturesStatus = async ({ setFeatures }: { setFeatures: (arg: Dict['type']) => void }) => {
   const response = (await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet()) as unknown as Dict['type'];
 
+  console.log(response);
+
   if (response && !(response as unknown as resError).error_message) {
     setFeatures(response);
   }
@@ -34,10 +36,10 @@ interface TierControlProps {
   fallbackOption?: ReactNode | ReactNode[];
 }
 
-export const TierControlWrapper = ({ children, feature, fallbackOption }: TierControlProps) => {
+export const PermissionControlWrapper = ({ children, feature, fallbackOption }: TierControlProps) => {
   const [features, setFeatures] = useState<Dict['type']>({});
 
-  useEffect(() => void getFeaturesStatus({ setFeatures: setFeatures }), []);
+  useEffect(() => void getFeaturesStatus({ setFeatures }), []);
 
   if (features[feature] === true) {
     return <>{children}</>;
@@ -48,14 +50,10 @@ export const TierControlWrapper = ({ children, feature, fallbackOption }: TierCo
   }
 };
 
-export const useTierControl = ({ feature }: TierControlProps) => {
+export const usePermissionControl = ({ feature }: TierControlProps) => {
   const [features, setFeatures] = useState<Dict['type']>({});
 
-  useEffect(() => void getFeaturesStatus({ setFeatures: setFeatures }), []);
+  useEffect(() => void getFeaturesStatus({ setFeatures }), []);
 
-  if (features[feature] === true) {
-    return true;
-  } else {
-    return false;
-  }
+  return features[feature] === true;
 };
