@@ -432,8 +432,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             name: str,
             schema: t.Union[str, pathlib.Path, io.TextIOBase, DataSchema] = None,
             feature_importance: t.Union[t.Dict[str, float], 'pd.Series[float]', None] = None,
-            model_classes: t.Optional[t.Sequence[str]] = None
-    ) -> DeepchecksModelVersionClient:
+            model_classes: t.Optional[t.Sequence[str]] = None,
+            create_if_not_exists: bool = True,
+    ) -> t.Optional[DeepchecksModelVersionClient]:
         """Create a new model version.
 
         Parameters
@@ -445,6 +446,9 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             A dictionary or pandas series of feature names and their feature importance value.
         model_classes : Optional[Sequence[str]], default: None
             List of classes used by the model. Must define classes in order to send probabilities.
+        create_if_not_exists : bool, default: True
+            If True, create the model version if it does not exist (requires passing schema), else return None if not
+            exists.
 
         Returns
         -------
@@ -483,7 +487,10 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             return version_client
 
         if response.status_code != 404:
-            maybe_raise(response)  # execution ends here, function will raose an error
+            maybe_raise(response)  # execution ends here, function will raise an error
+
+        if not create_if_not_exists:
+            return None
 
         if schema is None:
             raise ValueError('schema must be provided when creating a new version')
