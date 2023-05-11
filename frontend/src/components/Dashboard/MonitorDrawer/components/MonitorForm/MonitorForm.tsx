@@ -23,8 +23,9 @@ import { SelectColumn as Column } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { Subcategory } from 'components/Subcategory';
 import { ActiveAlertsModal } from '../ActiveAlertsModal';
+import { StyledButton } from 'components/lib';
 
-import { StyledButton, StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
+import { StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
 
 import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
 import { SelectValues } from 'helpers/types';
@@ -409,12 +410,12 @@ export const MonitorForm = ({
       </StyledFormContainer>
       <span onMouseEnter={() => setError(true)} onMouseLeave={() => setError(false)} style={{ margin: 'auto' }}>
         <StyledButton
+          label="Save"
           onClick={handleMonitorSave}
           disabled={!monitorName || !check || !frequency || !aggregationWindow || !lookBack || !isValidConfig}
-          sx={{ margin: 'auto auto 20px auto' }}
-        >
-          Save
-        </StyledButton>
+          color="primary"
+          sx={{ margin: 'auto auto 20px auto', width: '200px' }}
+        />
       </span>
       <ActiveAlertsModal
         open={activeAlertsModalOpen}
