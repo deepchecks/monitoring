@@ -31,7 +31,8 @@ from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 from deepchecks_monitoring.utils import database
 
-QUEUE_NAME = "alerts"
+
+__all__ = ["AlertsTask"]
 
 
 class AlertsTask(BackgroundWorker):
@@ -42,7 +43,7 @@ class AlertsTask(BackgroundWorker):
 
     @classmethod
     def queue_name(cls) -> str:
-        return QUEUE_NAME
+        return "alerts"
 
     @classmethod
     def delay_seconds(cls) -> int:

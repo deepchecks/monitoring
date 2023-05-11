@@ -38,6 +38,7 @@ from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel,
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelNote
@@ -51,7 +52,6 @@ from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, Mo
 from deepchecks_monitoring.schema_models.monitor import Monitor, round_off_datetime
 from deepchecks_monitoring.utils import auth
 
-from ...public_models.task import delete_monitor_tasks
 from .router import router
 
 

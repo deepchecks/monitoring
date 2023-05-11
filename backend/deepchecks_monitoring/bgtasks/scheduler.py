@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import joinedload, load_only, sessionmaker
 
 from deepchecks_monitoring import config
-from deepchecks_monitoring.bgtasks.alert_task import QUEUE_NAME
+from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
@@ -297,7 +297,8 @@ async def enqueue_tasks(monitor, schedules, organization, session):
     for schedule in schedules:
         params = {'monitor_id': monitor.id, 'timestamp': schedule.to_iso8601_string(),
                   'organization_id': organization.id}
-        tasks.append(dict(name=f'{organization.id}:{monitor.id}:{schedule.int_timestamp}', bg_worker_task=QUEUE_NAME,
+        tasks.append(dict(name=f'{organization.id}:{monitor.id}:{schedule.int_timestamp}',
+                          bg_worker_task=AlertsTask.queue_name(),
                           params=params))
 
     # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
