@@ -13,7 +13,7 @@ import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
 import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
 import { getParams } from 'helpers/utils/getParams';
-import { featuresList, useTierControl } from 'helpers/tierControl';
+import { featuresList, usePermissionControl } from 'helpers/permissionControl';
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ export const DashboardPage = () => {
       refetchOnWindowFocus: false
     }
   });
-  const onboardingEnabled = useTierControl({ feature: featuresList.onboarding_enabled });
+  const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
 
   function refetchMonitors() {
     refetch();

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { MonitorSchema } from 'api/generated';
 
-import { DeleteActionDialog } from 'components/base/Dialog/ActionDialog/DeleteActionDialog';
+import { StyledDeletionDialog } from 'components/lib';
 
 import { constants } from '../../../dashboard.constants';
 
@@ -24,15 +24,15 @@ export const DeleteMonitor = ({ monitor, deleteMonitor, setIsOpen, open }: Delet
   };
 
   return (
-    <DeleteActionDialog
-      title={title}
+    <StyledDeletionDialog
       open={open}
+      title={title}
       closeDialog={handleClose}
       submitButtonLabel={submit}
-      cancelButtonLabel={cancel}
       submitButtonAction={handleSubmit}
+      cancelButtonLabel={cancel}
       messageStart={messageStart}
-      itemNameToDelete={name(monitor?.name)}
+      itemToDelete={name(monitor?.name)}
       messageEnd={messageEnd}
     />
   );

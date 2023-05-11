@@ -11,7 +11,7 @@ import { Box, Checkbox } from '@mui/material';
 import { Stack } from '@mui/system';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { featuresList, TierControlWrapper } from 'helpers/tierControl';
+import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 
 import { Loader } from '../base/Loader/Loader';
 import { StyledButton, StyledText } from 'components/lib';
@@ -206,7 +206,7 @@ export function AlertNotifications() {
           </Box>
         ))}
       </Box>
-      <TierControlWrapper feature={featuresList.slack_enabled}>
+      <PermissionControlWrapper feature={featuresList.slack_enabled}>
         {!data?.is_slack_connected && (
           <Box
             sx={{
@@ -226,7 +226,7 @@ export function AlertNotifications() {
             <StyledButton label="Connect" onClick={linkToConnectSlack} />
           </Box>
         )}
-      </TierControlWrapper>
+      </PermissionControlWrapper>
     </Box>
   );
 }
