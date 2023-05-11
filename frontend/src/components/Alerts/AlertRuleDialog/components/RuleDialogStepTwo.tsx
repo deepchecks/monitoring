@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 
 import { Frequency, MonitorCheckConfSchema } from 'api/generated';
 
@@ -15,7 +15,6 @@ import { MarkedSelect } from 'components/MarkedSelect';
 import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { SelectColumn } from 'components/Select/SelectColumn';
-import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
@@ -27,7 +26,7 @@ const {
   checkBoxLabel
 } = constants.stepTwo;
 
-export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: AlertRuleStepBaseProps) => {
+export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: AlertRuleStepBaseProps, ref) => {
   const { monitor, setMonitor, alertRule } = useContext(AlertRuleDialogContext);
   const { models: modelsList } = useModels();
 
@@ -86,10 +85,18 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: A
       (monitor.additional_kwargs = (additionalKwargs as MonitorCheckConfSchema) || undefined),
         (monitor.data_filters = buildFilters(column, category, numericValue) || undefined);
       setMonitor(monitor);
-
-      handleNext();
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    next() {
+      finish();
+    }
+  }));
+
+  useEffect(() => {
+    setNextButtonDisabled(!model || !check || !frequency || !aggregationWindow || !isValidConfig);
+  }, [model, check, frequency, aggregationWindow, isValidConfig]);
 
   const aggregationWindowErr = aggregationWindow > 30;
   const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']]}${
@@ -178,12 +185,8 @@ export const AlertRuleDialogStepTwo = ({ handleNext, handleBack, activeStep }: A
           label={checkBoxLabel}
         />
       </Stack>
-      <AlertRuleDialogButtons
-        activeStep={activeStep}
-        disabled={!model || !check || !frequency || !aggregationWindow || !isValidConfig}
-        handleBack={handleBack}
-        handleNext={finish}
-      />
     </StyledContentContainer>
   );
-};
+});
+
+AlertRuleDialogStepTwo.displayName = 'AlertRuleDialogStepTwo';

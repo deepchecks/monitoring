@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
+import { StyledDialog } from 'components/lib';
 
 import { MembersActionDialogWithInputs } from '../Members.type';
 import { constants } from '../members.constants';
@@ -20,7 +20,7 @@ export const EditMember = ({ member, open, closeDialog }: MembersActionDialogWit
   };
 
   return (
-    <ActionDialog
+    <StyledDialog
       open={open}
       title={constants.editMember.title}
       closeDialog={closeDialog}
@@ -40,6 +40,6 @@ export const EditMember = ({ member, open, closeDialog }: MembersActionDialogWit
           onChange={handleEmailChange}
         />
       </MembersActionDialogContentLayout>
-    </ActionDialog>
+    </StyledDialog>
   );
 };

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete } from 'api/generated';
 
-import { DeleteActionDialog } from 'components/base/Dialog/ActionDialog/DeleteActionDialog';
+import { StyledDeletionDialog } from 'components/lib';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
@@ -24,14 +24,14 @@ export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: Memb
   };
 
   return (
-    <DeleteActionDialog
+    <StyledDeletionDialog
       open={open}
       title={title}
       closeDialog={closeDialog}
       submitButtonLabel={submit}
       submitButtonAction={removeMember}
       messageStart={messageStart}
-      itemNameToDelete={name(member.full_name)}
+      itemToDelete={name(member.full_name)}
       messageEnd={messageEnd}
     />
   );

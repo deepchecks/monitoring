@@ -10,6 +10,7 @@ import { Radio as StyledRadio } from './components/Button/Radio/Radio';
 import { Text as StyledText } from './components/Text/Text';
 import { Image as StyledImage } from './components/Image/Image';
 import { Dialog as StyledDialog } from './components/Dialog/Dialog';
+import { DeletionDialog as StyledDeletionDialog } from './components/Dialog/DeletionDialog/DeletionDialog';
 import { Severity as StyledSeverity } from './components/Severity/Severity';
 import { Logo as StyledLogo } from './components/Logo/Logo';
 import { Loader as StyledLoader } from './components/Loader/Loader';
@@ -33,6 +34,7 @@ export {
   StyledText,
   StyledImage,
   StyledDialog,
+  StyledDeletionDialog,
   StyledSeverity,
   StyledLogo,
   StyledLoader,
