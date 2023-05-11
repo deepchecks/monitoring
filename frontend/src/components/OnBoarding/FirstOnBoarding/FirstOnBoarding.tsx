@@ -40,7 +40,7 @@ const FirstOnBoarding = () => {
           <StyledText text={constants.first.description} type="bodyBold" letterSpacing="1.5px" />
           <StyledText text={constants.first.chooseText} type="bodyNormal" margin="50px 0 4px" letterSpacing="1.5px" />
           <StyledContainer display="flex" flexDirection="row" gap="24px" padding={0}>
-            <FirstOnBoardingOutlinedBox onClick={() => setDataType('user')}>
+            <FirstOnBoardingOutlinedBox /* onClick={() => setDataType('user')}*/ sx={{ opacity: 0.3, cursor: 'auto' }}>
               <StyledImage src={userDataImg} margin="-24px 0 0 -12px" />
               <FirstOnBoardingBoxLabel>{constants.first.userDataBtnLabel}</FirstOnBoardingBoxLabel>
             </FirstOnBoardingOutlinedBox>

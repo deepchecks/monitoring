@@ -2,10 +2,11 @@
 export const constants = {
   first: {
     title: 'Welcome to Deepchecks!',
-    description: 'Hi! So good to have you. \n We are going to show you, step by step, how to configure a model.',
-    chooseText: 'Choose your starting point:',
-    userDataBtnLabel: 'I have a model I want to use',
-    demoDataBtnLabel: 'I want to use the demo data',
+    description:
+      'Here is how you can quickly create your first model in Deepchecks\n All You need is to open a Python notebook, follow the instructions and in the right places copy the example code into your notebook\n\n Good luck!',
+    chooseText: 'Use a demo model of your own:',
+    userDataBtnLabel: 'My model',
+    demoDataBtnLabel: 'Demo data',
     userDataToggleLabel: 'My Data',
     demoDataToggleLabel: 'Demo Data'
   },
@@ -15,7 +16,7 @@ export const constants = {
       description: '',
       codeSnippet: '',
       secondCodeSnippet: (_token?: string) => ``,
-      docLink: { label: 'Docs link', url: '' }
+      docLink: { label: 'Go to documantation', url: '' }
     },
     {
       title: 'Creating a New Model Version',
@@ -25,7 +26,7 @@ export const constants = {
       secondCodeSnippet: (token?: string) =>
         `from deepchecks.tabular.datasets.regression.airbnb import load_data,\\ \n load_pre_calculated_prediction, load_pre_calculated_feature_importance \n\n ref_dataset, _ = load_data(data_format="Dataset") \n ref_predictions, _ = load_pre_calculated_prediction() \n feature_importance = load_pre_calculated_feature_importance() # Optional \n feature_importance \n\n from deepchecks_client import DeepchecksClient, create_schema, read_schema \n\n schema_file_path = "schema_file.yaml"\n create_schema(dataset=ref_dataset, schema_output_file=schema_file_path) \n read_schema(schema_file_path) \n\n import os \n\n host = "${window.location.origin}" \n dc_client = DeepchecksClient(host=host, token="${token}") \n\n model_name = "Airbnb"\n model_version = dc_client.create_tabular_model_version(model_name=model_name, version_name="ver_1",\n schema=schema_file_path,\n feature_importance=feature_importance,\n reference_dataset=ref_dataset,\n reference_predictions=ref_predictions,\n task_type="regression")`,
       docLink: {
-        label: 'Docs link >',
+        label: 'Go to documantation >',
         url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#creating-a-new-model-version'
       }
     },
@@ -37,7 +38,7 @@ export const constants = {
         'timestamp, label_col = "timestamp", "price"\n _, prod_data = load_data(data_format="DataFrame")\n _, prod_predictions = load_pre_calculated_prediction()\n timestamp_col = prod_data[timestamp].astype(int) // 10 ** 9 \n model_version.log_batch(sample_ids=prod_data.index,\ndata=prod_data.drop([timestamp, label_col], axis=1), \n timestamps=timestamp_col, predictions=prod_predictions)',
       secondCodeSnippet: (_token?: string) => ``,
       docLink: {
-        label: 'Docs link >',
+        label: 'Go to documantation >',
         url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#uploading-production-data'
       }
     },
@@ -49,7 +50,7 @@ export const constants = {
         'model_client = dc_client.get_or_create_model(model_name)\n model_client.log_batch_labels(sample_ids=prod_data.index, labels=prod_data[label_col])',
       secondCodeSnippet: (_token?: string) => '',
       docLink: {
-        label: 'Docs link >',
+        label: 'Go to documantation >',
         url: 'https://docs.deepchecks.com/monitoring/stable/user-guide/tabular/auto_quickstarts/plot_quickstart.html#updating-the-labels'
       }
     }
