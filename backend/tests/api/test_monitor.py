@@ -174,7 +174,7 @@ def test_monitor_creation_and_retrieval(
     assert monitor["data_filters"] == monitor_payload["data_filters"]
     assert monitor["check"] == classification_model_check
     assert monitor["check"]["docs_link"] == \
-        "https://docs.deepchecks.com/stable/checks_gallery/tabular/" \
+        "https://docs.deepchecks.com/stable/tabular/auto_checks/" \
         "model_evaluation/plot_single_dataset_performance.html"
     assert monitor["alert_rules"][0] == {"id": 1, **alert_rule}
 
