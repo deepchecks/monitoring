@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { MemberSchema } from 'api/generated';
 
-import { Box, Stack } from '@mui/material';
+import { Stack } from '@mui/material';
 
-import { SearchField } from 'components/base/Input/SearchField';
-import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
+import { Input } from 'components/lib/components/Input/Input';
+import { StyledButton } from 'components/lib';
+
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { MembersActionDialogOptions } from '../Members.type';
 import { constants } from '../members.constants';
@@ -19,37 +21,26 @@ interface MembersHeaderProps {
 export const MembersHeader = ({ organizationMembers, setMembersList, handleOpenActionDialog }: MembersHeaderProps) => {
   const [searchFieldValue, setSearchFieldValue] = useState('');
 
-  const filterMembers = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
-
+  useEffect(() => {
     const filtered = organizationMembers.filter(member =>
-      member.full_name?.toLowerCase().includes(value.trim().toLowerCase())
+      member.full_name?.toLowerCase().includes(searchFieldValue.trim().toLowerCase())
     );
-
     setMembersList(filtered);
-    setSearchFieldValue(value);
-  };
-
-  const handleResetSearchField = () => {
-    setSearchFieldValue('');
-    setMembersList(organizationMembers);
-  };
+  }, [searchFieldValue]);
 
   const inviteMember = () => handleOpenActionDialog(MembersActionDialogOptions.invite);
 
   return (
     <Stack direction="row" spacing="16px" marginBottom="16px">
-      <Box sx={{ flex: 1 }}>
-        <SearchField
-          size="small"
-          fullWidth
-          placeholder={constants.header.title}
-          value={searchFieldValue}
-          onChange={filterMembers}
-          onReset={handleResetSearchField}
-        />
-      </Box>
-      <MUIBaseButton onClick={inviteMember}>Invite Member</MUIBaseButton>
+      <Input
+        placeholder={constants.header.title}
+        value={searchFieldValue}
+        setValue={setSearchFieldValue}
+        searchField
+        fullWidth
+        sx={{ flex: 1 }}
+      />
+      <StyledButton startIcon={<AddCircleOutlineIcon fill="white" />} label="Invite Members" onClick={inviteMember} />
     </Stack>
   );
 };
