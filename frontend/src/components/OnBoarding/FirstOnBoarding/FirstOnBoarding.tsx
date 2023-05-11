@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import OnBoarding from '../OnBoarding';
+
+import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
 
 import { StyledContainer, StyledImage, /* StyledSelect,*/ StyledText } from 'components/lib';
 import {
@@ -17,6 +20,19 @@ import { constants } from '../onBoarding.constants';
 
 const FirstOnBoarding = () => {
   const [dataType, setDataType] = useState<'demo' | 'user'>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleUnavailableOnboarding = async () => {
+      const res = await getOnboardingStateApiV1OnboardingGet();
+
+      if (res.step === 4) {
+        navigate('/');
+      }
+    };
+
+    handleUnavailableOnboarding();
+  }, []);
 
   return (
     <StyledContainer maxWidth={770} margin="16px auto">

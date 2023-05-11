@@ -4,10 +4,9 @@ import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
-import Typography from '@mui/material/Typography';
 
 import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
-import { StyledButton, StyledCodeSnippet } from 'components/lib';
+import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
@@ -62,7 +61,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
-              <Typography>{step.description}</Typography>
+              <StyledText text={step.description} />
               <StyledCodeSnippet code={step.codeSnippet} />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
