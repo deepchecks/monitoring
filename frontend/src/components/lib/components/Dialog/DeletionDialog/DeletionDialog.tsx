@@ -13,6 +13,7 @@ export const DeletionDialog = ({ messageStart, messageEnd, itemToDelete, ...othe
   return (
     <Dialog alertTypeButtons {...otherProps}>
       <Text
+        textAlign="center"
         type="h3"
         text={
           <p>
