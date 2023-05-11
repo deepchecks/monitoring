@@ -35,10 +35,11 @@ const FirstOnBoarding = () => {
   }, []);
 
   return (
-    <StyledContainer maxWidth={770} margin="16px auto">
-      <FirstOnBoardingSelectContainer>
-        <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
-        {/* dataType && (
+    <StyledContainer type="bg" width="100%" minHeight="100vh" height="100%">
+      <StyledContainer maxWidth={770} margin="16px auto">
+        <FirstOnBoardingSelectContainer>
+          <FirstOnBoardingTitle>{constants.first.title}</FirstOnBoardingTitle>
+          {/* dataType && (
           <StyledSelect
             selections={[
               { label: constants.first.userDataToggleLabel, value: 'user' },
@@ -48,25 +49,28 @@ const FirstOnBoarding = () => {
             setState={setDataType}
           />
           )*/}
-      </FirstOnBoardingSelectContainer>
-      {dataType ? (
-        <OnBoarding dataType={dataType} />
-      ) : (
-        <>
-          <StyledText text={constants.first.description} type="bodyBold" letterSpacing="1.5px" />
-          <StyledText text={constants.first.chooseText} type="bodyNormal" margin="50px 0 4px" letterSpacing="1.5px" />
-          <StyledContainer display="flex" flexDirection="row" gap="24px" padding={0}>
-            <FirstOnBoardingOutlinedBox /* onClick={() => setDataType('user')}*/ sx={{ opacity: 0.3, cursor: 'auto' }}>
-              <StyledImage src={userDataImg} margin="-24px 0 0 -12px" />
-              <FirstOnBoardingBoxLabel>{constants.first.userDataBtnLabel}</FirstOnBoardingBoxLabel>
-            </FirstOnBoardingOutlinedBox>
-            <FirstOnBoardingOutlinedBox onClick={() => setDataType('demo')}>
-              <StyledImage src={demoDataImg} />
-              <FirstOnBoardingBoxLabel>{constants.first.demoDataBtnLabel}</FirstOnBoardingBoxLabel>
-            </FirstOnBoardingOutlinedBox>
-          </StyledContainer>
-        </>
-      )}
+        </FirstOnBoardingSelectContainer>
+        {dataType ? (
+          <OnBoarding dataType={dataType} />
+        ) : (
+          <>
+            <StyledText text={constants.first.description} type="bodyBold" letterSpacing="1.5px" />
+            <StyledText text={constants.first.chooseText} type="bodyNormal" margin="50px 0 4px" letterSpacing="1.5px" />
+            <StyledContainer display="flex" flexDirection="row" gap="24px" padding={0}>
+              <FirstOnBoardingOutlinedBox
+                /* onClick={() => setDataType('user')}*/ sx={{ opacity: 0.3, cursor: 'auto' }}
+              >
+                <StyledImage src={userDataImg} margin="-24px 0 0 -12px" />
+                <FirstOnBoardingBoxLabel>{constants.first.userDataBtnLabel}</FirstOnBoardingBoxLabel>
+              </FirstOnBoardingOutlinedBox>
+              <FirstOnBoardingOutlinedBox onClick={() => setDataType('demo')}>
+                <StyledImage src={demoDataImg} />
+                <FirstOnBoardingBoxLabel>{constants.first.demoDataBtnLabel}</FirstOnBoardingBoxLabel>
+              </FirstOnBoardingOutlinedBox>
+            </StyledContainer>
+          </>
+        )}
+      </StyledContainer>
     </StyledContainer>
   );
 };
