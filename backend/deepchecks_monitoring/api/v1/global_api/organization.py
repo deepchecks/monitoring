@@ -176,8 +176,7 @@ async def update_organization(
 @router.delete('/organization')
 async def remove_organization(
     user: User = Depends(auth.AdminUser()),
-    session: AsyncSession = AsyncSessionDep,
-    settings=SettingsDep
+    session: AsyncSession = AsyncSessionDep
 ):
     """Remove an organization."""
     # Active only in debug mode
