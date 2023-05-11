@@ -768,6 +768,7 @@ export interface FeaturesSchema {
   data_retention_months: number;
   monthly_predictions_limit: number;
   sso_enabled: boolean;
+  onboarding_enabled: boolean;
 }
 
 /**
@@ -5780,6 +5781,49 @@ export const useUpdateOrganizationApiV1OrganizationPut = <
     Awaited<ReturnType<typeof updateOrganizationApiV1OrganizationPut>>,
     TError,
     { data: OrganizationUpdateSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Remove an organization.
+ * @summary Remove Organization
+ */
+export const removeOrganizationApiV1OrganizationDelete = () => {
+  return customInstance<unknown>({ url: `/api/v1/organization`, method: 'delete' });
+};
+
+export type RemoveOrganizationApiV1OrganizationDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeOrganizationApiV1OrganizationDelete>>
+>;
+
+export type RemoveOrganizationApiV1OrganizationDeleteMutationError = ErrorType<unknown>;
+
+export const useRemoveOrganizationApiV1OrganizationDelete = <
+  TError = ErrorType<unknown>,
+  TVariables = void,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeOrganizationApiV1OrganizationDelete>>,
+    TError,
+    TVariables,
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeOrganizationApiV1OrganizationDelete>>,
+    TVariables
+  > = () => {
+    return removeOrganizationApiV1OrganizationDelete();
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof removeOrganizationApiV1OrganizationDelete>>,
+    TError,
+    TVariables,
     TContext
   >(mutationFn, mutationOptions);
 };
