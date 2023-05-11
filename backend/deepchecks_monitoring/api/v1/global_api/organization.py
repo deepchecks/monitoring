@@ -174,28 +174,23 @@ async def update_organization(
         await session.flush()
 
 
-@router.delete('/organization', include_in_schema=False)
+@router.delete('/organization')
 async def remove_organization(
-    user: User = Depends(auth.CurrentUser()),
-    session: AsyncSession = AsyncSessionDep,
-    settings=SettingsDep
+    user: User = Depends(auth.AdminUser()),
+    session: AsyncSession = AsyncSessionDep
 ):
     """Remove an organization."""
-    # Active only in debug mode
-    if settings.debug_mode:
-        if user.organization is not None:
-            if not user.is_admin or user.disabled:
-                return Response(status_code=403)
-            org_id = user.organization_id
-            await session.execute(sa.update(User).where(User.organization_id == org_id).
-                                  values({User.organization_id: None}))
-            await session.execute(DropSchema(user.organization.schema_name, cascade=True))
-            await session.execute(sa.delete(Organization).where(Organization.id == org_id),
-                                  execution_options={'synchronize_session': False})
-            await session.commit()
+    if user.organization is not None:
+        org_id = user.organization_id
+        await session.execute(sa.update(User).where(User.organization_id == org_id).
+                              values({User.organization_id: None}))
+        await session.execute(DropSchema(user.organization.schema_name, cascade=True))
+        await session.execute(sa.delete(Organization).where(Organization.id == org_id),
+                              execution_options={'synchronize_session': False})
+        await session.commit()
         return Response()
     else:
-        return Response(status_code=403)
+        return BadRequest('User is not associated with an organization.')
 
 
 class MemberSchema(BaseModel):
