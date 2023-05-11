@@ -43,7 +43,7 @@ export const Dialog = (props: DialogProps) => {
           <Text text={title} type="h1" />
           <CloseIcon onClick={closeDialog} color={buttonColor} sx={{ cursor: 'pointer' }} />
         </Container>
-        <Container textAlign="center">{children}</Container>
+        <Container>{children}</Container>
         <Container gap="24px" flexDirection="row" justifyContent="center">
           <Button
             label={submitButtonLabel}
