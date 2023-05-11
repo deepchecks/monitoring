@@ -192,7 +192,6 @@ async def remove_organization(
     else:
         return BadRequest('User is not associated with an organization.')
 
-
 class MemberSchema(BaseModel):
     """Schema for a member."""
 
