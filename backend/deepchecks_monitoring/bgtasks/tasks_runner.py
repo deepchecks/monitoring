@@ -81,11 +81,12 @@ class TaskRunner:
         # For example the retry time is 10 minutes. If there is 10 minutes delay in the runner, same task will be pushed
         # again, and if a second runner will get the task before the first one removed it, it will be ran twice.
 
+        task_entry = self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
         # allow async redis or normal redis for testing
-        if inspect.iscoroutinefunction(self.redis.bzpopmin):
-            task_entry = await self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
-        else:
-            task_entry = self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
+
+        if inspect.iscoroutine(task_entry):
+            task_entry = await task_entry
+
         # If timeout is not 0 we might get return value of None
         if task_entry is None:
             self.logger.debug('Got from redis queue task_id none')
