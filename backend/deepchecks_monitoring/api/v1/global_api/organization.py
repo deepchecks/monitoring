@@ -173,23 +173,17 @@ async def update_organization(
         await session.flush()
 
 
-@router.delete('/organization', include_in_schema=False)
+@router.delete('/organization')
 async def remove_organization(
-    user: User = Depends(auth.CurrentUser()),
+    user: User = Depends(auth.AdminUser()),
     session: AsyncSession = AsyncSessionDep,
     settings=SettingsDep
 ):
     """Remove an organization."""
     # Active only in debug mode
-    if settings.debug_mode:
-        if user.organization is not None:
-            if not user.is_admin or user.disabled:
-                return Response(status_code=403)
-            await user.organization.drop_organization(session)
-            await session.commit()
-        return Response()
-    else:
-        return Response(status_code=403)
+    await user.organization.drop_organization(session)
+    await session.commit()
+    return Response()
 
 
 class MemberSchema(BaseModel):
