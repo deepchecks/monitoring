@@ -23,8 +23,6 @@ export const featuresList = {
 const getFeaturesStatus = async ({ setFeatures }: { setFeatures: (arg: Dict['type']) => void }) => {
   const response = (await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet()) as unknown as Dict['type'];
 
-  console.log(response);
-
   if (response && !(response as unknown as resError).error_message) {
     setFeatures(response);
   }
