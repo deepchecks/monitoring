@@ -16,6 +16,7 @@ Create Date: 2023-05-11 10:29:29.333394
 """
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import MetaData, Table
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -26,6 +27,11 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute('INSERT INTO public.global_tasks (name, bg_worker_task, params, num_pushed) '
+               'SELECT name, \'alerts\', params, 0 '
+               'FROM tasks WHERE status=\'scheduled\' AND queue = \'monitors\' '
+               'ON CONFLICT DO NOTHING')
+
     op.drop_table('tasks')
 
 

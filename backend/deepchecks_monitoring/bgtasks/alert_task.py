@@ -31,7 +31,6 @@ from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
 from deepchecks_monitoring.utils import database
 
-
 __all__ = ["AlertsTask"]
 
 
