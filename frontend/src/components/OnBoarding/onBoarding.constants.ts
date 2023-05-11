@@ -3,7 +3,7 @@ export const constants = {
   first: {
     title: 'Welcome to Deepchecks!',
     description:
-      'Here is how you can quickly create your first model in Deepchecks\n All You need is to open a Python notebook, follow the instructions and in the right places copy the example code into your notebook\n\n Good luck!',
+      'Here is how you can quickly create your first model in Deepchecks.\n All You need is to open a Python notebook, follow the instructions and in the right places copy the example code into your notebook.\n\n Good luck!',
     chooseText: 'Use a demo model of your own:',
     userDataBtnLabel: 'My model',
     demoDataBtnLabel: 'Demo data',
