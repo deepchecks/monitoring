@@ -21,10 +21,8 @@ from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
-from pydantic import BaseModel, Field, root_validator
-from sqlalchemy import VARCHAR, Column, and_, func, select
 from pydantic import BaseModel, Field, ValidationError, root_validator
-from sqlalchemy import Column, and_, select
+from sqlalchemy import VARCHAR, Column, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -35,7 +33,7 @@ from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_mode
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
-                                                    MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum, TimeUnit,
+                                                    MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum,
                                                     fetch_or_404, make_oparator_func)
 from deepchecks_monitoring.schema_models import ModelVersion
 from deepchecks_monitoring.schema_models.check import Check
