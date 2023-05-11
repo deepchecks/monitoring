@@ -52,6 +52,7 @@ Cypress.Commands.add("resetState", () => {
     cy.clearCookies();
     cy.visit("/");
     cy.login(username, password);
+    cy.request({ method: "delete", url: "api/v1/organization", timeout: 20000 });
     cy.request({ method: "delete", url: "api/v1/users", timeout: 20000 });
     cy.visit("/");
     cy.login(username, password);

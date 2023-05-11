@@ -96,7 +96,7 @@ class Organization(Base):
         value = slugify(org_name, separator="_")
         value = value if value else "".join(choice(ascii_lowercase) for _ in range(10))
         # postgres schema name has limit of 63 characters, so truncate the hash and org name
-        return f"org_{value[:30]}_{secrets.token_urlsafe(16)}"
+        return f"org_{value[:30]}_{secrets.token_hex(16)}"
 
     @classmethod
     def generate_stripe_customer_id(cls, org_name: str) -> t.Optional[str]:
@@ -119,10 +119,3 @@ class Organization(Base):
             t.cast(str, self.schema_name),
             migrations_location="deepchecks_monitoring:schema_migrations"
         )
-
-    async def drop_organization(self, session):
-        """Drop organization."""
-        await session.execute(update(User).where(User.organization_id == self.id).
-                              values({User.organization_id: None}))
-        await session.execute(DropSchema(self.schema_name, cascade=True))
-        await session.execute(delete(Organization).where(Organization.id == self.id))
