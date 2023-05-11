@@ -4,9 +4,10 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { MemberSchema } from 'api/generated';
 
-import { StyledTableRow, StyledTableCell, StyledIconButton } from './MembersTable.style';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
-import { Edit, Trash } from 'assets/icon/icon';
+import { StyledTableRow, StyledTableCell, StyledIconButton } from './MembersTable.style';
 
 dayjs.extend(localizedFormat);
 
@@ -28,10 +29,10 @@ export const MembersTableRow = ({ member, editMember, removeMember }: MembersTab
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
       <StyledTableCell align="right">
         <StyledIconButton onClick={() => editMember(member)}>
-          <Edit />
+          <ModeEditIcon />
         </StyledIconButton>
         <StyledIconButton onClick={() => removeMember(member)}>
-          <Trash />
+          <DeleteIcon />
         </StyledIconButton>
       </StyledTableCell>
     </StyledTableRow>

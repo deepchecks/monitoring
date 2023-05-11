@@ -2,7 +2,7 @@ import React from 'react';
 
 import { AlertRuleConfigSchema, useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete } from 'api/generated';
 
-import { DeleteActionDialog } from 'components/base/Dialog/ActionDialog/DeleteActionDialog';
+import { StyledDeletionDialog } from 'components/lib';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { constants } from '../../alertRuleConfig.constants';
@@ -29,14 +29,14 @@ export const DeleteAlertRule = ({ alertRule, open, closeDialog, refetchAlertRule
   };
 
   return (
-    <DeleteActionDialog
+    <StyledDeletionDialog
       open={open}
       title={title}
       closeDialog={closeDialog}
       submitButtonLabel={submit}
       submitButtonAction={deleteAlertRule}
       messageStart={messageStart}
-      itemNameToDelete={name(alertRule?.name)}
+      itemToDelete={name(alertRule?.name)}
       messageEnd={messageEnd}
     />
   );

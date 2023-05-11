@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { forwardRef } from 'react';
 
 import { Box, StepLabel, Stepper } from '@mui/material';
 
@@ -7,57 +7,49 @@ import { AlertRuleDialogStepThree } from './RuleDialogStepThree';
 import { AlertRuleDialogStepTwo } from './RuleDialogStepTwo';
 
 import { StyledStepContainer, StyledStep } from '../AlertRuleDialog.styles';
-import { constants } from '../alertRuleDialog.constants';
-
-const { basic, monitor, rule } = constants.content.stepTitles;
-
-const steps = [basic, monitor, rule];
 
 interface AlertRuleDialogContentProps {
-  handleComplete: () => void;
-  startingStep?: number;
+  activeStep: number;
+  setActiveStep: React.Dispatch<React.SetStateAction<number>>;
+  steps: any[];
+  setNextButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const AlertRuleDialogContent = ({ handleComplete, startingStep }: AlertRuleDialogContentProps) => {
-  const [activeStep, setActiveStep] = useState(startingStep || 0);
+export const AlertRuleDialogContent = forwardRef(
+  ({ activeStep, steps, setNextButtonDisabled }: AlertRuleDialogContentProps, ref) => {
+    const renderStep = () => {
+      const renderStepProps = {
+        setNextButtonDisabled,
+        ref
+      };
 
-  const handleNext = () => {
-    activeStep === steps.length - 1 ? handleComplete() : setActiveStep(prevActiveStep => prevActiveStep + 1);
-  };
-
-  const handleBack = () => setActiveStep(prevActiveStep => prevActiveStep - 1);
-
-  const renderStep = () => {
-    const renderStepProps = {
-      activeStep,
-      handleNext,
-      handleBack
+      switch (activeStep) {
+        case 0:
+          return <AlertRuleDialogStepOne {...renderStepProps} />;
+        case 1:
+          return <AlertRuleDialogStepTwo {...renderStepProps} />;
+        case 2:
+          return <AlertRuleDialogStepThree {...renderStepProps} />;
+        default:
+          return null;
+      }
     };
 
-    switch (activeStep) {
-      case 0:
-        return <AlertRuleDialogStepOne {...renderStepProps} />;
-      case 1:
-        return <AlertRuleDialogStepTwo {...renderStepProps} />;
-      case 2:
-        return <AlertRuleDialogStepThree {...renderStepProps} />;
-      default:
-        return null;
-    }
-  };
+    return (
+      <StyledStepContainer>
+        <Stepper activeStep={activeStep} sx={{ width: '476px' }}>
+          {steps.map(label => (
+            <StyledStep key={label}>
+              <StepLabel color="inherit">{label}</StepLabel>
+            </StyledStep>
+          ))}
+        </Stepper>
+        <Box component="form" sx={{ marginTop: '50px', width: 1 }}>
+          {renderStep()}
+        </Box>
+      </StyledStepContainer>
+    );
+  }
+);
 
-  return (
-    <StyledStepContainer>
-      <Stepper activeStep={activeStep} sx={{ width: '476px' }}>
-        {steps.map(label => (
-          <StyledStep key={label}>
-            <StepLabel color="inherit">{label}</StepLabel>
-          </StyledStep>
-        ))}
-      </Stepper>
-      <Box component="form" sx={{ marginTop: '50px', width: 1 }}>
-        {renderStep()}
-      </Box>
-    </StyledStepContainer>
-  );
-};
+AlertRuleDialogContent.displayName = 'AlertRuleDialogContent';

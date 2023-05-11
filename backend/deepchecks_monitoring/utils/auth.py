@@ -324,6 +324,6 @@ class AdminUser(CurrentActiveUser):
     ) -> t.Optional["models.User"]:
         """Dependency for validation of a current active admin user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
-        if not user.is_admin:
+        if not user.is_admin or user.disabled:
             raise AccessForbidden("User does not have admin rights")
         return user

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { ChartData } from 'chart.js';
 import dayjs from 'dayjs';
 
@@ -14,7 +14,6 @@ import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 
 import { SelectCondition } from 'components/Dashboard/MonitorDrawer/components/CreateAlertForm/SelectCondition';
 import { MonitorDrawerGraph } from 'components/Dashboard/MonitorDrawer/components/MonitorDrawerGraph';
-import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { GraphData } from 'helpers/types';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
@@ -23,7 +22,7 @@ import { FrequencyMap } from 'helpers/utils/frequency';
 
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 
-export const AlertRuleDialogStepThree = ({ handleNext, handleBack, activeStep }: AlertRuleStepBaseProps) => {
+export const AlertRuleDialogStepThree = forwardRef(({ setNextButtonDisabled }: AlertRuleStepBaseProps, ref) => {
   const { monitor, alertRule, setAlertRule } = useContext(AlertRuleDialogContext);
   const { modelsMap } = useModels();
 
@@ -77,8 +76,17 @@ export const AlertRuleDialogStepThree = ({ handleNext, handleBack, activeStep }:
       value: +numericValue
     };
     setAlertRule(alertRule);
-    handleNext();
   };
+
+  useImperativeHandle(ref, () => ({
+    next() {
+      finish();
+    }
+  }));
+
+  useEffect(() => {
+    setNextButtonDisabled(!operator || !numericValue);
+  }, [operator, numericValue]);
 
   return (
     <Stack alignItems="center" gap={2} justifyContent="center">
@@ -97,12 +105,8 @@ export const AlertRuleDialogStepThree = ({ handleNext, handleBack, activeStep }:
           timeFreq={FrequencyMap[monitor?.frequency]}
         />
       </Box>
-      <AlertRuleDialogButtons
-        disabled={!operator || !numericValue}
-        activeStep={activeStep}
-        handleNext={finish}
-        handleBack={handleBack}
-      />
     </Stack>
   );
-};
+});
+
+AlertRuleDialogStepThree.displayName = 'AlertRuleDialogStepThree';
