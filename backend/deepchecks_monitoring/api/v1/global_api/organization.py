@@ -179,9 +179,11 @@ async def remove_organization(
     session: AsyncSession = AsyncSessionDep
 ):
     """Remove an organization."""
-    # Active only in debug mode
-    await user.organization.drop_organization(session)
-    await session.commit()
+    if user.organization is not None:
+        await user.organization.drop_organization(session)
+        await session.commit()
+    else:
+        return BadRequest('User is nor associated with an organization.')
     return Response()
 
 
