@@ -63,7 +63,7 @@ class TaskRunner:
                 task = await self.wait_for_task()
                 if task:
                     task_id, queued_time = task
-                    with self.resource_provider.create_async_database_session() as session:
+                    async with self.resource_provider.create_async_database_session() as session:
                         await self.run_single_task(task_id, session, queued_time)
 
         except anyio.get_cancelled_exc_class():
