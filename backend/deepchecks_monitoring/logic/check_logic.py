@@ -525,7 +525,7 @@ def create_execution_data_query(
             columns = [col.name for col in table.c]
 
         # Forcefully add the sample id and ts columns
-        columns = set(columns + [SAMPLE_TS_COL])
+        columns = set(columns + [SAMPLE_TS_COL, SAMPLE_ID_COL])
         # Sort the columns to create a deterministic query for profiling purposes
         columns = sorted(columns)
 
