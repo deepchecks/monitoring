@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 """Organization entity model."""
 import enum
-
 import logging
 import secrets
 import typing as t
