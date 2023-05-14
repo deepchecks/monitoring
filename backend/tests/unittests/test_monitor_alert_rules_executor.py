@@ -19,12 +19,12 @@ import sqlalchemy as sa
 from deepchecks.tabular.checks import SingleDatasetPerformance
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from deepchecks_monitoring.bgtasks.alert_task import execute_monitor, AlertsTask
+from deepchecks_monitoring.bgtasks.alert_task import AlertsTask, execute_monitor
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
 from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
 from deepchecks_monitoring.monitoring_utils import TimeUnit
-from deepchecks_monitoring.public_models import User, Task
+from deepchecks_monitoring.public_models import Task, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert
 from deepchecks_monitoring.schema_models.monitor import (Frequency, calculate_initial_latest_schedule,

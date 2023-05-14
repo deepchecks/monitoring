@@ -20,7 +20,7 @@ from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.public_models import User, Task
+from deepchecks_monitoring.public_models import Task, User
 from deepchecks_monitoring.schema_models import ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL
 from deepchecks_monitoring.schema_models.model_version import get_monitor_table_name
