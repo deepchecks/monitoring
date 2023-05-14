@@ -245,12 +245,12 @@ describe("Alert Rules Screen", () => {
   }) {
     cy.contains("button", "New Alert Rule").should("exist").click();
 
-    cy.get("div[role=presentation] > div[role=dialog]")
+    cy.get("div[role=dialog]")
       .first()
       .should("exist")
       .as("dialogWindow");
     cy.get("@dialogWindow")
-      .find("form")
+      .find("div.MuiDialogContent-root")
       .first()
       .should("exist")
       .as("currentStepForm");
@@ -318,12 +318,12 @@ describe("Alert Rules Screen", () => {
           .click();
       })
       .then(() => {
-        cy.get("div[role=presentation] > div[role=dialog]")
+        cy.get("div[role=dialog]")
           .first()
           .should("exist")
           .as("dialogWindow");
         cy.get("@dialogWindow")
-          .find("form")
+          .find("div.MuiDialogContent-root")
           .first()
           .should("exist")
           .as("currentStepForm");
@@ -358,7 +358,7 @@ describe("Alert Rules Screen", () => {
   it("Test closure of rule creation form", () => {
     cy.visit("/configuration/alert-rules");
     cy.contains("button", "New Alert Rule").should("exist").click();
-    cy.contains("h2", "Create New Alert Rule").should("exist").next().click();
+    cy.contains("h1", "Create New Alert Rule").should("exist").next().click();
     cy.get("div[role=presentation] > div[role=dialog]").should("not.exist");
   });
 
@@ -426,11 +426,11 @@ describe("Alert Rules Screen", () => {
           .click();
       })
       .then(() => {
-        cy.contains("h2", "Delete alert rule").should("exist");
+        cy.contains("h1", "Delete alert rule").should("exist");
         cy.contains("button", "Yes, continue").should("exist").click();
       })
       .then(() => {
-        cy.contains("h2", "Delete alert rule").should("not.exist");
+        cy.contains("h1", "Delete alert rule").should("not.exist");
         cy.contains("button", "Yes, continue").should("not.exist");
         cy.contains("p", availableAlertRules[0].details.name).should(
           "not.exist"
