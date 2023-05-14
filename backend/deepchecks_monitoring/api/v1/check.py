@@ -416,8 +416,7 @@ async def get_check_window(
     start_time = monitor_options.start_time_dt()
     end_time = monitor_options.end_time_dt()
     model, model_versions = await get_model_versions_for_time_range(session, check.model_id, start_time, end_time)
-    model_results = await run_check_window(check, monitor_options, session, model, model_versions,
-                                           parallel=resources_provider.settings.parallel_enabled)
+    model_results = await run_check_window(check, monitor_options, session, model, model_versions)
     result_per_version = reduce_check_window(model_results, monitor_options)
     return {version.name: val for version, val in result_per_version.items()}
 

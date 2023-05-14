@@ -39,7 +39,7 @@ logger = logging.Logger('test')
 @pytest.mark.asyncio
 async def test_task_queue(resources_provider, async_session):
     workers = [Worker()]
-    queuer = TasksQueuer(resources_provider, workers, logger)
+    queuer = TasksQueuer(resources_provider, workers, logger, 1)
     runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
 
     await async_session.execute(sa.insert(Task).values({'name': 'test', 'bg_worker_task': 'test'}))

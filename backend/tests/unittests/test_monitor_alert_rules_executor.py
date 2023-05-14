@@ -39,7 +39,7 @@ def as_payload(v):
 async def run_alerts_worker(resources_provider: ResourcesProvider, async_session: AsyncSession):
     workers = [AlertsTask()]
     logger = logging.getLogger("test")
-    queuer = TasksQueuer(resources_provider, workers, logger)
+    queuer = TasksQueuer(resources_provider, workers, logger, 1)
     runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
 
     await queuer.move_tasks_to_queue(async_session)
