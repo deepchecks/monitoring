@@ -392,7 +392,6 @@ async def get_check_window(
         check_id: int,
         monitor_options: SingleCheckRunOptions,
         session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
 ):
     """Run a check for the time window.
 
