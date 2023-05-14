@@ -87,7 +87,7 @@ describe("Connected Models Screen", () => {
   }
 
   function findModelDeletionConfirmationDialog() {
-    cy.contains("h2", "Delete Model")
+    cy.contains("h1", "Delete Model")
       .should("exist")
       .parent()
       .parent()
