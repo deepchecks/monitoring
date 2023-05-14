@@ -112,7 +112,7 @@ async def update_complete_details(
             if org_count > 0:
                 raise LicenseError("Current license does not support multiple organizations.")
 
-        org = await Organization.create_for_user(user, body.new_organization_name)
+        org = await Organization.create_for_user(user, body.new_organization_name, session=session)
         session.add(org)
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
     elif body.accept_invite:

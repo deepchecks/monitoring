@@ -22,6 +22,8 @@ from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql.ddl import DropSchema
 from typing_extensions import Self
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from deepchecks_monitoring.public_models import Base
 from deepchecks_monitoring.schema_models import AlertSeverity
 from deepchecks_monitoring.utils.database import SchemaBuilder
@@ -79,15 +81,19 @@ class Organization(Base):
     async def create_for_user(
         cls: t.Type[Self],
         owner: "User",
-        name: str
+        name: str,
+        session: AsyncSession,
     ) -> Self:
         """Create a new organization for a user."""
+
+        from deepchecks_monitoring.public_models.role import Role, RoleEnum
 
         org = Organization(name=name,
                            schema_name=cls.generate_schema_name(name),
                            stripe_customer_id=cls.generate_stripe_customer_id(name))
         owner.organization = org
-        owner.is_admin = True
+        session.add(Role(user_id=owner.id, role=RoleEnum.OWNER))
+        session.add(Role(user_id=owner.id, role=RoleEnum.ADMIN))
         return org
 
     @classmethod

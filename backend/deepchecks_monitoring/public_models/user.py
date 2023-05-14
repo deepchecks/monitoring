@@ -26,7 +26,7 @@ from deepchecks_monitoring.public_models import Base
 from deepchecks_monitoring.utils import auth
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.public_models import Organization  # pylint: disable=unused-import
+    from deepchecks_monitoring.public_models import Organization, Role  # pylint: disable=unused-import
 
 __all__ = ["User", "UserOAuthDTO"]
 
@@ -53,8 +53,6 @@ class User(Base):
     full_name = sa.Column(sa.String, nullable=True)
     disabled = sa.Column(sa.Boolean, default=False, nullable=False)
     picture_url = sa.Column(sa.String, nullable=True)
-    is_admin = sa.Column(sa.Boolean, default=False, nullable=False)
-    is_owner = sa.Column(sa.Boolean, default=False, nullable=False)
     last_login = sa.Column(sa.DateTime(timezone=True), nullable=True, onupdate=sa.func.now())
     created_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
 
@@ -79,6 +77,14 @@ class User(Base):
     organization: Mapped["Organization"] = relationship(
         "Organization",
         lazy="joined"
+    )
+
+    roles: Mapped[t.List["Role"]] = relationship(
+        "Role",
+        back_populates="user",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
     )
 
     @classmethod

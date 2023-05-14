@@ -116,7 +116,7 @@ def _get_subscription(stripe_customer_id: str, status: t.Optional[str]) -> t.Lis
 
 @router.get("/billing/charges", tags=["billing"], response_model=t.List[ChargeSchema])
 async def list_all_charges(
-        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        user: User = Depends(auth.OwnerUser())  # pylint: disable=unused-argument
 ):
     """Get the list of available products from stripe."""
     try:
@@ -141,7 +141,7 @@ async def list_all_charges(
 
 @router.get("/billing/available-products", tags=["billing"], response_model=t.List[ProductResponseSchema])
 async def list_all_products(
-        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        user: User = Depends(auth.OwnerUser())  # pylint: disable=unused-argument
 ):
     """Get the list of available products from stripe."""
     try:
@@ -188,7 +188,7 @@ async def get_payment_method(user: User = Depends(auth.OwnerUser())) -> t.List:
 
 
 @router.get("/billing/subscription", tags=["billing"], response_model=t.List)
-async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
+async def get_subscriptions(user: User = Depends(auth.OwnerUser())) -> t.List:
     """Return a list of subscription of the organization."""
     try:
         subscriptions = stripe.Subscription.list(customer=user.organization.stripe_customer_id,
@@ -293,32 +293,6 @@ async def stripe_webhook(request: Request,
     else:
         data = request_data["data"]
         event_type = request_data["type"]
-
-    print(data["object"])
-
-    if event_type == "invoice.paid":
-        # Used to provision services after the trial has ended.
-        # The status of the invoice will show up as paid. Store the status in your
-        # database to reference when a user accesses your service to avoid hitting rate
-        # limits.
-        print(data)
-
-    if event_type == "invoice.payment_failed":
-        # If the payment fails or the customer does not have a valid payment method,
-        # an invoice.payment_failed event is sent, the subscription becomes past_due.
-        # Use this webhook to notify your user that their payment has
-        # failed and to retrieve new card details.
-        print(data)
-
-    if event_type == "invoice.finalized":
-        # If you want to manually send out invoices to your customers
-        # or store them locally to reference to avoid hitting Stripe rate limits.
-        print(data)
-
-    if event_type == "customer.subscription.deleted":
-        # handle subscription canceled automatically based
-        # upon your subscription settings. Or if the user cancels it.
-        print(data)
 
     if event_type in [
         "charge.succeeded",
