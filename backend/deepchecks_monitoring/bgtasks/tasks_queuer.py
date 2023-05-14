@@ -50,7 +50,7 @@ class TasksQueuer:
             resource_provider: ResourcesProvider,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
-            run_interval: int = 30,
+            run_interval,
             retries_interval: int = 600
     ):
         self.resource_provider = resource_provider
@@ -115,6 +115,7 @@ class BaseWorkerSettings(DatabaseSettings, RedisSettings):
     loglevel: str = 'INFO'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
+    queuer_run_interval: int = 30
 
     class Config:
         """Model config."""
@@ -166,7 +167,7 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                worker = tasks_queuer.TasksQueuer(rp, workers, logger)
+                worker = tasks_queuer.TasksQueuer(rp, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 
     uvloop.install()

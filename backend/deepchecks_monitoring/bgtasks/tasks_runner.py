@@ -25,7 +25,7 @@ from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelData
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
+from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings, EmailSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
@@ -116,7 +116,7 @@ class TaskRunner:
             self.logger.exception('Exception running task')
 
 
-class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):
+class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, EmailSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -157,7 +157,7 @@ def execute_worker():
 
     async def main():
         settings = WorkerSettings()
-        service_name = 'tasks-queuer'
+        service_name = 'tasks-runner'
 
         logger = configure_logger(
             name=service_name,

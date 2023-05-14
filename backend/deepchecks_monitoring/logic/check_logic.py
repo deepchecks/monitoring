@@ -379,7 +379,6 @@ async def run_check_window(
         reference_only: bool = False,
         n_samples: int = DEFAULT_N_SAMPLES,
         with_display: bool = False,
-        parallel: bool = True,
 ) -> t.Dict[ModelVersion, t.Optional[t.Dict]]:
     """Run a check for each time window by lookback or for reference only.
 
@@ -401,8 +400,6 @@ async def run_check_window(
         The number of samples to use.
     with_display : bool, optional
         Whether to run the check with display or not.
-    parallel : bool, default True
-        Whether to run the checks in parallel with joblib.
 
     Returns
     -------
@@ -444,7 +441,7 @@ async def run_check_window(
             check,
             monitor_options.additional_kwargs,
             with_display,
-            parallel=parallel,
+            parallel=False,
         )
     else:
         model_results_per_window = await get_results_for_model_versions_for_reference(
