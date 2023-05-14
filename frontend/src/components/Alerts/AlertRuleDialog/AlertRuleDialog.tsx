@@ -79,7 +79,7 @@ export const AlertRuleDialog = ({
   }, [fetchedMonitor, setMonitor]);
 
   const handleClose = () => {
-    onClose(false);
+    onClose(true);
     setActiveStep(startingStep);
     resetState();
   };
