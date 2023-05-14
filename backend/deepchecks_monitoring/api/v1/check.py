@@ -623,8 +623,6 @@ async def run_check_group_by_feature(
 
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
-    # First create all session for the db to start simultaneously
-    sessions = []
     for f in filters:
         test_session, ref_session = load_data_for_check(model_version, top_feat,
                                                         monitor_options.add_filters(f['filters']),
@@ -633,25 +631,12 @@ async def run_check_group_by_feature(
                                                         with_labels=check.is_label_required,
                                                         filter_labels_exist=check.is_label_required)
         # Create data object to pass to calculate the check. Single window without start/end times
-        session_info = {'data': session.execute(test_session), 'windows': [{}]}
-        if ref_session is not None:
-            session_info['reference'] = session.execute(ref_session)
-        sessions.append(session_info)
-
-    # Now wait for sessions and run the check
-    for f, model_version_session in zip(filters, sessions):
-        results = await model_version_session['data']
-        model_version_session['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
-        if 'reference' in model_version_session:
-            results = await model_version_session['reference']
-            model_version_session['reference'] = pd.DataFrame(results.all(),
-                                                              columns=[str(key) for key in results.keys()])
-        else:
-            model_version_session['reference'] = pd.DataFrame()
+        session_info = {'windows': [{'query': session.execute(test_session)}],
+                        'reference': session.execute(ref_session) if ref_session is not None else None}
 
         # Get value from check to run
-        model_results_per_window = get_results_for_model_versions_per_window(
-            {model_version.id : model_version_session}, [model_version], model_version.model, check,
+        model_results_per_window = await get_results_for_model_versions_per_window(
+            {model_version.id: session_info}, [model_version], model_version.model, check,
             monitor_options.additional_kwargs, with_display=False,
             parallel=resources_provider.settings.parallel_enabled)
         # The function we called is more general, but we know here we have single version and window
@@ -689,23 +674,15 @@ async def get_check_display(
 
     top_feat, _ = get_top_features_or_from_conf(model_version, monitor_options.additional_kwargs)
 
-    model_version_data = {'windows': [{}]}
     test_session, ref_session = load_data_for_check(model_version, top_feat, monitor_options,
                                                     with_reference=check.is_reference_required, with_test=True,
                                                     with_labels=check.is_label_required,
                                                     filter_labels_exist=check.is_label_required)
-    test_session = session.execute(test_session)
-    ref_session = session.execute(ref_session) if ref_session is not None else None
-    results = await test_session
-    model_version_data['data'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
-    if ref_session:
-        results = await ref_session
-        model_version_data['reference'] = pd.DataFrame(results.all(), columns=[str(key) for key in results.keys()])
-    else:
-        model_version_data['reference'] = pd.DataFrame()
+    model_version_data = {'windows': [{'query': session.execute(test_session)}],
+                          'reference': session.execute(ref_session) if ref_session is not None else None}
 
     # Get value from check to run
-    model_results_per_window = get_results_for_model_versions_per_window(
+    model_results_per_window = await get_results_for_model_versions_per_window(
         {model_version.id: model_version_data}, [model_version], model_version.model, check,
         monitor_options.additional_kwargs, with_display=True, parallel=resources_provider.settings.parallel_enabled)
 

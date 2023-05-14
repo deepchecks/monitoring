@@ -146,14 +146,13 @@ def initialize_check(check: Check, model_version, additional_kwargs=None) -> Bas
     return BaseCheck.from_config(new_config)
 
 
-def get_results_for_model_versions_per_window(
+async def get_results_for_model_versions_per_window(
         model_versions_data: t.Dict,
         model_versions: t.List[ModelVersion],
         model: Model,
         check: t.Union[Check, t.List[Check]],
         additional_kwargs: MonitorCheckConfSchema,
         with_display: bool = False,
-        n_samples=DEFAULT_N_SAMPLES,
         parallel: bool = True,
 ) -> t.Dict[ModelVersion, t.Optional[t.List[t.Dict]]]:
     """Get results for active model version sessions per window."""
@@ -167,7 +166,13 @@ def get_results_for_model_versions_per_window(
     for model_version in model_versions:
         data_dict = model_versions_data[model_version.id]
         # If this is a train test check then we require reference data in order to run
-        missing_reference = need_ref and data_dict['reference'].empty
+        if need_ref:
+            if data_dict['reference'] is None:
+                raise ValueError(f'Reference data is required for {check.name} check, but was not provided.')
+            reference_results = await data_dict['reference']
+            reference = pd.DataFrame(reference_results.all(), columns=[str(key) for key in reference_results.keys()])
+        else:
+            reference = pd.DataFrame()
 
         if isinstance(check, Check):
             dp_check = initialize_check(check, model_version, additional_kwargs)
@@ -180,7 +185,7 @@ def get_results_for_model_versions_per_window(
             dp_check = Suite('', *all_checks)
 
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            data_dict['reference'],
+            reference,
             model_version,
             model,
             top_feat,
@@ -189,9 +194,8 @@ def get_results_for_model_versions_per_window(
 
         model_results[model_version] = []
         for curr_window in data_dict['windows']:
-            start = curr_window.get('start')
-            end = curr_window.get('end')
-            result = {'start': start, 'end': end, 'from_cache': False, 'result': None}
+            result = {'start': curr_window.get('start'), 'end': curr_window.get('end'), 'from_cache': False,
+                      'result': None}
             model_results[model_version].append(result)
 
             # If we already loaded result from the cache, then no need to run the check again
@@ -199,17 +203,20 @@ def get_results_for_model_versions_per_window(
                 result['from_cache'] = True
                 result['result'] = curr_window['result']
                 continue
+            elif 'query' in curr_window:
+                # The given window might be out of range for the model version, so we get None as query
+                if curr_window['query'] is None:
+                    continue
+                data_results = await curr_window['query']
+                data_df = pd.DataFrame(data_results.all(), columns=[str(key) for key in data_results.keys()])
+            else:
+                raise ValueError('Window must have either result or query, something went wrong')
 
             # if reference is missing in train-test check or no data - skip
-            if data_dict['data'].empty or missing_reference:
+            if data_df.empty or (need_ref and reference.empty):
                 continue
 
-            # If there is no result then must have a dataframe data. If the dataframe is empty, skipping the
-            # run and putting none result
-            data = get_data_for_window(data_dict['data'], start, end, n_samples)
-            if data.empty:
-                continue
-            jobs.append(delayed(run_deepchecks)(data, model_version, model, top_feat, dp_check,
+            jobs.append(delayed(run_deepchecks)(data_df, model_version, model, top_feat, dp_check,
                                                 feat_imp, with_display, reference_table_ds, reference_table_pred,
                                                 reference_table_proba))
             # Map index of the job to location in dict
@@ -227,15 +234,6 @@ def get_results_for_model_versions_per_window(
                 if 'job_index' in result:
                     result['result'] = jobs[result.pop('job_index')]
     return model_results
-
-
-def get_data_for_window(df, start, end, limit):
-    """Get data for a specific window."""
-    if start and end:
-        df = df[(df[SAMPLE_TS_COL] >= start) & (df[SAMPLE_TS_COL] < end)]
-    if len(df) > limit:
-        return df.sort_values(by=SAMPLE_ID_COL, key=lambda x: xxh3_64(x).digest()).head(limit)
-    return df
 
 
 def run_deepchecks(
@@ -310,7 +308,7 @@ def run_deepchecks(
         )
 
 
-def get_results_for_model_versions_for_reference(
+async def get_results_for_model_versions_for_reference(
         model_versions_dataframes: t.Dict,
         model_versions: t.List[ModelVersion],
         model: Model,
@@ -323,13 +321,15 @@ def get_results_for_model_versions_for_reference(
     model_reduces = {}
     for model_version in model_versions:
         version_data = model_versions_dataframes[model_version.id]
-        if version_data['reference'].empty:
+        reference = await version_data['reference']
+        reference = pd.DataFrame(reference.all(), columns=[str(key) for key in reference.keys()])
+        if reference.empty:
             model_reduces[model_version] = None
             continue
 
         reduced_outs = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            version_data['reference'],
+            reference,
             model_version,
             model,
             top_feat,
