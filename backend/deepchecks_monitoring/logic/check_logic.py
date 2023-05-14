@@ -14,7 +14,6 @@ from collections import defaultdict
 from copy import deepcopy
 from numbers import Number
 
-import pandas as pd
 import pendulum as pdl
 import sqlalchemy
 from deepchecks import BaseCheck, CheckResult
@@ -526,7 +525,7 @@ def create_execution_data_query(
             columns = [col.name for col in table.c]
 
         # Forcefully add the sample id and ts columns
-        columns = set(columns + [SAMPLE_ID_COL, SAMPLE_TS_COL])
+        columns = set(columns + [SAMPLE_TS_COL])
         # Sort the columns to create a deterministic query for profiling purposes
         columns = sorted(columns)
 

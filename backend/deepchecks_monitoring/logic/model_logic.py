@@ -22,12 +22,11 @@ from joblib import Parallel, delayed
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from xxhash import xxh3_64
 
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_PRED_COL,
-                                                             SAMPLE_PRED_PROBA_COL, SAMPLE_TS_COL, ColumnType)
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
+                                                             SAMPLE_TS_COL, ColumnType)
 
 DEFAULT_N_SAMPLES = 5000
 
