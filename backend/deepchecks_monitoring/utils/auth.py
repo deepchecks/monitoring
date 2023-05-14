@@ -324,6 +324,22 @@ class AdminUser(CurrentActiveUser):
     ) -> t.Optional["models.User"]:
         """Dependency for validation of a current active admin user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
-        if not user.is_admin:
+        if (not user.is_admin and not user.is_owner) or user.disabled:
             raise AccessForbidden("User does not have admin rights")
+        return user
+
+
+class OwnerUser(CurrentActiveUser):
+    """Authenticate a user and verify that he is an admin."""
+
+    async def __call__(
+        self,
+        request: Request,
+        bearer: t.Optional[AccessToken] = Depends(AccessBearer(auto_error=False)),
+        session: AsyncSession = AsyncSessionDep
+    ) -> t.Optional["models.User"]:
+        """Dependency for validation of a current active owner user."""
+        user = t.cast("models.User", await super().__call__(request, bearer, session))
+        if not user.is_owner or user.disabled:
+            raise AccessForbidden("User does not have owner rights")
         return user

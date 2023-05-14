@@ -54,6 +54,7 @@ class User(Base):
     disabled = sa.Column(sa.Boolean, default=False, nullable=False)
     picture_url = sa.Column(sa.String, nullable=True)
     is_admin = sa.Column(sa.Boolean, default=False, nullable=False)
+    is_owner = sa.Column(sa.Boolean, default=False, nullable=False)
     last_login = sa.Column(sa.DateTime(timezone=True), nullable=True, onupdate=sa.func.now())
     created_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
 

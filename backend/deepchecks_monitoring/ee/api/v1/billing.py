@@ -153,7 +153,7 @@ async def list_all_products(
 
 
 @router.post("/billing/payment-method", tags=["billing"])
-async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(auth.AdminUser())):
+async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(auth.OwnerUser())):
     """Update the payment method on stripe."""
     try:
         stripe.PaymentMethod.attach(
@@ -174,7 +174,7 @@ async def update_payment_method(body: PaymentMethodSchema, user: User = Depends(
 
 
 @router.get("/billing/payment-method", tags=["billing"], response_model=t.List)
-async def get_payment_method(user: User = Depends(auth.AdminUser())) -> t.List:
+async def get_payment_method(user: User = Depends(auth.OwnerUser())) -> t.List:
     """Return the payment method of the organization."""
     customer_id = user.organization.stripe_customer_id
 
@@ -201,7 +201,7 @@ async def get_subscriptions(user: User = Depends(auth.AdminUser())) -> t.List:
 @router.post("/billing/subscription", tags=["billing"], response_model=SubscriptionCreationResponse)
 async def create_subscription(
         body: CheckoutSchema,
-        user: User = Depends(auth.AdminUser())
+        user: User = Depends(auth.OwnerUser())
 ) -> SubscriptionCreationResponse:
     """Creates a checkout session with stripe"""
     try:
@@ -229,7 +229,7 @@ async def create_subscription(
 @router.delete("/billing/subscription/{subscription_id}", tags=["billing"])
 def cancel_subscription(
         subscription_id: str,
-        user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+        user: User = Depends(auth.OwnerUser())  # pylint: disable=unused-argument
 ):
     """Cancel the subscription."""
     try:
@@ -245,7 +245,7 @@ def cancel_subscription(
 def update_subscription(
         subscription_id: str,
         body: CheckoutSchema,
-        user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
+        user: User = Depends(auth.OwnerUser()),  # pylint: disable=unused-argument
 ) -> SubscriptionCreationResponse:
     """Update the subscription for the organization."""
     try:
