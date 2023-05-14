@@ -220,7 +220,7 @@ async def retrieve_organization_members(
     members = (await session.scalars(
         sa.select(User)
         .where(User.organization_id == user.organization_id)
-        .order_by(User.disabled.asc(), User.is_admin.desc())
+        .order_by(User.disabled.asc())
     )).all()
     return [MemberSchema.from_orm(it).dict() for it in members]
 
