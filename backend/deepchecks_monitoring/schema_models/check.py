@@ -24,8 +24,7 @@ if t.TYPE_CHECKING:
 
 __all__ = ["Check"]
 
-
-_DOCS_LINK_FORMAT = "https://docs.deepchecks.com/stable/checks_gallery/{data_type}/{check_type}/plot_{check_name}.html"
+_DOCS_LINK_FORMAT = "https://docs.deepchecks.com/stable/{data_type}/auto_checks/{check_type}/plot_{check_name}.html"
 
 
 class Check(Base, MetadataMixin):
