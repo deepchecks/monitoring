@@ -223,12 +223,15 @@ async def retrieve_organization_members(
         sa.select(User)
         .where(User.organization_id == user.organization_id)
         .options(selectinload(User.roles))
-        .order_by(User.disabled.asc())
     )).all()
     members_schems = [MemberSchema(id=user.id, email=user.email, full_name=user.full_name, disabled=user.disabled,
                          picture_url=user.picture_url, last_login=user.last_login, created_at=user.created_at,
                          roles=[role.role for role in user.roles]) for user in members]
-    return sorted(members_schems, key=lambda member: member.roles[0].role_index if member.roles else -1, reverse=True)
+    members_schems = \
+          sorted(members_schems, key=lambda member: member.roles[0].role_index if member.roles else -1, reverse=True)
+    members_schems = \
+          sorted(members_schems, key=lambda member: member.disabled, reverse=True)
+    return members_schems
 
 
 @router.delete(
