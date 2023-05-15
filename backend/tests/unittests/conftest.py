@@ -16,8 +16,12 @@ import pytest
 def _():
     # adding telemetry to make sure that it does not break routines
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
+    from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
+    from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
     from deepchecks_monitoring.ee.utils import telemetry
     from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
 
     telemetry.collect_telemetry(AlertsScheduler)
     telemetry.collect_telemetry(DataIngestionBackend)
+    telemetry.collect_telemetry(TasksQueuer)
+    telemetry.collect_telemetry(TaskRunner)
