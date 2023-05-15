@@ -16,6 +16,7 @@ from fastapi import Depends, Response, status
 from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.ddl import DropSchema
 
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
@@ -180,11 +181,16 @@ async def remove_organization(
 ):
     """Remove an organization."""
     if user.organization is not None:
-        await user.organization.drop_organization(session)
+        org_id = user.organization_id
+        await session.execute(sa.update(User).where(User.organization_id == org_id).
+                              values({User.organization_id: None}))
+        await session.execute(DropSchema(user.organization.schema_name, cascade=True))
+        await session.execute(sa.delete(Organization).where(Organization.id == org_id),
+                              execution_options={'synchronize_session': False})
         await session.commit()
+        return Response()
     else:
         return BadRequest('User is not associated with an organization.')
-    return Response()
 
 
 class MemberSchema(BaseModel):

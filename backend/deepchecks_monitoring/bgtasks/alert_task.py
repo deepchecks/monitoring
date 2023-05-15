@@ -14,28 +14,84 @@ import logging.handlers
 import typing as t
 from collections import defaultdict
 
-import anyio
 import sqlalchemy as sa
-import uvloop
-from sqlalchemy import func, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from deepchecks_monitoring import config
 from deepchecks_monitoring.api.v1.alert import AlertCreationSchema
-from deepchecks_monitoring.bgtasks.core import Actor, ExecutionStrategy, TasksBroker, Worker, actor
 from deepchecks_monitoring.logic.check_logic import SingleCheckRunOptions, reduce_check_window, run_check_window
-from deepchecks_monitoring.monitoring_utils import DataFilterList, configure_logger, make_oparator_func
+from deepchecks_monitoring.monitoring_utils import DataFilterList, make_oparator_func
+from deepchecks_monitoring.public_models import Organization
+from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, Condition
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Frequency, Monitor, as_pendulum_datetime
+from deepchecks_monitoring.utils import database
 
-__all__ = ["execute_monitor"]
+__all__ = ["AlertsTask"]
 
 
-async def _execute_monitor(
+class AlertsTask(BackgroundWorker):
+    """Worker to calculate alerts"""
+
+    def __init__(self):
+        self._logger = logging.getLogger(__name__)
+
+    @classmethod
+    def queue_name(cls) -> str:
+        return "alerts"
+
+    @classmethod
+    def delay_seconds(cls) -> int:
+        return 0
+
+    async def run(self, task: Task, session: AsyncSession, resources_provider: ResourcesProvider):
+        organization_id = task.params["organization_id"]
+        monitor_id = task.params["monitor_id"]
+        timestamp = task.params["timestamp"]
+
+        organization_schema = (await session.execute(
+            select(Organization.schema_name).where(Organization.id == organization_id)
+        )).scalar_one_or_none()
+
+        # If organization was removed doing nothing
+        if organization_schema is not None:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization_schema, "public"]
+            )
+
+            alerts = await execute_monitor(
+                session=session,
+                resources_provider=resources_provider,
+                monitor_id=monitor_id,
+                timestamp=timestamp,
+                logger=self._logger,
+                organization_id=organization_id,
+            )
+        else:
+            alerts = []
+
+        # Deleting the task
+        await session.execute(delete(Task).where(Task.id == task.id))
+        await session.commit()
+
+        for alert in alerts:
+            # TODO: move to different worker?
+            notificator = await resources_provider.ALERT_NOTIFICATOR_TYPE.instantiate(
+                alert=alert,
+                organization_id=organization_id,
+                session=session,
+                resources_provider=resources_provider,
+                logger=self._logger.getChild("alert-notificator")
+            )
+            await notificator.notify()
+
+
+async def execute_monitor(
         monitor_id: int,
         timestamp: str,
         session: AsyncSession,
@@ -107,8 +163,7 @@ async def _execute_monitor(
             monitor_options=options,
             session=session,
             model=model_versions_without_cache[0].model,
-            model_versions=model_versions_without_cache,
-            parallel=resources_provider.settings.parallel_enabled,
+            model_versions=model_versions_without_cache
         )
 
         result_per_version = reduce_check_window(result_per_version, options)
@@ -137,7 +192,6 @@ async def _execute_monitor(
             alert.end_time = end_time
             AlertCreationSchema.validate(alert)
             session.add(alert)
-            await session.commit()
             logger.info("Alert(id:%s) instance created for monitor(id:%s)", alert.id, monitor.id)
             alerts.append(alert)
 
@@ -147,40 +201,6 @@ async def _execute_monitor(
 
     logger.info("No alerts were raised for Monitor(id:%s)", monitor.id)
     return []
-
-
-@actor(queue_name="monitors", execution_strategy=ExecutionStrategy.NOT_ATOMIC)
-async def execute_monitor(
-        organization_id: int,
-        organization_schema: str,  # pylint: disable=unused-argument
-        monitor_id: int,
-        timestamp: str,
-        session: AsyncSession,
-        resources_provider: ResourcesProvider,
-        logger: logging.Logger,
-        **kwargs  # pylint: disable=unused-argument
-) -> t.List[Alert]:
-    """Execute alert rule."""
-    alerts = await _execute_monitor(
-        session=session,
-        resources_provider=resources_provider,
-        monitor_id=monitor_id,
-        timestamp=timestamp,
-        logger=logger,
-        organization_id=organization_id,
-    )
-    for alert in alerts:
-        # TODO:
-        notificator = await resources_provider.ALERT_NOTIFICATOR_TYPE.instantiate(
-            alert=alert,
-            organization_id=organization_id,
-            session=session,
-            resources_provider=resources_provider,
-            logger=logger.getChild("alert-notificator")
-        )
-        await notificator.notify()
-
-    return alerts
 
 
 def assert_check_results(
@@ -219,68 +239,3 @@ def assert_check_results(
         )
         alert.named_failed_values = {version.name: val for version, val in failed_values.items()}
         return alert
-
-
-class WorkerSettings(
-    config.Settings,
-):
-    """Set of worker settings."""
-
-    worker_logfile: t.Optional[str] = None
-    worker_loglevel: str = "INFO"
-    worker_logfile_maxsize: int = 10000000  # 10MB
-    worker_logfile_backup_count: int = 3
-
-
-class WorkerBootstrap:
-    """Worker initialization script."""
-
-    resources_provider_type: t.ClassVar[t.Type[ResourcesProvider]]
-    settings_type: t.ClassVar[t.Type[WorkerSettings]]
-    task_broker_type: t.ClassVar[t.Type[TasksBroker]] = TasksBroker
-    actors: t.ClassVar[t.Sequence[Actor]] = [execute_monitor]
-
-    try:
-        from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
-    except ImportError:
-        service_name = "deepchecks-worker"
-        resources_provider_type = ResourcesProvider
-        settings_type = WorkerSettings
-    else:
-        service_name = "deepchecks-worker-ee"
-        resources_provider_type = ee.resources.ResourcesProvider
-        settings_type = type(
-            "WorkerSettings",
-            (WorkerSettings, ee.config.TelemetrySettings, ee.config.SlackSettings),
-            {}
-        )
-
-    async def run(self):
-        settings = self.settings_type()  # type: ignore
-
-        logger = configure_logger(
-            name=self.service_name,
-            log_level=settings.worker_loglevel,
-            logfile=settings.worker_logfile,
-            logfile_backup_count=settings.worker_logfile_backup_count,
-        )
-
-        async with self.resources_provider_type(settings) as rp:
-            rp.initialize_telemetry_collectors(Worker)
-
-            async with anyio.create_task_group() as g:
-                g.start_soon(Worker.create(
-                    engine=rp.async_database_engine,
-                    task_broker_type=self.task_broker_type,
-                    actors=self.actors,
-                    additional_params={"resources_provider": rp},
-                    logger=logger,
-                ).start)
-
-    def bootstrap(self):
-        uvloop.install()
-        anyio.run(self.run)
-
-
-if __name__ == "__main__":
-    WorkerBootstrap().bootstrap()

@@ -155,9 +155,11 @@ class Model(Base, MetadataMixin):
         latest_schedule = pdl.instance(t.cast("datetime", self.data_ingestion_alert_latest_schedule))
         frequency = t.cast("Frequency", self.data_ingestion_alert_frequency).to_pendulum_duration()
         next_schedule = latest_schedule + frequency
-        curr_day = pdl.now(self.timezone).set(hour=0, minute=0, second=0, microsecond=0)
-        if next_schedule < curr_day:
-            return curr_day
+        day_back = pdl.now(self.timezone).set(minute=0, second=0, microsecond=0).subtract(days=1)
+        # Does not want to run on past dates, only on near-past
+        if next_schedule < day_back:
+            # Fast forward to today
+            return pdl.now(self.timezone).set(hour=0, minute=0, second=0, microsecond=0)
         return next_schedule
 
 

@@ -165,13 +165,11 @@ async def get_results_for_model_versions_per_window(
     for model_version in model_versions:
         data_dict = model_versions_data[model_version.id]
         # If this is a train test check then we require reference data in order to run
-        if need_ref:
-            if data_dict['reference'] is None:
-                raise ValueError(f'Reference data is required for {check.name} check, but was not provided.')
+        if 'reference' in data_dict and data_dict['reference'] is not None:
             reference_results = await data_dict['reference']
             reference = pd.DataFrame(reference_results.all(), columns=[str(key) for key in reference_results.keys()])
         else:
-            reference = pd.DataFrame()
+            reference = None
 
         if isinstance(check, Check):
             dp_check = initialize_check(check, model_version, additional_kwargs)
@@ -211,7 +209,10 @@ async def get_results_for_model_versions_per_window(
             else:
                 raise ValueError('Window must have either result or query, something went wrong')
 
-            # if reference is missing in train-test check or no data - skip
+            # If reference is none it was not provided at all.
+            if need_ref and reference is None:
+                raise ValueError(f'Reference data is required for {check.name} check, but was not provided.')
+            # If reference is empty, query was provided but no reference data was found
             if data_df.empty or (need_ref and reference.empty):
                 continue
 

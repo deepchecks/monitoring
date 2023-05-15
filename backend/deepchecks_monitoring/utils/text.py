@@ -13,7 +13,7 @@ def slugify(
 
     Convert to ASCII.
     Convert to lowercase.
-    Remove characters that aren't alphanumerics, underscores, or hyphens.
+    Remove characters that aren't alphanumerics, underscores.
     Convert spaces or repeated dashes to single 'seperator' character.
     Also strip leading and trailing whitespace, dashes, and underscores.
     """
