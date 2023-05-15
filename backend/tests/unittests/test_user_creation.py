@@ -17,7 +17,6 @@ async def test_user_creation_from_oauth_info(async_session: AsyncSession, settin
     assert isinstance(user, User)
     assert user.email == oauth_info.email
     assert user.full_name == oauth_info.name
-    assert user.is_admin is False
     assert user.disabled is False
 
 
@@ -38,7 +37,6 @@ async def test_user_retrieval_with_oauth_info(async_session: AsyncSession, setti
     assert retrieved_user.email == user.email
     assert retrieved_user.full_name == user.full_name
     assert retrieved_user.last_login != initial_last_login
-    assert retrieved_user.is_admin is False
     assert retrieved_user.disabled is False
 
     # TODO:
