@@ -206,7 +206,8 @@ async def application(
     """Create application instance."""
     return create_application(
         resources_provider=resources_provider,
-        settings=settings
+        settings=settings,
+        log_level="ERROR"
     )
 
 
