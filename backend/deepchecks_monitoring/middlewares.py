@@ -11,7 +11,6 @@
 import time
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class LoggingMiddleware:
