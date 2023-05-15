@@ -32,7 +32,7 @@ def as_payload(v):
 
 
 @pytest.mark.asyncio
-async def test_alert_scheduling(
+async def test_data_ingestion_scheduling(
     async_session: AsyncSession,
     async_engine,
     classification_model: dict,

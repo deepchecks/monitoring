@@ -17,9 +17,7 @@ from string import ascii_lowercase
 
 import sqlalchemy as sa
 import stripe
-from sqlalchemy import delete, update
 from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.sql.ddl import DropSchema
 from typing_extensions import Self
 
 from deepchecks_monitoring.public_models import Base
@@ -119,10 +117,3 @@ class Organization(Base):
             t.cast(str, self.schema_name),
             migrations_location="deepchecks_monitoring:schema_migrations"
         )
-
-    async def drop_organization(self, session):
-        """Drop organization."""
-        await session.execute(update(User).where(User.organization_id == self.id).
-                              values({User.organization_id: None}))
-        await session.execute(DropSchema(self.schema_name, cascade=True))
-        await session.execute(delete(Organization).where(Organization.id == self.id))
