@@ -29,7 +29,9 @@ from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import tags_metadata
 from deepchecks_monitoring.ee.middlewares import LicenseCheckDependency
 from deepchecks_monitoring.exceptions import BaseHTTPException, error_to_dict
+from deepchecks_monitoring.middlewares import LoggingMiddleware
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.utils import auth
 
 __all__ = ["create_application"]
@@ -93,6 +95,8 @@ def create_application(
         expose_headers=["x-substatus"],
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    logger = configure_logger("server")
+    app.add_middleware(LoggingMiddleware, logger=logger)
 
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
