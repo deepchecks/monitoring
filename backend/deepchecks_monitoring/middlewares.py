@@ -11,6 +11,7 @@
 import time
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class LoggingMiddleware:
@@ -44,12 +45,7 @@ class LoggingMiddleware:
                 response_status_code = message["status"]
             await send(message)
 
-        start = time.time()
-        await self.app(scope, receive, wrapped_send)
-        end = time.time()
-
         info = {
-            "duration": end - start,
             "client": scope["client"],
             "scheme": scope["scheme"],
             "http_version": scope["http_version"],
@@ -89,7 +85,18 @@ class LoggingMiddleware:
                 "organization_id": user.organization_id,
             }
 
-        if response_status_code >= 500:
-            self.logger.error(info)
+        start = time.time()
+        try:
+            await self.app(scope, receive, wrapped_send)
+        # Any uncaught exception will be logged here
+        except Exception:  # pylint: disable=broad-except
+            end = time.time()
+            info["duration"] = end - start
+            self.logger.exception(info)
         else:
-            self.logger.info(info)
+            end = time.time()
+            info["duration"] = end - start
+            if response_status_code >= 500:
+                self.logger.error(info)
+            else:
+                self.logger.info(info)

@@ -101,6 +101,10 @@ def create_application(
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
 
+    @app.get("/matan")
+    def func():
+        raise ValueError("matan")
+
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(
         request: Request,

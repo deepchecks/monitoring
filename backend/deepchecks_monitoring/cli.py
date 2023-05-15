@@ -111,7 +111,7 @@ def upgrade_organizations_schemas(orgid: str):
 @cli.command()
 def run():
     """Run web server."""
-    uvicorn.run("app:create_application", port=8000)
+    uvicorn.run("app:create_application", port=8000, log_level="critical")
 
 
 @cli.command()
