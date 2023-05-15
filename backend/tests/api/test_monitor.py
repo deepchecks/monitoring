@@ -337,7 +337,8 @@ async def test_monitor_update_with_data(
     # # Assert
     await async_session.refresh(monitor)
     # assert latest_schedule after update is "num windows to start" windows earlier
-    assert pdl.instance(monitor.latest_schedule) == round_off_datetime(daterange[0], monitor_frequency)
+    expected = round_off_datetime(daterange[0], monitor_frequency) - monitor_frequency.to_pendulum_duration()
+    assert pdl.instance(monitor.latest_schedule) == expected
     # assert latest_schedule_before_update - pdl.instance(monitor.latest_schedule) == \
     #     monitor.frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START
 
@@ -405,7 +406,8 @@ async def test_update_monitor_freq(
 
     latest_schedule = pdl.instance(monitor.latest_schedule)
     assert monitor.frequency == frequency
-    assert latest_schedule == round_off_datetime(daterange[0], frequency)
+    expected = round_off_datetime(daterange[0], frequency) - frequency.to_pendulum_duration()
+    assert latest_schedule == expected
 
 
 def test_monitor_execution(
