@@ -25,7 +25,7 @@ from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelData
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.config import DatabaseSettings, EmailSettings, KafkaSettings, RedisSettings
+from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
@@ -120,7 +120,7 @@ class TaskRunner:
             self.logger.exception('Exception running task')
 
 
-class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, EmailSettings):
+class BaseWorkerSettings():
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -137,11 +137,11 @@ class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, EmailSe
 
 
 if with_ee:
-    class WorkerSettings(BaseWorkerSettings, ee.config.TelemetrySettings):
+    class WorkerSettings(BaseWorkerSettings, ee.config.Settings):
         """Set of worker settings."""
         pass
 else:
-    class WorkerSettings(BaseWorkerSettings):
+    class WorkerSettings(BaseWorkerSettings, Settings):
         """Set of worker settings."""
         pass
 
