@@ -9,10 +9,12 @@
 # ----------------------------------------------------------------------------
 """Task entity model."""
 import abc
+import typing as t
+from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Integer, func
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models import Base
@@ -59,3 +61,20 @@ class Task(Base):
     # Used to re-push tasks to the queue, in case worker drops the task (reboot, error, etc)
     num_pushed = sa.Column(sa.Integer, nullable=False, default=0)
     params = sa.Column(JSONB, nullable=True)
+
+
+async def delete_monitor_tasks(
+    monitor_ids: t.Union[int, t.List[int]],
+    schedule: datetime,
+    session: AsyncSession
+):
+    """Delete monitor tasks."""
+    if not isinstance(monitor_ids, t.List):
+        monitor_ids = [monitor_ids]
+    await session.execute(
+        sa.delete(Task).where(
+            sa.cast(Task.params['timestamp'].astext, TIMESTAMP(True)) > schedule,
+            sa.cast(Task.params['monitor_id'].astext, Integer).in_(monitor_ids),
+        ),
+        execution_options={'synchronize_session': False}
+    )

@@ -21,6 +21,9 @@ import uvloop
 from sqlalchemy import case, func, update
 from sqlalchemy.cimmutabledict import immutabledict
 
+from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
+from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
+from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
@@ -47,7 +50,7 @@ class TasksQueuer:
             resource_provider: ResourcesProvider,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
-            run_interval: int = 30,
+            run_interval,
             retries_interval: int = 600
     ):
         self.resource_provider = resource_provider
@@ -60,14 +63,16 @@ class TasksQueuer:
             for bg_worker in workers
         ], else_=datetime.timedelta(seconds=0))
         retry_interval = Task.num_pushed * datetime.timedelta(seconds=retries_interval)
-        condition = Task.creation_time + intervals_by_type + retry_interval <= func.now()
-        self.query = update(Task).where(condition).values({Task.num_pushed: Task.num_pushed + 1}).returning(Task.id)
+        condition = Task.creation_time + intervals_by_type + retry_interval
+        self.query = update(Task).where(condition <= func.statement_timestamp())\
+            .values({Task.num_pushed: Task.num_pushed + 1}).returning(Task.id)
 
     async def run(self):
         """Run the main loop."""
         try:
             while True:
-                await self.move_tasks_to_queue()
+                async with self.resource_provider.create_async_database_session() as session:
+                    await self.move_tasks_to_queue(session)
                 self.logger.debug(f'sleep for {self.run_interval} seconds')
                 await asyncio.sleep(self.run_interval)
         except anyio.get_cancelled_exc_class():
@@ -80,28 +85,27 @@ class TasksQueuer:
             self.logger.warning('Worker interrupted')
             raise
 
-    async def move_tasks_to_queue(self) -> int:
+    async def move_tasks_to_queue(self, session) -> int:
         """Return the number of queued tasks."""
-        async with self.resource_provider.create_async_database_session() as session:
-            # SQLAlchemy evaluates the WHERE criteria in the UPDATE statement in Python, to locate matching objects
-            # within the Session and update them. Therefore, we must use synchronize_session=False to tell sqlalchemy
-            # that we don't care about updating ORM objects in the session.
-            tasks = (await session.execute(self.query,
-                                           execution_options=immutabledict({'synchronize_session': False}))).all()
-            ts = pdl.now().int_timestamp
-            task_ids = {x['id']: ts for x in tasks}
-            if task_ids:
-                try:
-                    # Push to sorted set. if task id is already in set then do nothing.
-                    pushed_count = self.resource_provider.redis_client.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
-                    self.logger.info(f'Pushed {len(task_ids)} tasks to queue out of {len(task_ids)}')
-                    return pushed_count
-                except redis.ConnectionError:
-                    # If redis failed, does not commit the update to the db
-                    await session.rollback()
-            else:
-                self.logger.info('No tasks to push found')
-            return 0
+        # SQLAlchemy evaluates the WHERE criteria in the UPDATE statement in Python, to locate matching objects
+        # within the Session and update them. Therefore, we must use synchronize_session=False to tell sqlalchemy
+        # that we don't care about updating ORM objects in the session.
+        tasks = (await session.execute(self.query, execution_options=immutabledict({'synchronize_session': False})))\
+            .all()
+        ts = pdl.now().int_timestamp
+        task_ids = {x['id']: ts for x in tasks}
+        if task_ids:
+            try:
+                # Push to sorted set. if task id is already in set then do nothing.
+                pushed_count = self.resource_provider.redis_client.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
+                self.logger.info(f'Pushed {len(task_ids)} tasks to queue out of {len(task_ids)}')
+                return pushed_count
+            except redis.ConnectionError:
+                # If redis failed, does not commit the update to the db
+                await session.rollback()
+        else:
+            self.logger.info('No tasks to push found')
+        return 0
 
 
 class BaseWorkerSettings(DatabaseSettings, RedisSettings):
@@ -111,6 +115,7 @@ class BaseWorkerSettings(DatabaseSettings, RedisSettings):
     loglevel: str = 'INFO'
     logfile_maxsize: int = 10000000  # 10MB
     logfile_backup_count: int = 3
+    queuer_run_interval: int = 30
 
     class Config:
         """Model config."""
@@ -157,11 +162,12 @@ def execute_worker():
                 )
                 ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation()]
+        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
+                   ModelDataIngestionAlerter(), DeleteDbTableTask(), AlertsTask()]
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                worker = tasks_queuer.TasksQueuer(rp, workers, logger)
+                worker = tasks_queuer.TasksQueuer(rp, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 
     uvloop.install()

@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 import asyncio
 import typing as t
-from datetime import datetime
 
 import pendulum as pdl
 import pytest
@@ -19,9 +18,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from deepchecks_monitoring.bgtasks.core import Task, TaskStatus
+from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
-from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.public_models import Task, User
 from deepchecks_monitoring.schema_models import ModelVersion, Monitor, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LOGGED_TIME_COL
 from deepchecks_monitoring.schema_models.model_version import get_monitor_table_name
@@ -51,9 +50,7 @@ async def get_tasks_and_latest_schedule(async_engine, user, monitor):
         schema_translate_map = {None: user.organization.schema_name}
 
         tasks = t.cast(t.List[Task], (await c.execute(
-            sa.select(Task)
-            .order_by(Task.execute_after.asc())
-            .execution_options(schema_translate_map=schema_translate_map)
+            sa.select(Task).where(Task.bg_worker_task == AlertsTask.queue_name())
         )).all())
 
         latest_schedule = (await c.execute(
@@ -128,17 +125,17 @@ async def test_scheduler_on_non_label_check(
     tasks, latest_schedule = await get_tasks_and_latest_schedule(async_engine, user, monitor)
 
     tasks_timestamps = [
-        pdl.instance(t.cast(datetime, it.execute_after))
+        pdl.parse(it.params["timestamp"])
         for it in tasks
     ]
 
     # last window of data is not scheduled since it schedule time didn't pass yet the model end time
     # TODO:
-    assert len(tasks) == 7
+    assert len(tasks) == 8
     assert expected_tasks_timestamps == tasks_timestamps
 
-    assert_tasks(t.cast(t.Sequence[Task], tasks), monitor, TaskStatus.SCHEDULED)
-    assert latest_schedule == tasks[-1].execute_after
+    assert_tasks(t.cast(t.Sequence[Task], tasks), monitor)
+    assert latest_schedule == pdl.parse(tasks[-1].params["timestamp"])
 
 
 @pytest.mark.asyncio
@@ -217,7 +214,7 @@ async def test_scheduler_monitor_update(
     # assert len(tasks) == NUM_WINDOWS_TO_START
 
     tasks_timestamps = [
-        pdl.instance(t.cast(datetime, it.execute_after))
+        pdl.parse(it.params["timestamp"])
         for it in tasks
     ]
 
@@ -311,13 +308,13 @@ async def test_alert_rule_scheduling_with_multiple_concurrent_updaters(
     tasks, latest_schedule = await get_tasks_and_latest_schedule(async_engine, user, monitor)
 
     tasks_timestamps = [
-        pdl.instance(t.cast(datetime, it.execute_after))
+        pdl.parse(it.params["timestamp"])
         for it in tasks
     ]
 
     assert expected_tasks_timestamps == tasks_timestamps
-    assert_tasks(t.cast(t.Sequence[Task], tasks), monitor, TaskStatus.SCHEDULED)
-    assert latest_schedule == tasks[-1].execute_after
+    assert_tasks(t.cast(t.Sequence[Task], tasks), monitor)
+    assert latest_schedule == pdl.parse(tasks[-1].params["timestamp"])
 
 
 @pytest.mark.asyncio
@@ -401,7 +398,7 @@ async def test_scheduling_with_seconds_delay(
         until=date_range[-1]
     ))
     tasks_timestamps = [
-        pdl.instance(t.cast(datetime, it.execute_after))
+        pdl.parse(it.params["timestamp"])
         for it in tasks
     ]
 
@@ -489,7 +486,7 @@ async def test_scheduling_with_labels_ratio_delay(
         until=date_range[-1]
     ))
     tasks_timestamps = [
-        pdl.instance(t.cast(datetime, it.execute_after))
+        pdl.parse(it.params["timestamp"])
         for it in tasks
     ]
 
@@ -497,25 +494,20 @@ async def test_scheduling_with_labels_ratio_delay(
     assert expected_tasks_timestamps == tasks_timestamps
 
 
-def assert_tasks(tasks: t.Sequence[Task], monitor, expected_status: TaskStatus):
-    reference = f"Monitor:{monitor['id']}"
+def assert_tasks(tasks: t.Sequence[Task], monitor):
     prev_date = None
 
     for task in tasks:
         task = t.cast(Task, task)
-        assert task.status == expected_status
-        assert task.reference == reference
-        assert task.name.startswith(reference)
-        assert task.queue == "monitors"
+        assert task.bg_worker_task == AlertsTask.queue_name()
         assert isinstance(task.params, dict)
         assert "monitor_id" in task.params and task.params["monitor_id"] == monitor["id"]
         assert "timestamp" in task.params and isinstance(task.params["timestamp"], str)
-        assert pdl.parse(task.params["timestamp"]) == task.execute_after
 
         if prev_date is None:
-            prev_date = pdl.instance(t.cast(datetime, task.execute_after))
+            prev_date = pdl.parse(task.params["timestamp"])
         else:
-            task_execute_after = pdl.instance(t.cast(datetime, task.execute_after))
+            task_execute_after = pdl.parse(task.params["timestamp"])
             duration = Frequency(monitor["frequency"]).to_pendulum_duration()
             assert (task_execute_after - prev_date) / duration == 1
             prev_date = task_execute_after

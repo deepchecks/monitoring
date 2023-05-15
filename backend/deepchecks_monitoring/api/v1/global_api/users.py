@@ -10,7 +10,6 @@
 """Module representing the endpoints for the organization."""
 import typing as t
 from datetime import datetime
-from deepchecks_monitoring.public_models.role import RoleEnum
 
 from fastapi import Depends, Response
 from pydantic import BaseModel
@@ -25,6 +24,7 @@ from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.organization import OrgTier
+from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import create_api_token

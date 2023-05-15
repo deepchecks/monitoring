@@ -143,7 +143,7 @@ async def test_organization_members_retrieval(
         assert member["email"] == members[member["id"]].email
         assert member["disabled"] == members[member["id"]].disabled
         assert member["full_name"] == members[member["id"]].full_name
-        assert member["is_admin"] == members[member["id"]].is_admin
+        assert member["roles"] == members[member["id"]].roles
 
 
 @pytest.mark.asyncio
@@ -239,8 +239,8 @@ def fetch_organization_members(
         assert "email" in member
         assert "full_name" in member
         assert "picture_url" in member
-        assert "is_admin" in member
         assert "last_login" in member
         assert "disabled" in member
+        assert "roles" in member
 
     return data

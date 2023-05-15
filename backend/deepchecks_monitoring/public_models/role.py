@@ -8,9 +8,9 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the Role ORM model."""
-from typing import TYPE_CHECKING
 import enum
-import sqlalchemy as sa
+from typing import TYPE_CHECKING
+
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, relationship
 

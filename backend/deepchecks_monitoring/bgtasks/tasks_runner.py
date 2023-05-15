@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #
 """Contains alert scheduling logic."""
+import inspect
 import logging.handlers
 import typing as t
 
@@ -18,12 +19,13 @@ from redis.asyncio import Redis, RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
 
+from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.config import DatabaseSettings, KafkaSettings, RedisSettings
+from deepchecks_monitoring.config import DatabaseSettings, EmailSettings, KafkaSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
@@ -45,12 +47,12 @@ class TaskRunner:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
-            async_redis,
+            redis,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
     ):
         self.resource_provider = resource_provider
-        self.async_redis = async_redis
+        self.redis = redis
         self.logger = logger
         self.workers = {w.queue_name(): w for w in workers}
 
@@ -58,7 +60,12 @@ class TaskRunner:
         """Run the main loop."""
         try:
             while True:
-                await self.wait_for_task()
+                task = await self.wait_for_task()
+                if task:
+                    task_id, queued_time = task
+                    async with self.resource_provider.create_async_database_session() as session:
+                        await self.run_single_task(task_id, session, queued_time)
+
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Worker coroutine canceled')
             raise
@@ -74,8 +81,13 @@ class TaskRunner:
         # For example the retry time is 10 minutes. If there is 10 minutes delay in the runner, same task will be pushed
         # again, and if a second runner will get the task before the first one removed it, it will be ran twice.
 
+        task_entry = self.redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
+        # allow async redis or normal redis for testing
+
+        if inspect.iscoroutine(task_entry):
+            task_entry = await task_entry
+
         # If timeout is not 0 we might get return value of None
-        task_entry = await self.async_redis.bzpopmin(GLOBAL_TASK_QUEUE, timeout=timeout)
         if task_entry is None:
             self.logger.debug('Got from redis queue task_id none')
             return
@@ -83,29 +95,32 @@ class TaskRunner:
             # Return value from redis is (redis key, value, score)
             task_id = int(task_entry[1].decode())
             queued_time = task_entry[2]
+            return task_id, queued_time
 
-        async with self.resource_provider.create_async_database_session() as session:
-            task = await session.scalar(select(Task).where(Task.id == task_id))
-            # Making sure task wasn't deleted for some reason
-            if task is None:
-                self.logger.debug(f'Got already removed task id: {task_id}')
-                return
-            self.logger.info(f'Running task {task.bg_worker_task}: {task.name}')
-            try:
-                await self.run_single_task(task, session, queued_time)
-            except Exception:  # pylint: disable=broad-except
-                self.logger.exception('Exception running task')
-
-    async def run_single_task(self, task, session, queued_time):  # pylint: disable=unused-argument
+    async def run_single_task(self, task_id, session, queued_time):  # pylint: disable=unused-argument
         # queued_time is not used but logged in telemetry
-        worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
-        if worker:
-            await worker.run(task, session, self.resource_provider)
-        else:
-            self.logger.error(f'Unknown task type: {task.bg_worker_task}')
+        task = await session.scalar(select(Task).where(Task.id == task_id))
+        # Making sure task wasn't deleted for some reason
+        if task is None:
+            self.logger.debug(f'Got already removed task id: {task_id}')
+            return
+        await self._run_task(task, session, queued_time)
+
+    async def _run_task(self, task: Task, session, queued_time):  # pylint: disable=unused-argument
+        """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
+        to log the task parameters and queued time."""
+        try:
+            self.logger.info(f'Running task {task.bg_worker_task}: {task.name}')
+            worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
+            if worker:
+                await worker.run(task, session, self.resource_provider)
+            else:
+                self.logger.error(f'Unknown task type: {task.bg_worker_task}')
+        except Exception:  # pylint: disable=broad-except
+            self.logger.exception('Exception running task')
 
 
-class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings):
+class BaseWorkerSettings(DatabaseSettings, RedisSettings, KafkaSettings, EmailSettings):
     """Worker settings."""
 
     logfile: t.Optional[str] = None
@@ -146,7 +161,7 @@ def execute_worker():
 
     async def main():
         settings = WorkerSettings()
-        service_name = 'tasks-queuer'
+        service_name = 'tasks-runner'
 
         logger = configure_logger(
             name=service_name,
@@ -173,7 +188,7 @@ def execute_worker():
                 sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
         workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
-                   ModelDataIngestionAlerter(), DeleteDbTableTask()]
+                   ModelDataIngestionAlerter(), DeleteDbTableTask(), AlertsTask()]
 
         # AIOKafka is spamming our logs, disable it for errors and warnings
         logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)

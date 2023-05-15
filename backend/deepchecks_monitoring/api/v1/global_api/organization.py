@@ -10,7 +10,6 @@
 """Module representing the endpoints for the organization."""
 import typing as t
 from datetime import datetime
-from deepchecks_monitoring.public_models.role import RoleEnum
 
 import sqlalchemy as sa
 from fastapi import Depends, Response, status
@@ -18,6 +17,7 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.ddl import DropSchema
 
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
@@ -27,6 +27,7 @@ from deepchecks_monitoring.features_control import FeaturesSchema
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
+from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
@@ -177,16 +178,21 @@ async def update_organization(
 
 @router.delete('/organization')
 async def remove_organization(
-    user: User = Depends(auth.AdminUser()),
+    user: User = Depends(auth.OwnerUser()),
     session: AsyncSession = AsyncSessionDep
 ):
     """Remove an organization."""
     if user.organization is not None:
-        await user.organization.drop_organization(session)
+        org_id = user.organization_id
+        await session.execute(sa.update(User).where(User.organization_id == org_id).
+                              values({User.organization_id: None}))
+        await session.execute(DropSchema(user.organization.schema_name, cascade=True))
+        await session.execute(sa.delete(Organization).where(Organization.id == org_id),
+                              execution_options={'synchronize_session': False})
         await session.commit()
+        return Response()
     else:
         return BadRequest('User is not associated with an organization.')
-    return Response()
 
 
 class MemberSchema(BaseModel):
@@ -230,7 +236,7 @@ async def retrieve_organization_members(
     members_schems = \
           sorted(members_schems, key=lambda member: member.roles[0].role_index if member.roles else -1, reverse=True)
     members_schems = \
-          sorted(members_schems, key=lambda member: member.disabled, reverse=True)
+          sorted(members_schems, key=lambda member: member.disabled)
     return members_schems
 
 

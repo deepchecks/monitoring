@@ -186,10 +186,9 @@ def calculate_initial_latest_schedule(
     else:
         unrounded_latest_schedule = (now - lookback).in_tz(model_timezone)
 
-    return round_off_datetime(
-        unrounded_latest_schedule,
-        frequency=frequency
-    )
+    # Round time returns the ceiling of the time, so in order to not skip the first schedule, reduce by one frequency
+    rounded_time = round_off_datetime(unrounded_latest_schedule, frequency=frequency)
+    return rounded_time - frequency.to_pendulum_duration()
 
 
 def monitor_execution_range(

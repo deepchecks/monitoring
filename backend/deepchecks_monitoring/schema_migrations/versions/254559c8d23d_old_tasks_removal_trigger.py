@@ -23,9 +23,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    from deepchecks_monitoring.bgtasks.core import PGOldTasksDeletionFunc, PGOldTasksDeletionTrigger
-    PGOldTasksDeletionFunc.execute(bind=op.get_bind())
-    PGOldTasksDeletionTrigger.execute(bind=op.get_bind())
+    pass
 
 
 def downgrade() -> None:
