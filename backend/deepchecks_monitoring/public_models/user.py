@@ -38,6 +38,7 @@ class UserOAuthDTO(PydanticModel):
     email: EmailStr
     picture: t.Optional[AnyHttpUrl] = None
 
+
 @dataclass
 class User(Base):
     """User model."""
