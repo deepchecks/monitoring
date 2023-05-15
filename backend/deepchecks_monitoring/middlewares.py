@@ -93,6 +93,8 @@ class LoggingMiddleware:
             end = time.time()
             info["duration"] = end - start
             self.logger.exception(info)
+            # Raise back to allow Starlette to handle it
+            raise
         else:
             end = time.time()
             info["duration"] = end - start
