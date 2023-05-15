@@ -92,8 +92,14 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            await self.run_organization(org)
-            await self.run_organization_data_ingestion_alert(org)
+            try:
+                await self.run_organization(org)
+            except:  # pylint: disable=bare-except
+                pass
+            try:
+                await self.run_organization_data_ingestion_alert(org)
+            except:  # pylint: disable=bare-except
+                pass
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
