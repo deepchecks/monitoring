@@ -232,8 +232,8 @@ async def test_alert_scheduling(
 
     # assert all(len(v) == 14 for v in tasks_per_monitor.values())
     assert task_count == 0
-    assert len(alert_per_rule[rules[0]["id"]]) == 13
-    assert len(alert_per_rule[rules[1]["id"]]) == 7
+    assert len(alert_per_rule[rules[0]["id"]]) == 14
+    assert len(alert_per_rule[rules[1]["id"]]) == 8
 
     for alert in alert_per_rule[rules[0]["id"]]:
         assert alert.failed_values["1"]["accuracy"] < 0.7

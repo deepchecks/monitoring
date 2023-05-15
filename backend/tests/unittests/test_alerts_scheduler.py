@@ -131,7 +131,7 @@ async def test_scheduler_on_non_label_check(
 
     # last window of data is not scheduled since it schedule time didn't pass yet the model end time
     # TODO:
-    assert len(tasks) == 7
+    assert len(tasks) == 8
     assert expected_tasks_timestamps == tasks_timestamps
 
     assert_tasks(t.cast(t.Sequence[Task], tasks), monitor)

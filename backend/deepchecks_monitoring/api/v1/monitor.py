@@ -178,16 +178,17 @@ async def update_monitor(
         latest_schedule = pdl.instance(as_datetime(monitor.latest_schedule))
 
         # Either continue from the latest schedule if it's early enough or take it back number of windows to start
-        update_dict["latest_schedule"] = round_off_datetime(
-            value=max(
-                model_start_time,
-                min(
-                    model_end_time - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START),
-                    latest_schedule
-                )
-            ).in_tz(model.timezone),
-            frequency=frequency
+        time_to_start = max(
+            model_start_time,
+            min(
+                model_end_time - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START),
+                latest_schedule
+            )
         )
+        update_dict["latest_schedule"] = round_off_datetime(
+            value=time_to_start.in_tz(model.timezone),
+            frequency=frequency
+        ) - frequency.to_pendulum_duration()
 
         # Delete monitor tasks
         await delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)

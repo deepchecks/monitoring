@@ -23,7 +23,7 @@ from tests.common import Payload, TestAPI, upload_classification_data
 
 def default_latest_schedule_for(frequency):
     lookback = pdl.now("utc") - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START)
-    return round_off_datetime(lookback, frequency)
+    return round_off_datetime(lookback, frequency) - frequency.to_pendulum_duration()
 
 
 def test_monitor_creation_without_filter(
@@ -120,7 +120,7 @@ async def test_add_monitor_day_schedule_from_version(
     monitor = await async_session.get(Monitor, monitor["id"])
     # model version data was day before
     latest_schedule = pdl.instance(monitor.latest_schedule)
-    assert latest_schedule == now.start_of("day")
+    assert latest_schedule == day_before.start_of("day")
 
 
 def test_monitor_creation_with_data_filter(
@@ -300,7 +300,8 @@ async def test_monitor_update_with_data(
     ))
     monitor = await async_session.get(Monitor, monitor["id"])
 
-    assert pdl.instance(monitor.latest_schedule) == round_off_datetime(daterange[0], monitor_frequency)
+    expected_schedule = round_off_datetime(daterange[0], monitor_frequency) - monitor_frequency.to_pendulum_duration()
+    assert pdl.instance(monitor.latest_schedule) == expected_schedule
 
     # Act - Update only monitor name, and rest of the fields should be the same
     latest_schedule_before_update = monitor.latest_schedule
@@ -394,7 +395,7 @@ async def test_update_monitor_freq(
     latest_schedule = pdl.instance(monitor.latest_schedule)
     assert monitor.frequency == frequency
     # for the number of windows in the past we calculate
-    assert latest_schedule == round_off_datetime(daterange[-15], frequency)
+    assert latest_schedule == round_off_datetime(daterange[-15], frequency) - frequency.to_pendulum_duration()
 
     # Act
     frequency = Frequency.DAY
