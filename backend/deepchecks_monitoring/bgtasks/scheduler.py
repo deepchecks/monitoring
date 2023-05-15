@@ -164,6 +164,7 @@ class AlertsScheduler:
                             await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
+                                raise
 
     async def run_organization_data_ingestion_alert(self, organization):
         """Try enqueue monitor execution tasks."""
