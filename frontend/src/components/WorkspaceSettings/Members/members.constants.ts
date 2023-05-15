@@ -28,5 +28,12 @@ export const constants = {
     messageStart: 'Are you sure you want to remove ',
     name: (name: string | undefined) => (name ? name : 'this member'),
     messageEnd: ' from the workspace?'
+  },
+  deleteWorkspace: {
+    title: 'Workspace Settings',
+    description: 'Lorem ipsum dolor sit amet consectetur. Tempor egestas massa aliquam eu ut.',
+    deleteWorkspace: 'Delete Workspace',
+    dialogMessage: 'Are you sure want to delete current workspace?',
+    dialogSubmitButtonLabel: 'Yes, delete'
   }
 };

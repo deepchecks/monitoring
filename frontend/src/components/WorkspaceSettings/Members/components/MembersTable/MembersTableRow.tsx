@@ -4,6 +4,8 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { MemberSchema } from 'api/generated';
 
+import { Checkbox, TableRowProps } from '@mui/material';
+
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
@@ -11,18 +13,27 @@ import { StyledTableRow, StyledTableCell, StyledIconButton } from './MembersTabl
 
 dayjs.extend(localizedFormat);
 
-interface MembersTableRowProps {
+interface MembersTableRowProps extends TableRowProps {
   member: MemberSchema;
   editMember: (member: MemberSchema) => void;
   removeMember: (member: MemberSchema) => void;
 }
 
-export const MembersTableRow = ({ member, editMember, removeMember }: MembersTableRowProps) => {
+export const MembersTableRow = ({
+  member,
+  editMember,
+  removeMember,
+  selected,
+  ...otherProps
+}: MembersTableRowProps) => {
   const { id, full_name, email, created_at } = member;
 
   return (
-    <StyledTableRow key={id} sx={{ 'td, th': { border: 0 } }}>
-      <StyledTableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
+    <StyledTableRow key={id} role="checkbox" hover {...otherProps}>
+      <StyledTableCell padding="checkbox">
+        <Checkbox checked={selected} />
+      </StyledTableCell>
+      <StyledTableCell component="th" scope="row">
         {full_name || 'n/a'}
       </StyledTableCell>
       <StyledTableCell>{email}</StyledTableCell>

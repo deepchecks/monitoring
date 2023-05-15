@@ -8,6 +8,7 @@ import { MembersHeader } from './components/MembersHeader';
 import { MembersTable } from './components/MembersTable/MembersTable';
 
 import { MembersActionDialogOptions } from './Members.type';
+import { DeleteWorkspace } from './components/DeleteWorkspace';
 
 const Members = () => {
   const {
@@ -48,7 +49,10 @@ const Members = () => {
       {isOrganizationMembersLoading ? (
         <Loader />
       ) : (
-        <MembersTable members={membersList} handleOpenActionDialog={handleOpenActionDialog} />
+        <>
+          <MembersTable members={membersList} handleOpenActionDialog={handleOpenActionDialog} />
+          <DeleteWorkspace />
+        </>
       )}
       <MembersListActionDialog
         action={dialogAction}
