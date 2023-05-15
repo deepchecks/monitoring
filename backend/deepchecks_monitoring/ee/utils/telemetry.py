@@ -339,10 +339,10 @@ class TaskRunerInstrumentor:
                     else:
                         return result
 
-        self.task_runner_type._run_task = _run_task
+        self.task_runner_type._run_task = _run_task  # pylint: disable=protected-access
 
     def uninstrument(self):
-        self.task_runner_type._run_task = self.original_run_task
+        self.task_runner_type._run_task = self.original_run_task  # pylint: disable=protected-access
 
 
 class TasksQueuerInstrumentor:
