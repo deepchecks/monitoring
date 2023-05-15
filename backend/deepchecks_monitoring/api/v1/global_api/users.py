@@ -10,6 +10,7 @@
 """Module representing the endpoints for the organization."""
 import typing as t
 from datetime import datetime
+from deepchecks_monitoring.public_models.role import RoleEnum
 
 from fastapi import Depends, Response
 from pydantic import BaseModel
@@ -161,6 +162,7 @@ class UserSchema(BaseModel):
     full_name: t.Optional[str] = None
     picture_url: t.Optional[str] = None
     organization: t.Optional[OrganizationSchema]
+    roles: t.List[RoleEnum]
 
     class Config:
         """Pydantic config."""
@@ -177,7 +179,9 @@ class UserSchema(BaseModel):
 async def retrieve_user_info(response: Response, user: User = Depends(auth.CurrentUser())) -> UserSchema:
     """Retrieve user details."""
     response.headers["cache-control"] = "max-age=3600"
-    return UserSchema.from_orm(user)
+    return UserSchema(id=user.id, email=user.email, created_at=user.created_at, full_name=user.full_name,
+                      picture_url=user.picture_url, organization=user.organization,
+                      roles=[role.role for role in user.roles])
 
 
 @router.get(
@@ -189,7 +193,7 @@ async def retrieve_user_info(response: Response, user: User = Depends(auth.Curre
 async def regenerate_api_token(
     user: User = Depends(auth.CurrentUser()),  # TODO: why not CurrentActiveUser?
     session: AsyncSession = AsyncSessionDep
-) -> UserSchema:
+) -> str:
     """Regenerate user token."""
     hash_password, user_token = create_api_token(user.email)
     user.api_secret_hash = hash_password
