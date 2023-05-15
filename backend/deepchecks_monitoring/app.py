@@ -29,8 +29,8 @@ from deepchecks_monitoring.api.v1.router import router as v1_router
 from deepchecks_monitoring.config import tags_metadata
 from deepchecks_monitoring.ee.middlewares import LicenseCheckDependency
 from deepchecks_monitoring.exceptions import BaseHTTPException, error_to_dict
-from deepchecks_monitoring.middlewares import LoggingMiddleware
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.middlewares import LoggingMiddleware
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.utils import auth
 

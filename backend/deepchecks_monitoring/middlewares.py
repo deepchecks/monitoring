@@ -10,7 +10,7 @@
 """Module defining middlewares of the application."""
 import time
 
-from starlette.types import Message, ASGIApp, Scope, Receive, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
 class LoggingMiddleware:
