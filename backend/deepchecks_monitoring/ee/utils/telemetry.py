@@ -290,13 +290,13 @@ class TaskRunerInstrumentor:
 
     def __init__(self, task_runner_type: t.Type["TaskRunner"]):
         self.task_runner_type = task_runner_type
-        self.original_run_single_task = self.task_runner_type.run_single_task
+        self.original_run_task = self.task_runner_type._run_task
 
     def instrument(self):
         """Instrument the task runner functions we want to monitor."""
 
-        @wraps(self.original_run_single_task)
-        async def run_single_task(runner: "TaskRunner", task, session, queued_time):
+        @wraps(self.original_run_task)
+        async def _run_task(runner: "TaskRunner", task, session, queued_time):
             redis_uri = runner.resource_provider.redis_settings.redis_uri
             database_uri = runner.resource_provider.database_settings.database_uri
             kafka_settings = runner.resource_provider.kafka_settings
@@ -329,7 +329,7 @@ class TaskRunerInstrumentor:
 
                     try:
                         start = perf_counter()
-                        result = await self.original_run_single_task(runner, task, session, queued_time)
+                        result = await self.original_run_task(runner, task, session, queued_time)
                         span.set_data("task.execution-duration", perf_counter() - start)
                         span.set_status(SpanStatus.OK)
                     except Exception as error:
@@ -339,10 +339,10 @@ class TaskRunerInstrumentor:
                     else:
                         return result
 
-        self.task_runner_type.run_single_task = run_single_task
+        self.task_runner_type._run_task = _run_task  # pylint: disable=protected-access
 
     def uninstrument(self):
-        self.task_runner_type.run_single_task = self.original_run_single_task
+        self.task_runner_type._run_task = self.original_run_task  # pylint: disable=protected-access
 
 
 class TasksQueuerInstrumentor:
@@ -356,7 +356,7 @@ class TasksQueuerInstrumentor:
         """Instrument the task runner functions we want to monitor."""
 
         @wraps(self.original_move_tasks_to_queue)
-        async def move_tasks_to_queue(queuer: "TasksQueuer"):
+        async def move_tasks_to_queue(queuer: "TasksQueuer", session):
             redis_uri = queuer.resource_provider.redis_settings.redis_uri
             database_uri = queuer.resource_provider.database_settings.database_uri
 
@@ -373,7 +373,7 @@ class TasksQueuerInstrumentor:
                 with sentry_sdk.start_span(op="TasksQueuer.move_tasks_to_queue") as span:
                     try:
                         start = perf_counter()
-                        result = await self.original_move_tasks_to_queue(queuer)
+                        result = await self.original_move_tasks_to_queue(queuer, session)
                         span.set_data("execution-duration", perf_counter() - start)
                         span.set_data("queued-tasks-amount", result)
                         span.set_status(SpanStatus.OK)

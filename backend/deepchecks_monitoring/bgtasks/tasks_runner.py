@@ -104,9 +104,13 @@ class TaskRunner:
         if task is None:
             self.logger.debug(f'Got already removed task id: {task_id}')
             return
-        self.logger.info(f'Running task {task.bg_worker_task}: {task.name}')
+        await self._run_task(task, session, queued_time)
 
+    async def _run_task(self, task: Task, session, queued_time):  # pylint: disable=unused-argument
+        """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
+        to log the task parameters and queued time."""
         try:
+            self.logger.info(f'Running task {task.bg_worker_task}: {task.name}')
             worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
             if worker:
                 await worker.run(task, session, self.resource_provider)
