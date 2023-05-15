@@ -10,12 +10,14 @@
 """Module representing the endpoints for the organization."""
 import typing as t
 from datetime import datetime
+from deepchecks_monitoring.public_models.role import RoleEnum
 
 import sqlalchemy as sa
 from fastapi import Depends, Response, status
 from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
@@ -195,9 +197,9 @@ class MemberSchema(BaseModel):
     full_name: t.Optional[str]
     disabled: bool
     picture_url: t.Optional[str]
-    is_admin: bool
     last_login: t.Optional[datetime]
     created_at: datetime
+    roles: t.List[RoleEnum]
 
     class Config:
         """Pydantic configuration."""
@@ -217,12 +219,16 @@ async def retrieve_organization_members(
     session: AsyncSession = AsyncSessionDep,
 ):
     """Retrieve organization members."""
-    members = (await session.scalars(
+    members: t.List[User] = (await session.scalars(
         sa.select(User)
         .where(User.organization_id == user.organization_id)
+        .options(selectinload(User.roles))
         .order_by(User.disabled.asc())
     )).all()
-    return [MemberSchema.from_orm(it).dict() for it in members]
+    members_schems = [MemberSchema(id=user.id, email=user.email, full_name=user.full_name, disabled=user.disabled,
+                         picture_url=user.picture_url, last_login=user.last_login, created_at=user.created_at,
+                         roles=[role.role for role in user.roles]) for user in members]
+    return sorted(members_schems, key=lambda member: member.roles[0].role_index if member.roles else -1, reverse=True)
 
 
 @router.delete(

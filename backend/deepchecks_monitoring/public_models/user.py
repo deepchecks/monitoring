@@ -38,7 +38,6 @@ class UserOAuthDTO(PydanticModel):
     email: EmailStr
     picture: t.Optional[AnyHttpUrl] = None
 
-
 @dataclass
 class User(Base):
     """User model."""
@@ -82,6 +81,7 @@ class User(Base):
     roles: Mapped[t.List["Role"]] = relationship(
         "Role",
         back_populates="user",
+        order_by="Role.role",
         cascade="save-update, merge, delete",
         passive_deletes=True,
         passive_updates=True,
