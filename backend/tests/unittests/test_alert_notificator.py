@@ -1,5 +1,6 @@
 import os
 import typing as t
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -14,8 +15,11 @@ from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, TaskType
+from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookKind, WebhookHttpMethod
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
+
 from tests.common import Payload, TestAPI, generate_user
+from tests.utils import dummy_http_server
 
 
 @pytest.mark.asyncio
@@ -198,6 +202,71 @@ async def test_that_emails_are_send_to_all_members_of_organization(
         emails.add(email["To"])
 
     assert emails == member_emails
+
+
+@pytest.mark.asyncio
+async def test_webhooks_execution(
+    async_session: AsyncSession,
+    test_api: TestAPI,
+    user: User
+):
+    model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
+    check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
+    monitor = t.cast(Payload, test_api.create_monitor(check_id=check["id"]))
+    alert_rule = t.cast(Payload, test_api.create_alert_rule(monitor_id=monitor["id"]))
+    now = datetime.now(timezone.utc)
+
+    alert = Alert(
+        failed_values={"1": ["accuracy"], "2": ["accuracy"]},
+        start_time=now,
+        end_time=now + timedelta(hours=2),
+        alert_rule_id=alert_rule["id"]
+    )
+    webhook = AlertWebhook(
+        name="test",
+        description="",
+        kind=WebhookKind.STANDARD,
+        http_url="http://127.0.0.1:9876/say-hello",
+        http_method=WebhookHttpMethod.GET,
+        http_headers={"X-own-header": "hello world"},
+        notification_levels=[
+            AlertSeverity.CRITICAL,
+            AlertSeverity.HIGH,
+            AlertSeverity.MEDIUM,
+            AlertSeverity.LOW
+        ],
+        created_by=user.id,
+        updated_by=user.id
+    )
+
+    async_session.add(webhook)
+    async_session.add(alert)
+    await async_session.flush()
+    await async_session.refresh(alert)
+    await async_session.refresh(webhook)
+
+    settings = Settings()  # type: ignore
+
+    async with EEResourcesProvider(settings) as rp:
+        notificator = await EEAlertNotificator.instantiate(
+            organization_id=t.cast(int, user.organization_id),
+            alert=alert,
+            session=async_session,
+            resources_provider=rp
+        )
+        with dummy_http_server("127.0.0.1", 9876) as requests_inbox:
+            were_webhooks_executed = await notificator.execute_webhooks()
+            assert were_webhooks_executed is True
+
+            assert len(requests_inbox) == 1
+            assert requests_inbox[0]["REQUEST_METHOD"] == "GET"
+            assert requests_inbox[0]["CONTENT_TYPE"] == "application/json"
+            assert requests_inbox[0]["HTTP_X_OWN_HEADER"] == "hello world"
+            assert requests_inbox[0]["PATH_INFO"] == "/say-hello"
+
+            payload = json.loads(requests_inbox[0]["X-INPUT"])
+            assert isinstance(payload, dict)
+            assert payload["alert_id"] == alert.id
 
 
 @pytest.mark.skipif("SLACK_INCOMING_WEBHOOK_URL" not in os.environ, reason="Webhook url is not defined")

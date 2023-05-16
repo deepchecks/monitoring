@@ -32,7 +32,7 @@ class WebhookHttpMethod(str, enum.Enum):
 class WebhookKind(str, enum.Enum):
     """Kind of request payload that webhook will form."""
 
-    STANDART = "STANDART"
+    STANDARD = "STANDARD"
     PAGER_DUTY = "PAGER_DUTY"  # https://www.pagerduty.com
 
 
@@ -66,7 +66,7 @@ class AlertWebhook(Base, MetadataMixin):
             """
             JSONB_TYPEOF(additional_arguments) = 'object'
             AND CASE
-                WHEN kind = 'STANDART' THEN
+                WHEN kind = 'STANDARD' THEN
                     TRUE
                 WHEN kind = 'PAGER_DUTY' THEN
                     additional_arguments ? 'routing_key'
@@ -238,7 +238,7 @@ class AlertWebhook(Base, MetadataMixin):
         model = t.cast("Model", check.model)
         alert_link = str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url))
 
-        if self.kind == WebhookKind.STANDART:
+        if self.kind == WebhookKind.STANDARD:
             return {
                 "url": self.http_url,
                 "method": self.http_method,
@@ -366,10 +366,10 @@ class PagerDutyWebhookProperties(BaseModel):
         }
 
 
-class StandartWebhookProperties(BaseModel):
-    """Standart webhook initialization properties."""
+class StandardWebhookProperties(BaseModel):
+    """Standard webhook initialization properties."""
 
-    kind: t.Literal[WebhookKind.STANDART] = WebhookKind.STANDART
+    kind: t.Literal[WebhookKind.STANDARD] = WebhookKind.STANDARD
     name: str
     description: str = ""
     http_url: HttpsUrl
