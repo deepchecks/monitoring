@@ -12,12 +12,14 @@
 import inspect
 import logging.handlers
 import typing as t
+from time import perf_counter
 
 import anyio
 import uvloop
 from redis.asyncio import Redis, RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
+import pendulum as pdl
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
@@ -62,9 +64,9 @@ class TaskRunner:
             while True:
                 task = await self.wait_for_task()
                 if task:
-                    task_id, queued_time = task
+                    task_id, queued_timestamp = task
                     async with self.resource_provider.create_async_database_session() as session:
-                        await self.run_single_task(task_id, session, queued_time)
+                        await self.run_single_task(task_id, session, queued_timestamp)
 
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Worker coroutine canceled')
@@ -94,26 +96,29 @@ class TaskRunner:
         else:
             # Return value from redis is (redis key, value, score)
             task_id = int(task_entry[1].decode())
-            queued_time = task_entry[2]
-            return task_id, queued_time
+            queued_timestamp = int(task_entry[2].decode())
+            return task_id, queued_timestamp
 
-    async def run_single_task(self, task_id, session, queued_time):  # pylint: disable=unused-argument
+    async def run_single_task(self, task_id, session, queued_timestamp):
         # queued_time is not used but logged in telemetry
         task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
         if task is None:
             self.logger.debug(f'Got already removed task id: {task_id}')
             return
-        await self._run_task(task, session, queued_time)
+        await self._run_task(task, session, queued_timestamp)
 
-    async def _run_task(self, task: Task, session, queued_time):  # pylint: disable=unused-argument
+    async def _run_task(self, task: Task, session, queued_timestamp):
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
         to log the task parameters and queued time."""
         try:
-            self.logger.info(f'Running task {task.bg_worker_task}: {task.name}')
             worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
             if worker:
+                start = pdl.now()
                 await worker.run(task, session, self.resource_provider)
+                duration = (pdl.now() - start).total_seconds()
+                delay = start.int_timestamp - queued_timestamp
+                self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
             else:
                 self.logger.error(f'Unknown task type: {task.bg_worker_task}')
         except Exception:  # pylint: disable=broad-except

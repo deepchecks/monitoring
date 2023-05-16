@@ -15,6 +15,7 @@ import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
+from time import perf_counter
 
 import anyio
 import pendulum as pdl
@@ -67,8 +68,10 @@ class AlertsScheduler:
         s = self.sleep_seconds
         try:
             while True:
+                start = perf_counter()
                 await self.run_all_organizations()
-                self.logger.info(f'Sleep for the next {s} seconds')
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_all_organizations'})
                 await asyncio.sleep(s)
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Scheduler coroutine canceled')
@@ -92,8 +95,14 @@ class AlertsScheduler:
             return
 
         for org in organizations:
+            start = perf_counter()
             await self.run_organization(org)
+            duration = perf_counter() - start
+            self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
+            start = perf_counter()
             await self.run_organization_data_ingestion_alert(org)
+            duration = perf_counter() - start
+            self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
