@@ -137,18 +137,11 @@ jobs:
           task-definition: ${{ steps.render-app-container.outputs.task-definition }}
           container-name: alert-scheduler
           image: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
-      - name: Fill in the new image ID in the Amazon ECS task definition - worker
-        id: render-worker-container
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-alert-scheduler-container.outputs.task-definition }}
-          container-name: worker
-          image: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
       - name: Fill in the new image ID in the Amazon ECS task definition - task queuer
         id: render-task-queuer-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ steps.render-worker-container.outputs.task-definition }}
+          task-definition: ${{ steps.render-alert-scheduler-container.outputs.task-definition }}
           container-name: task-queuer
           image: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
       - name: Fill in the new image ID in the Amazon ECS task definition - task runner
