@@ -47,7 +47,7 @@ from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
-from deepchecks_monitoring.schema_models.monitor import Monitor, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
 
 from .router import router
@@ -978,11 +978,11 @@ async def set_schedule_time(
 
     monitors = [monitor for check in model.checks for monitor in check.monitors]
     monitor_ids = [monitor.id for monitor in monitors]
-    timestamp = pdl.parser.parse(body.timestamp).in_tz(model.timezone)
+    timestamp = pdl.parser.parse(body.timestamp)
 
     for monitor in monitors:
         # Update schedule time
-        monitor.latest_schedule = round_off_datetime(timestamp, monitor.frequency)
+        monitor.latest_schedule = round_up_datetime(timestamp, monitor.frequency, model.timezone)
         monitor.updated_by = user.id
 
     # Delete monitors tasks

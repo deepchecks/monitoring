@@ -30,7 +30,7 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
-from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
@@ -185,10 +185,8 @@ async def update_monitor(
                 latest_schedule
             )
         )
-        update_dict["latest_schedule"] = round_off_datetime(
-            value=time_to_start.in_tz(model.timezone),
-            frequency=frequency
-        ) - frequency.to_pendulum_duration()
+        update_dict["latest_schedule"] = round_up_datetime(time_to_start, frequency, model.timezone) - \
+            frequency.to_pendulum_duration()
 
         # Delete monitor tasks
         await delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
