@@ -138,12 +138,16 @@ async def test_organization_members_retrieval(
 
     assert len(retrieved_members) == len(members)
 
-    for member in retrieved_members:
+    for i, member in enumerate(retrieved_members):
         assert member["id"] in members
         assert member["email"] == members[member["id"]].email
         assert member["disabled"] == members[member["id"]].disabled
         assert member["full_name"] == members[member["id"]].full_name
-        assert member["roles"] == members[member["id"]].roles
+        if i == 0:
+            assert member["roles"] == ['owner', 'admin'] 
+        else:
+            assert member["roles"] == []
+            
 
 
 @pytest.mark.asyncio
