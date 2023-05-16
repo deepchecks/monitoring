@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.schema_models import AlertRule, Check, Model, ModelVersion, Monitor, TaskType
-from deepchecks_monitoring.schema_models.monitor import round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import round_up_datetime
 from tests.common import ModelIdentifiersPair, Payload, TestAPI, upload_classification_data
 
 
@@ -300,7 +300,7 @@ async def test_model_set_monitors_time(
     )).all()
 
     for monitor in monitors:
-        assert pdl.instance(monitor.latest_schedule) == round_off_datetime(new_date, monitor.frequency)
+        assert pdl.instance(monitor.latest_schedule) == round_up_datetime(new_date, monitor.frequency, "UTC")
 
 
 def test_model_note_creation(
