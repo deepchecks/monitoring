@@ -17,8 +17,6 @@ import typing as t
 from functools import wraps
 from time import perf_counter
 
-from contextlib import suppress
-
 import anyio
 import pendulum as pdl
 import sentry_sdk
