@@ -36,12 +36,12 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => ({
     backgroundColor: theme.palette.grey[100]
   },
 
-  '& td:first-child': {
+  '& td:first-of-type': {
     borderTopLeftRadius: '10px',
     borderBottomLeftRadius: '10px'
   },
 
-  '& td:last-child': {
+  '& td:last-of-type': {
     borderTopRightRadius: '10px',
     borderBottomRightRadius: '10px'
   },
