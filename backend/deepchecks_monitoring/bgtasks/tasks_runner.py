@@ -14,11 +14,11 @@ import logging.handlers
 import typing as t
 
 import anyio
+import pendulum as pdl
 import uvloop
 from redis.asyncio import Redis, RedisCluster
 from redis.exceptions import RedisClusterException
 from sqlalchemy import select
-import pendulum as pdl
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.delete_db_table_task import DeleteDbTableTask
