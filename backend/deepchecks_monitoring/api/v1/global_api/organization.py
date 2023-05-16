@@ -16,6 +16,7 @@ from fastapi import Depends, Response, status
 from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.ddl import DropSchema
 
 from deepchecks_monitoring.config import Settings
@@ -26,6 +27,7 @@ from deepchecks_monitoring.features_control import FeaturesSchema
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
+from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
@@ -176,7 +178,7 @@ async def update_organization(
 
 @router.delete('/organization')
 async def remove_organization(
-    user: User = Depends(auth.AdminUser()),
+    user: User = Depends(auth.OwnerUser()),
     session: AsyncSession = AsyncSessionDep
 ):
     """Remove an organization."""
@@ -201,9 +203,9 @@ class MemberSchema(BaseModel):
     full_name: t.Optional[str]
     disabled: bool
     picture_url: t.Optional[str]
-    is_admin: bool
     last_login: t.Optional[datetime]
     created_at: datetime
+    roles: t.List[RoleEnum]
 
     class Config:
         """Pydantic configuration."""
@@ -223,12 +225,19 @@ async def retrieve_organization_members(
     session: AsyncSession = AsyncSessionDep,
 ):
     """Retrieve organization members."""
-    members = (await session.scalars(
+    members: t.List[User] = (await session.scalars(
         sa.select(User)
         .where(User.organization_id == user.organization_id)
-        .order_by(User.disabled.asc(), User.is_admin.desc())
+        .options(selectinload(User.roles))
     )).all()
-    return [MemberSchema.from_orm(it).dict() for it in members]
+    members_schems = [MemberSchema(id=user.id, email=user.email, full_name=user.full_name, disabled=user.disabled,
+                                   picture_url=user.picture_url, last_login=user.last_login, created_at=user.created_at,
+                                   roles=[role.role for role in user.roles]) for user in members]
+    members_schems = \
+        sorted(members_schems, key=lambda member: member.roles[0].role_index if member.roles else -1, reverse=True)
+    members_schems = \
+        sorted(members_schems, key=lambda member: member.disabled)
+    return members_schems
 
 
 @router.delete(

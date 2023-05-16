@@ -12,6 +12,7 @@ from .base import Base  # isort:skip
 from .billing import Billing
 from .invitation import Invitation
 from .organization import Organization
+from .role import Role
 from .task import Task
 from .user import User, UserOAuthDTO
 
@@ -22,5 +23,6 @@ __all__ = [
     "UserOAuthDTO",
     "Invitation",
     "Task",
-    "Billing"
+    "Billing",
+    "Role",
 ]

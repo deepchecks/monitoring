@@ -51,7 +51,7 @@ async def generate_user(
             await session.commit()
             await session.refresh(u)
         else:
-            org = await Organization.create_for_user(owner=u, name=f.name(),)
+            org = await Organization.create_for_user(owner=u, name=f.name(), session=session)
             await org.schema_builder.create(AsyncEngine(session.get_bind()))
             org.email_notification_levels = list(AlertSeverity)
             org.slack_notification_levels = list(AlertSeverity)
