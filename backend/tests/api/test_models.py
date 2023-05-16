@@ -129,7 +129,6 @@ async def test_connected_models_api(
 ):
     # Arrange
     time = pdl.now().in_tz("UTC")
-    user_id = 1
     version_props = {"features": {"x": "numeric", }, "additional_data": {
         "a": "numeric", }, "classes": ["0", "1", "2", "3"]}
     versions = [
@@ -141,7 +140,7 @@ async def test_connected_models_api(
             "name": "c", **version_props})
     ]
 
-    start = pdl.now() - pdl.duration(days=1)
+    start = pdl.now("utc") - pdl.duration(days=1)
 
     daterange = [start.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
     no_label_daterange = [start.add(hours=hours) for hours in [3, 4]]
@@ -157,7 +156,6 @@ async def test_connected_models_api(
         upload_classification_data(test_api, version["id"],
                                    daterange=extra_count_daterange, model_id=classification_model["id"],
                                    id_prefix="extra")
-    await async_session.flush()
 
     await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "a").values(
         dict(last_update_time=time.subtract(days=1), ingestion_offset=100, topic_end_offset=1000)
@@ -184,8 +182,8 @@ async def test_connected_models_api(
         "n_of_alerts": 0,
         "n_of_pending_rows": 900,
         "n_of_updating_versions": 1,
-        "sample_count": 0,
-        "label_count": 9,
+        "sample_count": 1,
+        "label_count": 0,
         "label_ratio": 0,
     }))
 

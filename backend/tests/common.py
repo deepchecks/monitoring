@@ -1556,7 +1556,6 @@ def upload_classification_data(
             data.append(sample)
             if is_labeled:
                 labels.append({"_dc_sample_id": sample["_dc_sample_id"], "_dc_label": "2" if i != 1 else "1"})
-
     response = api.upload_samples(model_version_id=model_version_id, samples=data)
     if labels:
         api.upload_labels(model_id=model_id, data=labels)
