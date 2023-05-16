@@ -152,6 +152,7 @@ class OrganizationSchema(BaseModel):
 
         orm_mode = True
 
+
 class BasicUserSchema(BaseModel):
     """Schema for user."""
 
@@ -167,11 +168,11 @@ class BasicUserSchema(BaseModel):
 
         orm_mode = True
 
+
 class UserSchema(BasicUserSchema):
     """Schema for user with roles."""
 
     roles: t.List[RoleEnum]
-
 
 
 @router.get(
