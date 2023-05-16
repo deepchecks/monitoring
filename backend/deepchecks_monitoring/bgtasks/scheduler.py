@@ -92,8 +92,8 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            skip_exceptions(self.run_organization, org)
-            skip_exceptions(self.run_organization_data_ingestion_alert, org)
+            await skip_exceptions(self.run_organization, org)
+            await skip_exceptions(self.run_organization_data_ingestion_alert, org)
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
