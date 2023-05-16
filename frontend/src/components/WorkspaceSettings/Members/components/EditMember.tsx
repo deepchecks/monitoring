@@ -4,10 +4,10 @@ import { MembersActionDialogContentLayout } from './MembersActionDialogContentLa
 import { MembersActionDialogInput } from './MembersActionDialogInput';
 import { StyledDialog } from 'components/lib';
 
-import { MembersActionDialogWithInputs } from '../Members.type';
+import { MembersActionDialogWithMember } from '../Members.type';
 import { constants } from '../members.constants';
 
-export const EditMember = ({ member, open, closeDialog }: MembersActionDialogWithInputs) => {
+export const EditMember = ({ member, open, closeDialog }: MembersActionDialogWithMember) => {
   const [name, setName] = useState(member.full_name);
   const [email, setEmail] = useState(member.email);
 
