@@ -23,6 +23,7 @@ import orjson
 import sqlalchemy as sa
 from fastapi import Depends, Path, Query
 from pydantic import BaseModel, conlist, constr
+from pythonjsonlogger.jsonlogger import JsonFormatter
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -419,7 +420,7 @@ def field_length(column) -> int:
 def configure_logger(
     name: str,
     log_level: str = "INFO",
-    message_format: str = "%(asctime)s %(levelname)s %(name)s %(message)s",
+    message_format: str = "%(asctime)s %(process)s %(levelname)s %(name)s %(module)s %(funcName)s %(lineno)s",
     logfile: t.Optional[str] = None,
     logfile_backup_count: int = 3,
 ):
@@ -427,7 +428,7 @@ def configure_logger(
     logger = logging.getLogger(name)
     logger.propagate = True
     logger.setLevel(log_level)
-    formatter = logging.Formatter(message_format)
+    formatter = JsonFormatter(message_format)
 
     h = logging.StreamHandler(sys.stdout)
     h.setLevel(log_level)
