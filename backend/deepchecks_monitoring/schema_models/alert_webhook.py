@@ -230,6 +230,14 @@ class AlertWebhook(Base, MetadataMixin):
         Dict[str, Any] :
             set of arguments that can be passed to http client to make a request
         """
+        from deepchecks_monitoring.utils.alerts import prepare_alert_link  # pylint: disable=import-outside-toplevel
+
+        alert_rule = t.cast("AlertRule", alert.alert_rule)
+        monitor = t.cast("Monitor", alert_rule.monitor)
+        check = t.cast("Check", monitor.check)
+        model = t.cast("Model", check.model)
+        alert_link = str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url))
+
         if self.kind == WebhookKind.STANDART:
             return {
                 "url": self.http_url,
@@ -237,17 +245,14 @@ class AlertWebhook(Base, MetadataMixin):
                 "headers": self.http_headers,
                 "json": {
                     "alert_id": alert.id,
-                    # TODO:
+                    "alert_name": f"models/{model.name}/monitors/{monitor.name}",
+                    "alert_rule": alert_rule.stringify(),
+                    "severity": alert_rule.alert_severity,
+                    "alert_link": alert_link
                 }
             }
 
         if self.kind == WebhookKind.PAGER_DUTY:
-            from deepchecks_monitoring.utils.alerts import prepare_alert_link  # pylint: disable=import-outside-toplevel
-
-            alert_rule = t.cast("AlertRule", alert.alert_rule)
-            monitor = t.cast("Monitor", alert_rule.monitor)
-            check = t.cast("Check", monitor.check)
-            model = t.cast("Model", check.model)
             additional_arguments = t.cast(t.Dict[str, t.Any], self.additional_arguments)
 
             if alert_rule.alert_severity == AlertSeverity.CRITICAL:
@@ -281,7 +286,7 @@ class AlertWebhook(Base, MetadataMixin):
                     },
                     "routing_key": additional_arguments["routing_key"],
                     "links": [{
-                        "href": str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url)),
+                        "href": alert_link,
                         "text": "Deepchecks Alert"
                     }],
                     "event_action": "trigger",
