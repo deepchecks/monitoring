@@ -156,11 +156,12 @@ def as_pendulum_datetime(value: t.Union[int, str, "PendulumDateTime", "datetime"
         raise TypeError(f"Unexpected type of value - {type(value)}")
 
 
-def round_off_datetime(
+def round_up_datetime(
     value: t.Union[int, str, "PendulumDateTime", "datetime"],
-    frequency: "Frequency"
+    frequency: "Frequency",
+    timezone: str
 ) -> "PendulumDateTime":
-    value = as_pendulum_datetime(value)
+    value = as_pendulum_datetime(value).in_tz(timezone)
     start_of_window = value.start_of(frequency.value.lower())
     duration = frequency.to_pendulum_duration()
     return start_of_window + duration
@@ -174,20 +175,20 @@ def calculate_initial_latest_schedule(
     model_end_time: t.Optional["pdl.datetime.DateTime"] = None,
     windows_to_lookback: int = NUM_WINDOWS_TO_START
 ):
-    now = pdl.now(model_timezone)
+    now = pdl.now()
     lookback = frequency.to_pendulum_duration() * windows_to_lookback
 
     if model_end_time is not None and model_start_time is not None:
         unrounded_latest_schedule = (
-            (now - lookback)
+            now - lookback
             if model_end_time < model_start_time
             else max(model_start_time, model_end_time - lookback)
-        ).in_tz(model_timezone)
+        )
     else:
-        unrounded_latest_schedule = (now - lookback).in_tz(model_timezone)
+        unrounded_latest_schedule = now - lookback
 
     # Round time returns the ceiling of the time, so in order to not skip the first schedule, reduce by one frequency
-    rounded_time = round_off_datetime(unrounded_latest_schedule, frequency=frequency)
+    rounded_time = round_up_datetime(unrounded_latest_schedule, frequency, model_timezone)
     return rounded_time - frequency.to_pendulum_duration()
 
 
