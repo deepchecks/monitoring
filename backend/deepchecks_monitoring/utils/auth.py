@@ -22,6 +22,7 @@ from deepchecks_monitoring import public_models as models
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import (AccessForbidden, BadRequest, InvalidConfigurationException,
                                               UnacceptedEULA, Unauthorized)
+from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.utils import database
 
 __all__ = ["CurrentUser", "CurrentActiveUser", "AdminUser", "create_api_token"]
@@ -57,7 +58,7 @@ async def get_user(
         return (await session.scalar(
             select(models.User)
             .where(models.User.email == token.email)
-            .options(joinedload(models.User.organization))
+            .options(joinedload(models.User.organization), joinedload(models.User.roles))
         ))
 
     if isinstance(token, APIAccessToken):
@@ -324,6 +325,22 @@ class AdminUser(CurrentActiveUser):
     ) -> t.Optional["models.User"]:
         """Dependency for validation of a current active admin user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
-        if not user.is_admin or user.disabled:
+        if len([role for role in user.roles if role.role in [RoleEnum.ADMIN, RoleEnum.OWNER]]) == 0 or user.disabled:
             raise AccessForbidden("User does not have admin rights")
+        return user
+
+
+class OwnerUser(CurrentActiveUser):
+    """Authenticate a user and verify that he is an admin."""
+
+    async def __call__(
+        self,
+        request: Request,
+        bearer: t.Optional[AccessToken] = Depends(AccessBearer(auto_error=False)),
+        session: AsyncSession = AsyncSessionDep
+    ) -> t.Optional["models.User"]:
+        """Dependency for validation of a current active owner user."""
+        user = t.cast("models.User", await super().__call__(request, bearer, session))
+        if len([role for role in user.roles if role.role == RoleEnum.OWNER]) == 0 or user.disabled:
+            raise AccessForbidden("User does not have owner rights")
         return user

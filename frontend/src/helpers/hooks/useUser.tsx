@@ -27,7 +27,11 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserSchema | null>(null);
 
-  const { data } = useRetrieveUserInfoApiV1UsersMeGet();
+  const { data } = useRetrieveUserInfoApiV1UsersMeGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
 
   const isUserDetailsComplete = !!user?.organization;
 
