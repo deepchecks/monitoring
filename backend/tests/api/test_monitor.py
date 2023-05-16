@@ -15,15 +15,15 @@ from fakeredis import FakeRedis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.logic.keys import build_monitor_cache_key
-from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_up_datetime
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
 from tests.api.test_check import upload_multiclass_reference_data
 from tests.common import Payload, TestAPI, upload_classification_data
 
 
 def default_latest_schedule_for(frequency):
-    lookback = pdl.now("utc") - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START)
-    return round_off_datetime(lookback, frequency) - frequency.to_pendulum_duration()
+    lookback = pdl.now() - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START)
+    return round_up_datetime(lookback, frequency, "utc") - frequency.to_pendulum_duration()
 
 
 def test_monitor_creation_without_filter(
@@ -300,7 +300,8 @@ async def test_monitor_update_with_data(
     ))
     monitor = await async_session.get(Monitor, monitor["id"])
 
-    expected_schedule = round_off_datetime(daterange[0], monitor_frequency) - monitor_frequency.to_pendulum_duration()
+    expected_schedule = round_up_datetime(daterange[0], monitor_frequency, "utc") - \
+                        monitor_frequency.to_pendulum_duration()
     assert pdl.instance(monitor.latest_schedule) == expected_schedule
 
     # Act - Update only monitor name, and rest of the fields should be the same
@@ -315,10 +316,7 @@ async def test_monitor_update_with_data(
     assert monitor.latest_schedule == latest_schedule_before_update
 
     # # Arrange - Forward latest schedule to latest data time
-    monitor.latest_schedule = round_off_datetime(
-        daterange[-1],
-        monitor.frequency
-    )
+    monitor.latest_schedule = round_up_datetime(daterange[-1], monitor.frequency, "utc")
 
     await async_session.commit()
 
@@ -337,7 +335,7 @@ async def test_monitor_update_with_data(
     # # Assert
     await async_session.refresh(monitor)
     # assert latest_schedule after update is "num windows to start" windows earlier
-    expected = round_off_datetime(daterange[0], monitor_frequency) - monitor_frequency.to_pendulum_duration()
+    expected = round_up_datetime(daterange[0], monitor_frequency, "utc") - monitor_frequency.to_pendulum_duration()
     assert pdl.instance(monitor.latest_schedule) == expected
     # assert latest_schedule_before_update - pdl.instance(monitor.latest_schedule) == \
     #     monitor.frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START
@@ -396,7 +394,7 @@ async def test_update_monitor_freq(
     latest_schedule = pdl.instance(monitor.latest_schedule)
     assert monitor.frequency == frequency
     # for the number of windows in the past we calculate
-    assert latest_schedule == round_off_datetime(daterange[-15], frequency) - frequency.to_pendulum_duration()
+    assert latest_schedule == round_up_datetime(daterange[-15], frequency, "utc") - frequency.to_pendulum_duration()
 
     # Act
     frequency = Frequency.DAY
@@ -406,7 +404,7 @@ async def test_update_monitor_freq(
 
     latest_schedule = pdl.instance(monitor.latest_schedule)
     assert monitor.frequency == frequency
-    expected = round_off_datetime(daterange[0], frequency) - frequency.to_pendulum_duration()
+    expected = round_up_datetime(daterange[0], frequency, "utc") - frequency.to_pendulum_duration()
     assert latest_schedule == expected
 
 

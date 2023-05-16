@@ -46,7 +46,7 @@ from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Check, ColumnType, Model, TaskType
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.model_version import ModelVersion
-from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import Frequency, round_up_datetime
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
 from deepchecks_monitoring.utils.typing import as_datetime, as_pendulum_datetime
@@ -262,7 +262,7 @@ async def get_model_auto_frequency(
 
     if model.end_time is None:
         frequency = Frequency.DAY
-        end = round_off_datetime(pdl.now(model_timezone), Frequency.DAY)
+        end = round_up_datetime(pdl.now(), Frequency.DAY, model_timezone)
         return {
             'end': end.int_timestamp,
             'start': as_pendulum_datetime(end - frequency.to_pendulum_duration()).int_timestamp,
@@ -270,8 +270,8 @@ async def get_model_auto_frequency(
         }
 
     # Query random timestamps of samples in the last 90 days
-    model_end_time = pdl.instance(as_datetime(model.end_time)).in_tz(model_timezone)
-    end_time = round_off_datetime(model_end_time, Frequency.MONTH)
+    model_end_time = pdl.instance(as_datetime(model.end_time))
+    end_time = round_up_datetime(model_end_time, Frequency.MONTH, model_timezone)
     start_time = end_time.subtract(years=1)
     # start_time = end_time.subtract(days=90)
 
@@ -314,7 +314,7 @@ async def get_model_auto_frequency(
         (Frequency.WEEK, pdl.duration(weeks=12)),
         (Frequency.MONTH, pdl.duration(years=1))
     ):
-        end_time = round_off_datetime(model_end_time, frequency)
+        end_time = round_up_datetime(model_end_time, frequency, model_timezone)
         start_time = as_pendulum_datetime(end_time - lookback)
 
         if model.start_time > start_time:
@@ -334,7 +334,7 @@ async def get_model_auto_frequency(
 
         # Convert timestamps to windows and count number of unique windows
         num_windows_exists = len(set((
-            round_off_datetime(pdl.instance(it).in_tz(model_timezone), frequency)
+            round_up_datetime(pdl.instance(it), frequency, model_timezone)
             for it in timestamps
             if it >= start_time
         )))
