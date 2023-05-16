@@ -12,7 +12,6 @@
 import inspect
 import logging.handlers
 import typing as t
-from time import perf_counter
 
 import anyio
 import uvloop
@@ -96,7 +95,7 @@ class TaskRunner:
         else:
             # Return value from redis is (redis key, value, score)
             task_id = int(task_entry[1].decode())
-            queued_timestamp = int(task_entry[2].decode())
+            queued_timestamp: int = task_entry[2]
             return task_id, queued_timestamp
 
     async def run_single_task(self, task_id, session, queued_timestamp):
