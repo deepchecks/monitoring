@@ -24,7 +24,7 @@ from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
 from deepchecks_monitoring.schema_models.monitor import Frequency
 
-from .global_api.users import UserSchema
+from .global_api.users import BasicUserSchema
 from .router import router
 
 
@@ -40,7 +40,7 @@ class AlertRuleConfigSchema(BaseModel):
     total_alerts: t.Optional[int] = 0
     non_resolved_alerts: t.Optional[int] = 0
     recent_alert: t.Optional[pdl.DateTime]
-    user: t.Optional[UserSchema] = None
+    user: t.Optional[BasicUserSchema] = None
 
     class Config:
         """Config for Alert schema."""
@@ -148,7 +148,7 @@ async def get_all_alert_rules(
             q = select(User).where(User.id == row.created_by)
             user = (await session.execute(q)).scalars().first()
             if user is not None:
-                user_schema = UserSchema.from_orm(user)
+                user_schema = BasicUserSchema.from_orm(user)
                 alert_rule_schema.user = user_schema
         alert_rule_schemas.append(alert_rule_schema)
     return alert_rule_schemas
