@@ -13,8 +13,9 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor, TaskType
+from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor, TaskType, Model
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookHttpMethod, WebhookKind
+from deepchecks_monitoring.schema_models.alert_rule import Condition
 from tests.common import Payload, TestAPI
 
 
@@ -59,14 +60,19 @@ async def test_standart_webhook_execution(
     await async_session.flush()
     await async_session.refresh(webhook)
 
-    alert = await async_session.scalar(
+    alert = t.cast(Alert, await async_session.scalar(
         sa.select(Alert).where(Alert.id == alert_id).options(
             joinedload(Alert.alert_rule)
             .joinedload(AlertRule.monitor)
             .joinedload(Monitor.check)
             .joinedload(Check.model)
         )
-    )
+    ))
+
+    alert_rule = t.cast("AlertRule", alert.alert_rule)
+    monitor = t.cast("Monitor", alert_rule.monitor)
+    check = t.cast("Check", monitor.check)
+    model = t.cast("Model", check.model)
 
     with dummy_http_server("127.0.0.1", 9876) as requests_inbox:
         async with httpx.AsyncClient() as c:
@@ -85,6 +91,9 @@ async def test_standart_webhook_execution(
         payload = json.loads(requests_inbox[0]["X-INPUT"])
         assert isinstance(payload, dict)
         assert payload["alert_id"] == alert_id
+        assert payload["alert_name"] == f"models/{model.name}/monitors/{monitor.name}"
+        assert payload["alert_rule"] == alert_rule.stringify()
+        assert payload["severity"] == alert_rule.alert_severity.value
 
         assert webhook.latest_execution_date is not None
         assert isinstance(webhook.latest_execution_status, dict)
