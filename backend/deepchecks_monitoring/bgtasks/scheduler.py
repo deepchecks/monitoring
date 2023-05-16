@@ -92,14 +92,8 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            try:
-                await self.run_organization(org)
-            except:  # pylint: disable=bare-except
-                pass
-            try:
-                await self.run_organization_data_ingestion_alert(org)
-            except:  # pylint: disable=bare-except
-                pass
+            skip_exceptions(self.run_organization, org)
+            skip_exceptions(self.run_organization_data_ingestion_alert, org)
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -341,6 +335,13 @@ def is_serialization_error(error: DBAPIError):
         or error.code == '40001'
         or orig_code == '40001'
     )
+
+
+async def skip_exceptions(function, org):
+    try:
+        await function(org)
+    except:  # pylint: disable=bare-except  # noqa: E722
+        pass
 
 
 class BaseSchedulerSettings(config.DatabaseSettings):
