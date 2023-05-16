@@ -123,20 +123,49 @@ async def test_model_deletion(
 @pytest.mark.asyncio
 async def test_connected_models_api(
     client: TestClient,
+    test_api: TestAPI,
     classification_model: Payload,
     async_session: AsyncSession
 ):
     # Arrange
     time = pdl.now().in_tz("UTC")
-    user_id = 1
-    async_session.add(ModelVersion(name="a", last_update_time=time.subtract(days=1),
-                                   model_id=classification_model["id"],
-                                   ingestion_offset=100, topic_end_offset=1000, created_by=user_id, updated_by=user_id))
-    async_session.add(ModelVersion(name="b", last_update_time=time, model_id=classification_model["id"],
-                                   ingestion_offset=100, topic_end_offset=100, created_by=user_id, updated_by=user_id))
-    async_session.add(ModelVersion(name="c", last_update_time=time.subtract(days=2),
-                                   model_id=classification_model["id"],
-                                   ingestion_offset=200, topic_end_offset=150, created_by=user_id, updated_by=user_id))
+    version_props = {"features": {"x": "numeric", }, "additional_data": {
+        "a": "numeric", }, "classes": ["0", "1", "2", "3"]}
+    versions = [
+        test_api.create_model_version(model_id=classification_model["id"], model_version={
+            "name": "a", **version_props}),
+        test_api.create_model_version(model_id=classification_model["id"], model_version={
+            "name": "b", **version_props}),
+        test_api.create_model_version(model_id=classification_model["id"], model_version={
+            "name": "c", **version_props})
+    ]
+
+    start = pdl.now("utc") - pdl.duration(days=1)
+
+    daterange = [start.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
+    no_label_daterange = [start.add(hours=hours) for hours in [3, 4]]
+    extra_count_daterange = [start.add(hours=hours) for hours in [1, 3, 4, 5]]
+
+    for version in versions[:2]:
+        upload_classification_data(test_api, version["id"],
+                                   daterange=daterange, model_id=classification_model["id"])
+        upload_classification_data(test_api, version["id"],
+                                   daterange=no_label_daterange, model_id=classification_model["id"],
+                                   is_labeled=False,
+                                   id_prefix="no_label")
+        upload_classification_data(test_api, version["id"],
+                                   daterange=extra_count_daterange, model_id=classification_model["id"],
+                                   id_prefix="extra")
+
+    await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "a").values(
+        dict(last_update_time=time.subtract(days=1), ingestion_offset=100, topic_end_offset=1000)
+    ))
+    await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "b").values(
+        dict(last_update_time=time, ingestion_offset=100, topic_end_offset=100)
+    ))
+    await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "c").values(
+        dict(last_update_time=time.subtract(days=2), ingestion_offset=200, topic_end_offset=150)
+    ))
     await async_session.commit()
 
     # Act
@@ -144,7 +173,8 @@ async def test_connected_models_api(
 
     # Assert
     assert response.status_code == 200
-    assert response.json() == [{
+    # TODO add count verification. (test client has a bug which he can't view updates on dynamically created tables)
+    assert_that(response.json()[0], has_entries({
         "id": 1,
         "latest_update": time.isoformat(),
         "name": "Classification Model",
@@ -152,31 +182,36 @@ async def test_connected_models_api(
         "task_type": "multiclass",
         "n_of_alerts": 0,
         "n_of_pending_rows": 900,
-        "n_of_updating_versions": 1
-    }]
+        "n_of_updating_versions": 1,
+    }))
 
 
 @pytest.mark.asyncio
 async def test_connected_models_api_missing_version_data(
     client: TestClient,
+    test_api: TestAPI,
     classification_model: Payload,
     async_session: AsyncSession
 ):
     # Arrange
     time = pdl.now().in_tz("UTC")
-    user_id = 1
-    async_session.add(ModelVersion(name="a",
-                                   model_id=classification_model["id"],
-                                   last_update_time=time,
-                                   ingestion_offset=100, created_by=user_id, updated_by=user_id))
-    async_session.add(ModelVersion(name="b",
-                                   last_update_time=time,
-                                   model_id=classification_model["id"], topic_end_offset=250,
-                                   created_by=user_id, updated_by=user_id))
-    async_session.add(ModelVersion(name="c",
-                                   model_id=classification_model["id"],
-                                   last_update_time=time,
-                                   ingestion_offset=200, topic_end_offset=250, created_by=user_id, updated_by=user_id))
+    version_props = {"features": {"x": "numeric", }, "additional_data": {
+        "a": "numeric", }, "classes": ["0", "1", "2", "3"]}
+    test_api.create_model_version(model_id=classification_model["id"], model_version={
+        "name": "a", **version_props})
+    test_api.create_model_version(model_id=classification_model["id"], model_version={
+        "name": "b", **version_props})
+    test_api.create_model_version(model_id=classification_model["id"], model_version={
+        "name": "c", **version_props})
+    await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "a").values(
+        dict(last_update_time=time, ingestion_offset=100)
+    ))
+    await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "b").values(
+        dict(last_update_time=time, topic_end_offset=250)
+    ))
+    await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "c").values(
+        dict(last_update_time=time, ingestion_offset=200, topic_end_offset=250)
+    ))
     await async_session.commit()
 
     # Act
@@ -184,7 +219,7 @@ async def test_connected_models_api_missing_version_data(
 
     # Assert
     assert response.status_code == 200
-    assert response.json() == [{
+    assert_that(response.json()[0], has_entries({
         "id": 1,
         "latest_update": time.isoformat(),
         "name": "Classification Model",
@@ -193,23 +228,21 @@ async def test_connected_models_api_missing_version_data(
         "n_of_alerts": 0,
         "n_of_pending_rows": 301,
         "n_of_updating_versions": 2
-    }]
+    }))
 
 
 @pytest.mark.asyncio
 async def test_connected_models_api_missing_all_version_data(
     client: TestClient,
-    classification_model: Payload,
-    async_session: AsyncSession
+    test_api: TestAPI,
+    classification_model: Payload
 ):
-    # Arrange
-    user_id = 1
-    async_session.add(ModelVersion(name="a",
-                                   model_id=classification_model["id"], created_by=user_id, updated_by=user_id))
-    async_session.add(ModelVersion(name="b",
-                                   model_id=classification_model["id"], created_by=user_id, updated_by=user_id))
-    await async_session.commit()
-
+    version_props = {"features": {"x": "numeric", }, "additional_data": {
+        "a": "numeric", }, "classes": ["0", "1", "2", "3"]}
+    test_api.create_model_version(model_id=classification_model["id"], model_version={
+        "name": "a", **version_props})
+    test_api.create_model_version(model_id=classification_model["id"], model_version={
+        "name": "b", **version_props})
     # Act
     response = client.get("/api/v1/connected-models")
 
