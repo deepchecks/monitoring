@@ -109,8 +109,6 @@ class TimeWindowOption(TableFiltersSchema):
         seconds_range = (pdl.parse(values["end_time"]) - pdl.parse(values["start_time"])).in_seconds()
         if seconds_range < 0:
             raise ValidationError("end_time must be after start_time")
-        # if seconds_range < TimeUnit.HOUR:
-        #     raise ("end_time must be at least an hour after start_time")
         return values
 
 
