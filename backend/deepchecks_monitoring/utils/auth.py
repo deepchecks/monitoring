@@ -58,7 +58,10 @@ async def get_user(
         return (await session.scalar(
             select(models.User)
             .where(models.User.email == token.email)
-            .options(joinedload(models.User.organization), joinedload(models.User.roles))
+            .options(
+                joinedload(models.User.organization), 
+                joinedload(models.User.roles)
+            )
         ))
 
     if isinstance(token, APIAccessToken):
@@ -76,7 +79,10 @@ async def get_user(
         user = (await session.scalar(
             select(models.User)
             .where(models.User.email == user_email)
-            .options(joinedload(models.User.organization))
+            .options(
+                joinedload(models.User.organization),
+                joinedload(models.User.roles)
+            )
         ))
 
         # Validate user password
@@ -325,7 +331,11 @@ class AdminUser(CurrentActiveUser):
     ) -> t.Optional["models.User"]:
         """Dependency for validation of a current active admin user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
-        if len([role for role in user.roles if role.role in [RoleEnum.ADMIN, RoleEnum.OWNER]]) == 0 or user.disabled:
+        if len([
+            role
+            for role in user.roles 
+            if role.role in {RoleEnum.ADMIN, RoleEnum.OWNER}
+        ]) == 0 or user.disabled:
             raise AccessForbidden("User does not have admin rights")
         return user
 
