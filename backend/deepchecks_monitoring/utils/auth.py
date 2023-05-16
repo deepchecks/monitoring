@@ -59,7 +59,7 @@ async def get_user(
             select(models.User)
             .where(models.User.email == token.email)
             .options(
-                joinedload(models.User.organization), 
+                joinedload(models.User.organization),
                 joinedload(models.User.roles)
             )
         ))
@@ -333,7 +333,7 @@ class AdminUser(CurrentActiveUser):
         user = t.cast("models.User", await super().__call__(request, bearer, session))
         if len([
             role
-            for role in user.roles 
+            for role in user.roles
             if role.role in {RoleEnum.ADMIN, RoleEnum.OWNER}
         ]) == 0 or user.disabled:
             raise AccessForbidden("User does not have admin rights")
