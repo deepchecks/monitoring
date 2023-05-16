@@ -111,12 +111,12 @@ class AlertRule(Base, MetadataMixin):
 
     def stringify(self):
         """Return a string representing current alert rule instance."""
-        monitor = t.cast('Monitor', self.monitor)
+        monitor = t.cast("Monitor", self.monitor)
         check = t.cast("Check", monitor.check)
         alert_rule_attr = None
 
         if monitor.additional_kwargs is not None:
-            monitor_kwargs = t.cast('MonitorCheckConfSchema', monitor.additional_kwargs)
+            monitor_kwargs = t.cast("MonitorCheckConfSchema", monitor.additional_kwargs)
             check_conf = monitor_kwargs.check_conf
             check_param = check_conf.get(CheckParameterTypeEnum.AGGREGATION_METHOD)
             check_param = check_param or check_conf.get(CheckParameterTypeEnum.SCORER)
@@ -126,9 +126,9 @@ class AlertRule(Base, MetadataMixin):
         if alert_rule_attr is None:
             alert_rule_attr = t.cast(str, check.name)
 
-        severity = t.cast('AlertSeverity', self.alert_severity)
+        severity = t.cast("AlertSeverity", self.alert_severity)
         alert_rule = t.cast("Condition", self.condition).__str__(prefix=alert_rule_attr)
-        return f'{severity.capitalize()} - {alert_rule}'
+        return f"{severity.capitalize()} - {alert_rule}"
 
 
 AlertRule.alert_severity_index = column_property(sa.case(

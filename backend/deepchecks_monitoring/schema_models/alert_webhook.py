@@ -18,7 +18,6 @@ if t.TYPE_CHECKING:
     # pylint: disable=unused-import
     from deepchecks_monitoring.config import Settings
     from deepchecks_monitoring.schema_models import Alert, AlertRule, Check, Model, Monitor
-    from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
 
 __all__ = ["AlertWebhook", "WebhookHttpMethod"]
 
@@ -233,7 +232,7 @@ class AlertWebhook(Base, MetadataMixin):
         """
         from deepchecks_monitoring.utils.alerts import prepare_alert_link  # pylint: disable=import-outside-toplevel
 
-        alert_rule = t.cast('AlertRule', alert.alert_rule)
+        alert_rule = t.cast("AlertRule", alert.alert_rule)
         monitor = t.cast("Monitor", alert_rule.monitor)
         check = t.cast("Check", monitor.check)
         model = t.cast("Model", check.model)

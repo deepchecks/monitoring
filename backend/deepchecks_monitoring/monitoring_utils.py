@@ -80,6 +80,7 @@ class OperatorsEnum(str, enum.Enum):
 
     # TODO: replace current __str__ with this
     def stringify(self) -> str:
+        """Return a string representing the operator instance."""
         cls = type(self)
         if self is cls.EQ:
             return "=="
@@ -94,7 +95,8 @@ class OperatorsEnum(str, enum.Enum):
         elif self is cls.LE:
             return "<="
         else:
-            raise TypeError(f"Unknown operator")
+            raise TypeError("Unknown operator")
+
 
 class CheckParameterTypeEnum(str, enum.Enum):
     """Supported customizable parameter types in checks."""
