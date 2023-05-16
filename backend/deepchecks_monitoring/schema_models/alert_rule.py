@@ -16,17 +16,16 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, column_property, relationship
 
-from deepchecks_monitoring.monitoring_utils import MetadataMixin, OperatorsEnum
+from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MetadataMixin, OperatorsEnum
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
-from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.monitor import Monitor
-    from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema
+    from deepchecks_monitoring.schema_models.check import Check
+    from deepchecks_monitoring.schema_models.monitor import Monitor
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
