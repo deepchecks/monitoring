@@ -8,7 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-# pylint: disable=ungrouped-imports
+# pylint: disable=ungrouped-imports,bare-except
 """Contains alert scheduling logic."""
 import asyncio
 import logging
@@ -95,14 +95,21 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            start = perf_counter()
-            await self.run_organization(org)
-            duration = perf_counter() - start
-            self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
-            start = perf_counter()
-            await self.run_organization_data_ingestion_alert(org)
-            duration = perf_counter() - start
-            self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+            try:
+                start = perf_counter()
+                await self.run_organization(org)
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
+            except:  # noqa: E722
+                self.logger.exception({'task': 'run_organization', 'org_id': org.id})
+            try:
+                start = perf_counter()
+                await self.run_organization_data_ingestion_alert(org)
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert',
+                                  'org_id': org.id})
+            except:  # noqa: E722
+                self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -170,6 +177,7 @@ class AlertsScheduler:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
                         # error is possible. In that case we just skip the monitor and try again next time.
                         except (SerializationError, DBAPIError) as error:
+                            await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
