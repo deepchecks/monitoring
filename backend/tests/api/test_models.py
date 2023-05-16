@@ -186,7 +186,7 @@ async def test_connected_models_api(
     }))
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_connected_models_api_missing_version_data(
     client: TestClient,
     test_api: TestAPI,
@@ -231,7 +231,7 @@ async def test_connected_models_api_missing_version_data(
     }))
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_connected_models_api_missing_all_version_data(
     client: TestClient,
     test_api: TestAPI,
@@ -301,7 +301,7 @@ TableExists = sa.text(
 ).bindparams(sa.bindparam(key="name", type_=sa.String))
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_model_set_monitors_time(
     test_api: TestAPI,
     deepchecks_sdk: DeepchecksClient,

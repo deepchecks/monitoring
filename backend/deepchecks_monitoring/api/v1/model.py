@@ -682,7 +682,7 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> 
 
         model: Model = (
             await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
-        ).scalars().first()
+        ).scalar()
 
         tables = [version.get_monitor_table(session) for version in model.versions]
 
