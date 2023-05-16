@@ -219,6 +219,7 @@ export interface UserSchema {
   full_name?: string;
   picture_url?: string;
   organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
+  roles: RoleEnum[];
 }
 
 /**
@@ -321,6 +322,17 @@ export interface SingleCheckRunOptions {
   start_time: string;
   additional_kwargs?: MonitorCheckConfSchema;
 }
+
+/**
+ * Roles enum.
+ */
+export type RoleEnum = typeof RoleEnum[keyof typeof RoleEnum];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const RoleEnum = {
+  admin: 'admin',
+  owner: 'owner'
+} as const;
 
 /**
  * Schema that represent a product from stripe.
@@ -695,9 +707,9 @@ export interface MemberSchema {
   full_name?: string;
   disabled: boolean;
   picture_url?: string;
-  is_admin: boolean;
   last_login?: string;
   created_at: string;
+  roles: RoleEnum[];
 }
 
 /**
