@@ -8,13 +8,14 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-# pylint: disable=ungrouped-imports
+# pylint: disable=ungrouped-imports,bare-except
 """Contains alert scheduling logic."""
 import asyncio
 import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
+from time import perf_counter
 
 import anyio
 import pendulum as pdl
@@ -67,8 +68,10 @@ class AlertsScheduler:
         s = self.sleep_seconds
         try:
             while True:
+                start = perf_counter()
                 await self.run_all_organizations()
-                self.logger.info(f'Sleep for the next {s} seconds')
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_all_organizations'})
                 await asyncio.sleep(s)
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Scheduler coroutine canceled')
@@ -92,8 +95,21 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            await self.run_organization(org)
-            await self.run_organization_data_ingestion_alert(org)
+            try:
+                start = perf_counter()
+                await self.run_organization(org)
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
+            except:  # noqa: E722
+                self.logger.exception({'task': 'run_organization', 'org_id': org.id})
+            try:
+                start = perf_counter()
+                await self.run_organization_data_ingestion_alert(org)
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert',
+                                  'org_id': org.id})
+            except:  # noqa: E722
+                self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -161,6 +177,7 @@ class AlertsScheduler:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
                         # error is possible. In that case we just skip the monitor and try again next time.
                         except (SerializationError, DBAPIError) as error:
+                            await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise

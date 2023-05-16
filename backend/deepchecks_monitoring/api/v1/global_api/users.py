@@ -153,7 +153,7 @@ class OrganizationSchema(BaseModel):
         orm_mode = True
 
 
-class UserSchema(BaseModel):
+class BasicUserSchema(BaseModel):
     """Schema for user."""
 
     id: int
@@ -162,12 +162,17 @@ class UserSchema(BaseModel):
     full_name: t.Optional[str] = None
     picture_url: t.Optional[str] = None
     organization: t.Optional[OrganizationSchema]
-    roles: t.List[RoleEnum]
 
     class Config:
         """Pydantic config."""
 
         orm_mode = True
+
+
+class UserSchema(BasicUserSchema):
+    """Schema for user with roles."""
+
+    roles: t.List[RoleEnum]
 
 
 @router.get(

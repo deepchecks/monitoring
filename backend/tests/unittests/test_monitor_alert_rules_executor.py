@@ -28,7 +28,7 @@ from deepchecks_monitoring.public_models import Task, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert
 from deepchecks_monitoring.schema_models.monitor import (Frequency, calculate_initial_latest_schedule,
-                                                         monitor_execution_range, round_off_datetime)
+                                                         monitor_execution_range, round_up_datetime)
 from tests.common import Payload, TestAPI, upload_classification_data
 
 
@@ -334,7 +334,7 @@ async def test_monitor_executor_is_using_cache(
     organization_id = user.organization.id
 
     # Act - Set monitor cache
-    window_end = round_off_datetime(now, monitor_frequency)
+    window_end = round_up_datetime(now, monitor_frequency, "utc")
     window_start = window_end - (monitor_frequency.to_pendulum_duration() * monitor["aggregation_window"])
     cache_value = {"my special key": 1}
 

@@ -39,7 +39,7 @@ from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID_COL, SAMPLE_ID_COL, SAMPLE_LABEL_COL,
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
-from deepchecks_monitoring.schema_models.monitor import Frequency, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import Frequency, round_up_datetime
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
 
 MAX_FEATURES_TO_RETURN = 1000
@@ -152,8 +152,8 @@ class MonitorOptions(SingleCheckRunOptions):
         frequency = self.frequency
         assert frequency is not None
 
-        end_time = round_off_datetime(self.end_time_dt().in_tz(tz), frequency)
-        start_time = round_off_datetime(self.start_time_dt().in_tz(tz), frequency)
+        end_time = round_up_datetime(self.end_time_dt(), frequency, tz)
+        start_time = round_up_datetime(self.start_time_dt(), frequency, tz)
         return list((end_time - start_time).range(frequency.to_pendulum_duration_unit()))
 
 

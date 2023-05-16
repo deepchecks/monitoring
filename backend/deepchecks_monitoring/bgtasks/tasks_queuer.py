@@ -13,6 +13,7 @@ import asyncio
 import datetime
 import logging.handlers
 import typing as t
+from time import perf_counter
 
 import anyio
 import pendulum as pdl
@@ -72,8 +73,10 @@ class TasksQueuer:
         try:
             while True:
                 async with self.resource_provider.create_async_database_session() as session:
-                    await self.move_tasks_to_queue(session)
-                self.logger.debug(f'sleep for {self.run_interval} seconds')
+                    start = perf_counter()
+                    total = await self.move_tasks_to_queue(session)
+                    duration = perf_counter() - start
+                    self.logger.info({'num_pushed': total, 'duration': duration})
                 await asyncio.sleep(self.run_interval)
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Worker coroutine canceled')
@@ -98,13 +101,10 @@ class TasksQueuer:
             try:
                 # Push to sorted set. if task id is already in set then do nothing.
                 pushed_count = self.resource_provider.redis_client.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
-                self.logger.info(f'Pushed {len(task_ids)} tasks to queue out of {len(task_ids)}')
                 return pushed_count
             except redis.ConnectionError:
                 # If redis failed, does not commit the update to the db
                 await session.rollback()
-        else:
-            self.logger.info('No tasks to push found')
         return 0
 
 
