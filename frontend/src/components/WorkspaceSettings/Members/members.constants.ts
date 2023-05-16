@@ -1,13 +1,22 @@
 export const constants = {
   header: {
-    title: 'Search member...'
+    title: 'Search member...',
+    assignModels: 'Assign Model',
+    removeMembers: 'Remove Members',
+    inviteMembers: 'Invite members'
   },
   table: {
     ariaLabel: 'organization members table',
     name: 'Name',
     email: 'Email address',
     activeSince: 'Active since',
-    actions: 'Actions'
+    role: 'Role',
+    actions: 'Actions',
+    roles: {
+      member: 'Member',
+      admin: 'Admin',
+      owner: 'Owner'
+    }
   },
   editMember: {
     title: 'Edit Member',
@@ -29,9 +38,15 @@ export const constants = {
     name: (name: string | undefined) => (name ? name : 'this member'),
     messageEnd: ' from the workspace?'
   },
+  removeSelectedMembers: {
+    title: 'Remove Members',
+    submit: 'Remove Members',
+    messageStart: 'Are you sure you want to remove ',
+    messageEnd: ' from the workspace?'
+  },
   deleteWorkspace: {
     title: 'Workspace Settings',
-    description: 'Lorem ipsum dolor sit amet consectetur. Tempor egestas massa aliquam eu ut.',
+    description: 'Delete your account along with all other members accounts.',
     deleteWorkspace: 'Delete Workspace',
     dialogMessage: 'Are you sure want to delete current workspace?',
     dialogSubmitButtonLabel: 'Yes, delete'

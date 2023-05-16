@@ -2,7 +2,7 @@ import React from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { MemberSchema } from 'api/generated';
+import { MemberSchema, RoleEnum } from 'api/generated';
 
 import { Checkbox, TableRowProps } from '@mui/material';
 
@@ -10,6 +10,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
 import { StyledTableRow, StyledTableCell, StyledIconButton } from './MembersTable.style';
+
+import { constants } from '../../members.constants';
 
 dayjs.extend(localizedFormat);
 
@@ -19,6 +21,14 @@ interface MembersTableRowProps extends TableRowProps {
   removeMember: (member: MemberSchema) => void;
 }
 
+const { member, admin, owner } = constants.table.roles;
+
+function getRole(roles: RoleEnum[]) {
+  if (roles.includes(RoleEnum.owner)) return owner;
+  if (roles.includes(RoleEnum.admin)) return admin;
+  return member;
+}
+
 export const MembersTableRow = ({
   member,
   editMember,
@@ -26,7 +36,12 @@ export const MembersTableRow = ({
   selected,
   ...otherProps
 }: MembersTableRowProps) => {
-  const { id, full_name, email, created_at } = member;
+  const { id, full_name, email, created_at, roles } = member;
+
+  const handleMemberActions = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, remove?: boolean) => {
+    e.stopPropagation();
+    remove ? removeMember(member) : editMember(member);
+  };
 
   return (
     <StyledTableRow key={id} role="checkbox" hover {...otherProps}>
@@ -38,11 +53,12 @@ export const MembersTableRow = ({
       </StyledTableCell>
       <StyledTableCell>{email}</StyledTableCell>
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
+      <StyledTableCell>{getRole(roles)}</StyledTableCell>
       <StyledTableCell align="right">
-        <StyledIconButton onClick={() => editMember(member)}>
+        <StyledIconButton onClick={handleMemberActions}>
           <ModeEditIcon />
         </StyledIconButton>
-        <StyledIconButton onClick={() => removeMember(member)}>
+        <StyledIconButton onClick={e => handleMemberActions(e, true)}>
           <DeleteIcon />
         </StyledIconButton>
       </StyledTableCell>

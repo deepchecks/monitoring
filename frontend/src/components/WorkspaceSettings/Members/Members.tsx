@@ -6,9 +6,9 @@ import { Loader } from 'components/base/Loader/Loader';
 import { MembersListActionDialog } from './components/MembersListActionDialog';
 import { MembersHeader } from './components/MembersHeader';
 import { MembersTable } from './components/MembersTable/MembersTable';
+import { DeleteWorkspace } from './components/DeleteWorkspace';
 
 import { MembersActionDialogOptions } from './Members.type';
-import { DeleteWorkspace } from './components/DeleteWorkspace';
 
 const Members = () => {
   const {
@@ -21,6 +21,7 @@ const Members = () => {
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [dialogAction, setDialogAction] = useState(MembersActionDialogOptions.invite);
   const [currentMember, setCurrentMember] = useState<MemberSchema | null>(null);
+  const [selectedMembers, setSelectedMembers] = useState<readonly number[]>([]);
 
   useEffect(() => {
     setMembersList(organizationMembers);
@@ -45,18 +46,26 @@ const Members = () => {
         organizationMembers={organizationMembers}
         setMembersList={setMembersList}
         handleOpenActionDialog={handleOpenActionDialog}
+        actionButtonsDisabled={!selectedMembers.length}
       />
       {isOrganizationMembersLoading ? (
         <Loader />
       ) : (
         <>
-          <MembersTable members={membersList} handleOpenActionDialog={handleOpenActionDialog} />
-          <DeleteWorkspace />
+          <MembersTable
+            selected={selectedMembers}
+            setSelected={setSelectedMembers}
+            members={membersList}
+            handleOpenActionDialog={handleOpenActionDialog}
+          />
+          <DeleteWorkspace handleOpenActionDialog={handleOpenActionDialog} />
         </>
       )}
       <MembersListActionDialog
         action={dialogAction}
-        member={currentMember}
+        members={membersList}
+        selectedMembers={selectedMembers}
+        currentMember={currentMember}
         open={showActionDialog}
         closeDialog={handleCloseActionDialog}
         refetchMembers={refetchMembers}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { MemberSchema } from 'api/generated';
 
@@ -16,12 +16,12 @@ import { constants } from '../../members.constants';
 
 interface MembersTableProps {
   members: MemberSchema[];
+  selected: readonly number[];
+  setSelected: React.Dispatch<React.SetStateAction<readonly number[]>>;
   handleOpenActionDialog: (action: MembersActionDialogOptions, member?: MemberSchema | null) => void;
 }
 
-export const MembersTable = ({ members, handleOpenActionDialog }: MembersTableProps) => {
-  const [selected, setSelected] = useState<readonly number[]>([]);
-
+export const MembersTable = ({ members, selected, setSelected, handleOpenActionDialog }: MembersTableProps) => {
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       const newSelected = members.map(m => m.id);

@@ -13,7 +13,7 @@ interface MembersTableHeadProps extends TableHeadProps {
   selectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const { name, email, activeSince, actions } = constants.table;
+const { name, email, activeSince, role, actions } = constants.table;
 
 export const MembersTableHead = ({ numSelected, rowCount, selectAllClick, ...otherProps }: MembersTableHeadProps) => (
   <TableHead {...otherProps}>
@@ -25,9 +25,10 @@ export const MembersTableHead = ({ numSelected, rowCount, selectAllClick, ...oth
           onChange={selectAllClick}
         />
       </StyledTableCell>
-      <StyledTableCell width="35%">{name}</StyledTableCell>
-      <StyledTableCell width="35%">{email}</StyledTableCell>
-      <StyledTableCell width="20%">{activeSince}</StyledTableCell>
+      <StyledTableCell width="30%">{name}</StyledTableCell>
+      <StyledTableCell width="30%">{email}</StyledTableCell>
+      <StyledTableCell width="15%">{activeSince}</StyledTableCell>
+      <StyledTableCell width="15%">{role}</StyledTableCell>
       <StyledTableCell align="right" width="10%">
         {actions}
       </StyledTableCell>

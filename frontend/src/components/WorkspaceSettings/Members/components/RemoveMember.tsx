@@ -6,12 +6,12 @@ import { StyledDeletionDialog } from 'components/lib';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { MembersActionDialogWithInputs } from '../Members.type';
+import { MembersActionDialogWithMember } from '../Members.type';
 import { constants } from '../members.constants';
 
 const { messageEnd, messageStart, name, submit, title } = constants.removeMember;
 
-export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: MembersActionDialogWithInputs) => {
+export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: MembersActionDialogWithMember) => {
   const { mutateAsync: deleteMember } = useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete();
 
   const removeMember = async () => {

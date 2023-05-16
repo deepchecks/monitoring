@@ -5,35 +5,52 @@ import { MemberSchema } from 'api/generated';
 import { InviteMember } from './InviteMember';
 import { EditMember } from './EditMember';
 import { RemoveMember } from './RemoveMember';
+import { RemoveSelectedMembers } from './RemoveSelectedMembers';
+import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 
 import { MembersActionDialog, MembersActionDialogOptions } from '../Members.type';
 
 interface MembersListActionDialogProps extends MembersActionDialog {
-  member: MemberSchema | null;
+  members: MemberSchema[];
+  selectedMembers: readonly number[];
+  currentMember: MemberSchema | null;
   action: MembersActionDialogOptions;
   refetchMembers: () => void;
 }
 
 export const MembersListActionDialog = ({
-  member,
+  members,
+  selectedMembers,
+  currentMember,
   action,
   open,
   closeDialog,
   refetchMembers
 }: MembersListActionDialogProps) => {
+  const sharedProps = {
+    open,
+    closeDialog,
+    refetchMembers
+  };
+
   switch (action) {
     case MembersActionDialogOptions.invite:
       return <InviteMember open={open} closeDialog={closeDialog} />;
 
     case MembersActionDialogOptions.edit:
-      return (
-        member && <EditMember member={member} open={open} closeDialog={closeDialog} refetchMembers={refetchMembers} />
-      );
+      return currentMember && <EditMember member={currentMember} {...sharedProps} />;
 
     case MembersActionDialogOptions.remove:
-      return (
-        member && <RemoveMember member={member} open={open} closeDialog={closeDialog} refetchMembers={refetchMembers} />
-      );
+      return currentMember && <RemoveMember member={currentMember} {...sharedProps} />;
+
+    case MembersActionDialogOptions.removeSelected:
+      return <RemoveSelectedMembers members={members} selectedMembers={selectedMembers} {...sharedProps} />;
+
+    case MembersActionDialogOptions.assignModel:
+      return <></>;
+
+    case MembersActionDialogOptions.deleteWorkspace:
+      return <DeleteWorkspaceDialog {...sharedProps} />;
 
     default:
       return <></>;
