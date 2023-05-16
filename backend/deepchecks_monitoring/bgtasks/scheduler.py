@@ -92,8 +92,8 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            await self.run_organization(org)
-            await self.run_organization_data_ingestion_alert(org)
+            await skip_exceptions(self.run_organization, org)
+            await skip_exceptions(self.run_organization_data_ingestion_alert, org)
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -161,6 +161,7 @@ class AlertsScheduler:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
                         # error is possible. In that case we just skip the monitor and try again next time.
                         except (SerializationError, DBAPIError) as error:
+                            await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
@@ -334,6 +335,13 @@ def is_serialization_error(error: DBAPIError):
         or error.code == '40001'
         or orig_code == '40001'
     )
+
+
+async def skip_exceptions(function, org):
+    try:
+        await function(org)
+    except:  # pylint: disable=bare-except  # noqa: E722
+        pass
 
 
 class BaseSchedulerSettings(config.DatabaseSettings):
