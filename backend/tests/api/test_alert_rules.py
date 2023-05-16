@@ -295,7 +295,7 @@ async def test_alerts_reactivation(
     alerts = t.cast(t.List[Payload], alerts)
     assert all(it["resolved"] is True for it in alerts)
 
-    # TestAPI will assert that 'resolved' flag is eq to False
+    # TestAPI will assert that "resolved" flag is eq to False
     test_api.reactivate_rule_alerts(alert_rule_id=rule["id"])
 
 
@@ -361,5 +361,5 @@ async def test_alert_rules_config(
     rules = t.cast(t.List[t.Dict[str, t.Any]], response.json())
 
     assert len(rules) == 2
-    assert rules[0]['alert_severity'] == 'medium'
-    assert rules[1]['alert_severity'] == 'low'
+    assert rules[0]["alert_severity"] == "medium"
+    assert rules[1]["alert_severity"] == "low"
