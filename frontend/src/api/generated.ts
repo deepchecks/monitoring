@@ -838,6 +838,9 @@ export interface ConnectedModelSchema {
   n_of_pending_rows: number;
   n_of_updating_versions: number;
   latest_update?: string;
+  sample_count: number;
+  label_count: number;
+  label_ratio: number;
 }
 
 /**
