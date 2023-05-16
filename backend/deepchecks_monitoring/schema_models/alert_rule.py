@@ -16,13 +16,16 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, column_property, relationship
 
-from deepchecks_monitoring.monitoring_utils import MetadataMixin, OperatorsEnum
+from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MetadataMixin, OperatorsEnum
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.schema_models.monitor import Monitor  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema
+    from deepchecks_monitoring.schema_models.check import Check
+    from deepchecks_monitoring.schema_models.monitor import Monitor
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
@@ -33,23 +36,10 @@ class Condition(BaseModel):
     operator: OperatorsEnum
     value: float
 
-    def __str__(self) -> str:
+    def __str__(self, prefix: str = "Result") -> str:
         """Return condition string representation."""
-        if self.operator == OperatorsEnum.EQ:
-            op = "=="
-        elif self.operator == OperatorsEnum.NOT_EQ:
-            op = "!="
-        elif self.operator == OperatorsEnum.GT:
-            op = ">"
-        elif self.operator == OperatorsEnum.GE:
-            op = ">="
-        elif self.operator == OperatorsEnum.LT:
-            op = "<"
-        elif self.operator == OperatorsEnum.LE:
-            op = "<="
-        else:
-            raise TypeError(f"Unknown operator - {self.operator}")
-        return f"Result {op} {self.value}"
+        op = self.operator.stringify()
+        return f"{prefix} {op} {self.value}"
 
 
 class AlertSeverity(str, enum.Enum):
@@ -117,6 +107,27 @@ class AlertRule(Base, MetadataMixin):
 
         results = (await session.execute(q)).all()
         return {r.alert_rule_id: r.alerts_count for r in results}
+
+    def stringify(self):
+        """Return a string representing current alert rule instance."""
+        monitor = t.cast("Monitor", self.monitor)
+        check = t.cast("Check", monitor.check)
+        alert_rule_attr = None
+
+        if monitor.additional_kwargs is not None:
+            monitor_kwargs = t.cast("MonitorCheckConfSchema", monitor.additional_kwargs)
+            check_conf = monitor_kwargs.check_conf
+            check_param = check_conf.get(CheckParameterTypeEnum.AGGREGATION_METHOD)
+            check_param = check_param or check_conf.get(CheckParameterTypeEnum.SCORER)
+            if isinstance(check_param, list) and len(check_param) > 0:
+                alert_rule_attr = check_param[0]
+
+        if alert_rule_attr is None:
+            alert_rule_attr = t.cast(str, check.name)
+
+        severity = t.cast("AlertSeverity", self.alert_severity)
+        alert_rule = t.cast("Condition", self.condition).__str__(prefix=alert_rule_attr)
+        return f"{severity.capitalize()} - {alert_rule}"
 
 
 AlertRule.alert_severity_index = column_property(sa.case(
