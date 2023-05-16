@@ -157,6 +157,7 @@ async def test_connected_models_api(
         upload_classification_data(test_api, version["id"],
                                    daterange=extra_count_daterange, model_id=classification_model["id"],
                                    id_prefix="extra")
+    await async_session.flush()
 
     await async_session.execute(sa.update(ModelVersion).where(ModelVersion.name == "a").values(
         dict(last_update_time=time.subtract(days=1), ingestion_offset=100, topic_end_offset=1000)
