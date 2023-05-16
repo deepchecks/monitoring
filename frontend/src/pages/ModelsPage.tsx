@@ -54,7 +54,11 @@ const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVaria
   );
 
 export const ModelsPage = () => {
-  const { data: models, isLoading, refetch: refetchModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const { data: models, isLoading, refetch: refetchModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
   const { refetchModels: refetchAvailableModels } = useModels();
   const [modelsList, setModelsList] = useState<ConnectedModelSchema[] | undefined>(models);
   const [filteredAndSortedModelsList, setFilteredAndSortedModelsList] = useState<ConnectedModelSchema[] | undefined>(

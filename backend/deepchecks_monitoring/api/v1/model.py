@@ -598,7 +598,7 @@ class ConnectedModelSchema(BaseModel):
     latest_update: t.Optional[datetime] = None
     sample_count: int
     label_count: int
-    label_ratio: int
+    label_ratio: float
 
     @validator("n_of_alerts", pre=True)
     @classmethod
