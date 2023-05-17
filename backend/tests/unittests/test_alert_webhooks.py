@@ -100,7 +100,7 @@ async def test_standart_webhook_execution(
         payload = json.loads(requests_inbox[0]["X-INPUT"])
         assert isinstance(payload, dict)
         assert payload["alert_id"] == alert_id
-        assert payload["alert_name"] == f"models/{model.name}/monitors/{monitor.name}"
+        assert payload["alert_name"] == f"model: {model.name} monitor: {monitor.name}"
         assert payload["alert_rule"] == alert_rule.stringify()
         assert payload["severity"] == alert_rule.alert_severity.value
 
