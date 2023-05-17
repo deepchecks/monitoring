@@ -241,26 +241,23 @@ async def retrieve_organization_members(
 
 
 @router.delete(
-    '/organization/members/',
+    '/organization/members/{member_id}',
     status_code=status.HTTP_200_OK,
     tags=['organization'],
     description='Remove member from an organization'
 )
 async def remove_organization_member(
-    member_ids: t.Union[int, t.List[int]],
+    member_id: int,
     user: User = Depends(auth.AdminUser()),
     session: AsyncSession = AsyncSessionDep,
 ):
-    """Remove member or members from an organization."""
-    member_ids = [member_ids] if not isinstance(member_ids, t.Sequence) else member_ids
-    for member_id in member_ids:
-        await session.execute(
-            sa.update(User)
-            .where(User.id == member_id)
-            .where(User.organization_id == user.organization_id)
-            .values(organization_id=None)
-        )
-    return Response()
+    """Remove member from an organization."""
+    await session.execute(
+        sa.update(User)
+        .where(User.id == member_id)
+        .where(User.organization_id == user.organization_id)
+        .values(organization_id=None)
+    )
 
 
 @router.post(
