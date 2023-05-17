@@ -29,7 +29,7 @@ from tests.utils import dummy_http_server
 
 
 @pytest.mark.asyncio
-async def test_standart_webhook_execution(
+async def test_standard_webhook_execution(
     test_api: TestAPI,
     async_session: AsyncSession,
     application: FastAPI  # app that were used to init "test_api:TestAPI"

@@ -208,7 +208,8 @@ async def test_that_emails_are_send_to_all_members_of_organization(
 async def test_webhooks_execution(
     async_session: AsyncSession,
     test_api: TestAPI,
-    user: User
+    user: User,
+    settings: Settings
 ):
     model = t.cast(Payload, test_api.create_model(model={"task_type": TaskType.BINARY.value}))
     check = t.cast(Payload, test_api.create_check(model_id=model["id"]))
@@ -245,7 +246,7 @@ async def test_webhooks_execution(
     await async_session.refresh(alert)
     await async_session.refresh(webhook)
 
-    settings = Settings()  # type: ignore
+    # settings = Settings()  # type: ignore
 
     async with EEResourcesProvider(settings) as rp:
         notificator = await EEAlertNotificator.instantiate(

@@ -5,13 +5,13 @@ import httpx
 from tests.common import Payload, TestAPI
 
 
-def test_standart_webhook_creation(test_api: TestAPI):
+def test_standard_webhook_creation(test_api: TestAPI):
     # == Act/Assert
     # NOTE: all needed assertions are done by 'test_api.create_alert_webhook'
     test_api.create_alert_webhook()
 
 
-def test_standart_webhook_creation_with_not_reacheable_url_address(test_api: TestAPI):
+def test_standard_webhook_creation_with_not_reacheable_url_address(test_api: TestAPI):
     response = test_api.create_alert_webhook(
         {"http_url": "https://some-url.blabla.com.ua.eu"},
         expected_status=400
@@ -20,7 +20,7 @@ def test_standart_webhook_creation_with_not_reacheable_url_address(test_api: Tes
     assert response.json()["error_message"] == "Failed to connect to the given URL address"
 
 
-def test_standart_webhook_deletion(test_api: TestAPI):
+def test_standard_webhook_deletion(test_api: TestAPI):
     # == Act/Assert
     # NOTE: all needed assertions are done by 'test_api.create_alert_webhook'
     webhook = t.cast(Payload, test_api.create_alert_webhook())
@@ -68,4 +68,4 @@ def test_retrieval_of_all_webhooks(test_api: TestAPI):
 
     assert isinstance(webhooks, list)
     assert len(webhooks) == 2
-    assert {it["kind"] for it in webhooks} == {"STANDART", "PAGER_DUTY"}
+    assert {it["kind"] for it in webhooks} == {"STANDARD", "PAGER_DUTY"}
