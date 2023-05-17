@@ -25,6 +25,7 @@ class FeaturesSchema(BaseModel):
     monthly_predictions_limit: int
     sso_enabled: bool
     onboarding_enabled: bool
+    update_roles: bool
 
 
 class FeaturesControl:
@@ -55,6 +56,11 @@ class FeaturesControl:
     @property
     def onboarding_enabled(self) -> bool:
         """Whether onBoarding is enabled."""
+        return False
+
+    @property
+    def update_roles(self) -> bool:
+        """Whether update_roles is enabled."""
         return False
 
     @property
@@ -99,4 +105,5 @@ class FeaturesControl:
             monthly_predictions_limit=self.monthly_predictions_limit,
             sso_enabled=self.sso_enabled,
             onboarding_enabled=self.onboarding_enabled,
+            update_roles=self.update_roles,
         )

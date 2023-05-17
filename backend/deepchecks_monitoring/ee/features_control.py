@@ -33,6 +33,7 @@ class CloudFeaturesControl(FeaturesControl):
         self._sso_enabled = None
         self._signup_enabled = None
         self._onboarding_enabled = None
+        self._update_roles = None
 
     @property
     def max_models(self) -> int:
@@ -49,6 +50,12 @@ class CloudFeaturesControl(FeaturesControl):
             return 1
 
         return self._allowed_models + 1
+
+    @property
+    def update_roles(self) -> bool:
+        if self._update_roles is None:
+            self._load_tier()
+        return self._update_roles
 
     @property
     def signup_enabled(self) -> bool:
@@ -109,6 +116,7 @@ class CloudFeaturesControl(FeaturesControl):
             }
         tier_conf = self.ld_client.variation("paid-features", ld_user, default={})
         self._signup_enabled = self.ld_client.variation("signUpEnabled", ld_user, default=True)
+        self._update_roles = self.ld_client.variation("updateRoles", ld_user, default=False)
         tier_conf = TierConfSchema(**tier_conf)
         self._custom_checks_enabled = tier_conf.custom_checks
         self._data_retention_months = tier_conf.data_retention_months
