@@ -145,9 +145,9 @@ class DataGenerator:
             for _ in range(n_of_features)
         )
 
-    def generate_random_standart_webhook(self):
+    def generate_random_standard_webhook(self):
         return {
-            "kind": "STANDART",
+            "kind": "STANDARD",
             "name": self.faker.name(),
             "description": self.faker.text(),
             "http_url": "https://httpbin.org",
@@ -1071,7 +1071,7 @@ class TestAPI:
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        default_payload = self.data_generator.generate_random_standart_webhook()
+        default_payload = self.data_generator.generate_random_standard_webhook()
 
         payload = (
             default_payload
@@ -1575,7 +1575,7 @@ def assert_alert_webhook(data: Payload) -> Payload:
     assert "id" in data and isinstance(data["id"], int)
     assert "name" in data and isinstance(data["name"], str)
     assert "description" in data and isinstance(data["description"], str)
-    assert "kind" in data and data["kind"] in {"STANDART", "PAGER_DUTY"}
+    assert "kind" in data and data["kind"] in {"STANDARD", "PAGER_DUTY"}
     assert "http_url" in data and isinstance(data["http_url"], str)
     assert "http_method" in data and data["http_method"] in {"GET", "POST"}
     assert "notification_levels" in data and isinstance(data["notification_levels"], list)

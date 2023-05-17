@@ -1009,7 +1009,7 @@ class API:
             'description': description,
             'http_headers': http_headers,
             'notification_levels': notification_levels,
-            'kind': 'STANDART'
+            'kind': 'STANDARD'
         }
         if raise_on_status:
             return maybe_raise(
