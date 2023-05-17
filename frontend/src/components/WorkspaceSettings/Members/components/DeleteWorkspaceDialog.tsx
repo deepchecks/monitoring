@@ -1,28 +1,33 @@
 import React, { useState } from 'react';
 
 import { removeOrganizationApiV1OrganizationDelete } from 'api/generated';
+import useUser from 'helpers/hooks/useUser';
+
+import { Box } from '@mui/material';
 
 import { StyledDialog, StyledText } from 'components/lib';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
-import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 
 import { constants } from '../members.constants';
-
-const { deleteWorkspace, dialogMessage, dialogSubmitButtonLabel, deleteString } = constants.deleteWorkspace;
 
 interface DeleteWorkspaceDialogProps {
   open: boolean;
   closeDialog: () => void;
 }
 
+const { deleteWorkspace, dialogMessage1, dialogMessage2, dialogSubmitButtonLabel, inputPlaceholder } =
+  constants.deleteWorkspace;
+
 export const DeleteWorkspaceDialog = ({ open, closeDialog }: DeleteWorkspaceDialogProps) => {
+  const { user } = useUser();
+
   const [inputValue, setInputValue] = useState('');
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const handleInputValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     setInputValue(value);
-    setButtonEnabled(value.toLowerCase() === deleteString);
+    setButtonEnabled(value.toLocaleLowerCase() === user?.organization?.name.toLocaleLowerCase());
   };
 
   const handleDeleteWorkspace = async () => {
@@ -40,10 +45,11 @@ export const DeleteWorkspaceDialog = ({ open, closeDialog }: DeleteWorkspaceDial
       submitButtonDisabled={!buttonEnabled}
       submitButtonAction={handleDeleteWorkspace}
     >
-      <MembersActionDialogContentLayout>
-        <StyledText text={dialogMessage} type="h3" textAlign="center" />
-        <MembersActionDialogInput value={inputValue} onChange={handleInputValueChange} />
-      </MembersActionDialogContentLayout>
+      <Box textAlign="center">
+        <StyledText text={dialogMessage1} type="h3" />
+        <StyledText text={dialogMessage2} type="h3" marginBottom="15px" />
+        <MembersActionDialogInput value={inputValue} onChange={handleInputValueChange} placeholder={inputPlaceholder} />
+      </Box>
     </StyledDialog>
   );
 };
