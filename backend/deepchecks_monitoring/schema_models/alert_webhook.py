@@ -245,7 +245,7 @@ class AlertWebhook(Base, MetadataMixin):
                 "headers": self.http_headers,
                 "json": {
                     "alert_id": alert.id,
-                    "alert_name": f"models: {model.name} monitors: {monitor.name}",
+                    "alert_name": f"model: {model.name} monitor: {monitor.name}",
                     "alert_rule": alert_rule.stringify(),
                     "severity": alert_rule.alert_severity,
                     "alert_link": alert_link
@@ -272,14 +272,14 @@ class AlertWebhook(Base, MetadataMixin):
                     "payload": {
                         "summary": f"New monitor alert: {monitor.name}",
                         "timestamp": pdl.instance(t.cast(datetime, alert.created_at)).to_iso8601_string(),
-                        "source": f"models: {model.name} monitors: {monitor.name}",
+                        "source": f"model: {model.name}, monitor: {monitor.name}",
                         "severity": severity,
                         "component": "deepchecks",
                         "group": additional_arguments.get("group") or "deepchecks",
                         "class": additional_arguments.get("class"),
                         "custom_details": {
                             "alert_id": alert.id,
-                            "alert_name": f"models/{model.name}/monitors/{monitor.name}",
+                            "alert_name": f"model: {model.name}, monitor: {monitor.name}",
                             "alert_rule": alert_rule.stringify(),
                             "severity": alert_rule.alert_severity,
                             "failed_values": alert.failed_values,
