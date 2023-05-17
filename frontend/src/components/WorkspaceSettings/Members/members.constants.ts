@@ -48,7 +48,9 @@ export const constants = {
     title: 'Workspace Settings',
     description: 'Delete your account along with all other members accounts.',
     deleteWorkspace: 'Delete Workspace',
-    dialogMessage: 'Are you sure want to delete current workspace?',
-    dialogSubmitButtonLabel: 'Yes, delete'
+    dialogMessage:
+      'Are you sure want to delete current workspace? If you want to proceed with the deletion please enter DELETE into the field below.',
+    dialogSubmitButtonLabel: 'Yes, delete',
+    deleteString: 'delete'
   }
 };

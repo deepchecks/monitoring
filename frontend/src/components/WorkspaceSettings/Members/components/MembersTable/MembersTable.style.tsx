@@ -6,7 +6,7 @@ import TableRow from '@mui/material/TableRow';
 
 export const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   boxShadow: 'none',
-  maxHeight: 'calc(100vh - 446px)',
+  height: 'calc(100vh - 446px)',
   backgroundColor: theme.palette.grey[100],
   borderRadius: 0,
   marginBottom: '50px',

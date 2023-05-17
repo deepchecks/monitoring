@@ -3,10 +3,10 @@ import React from 'react';
 import { TextField, Typography, styled, TextFieldProps } from '@mui/material';
 
 type MembersActionDialogInputProps = {
-  label: string;
+  label?: string;
 } & TextFieldProps;
 
-export const MembersActionDialogInput = ({ label, ...props }: MembersActionDialogInputProps) => (
+export const MembersActionDialogInput = ({ label = '', ...props }: MembersActionDialogInputProps) => (
   <>
     <StyledLabel>{label}</StyledLabel>
     <StyledTextfield fullWidth {...props} />
