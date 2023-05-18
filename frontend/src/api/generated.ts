@@ -95,7 +95,7 @@ export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: Id
 
 export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
 
-export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
+export type CreateWebhookApiV1AlertWebhooksPostBody = StandardWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
 
@@ -186,7 +186,7 @@ export type WebhookKind = typeof WebhookKind[keyof typeof WebhookKind];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const WebhookKind = {
-  STANDART: 'STANDART',
+  STANDARD: 'STANDARD',
   PAGER_DUTY: 'PAGER_DUTY'
 } as const;
 
@@ -279,26 +279,26 @@ export interface StepSchema {
   step: Step;
 }
 
-export type StandartWebhookPropertiesHttpHeaders = { [key: string]: string };
+export type StandardWebhookPropertiesHttpHeaders = { [key: string]: string };
 
-export type StandartWebhookPropertiesKind =
-  typeof StandartWebhookPropertiesKind[keyof typeof StandartWebhookPropertiesKind];
+export type StandardWebhookPropertiesKind =
+  typeof StandardWebhookPropertiesKind[keyof typeof StandardWebhookPropertiesKind];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const StandartWebhookPropertiesKind = {
-  STANDART: 'STANDART'
+export const StandardWebhookPropertiesKind = {
+  STANDARD: 'STANDARD'
 } as const;
 
 /**
- * Standart webhook initialization properties.
+ * Standard webhook initialization properties.
  */
-export interface StandartWebhookProperties {
-  kind?: StandartWebhookPropertiesKind;
+export interface StandardWebhookProperties {
+  kind?: StandardWebhookPropertiesKind;
   name: string;
   description?: string;
   http_url: string;
   http_method: WebhookHttpMethod;
-  http_headers?: StandartWebhookPropertiesHttpHeaders;
+  http_headers?: StandardWebhookPropertiesHttpHeaders;
   notification_levels?: AlertSeverity[];
 }
 
@@ -488,18 +488,6 @@ export interface MonitorRunSchema {
 }
 
 /**
- * Add to single window monitor options frequency and aggregation window to make it multi window.
- */
-export interface MonitorOptions {
-  filter?: DataFilterList;
-  end_time: string;
-  start_time: string;
-  additional_kwargs?: MonitorCheckConfSchema;
-  frequency?: Frequency;
-  aggregation_window?: number;
-}
-
-/**
  * Schema to get a monitor script/notebook.
  */
 export interface MonitorNotebookSchema {
@@ -533,6 +521,18 @@ export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
 export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
+}
+
+/**
+ * Add to single window monitor options frequency and aggregation window to make it multi window.
+ */
+export interface MonitorOptions {
+  filter?: DataFilterList;
+  end_time: string;
+  start_time: string;
+  additional_kwargs?: MonitorCheckConfSchema;
+  frequency?: Frequency;
+  aggregation_window?: number;
 }
 
 export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
@@ -1028,6 +1028,8 @@ export interface AutoFrequencyResponse {
   end: number;
 }
 
+export type AlertWebhookSchemaLatestExecutionStatus = { [key: string]: any };
+
 export type AlertWebhookSchemaAdditionalArguments = { [key: string]: any };
 
 export type AlertWebhookSchemaHttpHeaders = { [key: string]: any };
@@ -1058,6 +1060,8 @@ export interface AlertWebhookSchema {
   http_headers: AlertWebhookSchemaHttpHeaders;
   notification_levels: AlertSeverity[];
   additional_arguments: AlertWebhookSchemaAdditionalArguments;
+  latest_execution_date?: string;
+  latest_execution_status?: AlertWebhookSchemaLatestExecutionStatus;
 }
 
 export type AlertSchemaFailedValues = { [key: string]: { [key: string]: number } };
