@@ -75,8 +75,6 @@ class Model(Base, MetadataMixin):
     data_ingestion_alert_label_count = sa.Column(sa.Integer)
     data_ingestion_alert_sample_count = sa.Column(sa.Integer)
 
-    allowed_users = sa.Column(sa.ARRAY(sa.Integer), nullable=False)
-
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
         back_populates="model",
