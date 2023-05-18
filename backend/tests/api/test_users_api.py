@@ -69,3 +69,26 @@ async def test_user_auth_completion(unauthorized_client: TestClient, async_sessi
     assert schema_exists
 
     # TODO: assert that tables exist
+
+
+@pytest.mark.asyncio
+async def test_user_role_update(client: TestClient, async_session: AsyncSession, user, settings):
+    new_user = await generate_user(async_session, settings.auth_jwt_secret,
+                                   with_org=True, organization_id=user.organization_id)
+    new_user_id = new_user.id
+
+    response = client.put(f"/api/v1/users/{new_user_id}/roles", json={"roles": ["admin"]})
+    assert response.status_code == 200, response.content
+    json_resp = response.json()
+    assert json_resp["id"] == new_user_id
+    assert json_resp["roles"] == ["admin"]
+
+    response = client.put(f"/api/v1/users/{new_user_id}/roles", json={"roles": ["owner"], "replace": False})
+    json_resp = response.json()
+    assert json_resp["id"] == new_user_id
+    assert json_resp["roles"] == ["owner", "admin"]
+
+    response = client.put(f"/api/v1/users/{new_user_id}/roles", json={"roles": []})
+    json_resp = response.json()
+    assert json_resp["id"] == new_user_id
+    assert json_resp["roles"] == []

@@ -12,6 +12,7 @@ import typing as t
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.testclient import TestClient
+
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
 from tests.common import Payload, TestAPI, create_alert
 
