@@ -54,7 +54,11 @@ const sortModels = (models: ConnectedModelSchema[], sortMethod: sortOptionsVaria
   );
 
 export const ModelsPage = () => {
-  const { data: models, isLoading, refetch: refetchModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet({
+  const {
+    data: models,
+    isLoading,
+    refetch: refetchModels
+  } = useRetrieveConnectedModelsApiV1ConnectedModelsGet({
     query: {
       refetchOnWindowFocus: false
     }
@@ -302,8 +306,8 @@ const StyledSortMenuItem = styled(MenuItem, {
   shouldForwardProp: prop => prop !== 'sort' && prop !== 'sortMethod'
 })<StyledSortMenuItemProps>(({ sort, sortMethod }) => ({
   color: sort === sortMethod ? theme.palette.primary.main : theme.palette.text.primary,
-  py: '12px',
-  pl: '12px'
+  paddingY: '12px',
+  paddingLeft: '12px'
 }));
 
 const StyledAutocompleteTextField = styled(TextField)(({ theme }) => ({
