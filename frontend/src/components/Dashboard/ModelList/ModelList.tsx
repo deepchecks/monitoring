@@ -42,7 +42,11 @@ const { heading, reset, searchFieldPlaceholder } = constants.modelList;
 export function ModelList({ selectedModelId, setSelectedModelId }: ModelListProps) {
   const { models, isLoading } = useModels();
 
-  const { data: connectedModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet();
+  const { data: connectedModels } = useRetrieveConnectedModelsApiV1ConnectedModelsGet({
+    query: {
+      refetchOnWindowFocus: false
+    }
+  });
   const connectedModelsMap = useMemo(() => {
     const map: Record<string, ConnectedModelSchema> = {};
     (Array.isArray(connectedModels) ? connectedModels : []).forEach(model => (map[model.id] = model));

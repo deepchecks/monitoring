@@ -1,4 +1,4 @@
-from . import billing, slack
+from . import billing, members, slack
 from .routers import cloud_router, ee_router
 
-__all__ = ['cloud_router', 'ee_router', 'slack', 'billing']
+__all__ = ['cloud_router', 'ee_router', 'slack', 'billing', 'members']

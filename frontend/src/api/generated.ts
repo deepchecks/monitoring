@@ -210,7 +210,7 @@ export interface ValidationError {
 }
 
 /**
- * Schema for user.
+ * Schema for user with roles.
  */
 export interface UserSchema {
   id: number;
@@ -333,6 +333,14 @@ export const RoleEnum = {
   admin: 'admin',
   owner: 'owner'
 } as const;
+
+/**
+ * Role update schema.
+ */
+export interface RoleUpdateSchema {
+  roles: RoleEnum[];
+  replace?: boolean;
+}
 
 /**
  * Schema that represent a product from stripe.
@@ -502,19 +510,6 @@ export interface MonitorNotebookSchema {
 }
 
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
-
-/**
- * Monitor execution frequency.
- */
-export type Frequency = typeof Frequency[keyof typeof Frequency];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const Frequency = {
-  HOUR: 'HOUR',
-  DAY: 'DAY',
-  WEEK: 'WEEK',
-  MONTH: 'MONTH'
-} as const;
 
 /**
  * Schema defines the parameters for creating new monitor.
@@ -769,6 +764,19 @@ export interface HTTPValidationError {
 }
 
 /**
+ * Monitor execution frequency.
+ */
+export type Frequency = typeof Frequency[keyof typeof Frequency];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Frequency = {
+  HOUR: 'HOUR',
+  DAY: 'DAY',
+  WEEK: 'WEEK',
+  MONTH: 'MONTH'
+} as const;
+
+/**
  * Schema to be returned to the client for the features control.
  */
 export interface FeaturesSchema {
@@ -781,6 +789,7 @@ export interface FeaturesSchema {
   monthly_predictions_limit: number;
   sso_enabled: boolean;
   onboarding_enabled: boolean;
+  update_roles: boolean;
 }
 
 /**
@@ -838,6 +847,9 @@ export interface ConnectedModelSchema {
   n_of_pending_rows: number;
   n_of_updating_versions: number;
   latest_update?: string;
+  sample_count: number;
+  label_count: number;
+  label_ratio: number;
 }
 
 /**
@@ -996,6 +1008,18 @@ export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost 
 }
 
 /**
+ * Schema for user.
+ */
+export interface BasicUserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
+}
+
+/**
  * Response for auto frequency.
  */
 export interface AutoFrequencyResponse {
@@ -1109,7 +1133,7 @@ export interface AlertRuleConfigSchema {
   total_alerts?: number;
   non_resolved_alerts?: number;
   recent_alert?: string;
-  user?: UserSchema;
+  user?: BasicUserSchema;
 }
 
 /**
@@ -6260,6 +6284,55 @@ export const useEulaAcceptanceApiV1UsersAcceptEulaGet = <
   query.queryKey = queryKey;
 
   return query;
+};
+
+/**
+ * Update user roles.
+ * @summary Update User Role
+ */
+export const updateUserRoleApiV1UsersUserIdRolesPut = (userId: number, roleUpdateSchema: RoleUpdateSchema) => {
+  return customInstance<UserSchema>({
+    url: `/api/v1/users/${userId}/roles`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: roleUpdateSchema
+  });
+};
+
+export type UpdateUserRoleApiV1UsersUserIdRolesPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>
+>;
+export type UpdateUserRoleApiV1UsersUserIdRolesPutMutationBody = RoleUpdateSchema;
+export type UpdateUserRoleApiV1UsersUserIdRolesPutMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdateUserRoleApiV1UsersUserIdRolesPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>,
+    TError,
+    { userId: number; data: RoleUpdateSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>,
+    { userId: number; data: RoleUpdateSchema }
+  > = props => {
+    const { userId, data } = props ?? {};
+
+    return updateUserRoleApiV1UsersUserIdRolesPut(userId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>,
+    TError,
+    { userId: number; data: RoleUpdateSchema },
+    TContext
+  >(mutationFn, mutationOptions);
 };
 
 /**
