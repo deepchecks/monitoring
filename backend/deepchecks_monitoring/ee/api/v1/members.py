@@ -60,15 +60,14 @@ async def update_user_role(roles_schema: RoleUpdateSchema,
     for role in roles:
         if role.role not in roles_schema.roles:
             if roles_schema.replace:
-                roles_to_delete.append(role)
+                roles_to_delete.append(role.id)
     existing_roles = [role.role for role in roles]
     for role in roles_schema.roles:
         if role not in existing_roles:
             roles_to_create.append(Role(user_id=user_id, role=role))
-    for role in roles_to_delete:
-        await session.delete(role)
-    for role in roles_to_create:
-        session.add(role)
+
+    await session.execute(sa.delete(Role).where(Role.id.in_(roles_to_delete)))
+    session.add_all(roles_to_create)
     await session.flush()
 
     user = await session.scalar(sa.select(User).where(User.id == user_id).options(joinedload(User.roles)))
