@@ -65,6 +65,7 @@ const Members = () => {
         action={dialogAction}
         members={membersList}
         selectedMembers={selectedMembers}
+        setSelectedMembers={setSelectedMembers}
         currentMember={currentMember}
         open={showActionDialog}
         closeDialog={handleCloseActionDialog}

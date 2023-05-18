@@ -42,7 +42,8 @@ export const constants = {
     title: 'Remove Members',
     submit: 'Remove Members',
     messageStart: 'Are you sure you want to remove ',
-    messageEnd: ' from the workspace?'
+    messageEnd: ' from the workspace?',
+    allMembers: 'all members'
   },
   deleteWorkspace: {
     title: 'Workspace Settings',

@@ -13,6 +13,7 @@ import { MembersActionDialog, MembersActionDialogOptions } from '../Members.type
 interface MembersListActionDialogProps extends MembersActionDialog {
   members: MemberSchema[];
   selectedMembers: readonly number[];
+  setSelectedMembers: React.Dispatch<React.SetStateAction<readonly number[]>>;
   currentMember: MemberSchema | null;
   action: MembersActionDialogOptions;
   refetchMembers: () => void;
@@ -21,6 +22,7 @@ interface MembersListActionDialogProps extends MembersActionDialog {
 export const MembersListActionDialog = ({
   members,
   selectedMembers,
+  setSelectedMembers,
   currentMember,
   action,
   open,
@@ -44,7 +46,14 @@ export const MembersListActionDialog = ({
       return currentMember && <RemoveMember member={currentMember} {...sharedProps} />;
 
     case MembersActionDialogOptions.removeSelected:
-      return <RemoveSelectedMembers members={members} selectedMembers={selectedMembers} {...sharedProps} />;
+      return (
+        <RemoveSelectedMembers
+          members={members}
+          selectedMembers={selectedMembers}
+          setSelectedMembers={setSelectedMembers}
+          {...sharedProps}
+        />
+      );
 
     case MembersActionDialogOptions.assignModel:
       return <></>;

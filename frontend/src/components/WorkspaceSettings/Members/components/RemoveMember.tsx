@@ -12,10 +12,10 @@ import { constants } from '../members.constants';
 const { messageEnd, messageStart, name, submit, title } = constants.removeMember;
 
 export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: MembersActionDialogWithMember) => {
-  const { mutateAsync: deleteMember } = useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete();
+  const { mutateAsync: removeMember } = useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete();
 
-  const removeMember = async () => {
-    await deleteMember({ memberId: member.id });
+  const handleRemoveMember = async () => {
+    await removeMember({ memberId: member.id });
     refetchMembers();
     reportEvent(events.authentication.removeUser, {
       'Removed user email': member.email
@@ -29,7 +29,7 @@ export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: Memb
       title={title}
       closeDialog={closeDialog}
       submitButtonLabel={submit}
-      submitButtonAction={removeMember}
+      submitButtonAction={handleRemoveMember}
       messageStart={messageStart}
       itemToDelete={name(member.full_name)}
       messageEnd={messageEnd}
