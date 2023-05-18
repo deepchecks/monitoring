@@ -5,35 +5,61 @@ import { MemberSchema } from 'api/generated';
 import { InviteMember } from './InviteMember';
 import { EditMember } from './EditMember';
 import { RemoveMember } from './RemoveMember';
+import { RemoveSelectedMembers } from './RemoveSelectedMembers';
+import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 
 import { MembersActionDialog, MembersActionDialogOptions } from '../Members.type';
 
 interface MembersListActionDialogProps extends MembersActionDialog {
-  member: MemberSchema | null;
+  members: MemberSchema[];
+  selectedMembers: readonly number[];
+  setSelectedMembers: React.Dispatch<React.SetStateAction<readonly number[]>>;
+  currentMember: MemberSchema | null;
   action: MembersActionDialogOptions;
   refetchMembers: () => void;
 }
 
 export const MembersListActionDialog = ({
-  member,
+  members,
+  selectedMembers,
+  setSelectedMembers,
+  currentMember,
   action,
   open,
   closeDialog,
   refetchMembers
 }: MembersListActionDialogProps) => {
+  const sharedProps = {
+    open,
+    closeDialog,
+    refetchMembers
+  };
+
   switch (action) {
     case MembersActionDialogOptions.invite:
       return <InviteMember open={open} closeDialog={closeDialog} />;
 
     case MembersActionDialogOptions.edit:
-      return (
-        member && <EditMember member={member} open={open} closeDialog={closeDialog} refetchMembers={refetchMembers} />
-      );
+      return currentMember && <EditMember member={currentMember} {...sharedProps} />;
 
     case MembersActionDialogOptions.remove:
+      return currentMember && <RemoveMember member={currentMember} {...sharedProps} />;
+
+    case MembersActionDialogOptions.removeSelected:
       return (
-        member && <RemoveMember member={member} open={open} closeDialog={closeDialog} refetchMembers={refetchMembers} />
+        <RemoveSelectedMembers
+          members={members}
+          selectedMembers={selectedMembers}
+          setSelectedMembers={setSelectedMembers}
+          {...sharedProps}
+        />
       );
+
+    case MembersActionDialogOptions.assignModel:
+      return <></>;
+
+    case MembersActionDialogOptions.deleteWorkspace:
+      return <DeleteWorkspaceDialog {...sharedProps} />;
 
     default:
       return <></>;

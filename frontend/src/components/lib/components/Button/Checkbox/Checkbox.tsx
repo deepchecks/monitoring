@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Checkbox as MUICheckbox, FormGroup } from '@mui/material';
+import { Checkbox as MUICheckbox, FormGroup, CheckboxProps as MUICheckboxProps } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
 
@@ -7,7 +7,7 @@ import { Text } from '../../Text/Text';
 
 import { paletteOptions } from '../../../theme/palette';
 
-export interface CheckboxProps {
+export interface CheckboxProps extends MUICheckboxProps {
   state: any[];
   setState: (state: any) => void;
   options: {
@@ -22,7 +22,16 @@ export interface CheckboxProps {
 }
 
 export const Checkbox = (props: CheckboxProps) => {
-  const { state, setState, options, formTitle, disabled, direction = 'column', limit = options.length } = props;
+  const {
+    state,
+    setState,
+    options,
+    formTitle,
+    disabled,
+    direction = 'column',
+    limit = options.length,
+    ...otherProps
+  } = props;
 
   const [err, setErr] = useState(false);
 
@@ -50,7 +59,7 @@ export const Checkbox = (props: CheckboxProps) => {
           <FormControlLabel
             key={i}
             value={option.value}
-            control={<MUICheckbox disabled={disabled} checked={state.includes(option.value)} />}
+            control={<MUICheckbox disabled={disabled} checked={state.includes(option.value)} {...otherProps} />}
             label={
               option.label && (
                 <Text

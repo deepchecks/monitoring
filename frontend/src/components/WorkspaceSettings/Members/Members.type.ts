@@ -5,13 +5,19 @@ export interface MembersActionDialog {
   closeDialog: () => void;
 }
 
-export interface MembersActionDialogWithInputs extends MembersActionDialog {
-  member: MemberSchema;
+export interface MembersActionDialogWithRefetch extends MembersActionDialog {
   refetchMembers: () => void;
+}
+
+export interface MembersActionDialogWithMember extends MembersActionDialogWithRefetch {
+  member: MemberSchema;
 }
 
 export enum MembersActionDialogOptions {
   invite = 'invite',
   edit = 'edit',
-  remove = 'remove'
+  remove = 'remove',
+  removeSelected = 'removeSelected',
+  assignModel = 'assignModel',
+  deleteWorkspace = 'deleteWorkspace'
 }
