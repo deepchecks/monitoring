@@ -5,16 +5,16 @@ import { MemberSchema, useRemoveOrganizationMemberApiV1OrganizationMembersMember
 import { StyledDeletionDialog } from 'components/lib';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { MembersActionDialogWithRefetch } from '../Members.type';
 import { constants } from '../members.constants';
+import { MembersActionDialogWithRefetch } from '../Members.type';
+
+const { messageEnd, messageStart, submit, title, allMembers } = constants.removeSelectedMembers;
 
 interface RemoveSelectedMembersProps extends MembersActionDialogWithRefetch {
   members: MemberSchema[];
   selectedMembers: readonly number[];
   setSelectedMembers: React.Dispatch<React.SetStateAction<readonly number[]>>;
 }
-
-const { messageEnd, messageStart, submit, title, allMembers } = constants.removeSelectedMembers;
 
 function buildMembersToRemoveString(members: MemberSchema[], selectedMembers: readonly number[]) {
   return selectedMembers.length === members.length
@@ -48,8 +48,8 @@ export const RemoveSelectedMembers = ({
     setFetching(true);
     Promise.all(selectedMembers.map(memberId => handleRemoveMember(memberId))).then(() => {
       refetchMembers();
-      closeDialog();
       setSelectedMembers([]);
+      closeDialog();
       setFetching(false);
     });
   };

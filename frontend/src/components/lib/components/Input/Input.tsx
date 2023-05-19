@@ -25,43 +25,27 @@ const StyledSearchField = styled(MUIInput)(({ theme }) => ({
 
 interface InputProps extends MUIInputProps {
   value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  onCloseIconClick: () => void;
   searchField?: boolean;
   label?: string;
 }
 
 export const Input = (props: InputProps) => {
-  const { value, setValue, searchField, label, ...otherProps } = props;
+  const { value, onCloseIconClick, searchField, label, ...otherProps } = props;
   const id = label ? 'id ' + label : label;
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(event.target.value);
-  };
-
   const CloseIconAdornment = (
-    <CloseIcon onClick={() => setValue('')} cursor="pointer" sx={{ width: '18px', height: '18px' }} />
+    <CloseIcon onClick={onCloseIconClick} cursor="pointer" sx={{ width: '18px', height: '18px' }} />
   );
 
   return searchField ? (
     <>
-      <StyledSearchField
-        endAdornment={value ? CloseIconAdornment : <SearchIcon />}
-        value={value}
-        onChange={handleChange}
-        {...otherProps}
-      />
+      <StyledSearchField endAdornment={value ? CloseIconAdornment : <SearchIcon />} value={value} {...otherProps} />
     </>
   ) : (
     <Box>
       {label && <StyledLabel htmlFor={id}>{label}</StyledLabel>}
-      <StyledOutlinedInput
-        id={id}
-        endAdornment={value && CloseIconAdornment}
-        value={value}
-        onChange={handleChange}
-        fullWidth
-        {...otherProps}
-      />
+      <StyledOutlinedInput id={id} endAdornment={value && CloseIconAdornment} value={value} fullWidth {...otherProps} />
     </Box>
   );
 };

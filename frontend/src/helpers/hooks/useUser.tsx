@@ -3,7 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { hotjar } from 'react-hotjar';
 import mixpanel from 'mixpanel-browser';
 
-import { useRetrieveUserInfoApiV1UsersMeGet, UserSchema } from 'api/generated';
+import {
+  useRetrieveUserInfoApiV1UsersMeGet,
+  UserSchema,
+  getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet,
+  FeaturesSchema,
+  RoleEnum
+} from 'api/generated';
+
+import { resError } from 'helpers/types/resError';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -12,6 +20,9 @@ export type UserProvider = {
 export type UserContext = {
   user: UserSchema | null;
   isUserDetailsComplete: boolean;
+  isAdmin: boolean;
+  isOwner: boolean;
+  availableFeatures: FeaturesSchema | undefined;
 };
 
 const UserContext = createContext<UserContext | null>(null);
@@ -25,7 +36,11 @@ const useUser = () => {
 
 export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   const navigate = useNavigate();
+
   const [user, setUser] = useState<UserSchema | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [availableFeatures, setAvailableFeatures] = useState<FeaturesSchema>();
 
   const { data } = useRetrieveUserInfoApiV1UsersMeGet({
     query: {
@@ -44,7 +59,20 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
     navigate('/complete-details');
   }, [user, isUserDetailsComplete]);
 
-  const value = { user, isUserDetailsComplete };
+  useEffect(() => {
+    async function getAvailableFeatures() {
+      const response: FeaturesSchema = await getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet();
+      if (response && !(response as unknown as resError).error_message) setAvailableFeatures(response);
+    }
+
+    if (user) {
+      getAvailableFeatures();
+      setIsAdmin(!!user?.roles.includes(RoleEnum.admin));
+      setIsOwner(!!user?.roles.includes(RoleEnum.owner));
+    }
+  }, [user]);
+
+  const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner };
 
   if (user) {
     if (isUserDetailsComplete) {

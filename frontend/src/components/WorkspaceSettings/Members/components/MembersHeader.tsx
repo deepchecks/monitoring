@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import { MemberSchema } from 'api/generated';
 
 import { Stack } from '@mui/material';
 
-import { Input } from 'components/lib/components/Input/Input';
-import { StyledButton } from 'components/lib';
+import { StyledButton, StyledInput } from 'components/lib';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -31,12 +30,19 @@ export const MembersHeader = ({
 }: MembersHeaderProps) => {
   const [searchFieldValue, setSearchFieldValue] = useState('');
 
-  useEffect(() => {
-    const filtered = organizationMembers.filter(member =>
-      member.full_name?.toLowerCase().includes(searchFieldValue.trim().toLowerCase())
+  const handleSearchFieldChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+
+    setSearchFieldValue(value);
+    setMembersList(
+      organizationMembers.filter(member => member.full_name?.toLowerCase().includes(value.trim().toLowerCase()))
     );
-    setMembersList(filtered);
-  }, [searchFieldValue]);
+  };
+
+  const resetSearchField = () => {
+    setSearchFieldValue('');
+    setMembersList(organizationMembers);
+  };
 
   const handleInviteMember = () => handleOpenActionDialog(MembersActionDialogOptions.invite);
 
@@ -58,10 +64,11 @@ export const MembersHeader = ({
         disabled={actionButtonsDisabled}
         onClick={handleRemoveSelectedMembers}
       />
-      <Input
+      <StyledInput
         placeholder={title}
         value={searchFieldValue}
-        setValue={setSearchFieldValue}
+        onChange={handleSearchFieldChange}
+        onCloseIconClick={resetSearchField}
         searchField
         fullWidth
         sx={{ flex: 1 }}
