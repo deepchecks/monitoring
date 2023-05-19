@@ -97,7 +97,7 @@ class SlackInstallationUtils:
     def finish_installation(
         self,
         code: str,
-        redurect_uri: str
+        redirect_uri: t.Optional[str] = None
     ) -> SlackInstallationSchema:
         """Finish the slack installation."""
         try:
