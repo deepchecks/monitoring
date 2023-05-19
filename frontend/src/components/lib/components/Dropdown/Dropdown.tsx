@@ -41,6 +41,10 @@ export const Dropdown = (props: DropdownProps) => {
     setState(data);
   };
 
+  const handleChange = (event: SelectChangeEvent<unknown>) => {
+    setValue(event.target.value as string);
+  };
+
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
 
@@ -48,8 +52,9 @@ export const Dropdown = (props: DropdownProps) => {
     setState(data.filter(item => item.name.toLowerCase().includes(value.toLowerCase().trim())));
   };
 
-  const handleChange = (event: SelectChangeEvent<unknown>) => {
-    setValue(event.target.value as string);
+  const resetInput = () => {
+    setInputValue('');
+    setState(data);
   };
 
   return (
@@ -71,7 +76,7 @@ export const Dropdown = (props: DropdownProps) => {
           <StyledStickyContainer>
             <Input
               value={inputValue}
-              setValue={setInputValue}
+              onCloseIconClick={resetInput}
               placeholder={`Search ${label}`}
               searchField
               onChange={handleSearch}

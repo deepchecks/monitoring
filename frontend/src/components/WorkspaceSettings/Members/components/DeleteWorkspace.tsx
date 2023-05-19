@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { RoleEnum, MemberSchema } from 'api/generated';
+import { MemberSchema } from 'api/generated';
 import useUser from 'helpers/hooks/useUser';
 
 import { Box } from '@mui/material';
@@ -18,7 +18,7 @@ interface DeleteWorkspaceProps {
 }
 
 export const DeleteWorkspace = ({ handleOpenActionDialog }: DeleteWorkspaceProps) => {
-  const { user } = useUser();
+  const { isOwner } = useUser();
 
   const handleDeleteWorkspace = () => handleOpenActionDialog(MembersActionDialogOptions.deleteWorkspace);
 
@@ -31,7 +31,7 @@ export const DeleteWorkspace = ({ handleOpenActionDialog }: DeleteWorkspaceProps
         label={deleteWorkspace}
         color="error"
         onClick={handleDeleteWorkspace}
-        disabled={!user?.roles.includes(RoleEnum.owner)}
+        disabled={!isOwner}
       />
     </Box>
   );

@@ -22,7 +22,8 @@ export const constants = {
     title: 'Edit Member',
     submit: 'Save Changes',
     nameInputLabel: 'Name',
-    emailInputLabel: 'Email address'
+    emailInputLabel: 'Email address',
+    role: 'Role'
   },
   inviteMember: {
     title: 'Invite Members',
