@@ -26,13 +26,13 @@ const MAX_MENU_ITEM_TEXT_LENGTH = 21;
 const MenuProps: Partial<IMenuProps> = {
   MenuListProps: {
     style: {
-      padding: 0,
-      overflow: 'auto'
+      padding: 0
     }
   },
   PaperProps: {
     style: {
-      width: 280
+      width: 280,
+      maxHeight: 600
     }
   }
 };
