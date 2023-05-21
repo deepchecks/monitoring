@@ -14,10 +14,13 @@ import enum
 import logging
 import logging.handlers
 import operator
+import re
 import sys
 import typing as t
 from datetime import date, datetime
 from typing import TYPE_CHECKING
+from deepchecks_monitoring.dependencies import get_async_session
+import fastapi
 
 import orjson
 import sqlalchemy as sa
@@ -650,3 +653,14 @@ class MetadataMixin:
     updated_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now(),
                            onupdate=sa.func.now())
     updated_by = sa.Column(sa.Integer, nullable=False)
+
+
+class PermissionMixin(Base):
+    """Mixin class for ORM entities that have metadata."""
+
+    def get_object(self, request: fastapi.Request):
+        session = get_async_session(request)
+        id_param = re.sub(r'(?<!^)(?=[A-Z])', '_', self.__class__.__name__).lower()
+        param_val = request.query_params.get(id_param) or request.path_params.get(id_param)
+        if param_val is None:
+            return None
