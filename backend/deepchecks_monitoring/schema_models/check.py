@@ -24,8 +24,7 @@ if t.TYPE_CHECKING:
 
 __all__ = ["Check"]
 
-
-_DOCS_LINK_FORMAT = "https://docs.deepchecks.com/stable/checks_gallery/{data_type}/{check_type}/plot_{check_name}.html"
+_DOCS_LINK_FORMAT = "https://docs.deepchecks.com/stable/{data_type}/auto_checks/{check_type}/plot_{check_name}.html"
 
 
 class Check(Base, MetadataMixin):
@@ -62,6 +61,11 @@ class Check(Base, MetadataMixin):
     def docs_link(self) -> t.Optional[str]:
         # We need to init the check since the module in the config is shortened and does not include check_type
         check = BaseCheck.from_config(self.config)
+
+        # if module isn't deepchecks skip
+        if check.__module__.split(".", 2)[0] != "deepchecks":
+            return None
+
         package_module, data_type, checks_submodule, check_type, check_name = \
             check.__module__.split(".")  # pylint: disable=unused-variable
         # for future custom checks

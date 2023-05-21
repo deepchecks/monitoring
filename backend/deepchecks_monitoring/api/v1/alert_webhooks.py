@@ -1,5 +1,6 @@
 """Alert Webhooks API."""
 import typing as t
+from datetime import datetime
 
 import httpx
 import sqlalchemy as sa
@@ -13,7 +14,7 @@ from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, exists_
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models import AlertSeverity
 from deepchecks_monitoring.schema_models.alert_webhook import (AlertWebhook, PagerDutyWebhookProperties,
-                                                               StandartWebhookProperties, WebhookHttpMethod,
+                                                               StandardWebhookProperties, WebhookHttpMethod,
                                                                WebhookKind)
 from deepchecks_monitoring.utils import auth
 
@@ -32,6 +33,8 @@ class AlertWebhookSchema(BaseModel):
     http_headers: t.Dict[str, t.Any]
     notification_levels: t.List[AlertSeverity]
     additional_arguments: t.Dict[str, t.Any]
+    latest_execution_date: t.Optional[datetime] = None
+    latest_execution_status: t.Optional[t.Dict[t.Any, t.Any]] = None
 
     class Config:
         """Schema config."""
@@ -79,12 +82,12 @@ async def retrive_webhook(
     status_code=status.HTTP_201_CREATED
 )
 async def create_webhook(
-        webhook: t.Union[StandartWebhookProperties, PagerDutyWebhookProperties] = Body(discriminator="kind"),
+        webhook: t.Union[StandardWebhookProperties, PagerDutyWebhookProperties] = Body(discriminator="kind"),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ) -> t.Dict[str, int]:
     """Create alert webhook.."""
-    if isinstance(webhook, StandartWebhookProperties):
+    if isinstance(webhook, StandardWebhookProperties):
         http_method = webhook.http_method
     elif isinstance(webhook, PagerDutyWebhookProperties):
         http_method = "POST"

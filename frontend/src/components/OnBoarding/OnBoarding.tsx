@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
+import { useTheme } from '@mui/material';
 import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
-import Typography from '@mui/material/Typography';
 
 import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
-import { StyledButton, StyledCodeSnippet } from 'components/lib';
+import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
@@ -20,6 +20,8 @@ interface OnBoardingProps {
 }
 
 const OnBoarding = ({ dataType }: OnBoardingProps) => {
+  const theme = useTheme();
+
   const [activeStep, setActiveStep] = useState(1);
   const [apiToken, setApiToken] = useState('API_TOKEN');
 
@@ -62,7 +64,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
-              <Typography>{step.description}</Typography>
+              <StyledText text={step.description} color={theme.palette.grey[500]} />
               <StyledCodeSnippet code={step.codeSnippet} />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">

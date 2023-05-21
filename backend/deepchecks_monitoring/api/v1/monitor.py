@@ -20,7 +20,6 @@ from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.api.v1.alert_rule import AlertRuleSchema
 from deepchecks_monitoring.api.v1.check import CheckResultSchema, CheckSchema
-from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.config import Settings, Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
@@ -28,9 +27,10 @@ from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, Monitor
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
                                                     MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
+from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, Check
-from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import NUM_WINDOWS_TO_START, Frequency, Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import CurrentActiveUser
 from deepchecks_monitoring.utils.notebook_util import get_check_notebook
@@ -178,19 +178,18 @@ async def update_monitor(
         latest_schedule = pdl.instance(as_datetime(monitor.latest_schedule))
 
         # Either continue from the latest schedule if it's early enough or take it back number of windows to start
-        update_dict["latest_schedule"] = round_off_datetime(
-            value=max(
-                model_start_time,
-                min(
-                    model_end_time - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START),
-                    latest_schedule
-                )
-            ).in_tz(model.timezone),
-            frequency=frequency
+        time_to_start = max(
+            model_start_time,
+            min(
+                model_end_time - (frequency.to_pendulum_duration() * NUM_WINDOWS_TO_START),
+                latest_schedule
+            )
         )
+        update_dict["latest_schedule"] = round_up_datetime(time_to_start, frequency, model.timezone) - \
+            frequency.to_pendulum_duration()
 
         # Delete monitor tasks
-        await Task.delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
+        await delete_monitor_tasks(monitor.id, update_dict["latest_schedule"], session)
 
         # Resolving all alerts which are connected to this monitor
         await session.execute(

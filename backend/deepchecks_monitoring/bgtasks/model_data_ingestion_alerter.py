@@ -125,12 +125,12 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         for row in rows:
             sample_count = row.count
             label_count = row.label_count
-            label_ratio = sample_count / label_count
+            label_ratio = sample_count and label_count / sample_count
             start_time = as_pendulum_datetime(row.timestamp)
             end_time = start_time + pendulum_freq
             if ((model.data_ingestion_alert_label_count and model.data_ingestion_alert_label_count > label_count) or
                 (model.data_ingestion_alert_sample_count and model.data_ingestion_alert_sample_count > sample_count) or
-                    (model.data_ingestion_alert_label_ratio and model.data_ingestion_alert_label_ratio < label_ratio)):
+                    (model.data_ingestion_alert_label_ratio and model.data_ingestion_alert_label_ratio > label_ratio)):
                 alert = DataIngestionAlert(model_id=model_id, start_time=start_time, end_time=end_time,
                                            sample_count=sample_count, label_count=label_count, label_ratio=label_ratio)
                 alerts.append(alert)

@@ -1,10 +1,18 @@
-import contextlib
+# ----------------------------------------------------------------------------
+# Copyright (C) 2021-2022 Deepchecks (https://www.deepchecks.com)
+#
+# This file is part of Deepchecks.
+# Deepchecks is distributed under the terms of the GNU Affero General
+# Public License (version 3 or later).
+# You should have received a copy of the GNU Affero General Public License
+# along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
+# ----------------------------------------------------------------------------
+#
+# pylint: disable=unused-import
 import json
 import os
-import threading
 import typing as t
 from datetime import datetime, timedelta, timezone
-from wsgiref.simple_server import make_server
 
 import httpx
 import pytest
@@ -13,13 +21,15 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Monitor, TaskType
+from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookHttpMethod, WebhookKind
+
 from tests.common import Payload, TestAPI
+from tests.utils import dummy_http_server
 
 
 @pytest.mark.asyncio
-async def test_standart_webhook_execution(
+async def test_standard_webhook_execution(
     test_api: TestAPI,
     async_session: AsyncSession,
     application: FastAPI  # app that were used to init "test_api:TestAPI"
@@ -41,7 +51,7 @@ async def test_standart_webhook_execution(
     webhook = AlertWebhook(
         name="test",
         description="",
-        kind=WebhookKind.STANDART,
+        kind=WebhookKind.STANDARD,
         http_url="http://127.0.0.1:9876/say-hello",
         http_method=WebhookHttpMethod.GET,
         http_headers={"X-own-header": "hello world"},
@@ -59,14 +69,19 @@ async def test_standart_webhook_execution(
     await async_session.flush()
     await async_session.refresh(webhook)
 
-    alert = await async_session.scalar(
+    alert = t.cast(Alert, await async_session.scalar(
         sa.select(Alert).where(Alert.id == alert_id).options(
             joinedload(Alert.alert_rule)
             .joinedload(AlertRule.monitor)
             .joinedload(Monitor.check)
             .joinedload(Check.model)
         )
-    )
+    ))
+
+    alert_rule = t.cast("AlertRule", alert.alert_rule)
+    monitor = t.cast("Monitor", alert_rule.monitor)
+    check = t.cast("Check", monitor.check)
+    model = t.cast("Model", check.model)
 
     with dummy_http_server("127.0.0.1", 9876) as requests_inbox:
         async with httpx.AsyncClient() as c:
@@ -85,6 +100,9 @@ async def test_standart_webhook_execution(
         payload = json.loads(requests_inbox[0]["X-INPUT"])
         assert isinstance(payload, dict)
         assert payload["alert_id"] == alert_id
+        assert payload["alert_name"] == f"model: {model.name} monitor: {monitor.name}"
+        assert payload["alert_rule"] == alert_rule.stringify()
+        assert payload["severity"] == alert_rule.alert_severity.value
 
         assert webhook.latest_execution_date is not None
         assert isinstance(webhook.latest_execution_status, dict)
@@ -173,30 +191,3 @@ async def test_pager_duty_webhook_execution(
 
         await async_session.flush()
         await async_session.commit()
-
-
-@contextlib.contextmanager
-def dummy_http_server(
-    host: str,
-    port: int = 9876
-) -> t.Iterator[t.Sequence[t.Dict[str, t.Any]]]:
-    """Create dummy http server."""
-    requests = []
-
-    def app(environ, start_response):
-        nonlocal requests
-        if wsgi_input := environ.get("wsgi.input"):
-            environ["X-INPUT"] = wsgi_input.read1().decode("utf-8")
-        requests.append(environ)
-        status = "200 OK"
-        headers = [("Content-type", "text/plain; charset=utf-8")]
-        start_response(status, headers)
-        return ["Hello world".encode("utf-8")]
-
-    with make_server(host=host, port=port, app=app) as server:
-        thread = threading.Thread(target=server.serve_forever)
-        thread.start()
-        try:
-            yield requests
-        finally:
-            server.shutdown()

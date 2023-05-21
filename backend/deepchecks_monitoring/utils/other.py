@@ -71,7 +71,7 @@ async def generate_random_user(session: AsyncSession, auth_jwt_secret: str, with
     session.add(u)
 
     if with_org:
-        org = await Organization.create_for_user(owner=u, name=org)
+        org = await Organization.create_for_user(owner=u, name=org, session=session)
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
         session.add(org)
 
@@ -92,7 +92,7 @@ async def generate_test_user(session: AsyncSession, auth_jwt_secret: str, with_o
     session.add(u)
 
     if with_org:
-        org = await Organization.create_for_user(owner=u, name='e2e-testing@deepchecks.com',)
+        org = await Organization.create_for_user(owner=u, name='e2e-testing@deepchecks.com', session=session)
         await org.schema_builder.create(AsyncEngine(session.get_bind()))
         session.add(org)
 

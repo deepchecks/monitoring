@@ -1,14 +1,9 @@
-import { Button, styled, Divider, Link, Stack } from '@mui/material';
+import { styled, Divider, Link, Stack } from '@mui/material';
 
 export const StyledFormContainer = styled(Stack)({
   height: 'calc(100% - 100px)',
   overflowY: 'auto',
   overflowX: 'hidden'
-});
-
-export const StyledButton = styled(Button)({
-  width: '143px',
-  margin: '0 auto'
 });
 
 export const StyledDivider = styled(Divider)({

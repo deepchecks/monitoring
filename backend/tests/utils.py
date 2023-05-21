@@ -1,7 +1,9 @@
 import pathlib
 import ssl
 import typing as t
+import threading
 from contextlib import asynccontextmanager, contextmanager
+from wsgiref.simple_server import make_server
 
 import sqlalchemy as sa
 from aiosmtpd.controller import Controller
@@ -13,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from deepchecks_monitoring.monitoring_utils import json_dumps
 
-__all__ = ["TestDatabaseGenerator", "create_dummy_smtp_server"]
+__all__ = ["TestDatabaseGenerator", "create_dummy_smtp_server", "dummy_http_server"]
 
 
 close_database_connections = sa.text(
@@ -243,3 +245,30 @@ def generate_dummy_certificate() -> t.Tuple[str, str]:
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
 
     return str(keyfile.absolute()), str(certfile.absolute())
+
+
+@contextmanager
+def dummy_http_server(
+    host: str,
+    port: int = 9876
+) -> t.Iterator[t.Sequence[t.Dict[str, t.Any]]]:
+    """Create dummy http server."""
+    requests = []
+
+    def app(environ, start_response):
+        nonlocal requests
+        if wsgi_input := environ.get("wsgi.input"):
+            environ["X-INPUT"] = wsgi_input.read1().decode("utf-8")
+        requests.append(environ)
+        status = "200 OK"
+        headers = [("Content-type", "text/plain; charset=utf-8")]
+        start_response(status, headers)
+        return ["Hello world".encode("utf-8")]
+
+    with make_server(host=host, port=port, app=app) as server:
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            yield requests
+        finally:
+            server.shutdown()

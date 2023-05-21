@@ -1,7 +1,5 @@
 import { styled, Stack, Typography, Button, IconButton } from '@mui/material';
 
-import { theme } from 'components/lib/theme';
-
 export const StyledModelInfoItemContainer = styled(Stack)({
   position: 'relative',
   borderRadius: '16px',
@@ -10,7 +8,6 @@ export const StyledModelInfoItemContainer = styled(Stack)({
   fontWeight: 400,
   lineHeight: '150%',
   outline: '6px solid transparent',
-  paddingBottom: '10px',
   background: 'white'
 });
 
@@ -22,6 +19,16 @@ export const StyledModelInfoItemHeader = styled(Stack)(({ theme }) => ({
   borderRadius: '16px 16px 0 0'
 }));
 
+export const StyledModelInfoItemFooter = styled(Stack)(({ theme }) => ({
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  backgroundColor: theme.palette.grey[200],
+  color: theme.palette.text.primary,
+  height: '53px',
+  padding: '12px 20px',
+  borderRadius: '0 0 16px 16px'
+}));
+
 export const StyledModelInfoItemName = styled(Typography)({
   fontSize: '20px',
   fontWeight: 700,
@@ -31,7 +38,21 @@ export const StyledModelInfoItemName = styled(Typography)({
   textOverflow: 'ellipsis'
 });
 
-export const StyledModelInfoBadge = styled(Stack)({
+interface StyledModelInfoBadgesContainerProps {
+  isHovered: boolean;
+}
+
+export const StyledModelInfoBadgesContainer = styled(Stack, {
+  shouldForwardProp: prop => prop !== 'isHovered'
+})<StyledModelInfoBadgesContainerProps>(({ isHovered }) => ({
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: '20px',
+  filter: isHovered ? 'blur(5px)' : ''
+}));
+
+export const StyledModelInfoBadge = styled(Stack)(({ theme }) => ({
   alignItems: 'center',
   justifyContent: 'center',
   textAlign: 'center',
@@ -39,17 +60,24 @@ export const StyledModelInfoBadge = styled(Stack)({
   height: '60px',
   color: theme.palette.info.main,
   background: theme.palette.common.white,
-  borderRadius: '20px'
-});
+  margin: '0px 8px'
+}));
+
+export const StyledFooterItem = styled(Stack)(({ theme }) => ({
+  justifyContent: 'center',
+  height: '34px',
+  color: theme.palette.info.main,
+  margin: '0px 8px'
+}));
 
 export const StyledModelInfoVersionsTitle = styled(Typography)({
   fontWeight: 600,
   marginBottom: '16px'
 });
 
-export const StyledNoVersionsTitle = styled(Typography)({
+export const StyledNoVersionsTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.disabled
-});
+}));
 
 export const StyledVersion = styled(Typography)({
   marginBottom: '16px',
@@ -66,6 +94,8 @@ export const StyledModelInfoHandleRangeButton = styled(Button)({
 export const StyledHoverButtonContainer = styled(Stack)({
   borderRadius: '10px',
   position: 'absolute',
+  left: 'calc(50% - 77px)',
+  bottom: '74px',
   display: 'flex',
   flexDirection: 'row'
 });

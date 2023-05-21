@@ -22,7 +22,6 @@ import pendulum as pdl
 import sentry_sdk
 
 from deepchecks_monitoring import __version__
-from deepchecks_monitoring.bgtasks.core import TaskStatus
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 
@@ -30,7 +29,6 @@ if t.TYPE_CHECKING:
     from pendulum.datetime import DateTime as PendulumDateTime
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from deepchecks_monitoring.bgtasks.core import Actor, Task, Worker
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
     from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
     from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
@@ -40,7 +38,6 @@ if t.TYPE_CHECKING:
 __all__ = [
     "collect_telemetry",
     "SchedulerInstrumentor",
-    "WorkerInstrumentor",
     "DataIngetionInstrumentor"
 ]
 
@@ -54,7 +51,6 @@ class SpanStatus(str, enum.Enum):
 def collect_telemetry(routine: t.Any):
     """Instrument open-telementry for given routine."""
     # pylint: disable=redefined-outer-name,import-outside-toplevel
-    from deepchecks_monitoring.bgtasks.actors import Worker
     from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
     from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
     from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
@@ -65,11 +61,6 @@ def collect_telemetry(routine: t.Any):
     if issubclass(routine, AlertsScheduler):
         SchedulerInstrumentor(scheduler_type=routine).instrument()
         logger.info("Instrumented alerts scheduler telemetry collectors")
-        return routine
-
-    if issubclass(routine, Worker):
-        WorkerInstrumentor(worker_type=routine).instrument()
-        logger.info("Instrumented worker telemetry collectors")
         return routine
 
     if issubclass(routine, DataIngestionBackend):
@@ -177,103 +168,6 @@ class SchedulerInstrumentor:
     def uninstrument(self):
         self.scheduler_type.run_all_organizations = self.original_run_all_organizations
         self.scheduler_type.run_organization = self.original_run_organization
-
-
-class WorkerInstrumentor:
-    """Alerts scheduler open-telemetry instrumentor."""
-
-    def __init__(self, worker_type: "t.Type[Worker]"):
-        self.worker_type = worker_type
-        self.original_atomic_task_execution = self.worker_type.atomic_task_execution
-        self.original_not_atomic_task_execution = self.worker_type.not_atomic_task_execution
-
-    def instrument(self):
-        """Instrument open-telemetry for given worker type."""
-        self.worker_type.atomic_task_execution = self._wrap_task_execution(
-            self.worker_type.atomic_task_execution
-        )
-        self.worker_type.not_atomic_task_execution = self._wrap_task_execution(
-            self.worker_type.not_atomic_task_execution
-        )
-
-    def _wrap_task_execution(
-        self,
-        original_fn: t.Callable[..., t.Any]
-    ) -> t.Callable[..., t.Any]:
-        """Wrap worker task execution method."""
-
-        @wraps(original_fn)
-        async def execute_task(
-            worker: "Worker",
-            session: "AsyncSession",
-            actor: "Actor",
-            task: "Task",
-        ):
-            with sentry_sdk.start_transaction(name="Tasks Consumer (Worker)"):
-                sentry_sdk.set_context(
-                    "deepchecks_monitoring",
-                    {"version": __version__}
-                )
-                sentry_sdk.set_context("database", {
-                    "name": str(worker.engine.url.database),
-                    "uri": str(worker.engine.url),
-                    "user": str(worker.engine.url.username)
-                })
-                with sentry_sdk.start_span(op="Worker.execute_task") as span:
-                    span.set_data("operation.worker.expire_after", str(worker.expire_after))
-
-                    span.set_data(
-                        "operation.worker.actors",
-                        ", ".join(it.name for it in worker.actors.values())
-                    )
-                    span.set_data(
-                        "operation.worker.additional_params",
-                        json.dumps(worker.additional_params, indent=3, default=repr)
-                    )
-
-                    span.set_data("actor.name", actor.name)
-                    span.set_data("actor.queue_name", actor.queue_name)
-                    span.set_data("actor.priority", actor.priority)
-                    span.set_data("actor.execution_strategy", actor.execution_strategy)
-
-                    span.set_data("task.id", task.id)
-                    span.set_data("task.name", task.name)
-                    span.set_data("task.queue", task.queue)
-                    span.set_data("task.executor", task.executor)
-                    span.set_data("task.priority", task.priority)
-                    span.set_data("task.enqueued_at", str(task.enqueued_at))
-                    span.set_data("task.params", json.dumps(task.params, indent=3))
-                    span.set_data("task.execute_after", str(task.execute_after))
-
-                    try:
-                        result = await original_fn(
-                            self=worker,
-                            session=session,
-                            actor=actor,
-                            task=task
-                        )
-                    except Exception as error:
-                        sentry_sdk.capture_exception(error)
-                        span.set_status(
-                            SpanStatus.CANCELED
-                            if isinstance(error, anyio.get_cancelled_exc_class())
-                            else SpanStatus.FAILED
-                        )
-                        raise
-                    else:
-                        span.set_data("task.status", task.status.value)
-                        span.set_data("task.finished_at", str(task.finished_at))
-                        span.set_data("task.error", task.error)
-                        span.set_data("task.traceback", task.traceback)
-                        if task.status == TaskStatus.FAILED:
-                            span.set_status(SpanStatus.FAILED)
-                        return result
-
-        return execute_task
-
-    def uninstrument(self):
-        self.worker_type.atomic_task_execution = self.original_atomic_task_execution
-        self.worker_type.not_atomic_task_execution = self.original_not_atomic_task_execution
 
 
 class DataIngetionInstrumentor:
@@ -396,13 +290,13 @@ class TaskRunerInstrumentor:
 
     def __init__(self, task_runner_type: t.Type["TaskRunner"]):
         self.task_runner_type = task_runner_type
-        self.original_run_single_task = self.task_runner_type.run_single_task
+        self.original_run_task = self.task_runner_type._run_task
 
     def instrument(self):
         """Instrument the task runner functions we want to monitor."""
 
-        @wraps(self.original_run_single_task)
-        async def run_single_task(runner: "TaskRunner", task, session, queued_time):
+        @wraps(self.original_run_task)
+        async def _run_task(runner: "TaskRunner", task, session, queued_time):
             redis_uri = runner.resource_provider.redis_settings.redis_uri
             database_uri = runner.resource_provider.database_settings.database_uri
             kafka_settings = runner.resource_provider.kafka_settings
@@ -435,7 +329,7 @@ class TaskRunerInstrumentor:
 
                     try:
                         start = perf_counter()
-                        result = await self.original_run_single_task(runner, task, session, queued_time)
+                        result = await self.original_run_task(runner, task, session, queued_time)
                         span.set_data("task.execution-duration", perf_counter() - start)
                         span.set_status(SpanStatus.OK)
                     except Exception as error:
@@ -445,10 +339,10 @@ class TaskRunerInstrumentor:
                     else:
                         return result
 
-        self.task_runner_type.run_single_task = run_single_task
+        self.task_runner_type._run_task = _run_task  # pylint: disable=protected-access
 
     def uninstrument(self):
-        self.task_runner_type.run_single_task = self.original_run_single_task
+        self.task_runner_type._run_task = self.original_run_task  # pylint: disable=protected-access
 
 
 class TasksQueuerInstrumentor:
@@ -462,7 +356,7 @@ class TasksQueuerInstrumentor:
         """Instrument the task runner functions we want to monitor."""
 
         @wraps(self.original_move_tasks_to_queue)
-        async def move_tasks_to_queue(queuer: "TasksQueuer"):
+        async def move_tasks_to_queue(queuer: "TasksQueuer", session):
             redis_uri = queuer.resource_provider.redis_settings.redis_uri
             database_uri = queuer.resource_provider.database_settings.database_uri
 
@@ -479,7 +373,7 @@ class TasksQueuerInstrumentor:
                 with sentry_sdk.start_span(op="TasksQueuer.move_tasks_to_queue") as span:
                     try:
                         start = perf_counter()
-                        result = await self.original_move_tasks_to_queue(queuer)
+                        result = await self.original_move_tasks_to_queue(queuer, session)
                         span.set_data("execution-duration", perf_counter() - start)
                         span.set_data("queued-tasks-amount", result)
                         span.set_status(SpanStatus.OK)

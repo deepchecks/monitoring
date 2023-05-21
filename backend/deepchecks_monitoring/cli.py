@@ -21,7 +21,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from deepchecks_monitoring import __version__
-from deepchecks_monitoring.bgtasks.actors import WorkerBootstrap
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler, execute_alerts_scheduler
 from deepchecks_monitoring.config import DatabaseSettings, Settings
 from deepchecks_monitoring.monitoring_utils import fetch_unused_monitoring_tables
@@ -112,7 +111,7 @@ def upgrade_organizations_schemas(orgid: str):
 @cli.command()
 def run():
     """Run web server."""
-    uvicorn.run("app:create_application", port=8000, log_level="debug")
+    uvicorn.run("app:create_application", port=8000, log_level="critical")
 
 
 @cli.command()
@@ -126,12 +125,6 @@ def run_https():
 def run_alert_scheduler():
     """Run the alerts scheduler."""
     execute_alerts_scheduler(scheduler_implementation=AlertsScheduler)
-
-
-@cli.command()
-def run_worker():
-    """Run the alerts actor."""
-    WorkerBootstrap().bootstrap()
 
 
 @cli.command()

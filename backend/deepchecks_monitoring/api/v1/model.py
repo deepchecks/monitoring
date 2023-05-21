@@ -18,17 +18,14 @@ from datetime import datetime
 
 import pandas as pd
 import pendulum as pdl
+import sqlalchemy as sa
 from fastapi import BackgroundTasks, Body, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
-from sqlalchemy import Integer as SQLInteger
-from sqlalchemy import String as SQLString
-from sqlalchemy import case, delete, func, insert, literal, select, text, union_all, update
 from sqlalchemy.cimmutabledict import immutabledict
 from sqlalchemy.orm import joinedload, selectinload
 from typing_extensions import TypedDict
 
-from deepchecks_monitoring.bgtasks.core import Task
 from deepchecks_monitoring.bgtasks.delete_db_table_task import insert_delete_db_table_task
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
@@ -39,6 +36,7 @@ from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel,
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
                                                     exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelNote
@@ -49,7 +47,7 @@ from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
-from deepchecks_monitoring.schema_models.monitor import Monitor, round_off_datetime
+from deepchecks_monitoring.schema_models.monitor import Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
 
 from .router import router
@@ -157,7 +155,7 @@ async def get_create_model(
 
     """
     model = await session.scalar(
-        select(Model)
+        sa.select(Model)
         .where(Model.name == model_schema.name)
     )
     if model is not None:
@@ -168,7 +166,7 @@ async def get_create_model(
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the description "
                              f"'{model_schema.description} and not the description '{model.description}'")
     else:
-        model_count = await session.scalar(func.count(Model.id))
+        model_count = await session.scalar(sa.func.count(Model.id))
         if model_count > 0:
             features_control: FeaturesControl = resources_provider.get_features_control(user)
             if features_control.max_models != -1:
@@ -240,6 +238,18 @@ async def retrieve_models_data_ingestion(
     )
 
 
+def _sample_id(columns):
+    return getattr(columns, SAMPLE_ID_COL)
+
+
+def _sample_timestamp(columns):
+    return getattr(columns, SAMPLE_TS_COL)
+
+
+def _sample_label(columns):
+    return getattr(columns, SAMPLE_LABEL_COL)
+
+
 async def _retrieve_models_data_ingestion(
         *,
         model_identifier: t.Optional[ModelIdentifier] = None,
@@ -250,21 +260,12 @@ async def _retrieve_models_data_ingestion(
     """Retrieve models data ingestion status."""
 
     def is_within_dateframe(col, end_time):
-        return col > text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
+        return col > sa.text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
 
     def truncate_date(col, agg_time_unit: str = "day"):
-        return func.cast(func.extract("epoch", func.date_trunc(agg_time_unit, col)), SQLInteger)
+        return sa.func.cast(sa.func.extract("epoch", sa.func.date_trunc(agg_time_unit, col)), sa.Integer)
 
-    def sample_id(columns):
-        return getattr(columns, SAMPLE_ID_COL)
-
-    def sample_timestamp(columns):
-        return getattr(columns, SAMPLE_TS_COL)
-
-    def sample_label(columns):
-        return getattr(columns, SAMPLE_LABEL_COL)
-
-    models_query = select(Model).options(selectinload(Model.versions))
+    models_query = sa.select(Model).options(selectinload(Model.versions))
 
     if model_identifier is not None:
         model_identifier_name = model_identifier.column_name
@@ -300,36 +301,36 @@ async def _retrieve_models_data_ingestion(
 
         labels_table = model.get_sample_labels_table(session)
         # Get all samples within time window from all the versions
-        data_query = union_all(*(
-            select(
-                sample_id(table.c).label("sample_id"),
-                truncate_date(sample_timestamp(table.c), agg_time_unit).label("timestamp")
+        data_query = sa.union_all(*(
+            sa.select(
+                _sample_id(table.c).label("sample_id"),
+                truncate_date(_sample_timestamp(table.c), agg_time_unit).label("timestamp")
             ).where(is_within_dateframe(
-                sample_timestamp(table.c),
+                _sample_timestamp(table.c),
                 end_time
             )).distinct()  # TODO why distinct?
             for table in tables)
-                               )
+        )
         # Join with labels table
         all_models_queries.append(
-            select(literal(getattr(model, model_identifier_name)).label("model_id"),
-                   data_query.c.sample_id,
-                   data_query.c.timestamp,
-                   func.cast(sample_label(labels_table.c), SQLString).label("label"))
-            .join(labels_table, onclause=data_query.c.sample_id == sample_id(labels_table.c), isouter=True)
+            sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
+                      data_query.c.sample_id,
+                      data_query.c.timestamp,
+                      sa.func.cast(_sample_label(labels_table.c), sa.String).label("label"))
+            .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
         )
 
     if not all_models_queries:
         return {}
 
-    union = union_all(*all_models_queries)
+    union = sa.union_all(*all_models_queries)
 
     rows = (await session.execute(
-        select(
+        sa.select(
             union.c.model_id,
             union.c.timestamp,
-            func.count(union.c.sample_id).label("count"),
-            func.count(func.cast(union.c.label, SQLString)).label("label_count"))
+            sa.func.count(union.c.sample_id).label("count"),
+            sa.func.count(sa.func.cast(union.c.label, sa.String)).label("label_count"))
         .group_by(union.c.model_id, union.c.timestamp)
         .order_by(union.c.model_id, union.c.timestamp, "count"),
     )).fetchall()
@@ -393,7 +394,7 @@ async def get_versions_per_model(
         Created model.
     """
     model = await session.fetchone_or_404(
-        select(Model)
+        sa.select(Model)
         .where(model_identifier.as_expression)
         .options(joinedload(Model.versions)),
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
@@ -452,7 +453,7 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
     monitors_count = MonitorsCountPerModel.cte()
 
     records = (await session.execute(
-        select(
+        sa.select(
             Model,
             alerts_count.c.count.label("n_of_alerts"),
             alerts_count.c.max.label("max_severity"),
@@ -511,7 +512,7 @@ async def delete_model(
 ):
     """Delete model instance."""
     model: Model = await session.fetchone_or_404(
-        select(Model)
+        sa.select(Model)
         .where(model_identifier.as_expression)
         .options(joinedload(Model.versions)),
         message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
@@ -527,7 +528,7 @@ async def delete_model(
 
     await insert_delete_db_table_task(session=session, full_table_paths=tables)
 
-    await session.execute(delete(Model).where(model_identifier.as_expression))
+    await session.execute(sa.delete(Model).where(model_identifier.as_expression))
 
 
 async def drop_tables(
@@ -539,7 +540,7 @@ async def drop_tables(
         return
     async with resources_provider.async_database_engine.begin() as connection:
         for name in tables:
-            await connection.execute(text(f"DROP TABLE IF EXISTS {name}"))
+            await connection.execute(sa.text(f"DROP TABLE IF EXISTS {name}"))
 
 
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
@@ -595,6 +596,9 @@ class ConnectedModelSchema(BaseModel):
     n_of_pending_rows: int
     n_of_updating_versions: int
     latest_update: t.Optional[datetime] = None
+    sample_count: int
+    label_count: int
+    label_ratio: float
 
     @validator("n_of_alerts", pre=True)
     @classmethod
@@ -630,22 +634,22 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> 
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.where(AlertRule.alert_severity == AlertSeverity.CRITICAL).cte()
 
-    latest_update = func.max(ModelVersion.last_update_time)
+    latest_update = sa.func.max(ModelVersion.last_update_time)
     # We update the end_offset in the background so it's possible ingestion offset will be larger than it. In this case
     # we want to show 0 pending rows until the topic end offset will be updated again.
-    n_of_pending_rows = func.sum(case(
+    n_of_pending_rows = sa.func.sum(sa.case(
         (ModelVersion.topic_end_offset > ModelVersion.ingestion_offset,
          ModelVersion.topic_end_offset - ModelVersion.ingestion_offset),
         else_=0
     ))
 
-    n_of_updating_versions = func.sum(case(
+    n_of_updating_versions = sa.func.sum(sa.case(
         (ModelVersion.topic_end_offset > ModelVersion.ingestion_offset, 1),
         else_=0
     ))
 
     ingestion_info = (
-        select(
+        sa.select(
             ModelVersion.model_id,
             latest_update.label("latest_update"),
             n_of_pending_rows.label("n_of_pending_rows"),
@@ -656,7 +660,7 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> 
     )
 
     records = (await session.execute(
-        select(
+        sa.select(
             Model.id,
             Model.name,
             Model.task_type,
@@ -671,10 +675,49 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> 
         .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
     )).all()
 
-    return [
-        ConnectedModelSchema.from_orm(record)
-        for record in records
-    ]
+    connected_models: t.List[ConnectedModelSchema] = []
+
+    for record in records:
+        model_id = record.id
+
+        model: Model = (
+            await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
+        ).scalar()
+
+        tables = [version.get_monitor_table(session) for version in model.versions]
+
+        if len(tables) == 0:
+            sample_count = 0
+            label_count = 0
+            label_ratio = 0
+        else:
+            labels_table = model.get_sample_labels_table(session)
+            data_query = \
+                sa.union_all(*(sa.select(_sample_id(table.c).label("sample_id")).distinct() for table in tables))
+            joined_query = sa.select(data_query.c.sample_id,
+                                     sa.func.cast(_sample_label(labels_table.c), sa.String).label("label")) \
+                .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
+            row = (await session.execute(
+                sa.select(
+                    sa.func.count(joined_query.c.sample_id).label("count"),
+                    sa.func.count(sa.func.cast(joined_query.c.label, sa.String)).label("label_count"))
+            )).first()
+            sample_count = row.count
+            label_count = row.label_count
+            label_ratio = sample_count and label_count / sample_count
+
+        connected_models.append(
+            ConnectedModelSchema(
+                id=record.id, name=record.name, description=record.description,
+                task_type=record.task_type, n_of_alerts=record.n_of_alerts,
+                n_of_pending_rows=record.n_of_pending_rows,
+                n_of_updating_versions=record.n_of_updating_versions,
+                sample_count=sample_count, label_count=label_count, label_ratio=label_ratio,
+                latest_update=record.latest_update,
+            )
+        )
+
+    return connected_models
 
 
 class ConnectedModelVersionSchema(BaseModel):
@@ -718,9 +761,9 @@ async def retrive_connected_model_versions(
     await exists_or_404(session=session, model=Model, id=model_id)
 
     alerts_count = (
-        select(
-            func.jsonb_object_keys(Alert.failed_values).label("model_version_name"),
-            func.count(Alert.id).label("n_of_alerts")
+        sa.select(
+            sa.func.jsonb_object_keys(Alert.failed_values).label("model_version_name"),
+            sa.func.count(Alert.id).label("n_of_alerts")
         )
         .select_from(Alert)
         .join(Alert.alert_rule)
@@ -729,7 +772,7 @@ async def retrive_connected_model_versions(
         .where(Check.model_id == model_id)
         .where(Alert.resolved.is_(False))
         .where(AlertRule.alert_severity == AlertSeverity.CRITICAL)
-        .group_by(text("1"))
+        .group_by(sa.text("1"))
         .cte()
     )
 
@@ -738,10 +781,10 @@ async def retrive_connected_model_versions(
     # 'topic_end_offset' and 'ingestion_offset' both can be null
     # in this case expression 'n_of_pending_rows' will return null,
     # add 'case' expression to prevent this
-    n_of_pending_rows = case((n_of_pending_rows >= 0, n_of_pending_rows), else_=0)
+    n_of_pending_rows = sa.case((n_of_pending_rows >= 0, n_of_pending_rows), else_=0)
 
     records = (await session.execute(
-        select(
+        sa.select(
             ModelVersion.id,
             ModelVersion.name,
             ModelVersion.last_update_time,
@@ -819,7 +862,7 @@ async def retrieve_connected_model_version_ingestion_errors(
     }
 
     q = (
-        select(
+        sa.select(
             IngestionError.id,
             IngestionError.sample_id,
             IngestionError.created_at,
@@ -935,19 +978,19 @@ async def set_schedule_time(
 
     monitors = [monitor for check in model.checks for monitor in check.monitors]
     monitor_ids = [monitor.id for monitor in monitors]
-    timestamp = pdl.parser.parse(body.timestamp).in_tz(model.timezone)
+    timestamp = pdl.parser.parse(body.timestamp)
 
     for monitor in monitors:
         # Update schedule time
-        monitor.latest_schedule = round_off_datetime(timestamp, monitor.frequency)
+        monitor.latest_schedule = round_up_datetime(timestamp, monitor.frequency, model.timezone)
         monitor.updated_by = user.id
 
     # Delete monitors tasks
-    await Task.delete_monitor_tasks(monitor_ids, timestamp, session)
+    await delete_monitor_tasks(monitor_ids, timestamp, session)
 
     # Resolving all alerts which are connected to this monitors
     await session.execute(
-        update(Alert)
+        sa.update(Alert)
         .where(AlertRule.monitor_id.in_(monitor_ids))
         .values({Alert.resolved: True}),
         execution_options=immutabledict({"synchronize_session": False})
@@ -1001,7 +1044,7 @@ async def create_model_notes(
         **model_identifier.as_kwargs
     )
     records = (await session.execute(
-        insert(ModelNote)
+        sa.insert(ModelNote)
         .values([{"model_id": model.id, "created_by": user.id, "updated_by": user.id, **it.dict()} for it in notes])
         .returning(ModelNote.id, ModelNote.created_at, ModelNote.model_id)
     )).all()
@@ -1032,6 +1075,6 @@ async def delete_model_note(
         id=note_id
     )
     await session.execute(
-        delete(ModelNote)
+        sa.delete(ModelNote)
         .where(ModelNote.id == note_id)
     )

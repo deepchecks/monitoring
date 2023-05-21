@@ -7,19 +7,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-"""Organiztaion entity model."""
+"""Organization entity model."""
 import enum
 import logging
-import time
+import secrets
 import typing as t
 from random import choice
 from string import ascii_lowercase
 
 import sqlalchemy as sa
 import stripe
-from sqlalchemy import delete, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.sql.ddl import DropSchema
 from typing_extensions import Self
 
 from deepchecks_monitoring.public_models import Base
@@ -79,15 +78,19 @@ class Organization(Base):
     async def create_for_user(
         cls: t.Type[Self],
         owner: "User",
-        name: str
+        name: str,
+        session: AsyncSession,
     ) -> Self:
         """Create a new organization for a user."""
+
+        from deepchecks_monitoring.public_models.role import Role, RoleEnum  # pylint: disable=import-outside-toplevel
 
         org = Organization(name=name,
                            schema_name=cls.generate_schema_name(name),
                            stripe_customer_id=cls.generate_stripe_customer_id(name))
         owner.organization = org
-        owner.is_admin = True
+        session.add(Role(user_id=owner.id, role=RoleEnum.OWNER))
+        session.add(Role(user_id=owner.id, role=RoleEnum.ADMIN))
         return org
 
     @classmethod
@@ -95,7 +98,8 @@ class Organization(Base):
         """Generate a schema name for organization."""
         value = slugify(org_name, separator="_")
         value = value if value else "".join(choice(ascii_lowercase) for _ in range(10))
-        return f"org_{value}_ts_{int(time.time_ns())}"
+        # postgres schema name has limit of 63 characters, so truncate the hash and org name
+        return f"org_{value[:30]}_{secrets.token_hex(16)}"
 
     @classmethod
     def generate_stripe_customer_id(cls, org_name: str) -> t.Optional[str]:
@@ -118,10 +122,3 @@ class Organization(Base):
             t.cast(str, self.schema_name),
             migrations_location="deepchecks_monitoring:schema_migrations"
         )
-
-    async def drop_organization(self, session):
-        """Drop organization."""
-        await session.execute(update(User).where(User.organization_id == self.id).
-                              values({User.organization_id: None}))
-        await session.execute(DropSchema(self.schema_name, cascade=True))
-        await session.execute(delete(Organization).where(Organization.id == self.id))

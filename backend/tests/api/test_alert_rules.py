@@ -11,6 +11,7 @@ import typing as t
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
 from tests.common import Payload, TestAPI, create_alert
@@ -295,7 +296,7 @@ async def test_alerts_reactivation(
     alerts = t.cast(t.List[Payload], alerts)
     assert all(it["resolved"] is True for it in alerts)
 
-    # TestAPI will assert that 'resolved' flag is eq to False
+    # TestAPI will assert that "resolved" flag is eq to False
     test_api.reactivate_rule_alerts(alert_rule_id=rule["id"])
 
 
@@ -319,3 +320,47 @@ def test_alert_rule_activation(
 
     # Assert
     assert updated_rule["is_active"] is True
+
+
+@pytest.mark.asyncio
+async def test_alert_rules_config(
+    test_api: TestAPI,
+    client: TestClient,
+    classification_model_check: t.Dict[str, t.Any],
+    async_session: AsyncSession
+):
+    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
+
+    alert_rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={
+            "alert_severity": AlertSeverity.LOW.value,
+            "condition": {"operator": "greater_than", "value": 100.0},
+        }
+    ))
+    create_alert(alert_rule["id"], async_session)
+    create_alert(alert_rule["id"], async_session)
+    create_alert(alert_rule["id"], async_session, resolved=False)
+    create_alert(alert_rule["id"], async_session, resolved=False)
+    create_alert(alert_rule["id"], async_session, resolved=False)
+
+    alert_rule = as_dict(test_api.create_alert_rule(
+        monitor_id=monitor["id"],
+        alert_rule={
+            "alert_severity": AlertSeverity.MEDIUM.value,
+            "condition": {"operator": "greater_than", "value": 100.0},
+        }
+    ))
+    create_alert(alert_rule["id"], async_session)
+    create_alert(alert_rule["id"], async_session)
+
+    await async_session.commit()
+
+    response = client.get("/api/v1/config/alert-rules")
+    assert response.status_code == 200
+
+    rules = t.cast(t.List[t.Dict[str, t.Any]], response.json())
+
+    assert len(rules) == 2
+    assert rules[0]["alert_severity"] == "medium"
+    assert rules[1]["alert_severity"] == "low"

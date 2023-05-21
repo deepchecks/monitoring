@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 
 import {
   AlertRuleConfigSchema,
@@ -15,19 +15,39 @@ import { AlertRuleDialogContext } from './AlertRuleDialogContext';
 
 import { DialogProps } from '@mui/material';
 
-import { ActionDialogHeader } from 'components/base/Dialog/ActionDialog/ActionDialogHeader';
 import { Loader } from 'components/base/Loader/Loader';
+import { StyledDialog } from 'components/lib';
 
-import { StyledDialog } from './AlertRuleDialog.styles';
 import { constants } from './alertRuleDialog.constants';
 
 interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
+  open: boolean;
   alertRuleId?: AlertRuleConfigSchema['id'];
   onClose: (isRefetch?: boolean) => void;
   startingStep?: number;
 }
 
-export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...props }: AlertRuleDialogProps) => {
+interface AlertRuleDialogContentRef extends HTMLDivElement {
+  next(): void;
+}
+
+const {
+  dialogHeader,
+  buttons: { back, next },
+  content: {
+    stepTitles: { basic, monitor, rule }
+  }
+} = constants;
+
+const STEPS = [basic, monitor, rule];
+
+export const AlertRuleDialog = ({
+  open,
+  alertRuleId = 0,
+  onClose,
+  startingStep = 0,
+  ...props
+}: AlertRuleDialogProps) => {
   const { setAlertRule, setMonitor, resetState, monitor, alertRule } = useContext(AlertRuleDialogContext);
 
   const { data: fetchedAlertRule, isLoading: isAlertRuleLoading } =
@@ -45,6 +65,11 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
   const { mutateAsync: updateAlertRule, isLoading: isUpdateAlertRuleLoading } =
     useUpdateAlertApiV1AlertRulesAlertRuleIdPut();
 
+  const [activeStep, setActiveStep] = useState(startingStep);
+  const [nextButtonDisabled, setNextButtonDisabled] = useState(false);
+
+  const ref = useRef<AlertRuleDialogContentRef>();
+
   useEffect(() => {
     if (fetchedAlertRule) setAlertRule(fetchedAlertRule);
   }, [fetchedAlertRule, setAlertRule]);
@@ -54,7 +79,8 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
   }, [fetchedMonitor, setMonitor]);
 
   const handleClose = () => {
-    onClose(false);
+    onClose(true);
+    setActiveStep(startingStep);
     resetState();
   };
 
@@ -73,9 +99,15 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
       await createAlertRule({ monitorId, data: alertRule });
     }
 
-    onClose(true);
-    resetState();
+    handleClose();
   };
+
+  const handleNext = () => {
+    ref.current?.next();
+    activeStep === STEPS.length - 1 ? handleComplete() : setActiveStep(prevActiveStep => prevActiveStep + 1);
+  };
+
+  const handleBack = () => (activeStep === 0 ? handleClose() : setActiveStep(prevActiveStep => prevActiveStep - 1));
 
   const isLoading =
     (alertRuleId !== 0 && (isAlertRuleLoading || isMonitorLoading)) ||
@@ -85,14 +117,27 @@ export const AlertRuleDialog = ({ alertRuleId = 0, onClose, startingStep, ...pro
     isUpdateAlertRuleLoading;
 
   return (
-    <StyledDialog onClose={handleClose} {...props}>
+    <StyledDialog
+      open={open}
+      title={dialogHeader(monitor?.name)}
+      closeDialog={handleClose}
+      submitButtonLabel={next(activeStep === 2)}
+      cancelButtonLabel={back(activeStep === 0)}
+      submitButtonAction={handleNext}
+      cancelButtonAction={handleBack}
+      submitButtonDisabled={nextButtonDisabled}
+      {...props}
+    >
       {isLoading ? (
         <Loader />
       ) : (
-        <>
-          <ActionDialogHeader title={constants.dialogHeader(monitor?.name)} onClose={handleClose} />
-          <AlertRuleDialogContent startingStep={startingStep} handleComplete={handleComplete} />
-        </>
+        <AlertRuleDialogContent
+          activeStep={activeStep}
+          setActiveStep={setActiveStep}
+          steps={STEPS}
+          setNextButtonDisabled={setNextButtonDisabled}
+          ref={ref}
+        />
       )}
     </StyledDialog>
   );

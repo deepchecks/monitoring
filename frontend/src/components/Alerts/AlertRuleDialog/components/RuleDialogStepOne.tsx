@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 
 import { AlertSeverity } from 'api/generated';
 
@@ -7,29 +7,36 @@ import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 import { Stack, TextField } from '@mui/material';
 
 import { SelectSeverity } from 'components/Select/SelectSeverity';
-import { AlertRuleDialogButtons } from './AlertRuleDialogButtons';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 import { constants } from '../alertRuleDialog.constants';
 
-export const AlertRuleDialogStepOne = ({ activeStep, handleNext }: AlertRuleStepBaseProps) => {
+export const AlertRuleDialogStepOne = forwardRef(({ setNextButtonDisabled }: AlertRuleStepBaseProps, ref) => {
   const { alertRule, setAlertRule, monitor, setMonitor } = useContext(AlertRuleDialogContext);
 
   const [name, setName] = useState(monitor.name);
   const [severity, setSeverity] = useState<AlertSeverity | undefined>(alertRule.alert_severity);
 
-  const nextStep = () => {
+  const finish = () => {
     if (name && severity) {
       // Setting the context values
       monitor.name = name;
       setMonitor(monitor);
       alertRule.alert_severity = severity;
       setAlertRule(alertRule);
-
-      handleNext();
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    next() {
+      finish();
+    }
+  }));
+
+  useEffect(() => {
+    setNextButtonDisabled(!name || !severity);
+  }, [name, severity]);
 
   useEffect(() => {
     setName(monitor.name);
@@ -54,7 +61,8 @@ export const AlertRuleDialogStepOne = ({ activeStep, handleNext }: AlertRuleStep
           value={severity}
         />
       </Stack>
-      <AlertRuleDialogButtons disabled={!name || !severity} activeStep={activeStep} handleNext={nextStep} />
     </StyledContentContainer>
   );
-};
+});
+
+AlertRuleDialogStepOne.displayName = 'AlertRuleDialogStepOne';

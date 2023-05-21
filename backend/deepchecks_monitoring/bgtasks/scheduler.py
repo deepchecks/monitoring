@@ -8,13 +8,14 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-# pylint: disable=ungrouped-imports
+# pylint: disable=ungrouped-imports,bare-except
 """Contains alert scheduling logic."""
 import asyncio
 import logging
 import logging.handlers
 import typing as t
 from collections import defaultdict
+from time import perf_counter
 
 import anyio
 import pendulum as pdl
@@ -27,12 +28,12 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import joinedload, load_only, sessionmaker
 
-from deepchecks_monitoring import __version__, config
-from deepchecks_monitoring.bgtasks.core import Task
+from deepchecks_monitoring import config
+from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
-from deepchecks_monitoring.public_models.task import Task as GlobalTask
+from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, Task
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL,
@@ -67,8 +68,10 @@ class AlertsScheduler:
         s = self.sleep_seconds
         try:
             while True:
+                start = perf_counter()
                 await self.run_all_organizations()
-                self.logger.info(f'Sleep for the next {s} seconds')
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_all_organizations'})
                 await asyncio.sleep(s)
         except anyio.get_cancelled_exc_class():
             self.logger.exception('Scheduler coroutine canceled')
@@ -92,8 +95,21 @@ class AlertsScheduler:
             return
 
         for org in organizations:
-            await self.run_organization(org)
-            await self.run_organization_data_ingestion_alert(org)
+            try:
+                start = perf_counter()
+                await self.run_organization(org)
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_organization', 'org_id': org.id})
+            except:  # noqa: E722
+                self.logger.exception({'task': 'run_organization', 'org_id': org.id})
+            try:
+                start = perf_counter()
+                await self.run_organization_data_ingestion_alert(org)
+                duration = perf_counter() - start
+                self.logger.info({'duration': duration, 'task': 'run_organization_data_ingestion_alert',
+                                  'org_id': org.id})
+            except:  # noqa: E722
+                self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -161,6 +177,7 @@ class AlertsScheduler:
                         # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
                         # error is possible. In that case we just skip the monitor and try again next time.
                         except (SerializationError, DBAPIError) as error:
+                            await session.rollback()
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Monitor(id=%s) tasks enqueue failed', monitor.id)
                                 raise
@@ -295,21 +312,16 @@ def rules_pass(
 async def enqueue_tasks(monitor, schedules, organization, session):
     tasks = []
     for schedule in schedules:
-        tasks.append(dict(
-            name=f'Monitor:{monitor.id}:ts:{schedule.int_timestamp}',
-            executor='execute_monitor',
-            queue='monitors',
-            params={'monitor_id': monitor.id, 'timestamp': schedule.to_iso8601_string(),
-                     'organization_id': organization.id, 'organization_schema': organization.schema_name},
-            priority=1,
-            description='Monitor alert rules execution task',
-            reference=f'Monitor:{monitor.id}',
-            execute_after=schedule
-        ))
+        params = {'monitor_id': monitor.id, 'timestamp': schedule.to_iso8601_string(),
+                  'organization_id': organization.id}
+        tasks.append(dict(name=f'{organization.id}:{monitor.id}:{schedule.int_timestamp}',
+                          bg_worker_task=AlertsTask.queue_name(),
+                          params=params))
 
     # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
-    for i in range(0, len(tasks), 10):
-        await session.execute(insert(Task).values(tasks[i:i+10]).on_conflict_do_nothing(constraint='name_uniqueness'))
+    for i in range(0, len(tasks), 100):
+        await session.execute(insert(Task).values(tasks[i:i + 100])
+                              .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
 
 
 async def enqueue_ingestion_tasks(model, schedules, duration, organization, session):
@@ -326,8 +338,9 @@ async def enqueue_ingestion_tasks(model, schedules, duration, organization, sess
         ))
 
     # In order to avoid "the number of query arguments cannot exceed 32767" we split the insert to chunks
-    for i in range(0, len(tasks), 10):
-        await session.execute(insert(GlobalTask).values(tasks[i:i+10]))
+    for i in range(0, len(tasks), 100):
+        await session.execute(insert(Task).values(tasks[i:i + 100]).
+                              on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
 
 
 def is_serialization_error(error: DBAPIError):

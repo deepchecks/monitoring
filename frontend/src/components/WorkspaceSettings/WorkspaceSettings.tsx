@@ -3,16 +3,14 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 
-import { MemberSchema, retrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
+import { RoleEnum, useRetrieveUserInfoApiV1UsersMeGet } from 'api/generated';
 
 import Billing from './Billing/Billing';
 import Members from './Members/Members';
 import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
 import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
+import { Text } from 'components/lib/components/Text/Text';
 
-import { StyledH1 } from 'components/base/Text/Header.styles';
-
-import { resError } from 'helpers/types/resError';
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 const constants = {
@@ -23,33 +21,19 @@ const constants = {
 
 const WorkspaceSettings = () => {
   const [value, setValue] = useState(0);
-  const [memberSettings, setMemberSettings] = useState<MemberSchema[]>();
-  const [isLoading, setIsLoading] = useState(true);
-
-  const isAdmin = memberSettings && memberSettings[0]?.is_admin;
-
-  const getMemberSettings = async () => {
-    const response = await retrieveOrganizationMembersApiV1OrganizationMembersGet();
-
-    if (response) {
-      if ((response as unknown as resError).error_message) {
-        setIsLoading(false);
-      } else {
-        setMemberSettings(response);
-        setIsLoading(false);
-      }
+  const { data: user, isLoading } = useRetrieveUserInfoApiV1UsersMeGet({
+    query: {
+      refetchOnWindowFocus: false
     }
-  };
+  });
 
   const { is_cloud } = getStorageItem(storageKeys.environment);
-
-  useEffect(() => void getMemberSettings(), []);
 
   useEffect(() => {
     setValue(!is_cloud ? 1 : 0);
   }, [is_cloud]);
-
-  if (!isAdmin) {
+  
+  if (user && !user.roles.includes(RoleEnum.owner)) {
     return isLoading ? <BillingPaidSkeleton /> : <NotAdminDialog />;
   }
 
@@ -59,10 +43,14 @@ const WorkspaceSettings = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <StyledH1 margin="24px 0 8px">{constants.title}</StyledH1>
-      <Box sx={{ borderBottom: 1 }}>
+      <Text type="h1" margin="36px 0 27px" lineHeight="32.78px" text={constants.title} />
+      <Box sx={{ borderBottom: 1, borderColor: theme => theme.palette.grey[200] }}>
         {is_cloud && (
-          <Tabs value={value} onChange={handleTabChange}>
+          <Tabs
+            sx={{ '& .MuiTabs-indicator': { height: '4px' }, '& .MuiTab-root': { textTransform: 'uppercase' } }}
+            value={value}
+            onChange={handleTabChange}
+          >
             <Tab label={constants.billingTabLabel} />
             <Tab label={constants.membersTabLabel} />
           </Tabs>

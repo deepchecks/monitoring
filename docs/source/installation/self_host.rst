@@ -20,7 +20,7 @@ Want more reliability? The easiest way to get started with Deepchecks is to use
 Requirements
 ============
 
-* A Linux Ubuntu Server / MacOS (Windows support is WIP!)
+* A Linux Ubuntu Server / MacOS / Windows with `installed docker <https://docs.docker.com/desktop/install/windows-install/>`_
 * At least 4GB of RAM
 * At least 2 vCPU cores
 * At least 20GB of persistent volumes

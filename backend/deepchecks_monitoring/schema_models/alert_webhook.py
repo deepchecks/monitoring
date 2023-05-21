@@ -32,7 +32,7 @@ class WebhookHttpMethod(str, enum.Enum):
 class WebhookKind(str, enum.Enum):
     """Kind of request payload that webhook will form."""
 
-    STANDART = "STANDART"
+    STANDARD = "STANDARD"
     PAGER_DUTY = "PAGER_DUTY"  # https://www.pagerduty.com
 
 
@@ -66,7 +66,7 @@ class AlertWebhook(Base, MetadataMixin):
             """
             JSONB_TYPEOF(additional_arguments) = 'object'
             AND CASE
-                WHEN kind = 'STANDART' THEN
+                WHEN kind = 'STANDARD' THEN
                     TRUE
                 WHEN kind = 'PAGER_DUTY' THEN
                     additional_arguments ? 'routing_key'
@@ -230,24 +230,29 @@ class AlertWebhook(Base, MetadataMixin):
         Dict[str, Any] :
             set of arguments that can be passed to http client to make a request
         """
-        if self.kind == WebhookKind.STANDART:
+        from deepchecks_monitoring.utils.alerts import prepare_alert_link  # pylint: disable=import-outside-toplevel
+
+        alert_rule = t.cast("AlertRule", alert.alert_rule)
+        monitor = t.cast("Monitor", alert_rule.monitor)
+        check = t.cast("Check", monitor.check)
+        model = t.cast("Model", check.model)
+        alert_link = str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url))
+
+        if self.kind == WebhookKind.STANDARD:
             return {
                 "url": self.http_url,
                 "method": self.http_method,
                 "headers": self.http_headers,
                 "json": {
                     "alert_id": alert.id,
-                    # TODO:
+                    "alert_name": f"model: {model.name} monitor: {monitor.name}",
+                    "alert_rule": alert_rule.stringify(),
+                    "severity": alert_rule.alert_severity,
+                    "alert_link": alert_link
                 }
             }
 
         if self.kind == WebhookKind.PAGER_DUTY:
-            from deepchecks_monitoring.utils.alerts import prepare_alert_link  # pylint: disable=import-outside-toplevel
-
-            alert_rule = t.cast("AlertRule", alert.alert_rule)
-            monitor = t.cast("Monitor", alert_rule.monitor)
-            check = t.cast("Check", monitor.check)
-            model = t.cast("Model", check.model)
             additional_arguments = t.cast(t.Dict[str, t.Any], self.additional_arguments)
 
             if alert_rule.alert_severity == AlertSeverity.CRITICAL:
@@ -265,23 +270,24 @@ class AlertWebhook(Base, MetadataMixin):
                 "headers": self.http_headers,
                 "json": {
                     "payload": {
-                        "summary": f"New {alert_rule.alert_severity.value} alert: {monitor.name}",
+                        "summary": f"New monitor alert: {monitor.name}",
                         "timestamp": pdl.instance(t.cast(datetime, alert.created_at)).to_iso8601_string(),
-                        "source": f"models/{model.name}/monitors/{monitor.name}",
+                        "source": f"model: {model.name}, monitor: {monitor.name}",
                         "severity": severity,
                         "component": "deepchecks",
                         "group": additional_arguments.get("group") or "deepchecks",
                         "class": additional_arguments.get("class"),
                         "custom_details": {
-                            "deepchecks_alert_id": alert.id,
-                            "deepchecks_alert_start_time": str(alert.start_time),
-                            "deepchecks_alert_end_time": str(alert.end_time),
-                            "deepchecks_alert_failed_values": alert.failed_values,
+                            "alert_id": alert.id,
+                            "alert_name": f"model: {model.name}, monitor: {monitor.name}",
+                            "alert_rule": alert_rule.stringify(),
+                            "severity": alert_rule.alert_severity,
+                            "failed_values": alert.failed_values,
                         }
                     },
                     "routing_key": additional_arguments["routing_key"],
                     "links": [{
-                        "href": str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url)),
+                        "href": alert_link,
                         "text": "Deepchecks Alert"
                     }],
                     "event_action": "trigger",
@@ -361,10 +367,10 @@ class PagerDutyWebhookProperties(BaseModel):
         }
 
 
-class StandartWebhookProperties(BaseModel):
-    """Standart webhook initialization properties."""
+class StandardWebhookProperties(BaseModel):
+    """Standard webhook initialization properties."""
 
-    kind: t.Literal[WebhookKind.STANDART] = WebhookKind.STANDART
+    kind: t.Literal[WebhookKind.STANDARD] = WebhookKind.STANDARD
     name: str
     description: str = ""
     http_url: HttpsUrl
