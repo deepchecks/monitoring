@@ -910,46 +910,6 @@ async def retrieve_connected_model_version_ingestion_errors(
     return [IngestionErrorSchema.from_orm(it) for it in records]
 
 
-@router.get(
-    "/scorers",
-    tags=[Tags.MODELS, "connected-models"],
-    description="Retrieve list of all available scorers."
-)
-async def retrieve_scorers(session: AsyncSession = AsyncSessionDep):
-    """Retrieve list of all available scorers."""
-    # TODO
-    return []
-
-
-@router.get(
-    "/connected-models/{model_id}/scorers",
-    tags=[Tags.MODELS, "connected-models"],
-    description="Retrieve list of model scorers."
-)
-async def retrieve_model_scorers(
-        model_id: int = Path(...),
-        session: AsyncSession = AsyncSessionDep
-):
-    """Retrieve list of model scorers."""
-    # TODO
-    return []
-
-
-@router.post(
-    "/connected-models/{model_id}/scorers",
-    tags=[Tags.MODELS, "connected-models"],
-    description="Add a scorer to a model."
-)
-async def add_scorer(
-        model_id: int = Path(...),
-        body: t.Dict[str, t.Any] = Body(...),
-        session: AsyncSession = AsyncSessionDep
-):
-    """Add a scorer to a model."""
-    # TODO
-    return
-
-
 class ModelScheduleTimeSchema(BaseModel):
     """Model Schedule Time Schema."""
     timestamp: str

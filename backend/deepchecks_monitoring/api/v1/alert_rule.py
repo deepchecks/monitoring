@@ -94,22 +94,6 @@ async def create_alert_rule(
     return {"id": rule_id}
 
 
-@router.get("/alert-rules/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
-@router.get("/models/{model_id}/alert-rules/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
-async def count_alert_rules(
-        model_id: t.Optional[int] = None,
-        session: AsyncSession = AsyncSessionDep
-):
-    """Count alerts."""
-    select_alert = select(AlertRule.alert_severity, func.count(AlertRule.alert_severity))
-    if model_id:
-        select_alert = select_alert.join(AlertRule.monitor).join(Monitor.check).where(Check.model_id == model_id)
-    q = select_alert.group_by(AlertRule.alert_severity)
-    results = await session.execute(q)
-    total = results.all()
-    return dict(total)
-
-
 @router.get("/alert-rules", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
 @router.get("/monitors/{monitor_id}/alert-rules", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
 async def get_alert_rules(
