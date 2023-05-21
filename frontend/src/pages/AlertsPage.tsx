@@ -165,8 +165,8 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         cancelButtonLabel="No, cancel"
         alertTypeButtons={false}
         messageStart="You are about to resolve "
-        itemToDelete={(resolveAlertRule?.alerts_count || 'all') + ' active alerts'}
-        messageEnd=" for all the system blah blah blah. Are you sure you want to do this?"
+        itemToDelete={(resolveAlertRule?.alerts_count || 'all') + ' active alerts,'}
+        messageEnd=" please confirm."
       />
     </>
   );

@@ -95,7 +95,7 @@ export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: Id
 
 export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
 
-export type CreateWebhookApiV1AlertWebhooksPostBody = StandartWebhookProperties | PagerDutyWebhookProperties;
+export type CreateWebhookApiV1AlertWebhooksPostBody = StandardWebhookProperties | PagerDutyWebhookProperties;
 
 export type GetAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdAlertsGetParams = { resolved?: boolean };
 
@@ -186,7 +186,7 @@ export type WebhookKind = typeof WebhookKind[keyof typeof WebhookKind];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const WebhookKind = {
-  STANDART: 'STANDART',
+  STANDARD: 'STANDARD',
   PAGER_DUTY: 'PAGER_DUTY'
 } as const;
 
@@ -210,7 +210,7 @@ export interface ValidationError {
 }
 
 /**
- * Schema for user.
+ * Schema for user with roles.
  */
 export interface UserSchema {
   id: number;
@@ -279,26 +279,26 @@ export interface StepSchema {
   step: Step;
 }
 
-export type StandartWebhookPropertiesHttpHeaders = { [key: string]: string };
+export type StandardWebhookPropertiesHttpHeaders = { [key: string]: string };
 
-export type StandartWebhookPropertiesKind =
-  typeof StandartWebhookPropertiesKind[keyof typeof StandartWebhookPropertiesKind];
+export type StandardWebhookPropertiesKind =
+  typeof StandardWebhookPropertiesKind[keyof typeof StandardWebhookPropertiesKind];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const StandartWebhookPropertiesKind = {
-  STANDART: 'STANDART'
+export const StandardWebhookPropertiesKind = {
+  STANDARD: 'STANDARD'
 } as const;
 
 /**
- * Standart webhook initialization properties.
+ * Standard webhook initialization properties.
  */
-export interface StandartWebhookProperties {
-  kind?: StandartWebhookPropertiesKind;
+export interface StandardWebhookProperties {
+  kind?: StandardWebhookPropertiesKind;
   name: string;
   description?: string;
   http_url: string;
   http_method: WebhookHttpMethod;
-  http_headers?: StandartWebhookPropertiesHttpHeaders;
+  http_headers?: StandardWebhookPropertiesHttpHeaders;
   notification_levels?: AlertSeverity[];
 }
 
@@ -333,6 +333,14 @@ export const RoleEnum = {
   admin: 'admin',
   owner: 'owner'
 } as const;
+
+/**
+ * Role update schema.
+ */
+export interface RoleUpdateSchema {
+  roles: RoleEnum[];
+  replace?: boolean;
+}
 
 /**
  * Schema that represent a product from stripe.
@@ -480,18 +488,6 @@ export interface MonitorRunSchema {
 }
 
 /**
- * Add to single window monitor options frequency and aggregation window to make it multi window.
- */
-export interface MonitorOptions {
-  filter?: DataFilterList;
-  end_time: string;
-  start_time: string;
-  additional_kwargs?: MonitorCheckConfSchema;
-  frequency?: Frequency;
-  aggregation_window?: number;
-}
-
-/**
  * Schema to get a monitor script/notebook.
  */
 export interface MonitorNotebookSchema {
@@ -502,19 +498,6 @@ export interface MonitorNotebookSchema {
 }
 
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
-
-/**
- * Monitor execution frequency.
- */
-export type Frequency = typeof Frequency[keyof typeof Frequency];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const Frequency = {
-  HOUR: 'HOUR',
-  DAY: 'DAY',
-  WEEK: 'WEEK',
-  MONTH: 'MONTH'
-} as const;
 
 /**
  * Schema defines the parameters for creating new monitor.
@@ -538,6 +521,18 @@ export type MonitorCheckConfSchemaCheckConf = { [key: string]: string[] };
 export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
+}
+
+/**
+ * Add to single window monitor options frequency and aggregation window to make it multi window.
+ */
+export interface MonitorOptions {
+  filter?: DataFilterList;
+  end_time: string;
+  start_time: string;
+  additional_kwargs?: MonitorCheckConfSchema;
+  frequency?: Frequency;
+  aggregation_window?: number;
 }
 
 export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
@@ -769,6 +764,19 @@ export interface HTTPValidationError {
 }
 
 /**
+ * Monitor execution frequency.
+ */
+export type Frequency = typeof Frequency[keyof typeof Frequency];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Frequency = {
+  HOUR: 'HOUR',
+  DAY: 'DAY',
+  WEEK: 'WEEK',
+  MONTH: 'MONTH'
+} as const;
+
+/**
  * Schema to be returned to the client for the features control.
  */
 export interface FeaturesSchema {
@@ -781,6 +789,7 @@ export interface FeaturesSchema {
   monthly_predictions_limit: number;
   sso_enabled: boolean;
   onboarding_enabled: boolean;
+  update_roles: boolean;
 }
 
 /**
@@ -999,6 +1008,18 @@ export interface BodySaveReferenceApiV1ModelVersionsModelVersionIdReferencePost 
 }
 
 /**
+ * Schema for user.
+ */
+export interface BasicUserSchema {
+  id: number;
+  email: string;
+  created_at: string;
+  full_name?: string;
+  picture_url?: string;
+  organization?: DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema;
+}
+
+/**
  * Response for auto frequency.
  */
 export interface AutoFrequencyResponse {
@@ -1006,6 +1027,8 @@ export interface AutoFrequencyResponse {
   start: number;
   end: number;
 }
+
+export type AlertWebhookSchemaLatestExecutionStatus = { [key: string]: any };
 
 export type AlertWebhookSchemaAdditionalArguments = { [key: string]: any };
 
@@ -1037,6 +1060,8 @@ export interface AlertWebhookSchema {
   http_headers: AlertWebhookSchemaHttpHeaders;
   notification_levels: AlertSeverity[];
   additional_arguments: AlertWebhookSchemaAdditionalArguments;
+  latest_execution_date?: string;
+  latest_execution_status?: AlertWebhookSchemaLatestExecutionStatus;
 }
 
 export type AlertSchemaFailedValues = { [key: string]: { [key: string]: number } };
@@ -1112,7 +1137,7 @@ export interface AlertRuleConfigSchema {
   total_alerts?: number;
   non_resolved_alerts?: number;
   recent_alert?: string;
-  user?: UserSchema;
+  user?: BasicUserSchema;
 }
 
 /**
@@ -6263,6 +6288,55 @@ export const useEulaAcceptanceApiV1UsersAcceptEulaGet = <
   query.queryKey = queryKey;
 
   return query;
+};
+
+/**
+ * Update user roles.
+ * @summary Update User Role
+ */
+export const updateUserRoleApiV1UsersUserIdRolesPut = (userId: number, roleUpdateSchema: RoleUpdateSchema) => {
+  return customInstance<UserSchema>({
+    url: `/api/v1/users/${userId}/roles`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: roleUpdateSchema
+  });
+};
+
+export type UpdateUserRoleApiV1UsersUserIdRolesPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>
+>;
+export type UpdateUserRoleApiV1UsersUserIdRolesPutMutationBody = RoleUpdateSchema;
+export type UpdateUserRoleApiV1UsersUserIdRolesPutMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdateUserRoleApiV1UsersUserIdRolesPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>,
+    TError,
+    { userId: number; data: RoleUpdateSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>,
+    { userId: number; data: RoleUpdateSchema }
+  > = props => {
+    const { userId, data } = props ?? {};
+
+    return updateUserRoleApiV1UsersUserIdRolesPut(userId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updateUserRoleApiV1UsersUserIdRolesPut>>,
+    TError,
+    { userId: number; data: RoleUpdateSchema },
+    TContext
+  >(mutationFn, mutationOptions);
 };
 
 /**

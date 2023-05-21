@@ -6,7 +6,9 @@ import { ConnectedModelSchema } from 'api/generated';
 
 import { Stack, Typography, Tooltip } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
+import { ModalItemViewDetails } from './components/ModalItemViewDetails';
+import { ModelInfoBadge } from './components/ModelInfoBadge';
+import { FooterItem } from './components/FooterItem';
 
 import {
   StyledModelInfoItemContainer,
@@ -14,11 +16,14 @@ import {
   StyledModelInfoItemName,
   StyledHoverButtonContainer,
   StyledDeleteModelButton,
-  StyledDeleteModelButtonText
+  StyledDeleteModelButtonText,
+  StyledModelInfoItemFooter,
+  StyledModelInfoBadgesContainer
 } from './ModelInfoItem.style';
+
 import { DeleteIcon, ViewDetails } from 'assets/icon/icon';
-import { ModalItemViewDetails } from './components/ModalItemViewDetails';
-import { ModelInfoBadge } from './components/ModelInfoBadge';
+
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 dayjs.extend(localizedFormat);
 
@@ -37,10 +42,13 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
 
   const {
     name,
-    latest_update: lastUpdate,
-    n_of_pending_rows: nPendingRows,
-    n_of_alerts: nAlerts,
-    n_of_updating_versions: nVersions
+    latest_update,
+    n_of_pending_rows,
+    n_of_alerts,
+    n_of_updating_versions,
+    sample_count,
+    label_count,
+    label_ratio
   } = model;
 
   const modelNameRef = useRef<HTMLElement>(null);
@@ -56,11 +64,7 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
   return (
     <StyledModelInfoItemContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <StyledModelInfoItemHeader direction="row">
-        <Stack
-          sx={{
-            flexGrow: 1
-          }}
-        >
+        <Stack flexGrow={1}>
           <Tooltip
             disableFocusListener={isEllipsisActive}
             disableHoverListener={isEllipsisActive}
@@ -72,21 +76,22 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
               <span ref={modelNameRef}>{name}</span>
             </StyledModelInfoItemName>
           </Tooltip>
-          <Typography>Last update: {lastUpdate ? dayjs(lastUpdate).format('L') : '-'}</Typography>
+          <Typography>Last update: {latest_update ? dayjs(latest_update).format('L') : '-'}</Typography>
         </Stack>
       </StyledModelInfoItemHeader>
-      <Stack
-        sx={{ p: '20px', display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}
-        style={isHovered ? { filter: 'blur(5px)' } : {}}
-      >
-        <ModelInfoBadge value={nAlerts} title="Critical Alerts" margin="0px 8px" />
-        <ModelInfoBadge value={nVersions} title="Versions Updating" margin="0px 8px" />
-        <ModelInfoBadge value={nPendingRows} title="Pending Rows" margin="0px 8px" />
-      </Stack>
-
+      <StyledModelInfoBadgesContainer isHovered={isHovered}>
+        <ModelInfoBadge value={n_of_alerts} title="Critical Alerts" />
+        <ModelInfoBadge value={n_of_updating_versions} title="Versions Updating" />
+        <ModelInfoBadge value={n_of_pending_rows} title="Pending Rows" />
+      </StyledModelInfoBadgesContainer>
+      <StyledModelInfoItemFooter>
+        <FooterItem value={sample_count} title="samples" />
+        <FooterItem value={label_count} title="labels" />
+        <FooterItem value={+label_ratio.toPrecision(5)} title="missing labels %" />
+      </StyledModelInfoItemFooter>
       {isHovered && (
         <>
-          <StyledHoverButtonContainer left="calc(50% - 77px)" bottom="30px">
+          <StyledHoverButtonContainer>
             <StyledDeleteModelButton onClick={handleOpen}>
               <Stack sx={{ alignItems: 'center' }}>
                 <ViewDetails />

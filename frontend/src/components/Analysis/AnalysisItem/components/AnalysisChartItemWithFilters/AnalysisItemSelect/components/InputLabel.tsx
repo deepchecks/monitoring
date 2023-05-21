@@ -18,7 +18,7 @@ const sizeMap = {
 
 const InputLabel = ({ id, label, size }: InputLabelProps) => (
   <StyledRoundedSelectInputLabel id={id} htmlFor={label} size={size ? sizeMap[size] : sizeMap.medium}>
-    <Typography variant="subtitle2" sx={{ lineHeight: '17px' }}>
+    <Typography variant="subtitle2" sx={{ lineHeight: '17px', color: 'inherit' }}>
       {label}
     </Typography>
   </StyledRoundedSelectInputLabel>

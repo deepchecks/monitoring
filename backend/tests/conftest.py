@@ -184,6 +184,7 @@ def features_control_mock():
             self._rows_per_minute = ROWS_PER_MINUTE_LIMIT
             self._signup_enabled = True
             self._onboarding_enabled = True
+            self._update_roles = True
 
     def mock_get_features_control(self, user):  # pylint: disable=unused-argument
         return TestsFeaturesControl(user, None)

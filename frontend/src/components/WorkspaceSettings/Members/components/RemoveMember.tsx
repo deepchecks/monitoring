@@ -6,16 +6,16 @@ import { StyledDeletionDialog } from 'components/lib';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { MembersActionDialogWithInputs } from '../Members.type';
+import { MembersActionDialogWithMember } from '../Members.type';
 import { constants } from '../members.constants';
 
 const { messageEnd, messageStart, name, submit, title } = constants.removeMember;
 
-export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: MembersActionDialogWithInputs) => {
-  const { mutateAsync: deleteMember } = useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete();
+export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: MembersActionDialogWithMember) => {
+  const { mutateAsync: removeMember } = useRemoveOrganizationMemberApiV1OrganizationMembersMemberIdDelete();
 
-  const removeMember = async () => {
-    await deleteMember({ memberId: member.id });
+  const handleRemoveMember = async () => {
+    await removeMember({ memberId: member.id });
     refetchMembers();
     reportEvent(events.authentication.removeUser, {
       'Removed user email': member.email
@@ -29,7 +29,7 @@ export const RemoveMember = ({ member, refetchMembers, open, closeDialog }: Memb
       title={title}
       closeDialog={closeDialog}
       submitButtonLabel={submit}
-      submitButtonAction={removeMember}
+      submitButtonAction={handleRemoveMember}
       messageStart={messageStart}
       itemToDelete={name(member.full_name)}
       messageEnd={messageEnd}
