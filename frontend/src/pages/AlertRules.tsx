@@ -62,8 +62,8 @@ export const AlertRules = () => {
   };
 
   return (
-    <Box>
-      <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="16px 0">
+    <Box margin="24px 0">
+      <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="0 0 16px">
         <StyledText text="Alert Rules" type="h1" />
         <StyledButton startIcon={<AddCircleOutlineIcon />} onClick={() => onDialogOpen()} label="Rule" />
       </StyledContainer>
