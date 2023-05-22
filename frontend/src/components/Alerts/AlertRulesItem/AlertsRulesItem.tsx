@@ -10,6 +10,8 @@ import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogConte
 
 import { Tooltip, Typography, Stack } from '@mui/material';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import SyncIcon from '@mui/icons-material/Sync';
 
 import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
 import { Loader } from '../../base/Loader/Loader';
@@ -24,7 +26,6 @@ import {
   StyledCriticality,
   StyledDescription,
   StyledDivider,
-  StyledIconButton,
   StyledInfo,
   StyledMainWrapper,
   StyledMonitorName,
@@ -32,7 +33,6 @@ import {
   StyledTitle
 } from './AlertsRulesItem.style';
 
-import { Checkmark, Sync } from 'assets/icon/icon';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 dayjs.extend(duration);
@@ -128,17 +128,13 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
           ))}
         </StyledInfo>
         {hover && (
-          <StyledBlur>
-            <Stack onClick={handleEditRuleClick}>
-              <StyledIconButton>
-                <ModeEditIcon width={30} height={30} />
-              </StyledIconButton>
+          <StyledBlur alignItems="center">
+            <Stack onClick={handleEditRuleClick} alignItems="center">
+              <ModeEditIcon color="primary" />
               <StyledCaption variant="caption">Edit Rule</StyledCaption>
             </Stack>
-            <Stack onClick={handleOpenResolve}>
-              <StyledIconButton>
-                {resolved ? <Sync width={30} height={30} /> : <Checkmark width={30} height={30} />}
-              </StyledIconButton>
+            <Stack onClick={handleOpenResolve} alignItems="center">
+              {resolved ? <SyncIcon color="primary" /> : <TaskAltIcon color="primary" />}
               <StyledCaption variant="caption">{resolved ? 'Reactivate' : 'Resolve all'}</StyledCaption>
             </Stack>
           </StyledBlur>

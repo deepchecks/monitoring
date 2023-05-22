@@ -1,6 +1,6 @@
 import { AlertSeverity } from 'api/generated';
 
-import { alpha, Box, Divider, IconButton, styled, Typography } from '@mui/material';
+import { alpha, Box, Divider, styled, Typography } from '@mui/material';
 
 export const StyledMainWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -133,10 +133,6 @@ export const StyledBlur = styled(Box)({
   '@media (max-width: 1536px)': {
     padding: '5px 25px 5px 87px'
   }
-});
-
-export const StyledIconButton = styled(IconButton)({
-  backgroundColor: 'transparent'
 });
 
 export const StyledCaption = styled(Typography)(({ theme }) => ({
