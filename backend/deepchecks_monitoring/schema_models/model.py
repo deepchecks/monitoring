@@ -22,12 +22,13 @@ from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
     from deepchecks_monitoring.schema_models.model_memeber import ModelMember  # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
 
 
 __all__ = ["Model", "ModelNote"]
@@ -38,7 +39,7 @@ def _current_date_by_timezone(context):
     return pdl.now(timezone).set(hour=0, minute=0, second=0, microsecond=0)
 
 
-class Model(Base, MetadataMixin):
+class Model(Base, MetadataMixin, PermissionMixin):
     """ORM model for the model."""
 
     __tablename__ = "models"
@@ -105,6 +106,15 @@ class Model(Base, MetadataMixin):
         passive_deletes=True,
         passive_updates=True,
     )
+
+    @classmethod
+    async def has_user_permissions(cls, session, id, user):
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+
+        obj = await session.scalar(sa.select(cls)
+                                   .where(sa.and_(ModelMember.user_id == user.id,
+                                                  ModelMember.model_id == id)))
+        return obj is not None
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamps."""

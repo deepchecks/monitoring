@@ -1,10 +1,11 @@
 """Alerts utility functions."""
 import enum
 import typing as t
-from deepchecks_monitoring.monitoring_utils import OperatorsEnum
 
 from furl import furl
 from pydantic import BaseModel
+
+from deepchecks_monitoring.monitoring_utils import OperatorsEnum
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models import Alert  # pylint: disable=unused-import

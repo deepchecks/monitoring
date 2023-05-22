@@ -10,7 +10,6 @@
 """V1 API of the alert rules."""
 import typing as t
 from datetime import datetime
-from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 from fastapi import Depends, Query, Response, status
 from pydantic import BaseModel
@@ -23,6 +22,7 @@ from deepchecks_monitoring.monitoring_utils import IdResponse, exists_or_404, fe
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule
 from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 from ...public_models import User
 from .alert import AlertSchema
@@ -216,10 +216,10 @@ async def update_alert(
         alert_rule_id: int,
         body: AlertRuleUpdateSchema,
         session: AsyncSession = AsyncSessionDep,
+        alert_rule: AlertRule = Depends(AlertRule.get_object),
         user: User = Depends(auth.CurrentUser()),
 ):
     """Update alert by id."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     updated_body = body.dict(exclude_unset=True).copy()
     updated_body["updated_by"] = user.id
     # If toggling from inactive to active, then updating the latest_schedule value
@@ -230,11 +230,11 @@ async def update_alert(
 @router.delete("/alert-rules/{alert_rule_id}", tags=[Tags.ALERTS])
 async def delete_alert_rule(
         alert_rule_id: int,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        alert_rule: AlertRule = Depends(AlertRule.get_object),
 ):
     """Delete alert by id."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
-    await AlertRule.delete(session, alert_rule_id)
+    await session.delete(alert_rule)
     return Response(status_code=status.HTTP_200_OK)
 
 @router.get("/alert-rules/{alert_rule_id}/alerts", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])

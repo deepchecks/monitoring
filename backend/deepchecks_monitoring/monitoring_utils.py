@@ -19,9 +19,8 @@ import sys
 import typing as t
 from datetime import date, datetime
 from typing import TYPE_CHECKING
-from deepchecks_monitoring.dependencies import get_async_session
-import fastapi
 
+import fastapi
 import orjson
 import sqlalchemy as sa
 from fastapi import Depends, Path, Query
@@ -33,6 +32,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.expression import ColumnOperators
 
+from deepchecks_monitoring.dependencies import get_async_session
 from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest, NotFound
 
 if TYPE_CHECKING:

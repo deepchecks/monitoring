@@ -9,8 +9,6 @@
 # ----------------------------------------------------------------------------
 """Module defining the alert rule ORM model."""
 import typing as t
-from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
-from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,14 +17,16 @@ from sqlalchemy.orm import Mapped, column_property, relationship
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MetadataMixin
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
+from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
     from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema
+    from deepchecks_monitoring.public_models.user import User
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.monitor import Monitor
-    from deepchecks_monitoring.public_models.user import User
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
@@ -61,20 +61,28 @@ class AlertRule(Base, MetadataMixin, PermissionMixin):
 
     @classmethod
     async def has_user_permissions(cls, session, id, user: 'User'):
-        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
         from deepchecks_monitoring.schema_models.check import Check
         from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
         from deepchecks_monitoring.schema_models.monitor import Monitor
 
-        obj = await session.scalar(sa.select(cls)
-                                  .where(cls.id == id)
-                                  .join(AlertRule.monitor)
-                                  .join(Monitor.check)
-                                  .join(Check.model)
-                                  .join(Model.members)
-                                  .where(sa.and_(ModelMember.user_id == user.id,
-                                                 ModelMember.model_id == Check.model_id)))
-        return obj is not None
+        # obj = await session.scalar(sa.select(cls)
+        #                           .where(cls.id == id)
+        #                           .join(AlertRule.monitor)
+        #                           .join(Monitor.check)
+        #                           .join(Check.model)
+        #                           .join(Model.members)
+        #                           .where(sa.and_(ModelMember.user_id == user.id,
+        #                                          ModelMember.model_id == Check.model_id)))
+        # return obj is not None
+        return (sa.select(cls.id == id)
+                       .join(AlertRule.monitor)
+                       .join(Monitor.check)
+                       .join(Check.model)
+                       .join(Model.members)
+                       .where(sa.and_(ModelMember.user_id == user.id,
+                                      ModelMember.model_id == Check.model_id,
+                                      cls.id == id)))
 
     @classmethod
     async def get_alerts_per_rule(
