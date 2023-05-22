@@ -98,7 +98,7 @@ export const AlertRuleDialogStepThree = forwardRef(({ setNextButtonDisabled }: A
           setValue={setNumericValue}
         />
       </Box>
-      <Box width="536px" height="350px">
+      <Box width="536px" height="350px" marginBottom="30px">
         <MonitorDrawerGraph
           graphData={graphData}
           isLoading={isRunCheckLoading}
