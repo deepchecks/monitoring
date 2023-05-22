@@ -41,7 +41,6 @@ import { ReactComponent as RedWarningIcon } from './red-warning.svg';
 import { ReactComponent as Notebook } from './notebook.svg';
 import { ReactComponent as Checks } from './checks.svg';
 import { ReactComponent as Research } from './research.svg';
-import { ReactComponent as Share } from './share.svg';
 import { ReactComponent as Link } from './Link.svg';
 import { ReactComponent as MarkedMail } from './markedMail.svg';
 import { ReactComponent as ViewDetails } from './viewDetails.svg';
@@ -102,7 +101,6 @@ export {
   Notebook,
   Checks,
   Research,
-  Share,
   Link,
   MarkedMail,
   ViewDetails,
