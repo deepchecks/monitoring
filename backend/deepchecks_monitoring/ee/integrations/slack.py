@@ -94,13 +94,18 @@ class SlackInstallationUtils:
             redirect_uri=redirect_path
         ).generate(state=state)
 
-    def finish_installation(self, code: str) -> SlackInstallationSchema:
+    def finish_installation(
+        self,
+        code: str,
+        redirect_uri: t.Optional[str] = None
+    ) -> SlackInstallationSchema:
         """Finish the slack installation."""
         try:
             response = self.client.oauth_v2_access(
                 code=code,
                 client_id=self.settings.slack_client_id,
                 client_secret=self.settings.slack_client_secret.get_secret_value(),
+                redirect_uri=redirect_uri
             ).validate()
         except SlackApiError as e:
             msg = "Failed to obtaine access token."
