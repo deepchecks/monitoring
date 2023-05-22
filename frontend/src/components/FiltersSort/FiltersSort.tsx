@@ -268,11 +268,7 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
             />
           </Stack>
         </Stack>
-        {filtered && (
-          <Stack direction="row" spacing="11px">
-            <FiltersResetButton handleReset={handleReset} isLoading={isModelsLoading} />
-          </Stack>
-        )}
+        {filtered && <FiltersResetButton handleReset={handleReset} isLoading={isModelsLoading} divider={false} />}
       </StyledMainWrapper>
       <Menu
         anchorEl={anchorElSortMenu}
