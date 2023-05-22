@@ -2,7 +2,7 @@ import React, { useContext, useMemo, useState, useImperativeHandle, forwardRef, 
 
 import { Frequency, MonitorCheckConfSchema } from 'api/generated';
 
-import { Checkbox, FormControlLabel, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material';
+import { Box, Checkbox, FormControlLabel, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material';
 
 import useModels from 'helpers/hooks/useModels';
 import { SelectValues } from 'helpers/types';
@@ -137,38 +137,41 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
           disabled={!!alertRule.id || !model}
           size="medium"
         />
-        <OutlinedInput
-          placeholder={aggregationPlaceholder}
-          size="medium"
-          value={aggregationWindow}
-          onChange={event => setAggregationWindow(Number(event.target.value))}
-          endAdornment={aggregationWindowSuffix}
-          inputProps={{ min: 0, max: 30 }}
-          error={aggregationWindowErr}
-          type="number"
-          fullWidth
-          required
-        />
-        {aggregationWindowErr && <Typography color="red">aggregation window max value is 30</Typography>}
-        <TooltipInputWrapper title={frequencyTooltipTitle}>
-          <MarkedSelect
-            label={frequencyLabel}
-            value={frequency}
-            onChange={event => setFrequency(event.target.value as number)}
-            clearValue={() => {
-              setFrequency(freqTimeWindow[0].value);
-              setAggregationWindow(1);
-            }}
-            fullWidth
+        <Box display="grid" gridTemplateColumns="70% auto" gap="24px">
+          <TooltipInputWrapper title={frequencyTooltipTitle}>
+            <MarkedSelect
+              label={frequencyLabel}
+              value={frequency}
+              onChange={event => setFrequency(event.target.value as number)}
+              clearValue={() => {
+                setFrequency(freqTimeWindow[0].value);
+                setAggregationWindow(1);
+              }}
+              fullWidth
+              size="medium"
+            >
+              {freqTimeWindow.map(({ label, value }, index) => (
+                <MenuItem key={value + index} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </MarkedSelect>
+          </TooltipInputWrapper>
+          <OutlinedInput
+            sx={{ '@media (max-width: 1536px)': { height: '36px' } }}
+            placeholder={aggregationPlaceholder}
             size="medium"
-          >
-            {freqTimeWindow.map(({ label, value }, index) => (
-              <MenuItem key={value + index} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </MarkedSelect>
-        </TooltipInputWrapper>
+            value={aggregationWindow}
+            onChange={event => setAggregationWindow(Number(event.target.value))}
+            endAdornment={aggregationWindowSuffix}
+            inputProps={{ min: 0, max: 30 }}
+            error={aggregationWindowErr}
+            type="number"
+            fullWidth
+            required
+          />
+          {aggregationWindowErr && <Typography color="red">aggregation window max value is 30</Typography>}
+        </Box>
         <SelectColumn
           model={model}
           column={column}
@@ -180,7 +183,7 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
           size="medium"
         />
         <FormControlLabel
-          style={{ marginTop: '50px' }}
+          style={{ marginTop: '8px' }}
           control={<Checkbox checked={!!dashboardId} onChange={e => setDashboardId(e.target.checked ? 1 : null)} />}
           label={checkBoxLabel}
         />
