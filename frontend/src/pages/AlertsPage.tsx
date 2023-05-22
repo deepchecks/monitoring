@@ -23,6 +23,7 @@ import { StyledDeletionDialog } from 'components/lib';
 import useModels from '../helpers/hooks/useModels';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
+import { getParams, handleSetParams } from 'helpers/utils/getParams';
 
 const snackbarPosition = {
   vertical: 'bottom',
