@@ -39,5 +39,5 @@ class ModelMember(Base, MetadataMixin):
     )
     model: Mapped[t.Optional["Model"]] = relationship(
         "Model",
-        back_populates="model_members"
+        back_populates="members"
     )

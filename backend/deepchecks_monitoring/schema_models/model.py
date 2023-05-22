@@ -27,6 +27,7 @@ from deepchecks_monitoring.schema_models.task_type import TaskType
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
     from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.model_memeber import ModelMember  # pylint: disable=unused-import
 
 
 __all__ = ["Model", "ModelNote"]
@@ -75,6 +76,13 @@ class Model(Base, MetadataMixin):
     data_ingestion_alert_label_count = sa.Column(sa.Integer)
     data_ingestion_alert_sample_count = sa.Column(sa.Integer)
 
+    members: Mapped[t.List["ModelMember"]] = relationship(
+        "ModelMember",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
         back_populates="model",

@@ -14,6 +14,7 @@ import secrets
 import typing as t
 from random import choice
 from string import ascii_lowercase
+from deepchecks_monitoring.utils.alerts import AlertSeverity
 
 import sqlalchemy as sa
 import stripe
@@ -22,7 +23,6 @@ from sqlalchemy.orm import Mapped, relationship
 from typing_extensions import Self
 
 from deepchecks_monitoring.public_models import Base
-from deepchecks_monitoring.schema_models import AlertSeverity
 from deepchecks_monitoring.utils.database import SchemaBuilder
 from deepchecks_monitoring.utils.text import slugify
 

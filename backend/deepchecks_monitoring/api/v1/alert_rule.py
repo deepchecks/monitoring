@@ -10,6 +10,7 @@
 """V1 API of the alert rules."""
 import typing as t
 from datetime import datetime
+from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 from fastapi import Depends, Query, Response, status
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse, exists_or_404, fetch_or_404
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
-from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
+from deepchecks_monitoring.schema_models.alert_rule import AlertRule
 from deepchecks_monitoring.utils import auth
 
 from ...public_models import User
@@ -236,16 +237,15 @@ async def delete_alert_rule(
     await AlertRule.delete(session, alert_rule_id)
     return Response(status_code=status.HTTP_200_OK)
 
-
 @router.get("/alert-rules/{alert_rule_id}/alerts", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
 async def get_alerts_of_alert_rule(
         alert_rule_id: int,
         resolved: t.Optional[bool] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        alert_rule: AlertRule = Depends(AlertRule.get_object),
 ):
     """Get list of alerts raised by a given alert rule."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
-    query = select(Alert).where(Alert.alert_rule_id == alert_rule_id)
+    query = select(Alert).where(Alert.alert_rule_id == alert_rule.id)
     if resolved is not None:
         query = query.where(Alert.resolved.is_(resolved))
     query = await session.execute(query.order_by(Alert.start_time))

@@ -654,25 +654,3 @@ class MetadataMixin:
                            onupdate=sa.func.now())
     updated_by = sa.Column(sa.Integer, nullable=False)
 
-
-class PermissionMixin(Base, abc.ABC):
-    """Mixin class for ORM entities that have metadata."""
-
-    @abc.abstractmethod
-    def has_user_permissions(request: fastapi.Request):
-        raise NotImplementedError()
-
-    async def get_object(self, request: fastapi.Request):
-        session = get_async_session(request)
-        id_param = re.sub(r"(?<!^)(?=[A-Z])", "_", self.__class__.__name__).lower() + '_id'
-        id_param_val = request.query_params.get(id_param) or request.path_params.get(id_param)
-        if id_param_val is None:
-            return None
-        base_obj_query = sa.select(self).where(self.id == id_param_val)
-        obj = await session.execute(base_obj_query).first()
-        if obj is None:
-            return NotFound(f"{self.__class__.__name__} with the id {id_param_val} was not found.")
-        obj = await session.execute(base_obj_query.where(self.has_user_permissions(request))).first()
-        if obj is None:
-            return AccessForbidden(f"You do not have permissions to access this object.")
-        return obj

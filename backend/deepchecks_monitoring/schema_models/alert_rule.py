@@ -8,15 +8,15 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the alert rule ORM model."""
-import enum
 import typing as t
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
+from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 import sqlalchemy as sa
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, column_property, relationship
 
-from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MetadataMixin, OperatorsEnum
+from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MetadataMixin
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
@@ -26,40 +26,12 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.monitor import Monitor
+    from deepchecks_monitoring.public_models.user import User
 
 __all__ = ["Condition", "AlertRule", "AlertSeverity"]
 
 
-class Condition(BaseModel):
-    """Condition to define an alert on check result, value must be numeric."""
-
-    operator: OperatorsEnum
-    value: float
-
-    def __str__(self, prefix: str = "Result") -> str:
-        """Return condition string representation."""
-        op = self.operator.stringify()
-        return f"{prefix} {op} {self.value}"
-
-
-class AlertSeverity(str, enum.Enum):
-    """Enum for the alert severity."""
-
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-    @property
-    def severity_index(self) -> int:
-        return tuple(type(self)).index(self)
-
-    @classmethod
-    def from_index(cls, index: int) -> "AlertSeverity":
-        return tuple(cls)[index]
-
-
-class AlertRule(Base, MetadataMixin):
+class AlertRule(Base, MetadataMixin, PermissionMixin):
     """ORM model for the alert rule."""
 
     __tablename__ = "alert_rules"
@@ -86,6 +58,23 @@ class AlertRule(Base, MetadataMixin):
         passive_deletes=True,
         passive_updates=True
     )
+
+    @classmethod
+    async def has_user_permissions(cls, session, id, user: 'User'):
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+        from deepchecks_monitoring.schema_models.check import Check
+        from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.monitor import Monitor
+
+        obj = await session.scalar(sa.select(cls)
+                                  .where(cls.id == id)
+                                  .join(AlertRule.monitor)
+                                  .join(Monitor.check)
+                                  .join(Check.model)
+                                  .join(Model.members)
+                                  .where(sa.and_(ModelMember.user_id == user.id,
+                                                 ModelMember.model_id == Check.model_id)))
+        return obj is not None
 
     @classmethod
     async def get_alerts_per_rule(
