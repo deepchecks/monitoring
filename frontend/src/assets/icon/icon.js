@@ -26,7 +26,6 @@ import { ReactComponent as MenuVertical } from './menuVertical.svg';
 import { ReactComponent as NLPModel } from './NLPModel.svg';
 import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as PauseIcon } from './pause.svg';
-import { ReactComponent as PencilDrawing } from './pencilDrawing.svg';
 import { ReactComponent as PlusIcon } from './plus.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
 import { ReactComponent as RightArrow } from './right-arrow.svg';
@@ -90,7 +89,6 @@ export {
   SearchIcon,
   Slack,
   Sort,
-  PencilDrawing,
   UserInvite,
   ExpandIcon,
   PauseIcon,

@@ -9,6 +9,7 @@ import useModels from 'helpers/hooks/useModels';
 import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogContext';
 
 import { Tooltip, Typography, Stack } from '@mui/material';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
 import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
 import { Loader } from '../../base/Loader/Loader';
@@ -31,7 +32,7 @@ import {
   StyledTitle
 } from './AlertsRulesItem.style';
 
-import { Checkmark, PencilDrawing, Sync } from 'assets/icon/icon';
+import { Checkmark, Sync } from 'assets/icon/icon';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 dayjs.extend(duration);
@@ -130,7 +131,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
           <StyledBlur>
             <Stack onClick={handleEditRuleClick}>
               <StyledIconButton>
-                <PencilDrawing width={30} height={30} />
+                <ModeEditIcon width={30} height={30} />
               </StyledIconButton>
               <StyledCaption variant="caption">Edit Rule</StyledCaption>
             </Stack>
