@@ -15,6 +15,7 @@ import SyncIcon from '@mui/icons-material/Sync';
 
 import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
 import { Loader } from '../../base/Loader/Loader';
+import { StyledSeverity } from 'components/lib';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
@@ -23,7 +24,6 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import {
   StyledBlur,
   StyledCaption,
-  StyledCriticality,
   StyledDescription,
   StyledDivider,
   StyledInfo,
@@ -102,12 +102,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
         onClick={handleOpenDrawer}
         sx={{ background: 'white' }}
       >
-        <StyledCriticality criticality={alert_severity} resolved={resolved}>
-          <Typography variant="h4">{alerts_count}</Typography>
-          <Typography variant="subtitle2" color="white">
-            {alert_severity}
-          </Typography>
-        </StyledCriticality>
+        <StyledSeverity severity={alert_severity} number={alerts_count} margin="14px 0 0 6px" />
         <StyledDescription>
           <Tooltip title={monitor?.name ? monitor?.name : 'N/A'}>
             <StyledMonitorName noWrap={true} variant="h2">

@@ -1,6 +1,4 @@
-import { AlertSeverity } from 'api/generated';
-
-import { alpha, Box, Divider, styled, Typography } from '@mui/material';
+import { Box, Divider, styled, Typography } from '@mui/material';
 
 export const StyledMainWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -18,52 +16,6 @@ export const StyledMainWrapper = styled(Box)(({ theme }) => ({
     height: 70
   }
 }));
-
-type StyledCriticalityProps = {
-  criticality?: AlertSeverity;
-  resolved?: number;
-};
-
-const RESOLVED_ALERT_COLOR_OPACITY = 0.7;
-
-export const StyledCriticality = styled(Box, {
-  shouldForwardProp: prop => prop !== 'criticality'
-})<StyledCriticalityProps>(({ criticality = 'low', resolved, theme }) => {
-  const getColor = (filed: AlertSeverity): string => {
-    if (filed === 'low') {
-      return alpha(theme.palette.severity.low, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
-    }
-
-    if (filed === 'medium') {
-      return alpha(theme.palette.severity.medium, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
-    }
-
-    if (filed === 'high') {
-      return alpha(theme.palette.severity.high, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
-    }
-
-    if (filed === 'critical') {
-      return alpha(theme.palette.severity.critical, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
-    }
-
-    return alpha(theme.palette.severity.critical, resolved ? RESOLVED_ALERT_COLOR_OPACITY : 1);
-  };
-
-  return {
-    height: '100%',
-    backgroundColor: getColor(criticality),
-    borderLeft: `5px solid ${alpha(theme.palette.common.white, 0.4)}`,
-    minWidth: 80,
-    padding: '22px 11px 20px 11px',
-    textAlign: 'center',
-    borderRadius: '16px 0px 0px 16px',
-    color: theme.palette.common.white,
-    '@media (max-width: 1536px)': {
-      minWidth: 65,
-      padding: '10px 11px 10px 11px'
-    }
-  };
-});
 
 export const StyledDescription = styled(Box)({
   padding: '22px 20px 22px 30px',
