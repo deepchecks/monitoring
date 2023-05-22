@@ -301,6 +301,11 @@ async def run_check_per_window_in_range(
     # First filter out model versions that doesn't fit the filter
     model_versions = [model_version for model_version in model_versions
                       if model_version.is_filter_fit(monitor_options.filter)]
+    if len(model_versions) == 0:
+        return {
+            "output": {},
+            "time_labels": [],
+        }
 
     model_versions_data = {}
     for model_version in model_versions:
