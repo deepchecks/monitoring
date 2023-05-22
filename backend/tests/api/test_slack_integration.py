@@ -133,11 +133,11 @@ class MockedSlackInstallationUtils(SlackInstallationUtils):
     def mocked_installation(self, value: SlackInstallationSchema):
         return setattr(self, "_mocked_installation", value)
 
-    def finish_installation(self, code: str) -> SlackInstallationSchema:
+    def finish_installation(self, code: str, redirect_uri: t.Optional[str] = None) -> SlackInstallationSchema:
         if self.mocked_installation:
             return self.mocked_installation
         else:
-            return super().finish_installation(code)
+            return super().finish_installation(code, redirect_uri)
 
 
 def random_string():
