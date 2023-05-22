@@ -9,11 +9,12 @@ import {
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
+import useModels from '../helpers/hooks/useModels';
 import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
+import { handleSetParams, getParams } from 'helpers/utils/getParams';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Box, List, ListItem, styled } from '@mui/material';
-
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { AlertsDrawer } from 'components/Alerts/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
@@ -22,7 +23,6 @@ import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
-import useModels from '../helpers/hooks/useModels';
 import { StyledDeletionDialog } from 'components/lib';
 
 const snackbarPosition = {
@@ -108,8 +108,25 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   // if there are no alerts to show
   useEffect(() => {
     const isTwoWeeksOlder = checkIsTwoWeeksOlder(models, alertFilters, alertRules);
-    if (isTwoWeeksOlder !== undefined) setIsModelsEndTimeTwoWeeksOlder(isTwoWeeksOlder);
+    if (isTwoWeeksOlder) setIsModelsEndTimeTwoWeeksOlder(isTwoWeeksOlder);
   }, [alertFilters, alertRules]);
+
+  useEffect(() => {
+    if (getParams().alertRuleId) {
+      const alertRule = alertRules?.find(ar => ar.id === +getParams().alertRuleId);
+      alertRule && setDrawerAlertRule(alertRule);
+    }
+  }, [alertRules]);
+
+  const handleOpenDrawer = (alertRule: AlertRuleInfoSchema) => {
+    handleSetParams('alertRuleId', alertRule.id);
+    setDrawerAlertRule(alertRule);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerAlertRule(null);
+    handleSetParams('alertRuleId');
+  };
 
   return (
     <>
@@ -125,7 +142,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
                 <AlertsRulesItem
                   alertRule={alertRule}
                   onResolveOpen={() => setResolveAlertRule(alertRule)}
-                  onDrawerOpen={() => setDrawerAlertRule(alertRule)}
+                  onDrawerOpen={() => handleOpenDrawer(alertRule)}
                   resolved={resolved ? 1 : 0}
                 />
               </StyledListItem>
@@ -144,7 +161,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         anchor="right"
         open={!!drawerAlertRule}
         alertRule={drawerAlertRule}
-        onClose={() => setDrawerAlertRule(null)}
+        onClose={handleCloseDrawer}
         resolved={resolved}
       />
       <AlertsSnackbar
