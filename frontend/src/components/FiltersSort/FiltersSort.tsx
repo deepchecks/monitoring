@@ -13,7 +13,6 @@ import { DatePicker } from '../DatePicker/DatePicker';
 import { SelectPrimary } from '../Select/SelectPrimary';
 import { SelectSeverity, SeverityAll, severityAll } from '../Select/SelectSeverity';
 import { FiltersResetButton } from './components/FiltersResetButton';
-import FiltersSortButton from './components/FiltersSortButton';
 
 import useModels from 'helpers/hooks/useModels';
 import { reportEvent } from 'helpers/services/mixPanel';
@@ -64,10 +63,6 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
 
   const handleCloseSortMenu = () => {
     setAnchorElSortMenu(null);
-  };
-
-  const handleOpenSortMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorElSortMenu(event.currentTarget);
   };
 
   const handleModelChange = (event: SelectChangeEvent<number | unknown>) => {
@@ -273,14 +268,10 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
             />
           </Stack>
         </Stack>
-
-        {filtered ? (
+        {filtered && (
           <Stack direction="row" spacing="11px">
             <FiltersResetButton handleReset={handleReset} isLoading={isModelsLoading} />
-            <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isModelsLoading} />
           </Stack>
-        ) : (
-          <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isModelsLoading} />
         )}
       </StyledMainWrapper>
       <Menu

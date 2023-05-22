@@ -20,6 +20,7 @@ import NoResults from 'components/NoResults';
 
 import { reportEvent } from 'helpers/services/mixPanel';
 import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
+import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 
 export const AlertRules = () => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
@@ -63,7 +64,8 @@ export const AlertRules = () => {
 
   return (
     <Box margin="24px 0">
-      <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="0 0 16px">
+      <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
+      <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="16px 0">
         <StyledText text="Alert Rules" type="h1" />
         <StyledButton startIcon={<AddCircleOutlineIcon />} onClick={() => onDialogOpen()} label="Rule" />
       </StyledContainer>
@@ -85,11 +87,9 @@ export const AlertRules = () => {
           <NoResults margin="20vh auto" handleReset={() => resetAlertFilters(setAlertFilters)} />
         )}
       </Box>
-
       <AlertRuleDialogProvider>
         <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
       </AlertRuleDialogProvider>
-
       <DeleteAlertRule
         alertRule={currentAlertRule}
         open={isDeleteDialogOpen}
