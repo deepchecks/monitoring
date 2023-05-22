@@ -130,7 +130,8 @@ async def installation_callback(
         )
 
     try:
-        installation = utils.finish_installation(code)
+        redirect_path = str(request.url_for('slack-installation-callback'))
+        installation = utils.finish_installation(code, redirect_path)
     except SlackInstallationError as exception:
         # TODO:
         # what page should we show in this case?
