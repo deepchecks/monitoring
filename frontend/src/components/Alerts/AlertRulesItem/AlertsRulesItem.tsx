@@ -25,7 +25,6 @@ import {
   StyledBlur,
   StyledCaption,
   StyledDescription,
-  StyledDivider,
   StyledInfo,
   StyledMainWrapper,
   StyledMonitorName,
@@ -102,7 +101,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
         onClick={handleOpenDrawer}
         sx={{ background: 'white' }}
       >
-        <StyledSeverity severity={alert_severity} number={alerts_count} margin="14px 0 0 6px" />
+        <StyledSeverity severity={alert_severity} number={alerts_count} margin="14px 0 0 6px" width="200px" />
         <StyledDescription>
           <Tooltip title={monitor?.name ? monitor?.name : 'N/A'}>
             <StyledMonitorName noWrap={true} variant="h2">
@@ -111,7 +110,6 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
           </Tooltip>
           <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('L')}</Typography>
         </StyledDescription>
-        <StyledDivider orientation="vertical" flexItem />
         <StyledInfo>
           {titles.map((title, index) => (
             <StyledProperty key={title}>

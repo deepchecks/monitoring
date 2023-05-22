@@ -12,9 +12,10 @@ export interface SeverityProps {
   number?: number;
   hideInfo?: boolean;
   margin?: string;
+  width?: string;
 }
 
-export const Severity = ({ severity, number, hideInfo, margin = '0' }: SeverityProps) => {
+export const Severity = ({ severity, number, hideInfo, margin = '0', width = 'auto' }: SeverityProps) => {
   const theme = useTheme();
 
   const purpleIcon = require('../../assets/severity/purple.svg').default;
@@ -59,7 +60,7 @@ export const Severity = ({ severity, number, hideInfo, margin = '0' }: SeverityP
   };
 
   return (
-    <Container flexDirection="row" gap="0" width="auto" margin={margin}>
+    <Container flexDirection="row" gap="0" width={width} margin={margin}>
       <Image src={severityLevel().icon} alt={severityLevel().alt} width="36px" height="36px" />
       {severity && !hideInfo && (
         <Container margin={'0'} gap={'0'} marginTop={'-12px'}>
