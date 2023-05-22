@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
+import { Box, List, ListItem, styled } from '@mui/material';
+
 import {
   AlertRuleInfoSchema,
   useGetAlertRulesApiV1AlertRulesGet,
@@ -9,12 +11,6 @@ import {
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
-import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
-
-import { Box, List, ListItem, styled } from '@mui/material';
-
-import { events, reportEvent } from 'helpers/services/mixPanel';
-
 import { AlertsDrawer } from 'components/Alerts/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import { AlertsHeader } from 'components/Alerts/AlertsHeader';
@@ -22,8 +18,11 @@ import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
-import useModels from '../helpers/hooks/useModels';
 import { StyledDeletionDialog } from 'components/lib';
+
+import useModels from '../helpers/hooks/useModels';
+import { events, reportEvent } from 'helpers/services/mixPanel';
+import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
 
 const snackbarPosition = {
   vertical: 'bottom',
