@@ -6,6 +6,8 @@ import { StyledButton, StyledImage, StyledText } from 'components/lib';
 
 import webhook from '../../../assets/integrations/webhook.svg';
 
+import { constants } from '../integrations.constants';
+
 const ConnectWebhook = () => {
   return (
     <Box
@@ -14,26 +16,17 @@ const ConnectWebhook = () => {
         borderRadius: '10px',
         padding: '0 24px',
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'start',
         width: '100%',
         maxWidth: '500px',
-        boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
-        position: 'relative',
-        overflow: 'hidden',
         height: '170px'
       }}
     >
       <Box maxWidth={620}>
-        <Stack spacing="16px" pt="10px">
-          <StyledText text="Create a Webhook" type="h1" color="white" />
-          <StyledText
-            text="Get DeepChecks alerts and communications via Webhook integration."
-            type="h3"
-            color="white"
-          />
+        <Stack spacing="16px" pt="10px" marginBottom="20px">
+          <StyledText text={constants.connect.webhook.title} type="h1" color="white" />
+          <StyledText text={constants.connect.webhook.description} type="h3" color="white" />
         </Stack>
-        <StyledButton onClick={() => ''} label="Uninstall" margin="24px 0 0" />
+        <StyledButton onClick={() => ''} label="Uninstall" color="inherit" />
       </Box>
       <StyledImage alt="webhook" src={webhook} width="100px" height="100px" margin="24px 0" />
     </Box>

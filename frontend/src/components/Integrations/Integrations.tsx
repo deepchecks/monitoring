@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Box, Stack } from '@mui/material';
+import { Box, Stack, useMediaQuery, useTheme } from '@mui/material';
 
 import { ConnectSlack } from './components/ConnectSlack';
 import { AlertNotifications } from 'components/Integrations/components/AlertNotifications';
@@ -13,9 +13,14 @@ import ConnectWebhook from './components/ConnectWebhook';
 import { constants } from './integrations.constants';
 
 export const Integrations = () => {
+  const theme = useTheme();
+  const isLargeDesktop = useMediaQuery(theme.breakpoints.up(1840));
+
+  const stackDisplay = isLargeDesktop ? 'flex' : 'block';
+
   return (
     <Box padding="24px">
-      <Stack display="flex" flexDirection="row" gap="85px">
+      <Stack display={stackDisplay} flexDirection="row" gap="85px">
         <AlertNotifications />
         <Box display="flex" flexDirection="column" gap="16px">
           <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />

@@ -16,6 +16,8 @@ import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../lib';
 
 import slack from '../../../assets/integrations/slack.svg';
 
+import { constants } from '../integrations.constants';
+
 interface App {
   id: number;
   team_name: string;
@@ -75,25 +77,20 @@ export function ConnectSlack() {
         borderRadius: '10px',
         padding: '0 24px',
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'start',
         width: '100%',
         maxWidth: '500px',
-        boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
-        position: 'relative',
-        overflow: 'hidden',
         height: '170px'
       }}
     >
       <Box maxWidth={620}>
-        <Stack spacing="16px" pt="10px">
-          <StyledText text="Get notified on Slack" type="h1" color="white" />
-          <StyledText text="Get DeepChecks alerts and communications via slack integrations." type="h3" color="white" />
+        <Stack spacing="16px" pt="10px" marginBottom="20px">
+          <StyledText text={constants.connect.slack.title} type="h1" color="white" />
+          <StyledText text={constants.connect.slack.description} type="h3" color="white" />
         </Stack>
         {slackConnect?.is_slack_connected ? (
-          <StyledButton onClick={removeSlack} label="Uninstall" margin="24px 0 0" />
+          <StyledButton onClick={removeSlack} label="Uninstall" />
         ) : (
-          <StyledButton onClick={connectSlack} label="Connect" margin="24px 0 0" />
+          <StyledButton onClick={connectSlack} label="Connect" />
         )}
       </Box>
       <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="24px 0" />
