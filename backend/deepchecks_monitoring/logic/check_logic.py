@@ -9,17 +9,27 @@
 # ----------------------------------------------------------------------------
 
 """Module defining utility functions for check running."""
+import logging
 import typing as t
+import pickle
 from collections import defaultdict
 from copy import deepcopy
 from numbers import Number
 
 import pendulum as pdl
-import sqlalchemy
+import sqlalchemy as sa
+import loky
+import pandas as pd
+import numpy as np
+from sqlalchemy.orm import Session
 from deepchecks import BaseCheck, CheckResult
+from deepchecks.tabular import Dataset, Suite
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
+from deepchecks.tabular import Dataset
+from deepchecks.core import BaseCheck, errors
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
+from deepchecks.tabular import base_checks as tabular_base_checks
 from pydantic import BaseModel, Field, ValidationError, root_validator
 from sqlalchemy import VARCHAR, Column, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +40,8 @@ from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
-                                                     get_top_features_or_from_conf)
+                                                     get_top_features_or_from_conf,
+                                                     initialize_check, dataframe_to_dataset_and_pred, run_deepchecks)
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
                                                     MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum,
                                                     fetch_or_404, make_oparator_func)
@@ -40,7 +51,9 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.monitor import Frequency, round_up_datetime
+from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
+from deepchecks_monitoring.utils.database import SessionParameter
 
 MAX_FEATURES_TO_RETURN = 1000
 
@@ -243,6 +256,320 @@ def get_feature_property_info(latest_version: ModelVersion, dp_check: BaseCheck)
     return check_parameter_conf
 
 
+class CachedResult(t.TypedDict):
+    index: int
+    result: t.Any
+    start: str 
+    end: str
+
+
+class WindowExecutionArgs(t.TypedDict):
+    index: int
+    model_version_id: int
+    balance_classes: bool
+    classes: t.Optional[t.List[str]]
+    feature_columns: t.Dict[t.Union[str, int], str]
+    task_type: TaskType
+    start: str
+    end: str
+    samples_query: bytes
+    reference_query: t.Optional[bytes]
+    options: MonitorOptions
+    columns: t.List[str]
+
+
+async def run_check_per_window_in_range_v2(
+    check_id: int,
+    session: AsyncSession,
+    executor: t.Any,
+    monitor_options: MonitorOptions,
+    organization_id: int,
+    monitor_id: t.Optional[int] = None,
+    cache_funcs: t.Optional[CacheFunctions] = None,
+    n_of_windows_per_worker: int = 10,
+    database: t.Optional[str] = None
+):
+    check = await fetch_or_404(
+        session=session, 
+        model=Check,
+        id=check_id,
+        options=joinedload(Check.model).load_only(Model.timezone)
+    )
+    
+    all_windows = monitor_options.calculate_windows(check.model.timezone)[-31:]
+    frequency = monitor_options.frequency
+    assert frequency is not None
+    
+    aggregation_window = frequency.to_pendulum_duration() * monitor_options.aggregation_window
+    
+    model, model_versions = await get_model_versions_for_time_range(
+        session=session,
+        model_id=t.cast(int, check.model_id),
+        start_time=all_windows[0] - aggregation_window,
+        end_time=all_windows[-1]
+    )
+
+    if len(model_versions) == 0:
+        raise NotFound("No relevant model versions found")
+
+    top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
+    model_columns = list(model_versions[0].model_columns.keys())
+    columns = top_feat + model_columns
+    cached_results: t.Dict[int, t.List[CachedResult]] = defaultdict(list)
+    windows_to_calculate: t.List[WindowExecutionArgs] = []
+    
+    for model_version in model_versions:
+        if not model_version.is_filter_fit(monitor_options.filter):
+            continue
+        
+        reference_query: t.Optional[bytes] = None
+
+        if check.is_reference_required:
+            reference_query = pickle.dumps(create_execution_data_query(
+                model_version, 
+                monitor_options, columns=columns,
+                with_labels=t.cast(bool, check.is_label_required),
+                is_ref=True
+            ))
+
+        for index, window_end in enumerate(all_windows):
+            window_start = window_end - aggregation_window
+
+            if monitor_id and cache_funcs:
+                cache_result = cache_funcs.get_monitor_cache(
+                    organization_id, 
+                    model_version.id,
+                    monitor_id,
+                    window_start, 
+                    window_end
+                )
+                if cache_result.found:
+                    cached_results[model_version.id].append({
+                        'index': index,
+                        'result': cache_result.value,
+                        "start": str(window_start), 
+                        "end": str(window_end)
+                    })
+                    continue
+
+            if not model_version.is_in_range(window_start, window_end):
+                cached_results[model_version.id].append({
+                    'index': index,
+                    'result': None,
+                    "start": str(window_start),
+                    "end": str(window_end)
+                })
+                continue
+            
+            period = window_end - window_start
+            
+            samples_query = pickle.dumps(create_execution_data_query(
+                model_version, 
+                monitor_options, 
+                period=period, 
+                columns=columns,
+                with_labels=t.cast(bool, check.is_label_required),
+                is_ref=False
+            ))
+            windows_to_calculate.append({
+                'index': index,
+                "model_version_id": t.cast(int, model_version.id),
+                "balance_classes": t.cast(bool, model_version.balance_classes),
+                "feature_columns": t.cast(t.Dict[t.Any, t.Any], model_version.features_columns),
+                "classes": t.cast(t.Optional[t.List[str]], model_version.classes),
+                "task_type": t.cast(TaskType, model.task_type),
+                "start": str(window_start),
+                "end": str(window_end),
+                "samples_query": samples_query,
+                "reference_query": reference_query,
+                "options": monitor_options,
+                "columns": columns,
+            })
+
+    futures = []
+    calculated_windows = defaultdict(list)
+    
+    for i in range(0, len(windows_to_calculate), n_of_windows_per_worker):
+        futures.append(executor.submit(
+            calculate_windows,
+            windows_to_calculate[i:i + n_of_windows_per_worker],
+            check.config,
+            monitor_options.additional_kwargs,
+            top_feat,
+            feat_imp,
+            organization_id,
+            # database
+        ))
+
+    for it in futures:
+        r = it.result()
+    #     for k, v in r.items():
+    #         calculated_windows[k].extend(v)
+
+    # return cached_results, calculated_windows
+
+
+def calculate_windows(
+    windows_arguments: t.List[WindowExecutionArgs],
+    check_config: t.Any,
+    additional_check_kwargs: t.Any,
+    top_features: t.List[str],
+    feature_importance: pd.Series,
+    organization_id: int,
+    database: t.Optional[str] = None
+):
+    if database is None:
+        database_engine = getattr(loky, "_deepchecks_database_engine", None)
+        if database_engine is None:
+            raise RuntimeError(
+                "Database engine was not initialized, "
+                "worker process was not initialized"
+            )
+    else:
+        database_engine = sa.create_engine(database)
+
+    with Session(database_engine) as s:
+        org = t.cast(t.Optional[Organization], s.get(Organization, organization_id))
+
+        if org is None:
+            raise RuntimeError(f'Organization with id "{organization_id}" does not exist')
+        
+        s.execute(SessionParameter(
+            "search_path", 
+            value=t.cast(str, org.schema_name)
+        ))
+
+        result = defaultdict(list)
+        windows_per_model_version: t.Dict[int, t.List[WindowExecutionArgs]] = defaultdict(list)
+        
+        for it in windows_arguments:
+            windows_per_model_version[it["model_version_id"]].append(it)
+
+        for model_version_id, windows in windows_per_model_version.items():
+            reference: t.Optional[pd.DataFrame] = None
+            reference_dataset: t.Optional[Dataset] = None
+            reference_pred: t.Optional[np.ndarray] = None
+            reference_proba: t.Optional[np.ndarray] = None
+            check_instance: t.Optional[BaseCheck] = None
+
+            for window_args in windows:
+                if check_instance is None:
+                    check_instance = initialize_check(
+                        check_config, 
+                        window_args["balance_classes"], 
+                        additional_check_kwargs
+                    )
+
+                reference_query = window_args.get("reference_query")
+                
+                if reference is None and reference_query is not None:
+                    reference_data = s.execute(pickle.loads(reference_query))
+                    reference_df = pd.DataFrame(reference_data.all(), columns=[str(key) for key in reference_data.keys()])
+
+                    if reference_df.empty:
+                        result[model_version_id].append({
+                            'index': window_args["index"],
+                            'start': window_args["start"],
+                            'end': window_args["end"],
+                            'result': None
+                        })
+                        continue
+
+                    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+                        reference_df,
+                        features_columns=window_args["feature_columns"],
+                        task_type=window_args["task_type"].value,
+                        top_feat=top_features,
+                        dataset_name='Reference'
+                    )
+
+                window_data = s.execute(pickle.loads(window_args['samples_query']))
+                window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
+
+                if window_df.empty:
+                    result[model_version_id].append({
+                        'index': window_args["index"],
+                        'start': window_args["start"],
+                        'end': window_args["end"],
+                        'result': None
+                    })
+                    continue
+                
+                test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
+                    window_df,
+                    features_columns=window_args["feature_columns"],
+                    task_type=window_args["task_type"].value,
+                    top_feat=top_features,
+                    dataset_name='Production'
+                )
+                shared_args = dict(
+                    feature_importance=feature_importance,
+                    with_display=False,
+                    model_classes=window_args['classes']
+                )
+                single_dataset_args = dict(
+                    y_pred_train=test_pred,
+                    y_proba_train=test_proba,
+                    **shared_args
+                )
+                train_test_args = dict(
+                    train_dataset=reference_dataset,
+                    test_dataset=test_dataset,
+                    y_pred_train=reference_pred,
+                    y_proba_train=reference_proba,
+                    y_pred_test=test_pred,
+                    y_proba_test=test_proba,
+                    **shared_args
+                )
+                try:
+                    if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
+                        value = check_instance.run(test_dataset, **single_dataset_args)
+                    elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
+                        value = check_instance.run(**train_test_args)
+                    elif isinstance(check_instance, Suite):
+                        if reference_dataset is None:
+                            value = check_instance.run(test_dataset, **single_dataset_args)
+                        else:
+                            value = check_instance.run(**train_test_args, run_single_dataset='Test')
+                    else:
+                        raise ValueError(f'incompatible check type {type(check_instance)}')
+                except errors.NotEnoughSamplesError:
+                    result[model_version_id].append({
+                        'index': window_args["index"],
+                        'start': window_args["start"],
+                        'end': window_args["end"],
+                        'result': None
+                    })
+                except Exception as e:
+                    result[model_version_id].append({
+                        'index': window_args["index"],
+                        'start': window_args["start"],
+                        'end': window_args["end"],
+                        'result': None
+                    })
+                    # TODO: send error to sentry, needs to be done in the ee sub-package
+                    error_message = (
+                        str(e)
+                        if not (msg := getattr(e, 'message', None))
+                        else msg
+                    )
+                    logging.getLogger('monitor_run_logger').exception(
+                        'For model version(id=%s) check(%s) got exception: %s',
+                        model_version_id,
+                        check_instance.name,
+                        error_message
+                    )
+                else:
+                    result[model_version_id].append({
+                        'index': window_args["index"],
+                        'start': window_args["start"],
+                        'end': window_args["end"],
+                        'result': value
+                    })
+    
+        return 1
+
+
 async def run_check_per_window_in_range(
         check_id: int,
         session: AsyncSession,
@@ -277,13 +604,19 @@ async def run_check_per_window_in_range(
         A dictionary containing the output of the check and the time labels.
     """
     # get the relevant objects from the db
-    check: Check = await fetch_or_404(session, Check, id=check_id,
-                                      options=joinedload(Check.model).load_only(Model.timezone))
+    check = await fetch_or_404(
+        session, 
+        Check,
+        id=check_id,
+        options=joinedload(Check.model).load_only(Model.timezone)
+    )
+    
     all_windows = monitor_options.calculate_windows(check.model.timezone)[-31:]
     frequency = monitor_options.frequency
 
     assert frequency is not None
     aggregation_window = frequency.to_pendulum_duration() * monitor_options.aggregation_window
+    
     model, model_versions = await get_model_versions_for_time_range(
         session,
         check.model_id,
@@ -294,7 +627,7 @@ async def run_check_per_window_in_range(
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
-    top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
+    top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
     model_columns = list(model_versions[0].model_columns.keys())
     columns = top_feat + model_columns
 
@@ -340,12 +673,14 @@ async def run_check_per_window_in_range(
         model_versions_data[model_version.id] = {"reference": reference, "windows": test_info}
 
     # get result from active sessions and run the check per each model version
-    check_results = await get_results_for_model_versions_per_window(model_versions_data,
-                                                                    model_versions,
-                                                                    model,
-                                                                    check,
-                                                                    monitor_options.additional_kwargs,
-                                                                    parallel=parallel)
+    check_results = await get_results_for_model_versions_per_window(
+        model_versions_data,
+        model_versions,
+        model,
+        check,
+        monitor_options.additional_kwargs,
+        parallel=parallel
+    )
 
     # Reduce the check results
     reduce_results = defaultdict(list)
@@ -462,13 +797,13 @@ async def run_check_window(
 def create_execution_data_query(
         model_version: ModelVersion,
         options: TableFiltersSchema,
-        period: pdl.Period = None,
-        columns: t.List[str] = None,
+        period: t.Optional['pdl.Period'] = None,
+        columns: t.Optional[t.List[str]] = None,
         n_samples: int = DEFAULT_N_SAMPLES,
         with_labels: bool = False,
         filter_labels_exist: bool = False,
         is_ref: bool = False
-) -> sqlalchemy.select:
+) -> 'sa.sql.Selectable':
     """Return sessions of the data load for the given model version.
 
     Parameters

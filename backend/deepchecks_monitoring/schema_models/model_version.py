@@ -188,13 +188,19 @@ class ModelVersion(Base, MetadataMixin):
             if field not in sample:
                 sample[field] = None
 
-    def is_filter_fit(self, data_filter: DataFilterList):
+    def is_filter_fit(self, data_filter: t.Optional[DataFilterList]):
         """Check if columns defined on filter exists on the model version."""
         if data_filter is None or len(data_filter.filters) == 0:
             return True
-        filter_columns = [f.column for f in data_filter.filters]
-        columns = (set(self.features_columns.keys()) | set(self.additional_data_columns.keys()) |
-                   set(self.model_columns.keys()))
+        filter_columns = {
+            f.column 
+            for f in data_filter.filters
+        }
+        columns = (
+            set(self.features_columns.keys()) 
+            | set(self.additional_data_columns.keys()) 
+            | set(self.model_columns.keys())
+        )
         return columns.issuperset(filter_columns)
 
     def is_in_range(self, start_date, end_date):
