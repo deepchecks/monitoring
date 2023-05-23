@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { MemberSchema } from 'api/generated';
 
@@ -10,11 +10,12 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
+import { useTableSearchfield } from 'helpers/hooks/useTableSearchfield';
 import { MembersActionDialogOptions } from '../Members.type';
 import { constants } from '../members.constants';
 
 interface MembersHeaderProps {
-  organizationMembers: MemberSchema[];
+  initialMembersList: MemberSchema[];
   setMembersList: (value: React.SetStateAction<MemberSchema[]>) => void;
   handleOpenActionDialog: (action: MembersActionDialogOptions, member?: MemberSchema | null) => void;
   actionButtonsDisabled: boolean;
@@ -23,26 +24,16 @@ interface MembersHeaderProps {
 const { title, assignModels, removeMembers, inviteMembers } = constants.header;
 
 export const MembersHeader = ({
-  organizationMembers,
+  initialMembersList,
   setMembersList,
   handleOpenActionDialog,
   actionButtonsDisabled
 }: MembersHeaderProps) => {
-  const [searchFieldValue, setSearchFieldValue] = useState('');
-
-  const handleSearchFieldChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
-
-    setSearchFieldValue(value);
-    setMembersList(
-      organizationMembers.filter(member => member.full_name?.toLowerCase().includes(value.trim().toLowerCase()))
-    );
-  };
-
-  const resetSearchField = () => {
-    setSearchFieldValue('');
-    setMembersList(organizationMembers);
-  };
+  const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useTableSearchfield<MemberSchema>(
+    initialMembersList,
+    setMembersList,
+    'full_name'
+  );
 
   const handleInviteMember = () => handleOpenActionDialog(MembersActionDialogOptions.invite);
 

@@ -55,7 +55,7 @@ const Members = () => {
   return (
     <>
       <MembersHeader
-        organizationMembers={sortedOrganizationMembers}
+        initialMembersList={sortedOrganizationMembers}
         setMembersList={setMembersList}
         handleOpenActionDialog={handleOpenActionDialog}
         actionButtonsDisabled={!selectedMembers.length}

@@ -9,7 +9,7 @@ import Paper from '@mui/material/Paper';
 import { MembersTableHead } from './MembersTableHead';
 import { MembersTableRow } from './MembersTableRow';
 
-import { StyledTableContainer } from './MembersTable.style';
+import { StyledTableContainer } from '../../../WorkspaceSettings.styles';
 
 import { MembersActionDialogOptions } from '../../Members.type';
 import { constants } from '../../members.constants';
@@ -55,7 +55,7 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
   const removeMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.remove, member);
 
   return (
-    <StyledTableContainer component={Paper}>
+    <StyledTableContainer component={Paper} sx={{ height: 'calc(100vh - 446px)' }}>
       <Table stickyHeader sx={{ minWidth: 650 }} aria-label={constants.table.ariaLabel}>
         <MembersTableHead
           numSelected={selected.length}

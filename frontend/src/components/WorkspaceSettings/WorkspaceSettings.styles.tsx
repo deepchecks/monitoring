@@ -6,7 +6,6 @@ import TableRow from '@mui/material/TableRow';
 
 export const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   boxShadow: 'none',
-  height: 'calc(100vh - 446px)',
   backgroundColor: theme.palette.grey[100],
   borderRadius: 0,
   marginBottom: '50px',
@@ -51,8 +50,7 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => ({
     padding: '9px 16px'
   },
 
-  backgroundColor: theme.palette.common.white,
-  cursor: 'pointer'
+  backgroundColor: theme.palette.common.white
 }));
 
 export const StyledIconButton = styled(IconButton)(({ theme }) => ({

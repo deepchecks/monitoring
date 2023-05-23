@@ -9,7 +9,7 @@ import { Checkbox, TableRowProps } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
-import { StyledTableRow, StyledTableCell, StyledIconButton } from './MembersTable.style';
+import { StyledTableRow, StyledTableCell, StyledIconButton } from '../../../WorkspaceSettings.styles';
 
 import { constants } from '../../members.constants';
 
@@ -44,7 +44,7 @@ export const MembersTableRow = ({
   };
 
   return (
-    <StyledTableRow key={id} role="checkbox" hover {...otherProps}>
+    <StyledTableRow key={id} role="checkbox" sx={{ cursor: 'pointer' }} hover {...otherProps}>
       <StyledTableCell padding="checkbox">
         <Checkbox checked={selected} />
       </StyledTableCell>
