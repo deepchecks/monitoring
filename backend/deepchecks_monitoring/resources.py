@@ -308,7 +308,7 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._oauth_client is None:
             try:
                 url = f"{self.settings.oauth_url}/.well-known/openid-configuration"
-                openid_configuration = httpx.get(url).json()
+                openid_configuration = httpx.get(url, verify=False).json()
                 self._oauth_client = OAuth()
                 self._oauth_client.register(
                     name="auth0",
