@@ -82,7 +82,7 @@ export function ConnectSlack() {
         height: '170px'
       }}
     >
-      <Box maxWidth={620}>
+      <Box>
         <Stack spacing="16px" pt="10px" marginBottom="20px">
           <StyledText text={constants.connect.slack.title} type="h1" color="white" />
           <StyledText text={constants.connect.slack.description} type="h3" color="white" />
@@ -93,7 +93,7 @@ export function ConnectSlack() {
           <StyledButton onClick={connectSlack} label="Connect" />
         )}
       </Box>
-      <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="24px 0" />
+      <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="auto" />
     </Box>
   );
 }

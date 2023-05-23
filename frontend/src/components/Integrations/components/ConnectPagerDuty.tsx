@@ -21,14 +21,14 @@ const ConnectPagerDuty = () => {
         height: '170px'
       }}
     >
-      <Box maxWidth={620}>
+      <Box>
         <Stack spacing="16px" pt="10px" marginBottom="20px">
           <StyledText text={constants.connect.pagerDuty.title} type="h1" color="white" />
           <StyledText text={constants.connect.pagerDuty.description} type="h3" color="white" />
         </Stack>
         <StyledButton onClick={() => ''} label="Uninstall" color="inherit" />
       </Box>
-      <StyledImage alt="pagerDuty" src={pagerDuty} width="100px" height="100px" margin="24px 0" />
+      <StyledImage alt="pagerDuty" src={pagerDuty} width="100px" height="100px" margin="auto" />
     </Box>
   );
 };
