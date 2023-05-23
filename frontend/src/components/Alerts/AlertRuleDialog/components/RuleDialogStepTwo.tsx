@@ -2,7 +2,9 @@ import React, { useContext, useMemo, useState, useImperativeHandle, forwardRef, 
 
 import { Frequency, MonitorCheckConfSchema } from 'api/generated';
 
-import { Box, Checkbox, FormControlLabel, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material';
+import { Box, Checkbox, FormControlLabel, MenuItem, Stack } from '@mui/material';
+import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
+import RemoveCircleRoundedIcon from '@mui/icons-material/RemoveCircleRounded';
 
 import useModels from 'helpers/hooks/useModels';
 import { SelectValues } from 'helpers/types';
@@ -13,16 +15,15 @@ import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/u
 import { SelectCheck } from 'components/Select/SelectCheck';
 import { MarkedSelect } from 'components/MarkedSelect';
 import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
-import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
 import { SelectColumn } from 'components/Select/SelectColumn';
+import { StyledText } from 'components/lib';
 
 import { StyledContentContainer } from '../AlertRuleDialog.styles';
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 import { constants } from '../alertRuleDialog.constants';
 
 const {
-  aggregationPlaceholder,
-  frequency: { tooltipTitle: frequencyTooltipTitle, label: frequencyLabel },
+  frequency: { label: frequencyLabel },
   checkBoxLabel
 } = constants.stepTwo;
 
@@ -98,7 +99,6 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
     setNextButtonDisabled(!model || !check || !frequency || !aggregationWindow || !isValidConfig);
   }, [model, check, frequency, aggregationWindow, isValidConfig]);
 
-  const aggregationWindowErr = aggregationWindow > 30;
   const aggregationWindowSuffix = `${FrequencyNumberMap[frequency as FrequencyNumberType['type']]}${
     aggregationWindow > 1 ? 'S' : ''
   }`;
@@ -137,40 +137,32 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
           disabled={!!alertRule.id || !model}
           size="medium"
         />
-        <Box display="grid" gridTemplateColumns="70% auto" gap="24px">
-          <TooltipInputWrapper title={frequencyTooltipTitle}>
-            <MarkedSelect
-              label={frequencyLabel}
-              value={frequency}
-              onChange={event => setFrequency(event.target.value as number)}
-              clearValue={() => {
-                setFrequency(freqTimeWindow[0].value);
-                setAggregationWindow(1);
-              }}
-              fullWidth
-              size="medium"
-            >
-              {freqTimeWindow.map(({ label, value }, index) => (
-                <MenuItem key={value + index} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </MarkedSelect>
-          </TooltipInputWrapper>
-          <OutlinedInput
-            sx={{ '@media (max-width: 1536px)': { height: '36px' } }}
-            placeholder={aggregationPlaceholder}
-            size="medium"
-            value={aggregationWindow}
-            onChange={event => setAggregationWindow(Number(event.target.value))}
-            endAdornment={aggregationWindowSuffix}
-            inputProps={{ min: 0, max: 30 }}
-            error={aggregationWindowErr}
-            type="number"
+        <Box display="grid" gridTemplateColumns="70% auto" gap="24px" alignItems="center">
+          <MarkedSelect
+            label={frequencyLabel}
+            value={frequency}
+            onChange={event => setFrequency(event.target.value as number)}
             fullWidth
-            required
-          />
-          {aggregationWindowErr && <Typography color="red">aggregation window max value is 30</Typography>}
+            size="medium"
+          >
+            {freqTimeWindow.map(({ label, value }, index) => (
+              <MenuItem key={value + index} value={value}>
+                {label}
+              </MenuItem>
+            ))}
+          </MarkedSelect>
+          <Box textAlign="center">
+            <StyledText text="Aggregation Window" type="tiny" marginBottom="4px" color="gray" />
+            <Box display="inline-flex" gap="16px">
+              <RemoveCircleRoundedIcon
+                onClick={() => aggregationWindow > 1 && setAggregationWindow(aggregationWindow - 1)}
+              />
+              <StyledText text={`${aggregationWindow} ${aggregationWindowSuffix}`} />
+              <AddCircleRoundedIcon
+                onClick={() => aggregationWindow < 30 && setAggregationWindow(aggregationWindow + 1)}
+              />
+            </Box>
+          </Box>
         </Box>
         <SelectColumn
           model={model}
