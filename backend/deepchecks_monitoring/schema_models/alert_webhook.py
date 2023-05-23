@@ -3,6 +3,7 @@ import enum
 import logging
 import re
 import typing as t
+from typing_extensions import Literal
 from datetime import datetime, timezone
 
 import httpx
@@ -308,7 +309,7 @@ class HttpsUrl(AnyUrl):
 class PagerDutyWebhookProperties(BaseModel):
     """PagerDuty service webhook initialization properties."""
 
-    kind: t.Literal[WebhookKind.PAGER_DUTY] = WebhookKind.PAGER_DUTY
+    kind: Literal[WebhookKind.PAGER_DUTY] = WebhookKind.PAGER_DUTY
     http_url: HttpsUrl = "https://events.pagerduty.com/v2/enqueue"
     name: str
     description: str
@@ -370,7 +371,7 @@ class PagerDutyWebhookProperties(BaseModel):
 class StandardWebhookProperties(BaseModel):
     """Standard webhook initialization properties."""
 
-    kind: t.Literal[WebhookKind.STANDARD] = WebhookKind.STANDARD
+    kind: Literal[WebhookKind.STANDARD] = WebhookKind.STANDARD
     name: str
     description: str = ""
     http_url: HttpsUrl
