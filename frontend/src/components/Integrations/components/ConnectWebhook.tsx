@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Box, Stack } from '@mui/material';
 
@@ -7,8 +7,14 @@ import { StyledButton, StyledImage, StyledText } from 'components/lib';
 import webhook from '../../../assets/integrations/webhook.svg';
 
 import { constants } from '../integrations.constants';
+import WebhookDialog from './WebhookDialog';
 
 const ConnectWebhook = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleOpenDialog = () => setIsDialogOpen(true);
+  const handleCloseDialog = () => setIsDialogOpen(false);
+
   return (
     <Box
       sx={{
@@ -26,9 +32,10 @@ const ConnectWebhook = () => {
           <StyledText text={constants.connect.webhook.title} type="h1" color="white" />
           <StyledText text={constants.connect.webhook.description} type="h3" color="white" />
         </Stack>
-        <StyledButton onClick={() => ''} label="Uninstall" color="inherit" />
+        <StyledButton onClick={handleOpenDialog} label={constants.connect.webhook.buttonLabel} color="inherit" />
       </Box>
       <StyledImage alt="webhook" src={webhook} width="100px" height="100px" margin="auto" />
+      <WebhookDialog open={isDialogOpen} handleClose={handleCloseDialog} />
     </Box>
   );
 };
