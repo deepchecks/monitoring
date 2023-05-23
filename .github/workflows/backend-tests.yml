@@ -32,7 +32,7 @@ jobs:
     if: "!github.event.pull_request.draft"
     strategy:
       matrix:
-        python-version: ["3.12.0b1"]
+        python-version: [3.12-dev"]
 
     steps:
       - uses: actions/checkout@v3
