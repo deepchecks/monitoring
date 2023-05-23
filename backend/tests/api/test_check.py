@@ -1301,3 +1301,85 @@ def test_run_reference(
     result = t.cast(Payload, result)
 
     assert result == {"v1": {"Accuracy": 1.0, "Precision - Macro Average": 1.0, "Recall - Macro Average": 1.0}}
+
+
+def test_run_lookback_no_model_version_fit(
+    test_api: TestAPI,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+    classification_model: Payload,
+):
+    _, start_time, end_time = upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
+    )
+
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    # single dataset check
+    result = test_api.execute_check_for_range(
+        check_id=classification_model_check["id"],
+        options={
+            "start_time": start_time,
+            "end_time": end_time,
+            "filter": {
+                "filters": [
+                    {"column": "not-exists", "operator": "greater_than", "value": 12},
+                ]
+            }
+        }
+    )
+
+    result = t.cast(Payload, result)
+    assert len(result["output"]) == 0
+
+
+def test_run_lookback_some_model_version_not_fit(
+    test_api: TestAPI,
+    classification_model_check: Payload,
+    classification_model_version: Payload,
+    classification_model: Payload,
+):
+    _, start_time, end_time = upload_classification_data(
+        api=test_api,
+        model_version_id=classification_model_version["id"],
+        model_id=classification_model["id"]
+    )
+
+    # create new version with different features
+    v2 = test_api.create_model_version(
+        model_id=classification_model["id"],
+        model_version={
+            "name": "v2",
+            "features": {"foo": "numeric"},
+            "additional_data": {},
+            "classes": ["0", "1", "2"]
+        }
+    )
+    upload_classification_data(
+        api=test_api,
+        model_version_id=v2["id"],
+        model_id=classification_model["id"]
+    )
+
+    start_time = start_time.isoformat()
+    end_time = end_time.add(hours=1).isoformat()
+
+    # single dataset check
+    result = test_api.execute_check_for_range(
+        check_id=classification_model_check["id"],
+        options={
+            "start_time": start_time,
+            "end_time": end_time,
+            "filter": {
+                "filters": [
+                    {"column": "a", "operator": "greater_than", "value": 12},
+                ]
+            }
+        }
+    )
+
+    result = t.cast(Payload, result)
+    assert set(result["output"].keys()) == {"v1"}

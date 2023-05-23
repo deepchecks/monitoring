@@ -92,7 +92,7 @@ const SelectColumnComponent = ({
         ) : (
           numericValue && (
             <RangePicker
-              sx={{ width: '90%', margin: '30px auto 0' }}
+              sx={{ width: '90%', margin: '16px auto 0', ' .css-3ikqqr-MuiStack-root': { display: 'none' } }}
               min={columns[column].stats.min || 0}
               max={columns[column].stats.max || 0}
               numericValue={numericValue}

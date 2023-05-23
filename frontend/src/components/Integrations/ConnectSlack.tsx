@@ -99,11 +99,7 @@ export function ConnectSlack() {
       <Box maxWidth={620}>
         <Stack spacing="16px" pt="10px">
           <StyledText text="Slack" type="h1" />
-          <StyledText
-            text="Get DeepChecks alerts and communications via slack integrations. Get DeepChecks alerts and communications
-            via slack integrations."
-            type="h3"
-          />
+          <StyledText text="Get DeepChecks alerts and communications via slack integrations." type="h3" />
         </Stack>
         {slackConnect?.is_slack_connected ? (
           <StyledButton onClick={removeSlack} label="Uninstall" margin="24px 0 0" />
