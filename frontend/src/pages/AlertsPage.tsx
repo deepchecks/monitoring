@@ -128,6 +128,11 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     handleSetParams('alertRuleId');
   };
 
+  const handleResolveAll = () => {
+    onResolve(resolveAlertRule);
+    window.location.reload();
+  };
+
   return (
     <>
       <AlertsHeader resolved={resolved ? 1 : 0} />
@@ -178,7 +183,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         title="Resolve All"
         closeDialog={() => setResolveAlertRule(null)}
         submitButtonLabel="Yes, continue"
-        submitButtonAction={() => onResolve(resolveAlertRule)}
+        submitButtonAction={handleResolveAll}
         cancelButtonLabel="No, cancel"
         alertTypeButtons={false}
         messageStart="You are about to resolve "
