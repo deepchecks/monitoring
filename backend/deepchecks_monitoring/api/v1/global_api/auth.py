@@ -55,7 +55,7 @@ async def auth0_callback(
         token = await auth0_client.authorize_access_token(request)
     except InvalidClaimError:
         # In case of invalid claim error, we redirect to the login page
-        redirect = request.url_for('login/auth0')
+        redirect = request.url_for('auth0_login')
         return RedirectResponse(redirect)
     except MismatchingStateError as error:
         raise BadRequest(error.description) from error
