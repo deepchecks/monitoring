@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
-
 import {
   AlertRuleConfigSchema,
   GetAlertRulesApiV1AlertRulesGetParams,
@@ -12,17 +10,17 @@ import {
 import { Box, styled } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
-import HeaderLayout from 'components/HeaderLayout';
 import { AlertRuleConfigItem } from 'components/Alerts/AlertRuleConfig/AlertRuleConfigItem';
 import { Loader } from 'components/base/Loader/Loader';
-import { FiltersSort } from 'components/FiltersSort/FiltersSort';
-import NoResults from 'components/NoResults';
 import { AlertRuleDialog } from 'components/Alerts/AlertRuleDialog/AlertRuleDialog';
 import { AlertRuleDialogProvider } from 'components/Alerts/AlertRuleDialog/AlertRuleDialogContext';
 import { DeleteAlertRule } from 'components/Alerts/AlertRuleConfig/components/DeleteAlertRule';
-import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
+import { StyledButton, StyledText, StyledContainer } from 'components/lib';
+import NoResults from 'components/NoResults';
 
 import { reportEvent } from 'helpers/services/mixPanel';
+import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
+import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 
 export const AlertRules = () => {
   const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
@@ -65,43 +63,33 @@ export const AlertRules = () => {
   };
 
   return (
-    <Box>
-      <HeaderLayout>
-        <MUIBaseButton
-          sx={{ height: '40px' }}
-          disableElevation
-          startIcon={<AddCircleOutlineIcon />}
-          onClick={() => onDialogOpen()}
-        >
-          New Alert Rule
-        </MUIBaseButton>
-      </HeaderLayout>
-      <StyledContainer>
-        <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
-        <div>
-          {isAlertRulesLoading ? (
-            <Loader sx={{ margin: '20vh auto' }} />
-          ) : alertRules.length !== 0 ? (
-            <StyledAlertRulesContainer>
-              {alertRules.map(alertRule => (
-                <AlertRuleConfigItem
-                  key={alertRule.id}
-                  onEdit={() => onDialogOpen(alertRule)}
-                  alertRule={alertRule}
-                  onDelete={() => openDeleteAlertRuleDialog(alertRule)}
-                />
-              ))}
-            </StyledAlertRulesContainer>
-          ) : (
-            <NoResults margin="20vh auto" handleReset={() => resetAlertFilters(setAlertFilters)} />
-          )}
-        </div>
+    <Box margin="24px 0">
+      <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
+      <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="16px 0">
+        <StyledText text="Alert Rules" type="h1" />
+        <StyledButton startIcon={<AddCircleOutlineIcon />} onClick={() => onDialogOpen()} label="Rule" />
       </StyledContainer>
-
+      <Box>
+        {isAlertRulesLoading ? (
+          <Loader sx={{ margin: '20vh auto' }} />
+        ) : alertRules.length !== 0 ? (
+          <StyledAlertRulesContainer>
+            {alertRules.map(alertRule => (
+              <AlertRuleConfigItem
+                key={alertRule.id}
+                onEdit={() => onDialogOpen(alertRule)}
+                alertRule={alertRule}
+                onDelete={() => openDeleteAlertRuleDialog(alertRule)}
+              />
+            ))}
+          </StyledAlertRulesContainer>
+        ) : (
+          <NoResults margin="20vh auto" handleReset={() => resetAlertFilters(setAlertFilters)} />
+        )}
+      </Box>
       <AlertRuleDialogProvider>
         <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
       </AlertRuleDialogProvider>
-
       <DeleteAlertRule
         alertRule={currentAlertRule}
         open={isDeleteDialogOpen}
@@ -112,16 +100,10 @@ export const AlertRules = () => {
   );
 };
 
-const StyledContainer = styled(Box)({
-  padding: '40px 0 ',
-  width: '100%'
-});
-
 const StyledAlertRulesContainer = styled(Box)({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
   gap: '20px',
-  marginTop: '40px',
   padding: 0
 });
 

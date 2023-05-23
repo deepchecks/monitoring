@@ -3,7 +3,6 @@ import { ReactComponent as ArrowDropDown } from './arrowDropDown.svg';
 import { ReactComponent as Calendar } from './calendar.svg';
 import { ReactComponent as CheckboxDefault } from './checkboxDefault.svg';
 import { ReactComponent as CheckboxSelected } from './checkboxSelected.svg';
-import { ReactComponent as Checkmark } from './checkmark.svg';
 import { ReactComponent as Clear } from './clear.svg';
 import { ReactComponent as CloseIcon } from './close.svg';
 import { ReactComponent as CollapseArrowLeft } from './collapseArrowLeft.svg';
@@ -26,7 +25,6 @@ import { ReactComponent as MenuVertical } from './menuVertical.svg';
 import { ReactComponent as NLPModel } from './NLPModel.svg';
 import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as PauseIcon } from './pause.svg';
-import { ReactComponent as PencilDrawing } from './pencilDrawing.svg';
 import { ReactComponent as PlusIcon } from './plus.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
 import { ReactComponent as RightArrow } from './right-arrow.svg';
@@ -43,7 +41,6 @@ import { ReactComponent as RedWarningIcon } from './red-warning.svg';
 import { ReactComponent as Notebook } from './notebook.svg';
 import { ReactComponent as Checks } from './checks.svg';
 import { ReactComponent as Research } from './research.svg';
-import { ReactComponent as Share } from './share.svg';
 import { ReactComponent as Link } from './Link.svg';
 import { ReactComponent as MarkedMail } from './markedMail.svg';
 import { ReactComponent as ViewDetails } from './viewDetails.svg';
@@ -51,7 +48,6 @@ import { ReactComponent as HighPriority } from './highPriority.svg';
 import { ReactComponent as Check } from './check.svg';
 import { ReactComponent as Download } from './download.svg';
 import { ReactComponent as GraphReport } from './graphReport.svg';
-import { ReactComponent as Sync } from './sync.svg';
 import { ReactComponent as Rotate } from './rotate.svg';
 import { ReactComponent as NativePlus } from './nativePlus.svg';
 import { ReactComponent as Bell } from './bell.svg';
@@ -67,7 +63,6 @@ export {
   Calendar,
   CheckboxDefault,
   CheckboxSelected,
-  Checkmark,
   Clear,
   CloseIcon,
   CollapseArrowLeft,
@@ -90,7 +85,6 @@ export {
   SearchIcon,
   Slack,
   Sort,
-  PencilDrawing,
   UserInvite,
   ExpandIcon,
   PauseIcon,
@@ -107,7 +101,6 @@ export {
   Notebook,
   Checks,
   Research,
-  Share,
   Link,
   MarkedMail,
   ViewDetails,
@@ -115,7 +108,6 @@ export {
   Check,
   Download,
   GraphReport,
-  Sync,
   Rotate,
   NativePlus,
   Bell,

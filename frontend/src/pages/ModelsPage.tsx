@@ -77,6 +77,7 @@ export const ModelsPage = () => {
   const [sort, setSort] = useState<sortOptionsVariants | ''>('');
 
   const [error, setError] = useState<string>('');
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     reportEvent(events.modelsPage.modelsPageView);
@@ -155,13 +156,20 @@ export const ModelsPage = () => {
 
   const handleDeleteModel = async () => {
     if (modelIdToDelete) {
-      reportEvent(events.modelsPage.clickedDeleteModel);
-      refetchModels();
-      refetchAvailableModels();
-      handleModalClose();
+      setFetching(true);
 
       const res = await deleteModelApiV1ModelsModelIdDelete(modelIdToDelete);
-      setError((res as resError)?.error_message);
+
+      if ((res as resError)?.error_message) {
+        setError((res as resError)?.error_message);
+      } else {
+        await refetchModels();
+        await refetchAvailableModels();
+      }
+
+      reportEvent(events.modelsPage.clickedDeleteModel);
+      handleModalClose();
+      setFetching(false);
     }
   };
 
@@ -251,7 +259,7 @@ export const ModelsPage = () => {
           ) : filteredAndSortedModelsList.length !== 0 ? (
             <StyledModelsList>
               {filteredAndSortedModelsList.map(model => (
-                <ModelInfoItem key={model.id} model={model} onDelete={async () => handleOpenModal(model.id)} />
+                <ModelInfoItem key={model.id} model={model} onDelete={() => handleOpenModal(model.id)} />
               ))}
             </StyledModelsList>
           ) : (
@@ -265,6 +273,7 @@ export const ModelsPage = () => {
         title="Delete Model"
         submitButtonAction={handleDeleteModel}
         submitButtonLabel="Yes"
+        submitButtonDisabled={fetching}
         closeDialog={handleModalClose}
         messageStart="Are you sure you want to delete this model?"
       />

@@ -4,11 +4,12 @@ import duration from 'dayjs/plugin/duration';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
+import { Box, Typography, useTheme } from '@mui/material';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import { AlertRuleConfigSchema } from 'api/generated';
 
-import { Typography, useTheme } from '@mui/material';
-
-import { AlertCount } from './components/AlertCount';
 import { NoMaxWidthTooltip } from 'components/base/Tooltip';
 
 import {
@@ -25,12 +26,12 @@ import {
   StyledValue
 } from './AlertRuleConfigItem.style';
 
-import { DeleteIcon, PencilDrawing } from 'assets/icon/icon';
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import { FrequencyMap } from 'helpers/utils/frequency';
 import { truncateString } from 'helpers/utils/truncateString';
 
 import { constants } from './alertRuleConfig.constants';
+import { StyledSeverity } from 'components/lib';
 
 interface AlertRuleConfigItemProps {
   alertRule: AlertRuleConfigSchema;
@@ -66,16 +67,14 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
     total_alerts: totalAlerts,
     recent_alert: recentAlert,
     frequency: frequency,
-    name,
-    user
+    name
   } = alertRule;
 
-  const [headerColor, setHeaderColor] = useState(theme.palette.error.dark);
   const [isHovered, setIsHovered] = useState(false);
 
-  const checkFrequencyFormatted = dayjs.duration(FrequencyMap[frequency], 'seconds').humanize();
-
   const { operator, value } = alertRule.condition;
+  const checkFrequencyFormatted = dayjs.duration(FrequencyMap[frequency], 'seconds').humanize();
+  const headerColor = theme.palette.error.dark;
   const condition = `${OperatorsEnumMap[operator]} ${value}`;
   const alertName = name + ' ' + header.titleString;
   const alertCondition = checkName + ' ' + condition;
@@ -86,21 +85,18 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
   return (
     <StyledContainer onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} maxWidth={'450px'}>
       <StyledHeaderContainer>
-        {severity && <AlertCount severity={severity} setColor={setHeaderColor} />}
-        <StyledHeader color={headerColor} isHovered={isHovered}>
+        {severity && (
+          <Box width="auto" margin="4px">
+            <StyledSeverity severity={severity} hideInfo />
+          </Box>
+        )}
+        <StyledHeader color={headerColor}>
           {alertName.length > MAX_ALERT_RULE_NAME_LENGTH ? (
             <NoMaxWidthTooltip title={alertName} placement="top">
               <StyledAlertName>{truncateString(alertName, MAX_ALERT_RULE_NAME_LENGTH)}</StyledAlertName>
             </NoMaxWidthTooltip>
           ) : (
             <StyledAlertName>{alertName}</StyledAlertName>
-          )}
-          {user && (
-            <Typography fontSize={15}>
-              {user.created_at
-                ? header.createdByDate + dayjs(user.created_at).format('L')
-                : header.createdBy + user.full_name || '-'}
-            </Typography>
           )}
         </StyledHeader>
       </StyledHeaderContainer>
@@ -136,22 +132,12 @@ export const AlertRuleConfigItem = ({ alertRule, onEdit, onDelete }: AlertRuleCo
       {isHovered && (
         <StyledHoverContainer>
           <StyledButton variant="text" onClick={onEdit}>
-            <>
-              <PencilDrawing />
-              <StyledButtonText>{editButton}</StyledButtonText>
-            </>
+            <ModeEditIcon />
+            <StyledButtonText>{editButton}</StyledButtonText>
           </StyledButton>
-          <StyledButton
-            sx={{
-              marginRight: '0.3em'
-            }}
-            variant="text"
-            onClick={onDelete}
-          >
-            <>
-              <DeleteIcon />
-              <StyledButtonText>{deleteButton}</StyledButtonText>
-            </>
+          <StyledButton variant="text" onClick={onDelete}>
+            <DeleteIcon />
+            <StyledButtonText>{deleteButton}</StyledButtonText>
           </StyledButton>
         </StyledHoverContainer>
       )}
