@@ -10,7 +10,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
-import { useTableSearchfield } from 'helpers/hooks/useTableSearchfield';
+import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import { MembersActionDialogOptions } from '../Members.type';
 import { constants } from '../members.constants';
 
@@ -29,7 +29,7 @@ export const MembersHeader = ({
   handleOpenActionDialog,
   actionButtonsDisabled
 }: MembersHeaderProps) => {
-  const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useTableSearchfield<MemberSchema>(
+  const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<MemberSchema>(
     initialMembersList,
     setMembersList,
     'full_name'

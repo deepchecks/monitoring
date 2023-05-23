@@ -4,7 +4,7 @@ import { ModelManagmentSchema } from 'api/generated';
 
 import { StyledInput } from 'components/lib';
 
-import { useTableSearchfield } from 'helpers/hooks/useTableSearchfield';
+import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import { constants } from '../modelsTab.constants';
 
 interface ModelsTabHeaderProps {
@@ -13,7 +13,7 @@ interface ModelsTabHeaderProps {
 }
 
 export const ModelsTabHeader = ({ initialModels, setModelsList }: ModelsTabHeaderProps) => {
-  const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useTableSearchfield<ModelManagmentSchema>(
+  const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<ModelManagmentSchema>(
     initialModels,
     setModelsList,
     'name'

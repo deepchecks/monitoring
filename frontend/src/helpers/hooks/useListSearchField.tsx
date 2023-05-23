@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export function useTableSearchfield<T>(
+export function useListSearchField<T>(
   initialList: T[],
   setList: React.Dispatch<React.SetStateAction<T[]>>,
   searchBy: keyof T
