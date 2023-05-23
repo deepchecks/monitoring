@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
+import { Box, List, ListItem, styled } from '@mui/material';
+
 import {
   AlertRuleInfoSchema,
   useGetAlertRulesApiV1AlertRulesGet,
@@ -9,13 +11,6 @@ import {
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
-import useModels from '../helpers/hooks/useModels';
-import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
-import { handleSetParams, getParams } from 'helpers/utils/getParams';
-import { events, reportEvent } from 'helpers/services/mixPanel';
-
-import { Box, List, ListItem, styled } from '@mui/material';
-
 import { AlertsDrawer } from 'components/Alerts/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import { AlertsHeader } from 'components/Alerts/AlertsHeader';
@@ -24,6 +19,11 @@ import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
 import NoResults from 'components/NoResults';
 import { StyledDeletionDialog } from 'components/lib';
+
+import useModels from '../helpers/hooks/useModels';
+import { events, reportEvent } from 'helpers/services/mixPanel';
+import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
+import { getParams, handleSetParams } from 'helpers/utils/getParams';
 
 const snackbarPosition = {
   vertical: 'bottom',

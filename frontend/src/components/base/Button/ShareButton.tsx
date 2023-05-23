@@ -1,15 +1,15 @@
 import React from 'react';
 
-import { Box, Button, Popover, Typography, useTheme, styled, Alert, Snackbar } from '@mui/material';
+import { Box, Button, Popover, Typography, styled, Alert, Snackbar } from '@mui/material';
+import ShareIcon from '@mui/icons-material/Share';
 
-import { Link, MarkedMail, Share } from 'assets/icon/icon';
+import { Link, MarkedMail } from 'assets/icon/icon';
 
 interface ShareButtonProps {
   onlyIcon?: boolean;
 }
 
 export const ShareButton = ({ onlyIcon = false }: ShareButtonProps) => {
-  const theme = useTheme();
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
   const [snackOpen, setSnackOpen] = React.useState<boolean>(false);
 
@@ -54,7 +54,7 @@ export const ShareButton = ({ onlyIcon = false }: ShareButtonProps) => {
           }
         })}
         variant="text"
-        startIcon={<Share fill={theme.palette.primary.main} />}
+        startIcon={<ShareIcon color="primary" />}
         onClick={handleClick}
       >
         {onlyIcon ? '' : 'Share'}

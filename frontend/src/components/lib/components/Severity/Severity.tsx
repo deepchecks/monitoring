@@ -10,9 +10,12 @@ import { Text } from '../Text/Text';
 export interface SeverityProps {
   severity?: 'low' | 'medium' | 'high' | 'critical';
   number?: number;
+  hideInfo?: boolean;
+  margin?: string;
+  width?: string;
 }
 
-export const Severity = ({ severity, number }: SeverityProps) => {
+export const Severity = ({ severity, number, hideInfo, margin = '0', width = 'auto' }: SeverityProps) => {
   const theme = useTheme();
 
   const purpleIcon = require('../../assets/severity/purple.svg').default;
@@ -57,9 +60,9 @@ export const Severity = ({ severity, number }: SeverityProps) => {
   };
 
   return (
-    <Container flexDirection="row" gap="0">
+    <Container flexDirection="row" gap="0" width={width} margin={margin}>
       <Image src={severityLevel().icon} alt={severityLevel().alt} width="36px" height="36px" />
-      {severity && (
+      {severity && !hideInfo && (
         <Container margin={'0'} gap={'0'} marginTop={'-12px'}>
           <Text text={number ? number.toString() : '#'} color={severityLevel().color} type="h2" fontWeight={900} />
           <Text text={severity} color={severityLevel().color} fontWeight={900} textTransform={'capitalize'} />
