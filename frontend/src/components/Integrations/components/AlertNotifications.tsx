@@ -1,4 +1,4 @@
-import React, { /* useEffect,*/ useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   AlertSeverity,
@@ -51,7 +51,11 @@ interface NotificationsMap {
   [NotificationDictionary.pager_duty]: { [key: number]: AlertSeverity };
 }
 
-type NotificationsOptions = NotificationDictionary.email | NotificationDictionary.slack;
+type NotificationsOptions =
+  | NotificationDictionary.email
+  | NotificationDictionary.slack
+  | NotificationDictionary.webhook
+  | NotificationDictionary.pager_duty;
 
 const icons = [
   { label: 'webhook', Icon: <StyledImage src={webhookIcon} /> },
@@ -89,7 +93,12 @@ const notificationsMap: NotificationsMap = {
   }
 };
 
-const notificationsItems = [NotificationDictionary.slack, NotificationDictionary.email] as const;
+const notificationsItems = [
+  NotificationDictionary.slack,
+  NotificationDictionary.email,
+  NotificationDictionary.webhook,
+  NotificationDictionary.pager_duty
+] as const;
 
 export function AlertNotifications() {
   const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
@@ -140,16 +149,16 @@ export function AlertNotifications() {
     reportEvent(events.notificationPage.changedNotification);
   };
 
-  /* useEffect(() => {
+  useEffect(() => {
     if (data) {
-      setNotifications({
-        [NotificationDictionary.email]: data[NotificationDictionary.email],
-        [NotificationDictionary.slack]: data[NotificationDictionary.slack],
-        [NotificationDictionary.slack]: data[NotificationDictionary.webhook],
-        [NotificationDictionary.slack]: data[NotificationDictionary.pager_duty]
-      });
+      /* setNotifications({
+        [NotificationDictionary.email]: data[NotificationDictionary?.email],
+        [NotificationDictionary.slack]: data[NotificationDictionary?.slack],
+        [NotificationDictionary.webhook]: data[NotificationDictionary?.webhook],
+        [NotificationDictionary.pager_duty]: data[NotificationDictionary?.pager_duty]
+      } as any);*/
     }
-  }, [data]);*/
+  }, [data]);
 
   if (isLoading)
     return (
