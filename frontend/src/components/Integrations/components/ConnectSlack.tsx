@@ -14,7 +14,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
 import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../lib';
 
-import slack from '../../../assets/integrations/slack.png';
+import slack from '../../../assets/integrations/slack.svg';
 
 interface App {
   id: number;

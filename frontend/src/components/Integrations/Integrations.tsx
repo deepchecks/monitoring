@@ -10,13 +10,15 @@ import { featuresList, PermissionControlWrapper } from 'helpers/permissionContro
 import ConnectPagerDuty from './components/ConnectPagerDuty';
 import ConnectWebhook from './components/ConnectWebhook';
 
+import { constants } from './integrations.constants';
+
 export const Integrations = () => {
   return (
     <Box padding="24px">
-      <Stack display="flex" flexDirection="row" gap="24px">
+      <Stack display="flex" flexDirection="row" gap="85px">
         <AlertNotifications />
         <Box display="flex" flexDirection="column" gap="16px">
-          <StyledText text="Add New Integrations" type="h1" marginBottom="16px" />
+          <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />
           <ConnectWebhook />
           <PermissionControlWrapper feature={featuresList.slack_enabled}>
             <ConnectSlack />

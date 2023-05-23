@@ -17,6 +17,8 @@ import { StyledText } from 'components/lib';
 
 import { Email, Slack } from '../../../assets/icon/icon';
 
+import { constants } from '../integrations.constants';
+
 export enum NotificationDictionary {
   email = 'email_notification_levels',
   slack = 'slack_notification_levels'
@@ -137,7 +139,7 @@ export function AlertNotifications() {
 
   return (
     <Box width="100%" maxWidth="900px">
-      <StyledText text="Integration" type="h1" marginBottom="36px" />
+      <StyledText text={constants.integration.title} type="h1" marginBottom="36px" />
       <Box
         sx={theme => ({
           display: 'flex',
