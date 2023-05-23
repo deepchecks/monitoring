@@ -4,7 +4,6 @@ flake8==4.0.1
 flake8-eradicate==1.2.1
 flake8-rst==0.8.0
 flake8-spellcheck==0.28.0
-httpx==0.23.0
 isort==5.10.1
 pydocstyle==6.1.1
 pyhamcrest==2.0.4
