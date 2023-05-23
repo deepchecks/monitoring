@@ -110,10 +110,10 @@ class CloudFeaturesControl(FeaturesControl):
         return True
 
     def _load_tier(self):
-        context = Context.builder(self.user.email).set('email', self.user.email)
+        context = Context.builder(self.user.email).set("email", self.user.email)
         if self.user.organization:
-            context.set('organization_id', self.user.organization.id)
-            context.set('tier', self.user.organization.tier)
+            context.set("organization_id", self.user.organization.id)
+            context.set("tier", self.user.organization.tier)
 
         ld_user = context.build()
         tier_conf = self.ld_client.variation("paid-features", ld_user, default={})
