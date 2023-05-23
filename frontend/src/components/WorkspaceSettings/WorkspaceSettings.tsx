@@ -32,7 +32,7 @@ const WorkspaceSettings = () => {
   useEffect(() => {
     setValue(!is_cloud ? 1 : 0);
   }, [is_cloud]);
-  
+
   if (user && !user.roles.includes(RoleEnum.owner)) {
     return isLoading ? <BillingPaidSkeleton /> : <NotAdminDialog />;
   }
