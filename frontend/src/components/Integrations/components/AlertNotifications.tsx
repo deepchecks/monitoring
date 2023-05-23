@@ -11,13 +11,11 @@ import { Box, Checkbox } from '@mui/material';
 import { Stack } from '@mui/system';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 
-import { Loader } from '../base/Loader/Loader';
-import { StyledButton, StyledText } from 'components/lib';
+import { Loader } from '../../base/Loader/Loader';
+import { StyledText } from 'components/lib';
 
-import { Email, Slack } from '../../assets/icon/icon';
-import connectSlackBG from '../../assets/bg/connectSlackBG.svg';
+import { Email, Slack } from '../../../assets/icon/icon';
 
 export enum NotificationDictionary {
   email = 'email_notification_levels',
@@ -139,13 +137,13 @@ export function AlertNotifications() {
 
   return (
     <Box width="100%" maxWidth="900px">
+      <StyledText text="Integration" type="h1" marginBottom="36px" />
       <Box
         sx={theme => ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '10px 16px',
-          backgroundColor: theme.palette.grey[200],
           color: theme.palette.text.primary,
           width: 'calc(100% - 12px)'
         })}
@@ -176,57 +174,44 @@ export function AlertNotifications() {
         </Stack>
       </Box>
       <Box>
-        {alertConfigurations.map((label, index) => (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '9px 16px',
-              margin: '10px 0',
-              ':last-of-type': {
-                marginBottom: 0
-              }
-            }}
-            key={index}
-          >
-            <StyledText text={label} type="bodyNormal" />
-            <Stack direction="row" spacing="40px">
-              {notificationsItems.map(notification => (
-                <Box padding="9px" key={notification}>
-                  <Checkbox
-                    size="small"
-                    disabled={notification === NotificationDictionary.slack && !data?.is_slack_connected}
-                    onChange={event => handleNotifications(event, notification, notificationsMap[notification][index])}
-                    checked={notifications[notification].includes(notificationsMap[notification][index])}
-                  />
-                </Box>
-              ))}
-            </Stack>
-          </Box>
-        ))}
-      </Box>
-      <PermissionControlWrapper feature={featuresList.slack_enabled}>
-        {!data?.is_slack_connected && (
-          <Box
-            sx={{
-              padding: '20px 30px',
-              background: `url(${connectSlackBG}) no-repeat right`,
-              backgroundColor: '#F1E9FE',
-              borderRadius: '16px',
-              boxShadow: `0 0 15px 5px lightgray`,
-              marginTop: '124px',
-              gap: '24px'
-            }}
-          >
-            <StyledText type="h2" text="Get notified on slack" />
-            <Box margin="10px 0 16px">
-              <StyledText type="bodyNormal" text="Get DeepChecks alerts and communications via slack integrations" />
+        {alertConfigurations.map((label, index) => {
+          const bg = index % 2 !== 0 ? 'transparent' : 'white';
+
+          return (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '9px 16px',
+                margin: '10px 0',
+                borderRadius: '10px',
+                backgroundColor: bg,
+                ':last-of-type': {
+                  marginBottom: 0
+                }
+              }}
+              key={index}
+            >
+              <StyledText text={label} type="bodyNormal" />
+              <Stack direction="row" spacing="40px">
+                {notificationsItems.map(notification => (
+                  <Box padding="9px" key={notification}>
+                    <Checkbox
+                      size="small"
+                      disabled={notification === NotificationDictionary.slack && !data?.is_slack_connected}
+                      onChange={event =>
+                        handleNotifications(event, notification, notificationsMap[notification][index])
+                      }
+                      checked={notifications[notification].includes(notificationsMap[notification][index])}
+                    />
+                  </Box>
+                ))}
+              </Stack>
             </Box>
-            <StyledButton label="Connect" onClick={linkToConnectSlack} />
-          </Box>
-        )}
-      </PermissionControlWrapper>
+          );
+        })}
+      </Box>
     </Box>
   );
 }

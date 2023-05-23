@@ -7,14 +7,14 @@ import {
   useUpdateOrganizationApiV1OrganizationPut
 } from 'api/generated';
 
-import { alpha, Box, Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { NotificationDictionary, NotificationsResponse } from '../Notifications/AlertNotifications';
-import { StyledButton, StyledImage, StyledLoader, StyledText } from '../lib';
+import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
+import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../lib';
 
-import slack from '../../assets/icon/slack.png';
+import slack from '../../../assets/integrations/slack.png';
 
 interface App {
   id: number;
@@ -71,35 +71,24 @@ export function ConnectSlack() {
   return (
     <Box
       sx={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '20px 20px 30px 40px',
+        background: '#4A164B',
+        borderRadius: '10px',
+        padding: '0 24px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'start',
         width: '100%',
-        maxWidth: '888px',
+        maxWidth: '500px',
         boxShadow: '0px 0px 25px 2px rgba(0, 0, 0, 0.09)',
         position: 'relative',
         overflow: 'hidden',
-        '::before': {
-          content: "''",
-          height: '100%',
-          width: 10,
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          background: `linear-gradient(${alpha('#36C5F0', 0.5)} 0%,
-          ${alpha('#2EB67D', 0.5)} 36%, 
-          ${alpha('#ECB22E', 0.5)} 67%, 
-          ${alpha('#E01E5A', 0.5)} 100%)`
-        }
+        height: '170px'
       }}
     >
       <Box maxWidth={620}>
         <Stack spacing="16px" pt="10px">
-          <StyledText text="Slack" type="h1" />
-          <StyledText text="Get DeepChecks alerts and communications via slack integrations." type="h3" />
+          <StyledText text="Get notified on Slack" type="h1" color="white" />
+          <StyledText text="Get DeepChecks alerts and communications via slack integrations." type="h3" color="white" />
         </Stack>
         {slackConnect?.is_slack_connected ? (
           <StyledButton onClick={removeSlack} label="Uninstall" margin="24px 0 0" />
@@ -107,7 +96,7 @@ export function ConnectSlack() {
           <StyledButton onClick={connectSlack} label="Connect" margin="24px 0 0" />
         )}
       </Box>
-      <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="25px" />
+      <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="24px 0" />
     </Box>
   );
 }
