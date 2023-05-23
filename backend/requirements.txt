@@ -17,7 +17,7 @@ uvloop==0.17.0
 nbformat>=5.4.0,<6
 deepchecks@git+https://github.com/deepchecks/deepchecks.git@main
 redis[hiredis]>=4.3.4
-pandas>=1.4.3,<1.5.0
+pandas>=2.0.0
 #deepchecks-metrics@git+https://${DEEPCHECKS_CI_TOKEN}@github.com/deepchecks/deepchecks-metrics.git@main
 launchdarkly-server-sdk>=8.0.0
 pyjwt[crypto]==2.4.0
