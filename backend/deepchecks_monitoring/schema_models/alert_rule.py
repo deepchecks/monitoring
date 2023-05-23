@@ -24,7 +24,6 @@ from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
     from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema
-    from deepchecks_monitoring.public_models.user import User
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.monitor import Monitor
 
@@ -60,29 +59,19 @@ class AlertRule(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    async def has_user_permissions(cls, session, id, user: 'User'):
+    def get_object_by_id(cls, id, user):
         from deepchecks_monitoring.schema_models.check import Check
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
         from deepchecks_monitoring.schema_models.monitor import Monitor
 
-        # obj = await session.scalar(sa.select(cls)
-        #                           .where(cls.id == id)
-        #                           .join(AlertRule.monitor)
-        #                           .join(Monitor.check)
-        #                           .join(Check.model)
-        #                           .join(Model.members)
-        #                           .where(sa.and_(ModelMember.user_id == user.id,
-        #                                          ModelMember.model_id == Check.model_id)))
-        # return obj is not None
-        return (sa.select(cls.id == id)
-                       .join(AlertRule.monitor)
-                       .join(Monitor.check)
-                       .join(Check.model)
-                       .join(Model.members)
-                       .where(sa.and_(ModelMember.user_id == user.id,
-                                      ModelMember.model_id == Check.model_id,
-                                      cls.id == id)))
+        return (sa.select(cls)
+                .join(AlertRule.monitor)
+                .join(Monitor.check)
+                .join(Check.model)
+                .join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == id))
 
     @classmethod
     async def get_alerts_per_rule(

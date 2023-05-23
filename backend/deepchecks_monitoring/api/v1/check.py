@@ -124,6 +124,7 @@ async def add_checks(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: ExtendedAsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
+        model: Model = Depends(Model.get_object),
 ) -> t.List[t.Dict[t.Any, t.Any]]:
     """Add a new check or checks to the model.
 

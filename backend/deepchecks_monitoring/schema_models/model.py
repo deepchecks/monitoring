@@ -108,13 +108,12 @@ class Model(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    async def has_user_permissions(cls, session, id, user):
+    def get_object_by_id(cls, id, user):
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
-        obj = await session.scalar(sa.select(cls)
-                                   .where(sa.and_(ModelMember.user_id == user.id,
-                                                  ModelMember.model_id == id)))
-        return obj is not None
+        return (sa.select(cls).join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == id))
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamps."""
@@ -181,7 +180,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
         return next_schedule
 
 
-class ModelNote(Base, MetadataMixin):
+class ModelNote(Base, MetadataMixin, PermissionMixin):
     """ORM Model to represent model notes."""
 
     __tablename__ = "model_notes"
@@ -199,3 +198,11 @@ class ModelNote(Base, MetadataMixin):
         "Model",
         back_populates="notes"
     )
+
+    @classmethod
+    def get_object_by_id(cls, id, user):
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+
+        return (sa.select(cls).join(ModelNote.model).join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == id))

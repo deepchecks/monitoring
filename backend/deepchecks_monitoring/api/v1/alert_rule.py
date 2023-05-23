@@ -13,7 +13,7 @@ from datetime import datetime
 
 from fastapi import Depends, Query, Response, status
 from pydantic import BaseModel
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import and_, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
@@ -21,6 +21,8 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse, exists_or_404, fetch_or_404
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
@@ -111,6 +113,8 @@ async def get_alert_rules(
             "alert-window:asc",
             "alert-window:desc"
         ]] = Query(default=[]),
+        monitor: Monitor = Depends(Monitor.get_object),
+        user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep
 ):
     """Return all the alert rules.
@@ -165,11 +169,12 @@ async def get_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
+        .join(Model.members)
         .join(alerts_info, alerts_info.c.alert_rule_id == AlertRule.id)
+        .where(ModelMember.user_id == user.id)
     )
 
-    if monitor_id is not None:
-        await exists_or_404(session, Monitor, id=monitor_id)
+    if monitor is not None:
         q = q.where(AlertRule.monitor_id == monitor_id)
 
     if models:
@@ -203,11 +208,10 @@ async def get_alert_rules(
 @router.get("/alert-rules/{alert_rule_id}", response_model=AlertRuleSchema, tags=[Tags.ALERTS])
 async def get_alert_rule(
         alert_rule_id: int,
-        session: AsyncSession = AsyncSessionDep
+        alert_rule: AlertRule = Depends(AlertRule.get_object)
 ):
     """Get alert by id."""
-    alert = await fetch_or_404(session, AlertRule, id=alert_rule_id)
-    return AlertRuleSchema.from_orm(alert)
+    return AlertRuleSchema.from_orm(alert_rule)
 
 
 @router.put("/alert-rules/{alert_rule_id}", tags=[Tags.ALERTS],
@@ -263,10 +267,10 @@ async def get_alerts_of_alert_rule(
 @router.post("/alert-rules/{alert_rule_id}/resolve-all", tags=[Tags.ALERTS])
 async def resolve_all_alerts_of_alert_rule(
         alert_rule_id: int,
+        alert_rule: AlertRule = Depends(AlertRule.get_object),
         session: AsyncSession = AsyncSessionDep
 ):
     """Resolve all alerts of alert rule."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     await session.execute(update(Alert).where(Alert.alert_rule_id == alert_rule_id).values({Alert.resolved: True}))
     return Response(status_code=status.HTTP_200_OK)
 
@@ -279,8 +283,8 @@ async def resolve_all_alerts_of_alert_rule(
 )
 async def reactivate_resolved_alerts(
         alert_rule_id: int,
+        alert_rule: AlertRule = Depends(AlertRule.get_object),
         session: AsyncSession = AsyncSessionDep
 ):
     """Reactivate all resolved alerts."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     await session.execute(update(Alert).where(Alert.alert_rule_id == alert_rule_id).values(resolved=False))

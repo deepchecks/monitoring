@@ -10,10 +10,11 @@
 """Module defining the ingestion error ORM model."""
 import typing as t
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
@@ -22,27 +23,40 @@ if t.TYPE_CHECKING:
 __all__ = ["IngestionError"]
 
 
-class IngestionError(Base):
+class IngestionError(Base, PermissionMixin):
     """ORM model for ingestion error."""
 
     __tablename__ = "ingestion_errors"
 
-    id = Column(Integer, primary_key=True)
-    created_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
+    id = sa.Column(sa.Integer, primary_key=True)
+    created_at = sa.Column(
+        sa.DateTime(timezone=True),
+        server_default=sa.func.now(),
         index=True,
     )
-    sample = Column(String)
-    sample_id = Column(String, nullable=True)
-    error = Column(String, index=True)
+    sample = sa.Column(sa.String)
+    sample_id = sa.Column(sa.String, nullable=True)
+    error = sa.Column(sa.String, index=True)
 
-    model_version_id = Column(
-        Integer,
-        ForeignKey("model_versions.id", ondelete="CASCADE", onupdate="RESTRICT"),
+    model_version_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("model_versions.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
     model_version: Mapped["ModelVersion"] = relationship(
         "ModelVersion",
         back_populates="ingestion_errors"
     )
+
+    @classmethod
+    def get_object_by_id(cls, id, user):
+        from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+        from deepchecks_monitoring.schema_models.model_version import ModelVersion
+
+        return (sa.select(cls)
+                .join(IngestionError.model_version)
+                .join(ModelVersion.model)
+                .join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == id))
