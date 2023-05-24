@@ -13,7 +13,7 @@ import time
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
-def set_user_and_token_from_state(info, state):
+def _fill_user_and_token_from_state(info, state):
     from deepchecks_monitoring.utils import auth  # pylint: disable=import-outside-toplevel
 
     if state and isinstance(access_token := state.get("access_token"), auth.UserAccessToken):
@@ -88,14 +88,14 @@ class LoggingMiddleware:
         # Any uncaught exception will be logged here
         except Exception:  # pylint: disable=broad-except
             end = time.time()
-            set_user_and_token_from_state(info, scope.get("state"))
+            _fill_user_and_token_from_state(info, scope.get("state"))
             info["duration"] = end - start
             self.logger.exception(info)
             # Raise back to allow Starlette to handle it
             raise
         else:
             end = time.time()
-            set_user_and_token_from_state(info, scope.get("state"))
+            _fill_user_and_token_from_state(info, scope.get("state"))
             info["duration"] = end - start
             info["status"] = response_status_code
             if response_status_code >= 500:
