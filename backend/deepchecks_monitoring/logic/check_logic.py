@@ -15,7 +15,9 @@ import pickle
 from collections import defaultdict
 from copy import deepcopy
 from numbers import Number
+import contextlib
 
+import ray
 import pendulum as pdl
 import sqlalchemy as sa
 import loky
@@ -281,7 +283,7 @@ class WindowExecutionArgs(t.TypedDict):
 async def run_check_per_window_in_range_v2(
     check_id: int,
     session: AsyncSession,
-    executor: t.Any,
+    actor_pool: t.Any,
     monitor_options: MonitorOptions,
     organization_id: int,
     monitor_id: t.Optional[int] = None,
@@ -386,87 +388,129 @@ async def run_check_per_window_in_range_v2(
                 "columns": columns,
             })
 
-    futures = []
+    # futures = []
     calculated_windows = defaultdict(list)
-    
-    for i in range(0, len(windows_to_calculate), n_of_windows_per_worker):
-        futures.append(executor.submit(
-            calculate_windows,
-            windows_to_calculate[i:i + n_of_windows_per_worker],
+
+    for it in actor_pool.map(
+        lambda a, v: a.calculate.remote(
+            v,
             check.config,
             monitor_options.additional_kwargs,
             top_feat,
             feat_imp,
             organization_id,
-            # database
-        ))
+        ),
+        [
+            windows_to_calculate[i:i + n_of_windows_per_worker]
+            for i in range(0, len(windows_to_calculate), n_of_windows_per_worker)
+        ]
+    ):
+        for k, v in it.items():
+            calculated_windows[k].extend(v)
 
-    for it in futures:
-        r = it.result()
+    
+    # for i in range(0, len(windows_to_calculate), n_of_windows_per_worker):
+    #     futures.append(executor.submit(
+    #         calculate_windows,
+    #         windows_to_calculate[i:i + n_of_windows_per_worker],
+    #         check.config,
+    #         monitor_options.additional_kwargs,
+    #         top_feat,
+    #         feat_imp,
+    #         organization_id,
+    #         # database
+    #     ))
+
+    # for it in futures:
+    #     r = it.result()
     #     for k, v in r.items():
     #         calculated_windows[k].extend(v)
 
-    # return cached_results, calculated_windows
+    return cached_results, calculated_windows
 
+@ray.remote
+class WindowsCalculator:
+    
+    def __init__(self, database_uri: str):
+        self.engine = sa.create_engine(database_uri)
 
-def calculate_windows(
-    windows_arguments: t.List[WindowExecutionArgs],
-    check_config: t.Any,
-    additional_check_kwargs: t.Any,
-    top_features: t.List[str],
-    feature_importance: pd.Series,
-    organization_id: int,
-    database: t.Optional[str] = None
-):
-    if database is None:
-        database_engine = getattr(loky, "_deepchecks_database_engine", None)
-        if database_engine is None:
-            raise RuntimeError(
-                "Database engine was not initialized, "
-                "worker process was not initialized"
-            )
-    else:
-        database_engine = sa.create_engine(database)
+    @contextlib.contextmanager
+    def _session(self, organization_id):
+        with Session(self.engine) as s:
+            org = t.cast(t.Optional[Organization], s.get(Organization, organization_id))
 
-    with Session(database_engine) as s:
-        org = t.cast(t.Optional[Organization], s.get(Organization, organization_id))
+            if org is None:
+                raise RuntimeError(f'Organization with id "{organization_id}" does not exist')
 
-        if org is None:
-            raise RuntimeError(f'Organization with id "{organization_id}" does not exist')
-        
-        s.execute(SessionParameter(
-            "search_path", 
-            value=t.cast(str, org.schema_name)
-        ))
+            s.execute(SessionParameter(
+                "search_path", 
+                value=t.cast(str, org.schema_name)
+            ))
+            try:
+                yield s
+            except Exception:
+                s.rollback()
+            finally:
+                s.close()
 
-        result = defaultdict(list)
-        windows_per_model_version: t.Dict[int, t.List[WindowExecutionArgs]] = defaultdict(list)
-        
-        for it in windows_arguments:
-            windows_per_model_version[it["model_version_id"]].append(it)
+    def calculate(
+        self,
+        windows_arguments: t.List[WindowExecutionArgs],
+        check_config: t.Any,
+        additional_check_kwargs: t.Any,
+        top_features: t.List[str],
+        feature_importance: pd.Series,
+        organization_id: int,
+    ):
+        with self._session(organization_id) as s:
+            result = defaultdict(list)
+            windows_per_model_version: t.Dict[int, t.List[WindowExecutionArgs]] = defaultdict(list)
+            
+            for it in windows_arguments:
+                windows_per_model_version[it["model_version_id"]].append(it)
 
-        for model_version_id, windows in windows_per_model_version.items():
-            reference: t.Optional[pd.DataFrame] = None
-            reference_dataset: t.Optional[Dataset] = None
-            reference_pred: t.Optional[np.ndarray] = None
-            reference_proba: t.Optional[np.ndarray] = None
-            check_instance: t.Optional[BaseCheck] = None
+            for model_version_id, windows in windows_per_model_version.items():
+                reference: t.Optional[pd.DataFrame] = None
+                reference_dataset: t.Optional[Dataset] = None
+                reference_pred: t.Optional[np.ndarray] = None
+                reference_proba: t.Optional[np.ndarray] = None
+                check_instance: t.Optional[BaseCheck] = None
 
-            for window_args in windows:
-                if check_instance is None:
-                    check_instance = initialize_check(
-                        check_config, 
-                        window_args["balance_classes"], 
-                        additional_check_kwargs
-                    )
+                for window_args in windows:
+                    if check_instance is None:
+                        check_instance = initialize_check(
+                            check_config,
+                            window_args["balance_classes"], 
+                            additional_check_kwargs
+                        )
 
-                reference_query = window_args.get("reference_query")
-                
-                if reference is None and reference_query is not None:
-                    reference_data = s.execute(pickle.loads(reference_query))
-                    reference_df = pd.DataFrame(reference_data.all(), columns=[str(key) for key in reference_data.keys()])
+                    reference_query = window_args.get("reference_query")
+                    
+                    if reference is None and reference_query is not None:
+                        reference_data = s.execute(pickle.loads(reference_query))
+                        reference_df = pd.DataFrame(reference_data.all(), columns=[str(key) for key in reference_data.keys()])
 
-                    if reference_df.empty:
+                        if reference_df.empty:
+                            result[model_version_id].append({
+                                'index': window_args["index"],
+                                'start': window_args["start"],
+                                'end': window_args["end"],
+                                'result': None
+                            })
+                            continue
+
+                        reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+                            reference_df,
+                            features_columns=window_args["feature_columns"],
+                            task_type=window_args["task_type"].value,
+                            top_feat=top_features,
+                            dataset_name='Reference'
+                        )
+
+                    window_data = s.execute(pickle.loads(window_args['samples_query']))
+                    window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
+
+                    if window_df.empty:
                         result[model_version_id].append({
                             'index': window_args["index"],
                             'start': window_args["start"],
@@ -474,100 +518,241 @@ def calculate_windows(
                             'result': None
                         })
                         continue
-
-                    reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-                        reference_df,
+                    
+                    test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
+                        window_df,
                         features_columns=window_args["feature_columns"],
                         task_type=window_args["task_type"].value,
                         top_feat=top_features,
-                        dataset_name='Reference'
+                        dataset_name='Production'
                     )
-
-                window_data = s.execute(pickle.loads(window_args['samples_query']))
-                window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
-
-                if window_df.empty:
-                    result[model_version_id].append({
-                        'index': window_args["index"],
-                        'start': window_args["start"],
-                        'end': window_args["end"],
-                        'result': None
-                    })
-                    continue
-                
-                test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
-                    window_df,
-                    features_columns=window_args["feature_columns"],
-                    task_type=window_args["task_type"].value,
-                    top_feat=top_features,
-                    dataset_name='Production'
-                )
-                shared_args = dict(
-                    feature_importance=feature_importance,
-                    with_display=False,
-                    model_classes=window_args['classes']
-                )
-                single_dataset_args = dict(
-                    y_pred_train=test_pred,
-                    y_proba_train=test_proba,
-                    **shared_args
-                )
-                train_test_args = dict(
-                    train_dataset=reference_dataset,
-                    test_dataset=test_dataset,
-                    y_pred_train=reference_pred,
-                    y_proba_train=reference_proba,
-                    y_pred_test=test_pred,
-                    y_proba_test=test_proba,
-                    **shared_args
-                )
-                try:
-                    if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
-                        value = check_instance.run(test_dataset, **single_dataset_args)
-                    elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
-                        value = check_instance.run(**train_test_args)
-                    elif isinstance(check_instance, Suite):
-                        if reference_dataset is None:
+                    shared_args = dict(
+                        feature_importance=feature_importance,
+                        with_display=False,
+                        model_classes=window_args['classes']
+                    )
+                    single_dataset_args = dict(
+                        y_pred_train=test_pred,
+                        y_proba_train=test_proba,
+                        **shared_args
+                    )
+                    train_test_args = dict(
+                        train_dataset=reference_dataset,
+                        test_dataset=test_dataset,
+                        y_pred_train=reference_pred,
+                        y_proba_train=reference_proba,
+                        y_pred_test=test_pred,
+                        y_proba_test=test_proba,
+                        **shared_args
+                    )
+                    try:
+                        if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
                             value = check_instance.run(test_dataset, **single_dataset_args)
+                        elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
+                            value = check_instance.run(**train_test_args)
+                        elif isinstance(check_instance, Suite):
+                            if reference_dataset is None:
+                                value = check_instance.run(test_dataset, **single_dataset_args)
+                            else:
+                                value = check_instance.run(**train_test_args, run_single_dataset='Test')
                         else:
-                            value = check_instance.run(**train_test_args, run_single_dataset='Test')
+                            raise ValueError(f'incompatible check type {type(check_instance)}')
+                    except errors.NotEnoughSamplesError:
+                        result[model_version_id].append({
+                            'index': window_args["index"],
+                            'start': window_args["start"],
+                            'end': window_args["end"],
+                            'result': None
+                        })
+                    except Exception as e:
+                        result[model_version_id].append({
+                            'index': window_args["index"],
+                            'start': window_args["start"],
+                            'end': window_args["end"],
+                            'result': None
+                        })
+                        # TODO: send error to sentry, needs to be done in the ee sub-package
+                        error_message = (
+                            str(e)
+                            if not (msg := getattr(e, 'message', None))
+                            else msg
+                        )
+                        logging.getLogger('monitor_run_logger').exception(
+                            'For model version(id=%s) check(%s) got exception: %s',
+                            model_version_id,
+                            check_instance.name,
+                            error_message
+                        )
                     else:
-                        raise ValueError(f'incompatible check type {type(check_instance)}')
-                except errors.NotEnoughSamplesError:
-                    result[model_version_id].append({
-                        'index': window_args["index"],
-                        'start': window_args["start"],
-                        'end': window_args["end"],
-                        'result': None
-                    })
-                except Exception as e:
-                    result[model_version_id].append({
-                        'index': window_args["index"],
-                        'start': window_args["start"],
-                        'end': window_args["end"],
-                        'result': None
-                    })
-                    # TODO: send error to sentry, needs to be done in the ee sub-package
-                    error_message = (
-                        str(e)
-                        if not (msg := getattr(e, 'message', None))
-                        else msg
-                    )
-                    logging.getLogger('monitor_run_logger').exception(
-                        'For model version(id=%s) check(%s) got exception: %s',
-                        model_version_id,
-                        check_instance.name,
-                        error_message
-                    )
-                else:
-                    result[model_version_id].append({
-                        'index': window_args["index"],
-                        'start': window_args["start"],
-                        'end': window_args["end"],
-                        'result': value
-                    })
+                        result[model_version_id].append({
+                            'index': window_args["index"],
+                            'start': window_args["start"],
+                            'end': window_args["end"],
+                            'result': value
+                        })
+        
+            return result
+
+
+# def calculate_windows(
+#     windows_arguments: t.List[WindowExecutionArgs],
+#     check_config: t.Any,
+#     additional_check_kwargs: t.Any,
+#     top_features: t.List[str],
+#     feature_importance: pd.Series,
+#     organization_id: int,
+#     database: t.Optional[str] = None
+# ):
+#     if database is None:
+#         database_engine = getattr(loky, "_deepchecks_database_engine", None)
+#         if database_engine is None:
+#             raise RuntimeError(
+#                 "Database engine was not initialized, "
+#                 "worker process was not initialized"
+#             )
+#     else:
+#         database_engine = sa.create_engine(database)
+
+#     with Session(database_engine) as s:
+#         org = t.cast(t.Optional[Organization], s.get(Organization, organization_id))
+
+#         if org is None:
+#             raise RuntimeError(f'Organization with id "{organization_id}" does not exist')
+        
+#         s.execute(SessionParameter(
+#             "search_path", 
+#             value=t.cast(str, org.schema_name)
+#         ))
+
+        # result = defaultdict(list)
+        # windows_per_model_version: t.Dict[int, t.List[WindowExecutionArgs]] = defaultdict(list)
+        
+        # for it in windows_arguments:
+        #     windows_per_model_version[it["model_version_id"]].append(it)
+
+        # for model_version_id, windows in windows_per_model_version.items():
+        #     reference: t.Optional[pd.DataFrame] = None
+        #     reference_dataset: t.Optional[Dataset] = None
+        #     reference_pred: t.Optional[np.ndarray] = None
+        #     reference_proba: t.Optional[np.ndarray] = None
+        #     check_instance: t.Optional[BaseCheck] = None
+
+        #     for window_args in windows:
+        #         if check_instance is None:
+        #             check_instance = initialize_check(
+        #                 check_config, 
+        #                 window_args["balance_classes"], 
+        #                 additional_check_kwargs
+        #             )
+
+        #         reference_query = window_args.get("reference_query")
+                
+        #         if reference is None and reference_query is not None:
+        #             reference_data = s.execute(pickle.loads(reference_query))
+        #             reference_df = pd.DataFrame(reference_data.all(), columns=[str(key) for key in reference_data.keys()])
+
+        #             if reference_df.empty:
+        #                 result[model_version_id].append({
+        #                     'index': window_args["index"],
+        #                     'start': window_args["start"],
+        #                     'end': window_args["end"],
+        #                     'result': None
+        #                 })
+        #                 continue
+
+        #             reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+        #                 reference_df,
+        #                 features_columns=window_args["feature_columns"],
+        #                 task_type=window_args["task_type"].value,
+        #                 top_feat=top_features,
+        #                 dataset_name='Reference'
+        #             )
+
+        #         window_data = s.execute(pickle.loads(window_args['samples_query']))
+        #         window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
+
+        #         if window_df.empty:
+        #             result[model_version_id].append({
+        #                 'index': window_args["index"],
+        #                 'start': window_args["start"],
+        #                 'end': window_args["end"],
+        #                 'result': None
+        #             })
+        #             continue
+                
+        #         test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
+        #             window_df,
+        #             features_columns=window_args["feature_columns"],
+        #             task_type=window_args["task_type"].value,
+        #             top_feat=top_features,
+        #             dataset_name='Production'
+        #         )
+        #         shared_args = dict(
+        #             feature_importance=feature_importance,
+        #             with_display=False,
+        #             model_classes=window_args['classes']
+        #         )
+        #         single_dataset_args = dict(
+        #             y_pred_train=test_pred,
+        #             y_proba_train=test_proba,
+        #             **shared_args
+        #         )
+        #         train_test_args = dict(
+        #             train_dataset=reference_dataset,
+        #             test_dataset=test_dataset,
+        #             y_pred_train=reference_pred,
+        #             y_proba_train=reference_proba,
+        #             y_pred_test=test_pred,
+        #             y_proba_test=test_proba,
+        #             **shared_args
+        #         )
+        #         try:
+        #             if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
+        #                 value = check_instance.run(test_dataset, **single_dataset_args)
+        #             elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
+        #                 value = check_instance.run(**train_test_args)
+        #             elif isinstance(check_instance, Suite):
+        #                 if reference_dataset is None:
+        #                     value = check_instance.run(test_dataset, **single_dataset_args)
+        #                 else:
+        #                     value = check_instance.run(**train_test_args, run_single_dataset='Test')
+        #             else:
+        #                 raise ValueError(f'incompatible check type {type(check_instance)}')
+        #         except errors.NotEnoughSamplesError:
+        #             result[model_version_id].append({
+        #                 'index': window_args["index"],
+        #                 'start': window_args["start"],
+        #                 'end': window_args["end"],
+        #                 'result': None
+        #             })
+        #         except Exception as e:
+        #             result[model_version_id].append({
+        #                 'index': window_args["index"],
+        #                 'start': window_args["start"],
+        #                 'end': window_args["end"],
+        #                 'result': None
+        #             })
+        #             # TODO: send error to sentry, needs to be done in the ee sub-package
+        #             error_message = (
+        #                 str(e)
+        #                 if not (msg := getattr(e, 'message', None))
+        #                 else msg
+        #             )
+        #             logging.getLogger('monitor_run_logger').exception(
+        #                 'For model version(id=%s) check(%s) got exception: %s',
+        #                 model_version_id,
+        #                 check_instance.name,
+        #                 error_message
+        #             )
+        #         else:
+        #             result[model_version_id].append({
+        #                 'index': window_args["index"],
+        #                 'start': window_args["start"],
+        #                 'end': window_args["end"],
+        #                 'result': value
+        #             })
     
-        return 1
+        # return 1
 
 
 async def run_check_per_window_in_range(
