@@ -210,7 +210,7 @@ export function AlertNotifications() {
               }}
               key={index}
             >
-              <StyledText text={label} type="bodyNormal" />
+              <StyledText text={label} type="bodyBold" fontSize="16px" color="black" />
               <Stack direction="row" spacing="40px">
                 {notificationsItems.map(notification => (
                   <Box padding="9px" key={notification}>
