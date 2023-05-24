@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Box, Stack } from '@mui/material';
 
 import { StyledButton, StyledImage, StyledText } from 'components/lib';
+import WebhookDialog from './WebhookDialog';
 
 import webhook from '../../../assets/integrations/webhook.svg';
 
 import { constants } from '../integrations.constants';
-import WebhookDialog from './WebhookDialog';
 
+// TODO - Add edit option if already created
 const ConnectWebhook = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 

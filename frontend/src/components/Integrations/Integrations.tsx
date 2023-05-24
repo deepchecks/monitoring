@@ -5,7 +5,6 @@ import { Box, Stack, useMediaQuery, useTheme } from '@mui/material';
 import { ConnectSlack } from './components/ConnectSlack';
 import { AlertNotifications } from 'components/Integrations/components/AlertNotifications';
 import { StyledText } from 'components/lib';
-import ConnectPagerDuty from './components/ConnectPagerDuty';
 import ConnectWebhook from './components/ConnectWebhook';
 
 import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
@@ -28,7 +27,6 @@ export const Integrations = () => {
           <PermissionControlWrapper feature={featuresList.slack_enabled}>
             <ConnectSlack />
           </PermissionControlWrapper>
-          <ConnectPagerDuty />
         </Box>
       </Stack>
     </Box>
