@@ -65,7 +65,7 @@ export function ConnectSlack() {
   if (isLoading) {
     return (
       <Box sx={{ width: '100%' }}>
-        <StyledLoader margin="10vh auto" />
+        <StyledLoader />
       </Box>
     );
   }
