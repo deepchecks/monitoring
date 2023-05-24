@@ -9,7 +9,12 @@ import { Checkbox, TableRowProps } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
-import { StyledTableRow, StyledTableCell, StyledIconButton } from '../../../WorkspaceSettings.styles';
+import {
+  StyledTableRow,
+  StyledTableCell,
+  StyledIconButton,
+  StyledTableCellBold
+} from '../../../WorkspaceSettings.styles';
 
 import { constants } from '../../members.constants';
 
@@ -48,9 +53,9 @@ export const MembersTableRow = ({
       <StyledTableCell padding="checkbox">
         <Checkbox checked={selected} />
       </StyledTableCell>
-      <StyledTableCell component="th" scope="row">
+      <StyledTableCellBold component="th" scope="row">
         {full_name || 'n/a'}
-      </StyledTableCell>
+      </StyledTableCellBold>
       <StyledTableCell>{email}</StyledTableCell>
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
       <StyledTableCell>{getRole(roles)}</StyledTableCell>

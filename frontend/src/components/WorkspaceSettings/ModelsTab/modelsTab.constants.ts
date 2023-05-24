@@ -5,5 +5,10 @@ export const constants = {
     name: 'Model name',
     members: 'Members',
     actions: 'Actions'
+  },
+  editMembers: 'Edit members',
+  dialog: {
+    inputPlaceholder: 'Edit members...',
+    submitButtonLabel: 'Save'
   }
 };

@@ -4,20 +4,32 @@ import { ModelManagmentSchema } from 'api/generated';
 
 import { TableRowProps } from '@mui/material';
 
-import { StyledTableRow, StyledTableCell } from '../../../WorkspaceSettings.styles';
+import { StyledButton } from 'components/lib';
+
+import { StyledTableRow, StyledTableCell, StyledTableCellBold } from '../../../WorkspaceSettings.styles';
+
+import { constants } from '../../modelsTab.constants';
 
 interface ModelsTabTableRowProps extends TableRowProps {
   model: ModelManagmentSchema;
+  editMembers: (model: ModelManagmentSchema) => void;
 }
 
-export const ModelsTabTableRow = ({ model, ...otherProps }: ModelsTabTableRowProps) => {
+export const ModelsTabTableRow = ({ model, editMembers, ...otherProps }: ModelsTabTableRowProps) => {
   const { id, name } = model;
 
   return (
     <StyledTableRow key={id} sx={{ height: 60 }} {...otherProps}>
-      <StyledTableCell scope="row">{name || 'n/a'}</StyledTableCell>
+      <StyledTableCellBold scope="row">{name || 'n/a'}</StyledTableCellBold>
       <StyledTableCell>14 members</StyledTableCell>
-      <StyledTableCell align="right">Edit members</StyledTableCell>
+      <StyledTableCell align="right">
+        <StyledButton
+          label={constants.editMembers}
+          variant="text"
+          onClick={() => editMembers(model)}
+          sx={theme => ({ color: theme.palette.primary.main, fontWeight: 600 })}
+        />
+      </StyledTableCell>
     </StyledTableRow>
   );
 };

@@ -2,7 +2,7 @@ import React from 'react';
 
 import TableHead, { TableHeadProps } from '@mui/material/TableHead';
 
-import { StyledTableRow, StyledTableCell } from '../../../WorkspaceSettings.styles';
+import { StyledTableRow, StyledTableCellBold } from '../../../WorkspaceSettings.styles';
 
 import { constants } from '../../modelsTab.constants';
 
@@ -11,11 +11,11 @@ const { actions, members, name } = constants.table;
 export const ModelsTabTableHead = ({ ...props }: TableHeadProps) => (
   <TableHead {...props}>
     <StyledTableRow>
-      <StyledTableCell width="45%">{name}</StyledTableCell>
-      <StyledTableCell width="45%">{members}</StyledTableCell>
-      <StyledTableCell align="right" width="10%">
+      <StyledTableCellBold width="45%">{name}</StyledTableCellBold>
+      <StyledTableCellBold width="40%">{members}</StyledTableCellBold>
+      <StyledTableCellBold align="right" width="15%">
         {actions}
-      </StyledTableCell>
+      </StyledTableCellBold>
     </StyledTableRow>
   </TableHead>
 );

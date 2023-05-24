@@ -16,8 +16,9 @@ export const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
 })) as typeof TableContainer;
 
 export const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 500,
+
   [`&.${tableCellClasses.head}`]: {
-    fontWeight: 600,
     fontSize: 14,
     color: theme.palette.text.disabled,
     backgroundColor: theme.palette.grey[100],
@@ -29,6 +30,10 @@ export const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontSize: 16
   }
 }));
+
+export const StyledTableCellBold = styled(StyledTableCell)({
+  fontWeight: 600
+});
 
 export const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(even)': {
