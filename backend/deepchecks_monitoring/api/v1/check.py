@@ -180,10 +180,12 @@ async def add_checks(
 async def delete_check_by_id(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         check_identifier: CheckIdentifier = CheckIdentifier.resolver(),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Delete check instance by identifier."""
-    await exists_or_404(session, Model, **model_identifier.as_kwargs)
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
     await exists_or_404(session, Check, **check_identifier.as_kwargs)
     await delete(Check).where(check_identifier.as_expression)
 
@@ -244,7 +246,7 @@ async def get_checks(
     List[CheckSchema]
         All the checks for a given model.
     """
-    model = await exists_or_404(session, Model, **model_identifier.as_kwargs)
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
     await Model.fetch_or_403(session, model.id, user)
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
