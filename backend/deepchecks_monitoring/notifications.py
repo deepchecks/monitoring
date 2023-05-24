@@ -57,6 +57,7 @@ class AlertNotificator:
                 joinedload(AlertRule.monitor)
                 .joinedload(Monitor.check)
                 .joinedload(Check.model)
+                .joinedload(Model.members)
             )
         )) is None:
             raise RuntimeError(f"Not existing alert id:{alert.id}")
@@ -113,7 +114,7 @@ class AlertNotificator:
             return False
 
         members_emails = (await self.session.scalars(
-            sa.select(User.email).where(User.organization_id == org.id)
+            sa.select(User.email).where(sa.and_(User.organization_id == org.id, User.id.in_(model.members)))
         )).all()
 
         if not members_emails:
