@@ -5,6 +5,10 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
 
+import { StandardWebhookProperties, createWebhookApiV1AlertWebhooksPost } from 'api/generated';
+
+import { resError } from 'helpers/types/resError';
+
 interface WebhookDialogProps {
   open: boolean;
   handleClose: () => void;
@@ -13,36 +17,54 @@ interface WebhookDialogProps {
 const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
   const theme = useTheme();
 
-  const [name, setName] = useState('');
+  const [error, setError] = useState('');
   const [url, setUrl] = useState('');
+  const [name, setName] = useState('');
+  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
+  const [description, setDescription] = useState('');
   const [headers, setHeaders] = useState<{ [key: string]: any }>({ Name: 'Value' });
 
-  const payload = {
+  const payload: StandardWebhookProperties = {
     kind: 'STANDARD',
     name: name,
-    description: '',
+    description: description,
     http_url: url,
-    http_method: 'GET',
+    http_method: httpMethod,
     http_headers: headers,
     notification_levels: ['low', 'high', 'medium', 'critical']
   };
 
   const handleAddHeader = () => setHeaders({ ...headers, 'Another Header': 'Value' });
 
-  const handleHeaderChange = (key: string, value?: string) => {
-    console.log(key, value);
+  const handleHeaderChange = (key: string, value: string, prevKey?: string) => {
+    if (prevKey) {
+      const updatedHeaders = { ...headers };
+
+      delete updatedHeaders[prevKey];
+
+      setHeaders({ ...updatedHeaders, [key]: value });
+    } else {
+      setHeaders({ ...headers, [key]: value });
+    }
+    console.log(headers);
   };
 
-  const handleSubmitWebhookForm = () => {
-    console.log('submit webhook', payload);
+  const handleSubmitWebhookForm = async () => {
+    const response = await createWebhookApiV1AlertWebhooksPost(payload);
+
+    if ((response as unknown as resError)?.error_message) {
+      setError(response.error_message as any);
+    } else {
+      window.location.reload();
+    }
   };
 
   return (
     <StyledDialog
       open={open}
-      title={'Create New Webhook'}
+      title="Create New Webhook"
       closeDialog={handleClose}
-      submitButtonLabel={'Create New Webhook'}
+      submitButtonLabel="Create New Webhook"
       submitButtonAction={handleSubmitWebhookForm}
     >
       <StyledContainer flexDirection="column" gap="16px">
@@ -60,6 +82,20 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
           onChange={e => setUrl(e.target.value)}
           onCloseIconClick={() => setUrl('')}
         />
+        <StyledInput
+          label="Http Method"
+          placeholder="GET / POST"
+          value={httpMethod}
+          onChange={e => setHttpMethod(e.target.value.toUpperCase() as 'GET' | 'POST')}
+          onCloseIconClick={() => setHttpMethod('GET')}
+        />
+        <StyledInput
+          label="Description"
+          placeholder="Enter Description (Optional)"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          onCloseIconClick={() => setDescription('')}
+        />
         {Object.keys(headers).map((headerKey, i) => (
           <StyledContainer
             key={i}
@@ -72,7 +108,7 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
               label="Header Name"
               placeholder="Enter Header Name"
               value={headerKey}
-              onChange={e => handleHeaderChange(e.target.value)}
+              onChange={e => handleHeaderChange(e.target.value, headers[headerKey], headerKey)}
               onCloseIconClick={() => ''}
             />
             <StyledInput
@@ -88,6 +124,7 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
           <AddCircleOutlineIcon color="primary" />
           <StyledText text="Add Header" color={theme.palette.primary.main} type="bodyBold" />
         </StyledContainer>
+        <StyledText text={error} color={theme.palette.error.main} />
       </StyledContainer>
     </StyledDialog>
   );

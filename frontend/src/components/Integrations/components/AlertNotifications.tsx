@@ -168,7 +168,7 @@ export function AlertNotifications() {
     );
 
   return (
-    <Box width="100%" maxWidth="900px">
+    <Box width="100%" maxWidth="900px" marginBottom="36px">
       <StyledText text={constants.integration.title} type="h1" marginBottom="36px" />
       <Box
         sx={theme => ({
