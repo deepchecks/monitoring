@@ -70,7 +70,6 @@ class ModelVersionCreationSchema(BaseModel):
 async def get_or_create_version(
         info: ModelVersionCreationSchema,
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-        model: Model = Depends(Model.get_object),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
 ):
@@ -85,6 +84,8 @@ async def get_or_create_version(
     session : AsyncSession, optional
         SQLAlchemy session.
     """
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
     model_version: ModelVersion = (await session.execute(
         select(ModelVersion)
         .where(ModelVersion.name == info.name, ModelVersion.model_id == model.id)
