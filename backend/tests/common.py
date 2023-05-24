@@ -2,8 +2,6 @@ import contextlib
 import random
 import string
 import typing as t
-from deepchecks_monitoring.schema_models.model import Model
-from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
 import faker
 import httpx
@@ -18,6 +16,8 @@ from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.public_models.billing import Billing
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 

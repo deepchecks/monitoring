@@ -22,8 +22,8 @@ from deepchecks_monitoring.exceptions import AccessForbidden, NotFound
 class PermissionMixin:
     """Mixin class for ORM entities that have metadata."""
 
-    from deepchecks_monitoring.utils import auth
     from deepchecks_monitoring.public_models.user import User
+    from deepchecks_monitoring.utils import auth
 
     @classmethod
     @abc.abstractmethod

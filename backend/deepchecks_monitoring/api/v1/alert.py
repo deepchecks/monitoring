@@ -9,23 +9,23 @@
 # ----------------------------------------------------------------------------
 """V1 API of the alerts."""
 import typing as t
-from deepchecks_monitoring.schema_models.check import Check
-from deepchecks_monitoring.schema_models.model import Model
-from deepchecks_monitoring.schema_models.model_memeber import ModelMember
-from deepchecks_monitoring.schema_models.monitor import Monitor
-from deepchecks_monitoring.utils import auth
 
 import pendulum as pdl
 from fastapi import Depends, Response, status
 from pydantic import BaseModel
-from sqlalchemy import false, and_, func, select, update
+from sqlalchemy import false, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
-from deepchecks_monitoring.schema_models.alert import Alert
-from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
+# from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models import Alert
+from deepchecks_monitoring.schema_models import AlertRule, AlertSeverity
+from deepchecks_monitoring.schema_models import Check
+from deepchecks_monitoring.schema_models import Model
+from deepchecks_monitoring.schema_models import ModelMember
+from deepchecks_monitoring.schema_models import Monitor
+from deepchecks_monitoring.utils import auth
 
 from .router import router
 
@@ -55,7 +55,7 @@ class AlertSchema(AlertCreationSchema):
 @router.get("/alerts/count_active", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
 async def count_alerts(
     session: AsyncSession = AsyncSessionDep,
-    user=Depends(auth.CurrentUser())
+    user=Depends(auth.CurrentUser()),
 ):
     """Count alerts."""
     select_alert = (select(AlertRule.alert_severity, func.count())

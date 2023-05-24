@@ -15,12 +15,11 @@ import io
 import typing as t
 from collections import defaultdict
 from datetime import datetime
-from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
-from fastapi import BackgroundTasks, Body, Depends, Path, Query
+from fastapi import BackgroundTasks, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.cimmutabledict import immutabledict
@@ -35,8 +34,8 @@ from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
 from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, MonitorsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
-                                                    fetch_or_404, field_length)
+from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
+                                                    field_length)
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -47,6 +46,7 @@ from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
@@ -215,13 +215,15 @@ async def get_create_model(
 async def retrieve_all_models_data_ingestion(
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve all models data ingestion statistics."""
     return await _retrieve_models_data_ingestion(
         time_filter=time_filter,
         end_time=end_time,
         session=session,
+        user=user,
     )
 
 
@@ -235,7 +237,8 @@ async def retrieve_models_data_ingestion(
         model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(),
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve model data ingestion status."""
     return await _retrieve_models_data_ingestion(
@@ -243,6 +246,7 @@ async def retrieve_models_data_ingestion(
         time_filter=time_filter,
         end_time=end_time,
         session=session,
+        user=user,
     )
 
 
@@ -362,7 +366,7 @@ async def _retrieve_models_data_ingestion(
 async def get_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
-        user=Depends(auth.CurrentUser()),
+        user: User = Depends(auth.CurrentUser())
 ) -> ModelSchema:
     """Get a model from database based on model id.
 
@@ -391,7 +395,7 @@ async def get_model(
 async def get_versions_per_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
-        user=Depends(auth.CurrentUser()),
+        user: User = Depends(auth.CurrentUser())
 ):
     """Create a new model.
 
@@ -447,8 +451,9 @@ class ModelManagmentSchema(BaseModel):
     description: t.Optional[str] = None
     task_type: t.Optional[TaskType] = None
     has_data: bool = False
-    versions: t.List[ModelVersionManagmentSchema]
     max_severity: t.Optional[AlertSeverity] = None
+    versions: t.List[ModelVersionManagmentSchema]
+    members: t.List[int]
 
     class Config:
         """Schema config."""
@@ -464,7 +469,7 @@ class ModelManagmentSchema(BaseModel):
 )
 async def retrieve_available_models(
     session: AsyncSession = AsyncSessionDep,
-    user=Depends(auth.CurrentUser()),
+    user: User = Depends(auth.CurrentUser()),
 ) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.cte()
@@ -480,7 +485,10 @@ async def retrieve_available_models(
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
         .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
         .options(
+            joinedload(Model.members),
             joinedload(Model.versions).load_only(
                 ModelVersion.id,
                 ModelVersion.name,
@@ -510,7 +518,10 @@ async def retrieve_available_models(
             versions=[
                 ModelVersionManagmentSchema.from_orm(version)
                 for version in record.Model.versions
-            ]
+            ],
+            members=[
+                member.user_id for member in record.Model.members
+            ],
         )
         for record in records
     ]
@@ -653,7 +664,7 @@ class ConnectedModelSchema(BaseModel):
 )
 async def retrieve_connected_models(
         session: AsyncSession = AsyncSessionDep,
-        user=Depends(auth.CurrentUser())
+        user: User = Depends(auth.CurrentUser())
 ) -> t.List[ConnectedModelSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.where(AlertRule.alert_severity == AlertSeverity.CRITICAL).cte()
@@ -783,7 +794,7 @@ class ConnectedModelVersionSchema(BaseModel):
 async def retrive_connected_model_versions(
         model_id: int = Path(...),
         session: AsyncSession = AsyncSessionDep,
-        user=Depends(auth.CurrentUser()),
+        user: User = Depends(auth.CurrentUser())
 ) -> t.List[ConnectedModelVersionSchema]:
     """Retrieve list of versions of a connected model."""
     await Model.fetch_or_403(session, model_id, user)
@@ -873,7 +884,7 @@ async def retrieve_connected_model_version_ingestion_errors(
         limit: int = Query(default=50, le=10_000, ge=1),
         offset: int = Query(default=0, ge=0),
         session: AsyncSession = AsyncSessionDep,
-        user=Depends(auth.CurrentUser()),
+        user: User = Depends(auth.CurrentUser())
 ):
     """Retrieve connected model version ingestion errors."""
     await Model.fetch_or_403(session, model_id, user)
