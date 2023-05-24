@@ -136,12 +136,11 @@ export function AlertNotifications() {
 
   useEffect(() => {
     if (data) {
-      /* setNotifications({
+      setNotifications({
         [NotificationDictionary.email]: data[NotificationDictionary?.email],
         [NotificationDictionary.slack]: data[NotificationDictionary?.slack],
-        [NotificationDictionary.webhook]: data[NotificationDictionary?.webhook],
-        [NotificationDictionary.pager_duty]: data[NotificationDictionary?.pager_duty]
-      } as any);*/
+        [NotificationDictionary.webhook]: data[NotificationDictionary?.slack] // TODO - change to data.webhook
+      } as any);
     }
   }, [data]);
 
@@ -167,10 +166,11 @@ export function AlertNotifications() {
       >
         <StyledText text="Alert Notifications" type="bodyBold" />
         <Stack direction="row" spacing="74px">
-          {icons.map(({ Icon }, index) => {
+          {icons.map(({ Icon, label }, index) => {
             return (
-              <Box key={index} height="24px" alignItems="center">
+              <Box key={index} display="inline-flex" height="24px" alignItems="center" gap="12px">
                 {Icon}
+                {label}
               </Box>
             );
           })}
@@ -197,7 +197,7 @@ export function AlertNotifications() {
               key={index}
             >
               <StyledText text={label} type="bodyBold" fontSize="16px" color="black" />
-              <Stack direction="row" spacing="40px">
+              <Stack direction="row" spacing="120px">
                 {notificationsItems.map(notification => (
                   <Box padding="9px" key={notification}>
                     <Checkbox
