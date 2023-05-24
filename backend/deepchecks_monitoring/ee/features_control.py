@@ -1,3 +1,4 @@
+from ldclient import Context
 from ldclient.client import LDClient
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -109,12 +110,12 @@ class CloudFeaturesControl(FeaturesControl):
         return True
 
     def _load_tier(self):
-        ld_user = {"email": self.user.email, "key": self.user.email}
+        context = Context.builder(self.user.email).set("email", self.user.email)
         if self.user.organization:
-            ld_user["custom"] = {
-                "tier": self.user.organization.tier,
-                "organization_id": self.user.organization.id
-            }
+            context.set("organization_id", self.user.organization.id)
+            context.set("tier", self.user.organization.tier)
+
+        ld_user = context.build()
         tier_conf = self.ld_client.variation("paid-features", ld_user, default={})
         self._signup_enabled = self.ld_client.variation("signUpEnabled", ld_user, default=True)
         tier_conf = TierConfSchema(**tier_conf)

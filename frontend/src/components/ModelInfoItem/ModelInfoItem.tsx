@@ -29,7 +29,7 @@ dayjs.extend(localizedFormat);
 
 interface ModelInfoItemProps {
   model: ConnectedModelSchema;
-  onDelete: () => Promise<void>;
+  onDelete: () => void;
 }
 
 const MAX_MODEL_NAME_WIDTH = 275;
