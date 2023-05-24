@@ -118,7 +118,8 @@ class AlertNotificator:
         )).all()
 
         if not members_emails:
-            self.logger.error("Organization(id:%s) does not have members", org.id)
+            self.logger.error("Organization(id:%s) does not have members with premmisions to this model(id:%s)",
+                              org.id, model.id)
             return False
 
         deepchecks_host = self.resources_provider.settings.deployment_url

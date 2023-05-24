@@ -135,7 +135,7 @@ async def create_monitor(
 async def get_monitor(
         monitor_id: int,
         session: ExtendedAsyncSession = AsyncSessionDep,
-        user = Depends(auth.CurrentUser()),
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Get monitor by id."""
     monitor = await session.fetchone_or_404(

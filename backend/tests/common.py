@@ -2,6 +2,8 @@ import contextlib
 import random
 import string
 import typing as t
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
 import faker
 import httpx
@@ -48,8 +50,14 @@ async def generate_user(
     if with_org:
         if organization_id:
             u.organization_id = organization_id
+
             await session.commit()
             await session.refresh(u)
+
+            model_ids = await session.scalars(sa.select(Model.id))
+            model_members = [ModelMember(user_id=u.id, model_id=model_id) for model_id in model_ids]
+            session.add_all(model_members)
+            await session.commit()
         else:
             org = await Organization.create_for_user(owner=u, name=f.name(), session=session)
             await org.schema_builder.create(AsyncEngine(session.get_bind()))

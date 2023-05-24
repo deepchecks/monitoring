@@ -10,6 +10,8 @@
 """Module representing the endpoints for the organization."""
 import typing as t
 from datetime import datetime
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
 from fastapi import Depends, Response
 from pydantic import BaseModel
@@ -124,6 +126,10 @@ async def update_complete_details(
         user.organization_id = invite.organization_id
         # delete the invite
         await session.delete(invite)
+
+        model_ids = await session.scalars(select(Model.id))
+        model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
+        session.add_all(model_members)
 
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307

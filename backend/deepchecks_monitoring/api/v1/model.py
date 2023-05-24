@@ -155,11 +155,12 @@ async def get_create_model(
         Resources provider.
 
     """
-    model = await session.scalar(
+    model: Model = await session.scalar(
         sa.select(Model)
         .where(Model.name == model_schema.name)
     )
     if model is not None:
+        await Model.fetch_or_403(session, model.id, user)
         if model.task_type != model_schema.task_type:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
                              f"'{model_schema.task_type} and not the task type '{model.task_type}'")
@@ -186,6 +187,12 @@ async def get_create_model(
         notes = [ModelNote(created_by=user.id, updated_by=user.id, **it) for it in data.pop("notes", [])]
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
+
+        org_users: t.List[User] = await session.scalars(sa.select(User.id)
+                                                        .where(User.organization_id == user.organization_id))
+        model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in org_users]
+        session.add_all(model_members)
+
         await session.flush()
 
         # Create model tables
@@ -257,7 +264,7 @@ async def _retrieve_models_data_ingestion(
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
         session: AsyncSession = AsyncSessionDep,
-        user=Depends(auth.CurrentUser()),
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
 
@@ -776,7 +783,7 @@ class ConnectedModelVersionSchema(BaseModel):
 async def retrive_connected_model_versions(
         model_id: int = Path(...),
         session: AsyncSession = AsyncSessionDep,
-        user = Depends(auth.CurrentUser()),
+        user=Depends(auth.CurrentUser()),
 ) -> t.List[ConnectedModelVersionSchema]:
     """Retrieve list of versions of a connected model."""
     await Model.fetch_or_403(session, model_id, user)
@@ -866,7 +873,7 @@ async def retrieve_connected_model_version_ingestion_errors(
         limit: int = Query(default=50, le=10_000, ge=1),
         offset: int = Query(default=0, ge=0),
         session: AsyncSession = AsyncSessionDep,
-        user = Depends(auth.CurrentUser()),
+        user=Depends(auth.CurrentUser()),
 ):
     """Retrieve connected model version ingestion errors."""
     await Model.fetch_or_403(session, model_id, user)
@@ -1041,12 +1048,12 @@ async def create_model_notes(
 
 
 @router.delete(
-    "/models-notes/{note_id}",
+    "/models-notes/{model_note_id}",
     tags=[Tags.MODELS],
     summary="Delete model note."
 )
 async def delete_model_note(
-        note_id: int = Path(...),
+        model_note_id: int = Path(...),
         note: ModelNote = Depends(ModelNote.get_object),
         session: AsyncSession = AsyncSessionDep,
 ):
