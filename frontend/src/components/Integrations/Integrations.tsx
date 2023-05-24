@@ -5,10 +5,10 @@ import { Box, Stack, useMediaQuery, useTheme } from '@mui/material';
 import { ConnectSlack } from './components/ConnectSlack';
 import { AlertNotifications } from 'components/Integrations/components/AlertNotifications';
 import { StyledText } from 'components/lib';
-
-import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 import ConnectPagerDuty from './components/ConnectPagerDuty';
 import ConnectWebhook from './components/ConnectWebhook';
+
+import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 
 import { constants } from './integrations.constants';
 

@@ -25,22 +25,21 @@ interface App {
 }
 
 export function ConnectSlack() {
-  const { data: apps, isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
+  const { isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
+
   const { data: slackConnect, isLoading: isSlackConnectLoading } =
     useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>();
+
   const { mutate: updateNotifications, isLoading: isUpdateNotificationsLoading } =
     useUpdateOrganizationApiV1OrganizationPut();
-  const { mutate: removeInstallation, isLoading: isRemoveInstallationLoading } =
-    useRemoveInstallationApiV1SlackAppsAppIdDelete({
-      mutation: {
-        onSuccess: () => {
-          updateNotifications({ data: { ...slackConnect, [NotificationDictionary.slack]: [] } });
-        }
-      }
-    });
 
-  const isLoading =
-    isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
+  const { isLoading: isRemoveInstallationLoading } = useRemoveInstallationApiV1SlackAppsAppIdDelete({
+    mutation: {
+      onSuccess: () => {
+        updateNotifications({ data: { ...slackConnect, [NotificationDictionary.slack]: [] } });
+      }
+    }
+  });
 
   const connectSlack = () => {
     reportEvent(events.integrationsPage.clickedSlackInstagramIntegration);
@@ -52,15 +51,8 @@ export function ConnectSlack() {
     );
   };
 
-  const removeSlack = () => {
-    if (apps) {
-      apps?.forEach(({ id }) => {
-        removeInstallation({
-          appId: id
-        });
-      });
-    }
-  };
+  const isLoading =
+    isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
   if (isLoading) {
     return (
@@ -87,11 +79,7 @@ export function ConnectSlack() {
           <StyledText text={constants.connect.slack.title} type="h1" color="white" />
           <StyledText text={constants.connect.slack.description} type="h3" color="white" />
         </Stack>
-        {slackConnect?.is_slack_connected ? (
-          <StyledButton onClick={removeSlack} label="Uninstall" />
-        ) : (
-          <StyledButton onClick={connectSlack} label="Connect" />
-        )}
+        <StyledButton onClick={connectSlack} label="Connect" />
       </Box>
       <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="auto" />
     </Box>

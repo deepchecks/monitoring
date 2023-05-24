@@ -26,7 +26,7 @@ const ConnectPagerDuty = () => {
           <StyledText text={constants.connect.pagerDuty.title} type="h1" color="white" />
           <StyledText text={constants.connect.pagerDuty.description} type="h3" color="white" />
         </Stack>
-        <StyledButton onClick={() => ''} label="Uninstall" color="inherit" />
+        <StyledButton onClick={() => ''} label="Connect" color="inherit" />
       </Box>
       <StyledImage alt="pagerDuty" src={pagerDuty} width="100px" height="100px" margin="auto" />
     </Box>

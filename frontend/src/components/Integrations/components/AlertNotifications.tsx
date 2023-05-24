@@ -58,8 +58,8 @@ type NotificationsOptions =
   | NotificationDictionary.pager_duty;
 
 const icons = [
-  { label: 'webhook', Icon: <StyledImage src={webhookIcon} /> },
   { label: 'pager_duty', Icon: <StyledImage src={pagerDutyIcon} /> },
+  { label: 'webhook', Icon: <StyledImage src={webhookIcon} /> },
   { label: 'slack', Icon: <StyledImage src={slackIcon} /> },
   { label: 'email', Icon: <StyledImage src={mailIcon} /> }
 ] as const;
@@ -184,7 +184,7 @@ export function AlertNotifications() {
         <Stack direction="row" spacing="74px">
           {icons.map(({ Icon }, index) => {
             return (
-              <Box key={index} height="24px">
+              <Box key={index} height="24px" alignItems="center">
                 {Icon}
               </Box>
             );
