@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 import { Box, List, ListItem, styled } from '@mui/material';
 
@@ -17,8 +17,8 @@ import { AlertsHeader } from 'components/Alerts/AlertsHeader';
 import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
-import NoResults from 'components/NoResults';
 import { StyledDeletionDialog } from 'components/lib';
+import NoResults from 'components/NoResults';
 
 import useModels from '../helpers/hooks/useModels';
 import { events, reportEvent } from 'helpers/services/mixPanel';
@@ -120,7 +120,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     }
   }, [alertRules]);
 
-  useEffect(() => void refetch(), [refetchAlerts]);
+  useLayoutEffect(() => void refetch(), [refetchAlerts]);
 
   const handleOpenDrawer = (alertRule: AlertRuleInfoSchema) => {
     handleSetParams('alertRuleId', alertRule.id);
