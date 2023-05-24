@@ -34,19 +34,20 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
     notification_levels: ['low', 'high', 'medium', 'critical']
   };
 
-  const handleAddHeader = () => setHeaders({ ...headers, 'Another Header': 'Value' });
+  const handleAddHeader = () => setHeaders({ ...headers, 'Header (Cant be null)': 'Value' });
 
   const handleHeaderChange = (key: string, value: string, prevKey?: string) => {
-    if (prevKey) {
-      const updatedHeaders = { ...headers };
+    if (key) {
+      if (prevKey) {
+        const updatedHeaders = { ...headers };
 
-      delete updatedHeaders[prevKey];
+        delete updatedHeaders[prevKey];
 
-      setHeaders({ ...updatedHeaders, [key]: value });
-    } else {
-      setHeaders({ ...headers, [key]: value });
+        setHeaders({ ...updatedHeaders, [key]: value });
+      } else {
+        setHeaders({ ...headers, [key]: value });
+      }
     }
-    console.log(headers);
   };
 
   const handleSubmitWebhookForm = async () => {
@@ -87,7 +88,6 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
           placeholder="GET / POST"
           value={httpMethod}
           onChange={e => setHttpMethod(e.target.value.toUpperCase() as 'GET' | 'POST')}
-          onCloseIconClick={() => setHttpMethod('GET')}
         />
         <StyledInput
           label="Description"
@@ -109,14 +109,12 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
               placeholder="Enter Header Name"
               value={headerKey}
               onChange={e => handleHeaderChange(e.target.value, headers[headerKey], headerKey)}
-              onCloseIconClick={() => ''}
             />
             <StyledInput
               label="Header Value"
               placeholder="Enter Header Value"
               value={headers[headerKey]}
               onChange={e => handleHeaderChange(headerKey, e.target.value)}
-              onCloseIconClick={() => ''}
             />
           </StyledContainer>
         ))}

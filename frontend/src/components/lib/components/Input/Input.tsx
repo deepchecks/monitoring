@@ -25,7 +25,7 @@ const StyledSearchField = styled(MUIInput)(({ theme }) => ({
 
 interface InputProps extends MUIInputProps {
   value: string;
-  onCloseIconClick: () => void;
+  onCloseIconClick?: () => void;
   searchField?: boolean;
   label?: string;
 }
@@ -45,7 +45,13 @@ export const Input = (props: InputProps) => {
   ) : (
     <Box>
       {label && <StyledLabel htmlFor={id}>{label}</StyledLabel>}
-      <StyledOutlinedInput id={id} endAdornment={value && CloseIconAdornment} value={value} fullWidth {...otherProps} />
+      <StyledOutlinedInput
+        id={id}
+        endAdornment={value && onCloseIconClick && CloseIconAdornment}
+        value={value}
+        fullWidth
+        {...otherProps}
+      />
     </Box>
   );
 };
