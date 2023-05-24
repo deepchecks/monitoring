@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { Box, List, ListItem, styled } from '@mui/material';
 
@@ -73,13 +73,12 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const [drawerAlertRule, setDrawerAlertRule] = useState<AlertRuleInfoSchema | null>(null);
   const [isNotification, setIsNotification] = useState(false);
   const [isModelsEndTimeTwoWeeksOlder, setIsModelsEndTimeTwoWeeksOlder] = useState<boolean>(false);
-  const [refetchAlerts, setRefetchAlerts] = useState(false);
 
   const {
     data: alertRules,
     isLoading: alertRulesIsLoading,
     isError: isAlertRulesError,
-    refetch
+    refetch: refetchAlertRules
   } = useGetAlertRulesApiV1AlertRulesGet({ ...alertFilters, resolved: resolved });
   const { mutateAsync: resolveAllAlerts, isError: resolveAllAlertsError } =
     useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost();
@@ -120,8 +119,6 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     }
   }, [alertRules]);
 
-  useLayoutEffect(() => void refetch(), [refetchAlerts]);
-
   const handleOpenDrawer = (alertRule: AlertRuleInfoSchema) => {
     handleSetParams('alertRuleId', alertRule.id);
     setDrawerAlertRule(alertRule);
@@ -132,9 +129,9 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
     handleSetParams('alertRuleId');
   };
 
-  const handleResolveAll = () => {
-    onResolve(resolveAlertRule);
-    setRefetchAlerts(!refetchAlerts);
+  const handleResolveAll = async () => {
+    await onResolve(resolveAlertRule);
+    refetchAlertRules();
   };
 
   return (
