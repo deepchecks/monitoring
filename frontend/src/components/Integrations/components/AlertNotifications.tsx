@@ -33,7 +33,6 @@ export interface NotificationsResponse {
   [NotificationDictionary.slack]: AlertSeverity[];
   [NotificationDictionary.webhook]: AlertSeverity[];
   [NotificationDictionary.pager_duty]: AlertSeverity[];
-  is_slack_connected: boolean;
   slug: string;
 }
 
@@ -58,10 +57,10 @@ type NotificationsOptions =
   | NotificationDictionary.pager_duty;
 
 const icons = [
-  { label: 'pager_duty', Icon: <StyledImage src={pagerDutyIcon} /> },
-  { label: 'webhook', Icon: <StyledImage src={webhookIcon} /> },
   { label: 'slack', Icon: <StyledImage src={slackIcon} /> },
-  { label: 'email', Icon: <StyledImage src={mailIcon} /> }
+  { label: 'email', Icon: <StyledImage src={mailIcon} /> },
+  { label: 'webhook', Icon: <StyledImage src={webhookIcon} /> },
+  { label: 'pager_duty', Icon: <StyledImage src={pagerDutyIcon} /> }
 ] as const;
 
 const alertConfigurations = ['Critical Alerts', 'High Alerts', 'Medium Alerts', 'Low Alerts'];
@@ -217,7 +216,7 @@ export function AlertNotifications() {
                   <Box padding="9px" key={notification}>
                     <Checkbox
                       size="small"
-                      disabled={notification === NotificationDictionary.slack && !data?.is_slack_connected}
+                      disabled={!data?.[notification]}
                       onChange={event =>
                         handleNotifications(event, notification, notificationsMap[notification][index])
                       }
