@@ -36,7 +36,7 @@ from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
 from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, MonitorsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
 from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
-                                                    exists_or_404, fetch_or_404, field_length)
+                                                    fetch_or_404, field_length)
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -775,9 +775,11 @@ class ConnectedModelVersionSchema(BaseModel):
 )
 async def retrive_connected_model_versions(
         model_id: int = Path(...),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user = Depends(auth.CurrentUser()),
 ) -> t.List[ConnectedModelVersionSchema]:
     """Retrieve list of versions of a connected model."""
+    await Model.fetch_or_403(session, model_id, user)
     alerts_count = (
         sa.select(
             sa.func.jsonb_object_keys(Alert.failed_values).label("model_version_name"),
@@ -863,9 +865,11 @@ async def retrieve_connected_model_version_ingestion_errors(
         download: bool = Query(default=False),
         limit: int = Query(default=50, le=10_000, ge=1),
         offset: int = Query(default=0, ge=0),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user = Depends(auth.CurrentUser()),
 ):
     """Retrieve connected model version ingestion errors."""
+    await Model.fetch_or_403(session, model_id, user)
     order_by_expression: t.Dict[t.Tuple[IngestionErrorsSortKey, SortOrder], t.Any] = {
         (IngestionErrorsSortKey.TIMESTAMP, SortOrder.ASC): IngestionError.created_at.asc(),
         (IngestionErrorsSortKey.TIMESTAMP, SortOrder.DESC): IngestionError.created_at.desc(),

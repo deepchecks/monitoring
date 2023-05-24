@@ -23,7 +23,7 @@ if t.TYPE_CHECKING:
 __all__ = ["ModelMember"]
 
 
-class ModelMember(Base, MetadataMixin):
+class ModelMember(Base):
     """ORM model for the model members."""
 
     __tablename__ = "model_members"

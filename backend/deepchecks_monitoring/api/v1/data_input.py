@@ -52,18 +52,19 @@ async def log_data_batch(
     resources_provider=ResourcesProviderDep
 ):
     """Insert batch data samples."""
-    if len(data) == 0:
-        return ORJSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "Got empty list"}
-        )
-
     model_version: ModelVersion = await fetch_or_404(
         session,
         ModelVersion,
         id=model_version_id,
         options=joinedload(ModelVersion.model)
     )
+    await ModelVersion.fetch_or_403(session, model_version_id, user)
+
+    if len(data) == 0:
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "Got empty list"}
+        )
 
     time = pdl.now()
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
@@ -103,6 +104,7 @@ async def log_data_batch(
 async def log_labels(
     model_id: int,
     data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
+    model: Model = Depends(Model.get_object),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
@@ -115,7 +117,6 @@ async def log_labels(
             content={"detail": "Got empty list"}
         )
 
-    model: Model = await fetch_or_404(session, Model, id=model_id)
     time = pdl.now()
     minute_rate = resources_provider.get_features_control(user).rows_per_minute
 
@@ -161,6 +162,7 @@ async def log_labels(
 async def save_reference(
     model_version_id: int,
     batch: UploadFile,
+    model_version: ModelVersion = Depends(ModelVersion.get_object),
     session: AsyncSession = AsyncSessionDep,
 ):
     """Upload reference data for a given model version.
@@ -175,7 +177,6 @@ async def save_reference(
         database session instance
     """
     max_samples = 100_000
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     ref_table = model_version.get_reference_table(session)
     n_of_samples_query = select(count()).select_from(ref_table)
     current_samples = await session.scalar(n_of_samples_query)
