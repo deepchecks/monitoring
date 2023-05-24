@@ -102,4 +102,3 @@ class LoggingMiddleware:
                 self.logger.error(info)
             else:
                 self.logger.info(info)
-
