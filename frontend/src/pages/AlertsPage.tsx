@@ -17,8 +17,8 @@ import { AlertsHeader } from 'components/Alerts/AlertsHeader';
 import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
-import NoResults from 'components/NoResults';
 import { StyledDeletionDialog } from 'components/lib';
+import NoResults from 'components/NoResults';
 
 import useModels from '../helpers/hooks/useModels';
 import { events, reportEvent } from 'helpers/services/mixPanel';
@@ -77,7 +77,8 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const {
     data: alertRules,
     isLoading: alertRulesIsLoading,
-    isError: isAlertRulesError
+    isError: isAlertRulesError,
+    refetch: refetchAlertRules
   } = useGetAlertRulesApiV1AlertRulesGet({ ...alertFilters, resolved: resolved });
   const { mutateAsync: resolveAllAlerts, isError: resolveAllAlertsError } =
     useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost();
@@ -126,6 +127,11 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const handleCloseDrawer = () => {
     setDrawerAlertRule(null);
     handleSetParams('alertRuleId');
+  };
+
+  const handleResolveAll = async () => {
+    await onResolve(resolveAlertRule);
+    refetchAlertRules();
   };
 
   return (
@@ -178,7 +184,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         title="Resolve All"
         closeDialog={() => setResolveAlertRule(null)}
         submitButtonLabel="Yes, continue"
-        submitButtonAction={() => onResolve(resolveAlertRule)}
+        submitButtonAction={handleResolveAll}
         cancelButtonLabel="No, cancel"
         alertTypeButtons={false}
         messageStart="You are about to resolve "
