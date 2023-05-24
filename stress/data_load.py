@@ -44,7 +44,7 @@ if __name__ == '__main__':
     schema_file_path = 'schema_file.yaml'
     create_schema(dataset=ref_dataset, schema_output_file=schema_file_path)
 
-    host = 'https://staging-v4.deepchecks.com'
+    host = 'https://app.deepchecks.com'
     token = ''
     dc_client = DeepchecksClient(host=host, token=token)
     hours_per_batch = 5
