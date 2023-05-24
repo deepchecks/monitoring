@@ -9,9 +9,13 @@ import useModels from 'helpers/hooks/useModels';
 import { AlertRuleDialogProvider } from '../AlertRuleDialog/AlertRuleDialogContext';
 
 import { Tooltip, Typography, Stack } from '@mui/material';
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import SyncIcon from '@mui/icons-material/Sync';
 
 import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
 import { Loader } from '../../base/Loader/Loader';
+import { StyledSeverity } from 'components/lib';
 
 import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
@@ -20,10 +24,7 @@ import { events, reportEvent } from 'helpers/services/mixPanel';
 import {
   StyledBlur,
   StyledCaption,
-  StyledCriticality,
   StyledDescription,
-  StyledDivider,
-  StyledIconButton,
   StyledInfo,
   StyledMainWrapper,
   StyledMonitorName,
@@ -31,7 +32,6 @@ import {
   StyledTitle
 } from './AlertsRulesItem.style';
 
-import { Checkmark, PencilDrawing, Sync } from 'assets/icon/icon';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
 dayjs.extend(duration);
@@ -101,12 +101,7 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
         onClick={handleOpenDrawer}
         sx={{ background: 'white' }}
       >
-        <StyledCriticality criticality={alert_severity} resolved={resolved}>
-          <Typography variant="h4">{alerts_count}</Typography>
-          <Typography variant="subtitle2" color="white">
-            {alert_severity}
-          </Typography>
-        </StyledCriticality>
+        <StyledSeverity severity={alert_severity} number={alerts_count} margin="14px 0 0 6px" width="200px" />
         <StyledDescription>
           <Tooltip title={monitor?.name ? monitor?.name : 'N/A'}>
             <StyledMonitorName noWrap={true} variant="h2">
@@ -115,7 +110,6 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
           </Tooltip>
           <Typography variant="body2">Latest alert: {dayjs(max_end_time).format('L')}</Typography>
         </StyledDescription>
-        <StyledDivider orientation="vertical" flexItem />
         <StyledInfo>
           {titles.map((title, index) => (
             <StyledProperty key={title}>
@@ -127,17 +121,13 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
           ))}
         </StyledInfo>
         {hover && (
-          <StyledBlur>
-            <Stack onClick={handleEditRuleClick}>
-              <StyledIconButton>
-                <PencilDrawing width={30} height={30} />
-              </StyledIconButton>
+          <StyledBlur alignItems="center">
+            <Stack onClick={handleEditRuleClick} alignItems="center">
+              <ModeEditIcon color="primary" />
               <StyledCaption variant="caption">Edit Rule</StyledCaption>
             </Stack>
-            <Stack onClick={handleOpenResolve}>
-              <StyledIconButton>
-                {resolved ? <Sync width={30} height={30} /> : <Checkmark width={30} height={30} />}
-              </StyledIconButton>
+            <Stack onClick={handleOpenResolve} alignItems="center">
+              {resolved ? <SyncIcon color="primary" /> : <TaskAltIcon color="primary" />}
               <StyledCaption variant="caption">{resolved ? 'Reactivate' : 'Resolve all'}</StyledCaption>
             </Stack>
           </StyledBlur>

@@ -120,14 +120,14 @@ const StyledContainer = styled(Box)({
   scrollbarWidth: 'thin',
 
   '::-webkit-scrollbar': {
-    '-webkit-appearance': 'none',
+    webkitAppearance: 'none',
     width: '7px'
   },
 
   '::-webkit-scrollbar-thumb': {
     borderRadius: '4px',
     backgroundColor: 'rgba(0,0,0,.5)',
-    '-webkit-box-shadow': '0 0 1px rgba(255,255,255,.5)'
+    webkitBoxShadow: '0 0 1px rgba(255,255,255,.5)'
   }
 });
 
