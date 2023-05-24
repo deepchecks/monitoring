@@ -1,23 +1,25 @@
 import React from 'react';
 
-import { CircularProgress, CircularProgressProps } from '@mui/material';
+import { SxProps } from '@mui/system';
 
-import { Container } from '../Container/Container';
-import { Image } from '../Image/Image';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
-export interface LoaderProps extends CircularProgressProps {
-  margin?: string;
-}
-
-export const Loader = (props: LoaderProps) => {
-  const { margin = '0' } = props;
-
-  const logoImg = require('../../assets/logo/logo-purple.svg').default;
-
-  return (
-    <Container width="150px" height="150px" margin={margin}>
-      <Image src={logoImg} alt="purple-logo" margin=" 0 0 -132px 18px" width="90px" />
-      <CircularProgress {...props} size={'large'}></CircularProgress>
-    </Container>
-  );
+export type LoaderProps = {
+  sx?: SxProps;
 };
+
+export const Loader = ({ sx }: LoaderProps) => (
+  <Box
+    sx={{
+      width: 50,
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      margin: '0 auto',
+      ...sx
+    }}
+  >
+    <CircularProgress />
+  </Box>
+);
