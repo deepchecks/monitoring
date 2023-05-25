@@ -43,7 +43,7 @@ from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.utils.database import SessionParameter
 
 
-class CachedResult(t.TypedDict):
+class WindowResult(t.TypedDict):
     index: int
     result: t.Any
     start: 'pdl.datetime.DateTime'
@@ -93,7 +93,7 @@ async def execute_check_per_window(
     model_columns = list(model_versions[0].model_columns.keys())
     columns = top_feat + model_columns
 
-    results: dict[int, dict[int, CachedResult]] = defaultdict(dict)
+    results: dict[int, dict[int, WindowResult]] = defaultdict(dict)
     windows_to_calculate: list[WindowExecutionArgs] = []
 
     model_versions_names: dict[int, str] = {}
