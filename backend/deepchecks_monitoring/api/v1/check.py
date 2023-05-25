@@ -382,14 +382,14 @@ async def run_standalone_check_per_window_in_range(
     CheckResultSchema
         Check run result.
     """
-    # if pool := resources_provider.parallel_check_executors_pool:
-    #     return await execute_check_per_window(
-    #         actor_pool=pool,
-    #         session=session,
-    #         check_id=check_id,
-    #         monitor_options=monitor_options,
-    #         organization_id=t.cast(int, user.organization_id)
-    #     )
+    if pool := resources_provider.parallel_check_executors_pool:
+        return await execute_check_per_window(
+            actor_pool=pool,
+            session=session,
+            check_id=check_id,
+            monitor_options=monitor_options,
+            organization_id=t.cast(int, user.organization_id)
+        )
     return await run_check_per_window_in_range(
         check_id,
         session,
