@@ -69,13 +69,12 @@ async def get_user(
         if len(token.api_token.split(".")) != 2:
             raise Unauthorized("Received incorrect/old secret")
 
-        # base64email, api_secret = token.api_token.split(".")
-        # try:
-        #     user_email = base64.b64decode(base64email).decode()
-        # except (binascii.Error, UnicodeDecodeError) as exc:
-        #     raise Unauthorized("Received invalid secret - incorrect base64 email") from exc
+        base64email, api_secret = token.api_token.split(".")
+        try:
+            user_email = base64.b64decode(base64email).decode()
+        except (binascii.Error, UnicodeDecodeError) as exc:
+            raise Unauthorized("Received invalid secret - incorrect base64 email") from exc
 
-        user_email = 'matan@deepchecks.com'
         user = (await session.scalar(
             select(models.User)
             .where(models.User.email == user_email)
@@ -86,9 +85,12 @@ async def get_user(
         ))
 
         # Validate user password
-        # if user is None or user.api_secret_hash is None or \
-        #         not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode()):
-        #     raise Unauthorized("Received invalid secret")
+        if (
+            user is None
+            or user.api_secret_hash is None
+            or not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode())
+        ):
+            raise Unauthorized("Received invalid secret")
 
         return user
 
