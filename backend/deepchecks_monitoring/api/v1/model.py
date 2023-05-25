@@ -19,7 +19,7 @@ from datetime import datetime
 import pandas as pd
 import pendulum as pdl
 import sqlalchemy as sa
-from fastapi import BackgroundTasks, Body, Depends, Path, Query
+from fastapi import BackgroundTasks, Depends, Path, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.cimmutabledict import immutabledict
@@ -34,8 +34,8 @@ from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.logic.check_logic import MAX_FEATURES_TO_RETURN
 from deepchecks_monitoring.logic.monitor_alert_logic import AlertsCountPerModel, MonitorsCountPerModel
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession as AsyncSession
-from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit,
-                                                    exists_or_404, fetch_or_404, field_length)
+from deepchecks_monitoring.monitoring_utils import (IdResponse, ModelIdentifier, NameIdResponse, TimeUnit, fetch_or_404,
+                                                    field_length)
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -46,6 +46,7 @@ from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.ingestion_errors import IngestionError
 from deepchecks_monitoring.schema_models.model import TaskType
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.model_version import ColumnMetadata, ModelVersion
 from deepchecks_monitoring.schema_models.monitor import Monitor, round_up_datetime
 from deepchecks_monitoring.utils import auth
@@ -154,11 +155,12 @@ async def get_create_model(
         Resources provider.
 
     """
-    model = await session.scalar(
+    model: Model = await session.scalar(
         sa.select(Model)
         .where(Model.name == model_schema.name)
     )
     if model is not None:
+        await Model.fetch_or_403(session, model.id, user)
         if model.task_type != model_schema.task_type:
             raise BadRequest(f"A model with the name '{model.name}' already exists but with the task type "
                              f"'{model_schema.task_type} and not the task type '{model.task_type}'")
@@ -185,6 +187,12 @@ async def get_create_model(
         notes = [ModelNote(created_by=user.id, updated_by=user.id, **it) for it in data.pop("notes", [])]
         model = Model(notes=notes, created_by=user.id, updated_by=user.id, **data)
         session.add(model)
+
+        org_users: t.List[User] = await session.scalars(sa.select(User.id)
+                                                        .where(User.organization_id == user.organization_id))
+        model_members = [ModelMember(user_id=user_id, model_id=model.id) for user_id in org_users]
+        session.add_all(model_members)
+
         await session.flush()
 
         # Create model tables
@@ -207,13 +215,15 @@ async def get_create_model(
 async def retrieve_all_models_data_ingestion(
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve all models data ingestion statistics."""
     return await _retrieve_models_data_ingestion(
         time_filter=time_filter,
         end_time=end_time,
         session=session,
+        user=user,
     )
 
 
@@ -227,7 +237,8 @@ async def retrieve_models_data_ingestion(
         model_identifier: t.Optional[ModelIdentifier] = ModelIdentifier.resolver(),
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve model data ingestion status."""
     return await _retrieve_models_data_ingestion(
@@ -235,6 +246,7 @@ async def retrieve_models_data_ingestion(
         time_filter=time_filter,
         end_time=end_time,
         session=session,
+        user=user,
     )
 
 
@@ -255,7 +267,8 @@ async def _retrieve_models_data_ingestion(
         model_identifier: t.Optional[ModelIdentifier] = None,
         time_filter: int = TimeUnit.HOUR * 24,
         end_time: t.Optional[str] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.Dict[int, t.List[ModelDailyIngestion]]:
     """Retrieve models data ingestion status."""
 
@@ -269,15 +282,17 @@ async def _retrieve_models_data_ingestion(
 
     if model_identifier is not None:
         model_identifier_name = model_identifier.column_name
+        model = t.cast(Model, await session.fetchone_or_404(
+            models_query.where(model_identifier.as_expression),
+            message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
+        ))
+        await Model.fetch_or_403(session, model.id, user)
         models = [
-            t.cast(Model, await session.fetchone_or_404(
-                models_query.where(model_identifier.as_expression),
-                message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
-            ))
+            model
         ]
     else:
         model_identifier_name = "id"
-        result = await session.execute(models_query)
+        result = await session.execute(models_query.join(Model.members).where(ModelMember.user_id == user.id))
         models = t.cast(t.List[Model], result.scalars().all())
 
     if time_filter == TimeUnit.HOUR:
@@ -350,7 +365,8 @@ async def _retrieve_models_data_ingestion(
 @router.get("/models/{model_id}", response_model=ModelSchema, tags=[Tags.MODELS])
 async def get_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser())
 ) -> ModelSchema:
     """Get a model from database based on model id.
 
@@ -367,6 +383,7 @@ async def get_model(
         Requested model.
     """
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
     return ModelSchema.from_orm(model)
 
 
@@ -377,7 +394,8 @@ async def get_model(
 )
 async def get_versions_per_model(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser())
 ):
     """Create a new model.
 
@@ -399,6 +417,7 @@ async def get_versions_per_model(
         .options(joinedload(Model.versions)),
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     )
+    await Model.fetch_or_403(session, model.id, user)
     return [
         NameIdResponse.from_orm(model_version)
         for model_version in model.versions
@@ -432,8 +451,9 @@ class ModelManagmentSchema(BaseModel):
     description: t.Optional[str] = None
     task_type: t.Optional[TaskType] = None
     has_data: bool = False
-    versions: t.List[ModelVersionManagmentSchema]
     max_severity: t.Optional[AlertSeverity] = None
+    versions: t.List[ModelVersionManagmentSchema]
+    members: t.List[int]
 
     class Config:
         """Schema config."""
@@ -447,7 +467,10 @@ class ModelManagmentSchema(BaseModel):
     tags=[Tags.MODELS, "models-managment"],
     description="Retrieve list of available models."
 )
-async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> t.List[ModelManagmentSchema]:
+async def retrieve_available_models(
+    session: AsyncSession = AsyncSessionDep,
+    user: User = Depends(auth.CurrentUser()),
+) -> t.List[ModelManagmentSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.cte()
     monitors_count = MonitorsCountPerModel.cte()
@@ -462,7 +485,10 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
         .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
         .options(
+            joinedload(Model.members),
             joinedload(Model.versions).load_only(
                 ModelVersion.id,
                 ModelVersion.name,
@@ -492,7 +518,10 @@ async def retrieve_available_models(session: AsyncSession = AsyncSessionDep) -> 
             versions=[
                 ModelVersionManagmentSchema.from_orm(version)
                 for version in record.Model.versions
-            ]
+            ],
+            members=[
+                member.user_id for member in record.Model.members
+            ],
         )
         for record in records
     ]
@@ -517,6 +546,7 @@ async def delete_model(
         .options(joinedload(Model.versions)),
         message=f"Model with next set of arguments does not exist: {repr(model_identifier)}"
     )
+    await Model.fetch_or_403(session, model.id, user)
 
     organization_schema = user.organization.schema_name
     tables = [f'"{organization_schema}"."{model.get_sample_labels_table_name()}"',
@@ -546,6 +576,7 @@ async def drop_tables(
 @router.get("/models/{model_id}/columns", response_model=t.Dict[str, ColumnMetadata], tags=[Tags.MODELS])
 async def get_model_columns(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
+        user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep,
 ):
     """Get statistics of columns for model.
@@ -568,6 +599,7 @@ async def get_model_columns(
         **model_identifier.as_kwargs,
         options=selectinload(Model.versions)
     )
+    await Model.fetch_or_403(session, model.id, user)
 
     # If model is new and there are no versions, return empty dict
     if len(model.versions) == 0:
@@ -630,7 +662,10 @@ class ConnectedModelSchema(BaseModel):
     tags=[Tags.MODELS, "connected-models"],
     description="Retrieve list of connected models."
 )
-async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> t.List[ConnectedModelSchema]:
+async def retrieve_connected_models(
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser())
+) -> t.List[ConnectedModelSchema]:
     """Retrieve list of models for the "Models management" screen."""
     alerts_count = AlertsCountPerModel.where(AlertRule.alert_severity == AlertSeverity.CRITICAL).cte()
 
@@ -673,6 +708,8 @@ async def retrieve_connected_models(session: AsyncSession = AsyncSessionDep) -> 
         .select_from(Model)
         .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
         .outerjoin(ingestion_info, ingestion_info.c.model_id == Model.id)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
     )).all()
 
     connected_models: t.List[ConnectedModelSchema] = []
@@ -751,15 +788,16 @@ class ConnectedModelVersionSchema(BaseModel):
     "/connected-models/{model_id}/versions",
     tags=[Tags.MODELS, "connected-models"],
     response_model=t.List[ConnectedModelVersionSchema],
+    dependencies=[Depends(Model.get_object_from_http_request)],
     description="Retrieve list of versions of a connected model."
 )
 async def retrive_connected_model_versions(
         model_id: int = Path(...),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser())
 ) -> t.List[ConnectedModelVersionSchema]:
     """Retrieve list of versions of a connected model."""
-    await exists_or_404(session=session, model=Model, id=model_id)
-
+    await Model.fetch_or_403(session, model_id, user)
     alerts_count = (
         sa.select(
             sa.func.jsonb_object_keys(Alert.failed_values).label("model_version_name"),
@@ -834,6 +872,7 @@ class IngestionErrorSchema(BaseModel):
     "/connected-models/{model_id}/versions/{version_id}/ingestion-errors",
     tags=[Tags.MODELS, "connected-models"],
     description="Retrieve connected model version ingestion errors.",
+    dependencies=[Depends(Model.get_object_from_http_request)],
     response_model=t.List[IngestionErrorSchema]
 )
 async def retrieve_connected_model_version_ingestion_errors(
@@ -844,16 +883,11 @@ async def retrieve_connected_model_version_ingestion_errors(
         download: bool = Query(default=False),
         limit: int = Query(default=50, le=10_000, ge=1),
         offset: int = Query(default=0, ge=0),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser())
 ):
     """Retrieve connected model version ingestion errors."""
-    await exists_or_404(
-        session=session,
-        model=ModelVersion,
-        id=version_id,
-        model_id=model_id
-    )
-
+    await Model.fetch_or_403(session, model_id, user)
     order_by_expression: t.Dict[t.Tuple[IngestionErrorsSortKey, SortOrder], t.Any] = {
         (IngestionErrorsSortKey.TIMESTAMP, SortOrder.ASC): IngestionError.created_at.asc(),
         (IngestionErrorsSortKey.TIMESTAMP, SortOrder.DESC): IngestionError.created_at.desc(),
@@ -910,46 +944,6 @@ async def retrieve_connected_model_version_ingestion_errors(
     return [IngestionErrorSchema.from_orm(it) for it in records]
 
 
-@router.get(
-    "/scorers",
-    tags=[Tags.MODELS, "connected-models"],
-    description="Retrieve list of all available scorers."
-)
-async def retrieve_scorers(session: AsyncSession = AsyncSessionDep):
-    """Retrieve list of all available scorers."""
-    # TODO
-    return []
-
-
-@router.get(
-    "/connected-models/{model_id}/scorers",
-    tags=[Tags.MODELS, "connected-models"],
-    description="Retrieve list of model scorers."
-)
-async def retrieve_model_scorers(
-        model_id: int = Path(...),
-        session: AsyncSession = AsyncSessionDep
-):
-    """Retrieve list of model scorers."""
-    # TODO
-    return []
-
-
-@router.post(
-    "/connected-models/{model_id}/scorers",
-    tags=[Tags.MODELS, "connected-models"],
-    description="Add a scorer to a model."
-)
-async def add_scorer(
-        model_id: int = Path(...),
-        body: t.Dict[str, t.Any] = Body(...),
-        session: AsyncSession = AsyncSessionDep
-):
-    """Add a scorer to a model."""
-    # TODO
-    return
-
-
 class ModelScheduleTimeSchema(BaseModel):
     """Model Schedule Time Schema."""
     timestamp: str
@@ -975,6 +969,7 @@ async def set_schedule_time(
     """Set schedule time."""
     options = (selectinload(Model.checks).load_only(Check.id).selectinload(Check.monitors))
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs, options=options)
+    await Model.fetch_or_403(session, model.id, user)
 
     monitors = [monitor for check in model.checks for monitor in check.monitors]
     monitor_ids = [monitor.id for monitor in monitors]
@@ -1011,6 +1006,7 @@ async def set_schedule_time(
 async def retrieve_model_notes(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.List[ModelNoteSchema]:
     model = await fetch_or_404(
         session,
@@ -1018,6 +1014,7 @@ async def retrieve_model_notes(
         options=joinedload(Model.notes),
         **model_identifier.as_kwargs,
     )
+    await Model.fetch_or_403(session, model.id, user)
     return [
         ModelNoteSchema.from_orm(it)
         for it in model.notes
@@ -1043,6 +1040,7 @@ async def create_model_notes(
         model=Model,
         **model_identifier.as_kwargs
     )
+    await Model.fetch_or_403(session, model.id, user)
     records = (await session.execute(
         sa.insert(ModelNote)
         .values([{"model_id": model.id, "created_by": user.id, "updated_by": user.id, **it.dict()} for it in notes])
@@ -1061,20 +1059,13 @@ async def create_model_notes(
 
 
 @router.delete(
-    "/models-notes/{note_id}",
+    "/models-notes/{model_note_id}",
     tags=[Tags.MODELS],
     summary="Delete model note."
 )
 async def delete_model_note(
-        note_id: int = Path(...),
+        model_note_id: int = Path(...),
+        note: ModelNote = Depends(ModelNote.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
 ):
-    await exists_or_404(
-        session=session,
-        model=ModelNote,
-        id=note_id
-    )
-    await session.execute(
-        sa.delete(ModelNote)
-        .where(ModelNote.id == note_id)
-    )
+    await session.delete(note)

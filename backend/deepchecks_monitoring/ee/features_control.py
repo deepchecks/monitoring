@@ -17,6 +17,7 @@ class TierConfSchema(BaseModel):
     sso: bool = False
     rows_per_minute: int = 500_000
     update_roles: bool = False
+    model_assignment: bool = False
 
 
 class CloudFeaturesControl(FeaturesControl):
@@ -36,6 +37,7 @@ class CloudFeaturesControl(FeaturesControl):
         self._signup_enabled = None
         self._onboarding_enabled = None
         self._update_roles = None
+        self._model_assignment = None
 
     @property
     def max_models(self) -> int:
@@ -58,6 +60,12 @@ class CloudFeaturesControl(FeaturesControl):
         if self._update_roles is None:
             self._load_tier()
         return self._update_roles
+
+    @property
+    def model_assignment(self) -> bool:
+        if self._model_assignment is None:
+            self._load_tier()
+        return self._model_assignment
 
     @property
     def signup_enabled(self) -> bool:
@@ -126,4 +134,5 @@ class CloudFeaturesControl(FeaturesControl):
         self._sso_enabled = tier_conf.sso
         self._rows_per_minute = tier_conf.rows_per_minute
         self._update_roles = tier_conf.update_roles
+        self._model_assignment = tier_conf.model_assignment
         self._onboarding_enabled = self.ld_client.variation("onBoardingEnabled", ld_user, default=False)

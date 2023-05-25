@@ -21,6 +21,7 @@ from sqlalchemy.orm import Mapped, column_property, relationship
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin, MonitorCheckConfSchema
 from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
 
 if t.TYPE_CHECKING:
@@ -82,7 +83,7 @@ class Frequency(str, enum.Enum):
         return f"INTERVAL '1 {self.value}'"
 
 
-class Monitor(Base, MetadataMixin):
+class Monitor(Base, MetadataMixin, PermissionMixin):
     """ORM model for the monitor."""
 
     __tablename__ = "monitors"
@@ -143,6 +144,20 @@ class Monitor(Base, MetadataMixin):
         frequency = t.cast("Frequency", self.frequency).to_pendulum_duration()
         aggregation_window = frequency * t.cast(int, self.aggregation_window)
         return self.next_schedule - aggregation_window
+
+    @classmethod
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
+        from deepchecks_monitoring.schema_models.check import Check
+        from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+
+        return (sa.select(cls)
+                .join(Monitor.check)
+                .join(Check.model)
+                .join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == obj_id))
 
 
 def as_pendulum_datetime(value: t.Union[int, str, "PendulumDateTime", "datetime"]) -> "PendulumDateTime":
