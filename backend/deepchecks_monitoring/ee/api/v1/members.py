@@ -114,8 +114,10 @@ async def assign_models_to_user(
     for model_id in member_schema.model_ids:
         await exists_or_404(session, Model, id=model_id)
 
-    model_memebers: t.List[ModelMember] = (await session.execute(sa.select(ModelMember)
-                                                             .where(ModelMember.user_id == user_id))).scalars().all()
+    model_memebers: t.List[ModelMember] = (
+        await session.execute(sa.select(ModelMember)
+                              .where(ModelMember.user_id == user_id))
+    ).scalars().all()
     models_to_create = []
     models_to_delete = []
     for model_memeber in model_memebers:
@@ -153,8 +155,10 @@ async def assign_users_to_model(
         if user.organization_id != current_user.organization_id:
             raise BadRequest(f"User(id:{user_id}) doesn't exists in your organization.")
 
-    model_memebers: t.List[ModelMember] = (await session.execute(sa.select(ModelMember)
-                                                             .where(ModelMember.model_id == model_id))).scalars().all()
+    model_memebers: t.List[ModelMember] = (
+        await session.execute(sa.select(ModelMember)
+                              .where(ModelMember.model_id == model_id))
+    ).scalars().all()
     users_to_create = []
     users_to_delete = []
     for model_memeber in model_memebers:
