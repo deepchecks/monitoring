@@ -18,52 +18,68 @@ export const Toggle = (props: ToggleProps) => {
 
   const labelColor = state ? (paletteOptions.primary as any).main : paletteOptions.grey?.[400];
 
-  const CustomSwitch = styled(Switch)(({ theme }) => ({
-    width: 80,
-    height: 35,
-    margin: '0 8px',
+  const StyledFormControlLabel = styled(FormControlLabel)({
+    marginRight: 0,
+
+    '& .MuiFormControlLabel-label': {
+      marginRight: '9px',
+      fontSize: '14px',
+      fontWeight: 600,
+      lineHeight: '17px',
+      transform: 'translateY(-1px)',
+
+      '&.Mui-disabled': {
+        opacity: 0.3
+      }
+    }
+  });
+
+  const StyledSwitch = styled(Switch)(({ theme }) => ({
+    width: 40,
+    height: 20,
     padding: 0,
-    boxShadow: '0 0 2px 0.1px lightgray',
-    borderRadius: 40,
+    marginRight: 12,
+    display: 'flex',
     '&:active': {
       '& .MuiSwitch-thumb': {
-        width: 15
+        width: 20
       },
       '& .MuiSwitch-switchBase.Mui-checked': {
-        transform: 'translateX(9px)'
+        transform: 'translateX(16.5px)'
       }
     },
     '& .MuiSwitch-switchBase': {
-      padding: 4,
+      padding: 2,
       '&.Mui-checked': {
-        transform: 'translateX(44px)',
-        color: '#fff',
+        transform: 'translateX(19.5px)',
+        color: theme.palette.common.white,
         '& + .MuiSwitch-track': {
-          opacity: 1
+          opacity: 1,
+          backgroundColor: theme.palette.primary.main
         }
       }
     },
     '& .MuiSwitch-thumb': {
       boxShadow: '0 2px 4px 0 rgb(0 35 11 / 20%)',
-      width: 26,
-      height: 26,
-      borderRadius: 14,
+      width: 16,
+      height: 16,
+      borderRadius: 16 / 2,
       transition: theme.transitions.create(['width'], {
         duration: 200
       })
     },
     '& .MuiSwitch-track': {
-      borderRadius: 40,
+      borderRadius: '16px',
       opacity: 1,
-      backgroundColor: theme.palette.grey[300],
+      backgroundColor: theme.palette.text.disabled,
       boxSizing: 'border-box'
     }
   }));
 
   return (
-    <FormControlLabel
-      control={<CustomSwitch onChange={() => setState(!state)} checked={state} />}
-      label={label && <Text text={label} color={labelColor} type="h2" />}
+    <StyledFormControlLabel
+      control={<StyledSwitch onChange={() => setState(!state)} checked={state} />}
+      label={label && <Text text={label} color={labelColor} type="h3" />}
       labelPlacement={labelPlacement}
       disabled={disabled}
     />

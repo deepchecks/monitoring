@@ -1,6 +1,7 @@
 """Module representing the endpoints for the auth."""
 from authlib.integrations.base_client.errors import MismatchingStateError
 from authlib.integrations.starlette_client import OAuth
+from authlib.jose.errors import InvalidClaimError
 from fastapi import Depends
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -52,6 +53,10 @@ async def auth0_callback(
 
     try:
         token = await auth0_client.authorize_access_token(request)
+    except InvalidClaimError:
+        # In case of invalid claim error, we redirect to the login page
+        redirect = request.url_for('auth0_login')
+        return RedirectResponse(redirect)
     except MismatchingStateError as error:
         raise BadRequest(error.description) from error
 
