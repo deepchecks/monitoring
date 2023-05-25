@@ -190,16 +190,16 @@ async def get_results_for_model_versions_per_window(
 
         if isinstance(check, Check):
             dp_check = initialize_check(
-                check.config, 
-                model_version.balance_classes, 
+                check.config,
+                model_version.balance_classes,
                 additional_kwargs
             )
         else:
             all_checks = []
             for c in check:
                 init_check = initialize_check(
-                    c.config, 
-                    model_version.balance_classes, 
+                    c.config,
+                    model_version.balance_classes,
                     additional_kwargs
                 )
                 init_check.check_id = c.id
@@ -362,8 +362,8 @@ async def get_results_for_model_versions_for_reference(
         )
 
         dp_check = initialize_check(
-            check.config, 
-            model_version.balance_classes, 
+            check.config,
+            model_version.balance_classes,
             additional_kwargs
         )
         try:

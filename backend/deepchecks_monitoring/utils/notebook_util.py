@@ -79,8 +79,8 @@ async def get_check_notebook(
     model_version = model_versions[0]
 
     dp_check = initialize_check(
-        check.config, 
-        model_version.balance_classes, 
+        check.config,
+        model_version.balance_classes,
         notebook_options.additional_kwargs
     )
     check_config = dp_check.config(include_version=False, include_defaults=False)
@@ -89,13 +89,13 @@ async def get_check_notebook(
         str(notebook_options.filter.filters).replace(
             '), ',
             '),\n           '
-        ) 
-        if notebook_options.filter 
+        )
+        if notebook_options.filter
         else None
     )
     asset_name = (
-        'run_single_check.md' 
-        if isinstance(dp_check, tabular_base_checks.SingleDatasetBaseCheck) 
+        'run_single_check.md'
+        if isinstance(dp_check, tabular_base_checks.SingleDatasetBaseCheck)
         else 'run_train_test_check.md'
     )
 
