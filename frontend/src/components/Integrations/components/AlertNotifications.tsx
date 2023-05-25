@@ -1,21 +1,16 @@
 import React, { useEffect, useState } from 'react';
 
-import {
-  AlertSeverity,
-  useRetriveOrganizationApiV1OrganizationGet,
-  useUpdateOrganizationApiV1OrganizationPut
-} from 'api/generated';
+import { AlertSeverity, useUpdateOrganizationApiV1OrganizationPut } from 'api/generated';
 
 import { Box, Checkbox } from '@mui/material';
 import { Stack } from '@mui/system';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { Loader } from '../../base/Loader/Loader';
 import { StyledImage, StyledText } from 'components/lib';
 
 import mailIcon from 'assets/integrations/mail.svg';
-import webhookIcon from 'assets/integrations/webhook.svg';
+import webhookIcon from 'assets/integrations/purple-webhook.svg';
 import slackIcon from 'assets/integrations/slack.svg';
 
 import { constants } from '../integrations.constants';
@@ -31,6 +26,7 @@ export interface NotificationsResponse {
   [NotificationDictionary.slack]: AlertSeverity[];
   [NotificationDictionary.webhook]: AlertSeverity[];
   is_slack_connected?: boolean;
+  is_webhook_connected?: boolean;
   slug: string;
 }
 
@@ -86,13 +82,7 @@ const notificationsItems = [
   NotificationDictionary.webhook
 ] as const;
 
-export function AlertNotifications() {
-  const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
-    query: {
-      cacheTime: 0,
-      staleTime: Infinity
-    }
-  });
+export function AlertNotifications({ data }: { data: NotificationsResponse }) {
   const updateNotifications = useUpdateOrganizationApiV1OrganizationPut();
   const [notifications, setNotifications] = useState<Notifications>({
     [NotificationDictionary.email]: [],
@@ -143,13 +133,6 @@ export function AlertNotifications() {
       } as any);
     }
   }, [data]);
-
-  if (isLoading)
-    return (
-      <Box sx={{ width: 888, display: 'flex', justifyContent: 'center' }}>
-        <Loader />
-      </Box>
-    );
 
   return (
     <Box width="100%" maxWidth="900px" marginBottom="36px">

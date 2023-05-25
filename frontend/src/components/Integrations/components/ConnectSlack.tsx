@@ -24,7 +24,7 @@ interface App {
   scope: string;
 }
 
-export function ConnectSlack() {
+const ConnectSlack = ({ isSlackConnected }: { isSlackConnected: boolean | undefined }) => {
   const { data: apps, isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
   const { data: slackConnect, isLoading: isSlackConnectLoading } =
     useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>();
@@ -87,7 +87,7 @@ export function ConnectSlack() {
           <StyledText text={constants.connect.slack.title} type="h1" color="white" />
           <StyledText text={constants.connect.slack.description} type="h3" color="white" />
         </Stack>
-        {slackConnect?.is_slack_connected ? (
+        {isSlackConnected ? (
           <StyledButton onClick={removeSlack} label="Disconnect" />
         ) : (
           <StyledButton onClick={connectSlack} label="Connect" />
@@ -96,4 +96,6 @@ export function ConnectSlack() {
       <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="auto" />
     </Box>
   );
-}
+};
+
+export default ConnectSlack;

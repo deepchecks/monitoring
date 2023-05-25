@@ -2,30 +2,43 @@ import React from 'react';
 
 import { Box, Stack, useMediaQuery, useTheme } from '@mui/material';
 
-import { ConnectSlack } from './components/ConnectSlack';
-import { AlertNotifications } from 'components/Integrations/components/AlertNotifications';
-import { StyledText } from 'components/lib';
+import { AlertNotifications, NotificationsResponse } from 'components/Integrations/components/AlertNotifications';
+import { StyledText, StyledLoader } from 'components/lib';
 import ConnectWebhook from './components/ConnectWebhook';
+import ConnectSlack from './components/ConnectSlack';
 
 import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 
 import { constants } from './integrations.constants';
+import { useRetriveOrganizationApiV1OrganizationGet } from 'api/generated';
 
 export const Integrations = () => {
   const theme = useTheme();
   const isLargeDesktop = useMediaQuery(theme.breakpoints.up(1840));
+  const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
+    query: {
+      cacheTime: 0,
+      staleTime: Infinity
+    }
+  });
 
   const stackDisplay = isLargeDesktop ? 'flex' : 'block';
+  const isSlackConnected = data?.is_slack_connected;
+  const isWebhookConnected = data?.is_webhook_connected;
+
+  if (isLoading || data === undefined) {
+    return <StyledLoader />;
+  }
 
   return (
     <Box padding="24px">
       <Stack display={stackDisplay} flexDirection="row" gap="85px">
-        <AlertNotifications />
+        <AlertNotifications data={data} />
         <Box display="flex" flexDirection="column" gap="16px">
           <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />
-          <ConnectWebhook />
+          <ConnectWebhook isWebhookConnected={isWebhookConnected} />
           <PermissionControlWrapper feature={featuresList.slack_enabled}>
-            <ConnectSlack />
+            <ConnectSlack isSlackConnected={isSlackConnected} />
           </PermissionControlWrapper>
         </Box>
       </Stack>

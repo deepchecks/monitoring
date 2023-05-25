@@ -9,9 +9,9 @@ export const constants = {
       description: 'Get DeepChecks alerts and communications via slack integrations.'
     },
     webhook: {
-      title: 'Create a Webhook',
+      title: (connected: any) => (connected ? 'Edit your Webhook' : 'Create a Webhook'),
       description: 'Get DeepChecks alerts and communications via Webhook integration.',
-      buttonLabel: 'Create Webhook'
+      buttonLabel: (connected: any) => (connected ? 'Edit Webhook' : 'Create Webhook')
     },
     pagerDuty: {
       title: 'Get notified on Pager Duty',
