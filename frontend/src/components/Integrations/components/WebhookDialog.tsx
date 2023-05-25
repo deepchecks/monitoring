@@ -111,7 +111,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
             padding="24px 0 0"
           >
             <StyledInput
-              label="Header Name (Cant be null)"
+              label="Header Name (Cant be null / duplicated)"
               placeholder="Enter Header Name"
               value={headerKey}
               onChange={e => handleHeaderChange(e.target.value, headers[headerKey], headerKey)}
