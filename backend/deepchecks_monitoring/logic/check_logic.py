@@ -15,9 +15,7 @@ from copy import deepcopy
 from numbers import Number
 
 import pendulum as pdl
-import sqlalchemy as sa
 from deepchecks import BaseCheck, CheckResult
-from deepchecks.core import BaseCheck
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
@@ -42,6 +40,10 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.monitor import Frequency, round_up_datetime
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
+
+if t.TYPE_CHECKING:
+    # pylint: disable=unused-import
+    import sqlalchemy as sa
 
 MAX_FEATURES_TO_RETURN = 1000
 
@@ -301,7 +303,7 @@ async def run_check_per_window_in_range(
     if len(model_versions) == 0:
         raise NotFound("No relevant model versions found")
 
-    top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
+    top_feat, _ = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
     model_columns = list(model_versions[0].model_columns.keys())
     columns = top_feat + model_columns
 
@@ -476,13 +478,13 @@ async def run_check_window(
 def create_execution_data_query(
         model_version: ModelVersion,
         options: TableFiltersSchema,
-        period: 't.Optional[pdl.Period]' = None,
-        columns: 't.Optional[list[str]]' = None,
+        period: "t.Optional[pdl.Period]" = None,
+        columns: "t.Optional[list[str]]" = None,
         n_samples: int = DEFAULT_N_SAMPLES,
         with_labels: bool = False,
         filter_labels_exist: bool = False,
         is_ref: bool = False
-) -> 'sa.sql.Selectable':
+) -> "sa.sql.Selectable":
     """Return sessions of the data load for the given model version.
 
     Parameters

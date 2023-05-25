@@ -344,7 +344,7 @@ class ResourcesProvider(BaseResourcesProvider):
         return self._email_sender
 
     @property
-    def parallel_check_executors_pool(self) -> 'ActorPool | None':
+    def parallel_check_executors_pool(self) -> "ActorPool | None":
         if not ray.is_initialized():
             # ray host and port envvars were not provided
             return
@@ -352,12 +352,13 @@ class ResourcesProvider(BaseResourcesProvider):
         if pool := getattr(self, "_parallel_check_executors", None):
             return pool
 
+        # pylint: disable=import-outside-toplevel
         from deepchecks_monitoring.logic.parallel_check_executor import CheckPerWindowExecutor
         database_uri = str(self.database_settings.database_uri)
 
         p = self._parallel_check_executors = ActorPool([
             CheckPerWindowExecutor
-            .options(name=f'CheckExecutor-{index}', get_if_exists=True)
+            .options(name=f"CheckExecutor-{index}", get_if_exists=True)
             .remote(database_uri)
             for index in range(self.settings.total_number_of_check_executor_actors)
         ])

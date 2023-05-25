@@ -7,16 +7,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-
-"""Module defining utility functions for check running."""
+"""Module defining parallel check execution logic."""
 import contextlib
-# import logging
 import typing as t
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-import pendulum as pdl
 import ray
 import sqlalchemy as sa
 from deepchecks.core import errors
@@ -35,6 +32,10 @@ from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.utils.database import SessionParameter
+
+if t.TYPE_CHECKING:
+    # pylint: disable=unused-import
+    import pendulum as pdl
 
 __all__ = ['execute_check_per_window', 'CheckPerWindowExecutor']
 
@@ -61,6 +62,7 @@ async def execute_check_per_window(
     cache_funcs: t.Optional[CacheFunctions] = None,
     n_of_windows_per_worker: int = 10,
 ):
+    """Execute check."""
     check = await fetch_or_404(
         session=session,
         model=Check,
@@ -82,7 +84,7 @@ async def execute_check_per_window(
     )
 
     if len(model_versions) == 0:
-        raise NotFound("No relevant model versions found")
+        raise NotFound('No relevant model versions found')
 
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
     model_columns = list(model_versions[0].model_columns.keys())
@@ -146,9 +148,9 @@ async def execute_check_per_window(
                 is_ref=False
             )
             windows_to_calculate.append({
-                "window_index": window_index,
-                "model_version_id": model_version_id,
-                "samples_query": samples_query,
+                'window_index': window_index,
+                'model_version_id': model_version_id,
+                'samples_query': samples_query,
             })
 
         if check.is_reference_required and create_reference_query:
@@ -186,9 +188,9 @@ async def execute_check_per_window(
     )
 
     for result in calculated_check_results:
-        value = result["result"]
-        window_index = result["window_index"]
-        model_version_id = result["model_version_id"]
+        value = result['result']
+        window_index = result['window_index']
+        model_version_id = result['model_version_id']
         start = results[model_version_id][window_index]['start']
         end = results[model_version_id][window_index]['end']
 
@@ -202,7 +204,7 @@ async def execute_check_per_window(
         if cache_funcs and monitor_id:
             cache_funcs.set_monitor_cache(
                 organization_id,
-                result["model_version_id"],
+                result['model_version_id'],
                 monitor_id,
                 start,
                 end,
@@ -221,12 +223,14 @@ async def execute_check_per_window(
         ]
 
     return {
-        "output": output,
-        "time_labels": [d.isoformat() for d in all_windows]
+        'output': output,
+        'time_labels': [d.isoformat() for d in all_windows]
     }
 
 
 class CheckPerWindowExecutionArgs(t.TypedDict):
+    """Arguments for check execution on a set for windows."""
+
     check_config: dict[str, t.Any]
     additional_check_kwargs: MonitorCheckConfSchema | None
     windows: list[WindowExecutionArgs]
@@ -243,6 +247,7 @@ class CheckPerWindowExecutionArgs(t.TypedDict):
 
 @ray.remote(max_restarts=-1)
 class CheckPerWindowExecutor:
+    """Ray actor for parallel check execution."""
 
     def __init__(self, database_uri: str):
         self.engine = sa.create_engine(database_uri)
@@ -260,11 +265,11 @@ class CheckPerWindowExecutor:
                 raise RuntimeError(f'Organization with id "{organization_id}" does not exist')
 
             search_path = t.cast(str, org.schema_name)
-            s.execute(SessionParameter("search_path", value=search_path))
+            s.execute(SessionParameter('search_path', value=search_path))
 
             try:
                 yield s
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 s.rollback()
             finally:
                 s.close()
@@ -286,18 +291,18 @@ class CheckPerWindowExecutor:
             reference_dataset = None
             reference_pred = None
             reference_proba = None
-            features_columns = args["feature_columns"][window['model_version_id']]
+            features_columns = args['feature_columns'][window['model_version_id']]
             model_classes = args['classes'][window['model_version_id']]
 
             check_instance = initialize_check(
-                args["check_config"],
-                args["balance_classes"][window['model_version_id']],
-                args["additional_check_kwargs"]
+                args['check_config'],
+                args['balance_classes'][window['model_version_id']],
+                args['additional_check_kwargs']
             )
             window_result = {
-                "window_index": window["window_index"],
-                "model_version_id": window["model_version_id"],
-                "result": None
+                'window_index': window['window_index'],
+                'model_version_id': window['model_version_id'],
+                'result': None
             }
 
             results.append(window_result)
@@ -316,8 +321,8 @@ class CheckPerWindowExecutor:
                 reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
                     reference_df,
                     features_columns=features_columns,
-                    task_type=args["task_type"].value,
-                    top_feat=args["top_features"],
+                    task_type=args['task_type'].value,
+                    top_feat=args['top_features'],
                     dataset_name='Reference'
                 )
                 references_dataframes[window['model_version_id']] = (
@@ -330,7 +335,7 @@ class CheckPerWindowExecutor:
             if reference_df is not None and reference_df.empty:
                 continue
 
-            window_data = session.execute(window["samples_query"])
+            window_data = session.execute(window['samples_query'])
             window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
 
             if window_df.empty:
@@ -339,8 +344,8 @@ class CheckPerWindowExecutor:
             test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
                 window_df,
                 features_columns=features_columns,
-                task_type=args["task_type"].value,
-                top_feat=args["top_features"],
+                task_type=args['task_type'].value,
+                top_feat=args['top_features'],
                 dataset_name='Production'
             )
             check_result = self._execute_check(
@@ -372,22 +377,22 @@ class CheckPerWindowExecutor:
         model_classes,
     ):
         shared_args = {
-            "feature_importance": feature_importance,
-            "with_display": False,
-            "model_classes": model_classes
+            'feature_importance': feature_importance,
+            'with_display': False,
+            'model_classes': model_classes
         }
         single_dataset_args = {
-            "y_pred_train": y_pred_train,
-            "y_proba_train": y_proba_train,
+            'y_pred_train': y_pred_train,
+            'y_proba_train': y_proba_train,
             **shared_args
         }
         train_test_args = {
-            "train_dataset": train_dataset,
-            "test_dataset": test_dataset,
-            "y_pred_train": y_pred_train,
-            "y_proba_train": y_proba_train,
-            "y_pred_test": y_pred_test,
-            "y_proba_test": y_proba_test,
+            'train_dataset': train_dataset,
+            'test_dataset': test_dataset,
+            'y_pred_train': y_pred_train,
+            'y_proba_train': y_proba_train,
+            'y_pred_test': y_pred_test,
+            'y_proba_test': y_proba_test,
             **shared_args
         }
 
@@ -408,7 +413,7 @@ class CheckPerWindowExecutor:
             return check_instance.run(*args, **kwargs)
         except errors.NotEnoughSamplesError:
             return None
-        except Exception as e:
+        except Exception:  # pylint: disable=broad-except
             return None
             # # TODO:
             # send error to sentry, needs to be done in the ee sub-package

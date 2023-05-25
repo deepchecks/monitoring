@@ -27,7 +27,10 @@ from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, Monit
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType)
-from deepchecks_monitoring.schema_models.model import TaskType
+
+if t.TYPE_CHECKING:
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.model import TaskType
 
 DEFAULT_N_SAMPLES = 5000
 

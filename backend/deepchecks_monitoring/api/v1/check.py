@@ -149,8 +149,15 @@ async def add_checks(
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
 
-    checks = [checks] if not isinstance(checks, t.Sequence) else checks
-    existing_check_names = [t.cast(str, x.name) for x in t.cast(t.List[Check], model.checks)]
+    checks = (
+        [checks]
+        if not isinstance(checks, t.Sequence)  # pylint: disable=isinstance-second-argument-not-valid-type
+        else checks
+    )
+    existing_check_names = [
+        t.cast(str, x.name)
+        for x in t.cast(t.List[Check], model.checks)
+    ]
 
     check_entities = []
     for check_creation_schema in checks:

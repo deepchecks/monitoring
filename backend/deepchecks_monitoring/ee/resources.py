@@ -9,13 +9,12 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import ldclient
 from ldclient import Context
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
-from ray.util.actor_pool import ActorPool
 
 from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
@@ -25,6 +24,10 @@ from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider as OpenSourceResourcesProvider
+
+if TYPE_CHECKING:
+    # pylint: disable=unused-import
+    from ray.util.actor_pool import ActorPool
 
 __all__ = ["ResourcesProvider"]
 
@@ -97,10 +100,10 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         return FeaturesControl()
 
     @property
-    def parallel_check_executors_pool(self) -> 'ActorPool | None':
+    def parallel_check_executors_pool(self) -> "ActorPool | None":
         parallel_check_executor_flag = self.lauchdarkly_client.variation(
-            'parallelCheckExecutorEnabled',
-            context=Context.builder('parallelCheckExecutorEnabled').build(),
+            "parallelCheckExecutorEnabled",
+            context=Context.builder("parallelCheckExecutorEnabled").build(),
             default=False
         )
         if parallel_check_executor_flag:
