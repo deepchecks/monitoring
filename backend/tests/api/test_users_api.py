@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models import Organization
-from tests.common import generate_user
+from tests.common import Payload, generate_user
 
 
 @pytest.mark.asyncio
@@ -92,3 +92,22 @@ async def test_user_role_update(client: TestClient, async_session: AsyncSession,
     json_resp = response.json()
     assert json_resp["id"] == new_user_id
     assert json_resp["roles"] == []
+
+
+@pytest.mark.asyncio
+async def test_user_model_update(client: TestClient,
+                                 test_api,
+                                 classification_model: Payload,
+                                 user):
+    available_models = test_api.fetch_available_models()
+    assert available_models[0]["members"] == [user.id]
+
+    response = client.post(f"/api/v1/users/{user.id}/models", json={"model_ids": []})
+    assert response.status_code == 200, response.content
+    available_models = test_api.fetch_available_models()
+    assert len(available_models) == 0
+
+    response = client.post(f"/api/v1/users/{user.id}/models", json={"model_ids": [classification_model["id"]]})
+    assert response.status_code == 200, response.content
+    available_models = test_api.fetch_available_models()
+    assert available_models[0]["members"] == [user.id]

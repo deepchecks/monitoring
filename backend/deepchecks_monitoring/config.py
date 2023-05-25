@@ -159,6 +159,7 @@ class Settings(
 class Tags(Enum):
     """Tags for the deepchecks_monitoring package."""
 
+    USERS = 'Users'
     MODELS = 'Models'
     CHECKS = 'Checks'
     MONITORS = 'Monitors'

@@ -147,7 +147,7 @@ async def add_checks(
         .options(joinedload(Model.checks)),
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
-
+    await Model.fetch_or_403(session, model.id, user)
     checks = [checks] if not isinstance(checks, t.Sequence) else checks
     existing_check_names = [t.cast(str, x.name) for x in t.cast(t.List[Check], model.checks)]
 
@@ -180,10 +180,12 @@ async def add_checks(
 async def delete_check_by_id(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         check_identifier: CheckIdentifier = CheckIdentifier.resolver(),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Delete check instance by identifier."""
-    await exists_or_404(session, Model, **model_identifier.as_kwargs)
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
     await exists_or_404(session, Check, **check_identifier.as_kwargs)
     await delete(Check).where(check_identifier.as_expression)
 
@@ -192,7 +194,8 @@ async def delete_check_by_id(
 async def delete_checks_by_name(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         names: t.List[str] = Query(..., description='Checks names'),
-        session: ExtendedAsyncSession = AsyncSessionDep
+        session: ExtendedAsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Delete check instances by name if they exist, otherwise returns 404."""
     model = (await session.fetchone_or_404(
@@ -202,6 +205,7 @@ async def delete_checks_by_name(
         .limit(1),
         message=f"'Model' with next set of arguments does not exist: {repr(model_identifier)}"
     ))
+    await Model.fetch_or_403(session, model.id, user)
 
     model = t.cast(Model, model)
     existing_checks = {check.name: check.id for check in model.checks}
@@ -225,7 +229,8 @@ async def delete_checks_by_name(
 )
 async def get_checks(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> t.List[CheckSchema]:
     """Return all the checks for a given model.
 
@@ -241,7 +246,8 @@ async def get_checks(
     List[CheckSchema]
         All the checks for a given model.
     """
-    await exists_or_404(session, Model, **model_identifier.as_kwargs)
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
     return [CheckSchema.from_orm(res) for res in results]
@@ -255,9 +261,12 @@ async def get_checks(
 async def get_model_auto_frequency(
         model_identifier: ModelIdentifier = ModelIdentifier.resolver(),
         session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Infer from the data the best frequency to show for analysis screen."""
     model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
+
     model_timezone = t.cast(str, model.timezone)
 
     if model.end_time is None:

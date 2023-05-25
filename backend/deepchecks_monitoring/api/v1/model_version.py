@@ -84,8 +84,8 @@ async def get_or_create_version(
     session : AsyncSession, optional
         SQLAlchemy session.
     """
-    model: Model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
-
+    model = await fetch_or_404(session, Model, **model_identifier.as_kwargs)
+    await Model.fetch_or_403(session, model.id, user)
     model_version: ModelVersion = (await session.execute(
         select(ModelVersion)
         .where(ModelVersion.name == info.name, ModelVersion.model_id == model.id)
@@ -294,12 +294,11 @@ class ModelVersionUpdateSchema(BaseModel):
 async def update_model_version(
         model_version_id: int,
         data: ModelVersionUpdateSchema,
+        model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
 ):
     """Update model version."""
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
-
     if data.feature_importance is not None:
         # TODO: move to ModelVersion
         existing_features = set(model_version.features_columns.keys())
@@ -365,11 +364,10 @@ class ModelVersionSchema(BaseModel):
     status_code=HttpStatus.HTTP_200_OK
 )
 async def retrieve_model_version_by_id(
-        model_version_id: int,
-        session: AsyncSession = AsyncSessionDep
+        model_version_id: int,  # pylint: disable=unused-argument
+        model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request),
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
-    model_version = await fetch_or_404(session, ModelVersion, id=model_version_id)
     return ModelVersionSchema.from_orm(model_version)
 
 
@@ -383,18 +381,22 @@ async def retrieve_model_version_by_id(
 async def retrieve_model_version_by_name(
         model_name: str = Path(..., description='Model name.'),
         version_name: str = Path(..., description='Model version name.'),
-        session: ExtendedAsyncSession = AsyncSessionDep
+        session: ExtendedAsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     model = await fetch_or_404(session, Model, name=model_name)
     model_version = await fetch_or_404(session, ModelVersion, name=version_name, model_id=model.id)
+    await ModelVersion.fetch_or_403(session, model_version.id, user)
     return ModelVersionSchema.from_orm(model_version)
 
 
-@router.get('/model-versions/{model_version_id}/schema', tags=[Tags.MODELS])
+@router.get('/model-versions/{model_version_id}/schema',
+            tags=[Tags.MODELS]
+            )
 async def get_schema(
-        model_version_id: int,
-        session: AsyncSession = AsyncSessionDep
+        model_version_id: int,  # pylint: disable=unused-argument
+        model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request)
 ):
     """Return json schema of the model version data to use in validation on client-side.
 
@@ -413,7 +415,6 @@ async def get_schema(
         feature columns schema
         non-feature columns schema
     """
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     result = {
         'monitor_schema': model_version.monitor_json_schema,
         'reference_schema': model_version.reference_json_schema,
@@ -426,7 +427,10 @@ async def get_schema(
     return result
 
 
-@router.post('/model-versions/{model_version_id}/suite-run', tags=[Tags.CHECKS], response_class=HTMLResponse)
+@router.post('/model-versions/{model_version_id}/suite-run',
+             tags=[Tags.CHECKS],
+             dependencies=[Depends(ModelVersion.get_object_from_http_request)],
+             response_class=HTMLResponse)
 async def run_suite_on_model_version(
         model_version_id: int,
         monitor_options: SingleCheckRunOptions,
@@ -506,7 +510,10 @@ async def _get_data(model_version_id: int,
     return ORJSONResponse(df.to_json(orient='records'))
 
 
-@router.post('/model-versions/{model_version_id}/get-ref-data', tags=[Tags.MODELS], response_class=ORJSONResponse)
+@router.post('/model-versions/{model_version_id}/get-ref-data',
+             tags=[Tags.MODELS],
+             dependencies=[Depends(ModelVersion.get_object_from_http_request)],
+             response_class=ORJSONResponse,)
 async def get_model_version_ref_data(
         model_version_id: int,
         monitor_options: TableDataSchema,
@@ -531,7 +538,10 @@ async def get_model_version_ref_data(
     return await _get_data(model_version_id, monitor_options, session, True)
 
 
-@router.post('/model-versions/{model_version_id}/get-prod-data', tags=[Tags.MODELS], response_class=ORJSONResponse)
+@router.post('/model-versions/{model_version_id}/get-prod-data',
+             tags=[Tags.MODELS],
+             dependencies=[Depends(ModelVersion.get_object_from_http_request)],
+             response_class=ORJSONResponse)
 async def get_model_version_prod_data(
         model_version_id: int,
         monitor_options: WindowDataSchema,
@@ -581,6 +591,7 @@ class TimeWindowOutputStatsSchema(BaseModel):
 @router.get(
     '/model-versions/{model_version_id}/time-window-statistics',
     response_model=TimeWindowOutputStatsSchema,
+    dependencies=[Depends(ModelVersion.get_object_from_http_request)],
     tags=[Tags.DATA]
 )
 async def get_time_window_statistics(
@@ -629,8 +640,9 @@ async def get_time_window_statistics(
 
 @router.get('/model-versions/{model_version_id}/count-samples', tags=[Tags.MODELS])
 async def get_count_samples(
-        model_version_id: int,
-        session: AsyncSession = AsyncSessionDep
+        model_version_id: int,  # pylint: disable=unused-argument
+        session: AsyncSession = AsyncSessionDep,
+        model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request)
 ):
     """Return json schema of the model version data to use in validation on client-side.
 
@@ -645,7 +657,6 @@ async def get_count_samples(
     -------
     json schema of the model version
     """
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     count_sql = 'select count(1) from {}'
     mon_count = (await session.execute(text(count_sql.format(model_version.get_monitor_table_name())))).scalar()
     ref_count = (await session.execute(text(count_sql.format(model_version.get_reference_table_name())))).scalar()
@@ -670,6 +681,7 @@ async def delete_model_version_by_name(
         model_identifier=ModelIdentifier(model_name, kind=IdentifierKind.NAME),
         version_identifier=ModelVersionIdentifier(version_name, kind=IdentifierKind.NAME),
         session=session,
+        user=user,
     )
 
 
@@ -697,6 +709,7 @@ async def delete_model_version_by_id(
         organization=user.organization,
         version_identifier=ModelVersionIdentifier.from_request_params(model_version_id),
         session=session,
+        user=user,
     )
 
 
@@ -706,6 +719,7 @@ async def _delete_model_version(
         version_identifier: ModelVersionIdentifier,
         model_identifier: t.Optional[ModelIdentifier] = None,
         session: AsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.AdminUser()),
 ):
     """Delete model version.
 
@@ -720,7 +734,7 @@ async def _delete_model_version(
         if version_identifier.kind != IdentifierKind.ID:
             raise ValueError('Version name cannot be used without model identifier')
         model_version = await fetch_or_404(session, ModelVersion, **version_identifier.as_kwargs)
-
+    model_version = await ModelVersion.fetch_or_403(session, model_version.id, user)
     await session.delete(model_version)
     tables = [f'"{organization.schema_name}"."{model_version.get_monitor_table_name()}"',
               f'"{organization.schema_name}"."{model_version.get_reference_table_name()}"']
