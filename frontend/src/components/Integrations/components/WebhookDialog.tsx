@@ -23,7 +23,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
   const [name, setName] = useState('');
   const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
   const [description, setDescription] = useState('');
-  const [headers, setHeaders] = useState<{ [key: string]: any }>({ 'Name (Cant be null)': 'Value' });
+  const [headers, setHeaders] = useState<{ [key: string]: any }>({ Name: 'Value' });
 
   const dialogTitleAndBtn = isWebhookConnected ? 'Edit Webhook' : 'Create New Webhook';
 
@@ -38,9 +38,9 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
   };
 
   const handleAddHeader = () =>
-    headers['Name (Cant be null)']
+    headers['Name']
       ? setError('Please fill the existing header name input before adding a new one.')
-      : setHeaders({ ...headers, 'Name (Cant be null)': 'Value' });
+      : setHeaders({ ...headers, Name: 'Value' });
 
   const handleHeaderChange = (key: string, value: string, prevKey?: string) => {
     if (key) {
@@ -111,7 +111,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
             padding="24px 0 0"
           >
             <StyledInput
-              label="Header Name"
+              label="Header Name (Cant be null)"
               placeholder="Enter Header Name"
               value={headerKey}
               onChange={e => handleHeaderChange(e.target.value, headers[headerKey], headerKey)}
