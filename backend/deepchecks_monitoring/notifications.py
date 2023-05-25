@@ -57,6 +57,7 @@ class AlertNotificator:
                 joinedload(AlertRule.monitor)
                 .joinedload(Monitor.check)
                 .joinedload(Check.model)
+                .joinedload(Model.members)
             )
         )) is None:
             raise RuntimeError(f"Not existing alert id:{alert.id}")
@@ -112,12 +113,14 @@ class AlertNotificator:
             )
             return False
 
+        model_members_ids = [member.user_id for member in model.members]
         members_emails = (await self.session.scalars(
-            sa.select(User.email).where(User.organization_id == org.id)
+            sa.select(User.email).where(sa.and_(User.organization_id == org.id, User.id.in_(model_members_ids)))
         )).all()
 
         if not members_emails:
-            self.logger.error("Organization(id:%s) does not have members", org.id)
+            self.logger.error("Organization(id:%s) does not have members with premmisions to this model(id:%s)",
+                              org.id, model.id)
             return False
 
         deepchecks_host = self.resources_provider.settings.deployment_url

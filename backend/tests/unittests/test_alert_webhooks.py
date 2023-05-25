@@ -23,7 +23,6 @@ from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor, TaskType
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookHttpMethod, WebhookKind
-
 from tests.common import Payload, TestAPI
 from tests.utils import dummy_http_server
 

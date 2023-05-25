@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from starlette import status
 from starlette.responses import RedirectResponse
 
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, LicenseError
 from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
@@ -26,6 +27,8 @@ from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.organization import OrgTier
 from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.auth import create_api_token
 
@@ -58,7 +61,7 @@ class CompleteDetailsUpdateSchema(BaseModel):
     accept_invite: t.Optional[bool]
 
 
-@router.get("/users/complete-details", tags=["users"], response_model=CompleteDetailsSchema)
+@router.get("/users/complete-details", tags=[Tags.USERS], response_model=CompleteDetailsSchema)
 async def get_complete_details(
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep
@@ -86,7 +89,7 @@ async def get_complete_details(
     return CompleteDetailsSchema(invitation=invite_info, user_full_name=user.full_name, organization_name=org_name)
 
 
-@router.post("/users/complete-details", tags=["users"])
+@router.post("/users/complete-details", tags=[Tags.USERS])
 async def update_complete_details(
         body: CompleteDetailsUpdateSchema,
         user: User = Depends(auth.CurrentUser()),
@@ -125,12 +128,16 @@ async def update_complete_details(
         # delete the invite
         await session.delete(invite)
 
+        model_ids = await session.scalars(select(Model.id))
+        model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
+        session.add_all(model_members)
+
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
 
 
-@router.delete("/users", tags=["users"])
+@router.delete("/users", tags=[Tags.USERS])
 async def delete_user(
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep,
@@ -178,7 +185,7 @@ class UserSchema(BasicUserSchema):
 @router.get(
     "/users/me",
     response_model=UserSchema,
-    tags=["users"],
+    tags=[Tags.USERS],
     description="Retrieve user details"
 )
 async def retrieve_user_info(response: Response, user: User = Depends(auth.CurrentUser())) -> UserSchema:
@@ -192,7 +199,7 @@ async def retrieve_user_info(response: Response, user: User = Depends(auth.Curre
 @router.get(
     "/users/regenerate-api-token",
     response_model=str,
-    tags=["users"],
+    tags=[Tags.USERS],
     description="Regenerate user token"
 )
 async def regenerate_api_token(
@@ -210,7 +217,7 @@ async def regenerate_api_token(
 @router.get(
     "/users/accept-eula",
     name="eula-acceptance",
-    tags=["users"],
+    tags=[Tags.USERS],
     description="Accept End-User License Aggrement"
 )
 async def accept_eula(
