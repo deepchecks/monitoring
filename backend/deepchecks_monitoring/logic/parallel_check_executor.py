@@ -43,6 +43,8 @@ from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.utils.database import SessionParameter
 
 
+__all__ = ['execute_check_per_window', 'CheckPerWindowExecutor']
+
 class WindowResult(t.TypedDict):
     index: int
     result: t.Any
@@ -159,7 +161,8 @@ async def execute_check_per_window(
         if check.is_reference_required and create_reference_query:
             references_queries[model_version_id] = create_execution_data_query(
                 model_version,
-                monitor_options, columns=columns,
+                monitor_options,
+                columns=columns,
                 with_labels=t.cast(bool, check.is_label_required),
                 is_ref=True
             )
@@ -196,8 +199,11 @@ async def execute_check_per_window(
         start = results[model_version_id][window_index]['start']
         end = results[model_version_id][window_index]['end']
 
-        if value is not None:
-            value = reduce_check_result(value, monitor_options.additional_kwargs)
+        value = (
+            reduce_check_result(value, monitor_options.additional_kwargs)
+            if value is not None
+            else value
+        )
 
         # TODO: consider caching results not only when a 'monitor_id' is provided
         if cache_funcs and monitor_id:
@@ -216,7 +222,10 @@ async def execute_check_per_window(
 
     for k, v in results.items():
         key = lambda it: it['index']
-        output[model_versions_names[k]] = sorted(v.values(), key=key)
+        output[model_versions_names[k]] = [
+            it['result'] if it else None
+            for it in sorted(v.values(), key=key)
+        ]
 
     return {
         "output": output,

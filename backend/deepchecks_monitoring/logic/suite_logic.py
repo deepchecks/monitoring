@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 
 """Module defining utility functions for suite running."""
+import typing as t
 
 from deepchecks.tabular.suite import Suite as TabularSuite
 from deepchecks.tabular.suites import production_suite
@@ -70,16 +71,16 @@ async def run_suite_for_model_version(model_version: ModelVersion, window_option
     suite = _create_tabular_suite(suite_name, task_type, len(ref_df) > 0)
     test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
         test_df,
-        model_version,
-        model,
-        top_feat,
+        features_columns=t.cast('dict[str, str]', model_version.features_columns),
+        task_type=t.cast('TaskType', model.task_type).value,
+        top_feat=top_feat,
         dataset_name="Production",
     )
     reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
         ref_df,
-        model_version,
-        model,
-        top_feat,
+        features_columns=t.cast('dict[str, str]', model_version.features_columns),
+        task_type=t.cast('TaskType', model.task_type).value,
+        top_feat=top_feat,
         dataset_name="Reference",
     )
 

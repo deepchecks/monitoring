@@ -9,28 +9,18 @@
 # ----------------------------------------------------------------------------
 
 """Module defining utility functions for check running."""
-import logging
 import typing as t
 from collections import defaultdict
 from copy import deepcopy
 from numbers import Number
-import contextlib
 
-import ray
 import pendulum as pdl
 import sqlalchemy as sa
-# import loky
-import pandas as pd
-import numpy as np
-from sqlalchemy.orm import Session
 from deepchecks import BaseCheck, CheckResult
-from deepchecks.tabular import Dataset, Suite
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
-from deepchecks.tabular import Dataset
-from deepchecks.core import BaseCheck, errors
+from deepchecks.core import BaseCheck
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
-from deepchecks.tabular import base_checks as tabular_base_checks
 from pydantic import BaseModel, Field, ValidationError, root_validator
 from sqlalchemy import VARCHAR, Column, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,8 +31,7 @@ from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.model_logic import (DEFAULT_N_SAMPLES, get_model_versions_for_time_range,
                                                      get_results_for_model_versions_for_reference,
                                                      get_results_for_model_versions_per_window,
-                                                     get_top_features_or_from_conf,
-                                                     initialize_check, dataframe_to_dataset_and_pred, run_deepchecks)
+                                                     get_top_features_or_from_conf)
 from deepchecks_monitoring.monitoring_utils import (CheckParameterTypeEnum, DataFilter, DataFilterList,
                                                     MonitorCheckConf, MonitorCheckConfSchema, OperatorsEnum,
                                                     fetch_or_404, make_oparator_func)
@@ -52,9 +41,7 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
                                                              SAMPLE_PRED_COL, SAMPLE_TS_COL)
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.monitor import Frequency, round_up_datetime
-from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
-from deepchecks_monitoring.utils.database import SessionParameter
 
 MAX_FEATURES_TO_RETURN = 1000
 

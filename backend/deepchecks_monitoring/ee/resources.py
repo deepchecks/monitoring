@@ -12,7 +12,9 @@
 from typing import cast
 
 import ldclient
+from ray.util.actor_pool import ActorPool
 from ldclient.client import LDClient
+from ldclient import Context
 from ldclient.config import Config as LDConfig
 
 from deepchecks_monitoring.ee import utils
@@ -93,6 +95,19 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.lauchdarkly_client)
         return FeaturesControl()
+
+    @property
+    def parallel_check_executors_pool(self) -> 'ActorPool | None':
+        parallel_check_executor_flag = self.lauchdarkly_client.variation(
+            'parallelCheckExecutorEnabled',
+            context=Context.builder('parallelCheckExecutorEnabled').build(),
+            default=False
+        )
+        if any((
+            self.settings.parallel_check_executor_enabled,
+            parallel_check_executor_flag
+        )):
+            return self._parallel_check_executors_pool
 
     def initialize_telemetry_collectors(
         self,

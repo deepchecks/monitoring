@@ -13,6 +13,9 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
+import ray
+from ray.util.actor_pool import ActorPool
+from ldclient import Context
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
@@ -342,14 +345,18 @@ class ResourcesProvider(BaseResourcesProvider):
         return self._email_sender
 
     @property
-    def parallel_check_executors_pool(self):
-        if not self.settings.parallel_check_executor_enabled:
-            return
+    def parallel_check_executors_pool(self) -> 'ActorPool | None':
+        if self.settings.parallel_check_executor_enabled:
+            return self._parallel_check_executors_pool
 
+    @property
+    def _parallel_check_executors_pool(self) -> 'ActorPool | None':
         if pool := getattr(self, "_parallel_check_executors", None):
             return pool
 
-        from ray.util.actor_pool import ActorPool
+        if not ray.is_initialized():
+            ray.init()
+
         from deepchecks_monitoring.logic.parallel_check_executor import CheckPerWindowExecutor
         database_uri = str(self.database_settings.database_uri)
 
@@ -359,6 +366,10 @@ class ResourcesProvider(BaseResourcesProvider):
         ])
 
         return p
+
+    def shutdown_parallel_check_executors_pool(self):
+        self._parallel_check_executors = None
+        ray.shutdown()
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.

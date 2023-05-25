@@ -23,6 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
@@ -198,10 +199,10 @@ async def get_results_for_model_versions_per_window(
             dp_check = Suite('', *all_checks)
 
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference,
-            model_version,
-            model,
-            top_feat,
+            df=reference,
+            features_columns=t.cast('dict[str, str]', model_version.features_columns),
+            task_type=t.cast('TaskType', model.task_type).value,
+            top_feat=top_feat,
             dataset_name='Reference'
         )
 
@@ -265,10 +266,10 @@ def run_deepchecks(
     reference_table_proba
 ):
     test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
-        test_data,
-        model_version,
-        model,
-        top_feat,
+        df=test_data,
+        features_columns=model_version.features_columns,
+        task_type=t.cast('TaskType', model).value,
+        top_feat=top_feat,
         dataset_name='Production',
     )
     shared_args = dict(
@@ -345,10 +346,10 @@ async def get_results_for_model_versions_for_reference(
 
         reduced_outs = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference,
-            model_version,
-            model,
-            top_feat,
+            df=reference,
+            features_columns=t.cast('dict[str, str]', model_version.features_columns),
+            task_type=t.cast('TaskType', model.task_type).value,
+            top_feat=top_feat,
             dataset_name='Reference'
         )
 
