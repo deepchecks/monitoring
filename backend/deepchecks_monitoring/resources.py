@@ -80,6 +80,7 @@ class ResourcesProvider(BaseResourcesProvider):
         self._cache_funcs: t.Optional[CacheFunctions] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
+        self._parallel_check_executors = None
         self._topics = set()
 
     @property
@@ -339,6 +340,25 @@ class ResourcesProvider(BaseResourcesProvider):
         if self._email_sender is None:
             self._email_sender = EmailSender(self.settings)
         return self._email_sender
+
+    @property
+    def parallel_check_executors_pool(self):
+        if not self.settings.parallel_check_executor_enabled:
+            return
+
+        if pool := getattr(self, "_parallel_check_executors", None):
+            return pool
+
+        from ray.util.actor_pool import ActorPool
+        from deepchecks_monitoring.logic.parallel_check_executor import CheckPerWindowExecutor
+        database_uri = str(self.database_settings.database_uri)
+
+        p = self._parallel_check_executors = ActorPool([
+            CheckPerWindowExecutor.remote(database_uri)
+            for _ in range(self.settings.n_of_check_executors)
+        ])
+
+        return p
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.

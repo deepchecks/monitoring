@@ -193,12 +193,12 @@ class ModelVersion(Base, MetadataMixin):
         if data_filter is None or len(data_filter.filters) == 0:
             return True
         filter_columns = {
-            f.column 
+            f.column
             for f in data_filter.filters
         }
         columns = (
-            set(self.features_columns.keys()) 
-            | set(self.additional_data_columns.keys()) 
+            set(self.features_columns.keys())
+            | set(self.additional_data_columns.keys())
             | set(self.model_columns.keys())
         )
         return columns.issuperset(filter_columns)

@@ -118,25 +118,25 @@ def get_top_features_or_from_conf(
         )
     ):
         features = (
-            additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE, []) 
+            additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE, [])
             + additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY, [])
         )  # type: ignore TODO
         if model_version.feature_importance is not None:
             feat_dict = pd.Series({
-                key: val 
-                for key, val in model_version.feature_importance.items() 
+                key: val
+                for key, val in model_version.feature_importance.items()
                 if key in features
             })
         else:
             feat_dict = None
         return features, feat_dict
-    
+
     return model_version.get_top_features(n_top)
 
 
 def initialize_check(
     check_config: t.Any,
-    balance_classes, 
+    balance_classes,
     additional_kwargs=None
 ) -> BaseCheck:
     """Initialize an instance of Deepchecks' check. also filter the extra parameters to only include the parameters \

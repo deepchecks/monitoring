@@ -292,18 +292,18 @@ async def run_check_per_window_in_range(
     """
     # get the relevant objects from the db
     check = await fetch_or_404(
-        session, 
+        session,
         Check,
         id=check_id,
         options=joinedload(Check.model).load_only(Model.timezone)
     )
-    
+
     all_windows = monitor_options.calculate_windows(check.model.timezone)[-31:]
     frequency = monitor_options.frequency
 
     assert frequency is not None
     aggregation_window = frequency.to_pendulum_duration() * monitor_options.aggregation_window
-    
+
     model, model_versions = await get_model_versions_for_time_range(
         session,
         check.model_id,

@@ -18,6 +18,7 @@ import ray
 import sqlalchemy as sa
 import pandas as pd
 import numpy as np
+import pendulum as pdl
 from sqlalchemy.orm import Session
 from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import Dataset
@@ -33,6 +34,7 @@ from deepchecks_monitoring.logic.model_logic import get_top_features_or_from_con
 from deepchecks_monitoring.logic.model_logic import initialize_check, dataframe_to_dataset_and_pred
 from deepchecks_monitoring.logic.check_logic import MonitorOptions
 from deepchecks_monitoring.logic.check_logic import create_execution_data_query
+from deepchecks_monitoring.logic.check_logic import reduce_check_result
 
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models.check import Check
@@ -44,8 +46,8 @@ from deepchecks_monitoring.utils.database import SessionParameter
 class CachedResult(t.TypedDict):
     index: int
     result: t.Any
-    start: str
-    end: str
+    start: 'pdl.datetime.DateTime'
+    end: 'pdl.datetime.DateTime'
 
 
 class WindowExecutionArgs(t.TypedDict):
@@ -65,18 +67,18 @@ async def execute_check_per_window(
     n_of_windows_per_worker: int = 10,
 ):
     check = await fetch_or_404(
-        session=session, 
+        session=session,
         model=Check,
         id=check_id,
         options=joinedload(Check.model).load_only(Model.timezone)
     )
-    
+
     all_windows = monitor_options.calculate_windows(check.model.timezone)[-31:]
     frequency = monitor_options.frequency
     assert frequency is not None
-    
+
     aggregation_window = frequency.to_pendulum_duration() * monitor_options.aggregation_window
-    
+
     model, model_versions = await get_model_versions_for_time_range(
         session=session,
         model_id=t.cast(int, check.model_id),
@@ -90,58 +92,60 @@ async def execute_check_per_window(
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], monitor_options.additional_kwargs)
     model_columns = list(model_versions[0].model_columns.keys())
     columns = top_feat + model_columns
-    # cached_results: dict[int, list[CachedResult]] = defaultdict(list)
 
     results: dict[int, dict[int, CachedResult]] = defaultdict(dict)
-    
     windows_to_calculate: list[WindowExecutionArgs] = []
+
+    model_versions_names: dict[int, str] = {}
     references_queries: dict[int, 'sa.sql.Selectable'] = {}
     features_per_model_version: dict[int, dict[str, str]] = {}
     balance_classes_per_model_version: dict[int, bool] = {}
     classes_per_model_version: dict[int, t.Optional[list[str|int]]] = {}
-    
+
     for model_version in model_versions:
         if not model_version.is_filter_fit(monitor_options.filter):
             continue
-        
+
         model_version_id = t.cast(int, model_version.id)
+        model_versions_names[model_version_id] = t.cast(str, model_version.name)
         create_reference_query = False
 
         for window_index, window_end in enumerate(all_windows):
             window_start = window_end - aggregation_window
-            value = {'index': window_index, 'start': str(window_start), 'end': str(window_end)}
+
+            results[model_version_id][window_index] = {
+                'index': window_index,
+                'start': window_start,
+                'end': window_end,
+                'result': None  # will be filled later
+            }
 
             if monitor_id and cache_funcs:
                 cached_result = cache_funcs.get_monitor_cache(
-                    organization_id, 
+                    organization_id,
                     model_version_id,
                     monitor_id,
                     window_start,
                     window_end
                 )
                 if cached_result.found:
-                    value = value | {'result': cached_result.value}
-                    results[model_version_id][window_index] = t.cast(CachedResult, value)
-                    # cached_results[model_version_id].append(t.cast(CachedResult, value))
+                    results[model_version_id][window_index]['result'] = cached_result.value
                     continue
 
             if not model_version.is_in_range(window_start, window_end):
-                value = value | {'result': None}
-                results[model_version_id][window_index] = t.cast(CachedResult, value)
-                # cached_results[model_version_id].append(t.cast(CachedResult, value))
                 continue
-            
+
             features_per_model_version[model_version_id] = t.cast('dict[t.Any, t.Any]', model_version.features_columns)
             balance_classes_per_model_version[model_version_id] = t.cast('bool', model_version.balance_classes)
             classes_per_model_version[model_version_id] = t.cast('t.Optional[list[str|int]]', model_version.classes)
-            
+
             create_reference_query = True
             period = window_end - window_start
-            
+
             samples_query = create_execution_data_query(
-                model_version, 
-                monitor_options, 
-                period=period, 
+                model_version,
+                monitor_options,
+                period=period,
                 columns=columns,
                 with_labels=t.cast(bool, check.is_label_required),
                 is_ref=False
@@ -151,14 +155,16 @@ async def execute_check_per_window(
                 "model_version_id": model_version_id,
                 "samples_query": samples_query,
             })
-        
+
         if check.is_reference_required and create_reference_query:
             references_queries[model_version_id] = create_execution_data_query(
-                model_version, 
+                model_version,
                 monitor_options, columns=columns,
                 with_labels=t.cast(bool, check.is_label_required),
                 is_ref=True
             )
+
+    # TODO: do not use actors pool if you have small number of windows
 
     task_factory = lambda pool, batch: pool.execute.remote(CheckPerWindowExecutionArgs(
         check_config=t.cast('dict[t.Any, t.Any]', check.config),
@@ -177,14 +183,44 @@ async def execute_check_per_window(
         windows_to_calculate[i:i + n_of_windows_per_worker]
         for i in range(0, len(windows_to_calculate), n_of_windows_per_worker)
     )
+    calculated_check_results = (
+        result
+        for batch_results in actor_pool.map(task_factory, windows_batches)
+        for result in batch_results
+    )
 
-    for batch_results in actor_pool.map(task_factory, windows_batches):
-        for result in batch_results:
-            results[result["model_version_id"]][result["window_index"]] = result["result"]
-    
+    for result in calculated_check_results:
+        value = result["result"]
+        window_index = result["window_index"]
+        model_version_id = result["model_version_id"]
+        start = results[model_version_id][window_index]['start']
+        end = results[model_version_id][window_index]['end']
+
+        if value is not None:
+            value = reduce_check_result(value, monitor_options.additional_kwargs)
+
+        # TODO: consider caching results not only when a 'monitor_id' is provided
+        if cache_funcs and monitor_id:
+            cache_funcs.set_monitor_cache(
+                organization_id,
+                result["model_version_id"],
+                monitor_id,
+                start,
+                end,
+                value
+            )
+
+        results[model_version_id][window_index]['result'] = value
+
+    output = {}
+
+    for k, v in results.items():
+        key = lambda it: it['index']
+        output[model_versions_names[k]] = sorted(v.values(), key=key)
+
     return {
-        k: list(v.values())
-        for k, v in results.items()
+        "output": output,
+        "time_labels": [d.isoformat() for d in all_windows]
     }
 
 
@@ -205,10 +241,10 @@ class CheckPerWindowExecutionArgs(t.TypedDict):
 
 @ray.remote(max_restarts=-1)
 class CheckPerWindowExecutor:
-    
+
     def __init__(self, database_uri: str):
         self.engine = sa.create_engine(database_uri)
-    
+
     def execute(self, args: CheckPerWindowExecutionArgs):
         with self._session(args['organization_id']) as s:
             return self._execute(s, args)
@@ -233,15 +269,15 @@ class CheckPerWindowExecutor:
 
     def _execute(self, session: Session, args: CheckPerWindowExecutionArgs):
         references_queries = args['references_queries']
-    
+
         references_dataframes: dict[int, tuple[
-            pd.DataFrame, 
+            pd.DataFrame,
             Dataset | None,
-            np.ndarray | None, 
+            np.ndarray | None,
             np.ndarray | None
         ]] = {}
 
-        result = []
+        results = []
 
         for window in args['windows']:
             reference_df = None
@@ -256,6 +292,13 @@ class CheckPerWindowExecutor:
                 args["balance_classes"][window['model_version_id']],
                 args["additional_check_kwargs"]
             )
+            window_result = {
+                "window_index": window["window_index"],
+                "model_version_id": window["model_version_id"],
+                "result": None
+            }
+
+            results.append(window_result)
 
             if window['model_version_id'] in references_dataframes:
                 reference_data = references_dataframes[window['model_version_id']]
@@ -265,7 +308,7 @@ class CheckPerWindowExecutor:
                 query = references_queries[window['model_version_id']]
                 query_result = session.execute(query)
                 reference_df = pd.DataFrame(
-                    query_result.all(), 
+                    query_result.all(),
                     columns=[str(key) for key in query_result.keys()]
                 )
                 reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
@@ -276,40 +319,19 @@ class CheckPerWindowExecutor:
                     dataset_name='Reference'
                 )
                 references_dataframes[window['model_version_id']] = (
-                    reference_df, 
-                    reference_dataset, 
-                    reference_pred, 
+                    reference_df,
+                    reference_dataset,
+                    reference_pred,
                     reference_proba
                 )
 
             if reference_df is not None and reference_df.empty:
-                result.append({
-                    "window_index": window['window_index'],
-                    "model_version_id": window['model_version_id'],
-                    'result': None
-                })
-                # result[window['model_version_id']].append({
-                #     'index': window["index"],
-                #     'start': window["start"],
-                #     'end': window["end"],
-                    
-                # })
                 continue
 
             window_data = session.execute(window["samples_query"])
             window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
-            
+
             if window_df.empty:
-                result.append({
-                    "window_index": window['window_index'],
-                    "model_version_id": window['model_version_id'],
-                    'result': None
-                })
-                # result[window['model_version_id']].append({
-                #     "window_index": window['window_index'],
-                #     "model_version_id": window['model_version_id'],
-                #     'result': None
-                # })
                 continue
 
             test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
@@ -330,19 +352,10 @@ class CheckPerWindowExecutor:
                 model_classes=model_classes,
                 feature_importance=args['feature_importance']
             )
-            result.append({
-                "window_index": window['window_index'],
-                "model_version_id": window['model_version_id'],
-                'result': check_result
-            })
 
-            # result[window['model_version_id']].append({
-            #     "window_index": window['window_index'],
-            #     "model_version_id": window['model_version_id'],
-            #     'result': check_result
-            # })
-        
-        return result
+            window_result['result'] = check_result
+
+        return results
 
     def _execute_check(
         self,
@@ -375,7 +388,7 @@ class CheckPerWindowExecutor:
             "y_proba_test": y_proba_test,
             **shared_args
         }
-        
+
         if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
             args, kwargs = (test_dataset,), single_dataset_args
         elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
@@ -395,7 +408,7 @@ class CheckPerWindowExecutor:
             return None
         except Exception as e:
             return None
-            # # TODO: 
+            # # TODO:
             # send error to sentry, needs to be done in the ee sub-package
             # error_message = (
             #     str(e)

@@ -29,6 +29,7 @@ from typing_extensions import TypedDict
 from deepchecks_monitoring.config import Settings, Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.exceptions import BadRequest, NotFound
+from deepchecks_monitoring.logic.parallel_check_executor import execute_check_per_window
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
                                                      SingleCheckRunOptions, get_feature_property_info,
                                                      get_metric_class_info, load_data_for_check, reduce_check_result,
@@ -361,6 +362,7 @@ async def run_standalone_check_per_window_in_range(
         monitor_options: MonitorOptions,
         session: AsyncSession = AsyncSessionDep,
         resources_provider: ResourcesProvider = ResourcesProviderDep,
+        user: User = Depends(auth.CurrentActiveUser()),
 ):
     """Run a check for each time window by start-end.
 
@@ -380,6 +382,14 @@ async def run_standalone_check_per_window_in_range(
     CheckResultSchema
         Check run result.
     """
+    # if pool := resources_provider.parallel_check_executors_pool:
+    #     return await execute_check_per_window(
+    #         actor_pool=pool,
+    #         session=session,
+    #         check_id=check_id,
+    #         monitor_options=monitor_options,
+    #         organization_id=t.cast(int, user.organization_id)
+    #     )
     return await run_check_per_window_in_range(
         check_id,
         session,

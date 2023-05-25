@@ -155,6 +155,10 @@ class Settings(
     oauth_client_id: str
     oauth_client_secret: str
 
+    parallel_check_executor_enabled: bool = True
+    n_of_check_executors: int = 8
+
+
 
 class Tags(Enum):
     """Tags for the deepchecks_monitoring package."""
