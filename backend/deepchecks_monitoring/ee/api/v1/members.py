@@ -15,7 +15,6 @@ from fastapi import Depends
 from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from sqlalchemy.dialects.postgresql import insert
 
 from deepchecks_monitoring.api.v1.global_api.users import UserSchema
 from deepchecks_monitoring.config import Tags
@@ -124,8 +123,8 @@ async def assign_models_to_user(
             if member_schema.replace:
                 models_to_delete.append(model_memeber.id)
     existing_models = [member.model_id for member in model_memebers]
-    for model in member_schema.model_ids:
-        if model not in existing_models:
+    for model_id in member_schema.model_ids:
+        if model_id not in existing_models:
             models_to_create.append(ModelMember(user_id=user_id, model_id=model_id))
 
     await session.execute(sa.delete(ModelMember).where(ModelMember.id.in_(models_to_delete)))
