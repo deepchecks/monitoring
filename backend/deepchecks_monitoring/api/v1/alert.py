@@ -19,12 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 # from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.schema_models import Alert
-from deepchecks_monitoring.schema_models import AlertRule, AlertSeverity
-from deepchecks_monitoring.schema_models import Check
-from deepchecks_monitoring.schema_models import Model
-from deepchecks_monitoring.schema_models import ModelMember
-from deepchecks_monitoring.schema_models import Monitor
+from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, ModelMember, Monitor
 from deepchecks_monitoring.utils import auth
 
 from .router import router
@@ -76,7 +71,7 @@ async def count_alerts(
 async def resolve_alert(
         alert_id: int,
         session: AsyncSession = AsyncSessionDep,
-        alert: Alert = Depends(Alert. get_object_from_http_request)
+        alert: Alert = Depends(Alert.get_object_from_http_request)  # pylint: disable=unused-argument
 ):
     """Resolve alert by id."""
     await Alert.update(session, alert_id, {Alert.resolved: True})
@@ -87,12 +82,12 @@ async def resolve_alert(
     "/alerts/{alert_id}/reactivate",
     tags=[Tags.ALERTS],
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(Alert.get_object_from_http_request)],
     description="Reactivate resolved alert."
 )
 async def reactivate_alert(
     alert_id: int,
     session: AsyncSession = AsyncSessionDep,
-    alert: Alert = Depends(Alert. get_object_from_http_request)
 ):
     """Reactivate resolved alert."""
     await session.execute(update(Alert).where(Alert.id == alert_id).values(resolved=False))
@@ -100,8 +95,8 @@ async def reactivate_alert(
 
 @router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
-        alert_id: int,
-        alert: Alert = Depends(Alert. get_object_from_http_request)
+        alert_id: int,  # pylint: disable=unused-argument
+        alert: Alert = Depends(Alert.get_object_from_http_request)
 ):
     """Get alert by id."""
     return AlertSchema.from_orm(alert)
@@ -109,9 +104,9 @@ async def get_alert(
 
 @router.delete("/alerts/{alert_id}", tags=[Tags.ALERTS])
 async def delete_alert(
-        alert_id: int,
+        alert_id: int,  # pylint: disable=unused-argument
         session: AsyncSession = AsyncSessionDep,
-        alert: Alert = Depends(Alert. get_object_from_http_request)
+        alert: Alert = Depends(Alert.get_object_from_http_request)
 ):
     """Delete alert by id."""
     await session.delete(alert)

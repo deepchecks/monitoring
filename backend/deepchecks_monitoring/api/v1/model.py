@@ -788,7 +788,7 @@ class ConnectedModelVersionSchema(BaseModel):
     "/connected-models/{model_id}/versions",
     tags=[Tags.MODELS, "connected-models"],
     response_model=t.List[ConnectedModelVersionSchema],
-    dependencies=[Depends(Model. get_object_from_http_request)],
+    dependencies=[Depends(Model.get_object_from_http_request)],
     description="Retrieve list of versions of a connected model."
 )
 async def retrive_connected_model_versions(
@@ -872,7 +872,7 @@ class IngestionErrorSchema(BaseModel):
     "/connected-models/{model_id}/versions/{version_id}/ingestion-errors",
     tags=[Tags.MODELS, "connected-models"],
     description="Retrieve connected model version ingestion errors.",
-    dependencies=[Depends(Model. get_object_from_http_request)],
+    dependencies=[Depends(Model.get_object_from_http_request)],
     response_model=t.List[IngestionErrorSchema]
 )
 async def retrieve_connected_model_version_ingestion_errors(
@@ -1065,7 +1065,7 @@ async def create_model_notes(
 )
 async def delete_model_note(
         model_note_id: int = Path(...),
-        note: ModelNote = Depends(ModelNote. get_object_from_http_request),
+        note: ModelNote = Depends(ModelNote.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
 ):
     await session.delete(note)

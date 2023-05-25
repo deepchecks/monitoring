@@ -22,6 +22,7 @@ def prepare_alert_link(alert: "Alert", deepchecks_host: str) -> furl:
     alert_link = (furl(deepchecks_host) / "alert-rules")
     return alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
 
+
 class Condition(BaseModel):
     """Condition to define an alert on check result, value must be numeric."""
 

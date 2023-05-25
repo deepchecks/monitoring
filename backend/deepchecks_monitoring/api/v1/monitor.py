@@ -25,7 +25,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDe
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
-                                                    MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
+                                                    MonitorCheckConfSchema, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -111,7 +111,7 @@ class MonitorNotebookSchema(BaseModel):
 @router.post("/checks/{check_id}/monitors",
              response_model=IdResponse,
              tags=[Tags.MONITORS],
-             dependencies=[Depends(Check. get_object_from_http_request)],
+             dependencies=[Depends(Check.get_object_from_http_request)],
              summary="Create a new monitor.",
              description="Create a new monitor based on a check. This endpoint requires the "
                          "name, lookback, data_filter and description of the monitor.", )
@@ -225,7 +225,7 @@ async def update_monitor(
 @router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
         monitor_id: int,
-        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser())
@@ -238,9 +238,9 @@ async def delete_monitor(
 
 @router.post("/monitors/{monitor_id}/get-notebook", tags=[Tags.MONITORS], response_class=PlainTextResponse)
 async def get_notebook(
-        monitor_id: int,
+        monitor_id: int,  # pylint: disable=unused-argument
         notebook_options: MonitorNotebookSchema,
-        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         settings: Settings = SettingsDep,
 ):
@@ -274,7 +274,7 @@ async def get_notebook(
 async def run_monitor_lookback(
         monitor_id: int,
         body: MonitorRunSchema,
-        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser()),

@@ -49,7 +49,8 @@ class IngestionError(Base, PermissionMixin):
     )
 
     @classmethod
-    def get_object_by_id(cls, id, user):
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
         from deepchecks_monitoring.schema_models.model_version import ModelVersion
@@ -59,4 +60,4 @@ class IngestionError(Base, PermissionMixin):
                 .join(ModelVersion.model)
                 .join(Model.members)
                 .where(ModelMember.user_id == user.id)
-                .where(cls.id == id))
+                .where(cls.id == obj_id))

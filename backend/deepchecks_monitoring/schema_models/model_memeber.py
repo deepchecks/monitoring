@@ -14,7 +14,6 @@ import typing as t
 from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship
 
-from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 
 if t.TYPE_CHECKING:

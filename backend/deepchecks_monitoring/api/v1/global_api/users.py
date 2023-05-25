@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from starlette import status
 from starlette.responses import RedirectResponse
 
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, LicenseError
 from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
@@ -60,7 +61,7 @@ class CompleteDetailsUpdateSchema(BaseModel):
     accept_invite: t.Optional[bool]
 
 
-@router.get("/users/complete-details", tags=["users"], response_model=CompleteDetailsSchema)
+@router.get("/users/complete-details", tags=[Tags.USERS], response_model=CompleteDetailsSchema)
 async def get_complete_details(
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep
@@ -88,7 +89,7 @@ async def get_complete_details(
     return CompleteDetailsSchema(invitation=invite_info, user_full_name=user.full_name, organization_name=org_name)
 
 
-@router.post("/users/complete-details", tags=["users"])
+@router.post("/users/complete-details", tags=[Tags.USERS])
 async def update_complete_details(
         body: CompleteDetailsUpdateSchema,
         user: User = Depends(auth.CurrentUser()),
@@ -136,7 +137,7 @@ async def update_complete_details(
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
 
 
-@router.delete("/users", tags=["users"])
+@router.delete("/users", tags=[Tags.USERS])
 async def delete_user(
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep,
@@ -184,7 +185,7 @@ class UserSchema(BasicUserSchema):
 @router.get(
     "/users/me",
     response_model=UserSchema,
-    tags=["users"],
+    tags=[Tags.USERS],
     description="Retrieve user details"
 )
 async def retrieve_user_info(response: Response, user: User = Depends(auth.CurrentUser())) -> UserSchema:
@@ -198,7 +199,7 @@ async def retrieve_user_info(response: Response, user: User = Depends(auth.Curre
 @router.get(
     "/users/regenerate-api-token",
     response_model=str,
-    tags=["users"],
+    tags=[Tags.USERS],
     description="Regenerate user token"
 )
 async def regenerate_api_token(
@@ -216,7 +217,7 @@ async def regenerate_api_token(
 @router.get(
     "/users/accept-eula",
     name="eula-acceptance",
-    tags=["users"],
+    tags=[Tags.USERS],
     description="Accept End-User License Aggrement"
 )
 async def accept_eula(

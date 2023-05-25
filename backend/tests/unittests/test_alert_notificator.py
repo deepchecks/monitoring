@@ -156,14 +156,17 @@ async def test_that_emails_are_send_to_all_members_of_organization(
 
     users = [
         await generate_user(async_session, settings.auth_jwt_secret, switch_schema=True),
-        await generate_user(async_session, settings.auth_jwt_secret, with_org=False, switch_schema=False),
-        await generate_user(async_session, settings.auth_jwt_secret, with_org=False, switch_schema=False),
-        await generate_user(async_session, settings.auth_jwt_secret, with_org=False, switch_schema=False),
     ]
 
-    users[1].organization_id = users[0].organization_id
-    users[2].organization_id = users[0].organization_id
-    users[3].organization_id = users[0].organization_id
+    # need this to not add them to the members manually
+    users += [
+        await generate_user(async_session, settings.auth_jwt_secret,
+                            organization_id=users[0].organization_id, switch_schema=False),
+        await generate_user(async_session, settings.auth_jwt_secret,
+                            organization_id=users[0].organization_id, switch_schema=False),
+        await generate_user(async_session, settings.auth_jwt_secret,
+                            organization_id=users[0].organization_id, switch_schema=False),
+    ]
 
     async_session.add_all(users)
     await async_session.flush()

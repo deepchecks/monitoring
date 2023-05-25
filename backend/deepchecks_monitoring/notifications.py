@@ -113,8 +113,9 @@ class AlertNotificator:
             )
             return False
 
+        model_members_ids = [member.user_id for member in model.members]
         members_emails = (await self.session.scalars(
-            sa.select(User.email).where(sa.and_(User.organization_id == org.id, User.id.in_(model.members)))
+            sa.select(User.email).where(sa.and_(User.organization_id == org.id, User.id.in_(model_members_ids)))
         )).all()
 
         if not members_emails:

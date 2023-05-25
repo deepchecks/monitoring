@@ -13,12 +13,12 @@ from datetime import datetime
 
 from fastapi import Depends, Query, Response, status
 from pydantic import BaseModel
-from sqlalchemy import and_, func, insert, select, update
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.monitoring_utils import IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import IdResponse
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule
 from deepchecks_monitoring.schema_models.model import Model
@@ -75,6 +75,7 @@ class AlertRuleUpdateSchema(BaseModel):
     "/monitors/{monitor_id}/alert-rules",
     response_model=IdResponse,
     tags=[Tags.ALERTS],
+    dependencies=[Depends(Monitor.get_object_from_http_request)],
     summary="Create new alert rule on a given monitor."
 )
 async def create_alert_rule(
@@ -84,8 +85,6 @@ async def create_alert_rule(
         user: User = Depends(auth.CurrentUser()),
 ):
     """Create new alert rule on a given check."""
-    await exists_or_404(session, Monitor, id=monitor_id)
-
     stm = insert(AlertRule).values(
         monitor_id=monitor_id,
         created_by=user.id,
@@ -113,7 +112,7 @@ async def get_alert_rules(
             "alert-window:asc",
             "alert-window:desc"
         ]] = Query(default=[]),
-        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep
 ):
@@ -207,20 +206,21 @@ async def get_alert_rules(
 
 @router.get("/alert-rules/{alert_rule_id}", response_model=AlertRuleSchema, tags=[Tags.ALERTS])
 async def get_alert_rule(
-        alert_rule_id: int,
-        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request)
+        alert_rule_id: int,  # pylint: disable=unused-argument
+        alert_rule: AlertRule = Depends(AlertRule.get_object_from_http_request)
 ):
     """Get alert by id."""
     return AlertRuleSchema.from_orm(alert_rule)
 
 
-@router.put("/alert-rules/{alert_rule_id}", tags=[Tags.ALERTS],
+@router.put("/alert-rules/{alert_rule_id}",
+            tags=[Tags.ALERTS],
+            dependencies=[Depends(AlertRule.get_object_from_http_request)],
             summary="Update alert rule by id.")
 async def update_alert(
         alert_rule_id: int,
         body: AlertRuleUpdateSchema,
         session: AsyncSession = AsyncSessionDep,
-        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
         user: User = Depends(auth.CurrentUser()),
 ):
     """Update alert by id."""
@@ -233,20 +233,21 @@ async def update_alert(
 
 @router.delete("/alert-rules/{alert_rule_id}", tags=[Tags.ALERTS])
 async def delete_alert_rule(
-        alert_rule_id: int,
+        alert_rule_id: int,  # pylint: disable=unused-argument
         session: AsyncSession = AsyncSessionDep,
-        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
+        alert_rule: AlertRule = Depends(AlertRule.get_object_from_http_request),
 ):
     """Delete alert by id."""
     await session.delete(alert_rule)
     return Response(status_code=status.HTTP_200_OK)
 
+
 @router.get("/alert-rules/{alert_rule_id}/alerts", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
 async def get_alerts_of_alert_rule(
-        alert_rule_id: int,
+        alert_rule_id: int,  # pylint: disable=unused-argument
         resolved: t.Optional[bool] = None,
         session: AsyncSession = AsyncSessionDep,
-        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
+        alert_rule: AlertRule = Depends(AlertRule.get_object_from_http_request),
 ):
     """Get list of alerts raised by a given alert rule."""
     query = select(Alert).where(Alert.alert_rule_id == alert_rule.id)
@@ -264,10 +265,11 @@ async def get_alerts_of_alert_rule(
     return alerts
 
 
-@router.post("/alert-rules/{alert_rule_id}/resolve-all", tags=[Tags.ALERTS])
+@router.post("/alert-rules/{alert_rule_id}/resolve-all",
+             dependencies=[Depends(AlertRule.get_object_from_http_request)],
+             tags=[Tags.ALERTS])
 async def resolve_all_alerts_of_alert_rule(
         alert_rule_id: int,
-        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep
 ):
     """Resolve all alerts of alert rule."""
@@ -279,11 +281,11 @@ async def resolve_all_alerts_of_alert_rule(
     "/alert-rules/{alert_rule_id}/alerts/reactivate-resolved",
     tags=[Tags.ALERTS],
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(AlertRule.get_object_from_http_request)],
     description="Reactivate all resolved alerts"
 )
 async def reactivate_resolved_alerts(
         alert_rule_id: int,
-        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep
 ):
     """Reactivate all resolved alerts."""

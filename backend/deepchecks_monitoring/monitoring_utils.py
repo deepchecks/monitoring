@@ -14,13 +14,11 @@ import enum
 import logging
 import logging.handlers
 import operator
-import re
 import sys
 import typing as t
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-import fastapi
 import orjson
 import sqlalchemy as sa
 from fastapi import Depends, Path, Query
@@ -32,8 +30,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.expression import ColumnOperators
 
-from deepchecks_monitoring.dependencies import get_async_session
-from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest, NotFound
+from deepchecks_monitoring.exceptions import BadRequest, NotFound
 
 if TYPE_CHECKING:
     from deepchecks_monitoring.public_models import Base
@@ -653,4 +650,3 @@ class MetadataMixin:
     updated_at = sa.Column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now(),
                            onupdate=sa.func.now())
     updated_by = sa.Column(sa.Integer, nullable=False)
-

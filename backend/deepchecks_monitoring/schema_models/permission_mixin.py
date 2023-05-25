@@ -20,28 +20,28 @@ from deepchecks_monitoring.exceptions import AccessForbidden, NotFound
 
 
 class PermissionMixin:
-    """Mixin class for ORM entities that have metadata."""
+    """Mixin class for ORM entities that have relation to a model."""
 
     from deepchecks_monitoring.public_models.user import User
     from deepchecks_monitoring.utils import auth
 
     @classmethod
     @abc.abstractmethod
-    def get_object_by_id(cls, id, user):
+    def get_object_by_id(cls, obj_id, user):
         raise NotImplementedError()
 
     @classmethod
-    async def fetch_or_403(cls, session, id, user):
-        obj = await session.scalar(cls.get_object_by_id(id, user))
+    async def fetch_or_403(cls, session, obj_id, user):
+        obj = await session.scalar(cls.get_object_by_id(obj_id, user))
         if obj is None:
-            raise AccessForbidden(f"You do not have permissions to access this object.")
+            raise AccessForbidden("You do not have permissions to access this object.")
         return obj
 
     @classmethod
     async def get_object_from_http_request(cls, request: fastapi.Request,
-                         user: User = Depends(auth.CurrentUser()),
-                         session=AsyncSessionDep):
-        id_param = cls.__tablename__[:-1] + '_id'
+                                           user: User = Depends(auth.CurrentUser()),
+                                           session=AsyncSessionDep):
+        id_param = cls.__tablename__[:-1] + "_id"
         id_param_val = request.query_params.get(id_param) or request.path_params.get(id_param)
         if id_param_val is None:
             return None

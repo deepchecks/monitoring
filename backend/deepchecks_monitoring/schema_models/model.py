@@ -108,12 +108,13 @@ class Model(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    def get_object_by_id(cls, id, user):
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
         return (sa.select(cls).join(Model.members)
                 .where(ModelMember.user_id == user.id)
-                .where(cls.id == id))
+                .where(cls.id == obj_id))
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamps."""
@@ -200,9 +201,10 @@ class ModelNote(Base, MetadataMixin, PermissionMixin):
     )
 
     @classmethod
-    def get_object_by_id(cls, id, user):
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
         return (sa.select(cls).join(ModelNote.model).join(Model.members)
                 .where(ModelMember.user_id == user.id)
-                .where(cls.id == id))
+                .where(cls.id == obj_id))

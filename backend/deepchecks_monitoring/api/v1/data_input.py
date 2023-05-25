@@ -102,9 +102,9 @@ async def log_data_batch(
 
 @router.put("/model/{model_id}/labels", tags=[Tags.DATA])
 async def log_labels(
-    model_id: int,
+    model_id: int,  # pylint: disable=unused-argument
     data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
-    model: Model = Depends(Model. get_object_from_http_request),
+    model: Model = Depends(Model.get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
@@ -160,9 +160,9 @@ async def log_labels(
                 "it requires the actual data and validates it matches the version schema.",
 )
 async def save_reference(
-    model_version_id: int,
+    model_version_id: int,  # pylint: disable=unused-argument
     batch: UploadFile,
-    model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request),
+    model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
 ):
     """Upload reference data for a given model version.

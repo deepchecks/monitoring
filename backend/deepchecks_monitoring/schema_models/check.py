@@ -75,7 +75,8 @@ class Check(Base, MetadataMixin, PermissionMixin):
         return _DOCS_LINK_FORMAT.format(data_type=data_type, check_type=check_type, check_name=check_name)
 
     @classmethod
-    def get_object_by_id(cls, id, user):
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.check import Check
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
@@ -84,4 +85,4 @@ class Check(Base, MetadataMixin, PermissionMixin):
                 .join(Check.model)
                 .join(Model.members)
                 .where(ModelMember.user_id == user.id)
-                .where(cls.id == id))
+                .where(cls.id == obj_id))

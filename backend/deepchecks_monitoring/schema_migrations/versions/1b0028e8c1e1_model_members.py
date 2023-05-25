@@ -35,6 +35,13 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'model_id')
     )
+    select = "SELECT id FROM public.users"
+    user_rows = op.get_bind().execute(sa.text(select)).fetchall()
+    select = "SELECT id FROM models"
+    model_rows = op.get_bind().execute(sa.text(select)).fetchall()
+    for user_row in user_rows:
+        for model_row in model_rows:
+            op.execute(f"INSERT INTO model_members (user_id, model_id) values ({user_row['id']}, {model_row['id']})")
     # ### end Alembic commands ###
 
 

@@ -121,7 +121,8 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
         return self._optional_fields
 
     @classmethod
-    def get_object_by_id(cls, id, user):
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 
@@ -129,7 +130,7 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
                 .join(ModelVersion.model)
                 .join(Model.members)
                 .where(ModelMember.user_id == user.id)
-                .where(cls.id == id))
+                .where(cls.id == obj_id))
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""

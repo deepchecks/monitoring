@@ -20,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.logic.keys import get_data_topic_name
-from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, ModelVersion
@@ -32,7 +31,7 @@ from .router import router
 @router.get("/wait-for-queue/{model_version_id}", include_in_schema=False)
 async def wait_for_queue(
     model_version_id: int,
-    model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request),
+    model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentActiveUser()),
     resources_provider: ResourcesProvider = ResourcesProviderDep,
@@ -55,8 +54,8 @@ async def wait_for_queue(
         await asyncio.sleep(0.1)
 
 
-@router.get("/wait-for-alerts/{alert_rule_id}", 
-            dependencies=[Depends(AlertRule. get_object_from_http_request)],
+@router.get("/wait-for-alerts/{alert_rule_id}",
+            dependencies=[Depends(AlertRule.get_object_from_http_request)],
             include_in_schema=False)
 async def wait_for_alerts(
     alert_rule_id: int,
