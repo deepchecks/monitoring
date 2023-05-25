@@ -104,7 +104,7 @@ async def log_data_batch(
 async def log_labels(
     model_id: int,
     data: t.List[t.Dict[t.Any, t.Any]] = Body(...),
-    model: Model = Depends(Model.get_object),
+    model: Model = Depends(Model. get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
     data_ingest: DataIngestionBackend = DataIngestionDep,
     user: User = Depends(CurrentActiveUser()),
@@ -162,7 +162,7 @@ async def log_labels(
 async def save_reference(
     model_version_id: int,
     batch: UploadFile,
-    model_version: ModelVersion = Depends(ModelVersion.get_object),
+    model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
 ):
     """Upload reference data for a given model version.

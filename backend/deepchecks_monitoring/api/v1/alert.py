@@ -76,7 +76,7 @@ async def count_alerts(
 async def resolve_alert(
         alert_id: int,
         session: AsyncSession = AsyncSessionDep,
-        alert: Alert = Depends(Alert.get_object)
+        alert: Alert = Depends(Alert. get_object_from_http_request)
 ):
     """Resolve alert by id."""
     await Alert.update(session, alert_id, {Alert.resolved: True})
@@ -92,7 +92,7 @@ async def resolve_alert(
 async def reactivate_alert(
     alert_id: int,
     session: AsyncSession = AsyncSessionDep,
-    alert: Alert = Depends(Alert.get_object)
+    alert: Alert = Depends(Alert. get_object_from_http_request)
 ):
     """Reactivate resolved alert."""
     await session.execute(update(Alert).where(Alert.id == alert_id).values(resolved=False))
@@ -101,7 +101,7 @@ async def reactivate_alert(
 @router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
         alert_id: int,
-        alert: Alert = Depends(Alert.get_object)
+        alert: Alert = Depends(Alert. get_object_from_http_request)
 ):
     """Get alert by id."""
     return AlertSchema.from_orm(alert)
@@ -111,7 +111,7 @@ async def get_alert(
 async def delete_alert(
         alert_id: int,
         session: AsyncSession = AsyncSessionDep,
-        alert: Alert = Depends(Alert.get_object)
+        alert: Alert = Depends(Alert. get_object_from_http_request)
 ):
     """Delete alert by id."""
     await session.delete(alert)

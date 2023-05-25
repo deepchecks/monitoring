@@ -111,7 +111,7 @@ class MonitorNotebookSchema(BaseModel):
 @router.post("/checks/{check_id}/monitors",
              response_model=IdResponse,
              tags=[Tags.MONITORS],
-             dependencies=[Depends(Check.get_object)],
+             dependencies=[Depends(Check. get_object_from_http_request)],
              summary="Create a new monitor.",
              description="Create a new monitor based on a check. This endpoint requires the "
                          "name, lookback, data_filter and description of the monitor.", )
@@ -225,7 +225,7 @@ async def update_monitor(
 @router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
         monitor_id: int,
-        monitor: Monitor = Depends(Monitor.get_object),
+        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser())
@@ -240,7 +240,7 @@ async def delete_monitor(
 async def get_notebook(
         monitor_id: int,
         notebook_options: MonitorNotebookSchema,
-        monitor: Monitor = Depends(Monitor.get_object),
+        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         settings: Settings = SettingsDep,
 ):
@@ -274,7 +274,7 @@ async def get_notebook(
 async def run_monitor_lookback(
         monitor_id: int,
         body: MonitorRunSchema,
-        monitor: Monitor = Depends(Monitor.get_object),
+        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser()),

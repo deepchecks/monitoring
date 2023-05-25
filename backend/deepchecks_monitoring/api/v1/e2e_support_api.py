@@ -32,7 +32,7 @@ from .router import router
 @router.get("/wait-for-queue/{model_version_id}", include_in_schema=False)
 async def wait_for_queue(
     model_version_id: int,
-    model_version: ModelVersion = Depends(ModelVersion.get_object),
+    model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentActiveUser()),
     resources_provider: ResourcesProvider = ResourcesProviderDep,
@@ -56,7 +56,7 @@ async def wait_for_queue(
 
 
 @router.get("/wait-for-alerts/{alert_rule_id}", 
-            dependencies=[Depends(AlertRule.get_object)],
+            dependencies=[Depends(AlertRule. get_object_from_http_request)],
             include_in_schema=False)
 async def wait_for_alerts(
     alert_rule_id: int,

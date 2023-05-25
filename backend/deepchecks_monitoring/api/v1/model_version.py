@@ -294,7 +294,7 @@ class ModelVersionUpdateSchema(BaseModel):
 async def update_model_version(
         model_version_id: int,
         data: ModelVersionUpdateSchema,
-        model_version: ModelVersion = Depends(ModelVersion.get_object),
+        model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
 ):
@@ -365,7 +365,7 @@ class ModelVersionSchema(BaseModel):
 )
 async def retrieve_model_version_by_id(
         model_version_id: int,
-        model_version: ModelVersion = Depends(ModelVersion.get_object),
+        model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request),
 ) -> ModelVersionSchema:
     """Retrieve model version record."""
     return ModelVersionSchema.from_orm(model_version)
@@ -396,7 +396,7 @@ async def retrieve_model_version_by_name(
             )
 async def get_schema(
         model_version_id: int,
-        model_version: ModelVersion = Depends(ModelVersion.get_object)
+        model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request)
 ):
     """Return json schema of the model version data to use in validation on client-side.
 
@@ -429,7 +429,7 @@ async def get_schema(
 
 @router.post('/model-versions/{model_version_id}/suite-run',
              tags=[Tags.CHECKS],
-             dependencies=[Depends(ModelVersion.get_object)],
+             dependencies=[Depends(ModelVersion. get_object_from_http_request)],
              response_class=HTMLResponse)
 async def run_suite_on_model_version(
         model_version_id: int,
@@ -512,7 +512,7 @@ async def _get_data(model_version_id: int,
 
 @router.post('/model-versions/{model_version_id}/get-ref-data',
              tags=[Tags.MODELS],
-             dependencies=[Depends(ModelVersion.get_object)],
+             dependencies=[Depends(ModelVersion. get_object_from_http_request)],
              response_class=ORJSONResponse,)
 async def get_model_version_ref_data(
         model_version_id: int,
@@ -540,7 +540,7 @@ async def get_model_version_ref_data(
 
 @router.post('/model-versions/{model_version_id}/get-prod-data',
              tags=[Tags.MODELS],
-             dependencies=[Depends(ModelVersion.get_object)],
+             dependencies=[Depends(ModelVersion. get_object_from_http_request)],
              response_class=ORJSONResponse)
 async def get_model_version_prod_data(
         model_version_id: int,
@@ -591,7 +591,7 @@ class TimeWindowOutputStatsSchema(BaseModel):
 @router.get(
     '/model-versions/{model_version_id}/time-window-statistics',
     response_model=TimeWindowOutputStatsSchema,
-    dependencies=[Depends(ModelVersion.get_object)],
+    dependencies=[Depends(ModelVersion. get_object_from_http_request)],
     tags=[Tags.DATA]
 )
 async def get_time_window_statistics(
@@ -642,7 +642,7 @@ async def get_time_window_statistics(
 async def get_count_samples(
         model_version_id: int,
         session: AsyncSession = AsyncSessionDep,
-        model_version: ModelVersion = Depends(ModelVersion.get_object)
+        model_version: ModelVersion = Depends(ModelVersion. get_object_from_http_request)
 ):
     """Return json schema of the model version data to use in validation on client-side.
 

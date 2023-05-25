@@ -113,7 +113,7 @@ async def get_alert_rules(
             "alert-window:asc",
             "alert-window:desc"
         ]] = Query(default=[]),
-        monitor: Monitor = Depends(Monitor.get_object),
+        monitor: Monitor = Depends(Monitor. get_object_from_http_request),
         user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep
 ):
@@ -208,7 +208,7 @@ async def get_alert_rules(
 @router.get("/alert-rules/{alert_rule_id}", response_model=AlertRuleSchema, tags=[Tags.ALERTS])
 async def get_alert_rule(
         alert_rule_id: int,
-        alert_rule: AlertRule = Depends(AlertRule.get_object)
+        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request)
 ):
     """Get alert by id."""
     return AlertRuleSchema.from_orm(alert_rule)
@@ -220,7 +220,7 @@ async def update_alert(
         alert_rule_id: int,
         body: AlertRuleUpdateSchema,
         session: AsyncSession = AsyncSessionDep,
-        alert_rule: AlertRule = Depends(AlertRule.get_object),
+        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
         user: User = Depends(auth.CurrentUser()),
 ):
     """Update alert by id."""
@@ -235,7 +235,7 @@ async def update_alert(
 async def delete_alert_rule(
         alert_rule_id: int,
         session: AsyncSession = AsyncSessionDep,
-        alert_rule: AlertRule = Depends(AlertRule.get_object),
+        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
 ):
     """Delete alert by id."""
     await session.delete(alert_rule)
@@ -246,7 +246,7 @@ async def get_alerts_of_alert_rule(
         alert_rule_id: int,
         resolved: t.Optional[bool] = None,
         session: AsyncSession = AsyncSessionDep,
-        alert_rule: AlertRule = Depends(AlertRule.get_object),
+        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
 ):
     """Get list of alerts raised by a given alert rule."""
     query = select(Alert).where(Alert.alert_rule_id == alert_rule.id)
@@ -267,7 +267,7 @@ async def get_alerts_of_alert_rule(
 @router.post("/alert-rules/{alert_rule_id}/resolve-all", tags=[Tags.ALERTS])
 async def resolve_all_alerts_of_alert_rule(
         alert_rule_id: int,
-        alert_rule: AlertRule = Depends(AlertRule.get_object),
+        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep
 ):
     """Resolve all alerts of alert rule."""
@@ -283,7 +283,7 @@ async def resolve_all_alerts_of_alert_rule(
 )
 async def reactivate_resolved_alerts(
         alert_rule_id: int,
-        alert_rule: AlertRule = Depends(AlertRule.get_object),
+        alert_rule: AlertRule = Depends(AlertRule. get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep
 ):
     """Reactivate all resolved alerts."""
