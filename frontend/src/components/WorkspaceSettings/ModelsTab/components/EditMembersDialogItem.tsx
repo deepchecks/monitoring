@@ -15,8 +15,6 @@ export const StyledContainer = styled(Stack)(({ theme }) => ({
   padding: '12px 0',
   borderRadius: '5px',
 
-  '& last-of-type': { marginBottom: 0 },
-
   '&:hover': {
     backgroundColor: alpha(theme.palette.primary.main, 0.1)
   }
@@ -31,8 +29,8 @@ export const EditMembersDialogItem = ({ member }: EditMembersDialogItemProps) =>
     <StyledContainer onClick={handleClick}>
       <Checkbox checked={checked} sx={{ marginRight: '15px' }} />
       <Stack>
-        <StyledText type="h3" text={member.full_name} sx={{ fontWeight: 700, marginBottom: '4px' }} />
-        <StyledText type="smallNormal" text={member.email} sx={theme => ({ color: theme.palette.grey.light })} />
+        <StyledText type="h3" text={member.full_name} sx={{ fontWeight: 700, marginBottom: '3px' }} />
+        <StyledText type="smallNormal" text={member.email} />
       </Stack>
     </StyledContainer>
   );
