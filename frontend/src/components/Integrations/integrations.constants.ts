@@ -1,6 +1,7 @@
 export const constants = {
   integration: {
-    title: 'Integrations'
+    title: 'Integrations',
+    noAPIDataText: 'Got an error from integrations API, please contact us'
   },
   connect: {
     title: 'Add New Integrations',
