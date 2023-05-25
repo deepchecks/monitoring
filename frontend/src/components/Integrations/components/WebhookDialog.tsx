@@ -12,9 +12,10 @@ import { resError } from 'helpers/types/resError';
 interface WebhookDialogProps {
   open: boolean;
   handleClose: () => void;
+  isWebhookConnected: boolean | undefined;
 }
 
-const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
+const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogProps) => {
   const theme = useTheme();
 
   const [error, setError] = useState('');
@@ -22,7 +23,9 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
   const [name, setName] = useState('');
   const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
   const [description, setDescription] = useState('');
-  const [headers, setHeaders] = useState<{ [key: string]: any }>({ Name: 'Value' });
+  const [headers, setHeaders] = useState<{ [key: string]: any }>({ 'Name (Cant be null)': 'Value' });
+
+  const dialogTitleAndBtn = isWebhookConnected ? 'Edit Webhook' : 'Create New Webhook';
 
   const payload: StandardWebhookProperties = {
     kind: 'STANDARD',
@@ -34,7 +37,10 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
     notification_levels: ['low', 'high', 'medium', 'critical']
   };
 
-  const handleAddHeader = () => setHeaders({ ...headers, 'Header (Cant be null)': 'Value' });
+  const handleAddHeader = () =>
+    headers['Name (Cant be null)']
+      ? setError('Please fill the existing header name input before adding a new one.')
+      : setHeaders({ ...headers, 'Name (Cant be null)': 'Value' });
 
   const handleHeaderChange = (key: string, value: string, prevKey?: string) => {
     if (key) {
@@ -63,9 +69,9 @@ const WebhookDialog = ({ handleClose, open }: WebhookDialogProps) => {
   return (
     <StyledDialog
       open={open}
-      title="Create New Webhook"
+      title={dialogTitleAndBtn}
       closeDialog={handleClose}
-      submitButtonLabel="Create New Webhook"
+      submitButtonLabel={dialogTitleAndBtn}
       submitButtonAction={handleSubmitWebhookForm}
     >
       <StyledContainer flexDirection="column" gap="16px">

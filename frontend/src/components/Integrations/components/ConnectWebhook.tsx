@@ -16,7 +16,6 @@ const ConnectWebhook = ({ isWebhookConnected }: { isWebhookConnected: boolean | 
   const handleOpenDialog = () => setIsDialogOpen(true);
   const handleCloseDialog = () => setIsDialogOpen(false);
 
-  console.log(isWebhookConnected);
   return (
     <Box
       sx={{
@@ -42,7 +41,7 @@ const ConnectWebhook = ({ isWebhookConnected }: { isWebhookConnected: boolean | 
         />
       </Box>
       <StyledImage alt="webhook" src={webhook} width="100px" height="100px" margin="auto" />
-      <WebhookDialog open={isDialogOpen} handleClose={handleCloseDialog} />
+      <WebhookDialog open={isDialogOpen} handleClose={handleCloseDialog} isWebhookConnected={isWebhookConnected} />
     </Box>
   );
 };
