@@ -17,8 +17,8 @@ from numbers import Number
 import pendulum as pdl
 import sqlalchemy as sa
 from deepchecks import BaseCheck, CheckResult
-from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.core import BaseCheck
+from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
 from deepchecks.utils.dataframes import un_numpy
 from pydantic import BaseModel, Field, ValidationError, root_validator

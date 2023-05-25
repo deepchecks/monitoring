@@ -14,13 +14,12 @@ from contextlib import asynccontextmanager, contextmanager
 
 import httpx
 import ray
-from ray.util.actor_pool import ActorPool
-from ldclient import Context
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
+from ray.util.actor_pool import ActorPool
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -346,23 +345,21 @@ class ResourcesProvider(BaseResourcesProvider):
 
     @property
     def parallel_check_executors_pool(self) -> 'ActorPool | None':
-        if self.settings.parallel_check_executor_enabled:
-            return self._parallel_check_executors_pool
+        if not ray.is_initialized():
+            # ray host and port envvars were not provided
+            return
 
-    @property
-    def _parallel_check_executors_pool(self) -> 'ActorPool | None':
         if pool := getattr(self, "_parallel_check_executors", None):
             return pool
-
-        if not ray.is_initialized():
-            ray.init()
 
         from deepchecks_monitoring.logic.parallel_check_executor import CheckPerWindowExecutor
         database_uri = str(self.database_settings.database_uri)
 
         p = self._parallel_check_executors = ActorPool([
-            CheckPerWindowExecutor.remote(database_uri)
-            for _ in range(self.settings.n_of_check_executors)
+            CheckPerWindowExecutor
+            .options(name=f'CheckExecutor-{index}', get_if_exists=True)
+            .remote(database_uri)
+            for index in range(self.settings.total_number_of_check_executor_actors)
         ])
 
         return p

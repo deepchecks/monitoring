@@ -14,6 +14,7 @@ import typing as t
 
 import deepchecks
 import dotenv
+import ray
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -92,9 +93,8 @@ def create_application(
     app.state.resources_provider = resources_provider or ResourcesProvider(settings)
     app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider)
 
-    if settings.parallel_check_executor_enabled:
-        # NOTE: initialization of actors instances take few seconds
-        app.state.resources_provider.parallel_check_executors_pool
+    if settings.ray_host:
+        ray.init(address=settings.ray_host)
 
     app.add_middleware(
         CORSMiddleware,

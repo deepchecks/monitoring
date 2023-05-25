@@ -9,39 +9,32 @@
 # ----------------------------------------------------------------------------
 
 """Module defining utility functions for check running."""
+import contextlib
 # import logging
 import typing as t
 from collections import defaultdict
-import contextlib
 
+import numpy as np
+import pandas as pd
+import pendulum as pdl
 import ray
 import sqlalchemy as sa
-import pandas as pd
-import numpy as np
-import pendulum as pdl
-from sqlalchemy.orm import Session
-from deepchecks.tabular import Dataset, Suite
-from deepchecks.tabular import Dataset
 from deepchecks.core import errors
+from deepchecks.tabular import Dataset, Suite
 from deepchecks.tabular import base_checks as tabular_base_checks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import Session, joinedload
 
 from deepchecks_monitoring.exceptions import NotFound
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
-from deepchecks_monitoring.logic.model_logic import get_model_versions_for_time_range
-from deepchecks_monitoring.logic.model_logic import get_top_features_or_from_conf
-from deepchecks_monitoring.logic.model_logic import initialize_check, dataframe_to_dataset_and_pred
-from deepchecks_monitoring.logic.check_logic import MonitorOptions
-from deepchecks_monitoring.logic.check_logic import create_execution_data_query
-from deepchecks_monitoring.logic.check_logic import reduce_check_result
-
+from deepchecks_monitoring.logic.check_logic import MonitorOptions, create_execution_data_query, reduce_check_result
+from deepchecks_monitoring.logic.model_logic import (dataframe_to_dataset_and_pred, get_model_versions_for_time_range,
+                                                     get_top_features_or_from_conf, initialize_check)
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema, fetch_or_404
+from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.model import Model, TaskType
-from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.utils.database import SessionParameter
-
 
 __all__ = ['execute_check_per_window', 'CheckPerWindowExecutor']
 

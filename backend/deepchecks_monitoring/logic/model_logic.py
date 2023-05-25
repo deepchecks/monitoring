@@ -23,11 +23,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from deepchecks_monitoring.schema_models.model import TaskType
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum, MonitorCheckConfSchema, fetch_or_404
 from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType)
+from deepchecks_monitoring.schema_models.model import TaskType
 
 DEFAULT_N_SAMPLES = 5000
 
@@ -189,11 +189,19 @@ async def get_results_for_model_versions_per_window(
             reference = None
 
         if isinstance(check, Check):
-            dp_check = initialize_check(check, model_version, additional_kwargs)
+            dp_check = initialize_check(
+                check.config, 
+                model_version.balance_classes, 
+                additional_kwargs
+            )
         else:
             all_checks = []
             for c in check:
-                init_check = initialize_check(c, model_version, additional_kwargs)
+                init_check = initialize_check(
+                    c.config, 
+                    model_version.balance_classes, 
+                    additional_kwargs
+                )
                 init_check.check_id = c.id
                 all_checks.append(init_check)
             dp_check = Suite('', *all_checks)
@@ -268,7 +276,7 @@ def run_deepchecks(
     test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
         df=test_data,
         features_columns=model_version.features_columns,
-        task_type=t.cast('TaskType', model).value,
+        task_type=t.cast('TaskType', model.task_type).value,
         top_feat=top_feat,
         dataset_name='Production',
     )
@@ -353,7 +361,11 @@ async def get_results_for_model_versions_for_reference(
             dataset_name='Reference'
         )
 
-        dp_check = initialize_check(check, model_version, additional_kwargs)
+        dp_check = initialize_check(
+            check.config, 
+            model_version.balance_classes, 
+            additional_kwargs
+        )
         try:
             if isinstance(dp_check, tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,

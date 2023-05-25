@@ -12,10 +12,10 @@
 from typing import cast
 
 import ldclient
-from ray.util.actor_pool import ActorPool
-from ldclient.client import LDClient
 from ldclient import Context
+from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
+from ray.util.actor_pool import ActorPool
 
 from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
@@ -103,11 +103,8 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             context=Context.builder('parallelCheckExecutorEnabled').build(),
             default=False
         )
-        if any((
-            self.settings.parallel_check_executor_enabled,
-            parallel_check_executor_flag
-        )):
-            return self._parallel_check_executors_pool
+        if parallel_check_executor_flag:
+            return super().parallel_check_executors_pool
 
     def initialize_telemetry_collectors(
         self,

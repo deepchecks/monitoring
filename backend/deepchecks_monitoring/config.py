@@ -155,9 +155,8 @@ class Settings(
     oauth_client_id: str
     oauth_client_secret: str
 
-    parallel_check_executor_enabled: bool = False
-    n_of_check_executors: int = 8
-
+    ray_host: str | None = None
+    total_number_of_check_executor_actors: int = 8
 
 
 class Tags(Enum):
