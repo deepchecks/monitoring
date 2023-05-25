@@ -42,24 +42,21 @@ const ConnectSlack = ({ isSlackConnected }: { isSlackConnected: boolean | undefi
   const isLoading =
     isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
-  const connectSlack = () => {
-    reportEvent(events.integrationsPage.clickedSlackInstagramIntegration);
+  const handleSlack = () => {
+    isSlackConnected
+      ? apps &&
+        apps?.forEach(({ id }) => {
+          removeInstallation({
+            appId: id
+          });
+        })
+      : reportEvent(events.integrationsPage.clickedSlackInstagramIntegration);
 
     window.open(
       `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,
       '_blank',
       'width=600, height=650,scrollbars=1,top=150,left=' + (window.screen.width / 2 - 250)
     );
-  };
-
-  const removeSlack = () => {
-    if (apps) {
-      apps?.forEach(({ id }) => {
-        removeInstallation({
-          appId: id
-        });
-      });
-    }
   };
 
   if (isLoading) {
@@ -87,11 +84,7 @@ const ConnectSlack = ({ isSlackConnected }: { isSlackConnected: boolean | undefi
           <StyledText text={constants.connect.slack.title} type="h1" color="white" />
           <StyledText text={constants.connect.slack.description} type="h3" color="white" />
         </Stack>
-        {isSlackConnected ? (
-          <StyledButton onClick={removeSlack} label="Disconnect" />
-        ) : (
-          <StyledButton onClick={connectSlack} label="Connect" />
-        )}
+        <StyledButton onClick={handleSlack} label={constants.connect.slack.buttonLabel(isSlackConnected)} />
       </Box>
       <StyledImage alt="slack" src={slack} width="100px" height="100px" margin="auto" />
     </Box>
