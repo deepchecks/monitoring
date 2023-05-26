@@ -345,6 +345,7 @@ class ResourcesProvider(BaseResourcesProvider):
 
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":
+        """Return parallel check executors actors."""
         if not ray.is_initialized():
             # ray host and port envvars were not provided
             return
@@ -366,6 +367,7 @@ class ResourcesProvider(BaseResourcesProvider):
         return p
 
     def shutdown_parallel_check_executors_pool(self):
+        """Shutdown parallel check executors actors."""
         self._parallel_check_executors = None
         ray.shutdown()
 
@@ -408,7 +410,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Initialize telemetry."""
         pass
 
-    def get_client_configuration(self) -> dict:
+    def get_client_configuration(self) -> "dict[str, t.Any]":
         """Return configuration to be used in client side."""
         return {
             "sentryDsn": None,
