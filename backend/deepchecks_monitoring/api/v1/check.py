@@ -32,8 +32,7 @@ from deepchecks_monitoring.exceptions import BadRequest, NotFound
 from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckRunOptions, MonitorOptions,
                                                      SingleCheckRunOptions, get_feature_property_info,
                                                      get_metric_class_info, load_data_for_check, reduce_check_result,
-                                                     reduce_check_window, run_check_per_window_in_range,
-                                                     run_check_window)
+                                                     reduce_check_window, run_check_window)
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
