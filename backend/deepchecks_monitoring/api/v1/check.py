@@ -406,12 +406,14 @@ async def run_standalone_check_per_window_in_range(
             monitor_options=monitor_options,
             organization_id=t.cast(int, user.organization_id)
         )
-    return await run_check_per_window_in_range(
-        check_id,
-        session,
-        monitor_options,
-        parallel=resources_provider.settings.parallel_enabled,
-    )
+    else:
+        raise RuntimeError('Ray instance is not initialized')
+    # return await run_check_per_window_in_range(
+    #     check_id,
+    #     session,
+    #     monitor_options,
+    #     parallel=resources_provider.settings.parallel_enabled,
+    # )
 
 
 @router.post('/checks/{check_id}/run/window', tags=[Tags.CHECKS])
