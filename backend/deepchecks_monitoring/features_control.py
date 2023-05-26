@@ -26,6 +26,7 @@ class FeaturesSchema(BaseModel):
     sso_enabled: bool
     onboarding_enabled: bool
     update_roles: bool
+    model_assignment: bool
 
 
 class FeaturesControl:
@@ -61,6 +62,11 @@ class FeaturesControl:
     @property
     def update_roles(self) -> bool:
         """Whether update_roles is enabled."""
+        return False
+
+    @property
+    def model_assignment(self) -> bool:
+        """Whether model_assignment is enabled."""
         return False
 
     @property
@@ -106,4 +112,5 @@ class FeaturesControl:
             sso_enabled=self.sso_enabled,
             onboarding_enabled=self.onboarding_enabled,
             update_roles=self.update_roles,
+            model_assignment=self.model_assignment,
         )

@@ -18,6 +18,7 @@ from .dashboard import Dashboard
 from .data_ingestion_alert import DataIngestionAlert
 from .ingestion_errors import IngestionError
 from .model import Model, ModelNote, TaskType
+from .model_memeber import ModelMember
 from .model_version import ModelVersion
 from .monitor import Monitor
 from .slack import SlackInstallation, SlackInstallationState
@@ -40,5 +41,6 @@ __all__ = [
     'SlackInstallation',
     'SlackInstallationState',
     'AlertWebhook',
-    'DataIngestionAlert'
+    'DataIngestionAlert',
+    'ModelMember',
 ]

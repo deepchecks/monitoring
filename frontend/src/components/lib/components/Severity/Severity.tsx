@@ -24,6 +24,8 @@ export const Severity = ({ severity, number, hideInfo, margin = '0', width = 'au
   const highIcon = require('../../assets/severity/high.svg').default;
   const criticalIcon = require('../../assets/severity/critical.svg').default;
 
+  const showSeverity = severity && !hideInfo;
+
   const severityLevel = () => {
     switch (severity) {
       case 'low':
@@ -62,7 +64,7 @@ export const Severity = ({ severity, number, hideInfo, margin = '0', width = 'au
   return (
     <Container flexDirection="row" gap="0" width={width} margin={margin}>
       <Image src={severityLevel().icon} alt={severityLevel().alt} width="36px" height="36px" />
-      {severity && !hideInfo && (
+      {showSeverity && (
         <Container margin={'0'} gap={'0'} marginTop={'-12px'}>
           <Text text={number ? number.toString() : '#'} color={severityLevel().color} type="h2" fontWeight={900} />
           <Text text={severity} color={severityLevel().color} fontWeight={900} textTransform={'capitalize'} />
