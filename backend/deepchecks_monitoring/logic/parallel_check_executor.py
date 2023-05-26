@@ -39,6 +39,7 @@ if t.TYPE_CHECKING:
 
 __all__ = ['execute_check_per_window', 'CheckPerWindowExecutor']
 
+
 class WindowResult(t.TypedDict):
     index: int
     result: t.Any
@@ -97,7 +98,7 @@ async def execute_check_per_window(
     references_queries: dict[int, 'sa.sql.Selectable'] = {}
     features_per_model_version: dict[int, dict[str, str]] = {}
     balance_classes_per_model_version: dict[int, bool] = {}
-    classes_per_model_version: dict[int, t.Optional[list[str|int]]] = {}
+    classes_per_model_version: dict[int, t.Optional[list[str | int]]] = {}
 
     for model_version in model_versions:
         if not model_version.is_filter_fit(monitor_options.filter):
@@ -234,7 +235,7 @@ class CheckPerWindowExecutionArgs(t.TypedDict):
     check_config: dict[str, t.Any]
     additional_check_kwargs: MonitorCheckConfSchema | None
     windows: list[WindowExecutionArgs]
-    classes: dict[int, t.Optional[list[str|int]]]   # dict[model-version-id, list-of-classes]
+    classes: dict[int, t.Optional[list[str | int]]]   # dict[model-version-id, list-of-classes]
     balance_classes: dict[int, bool]                # dict[model-version-id, bool]
     feature_columns: dict[int, dict[str, str]]      # dict[model-version-id, columns]
     references_queries: dict[int, 'sa.sql.Selectable']  # dict[model-version-id, window-query]
