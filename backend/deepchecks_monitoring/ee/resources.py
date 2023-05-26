@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
+import logging
 from typing import TYPE_CHECKING, cast
 
 import ldclient
@@ -106,6 +107,8 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             context=Context.builder("parallelCheckExecutorEnabled").build(),
             default=False
         )
+        logging.getLogger("server").info("'parallelCheckExecutorEnabled' is set to False")
+
         if parallel_check_executor_flag:
             return super().parallel_check_executors_pool
 

@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
+import logging
 import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
@@ -347,6 +348,7 @@ class ResourcesProvider(BaseResourcesProvider):
     def parallel_check_executors_pool(self) -> "ActorPool | None":
         """Return parallel check executors actors."""
         if not ray.is_initialized():
+            logging.getLogger("server").info("Ray is not initialized")
             return
 
         if pool := getattr(self, "_parallel_check_executors", None):
