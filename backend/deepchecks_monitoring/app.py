@@ -110,9 +110,9 @@ def create_application(
 
     if settings.init_local_ray_instance is not None:
         try:
-            ray.init(address='auto')
+            ray.init(address="auto")
         except ConnectionError:
-            logger.info('Local ray instance is not instantiated')
+            logger.info("Local ray instance is not instantiated")
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(
