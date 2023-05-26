@@ -12,23 +12,28 @@ import { StyledTableContainer } from '../../../WorkspaceSettings.styles';
 import { ModelsTabTableRow } from './ModelsTabTableRow';
 
 import { constants } from '../../modelsTab.constants';
-import { EditMembersDialog } from '../EditMembersDialog';
+import { AssignMembersToModelDialog } from '../AssignMembersToModelDialog';
 import { useOrganizationMembers } from 'components/WorkspaceSettings/useOrganizationMembers';
 
 interface ModelsTabTableProps {
   models: ModelManagmentSchema[];
+  refetchModels: () => void;
 }
 
-export const ModelsTabTable = ({ models }: ModelsTabTableProps) => {
+export const ModelsTabTable = ({ models, refetchModels }: ModelsTabTableProps) => {
   const { organizationMembersList, setOrganizationMembersList, sortedOrganizationMembers } = useOrganizationMembers();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentModel, setCurrentModel] = useState<ModelManagmentSchema | null>(null);
 
-  const closeDialog = () => setIsDialogOpen(false);
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setTimeout(() => setCurrentModel(null), 70);
+  };
 
   const editMembers = (model: ModelManagmentSchema) => {
     setIsDialogOpen(true);
-    console.log(model);
+    setCurrentModel(model);
   };
 
   return (
@@ -43,12 +48,14 @@ export const ModelsTabTable = ({ models }: ModelsTabTableProps) => {
           </TableBody>
         </Table>
       </StyledTableContainer>
-      <EditMembersDialog
+      <AssignMembersToModelDialog
+        currentModel={currentModel}
         initialMembersList={sortedOrganizationMembers}
         membersList={organizationMembersList}
         setMembersList={setOrganizationMembersList}
         open={isDialogOpen}
         closeDialog={closeDialog}
+        refetchModels={refetchModels}
       />
     </>
   );

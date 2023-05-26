@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { MemberSchema } from 'api/generated';
 
-import { Stack, Checkbox, alpha, styled } from '@mui/material';
+import { Stack, Checkbox, alpha, styled, StackProps } from '@mui/material';
 import { StyledText } from 'components/lib';
 
-interface EditMembersDialogItemProps {
+interface AssignMembersToModelDialogItemProps extends StackProps {
   member: MemberSchema;
+  selected: boolean;
 }
 
 export const StyledContainer = styled(Stack)(({ theme }) => ({
@@ -20,14 +21,14 @@ export const StyledContainer = styled(Stack)(({ theme }) => ({
   }
 }));
 
-export const EditMembersDialogItem = ({ member }: EditMembersDialogItemProps) => {
-  const [checked, setChecked] = useState(false);
-
-  const handleClick = () => setChecked(!checked);
-
+export const AssignMembersToModelDialogItem = ({
+  member,
+  selected,
+  ...otherProps
+}: AssignMembersToModelDialogItemProps) => {
   return (
-    <StyledContainer onClick={handleClick}>
-      <Checkbox checked={checked} sx={{ marginRight: '15px' }} />
+    <StyledContainer {...otherProps}>
+      <Checkbox checked={selected} sx={{ marginRight: '15px' }} />
       <Stack>
         <StyledText type="h3" text={member.full_name} sx={{ fontWeight: 700, marginBottom: '3px' }} />
         <StyledText type="smallNormal" text={member.email} />

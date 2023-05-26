@@ -11,6 +11,7 @@ import { MembersTableRow } from './MembersTableRow';
 
 import { StyledTableContainer } from '../../../WorkspaceSettings.styles';
 
+import { selectMultiple, isSelected } from 'components/WorkspaceSettings/WorkspaceSettings.helpers';
 import { MembersActionDialogOptions } from '../../Members.type';
 import { constants } from '../../members.constants';
 
@@ -31,25 +32,6 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
     setSelected([]);
   };
 
-  const handleSelect = (event: React.MouseEvent<unknown>, id: number) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: readonly number[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-    }
-
-    setSelected(newSelected);
-  };
-
-  const isSelected = (id: number) => selected.indexOf(id) !== -1;
-
   const editMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.edit, member);
 
   const removeMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.remove, member);
@@ -66,7 +48,7 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
         <TableBody>
           {members.map(member => {
             const id = member.id;
-            const isItemSelected = isSelected(id);
+            const isItemSelected = isSelected(id, selected);
 
             return (
               <MembersTableRow
@@ -77,7 +59,7 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
                 editMember={editMember}
                 removeMember={removeMember}
                 selected={isItemSelected}
-                onClick={event => handleSelect(event, id)}
+                onClick={e => selectMultiple(e, id, selected, setSelected)}
               />
             );
           })}

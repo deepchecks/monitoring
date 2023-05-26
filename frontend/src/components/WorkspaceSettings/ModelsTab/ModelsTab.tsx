@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+import { ModelManagmentSchema } from 'api/generated';
 
 import useModels from 'helpers/hooks/useModels';
 
@@ -7,14 +9,18 @@ import { ModelsTabHeader } from './components/ModelsTabHeader';
 import { ModelsTabTable } from './components/ModelsTabTable/ModelsTabTable';
 
 const ModelsTab = () => {
-  const { models: initialModels, isLoading } = useModels();
+  const { models: initialModels, isLoading, refetchModels } = useModels();
 
-  const [modelsList, setModelsList] = useState(initialModels);
+  const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>([]);
+
+  useEffect(() => {
+    setModelsList(initialModels);
+  }, [initialModels]);
 
   return (
     <>
       <ModelsTabHeader initialModels={initialModels} setModelsList={setModelsList} />
-      {isLoading ? <Loader /> : <ModelsTabTable models={modelsList} />}
+      {isLoading ? <Loader /> : <ModelsTabTable models={modelsList} refetchModels={refetchModels} />}
     </>
   );
 };

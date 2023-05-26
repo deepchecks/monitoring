@@ -16,12 +16,12 @@ interface ModelsTabTableRowProps extends TableRowProps {
 }
 
 export const ModelsTabTableRow = ({ model, editMembers, ...otherProps }: ModelsTabTableRowProps) => {
-  const { id, name } = model;
+  const { id, name, members } = model;
 
   return (
     <StyledTableRow key={id} sx={{ height: 60 }} {...otherProps}>
       <StyledTableCellBold scope="row">{name || 'n/a'}</StyledTableCellBold>
-      <StyledTableCell>14 members</StyledTableCell>
+      <StyledTableCell>{`${members.length} member${members.length === 1 ? '' : 's'}`}</StyledTableCell>
       <StyledTableCell align="right">
         <StyledButton
           label={constants.editMembers}
