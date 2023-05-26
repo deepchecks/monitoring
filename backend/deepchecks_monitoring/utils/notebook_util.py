@@ -78,14 +78,26 @@ async def get_check_notebook(
 
     model_version = model_versions[0]
 
-    dp_check = initialize_check(check, model_version, notebook_options.additional_kwargs)
+    dp_check = initialize_check(
+        check.config,
+        model_version.balance_classes,
+        notebook_options.additional_kwargs
+    )
     check_config = dp_check.config(include_version=False, include_defaults=False)
 
-    filters = str(notebook_options.filter.filters).replace('), ',
-                                                           '),\n           ') if notebook_options.filter else None
-
-    asset_name = 'run_single_check.md' if \
-        isinstance(dp_check, tabular_base_checks.SingleDatasetBaseCheck) else 'run_train_test_check.md'
+    filters = (
+        str(notebook_options.filter.filters).replace(
+            '), ',
+            '),\n           '
+        )
+        if notebook_options.filter
+        else None
+    )
+    asset_name = (
+        'run_single_check.md'
+        if isinstance(dp_check, tabular_base_checks.SingleDatasetBaseCheck)
+        else 'run_train_test_check.md'
+    )
 
     path = os.path.join('utils', 'notebook_resources', asset_name)
     template = pkgutil.get_data('deepchecks_monitoring', path).decode('utf-8')

@@ -37,6 +37,7 @@ from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckR
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
+from deepchecks_monitoring.logic.parallel_check_executor import execute_check_per_window
 from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
@@ -148,8 +149,15 @@ async def add_checks(
         message=f'Model with next set of arguments does not exist: {repr(model_identifier)}'
     ))
     await Model.fetch_or_403(session, model.id, user)
-    checks = [checks] if not isinstance(checks, t.Sequence) else checks
-    existing_check_names = [t.cast(str, x.name) for x in t.cast(t.List[Check], model.checks)]
+    checks = (
+        [checks]
+        if not isinstance(checks, t.Sequence)  # pylint: disable=isinstance-second-argument-not-valid-type
+        else checks
+    )
+    existing_check_names = [
+        t.cast(str, x.name)
+        for x in t.cast(t.List[Check], model.checks)
+    ]
 
     check_entities = []
     for check_creation_schema in checks:
@@ -370,6 +378,7 @@ async def run_standalone_check_per_window_in_range(
         monitor_options: MonitorOptions,
         session: AsyncSession = AsyncSessionDep,
         resources_provider: ResourcesProvider = ResourcesProviderDep,
+        user: User = Depends(auth.CurrentActiveUser()),
 ):
     """Run a check for each time window by start-end.
 
@@ -389,6 +398,14 @@ async def run_standalone_check_per_window_in_range(
     CheckResultSchema
         Check run result.
     """
+    if pool := resources_provider.parallel_check_executors_pool:
+        return await execute_check_per_window(
+            actor_pool=pool,
+            session=session,
+            check_id=check_id,
+            monitor_options=monitor_options,
+            organization_id=t.cast(int, user.organization_id)
+        )
     return await run_check_per_window_in_range(
         check_id,
         session,

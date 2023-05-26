@@ -14,6 +14,7 @@ import typing as t
 
 import deepchecks
 import dotenv
+import ray
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -78,6 +79,7 @@ def create_application(
         dotenv.load_dotenv(dotenv_path=path)
 
     settings = settings or Settings()
+
     app = FastAPI(
         title=title,
         openapi_url=openapi_url,
@@ -90,6 +92,7 @@ def create_application(
     app.state.settings = settings
     app.state.resources_provider = resources_provider or ResourcesProvider(settings)
     app.state.data_ingestion_backend = DataIngestionBackend(app.state.resources_provider)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "https://localhost:3000"],
@@ -104,6 +107,12 @@ def create_application(
 
     app.include_router(v1_router, dependencies=[Depends(auth.CurrentActiveUser())])
     app.include_router(v1_global_router)
+
+    if settings.init_local_ray_instance is not None:
+        try:
+            ray.init(address="auto")
+        except ConnectionError:
+            logger.info("Local ray instance is not instantiated")
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(

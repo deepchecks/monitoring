@@ -13,11 +13,13 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
+import ray
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
+from ray.util.actor_pool import ActorPool
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -80,6 +82,7 @@ class ResourcesProvider(BaseResourcesProvider):
         self._cache_funcs: t.Optional[CacheFunctions] = None
         self._email_sender: t.Optional[EmailSender] = None
         self._oauth_client: t.Optional[OAuth] = None
+        self._parallel_check_executors = None
         self._topics = set()
 
     @property
@@ -340,6 +343,33 @@ class ResourcesProvider(BaseResourcesProvider):
             self._email_sender = EmailSender(self.settings)
         return self._email_sender
 
+    @property
+    def parallel_check_executors_pool(self) -> "ActorPool | None":
+        """Return parallel check executors actors."""
+        if not ray.is_initialized():
+            return
+
+        if pool := getattr(self, "_parallel_check_executors", None):
+            return pool
+
+        # pylint: disable=import-outside-toplevel
+        from deepchecks_monitoring.logic.parallel_check_executor import CheckPerWindowExecutor
+        database_uri = str(self.database_settings.database_uri)
+
+        p = self._parallel_check_executors = ActorPool([
+            CheckPerWindowExecutor
+            .options(name=f"CheckExecutor-{index}", get_if_exists=True)
+            .remote(database_uri)
+            for index in range(self.settings.total_number_of_check_executor_actors)
+        ])
+
+        return p
+
+    def shutdown_parallel_check_executors_pool(self):
+        """Shutdown parallel check executors actors."""
+        self._parallel_check_executors = None
+        ray.shutdown()
+
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
         """Ensure that kafka topic exist. If not, creating it.
 
@@ -379,7 +409,7 @@ class ResourcesProvider(BaseResourcesProvider):
         """Initialize telemetry."""
         pass
 
-    def get_client_configuration(self) -> dict:
+    def get_client_configuration(self) -> "dict[str, t.Any]":
         """Return configuration to be used in client side."""
         return {
             "sentryDsn": None,
