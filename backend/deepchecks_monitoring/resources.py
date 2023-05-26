@@ -347,7 +347,6 @@ class ResourcesProvider(BaseResourcesProvider):
     def parallel_check_executors_pool(self) -> "ActorPool | None":
         """Return parallel check executors actors."""
         if not ray.is_initialized():
-            # ray host and port envvars were not provided
             return
 
         if pool := getattr(self, "_parallel_check_executors", None):
