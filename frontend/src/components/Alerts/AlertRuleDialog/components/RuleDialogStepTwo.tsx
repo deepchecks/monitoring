@@ -116,7 +116,7 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
           clearValue={() => {
             setModel('');
           }}
-          disabled={!!alertRule.id}
+          disabled={!!alertRule.id || !!category || !!numericValue || !!column}
         >
           {modelsList.map(({ name, id }) => (
             <MenuItem key={id} value={id}>
