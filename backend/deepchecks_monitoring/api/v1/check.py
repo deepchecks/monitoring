@@ -7,6 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+# pylint: disable=import-outside-toplevel
 """V1 API of the check."""
 import typing as t
 

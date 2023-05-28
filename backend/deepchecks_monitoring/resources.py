@@ -7,7 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=unnecessary-ellipsis
+#  pylint: disable=unnecessary-ellipsis,import-outside-toplevel
 """Module with resources instatiation logic."""
 import logging
 import typing as t
