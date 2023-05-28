@@ -250,9 +250,9 @@ async def run_check_per_window_in_range(
         check_id: int,
         session: AsyncSession,
         monitor_options: MonitorOptions,
-        monitor_id: t.Optional[int] = None,
-        cache_funcs:  t.Optional[CacheFunctions] = None,
-        organization_id: t.Optional[int] = None,
+        monitor_id: int | None = None,
+        cache_funcs: CacheFunctions | None = None,
+        organization_id: int | None = None,
         parallel: bool = True,
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.

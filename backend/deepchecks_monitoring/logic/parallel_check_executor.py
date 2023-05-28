@@ -232,17 +232,17 @@ async def execute_check_per_window(
 class CheckPerWindowExecutionArgs(t.TypedDict):
     """Arguments for check execution on a set for windows."""
 
-    check_config: t.Dict[str, t.Any]
-    additional_check_kwargs: t.Optional[MonitorCheckConfSchema]
-    windows: t.List[WindowExecutionArgs]
-    classes: t.Dict[int, t.Optional[t.List[t.Union[str, int]]]]   # dict[model-version-id, list-of-classes]
-    balance_classes: t.Dict[int, bool]                # dict[model-version-id, bool]
-    feature_columns: t.Dict[int, t.Dict[str, str]]      # dict[model-version-id, columns]
-    references_queries: t.Dict[int, 'sa.sql.Selectable']  # dict[model-version-id, window-query]
+    check_config: dict[str, t.Any]
+    additional_check_kwargs: MonitorCheckConfSchema | None
+    windows: list[WindowExecutionArgs]
+    classes: dict[int, t.Optional[list[str | int]]]   # dict[model-version-id, list-of-classes]
+    balance_classes: dict[int, bool]                # dict[model-version-id, bool]
+    feature_columns: dict[int, dict[str, str]]      # dict[model-version-id, columns]
+    references_queries: dict[int, 'sa.sql.Selectable']  # dict[model-version-id, window-query]
     task_type: TaskType
 
-    top_features: t.List[str]
-    feature_importance: t.List[t.Optional[float]]
+    top_features: list[str]
+    feature_importance: list[float] | None
     organization_id: int
 
 
