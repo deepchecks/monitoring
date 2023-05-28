@@ -37,7 +37,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.8"
+          python-version: 3.11
       - name: Get explicit and transitive dependencies
         run: |
           pip install -U pip==22.0.4 setuptools==58.3.0

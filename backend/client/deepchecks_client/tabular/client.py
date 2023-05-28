@@ -15,6 +15,7 @@ import time
 # flake8: noqa: F821
 import typing as t
 import warnings
+from collections.abc import Sequence
 from datetime import datetime
 from numbers import Number
 
@@ -521,7 +522,7 @@ class DeepchecksModelClient(core_client.DeepchecksModelClient):
             validate_additional_data_schema(additional_data, features)
 
             if model_classes:
-                if not isinstance(model_classes, t.Sequence):
+                if not isinstance(model_classes, Sequence):
                     raise ValueError(f'model_classes must be a sequence but got type {type(model_classes)}')
                 if len(model_classes) < 2:
                     raise ValueError(f'model_classes length must be at least 2 but got {len(model_classes)}')
