@@ -16,20 +16,21 @@ import { AlertRuleDialog } from 'components/Alerts/AlertRuleDialog/AlertRuleDial
 import { AlertRuleDialogProvider } from 'components/Alerts/AlertRuleDialog/AlertRuleDialogContext';
 import { DeleteAlertRule } from 'components/Alerts/AlertRuleConfig/components/DeleteAlertRule';
 import { StyledButton, StyledText, StyledContainer } from 'components/lib';
+import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 
 import { reportEvent } from 'helpers/services/mixPanel';
 import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
-import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 
 export const AlertRules = () => {
-  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
-    getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams
-  );
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);
+  const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editableAlertRuleId, setEditableAlertRuleId] = useState<AlertRuleConfigSchema['id'] | undefined>();
   const [currentAlertRule, setCurrentAlertRule] = useState<AlertRuleConfigSchema | null>(null);
+  const [alertFilters, setAlertFilters] = useState<GetAlertRulesApiV1AlertRulesGetParams>(
+    getAlertFilters() as GetAlertRulesApiV1AlertRulesGetParams
+  );
 
   const {
     data: alertRules = [],
@@ -41,15 +42,20 @@ export const AlertRules = () => {
 
   const onDialogClose = (isRefetch = false) => {
     isRefetch && refetchAlertRules();
-    setIsDialogOpen(false);
+    setIsModelDialogOpen(false);
+    setIsDataDialogOpen(false);
     setEditableAlertRuleId(undefined);
   };
 
-  const onDialogOpen = (alertRule?: AlertRuleConfigSchema) => {
+  const onDialogOpen = ({ alertRule, isDataAlert }: { alertRule?: AlertRuleConfigSchema; isDataAlert?: boolean }) => {
     reportEvent(`Click on the ${alertRule ? 'Edit' : 'Add'} rule`);
-
-    setIsDialogOpen(true);
     setEditableAlertRuleId(alertRule?.id);
+
+    if (isDataAlert) {
+      setIsDataDialogOpen(true);
+    } else {
+      setIsModelDialogOpen(true);
+    }
   };
 
   const openDeleteAlertRuleDialog = (alertRule: AlertRuleConfigSchema) => {
@@ -67,7 +73,11 @@ export const AlertRules = () => {
       <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
       <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="16px 0">
         <StyledText text="Alert Rules" type="h1" />
-        <StyledButton startIcon={<AddCircleOutlineIcon />} onClick={() => onDialogOpen()} label="Rule" />
+        <StyledButton
+          startIcon={<AddCircleOutlineIcon />}
+          onClick={() => onDialogOpen({ isDataAlert: false })}
+          label="Rule"
+        />
       </StyledContainer>
       <Box>
         {isAlertRulesLoading ? (
@@ -77,7 +87,7 @@ export const AlertRules = () => {
             {alertRules.map(alertRule => (
               <AlertRuleConfigItem
                 key={alertRule.id}
-                onEdit={() => onDialogOpen(alertRule)}
+                onEdit={() => onDialogOpen({ alertRule: alertRule, isDataAlert: false })}
                 alertRule={alertRule}
                 onDelete={() => openDeleteAlertRuleDialog(alertRule)}
               />
@@ -88,7 +98,12 @@ export const AlertRules = () => {
         )}
       </Box>
       <AlertRuleDialogProvider>
-        <AlertRuleDialog open={isDialogOpen} onClose={onDialogClose} alertRuleId={editableAlertRuleId} />
+        <AlertRuleDialog
+          open={isDataDialogOpen || isModelDialogOpen}
+          onClose={onDialogClose}
+          alertRuleId={editableAlertRuleId}
+          dataAlert={isDataDialogOpen}
+        />
       </AlertRuleDialogProvider>
       <DeleteAlertRule
         alertRule={currentAlertRule}
