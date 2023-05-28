@@ -22,16 +22,14 @@ class DataIngestionAlert(Base):
     __tablename__ = "data_ingestion_alerts"
 
     id = sa.Column(sa.Integer, primary_key=True)
-    label_ratio = sa.Column(sa.Float)
-    label_count = sa.Column(sa.Integer)
-    sample_count = sa.Column(sa.Integer)
+    value = sa.Column(sa.Float)
     created_at = sa.Column(sa.DateTime(timezone=True), default=pdl.now)
     start_time = sa.Column(sa.DateTime(timezone=True), nullable=False, index=True)
     end_time = sa.Column(sa.DateTime(timezone=True), nullable=False, index=True)
     resolved = sa.Column(sa.Boolean, nullable=False, default=False, index=True)
 
-    model_id = sa.Column(
+    alert_rule_id = sa.Column(
         sa.Integer,
-        sa.ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        sa.ForeignKey("data_ingestion_alert_rules.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )

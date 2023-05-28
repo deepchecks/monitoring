@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.ddl import DropSchema
 
+from backend.deepchecks_monitoring.utils.alerts import AlertSeverity
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.dependencies import (AsyncSessionDep, ResourcesProviderDep, SettingsDep,
                                                 get_email_sender_resource)
@@ -30,7 +31,7 @@ from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
+from deepchecks_monitoring.schema_models import SlackInstallation
 from deepchecks_monitoring.utils import auth
 
 from .global_router import router

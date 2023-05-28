@@ -8,9 +8,14 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
+import typing as t
+
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from backend.deepchecks_monitoring.monitoring_utils import make_oparator_func
+from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule, AlertRuleType
+from deepchecks_monitoring.utils.alerts import Condition
 
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
@@ -42,13 +47,14 @@ class ModelDataIngestionAlerter(BackgroundWorker):
     async def run(self, task: "Task",
                   session: AsyncSession,  # pylint: disable=unused-argument
                   resources_provider: ResourcesProvider):
-        model_id = task.params["model_id"]
+        alert_rule_id = task.params["alert_rule_id"]
         org_id = task.params["organization_id"]
         end_time = task.params["end_time"]
         start_time = task.params["start_time"]
 
         organization_schema = (await session.execute(
-            sa.select(Organization.schema_name).where(Organization.id == org_id)
+            sa.select(Organization.schema_name).where(
+                Organization.id == org_id)
         )).scalar_one_or_none()
 
         # If organization was removed - doing nothing
@@ -62,17 +68,21 @@ class ModelDataIngestionAlerter(BackgroundWorker):
             schema_search_path=[organization_schema, "public"]
         )
 
-        model: Model = (
-            await session.execute(sa.select(Model).where(Model.id == model_id).options(selectinload(Model.versions)))
+        alert_rule: DataIngestionAlertRule = (
+            await session.execute(sa.select(DataIngestionAlertRule)
+                                  .where(DataIngestionAlertRule.id == alert_rule_id)
+                                  .options(selectinload(DataIngestionAlertRule.model),
+                                           selectinload(Model.versions)))
         ).scalars().first()
 
         # in case it was deleted
-        if model is None:
+        if alert_rule is None:
             await session.execute(sa.delete(Task).where(Task.id == task.id))
             await session.commit()
             return
 
-        freq: Frequency = model.data_ingestion_alert_frequency
+        model: Model = alert_rule.model
+        freq: Frequency = alert_rule.frequency
         pdl_start_time = as_pendulum_datetime(start_time)
         pdl_end_time = as_pendulum_datetime(end_time)
 
@@ -88,7 +98,8 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         def sample_label(columns):
             return getattr(columns, SAMPLE_LABEL_COL)
 
-        tables = [version.get_monitor_table(session) for version in model.versions]
+        tables = [version.get_monitor_table(
+            session) for version in model.versions]
         if not tables:
             return
 
@@ -97,14 +108,15 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         data_query = sa.union_all(*(
             sa.select(
                 sample_id(table.c).label("sample_id"),
-                truncate_date(sample_timestamp(table.c), freq.value.lower()).label("timestamp")
+                truncate_date(sample_timestamp(table.c),
+                              freq.value.lower()).label("timestamp")
             ).where(
                 sample_timestamp(table.c) <= pdl_end_time,
                 sample_timestamp(table.c) > pdl_start_time
             ).distinct()
             for table in tables)
         )
-        joined_query = sa.select(sa.literal(model_id).label("model_id"),
+        joined_query = sa.select(sa.literal(model.id).label("model_id"),
                                  data_query.c.sample_id,
                                  data_query.c.timestamp,
                                  sa.func.cast(sample_label(labels_table.c), sa.String).label("label")) \
@@ -123,16 +135,22 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         pendulum_freq = freq.to_pendulum_duration()
         alerts = []
         for row in rows:
-            sample_count = row.count
-            label_count = row.label_count
-            label_ratio = sample_count and label_count / sample_count
-            start_time = as_pendulum_datetime(row.timestamp)
-            end_time = start_time + pendulum_freq
-            if ((model.data_ingestion_alert_label_count and model.data_ingestion_alert_label_count > label_count) or
-                (model.data_ingestion_alert_sample_count and model.data_ingestion_alert_sample_count > sample_count) or
-                    (model.data_ingestion_alert_label_ratio and model.data_ingestion_alert_label_ratio > label_ratio)):
-                alert = DataIngestionAlert(model_id=model_id, start_time=start_time, end_time=end_time,
-                                           sample_count=sample_count, label_count=label_count, label_ratio=label_ratio)
+            match alert_rule.alert_type:
+                case AlertRuleType.SAMPLE_COUNT:
+                    value = row.count
+                case AlertRuleType.LABEL_COUNT:
+                    value = row.label_count
+                case AlertRuleType.LABEL_RATIO:
+                    value = row.count and row.label_count / row.count
+
+            alert_condition = t.cast(Condition, alert_rule.condition)
+            operator = make_oparator_func(alert_rule.condition.operator)
+
+            if operator(value, alert_condition.value):
+                start_time = as_pendulum_datetime(row.timestamp)
+                end_time = start_time + pendulum_freq
+                alert = DataIngestionAlert(alert_rule_id=alert.id, start_time=start_time, end_time=end_time,
+                                           value=value)
                 alerts.append(alert)
                 session.add(alert)
 

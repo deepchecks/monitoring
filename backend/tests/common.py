@@ -12,10 +12,12 @@ from deepchecks.tabular.checks import SingleDatasetPerformance
 from deepchecks_client.core.api import API
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+from backend.deepchecks_monitoring.schema_models import Alert, ColumnType
+from backend.deepchecks_monitoring.schema_models.task_type import TaskType
+from backend.deepchecks_monitoring.utils.alerts import AlertSeverity
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.public_models.billing import Billing
-from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
