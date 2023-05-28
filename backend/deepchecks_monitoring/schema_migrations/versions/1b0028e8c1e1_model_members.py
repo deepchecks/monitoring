@@ -15,7 +15,7 @@ Create Date: 2023-05-22 19:52:54.137225
 
 """
 import sqlalchemy as sa
-from alembic import op, context
+from alembic import context, op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
