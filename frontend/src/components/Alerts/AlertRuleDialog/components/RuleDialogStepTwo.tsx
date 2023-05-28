@@ -152,14 +152,18 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
             ))}
           </MarkedSelect>
           <Box textAlign="center">
-            <StyledText text="Aggregation Window" type="tiny" marginBottom="6px" color="gray" />
-            <Box display="inline-flex" gap="16px">
+            <StyledText text="Aggregation Window (Advanced)" type="tiny" marginBottom="10px" color="gray" />
+            <Box display="flex" flexDirection="row" justifyContent="space-between" width="140px" marginX="auto">
               <RemoveCircleRoundedIcon
+                color="info"
                 onClick={() => aggregationWindow > 1 && setAggregationWindow(aggregationWindow - 1)}
+                sx={{ cursor: 'pointer' }}
               />
               <StyledText text={`${aggregationWindow} ${aggregationWindowSuffix}`} />
               <AddCircleRoundedIcon
+                color="info"
                 onClick={() => aggregationWindow < 30 && setAggregationWindow(aggregationWindow + 1)}
+                sx={{ cursor: 'pointer' }}
               />
             </Box>
           </Box>
