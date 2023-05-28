@@ -36,14 +36,15 @@ def upgrade() -> None:
     sa.UniqueConstraint('user_id', 'model_id')
     )
     schema_name = context.get_tag_argument()
-    org_id = op.get_bind().execute(sa.text(f"SELECT id FROM public.organizations where schema_name = '{schema_name}'")).first()[0]
-    select = f"SELECT id FROM public.users where organization_id = {org_id}"
-    user_rows = op.get_bind().execute(sa.text(select)).fetchall()
-    select = "SELECT id FROM models"
-    model_rows = op.get_bind().execute(sa.text(select)).fetchall()
-    for user_row in user_rows:
-        for model_row in model_rows:
-            op.execute(f"INSERT INTO model_members (user_id, model_id) values ({user_row['id']}, {model_row['id']})")
+    org_id = op.get_bind().execute(sa.text(f"SELECT id FROM public.organizations where schema_name = '{schema_name}'")).first()
+    if org_id is not None:
+        select = f"SELECT id FROM public.users where organization_id = {org_id[0]}"
+        user_rows = op.get_bind().execute(sa.text(select)).fetchall()
+        select = "SELECT id FROM models"
+        model_rows = op.get_bind().execute(sa.text(select)).fetchall()
+        for user_row in user_rows:
+            for model_row in model_rows:
+                op.execute(f"INSERT INTO model_members (user_id, model_id) values ({user_row['id']}, {model_row['id']})")
     # ### end Alembic commands ###
 
 
