@@ -43,6 +43,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
     """
 
     def __init__(self):
+        super().__init__()
         self.lock = threading.Lock()
         self.consumer: Optional[aiokafka.AIOKafkaConsumer] = None
 
