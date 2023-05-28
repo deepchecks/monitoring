@@ -137,7 +137,7 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
           disabled={!!alertRule.id || !model}
           size="medium"
         />
-        <Box display="grid" gridTemplateColumns="70% auto" gap="24px" alignItems="center">
+        <Box display="grid" gridTemplateColumns="60% auto" gap="24px" alignItems="center">
           <MarkedSelect
             label={frequencyLabel}
             value={frequency}
@@ -152,7 +152,7 @@ export const AlertRuleDialogStepTwo = forwardRef(({ setNextButtonDisabled }: Ale
             ))}
           </MarkedSelect>
           <Box textAlign="center">
-            <StyledText text="Aggregation Window" type="tiny" marginBottom="4px" color="gray" />
+            <StyledText text="Aggregation Window" type="tiny" marginBottom="6px" color="gray" />
             <Box display="inline-flex" gap="16px">
               <RemoveCircleRoundedIcon
                 onClick={() => aggregationWindow > 1 && setAggregationWindow(aggregationWindow - 1)}

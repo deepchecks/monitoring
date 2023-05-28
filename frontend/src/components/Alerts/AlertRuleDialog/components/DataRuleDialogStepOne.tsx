@@ -12,7 +12,7 @@ import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
 import { constants } from '../alertRuleDialog.constants';
 
 import { SelectValues } from 'helpers/types';
-import { FrequencyMap } from 'helpers/utils/frequency';
+import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 import { freqTimeWindow } from 'helpers/monitorFields.helpers';
 import useModels from 'helpers/hooks/useModels';
 
@@ -35,11 +35,14 @@ export const DataRuleDialogStepOne = forwardRef(({ setNextButtonDisabled }: Aler
   );
 
   const finish = () => {
-    if (name && severity) {
-      // Setting the context values
+    if (name && severity && model) {
       monitor.name = name;
-      setMonitor(monitor);
       alertRule.alert_severity = severity;
+      monitor.check.model_id = +model;
+      // monitor.check.data_type = +dataType;
+      monitor.frequency = FrequencyNumberMap[frequency as FrequencyNumberType['type']];
+
+      setMonitor(monitor);
       setAlertRule(alertRule);
     }
   };
@@ -51,8 +54,8 @@ export const DataRuleDialogStepOne = forwardRef(({ setNextButtonDisabled }: Aler
   }));
 
   useEffect(() => {
-    setNextButtonDisabled(!name || !severity);
-  }, [name, severity]);
+    setNextButtonDisabled(!name || !severity || !model);
+  }, [name, severity, model]);
 
   useEffect(() => {
     setName(monitor.name);
