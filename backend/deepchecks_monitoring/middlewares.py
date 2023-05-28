@@ -23,13 +23,14 @@ def _fill_user_and_token_from_state(info, state):
             "exp": access_token.exp,
         }
 
-    if state and (user := state.get("user")):
-        info["user"] = {
-            "id": user.id,
-            "full_name": user.full_name,
-            "email": user.email,
-            "organization_id": user.organization_id,
-        }
+    # TODO: this creates DetachedInstanceError for some reason
+    # if state and (user := state.get("user")):
+    #     info["user"] = {
+    #         "id": user.id,
+    #         "full_name": user.full_name,
+    #         "email": user.email,
+    #         "organization_id": user.organization_id,
+    #     }
 
 
 class LoggingMiddleware:
