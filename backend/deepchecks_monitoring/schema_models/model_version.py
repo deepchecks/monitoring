@@ -26,6 +26,7 @@ from sqlalchemy.orm import Mapped, relationship
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import ColumnType, column_types_to_table_columns
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models import Model  # pylint: disable=unused-import
@@ -51,7 +52,7 @@ class ColumnMetadata(BaseModel):
     stats: ColumnStatistics
 
 
-class ModelVersion(Base, MetadataMixin):
+class ModelVersion(Base, MetadataMixin, PermissionMixin):
     """ORM model for the model version."""
 
     __tablename__ = "model_versions"
@@ -118,6 +119,18 @@ class ModelVersion(Base, MetadataMixin):
             self._optional_fields = list(set(self.monitor_json_schema["properties"].keys()) -
                                          set(self.monitor_json_schema["required"]))
         return self._optional_fields
+
+    @classmethod
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
+        from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+
+        return (sa.select(cls)
+                .join(ModelVersion.model)
+                .join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == obj_id))
 
     def get_monitor_table_name(self) -> str:
         """Get name of monitor table."""
@@ -188,13 +201,19 @@ class ModelVersion(Base, MetadataMixin):
             if field not in sample:
                 sample[field] = None
 
-    def is_filter_fit(self, data_filter: DataFilterList):
+    def is_filter_fit(self, data_filter: t.Optional[DataFilterList]):
         """Check if columns defined on filter exists on the model version."""
         if data_filter is None or len(data_filter.filters) == 0:
             return True
-        filter_columns = [f.column for f in data_filter.filters]
-        columns = (set(self.features_columns.keys()) | set(self.additional_data_columns.keys()) |
-                   set(self.model_columns.keys()))
+        filter_columns = {
+            f.column
+            for f in data_filter.filters
+        }
+        columns = (
+            set(self.features_columns.keys())
+            | set(self.additional_data_columns.keys())
+            | set(self.model_columns.keys())
+        )
         return columns.issuperset(filter_columns)
 
     def is_in_range(self, start_date, end_date):

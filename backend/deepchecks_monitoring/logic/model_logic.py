@@ -28,6 +28,10 @@ from deepchecks_monitoring.schema_models import Check, Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_LABEL_COL, SAMPLE_PRED_COL, SAMPLE_PRED_PROBA_COL,
                                                              SAMPLE_TS_COL, ColumnType)
 
+if t.TYPE_CHECKING:
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.model import TaskType
+
 DEFAULT_N_SAMPLES = 5000
 
 
@@ -50,11 +54,11 @@ async def get_model_versions_for_time_range(session: AsyncSession,
 
 def dataframe_to_dataset_and_pred(
     df: t.Union[pd.DataFrame, None],
-    model_version: ModelVersion,
-    model: Model,
+    features_columns: t.Dict[t.Any, str],
+    task_type: str,
     top_feat: t.List[str],
     dataset_name: t.Optional[str] = None
-) -> t.Tuple[Dataset, t.Optional[np.ndarray], t.Optional[np.ndarray]]:
+) -> t.Tuple[t.Optional[Dataset], t.Optional[np.ndarray], t.Optional[np.ndarray]]:
     """Dataframe_to_dataset_and_pred."""
     if df is None or len(df) == 0:
         return None, None, None
@@ -74,18 +78,18 @@ def dataframe_to_dataset_and_pred(
 
     available_features = [
         feat_name
-        for feat_name in model_version.features_columns.keys()
+        for feat_name in features_columns.keys()
         if feat_name in top_feat
     ]
     cat_features = [
         feat_name
-        for feat_name, feat_type in model_version.features_columns.items()
+        for feat_name, feat_type in features_columns.items()
         if feat_name in top_feat and feat_type in [ColumnType.CATEGORICAL, ColumnType.BOOLEAN]
     ]
     dataset_params = {
         'features': available_features,
         'cat_features': cat_features,
-        'label_type': model.task_type.value,
+        'label_type': task_type,
         'dataset_name': dataset_name
     }
 
@@ -104,25 +108,41 @@ def dataframe_to_dataset_and_pred(
     return dataset, y_pred, y_proba
 
 
-def get_top_features_or_from_conf(model_version: ModelVersion,
-                                  additional_kwargs: MonitorCheckConfSchema,
-                                  n_top: int = 30) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
+def get_top_features_or_from_conf(
+    model_version: ModelVersion,
+    additional_kwargs: t.Optional[MonitorCheckConfSchema] = None,
+    n_top: int = 30
+) -> t.Tuple[t.List[str], t.Optional[pd.Series]]:
     """Get top features sorted by feature importance and the feature_importance or by the check config."""
-    if additional_kwargs is not None \
-        and (additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE) is not None
-             or additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY) is not None):
-        features = additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE, []) + \
-            additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY, [])
+    if (
+        additional_kwargs is not None
+        and (
+            additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE) is not None
+            or additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY) is not None
+        )
+    ):
+        features = (
+            additional_kwargs.check_conf.get(CheckParameterTypeEnum.FEATURE, [])
+            + additional_kwargs.check_conf.get(CheckParameterTypeEnum.PROPERTY, [])
+        )  # type: ignore TODO
         if model_version.feature_importance is not None:
-            feat_dict = pd.Series({key: val for key, val in
-                                   model_version.feature_importance.items() if key in features})
+            feat_dict = pd.Series({
+                key: val
+                for key, val in model_version.feature_importance.items()
+                if key in features
+            })
         else:
             feat_dict = None
         return features, feat_dict
+
     return model_version.get_top_features(n_top)
 
 
-def initialize_check(check: Check, model_version, additional_kwargs=None) -> BaseCheck:
+def initialize_check(
+    check_config: t.Any,
+    balance_classes,
+    additional_kwargs=None
+) -> BaseCheck:
     """Initialize an instance of Deepchecks' check. also filter the extra parameters to only include the parameters \
     that are relevant to the check type.
 
@@ -130,7 +150,7 @@ def initialize_check(check: Check, model_version, additional_kwargs=None) -> Bas
     -------
     Deepchecks' check.
     """
-    new_config = check.config.copy()
+    new_config = check_config.copy()
     extra_kwargs = additional_kwargs.check_conf if additional_kwargs is not None else {}
     for kwarg_type, kwarg_val in extra_kwargs.items():
         kwarg_type = CheckParameterTypeEnum(kwarg_type)
@@ -141,7 +161,7 @@ def initialize_check(check: Check, model_version, additional_kwargs=None) -> Bas
             new_config['params'][kwarg_name] = kwarg_val
 
     new_config['params']['n_samples'] = None
-    new_config['params']['balance_classes'] = model_version.balance_classes
+    new_config['params']['balance_classes'] = balance_classes
     return BaseCheck.from_config(new_config)
 
 
@@ -172,20 +192,28 @@ async def get_results_for_model_versions_per_window(
             reference = None
 
         if isinstance(check, Check):
-            dp_check = initialize_check(check, model_version, additional_kwargs)
+            dp_check = initialize_check(
+                check.config,
+                model_version.balance_classes,
+                additional_kwargs
+            )
         else:
             all_checks = []
             for c in check:
-                init_check = initialize_check(c, model_version, additional_kwargs)
+                init_check = initialize_check(
+                    c.config,
+                    model_version.balance_classes,
+                    additional_kwargs
+                )
                 init_check.check_id = c.id
                 all_checks.append(init_check)
             dp_check = Suite('', *all_checks)
 
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference,
-            model_version,
-            model,
-            top_feat,
+            df=reference,
+            features_columns=t.cast('dict[str, str]', model_version.features_columns),
+            task_type=t.cast('TaskType', model.task_type).value,
+            top_feat=top_feat,
             dataset_name='Reference'
         )
 
@@ -249,10 +277,10 @@ def run_deepchecks(
     reference_table_proba
 ):
     test_ds, test_pred, test_proba = dataframe_to_dataset_and_pred(
-        test_data,
-        model_version,
-        model,
-        top_feat,
+        df=test_data,
+        features_columns=model_version.features_columns,
+        task_type=t.cast('TaskType', model.task_type).value,
+        top_feat=top_feat,
         dataset_name='Production',
     )
     shared_args = dict(
@@ -329,14 +357,18 @@ async def get_results_for_model_versions_for_reference(
 
         reduced_outs = []
         reference_table_ds, reference_table_pred, reference_table_proba = dataframe_to_dataset_and_pred(
-            reference,
-            model_version,
-            model,
-            top_feat,
+            df=reference,
+            features_columns=t.cast('dict[str, str]', model_version.features_columns),
+            task_type=t.cast('TaskType', model.task_type).value,
+            top_feat=top_feat,
             dataset_name='Reference'
         )
 
-        dp_check = initialize_check(check, model_version, additional_kwargs)
+        dp_check = initialize_check(
+            check.config,
+            model_version.balance_classes,
+            additional_kwargs
+        )
         try:
             if isinstance(dp_check, tabular_base_checks.SingleDatasetCheck):
                 curr_result = dp_check.run(reference_table_ds, feature_importance=feat_imp,

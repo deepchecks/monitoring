@@ -1,6 +1,6 @@
+import json
 import os
 import typing as t
-import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -15,9 +15,8 @@ from deepchecks_monitoring.notifications import AlertNotificator
 from deepchecks_monitoring.public_models import Organization, User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, TaskType
-from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookKind, WebhookHttpMethod
+from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook, WebhookHttpMethod, WebhookKind
 from deepchecks_monitoring.schema_models.slack import SlackInstallation
-
 from tests.common import Payload, TestAPI, generate_user
 from tests.utils import dummy_http_server
 
@@ -157,14 +156,17 @@ async def test_that_emails_are_send_to_all_members_of_organization(
 
     users = [
         await generate_user(async_session, settings.auth_jwt_secret, switch_schema=True),
-        await generate_user(async_session, settings.auth_jwt_secret, with_org=False, switch_schema=False),
-        await generate_user(async_session, settings.auth_jwt_secret, with_org=False, switch_schema=False),
-        await generate_user(async_session, settings.auth_jwt_secret, with_org=False, switch_schema=False),
     ]
 
-    users[1].organization_id = users[0].organization_id
-    users[2].organization_id = users[0].organization_id
-    users[3].organization_id = users[0].organization_id
+    # need this to not add them to the members manually
+    users += [
+        await generate_user(async_session, settings.auth_jwt_secret,
+                            organization_id=users[0].organization_id, switch_schema=False),
+        await generate_user(async_session, settings.auth_jwt_secret,
+                            organization_id=users[0].organization_id, switch_schema=False),
+        await generate_user(async_session, settings.auth_jwt_secret,
+                            organization_id=users[0].organization_id, switch_schema=False),
+    ]
 
     async_session.add_all(users)
     await async_session.flush()

@@ -20,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.logic.keys import get_data_topic_name
-from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, AlertRule, ModelVersion
@@ -32,6 +31,7 @@ from .router import router
 @router.get("/wait-for-queue/{model_version_id}", include_in_schema=False)
 async def wait_for_queue(
     model_version_id: int,
+    model_version: ModelVersion = Depends(ModelVersion.get_object_from_http_request),
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentActiveUser()),
     resources_provider: ResourcesProvider = ResourcesProviderDep,
@@ -40,7 +40,6 @@ async def wait_for_queue(
     """Wait for queue to be empty. This api is used only to speed up e2e tests."""
     if resources_provider.kafka_settings.kafka_host is None or settings.debug_mode is False:
         return
-    model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id)
     consumer = KafkaConsumer(**resources_provider.kafka_settings.kafka_params)
     topic_partition = TopicPartition(get_data_topic_name(user.organization.id, model_version_id, "model-version"), 0)
     # The end_offset returned is the next offset (end + 1)
@@ -55,7 +54,9 @@ async def wait_for_queue(
         await asyncio.sleep(0.1)
 
 
-@router.get("/wait-for-alerts/{alert_rule_id}", include_in_schema=False)
+@router.get("/wait-for-alerts/{alert_rule_id}",
+            dependencies=[Depends(AlertRule.get_object_from_http_request)],
+            include_in_schema=False)
 async def wait_for_alerts(
     alert_rule_id: int,
     session: AsyncSession = AsyncSessionDep,
@@ -66,7 +67,6 @@ async def wait_for_alerts(
     if settings.debug_mode is False:
         return
 
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     alerts_count = 0
     start_time = perf_counter()
     amount = amount or 1

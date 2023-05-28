@@ -94,3 +94,4 @@ isort
 pdl
 ee
 TimeWindowOption
+getLogger

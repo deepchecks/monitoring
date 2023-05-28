@@ -63,59 +63,6 @@ def test_alert_rule_update(
     )
 
 
-def test_alert_rules_count(
-    test_api: TestAPI,
-    classification_model_check: t.Dict[str, t.Any],
-    regression_model_check: t.Dict[str, t.Any],
-):
-    # Arrange
-    monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
-    test_api.create_alert_rule(monitor_id=monitor["id"])
-    test_api.create_alert_rule(monitor_id=monitor["id"])
-    # ---
-    monitor = as_dict(test_api.create_monitor(regression_model_check["id"]))
-    test_api.create_alert_rule(monitor_id=monitor["id"])
-
-    # Act
-    data = as_dict(test_api.fetch_alert_rules_count())
-
-    # Assert
-    assert sum(data.values()) == 3
-
-
-def test_alert_rules_count_for_single_model(
-    test_api: TestAPI,
-    classification_model_check: t.Dict[str, t.Any],
-    regression_model_check: t.Dict[str, t.Any],
-):
-    # Arrange
-    monitor = as_dict(test_api.create_monitor(
-        classification_model_check["id"]
-    ))
-    test_api.create_alert_rule(
-        monitor_id=monitor["id"],
-        alert_rule={"alert_severity": AlertSeverity.LOW.value}
-    )
-    test_api.create_alert_rule(
-        monitor_id=monitor["id"],
-        alert_rule={"alert_severity": AlertSeverity.LOW.value}
-    )
-    # ---
-    monitor = as_dict(test_api.create_monitor(
-        regression_model_check["id"]
-    ))
-    test_api.create_alert_rule(
-        monitor_id=monitor["id"],
-        alert_rule={"alert_severity": AlertSeverity.LOW.value}
-    )
-
-    # Act/Assert
-    data = as_dict(test_api.fetch_alert_rules_count(classification_model_check["id"]))
-    assert data[AlertSeverity.LOW.value] == 2
-    data = as_dict(test_api.fetch_alert_rules_count(regression_model_check["id"]))
-    assert data[AlertSeverity.LOW.value] == 1
-
-
 @pytest.mark.asyncio
 async def test_get_alert_rules(
     test_api: TestAPI,

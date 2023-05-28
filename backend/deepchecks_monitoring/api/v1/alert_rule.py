@@ -18,10 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.monitoring_utils import IdResponse, exists_or_404, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import IdResponse
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
-from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
+from deepchecks_monitoring.schema_models.alert_rule import AlertRule
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
 from ...public_models import User
 from .alert import AlertSchema
@@ -72,6 +75,7 @@ class AlertRuleUpdateSchema(BaseModel):
     "/monitors/{monitor_id}/alert-rules",
     response_model=IdResponse,
     tags=[Tags.ALERTS],
+    dependencies=[Depends(Monitor.get_object_from_http_request)],
     summary="Create new alert rule on a given monitor."
 )
 async def create_alert_rule(
@@ -81,8 +85,6 @@ async def create_alert_rule(
         user: User = Depends(auth.CurrentUser()),
 ):
     """Create new alert rule on a given check."""
-    await exists_or_404(session, Monitor, id=monitor_id)
-
     stm = insert(AlertRule).values(
         monitor_id=monitor_id,
         created_by=user.id,
@@ -92,22 +94,6 @@ async def create_alert_rule(
 
     rule_id = (await session.execute(stm)).scalar_one()
     return {"id": rule_id}
-
-
-@router.get("/alert-rules/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
-@router.get("/models/{model_id}/alert-rules/count", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
-async def count_alert_rules(
-        model_id: t.Optional[int] = None,
-        session: AsyncSession = AsyncSessionDep
-):
-    """Count alerts."""
-    select_alert = select(AlertRule.alert_severity, func.count(AlertRule.alert_severity))
-    if model_id:
-        select_alert = select_alert.join(AlertRule.monitor).join(Monitor.check).where(Check.model_id == model_id)
-    q = select_alert.group_by(AlertRule.alert_severity)
-    results = await session.execute(q)
-    total = results.all()
-    return dict(total)
 
 
 @router.get("/alert-rules", response_model=t.List[AlertRuleInfoSchema], tags=[Tags.ALERTS])
@@ -126,6 +112,8 @@ async def get_alert_rules(
             "alert-window:asc",
             "alert-window:desc"
         ]] = Query(default=[]),
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
+        user: User = Depends(auth.CurrentUser()),
         session: AsyncSession = AsyncSessionDep
 ):
     """Return all the alert rules.
@@ -180,11 +168,12 @@ async def get_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
+        .join(Model.members)
         .join(alerts_info, alerts_info.c.alert_rule_id == AlertRule.id)
+        .where(ModelMember.user_id == user.id)
     )
 
-    if monitor_id is not None:
-        await exists_or_404(session, Monitor, id=monitor_id)
+    if monitor is not None:
         q = q.where(AlertRule.monitor_id == monitor_id)
 
     if models:
@@ -217,15 +206,16 @@ async def get_alert_rules(
 
 @router.get("/alert-rules/{alert_rule_id}", response_model=AlertRuleSchema, tags=[Tags.ALERTS])
 async def get_alert_rule(
-        alert_rule_id: int,
-        session: AsyncSession = AsyncSessionDep
+        alert_rule_id: int,  # pylint: disable=unused-argument
+        alert_rule: AlertRule = Depends(AlertRule.get_object_from_http_request)
 ):
     """Get alert by id."""
-    alert = await fetch_or_404(session, AlertRule, id=alert_rule_id)
-    return AlertRuleSchema.from_orm(alert)
+    return AlertRuleSchema.from_orm(alert_rule)
 
 
-@router.put("/alert-rules/{alert_rule_id}", tags=[Tags.ALERTS],
+@router.put("/alert-rules/{alert_rule_id}",
+            tags=[Tags.ALERTS],
+            dependencies=[Depends(AlertRule.get_object_from_http_request)],
             summary="Update alert rule by id.")
 async def update_alert(
         alert_rule_id: int,
@@ -234,7 +224,6 @@ async def update_alert(
         user: User = Depends(auth.CurrentUser()),
 ):
     """Update alert by id."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     updated_body = body.dict(exclude_unset=True).copy()
     updated_body["updated_by"] = user.id
     # If toggling from inactive to active, then updating the latest_schedule value
@@ -244,24 +233,24 @@ async def update_alert(
 
 @router.delete("/alert-rules/{alert_rule_id}", tags=[Tags.ALERTS])
 async def delete_alert_rule(
-        alert_rule_id: int,
-        session: AsyncSession = AsyncSessionDep
+        alert_rule_id: int,  # pylint: disable=unused-argument
+        session: AsyncSession = AsyncSessionDep,
+        alert_rule: AlertRule = Depends(AlertRule.get_object_from_http_request),
 ):
     """Delete alert by id."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
-    await AlertRule.delete(session, alert_rule_id)
+    await session.delete(alert_rule)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.get("/alert-rules/{alert_rule_id}/alerts", response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
 async def get_alerts_of_alert_rule(
-        alert_rule_id: int,
+        alert_rule_id: int,  # pylint: disable=unused-argument
         resolved: t.Optional[bool] = None,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        alert_rule: AlertRule = Depends(AlertRule.get_object_from_http_request),
 ):
     """Get list of alerts raised by a given alert rule."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
-    query = select(Alert).where(Alert.alert_rule_id == alert_rule_id)
+    query = select(Alert).where(Alert.alert_rule_id == alert_rule.id)
     if resolved is not None:
         query = query.where(Alert.resolved.is_(resolved))
     query = await session.execute(query.order_by(Alert.start_time))
@@ -276,13 +265,14 @@ async def get_alerts_of_alert_rule(
     return alerts
 
 
-@router.post("/alert-rules/{alert_rule_id}/resolve-all", tags=[Tags.ALERTS])
+@router.post("/alert-rules/{alert_rule_id}/resolve-all",
+             dependencies=[Depends(AlertRule.get_object_from_http_request)],
+             tags=[Tags.ALERTS])
 async def resolve_all_alerts_of_alert_rule(
         alert_rule_id: int,
         session: AsyncSession = AsyncSessionDep
 ):
     """Resolve all alerts of alert rule."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     await session.execute(update(Alert).where(Alert.alert_rule_id == alert_rule_id).values({Alert.resolved: True}))
     return Response(status_code=status.HTTP_200_OK)
 
@@ -291,6 +281,7 @@ async def resolve_all_alerts_of_alert_rule(
     "/alert-rules/{alert_rule_id}/alerts/reactivate-resolved",
     tags=[Tags.ALERTS],
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(AlertRule.get_object_from_http_request)],
     description="Reactivate all resolved alerts"
 )
 async def reactivate_resolved_alerts(
@@ -298,5 +289,4 @@ async def reactivate_resolved_alerts(
         session: AsyncSession = AsyncSessionDep
 ):
     """Reactivate all resolved alerts."""
-    await exists_or_404(session, AlertRule, id=alert_rule_id)
     await session.execute(update(Alert).where(Alert.alert_rule_id == alert_rule_id).values(resolved=False))
