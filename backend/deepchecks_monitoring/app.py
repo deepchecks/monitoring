@@ -14,7 +14,6 @@ import typing as t
 
 import deepchecks
 import dotenv
-import ray
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -110,11 +109,12 @@ def create_application(
 
     if settings.init_local_ray_instance is not None:
         try:
+            import ray
             ray.init(address="auto")
         except ConnectionError:
             logger.info("Local ray instance is not instantiated")
         else:
-            logger.info("Conected to local ray instance")
+            logger.info("Connected to local ray instance")
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(

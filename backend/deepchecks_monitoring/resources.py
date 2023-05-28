@@ -14,13 +14,11 @@ import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
-import ray
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
-from ray.util.actor_pool import ActorPool
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -347,6 +345,9 @@ class ResourcesProvider(BaseResourcesProvider):
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":
         """Return parallel check executors actors."""
+        import ray
+        from ray.util.actor_pool import ActorPool
+
         if not ray.is_initialized():
             logging.getLogger("server").info("Ray is not initialized")
             return
@@ -370,6 +371,7 @@ class ResourcesProvider(BaseResourcesProvider):
     def shutdown_parallel_check_executors_pool(self):
         """Shutdown parallel check executors actors."""
         self._parallel_check_executors = None
+        import ray
         ray.shutdown()
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:
