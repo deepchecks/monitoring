@@ -102,7 +102,7 @@ export const AlertRules = () => {
           open={isDataDialogOpen || isModelDialogOpen}
           onClose={onDialogClose}
           alertRuleId={editableAlertRuleId}
-          dataAlert={isDataDialogOpen}
+          isDataAlert={isDataDialogOpen}
         />
       </AlertRuleDialogProvider>
       <DeleteAlertRule

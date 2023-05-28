@@ -25,7 +25,7 @@ interface AlertRuleDialogProps extends Omit<DialogProps, 'onClose'> {
   alertRuleId?: AlertRuleConfigSchema['id'];
   onClose: (isRefetch?: boolean) => void;
   startingStep?: number;
-  dataAlert?: boolean;
+  isDataAlert?: boolean;
 }
 
 interface AlertRuleDialogContentRef extends HTMLDivElement {
@@ -48,7 +48,7 @@ export const AlertRuleDialog = ({
   alertRuleId = 0,
   onClose,
   startingStep = 0,
-  dataAlert,
+  isDataAlert,
   ...props
 }: AlertRuleDialogProps) => {
   const { setAlertRule, setMonitor, resetState, monitor, alertRule } = useContext(AlertRuleDialogContext);
@@ -73,7 +73,7 @@ export const AlertRuleDialog = ({
 
   const ref = useRef<AlertRuleDialogContentRef>();
 
-  const STEPS = dataAlert ? DATA_STEPS : MODEL_STEPS;
+  const STEPS = isDataAlert ? DATA_STEPS : MODEL_STEPS;
 
   useEffect(() => {
     if (fetchedAlertRule) setAlertRule(fetchedAlertRule);
@@ -142,7 +142,7 @@ export const AlertRuleDialog = ({
           steps={STEPS}
           setNextButtonDisabled={setNextButtonDisabled}
           ref={ref}
-          dataAlert={dataAlert}
+          isDataAlert={isDataAlert}
         />
       )}
     </StyledDialog>

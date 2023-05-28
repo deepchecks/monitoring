@@ -14,18 +14,18 @@ interface AlertRuleDialogContentProps {
   setActiveStep: React.Dispatch<React.SetStateAction<number>>;
   steps: any[];
   setNextButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
-  dataAlert?: boolean;
+  isDataAlert?: boolean;
 }
 
 export const AlertRuleDialogContent = forwardRef(
-  ({ activeStep, steps, setNextButtonDisabled, dataAlert }: AlertRuleDialogContentProps, ref) => {
+  ({ activeStep, steps, setNextButtonDisabled, isDataAlert }: AlertRuleDialogContentProps, ref) => {
     const renderStep = () => {
       const renderStepProps = {
         setNextButtonDisabled,
         ref
       };
 
-      if (dataAlert) {
+      if (isDataAlert) {
         switch (activeStep) {
           case 0:
             return <DataRuleDialogStepOne {...renderStepProps} />;
