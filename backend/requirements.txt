@@ -37,4 +37,4 @@ jupytext>=1.14.5
 uvicorn==0.21.1
 ddtrace>=1.0,<2
 python-json-logger>=2.0.7
-ray==2.4.0
+ray@https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp311-cp311-manylinux2014_x86_64.whl
