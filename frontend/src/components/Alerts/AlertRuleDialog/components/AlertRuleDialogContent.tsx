@@ -2,9 +2,10 @@ import React, { forwardRef } from 'react';
 
 import { Box, StepLabel, Stepper } from '@mui/material';
 
+import { DataRuleDialogStepOne } from './DataRuleDialogStepOne';
 import { AlertRuleDialogStepOne } from './RuleDialogStepOne';
-import { AlertRuleDialogStepThree } from './RuleDialogStepThree';
 import { AlertRuleDialogStepTwo } from './RuleDialogStepTwo';
+import { AlertRuleDialogStepThree } from './RuleDialogStepThree';
 
 import { StyledStepContainer, StyledStep } from '../AlertRuleDialog.styles';
 
@@ -13,25 +14,37 @@ interface AlertRuleDialogContentProps {
   setActiveStep: React.Dispatch<React.SetStateAction<number>>;
   steps: any[];
   setNextButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
+  dataAlert?: boolean;
 }
 
 export const AlertRuleDialogContent = forwardRef(
-  ({ activeStep, steps, setNextButtonDisabled }: AlertRuleDialogContentProps, ref) => {
+  ({ activeStep, steps, setNextButtonDisabled, dataAlert }: AlertRuleDialogContentProps, ref) => {
     const renderStep = () => {
       const renderStepProps = {
         setNextButtonDisabled,
         ref
       };
 
-      switch (activeStep) {
-        case 0:
-          return <AlertRuleDialogStepOne {...renderStepProps} />;
-        case 1:
-          return <AlertRuleDialogStepTwo {...renderStepProps} />;
-        case 2:
-          return <AlertRuleDialogStepThree {...renderStepProps} />;
-        default:
-          return null;
+      if (dataAlert) {
+        switch (activeStep) {
+          case 0:
+            return <DataRuleDialogStepOne {...renderStepProps} />;
+          case 1:
+            return <AlertRuleDialogStepThree {...renderStepProps} />;
+          default:
+            return null;
+        }
+      } else {
+        switch (activeStep) {
+          case 0:
+            return <AlertRuleDialogStepOne {...renderStepProps} />;
+          case 1:
+            return <AlertRuleDialogStepTwo {...renderStepProps} />;
+          case 2:
+            return <AlertRuleDialogStepThree {...renderStepProps} />;
+          default:
+            return null;
+        }
       }
     };
 
