@@ -15,7 +15,7 @@ Create Date: 2023-05-22 19:52:54.137225
 
 """
 import sqlalchemy as sa
-from alembic import op
+from alembic import op, context
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -35,7 +35,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'model_id')
     )
-    select = "SELECT id FROM public.users"
+    schema_name = context.get_tag_argument()
+    org_id = op.get_bind().execute(sa.text(f"SELECT id FROM public.organizations where schema_name = '{schema_name}'")).first()[0]
+    select = f"SELECT id FROM public.users where organization_id = {org_id}"
     user_rows = op.get_bind().execute(sa.text(select)).fetchall()
     select = "SELECT id FROM models"
     model_rows = op.get_bind().execute(sa.text(select)).fetchall()
