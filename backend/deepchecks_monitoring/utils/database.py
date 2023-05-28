@@ -192,7 +192,7 @@ class SchemaBuilder:
         cfg = config.Config()
         cfg.set_main_option("script_location", migrations_location)
         cfg.attributes["connection"] = connection  # pylint: disable=unsupported-assignment-operation
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, "head", tag=self.name)
 
     async def does_schema_exist(self, connection: AsyncConnection, schema: str):
         """Check if the schema exists."""

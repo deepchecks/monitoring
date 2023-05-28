@@ -16,6 +16,8 @@ from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.public_models.billing import Billing
 from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 
@@ -48,8 +50,14 @@ async def generate_user(
     if with_org:
         if organization_id:
             u.organization_id = organization_id
+
             await session.commit()
             await session.refresh(u)
+
+            model_ids = await session.scalars(sa.select(Model.id))
+            model_members = [ModelMember(user_id=u.id, model_id=model_id) for model_id in model_ids]
+            session.add_all(model_members)
+            await session.commit()
         else:
             org = await Organization.create_for_user(owner=u, name=f.name(), session=session)
             await org.schema_builder.create(AsyncEngine(session.get_bind()))

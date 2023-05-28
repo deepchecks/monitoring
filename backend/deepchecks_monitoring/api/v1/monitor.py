@@ -25,7 +25,7 @@ from deepchecks_monitoring.dependencies import AsyncSessionDep, CacheFunctionsDe
 from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import CheckNotebookSchema, MonitorOptions, run_check_per_window_in_range
 from deepchecks_monitoring.monitoring_utils import (DataFilterList, ExtendedAsyncSession, IdResponse,
-                                                    MonitorCheckConfSchema, exists_or_404, fetch_or_404, field_length)
+                                                    MonitorCheckConfSchema, fetch_or_404, field_length)
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import delete_monitor_tasks
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -108,7 +108,10 @@ class MonitorNotebookSchema(BaseModel):
     as_script: t.Optional[bool] = False
 
 
-@router.post("/checks/{check_id}/monitors", response_model=IdResponse, tags=[Tags.MONITORS],
+@router.post("/checks/{check_id}/monitors",
+             response_model=IdResponse,
+             tags=[Tags.MONITORS],
+             dependencies=[Depends(Check.get_object_from_http_request)],
              summary="Create a new monitor.",
              description="Create a new monitor based on a check. This endpoint requires the "
                          "name, lookback, data_filter and description of the monitor.", )
@@ -119,7 +122,6 @@ async def create_monitor(
         user: User = Depends(auth.CurrentUser()),
 ):
     """Create new monitor on a given check."""
-    await exists_or_404(session, Check, id=check_id)
     updated_body = body.dict(exclude_unset=True).copy()
     updated_body["updated_by"] = user.id
     updated_body["created_by"] = user.id
@@ -132,16 +134,18 @@ async def create_monitor(
 @router.get("/monitors/{monitor_id}", response_model=MonitorSchema, tags=[Tags.MONITORS])
 async def get_monitor(
         monitor_id: int,
-        session: ExtendedAsyncSession = AsyncSessionDep
+        session: ExtendedAsyncSession = AsyncSessionDep,
+        user: User = Depends(auth.CurrentUser()),
 ):
     """Get monitor by id."""
-    moonitor = await session.fetchone_or_404(
+    monitor = await session.fetchone_or_404(
         sa.select(Monitor)
         .where(Monitor.id == monitor_id)
         .options(joinedload(Monitor.check), joinedload(Monitor.alert_rules)),
-        message=f"'Monitor' with next set of arguments does not exist: id={monitor_id}"
+        message=f"'Monitor with the id - {monitor_id} does not exist"
     )
-    return MonitorSchema.from_orm(moonitor)
+    await Monitor.fetch_or_403(session, monitor_id, user)
+    return MonitorSchema.from_orm(monitor)
 
 
 @router.put("/monitors/{monitor_id}", tags=[Tags.MONITORS])
@@ -155,6 +159,7 @@ async def update_monitor(
     """Update monitor by id."""
     options = joinedload(Monitor.check).load_only(Check.id).joinedload(Check.model)
     monitor = await fetch_or_404(session, Monitor, id=monitor_id, options=options)
+    await Monitor.fetch_or_403(session, monitor_id, user)
     model = monitor.check.model
 
     # Remove from body all the fields which hasn't changed
@@ -220,21 +225,22 @@ async def update_monitor(
 @router.delete("/monitors/{monitor_id}", tags=[Tags.MONITORS])
 async def delete_monitor(
         monitor_id: int,
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser())
 ):
     """Delete monitor by id."""
-    await exists_or_404(session, Monitor, id=monitor_id)
-    await Monitor.delete(session, monitor_id)
+    await session.delete(monitor)
     cache_funcs.clear_monitor_cache(user.organization_id, monitor_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post("/monitors/{monitor_id}/get-notebook", tags=[Tags.MONITORS], response_class=PlainTextResponse)
 async def get_notebook(
-        monitor_id: int,
+        monitor_id: int,  # pylint: disable=unused-argument
         notebook_options: MonitorNotebookSchema,
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         settings: Settings = SettingsDep,
 ):
@@ -255,7 +261,6 @@ async def get_notebook(
     PlainTextResponse
         A response containing the Jupyter notebook.
     """
-    monitor: Monitor = await fetch_or_404(session, Monitor, id=monitor_id)
     check_notebook_options = CheckNotebookSchema(filter=monitor.data_filters,
                                                  end_time=notebook_options.end_time,
                                                  start_time=notebook_options.start_time,
@@ -269,6 +274,7 @@ async def get_notebook(
 async def run_monitor_lookback(
         monitor_id: int,
         body: MonitorRunSchema,
+        monitor: Monitor = Depends(Monitor.get_object_from_http_request),
         session: AsyncSession = AsyncSessionDep,
         cache_funcs: CacheFunctions = CacheFunctionsDep,
         user: User = Depends(CurrentActiveUser()),
@@ -293,7 +299,6 @@ async def run_monitor_lookback(
     CheckResultSchema
         Check run result.
     """
-    monitor = await fetch_or_404(session, Monitor, id=monitor_id)
     end_time = pdl.parse(body.end_time) if body.end_time else pdl.now()
     start_time = end_time.subtract(seconds=monitor.lookback)
 

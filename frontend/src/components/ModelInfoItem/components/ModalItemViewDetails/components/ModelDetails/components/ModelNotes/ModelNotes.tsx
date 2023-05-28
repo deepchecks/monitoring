@@ -4,7 +4,7 @@ import {
   ConnectedModelSchema,
   ModelNoteCreationSchema,
   useCreateModelNotesApiV1ModelsModelIdNotesPost,
-  useDeleteModelNoteApiV1ModelsNotesNoteIdDelete,
+  useDeleteModelNoteApiV1ModelsNotesModelNoteIdDelete,
   useRetrieveModelNotesApiV1ModelsModelIdNotesGet
 } from 'api/generated';
 import { Loader } from 'components/base/Loader/Loader';
@@ -18,7 +18,7 @@ interface ModelNotesProps {
 export const ModelNotes = ({ model }: ModelNotesProps) => {
   const { data: notes, isLoading, refetch } = useRetrieveModelNotesApiV1ModelsModelIdNotesGet(model.id);
   const { mutateAsync: createNote } = useCreateModelNotesApiV1ModelsModelIdNotesPost();
-  const { mutateAsync: deleteNote } = useDeleteModelNoteApiV1ModelsNotesNoteIdDelete();
+  const { mutateAsync: deleteNote } = useDeleteModelNoteApiV1ModelsNotesModelNoteIdDelete();
 
   const handleCreateNote = async (note: ModelNoteCreationSchema) => {
     await createNote({ modelId: model.id, data: [note] });
@@ -26,7 +26,7 @@ export const ModelNotes = ({ model }: ModelNotesProps) => {
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    await deleteNote({ noteId: +noteId });
+    await deleteNote({ modelNoteId: +noteId });
     await refetch();
   };
 
