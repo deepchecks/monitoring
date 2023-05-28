@@ -11,16 +11,16 @@
 import typing as t
 
 import pendulum as pdl
-from fastapi import Response, status
+from fastapi import Depends, Response, status
 from pydantic import BaseModel
 from sqlalchemy import false, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
-from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
-from deepchecks_monitoring.schema_models.alert import Alert
-from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity
+# from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, ModelMember, Monitor
+from deepchecks_monitoring.utils import auth
 
 from .router import router
 
@@ -49,11 +49,18 @@ class AlertSchema(AlertCreationSchema):
 
 @router.get("/alerts/count_active", response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
 async def count_alerts(
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
+    user=Depends(auth.CurrentUser()),
 ):
     """Count alerts."""
-    select_alert = select(AlertRule.alert_severity, func.count()).join(Alert.alert_rule)\
-        .where(Alert.resolved == false())
+    select_alert = (select(AlertRule.alert_severity, func.count())
+                    .join(Alert.alert_rule)
+                    .join(AlertRule.monitor)
+                    .join(Monitor.check)
+                    .join(Check.model)
+                    .join(Model.members)
+                    .where(ModelMember.user_id == user.id)
+                    .where(Alert.resolved == false()))
     q = select_alert.group_by(AlertRule.alert_severity)
     results = await session.execute(q)
     total = results.all()
@@ -63,10 +70,10 @@ async def count_alerts(
 @router.post("/alerts/{alert_id}/resolve", tags=[Tags.ALERTS])
 async def resolve_alert(
         alert_id: int,
-        session: AsyncSession = AsyncSessionDep
+        session: AsyncSession = AsyncSessionDep,
+        alert: Alert = Depends(Alert.get_object_from_http_request)  # pylint: disable=unused-argument
 ):
     """Resolve alert by id."""
-    await exists_or_404(session, Alert, id=alert_id)
     await Alert.update(session, alert_id, {Alert.resolved: True})
     return Response(status_code=status.HTTP_200_OK)
 
@@ -75,33 +82,32 @@ async def resolve_alert(
     "/alerts/{alert_id}/reactivate",
     tags=[Tags.ALERTS],
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(Alert.get_object_from_http_request)],
     description="Reactivate resolved alert."
 )
 async def reactivate_alert(
     alert_id: int,
-    session: AsyncSession = AsyncSessionDep
+    session: AsyncSession = AsyncSessionDep,
 ):
     """Reactivate resolved alert."""
-    await exists_or_404(session, Alert, id=alert_id)
     await session.execute(update(Alert).where(Alert.id == alert_id).values(resolved=False))
 
 
 @router.get("/alerts/{alert_id}", response_model=AlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
-        alert_id: int,
-        session: AsyncSession = AsyncSessionDep
+        alert_id: int,  # pylint: disable=unused-argument
+        alert: Alert = Depends(Alert.get_object_from_http_request)
 ):
     """Get alert by id."""
-    event = await fetch_or_404(session, Alert, id=alert_id)
-    return AlertSchema.from_orm(event)
+    return AlertSchema.from_orm(alert)
 
 
 @router.delete("/alerts/{alert_id}", tags=[Tags.ALERTS])
 async def delete_alert(
-        alert_id: int,
-        session: AsyncSession = AsyncSessionDep
+        alert_id: int,  # pylint: disable=unused-argument
+        session: AsyncSession = AsyncSessionDep,
+        alert: Alert = Depends(Alert.get_object_from_http_request)
 ):
     """Delete alert by id."""
-    await exists_or_404(session, Alert, id=alert_id)
-    await Alert.delete(session, alert_id)
+    await session.delete(alert)
     return Response(status_code=status.HTTP_200_OK)

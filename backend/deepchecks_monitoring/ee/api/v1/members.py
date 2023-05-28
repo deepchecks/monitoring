@@ -17,13 +17,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.api.v1.global_api.users import UserSchema
+from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, PaymentRequired
 from deepchecks_monitoring.features_control import FeaturesControl
-from deepchecks_monitoring.monitoring_utils import fetch_or_404
+from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.role import Role, RoleEnum
 from deepchecks_monitoring.resources import ResourcesProvider
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
 
 from .routers import ee_router as router
@@ -36,7 +39,21 @@ class RoleUpdateSchema(BaseModel):
     replace: t.Optional[bool] = True
 
 
-@router.put("/users/{user_id}/roles", response_model=UserSchema, tags=["users"])
+class MemberUpdateSchema(BaseModel):
+    """Member update schema."""
+
+    model_ids: t.List[int]
+    replace: t.Optional[bool] = True
+
+
+class BatchModelMemberUpdateSchema(BaseModel):
+    """Member update schema."""
+
+    user_ids: t.List[int]
+    replace: t.Optional[bool] = True
+
+
+@router.put("/users/{user_id}/roles", response_model=UserSchema, tags=[Tags.USERS])
 async def update_user_role(roles_schema: RoleUpdateSchema,
                            user_id: int,
                            session: AsyncSession = AsyncSessionDep,
@@ -74,3 +91,85 @@ async def update_user_role(roles_schema: RoleUpdateSchema,
     return UserSchema(id=user.id, email=user.email, created_at=user.created_at, full_name=user.full_name,
                       picture_url=user.picture_url, organization=user.organization,
                       roles=[role.role for role in user.roles])
+
+
+@router.post("/users/{user_id}/models", tags=[Tags.USERS])
+async def assign_models_to_user(
+    user_id: int,
+    member_schema: MemberUpdateSchema,
+    session: AsyncSession = AsyncSessionDep,
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
+    current_user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
+):
+    """Assign models to user."""
+
+    features_control: FeaturesControl = resources_provider.get_features_control(current_user)
+    if not features_control.model_assignment:
+        raise PaymentRequired("Model assignment requires to set up a dedicated plan. "
+                              "Contact Deepchecks.")
+    user = await fetch_or_404(session, User, id=user_id)
+    if user.organization_id != current_user.organization_id:
+        raise BadRequest("User doesn't exists in your organization.")
+
+    for model_id in member_schema.model_ids:
+        await exists_or_404(session, Model, id=model_id)
+
+    model_memebers: t.List[ModelMember] = (
+        await session.execute(sa.select(ModelMember)
+                              .where(ModelMember.user_id == user_id))
+    ).scalars().all()
+    models_to_create = []
+    models_to_delete = []
+    for model_memeber in model_memebers:
+        if model_memeber.model_id not in member_schema.model_ids:
+            if member_schema.replace:
+                models_to_delete.append(model_memeber.id)
+    existing_models = [member.model_id for member in model_memebers]
+    for model_id in member_schema.model_ids:
+        if model_id not in existing_models:
+            models_to_create.append(ModelMember(user_id=user_id, model_id=model_id))
+
+    await session.execute(sa.delete(ModelMember).where(ModelMember.id.in_(models_to_delete)))
+    session.add_all(models_to_create)
+    await session.flush()
+
+
+@router.post("/models/{model_id}/members", tags=[Tags.MODELS])
+async def assign_users_to_model(
+    model_id: int,
+    member_schema: BatchModelMemberUpdateSchema,
+    session: AsyncSession = AsyncSessionDep,
+    resources_provider: ResourcesProvider = ResourcesProviderDep,
+    current_user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
+):
+    """Assign users to model."""
+
+    features_control: FeaturesControl = resources_provider.get_features_control(current_user)
+    if not features_control.model_assignment:
+        raise PaymentRequired("Model assignment requires to set up a dedicated plan. "
+                              "Contact Deepchecks.")
+    await exists_or_404(session, Model, id=model_id)
+
+    for user_id in member_schema.user_ids:
+        user = await fetch_or_404(session, User, id=user_id)
+        if user.organization_id != current_user.organization_id:
+            raise BadRequest(f"User(id:{user_id}) doesn't exists in your organization.")
+
+    model_memebers: t.List[ModelMember] = (
+        await session.execute(sa.select(ModelMember)
+                              .where(ModelMember.model_id == model_id))
+    ).scalars().all()
+    users_to_create = []
+    users_to_delete = []
+    for model_memeber in model_memebers:
+        if model_memeber.user_id not in member_schema.user_ids:
+            if member_schema.replace:
+                users_to_delete.append(model_memeber.id)
+    existing_users = [member.user_id for member in model_memebers]
+    for user_id in member_schema.user_ids:
+        if user_id not in existing_users:
+            users_to_create.append(ModelMember(user_id=user_id, model_id=model_id))
+
+    await session.execute(sa.delete(ModelMember).where(ModelMember.id.in_(users_to_delete)))
+    session.add_all(users_to_create)
+    await session.flush()

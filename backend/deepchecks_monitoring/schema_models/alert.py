@@ -11,11 +11,12 @@
 import typing as t
 
 import pendulum as pdl
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.alert_rule import AlertRule  # pylint: disable=unused-import
@@ -23,24 +24,42 @@ if t.TYPE_CHECKING:
 __all__ = ["Alert"]
 
 
-class Alert(Base):
+class Alert(Base, PermissionMixin):
     """ORM model for the alert."""
 
     __tablename__ = "alerts"
 
-    id = Column(Integer, primary_key=True)
-    failed_values = Column(JSONB, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=pdl.now)
-    start_time = Column(DateTime(timezone=True), nullable=False, index=True)
-    end_time = Column(DateTime(timezone=True), nullable=False, index=True)
-    resolved = Column(Boolean, nullable=False, default=False, index=True)
+    id = sa.Column(sa.Integer, primary_key=True)
+    failed_values = sa.Column(JSONB, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=pdl.now)
+    start_time = sa.Column(sa.DateTime(timezone=True), nullable=False, index=True)
+    end_time = sa.Column(sa.DateTime(timezone=True), nullable=False, index=True)
+    resolved = sa.Column(sa.Boolean, nullable=False, default=False, index=True)
 
-    alert_rule_id = Column(
-        Integer,
-        ForeignKey("alert_rules.id", ondelete="CASCADE", onupdate="RESTRICT"),
+    alert_rule_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("alert_rules.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
     alert_rule: Mapped["AlertRule"] = relationship(
         "AlertRule",
         back_populates="alerts"
     )
+
+    @classmethod
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
+        from deepchecks_monitoring.schema_models.alert_rule import AlertRule
+        from deepchecks_monitoring.schema_models.check import Check
+        from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+        from deepchecks_monitoring.schema_models.monitor import Monitor
+
+        return (sa.select(cls)
+                .join(cls.alert_rule)
+                .join(AlertRule.monitor)
+                .join(Monitor.check)
+                .join(Check.model)
+                .join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == obj_id))

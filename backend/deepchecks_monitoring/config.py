@@ -155,10 +155,14 @@ class Settings(
     oauth_client_id: str
     oauth_client_secret: str
 
+    init_local_ray_instance: str | None = None
+    total_number_of_check_executor_actors: int = 8
+
 
 class Tags(Enum):
     """Tags for the deepchecks_monitoring package."""
 
+    USERS = 'Users'
     MODELS = 'Models'
     CHECKS = 'Checks'
     MONITORS = 'Monitors'
