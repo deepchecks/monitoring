@@ -134,6 +134,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
         pendulum_freq = freq.to_pendulum_duration()
         alerts = []
         for row in rows:
+            print(pdl_start_time, row.label_count)
             match alert_rule.alert_type:
                 case AlertRuleType.SAMPLE_COUNT:
                     value = row.count

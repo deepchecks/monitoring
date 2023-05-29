@@ -15,6 +15,7 @@ from datetime import datetime
 import pendulum as pdl
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.orm import Mapped, column_property, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
@@ -31,9 +32,19 @@ if t.TYPE_CHECKING:
 __all__ = ["DataIngestionAlertRule", "AlertRuleType"]
 
 
-def _current_date_by_timezone(context):
-    timezone = context.get_current_parameters().get("timezone", "UTC")
-    return pdl.now(timezone).set(hour=0, minute=0, second=0, microsecond=0)
+def _calculate_default_latest_schedule(context: DefaultExecutionContext):
+    # pylint: disable=import-outside-toplevel, redefined-outer-name
+    from deepchecks_monitoring.schema_models.model import Model
+
+    model_id = t.cast(int, context.get_current_parameters()["model_id"])
+
+    record = context.connection.execute(
+        sa.select(Model.timezone)
+        .where(Model.id == model_id)
+    ).first()
+
+    tz = record["timezone"]
+    return pdl.now(tz).set(hour=0, minute=0, second=0, microsecond=0)
 
 
 class AlertRuleType(str, enum.Enum):
@@ -49,12 +60,13 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
 
     id = sa.Column(sa.Integer, primary_key=True)
     condition = sa.Column(PydanticType(pydantic_model=Condition))
-    alert_severity = sa.Column(sa.Enum(AlertSeverity), default=AlertSeverity.MEDIUM, nullable=False, index=True)
+    alert_severity = sa.Column(sa.Enum(
+        AlertSeverity), default=AlertSeverity.MEDIUM, nullable=False, index=True)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
     frequency = sa.Column(sa.Enum(Frequency), nullable=False)
     alert_type = sa.Column(sa.Enum(AlertRuleType), nullable=False)
     latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
-                                                     default=_current_date_by_timezone)
+                                default=_calculate_default_latest_schedule)
 
     model_id = sa.Column(
         sa.Integer,
@@ -112,15 +124,18 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
 
     @property
     def next_schedule(self):
-        latest_schedule = pdl.instance(t.cast("datetime", self.latest_schedule))
+        latest_schedule = pdl.instance(
+            t.cast("datetime", self.latest_schedule))
         frequency = t.cast("Frequency", self.frequency).to_pendulum_duration()
         next_schedule = latest_schedule + frequency
-        day_back = pdl.now(self.model.timezone).set(minute=0, second=0, microsecond=0).subtract(days=1)
+        day_back = pdl.now(self.model.timezone).set(
+            minute=0, second=0, microsecond=0).subtract(days=1)
         # Does not want to run on past dates, only on near-past
         if next_schedule < day_back:
             # Fast forward to today
             return pdl.now(self.model.timezone).set(hour=0, minute=0, second=0, microsecond=0)
         return next_schedule
+
 
 DataIngestionAlertRule.alert_severity_index = column_property(sa.case(
     *(

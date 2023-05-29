@@ -725,17 +725,10 @@ class TestAPI:
     def create_model_alert_rule(
         self,
         model_id: int,
-        alert_rule: t.Optional[t.Dict[t.Any, t.Any]] = None,
+        alert_rule: t.Optional[t.Dict[t.Any, t.Any]],
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        generated_payload = self.data_generator.generate_random_alert_rule()
-
-        alert_rule = (
-            {**generated_payload, **alert_rule}
-            if alert_rule is not None
-            else generated_payload
-        )
 
         response = self.api.session.post(f"models/{model_id}/data-ingestion-alert-rules", json=alert_rule)
         response = t.cast(httpx.Response, response)

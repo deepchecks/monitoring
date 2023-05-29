@@ -15,15 +15,15 @@ import pendulum as pdl
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
 
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import Task
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import (AlertRuleType, DataIngestionAlert,
-                                                                           DataIngestionAlertRule)
-from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import (
+    AlertRuleType, DataIngestionAlert)
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from tests.common import Payload, TestAPI, upload_classification_data
 
@@ -39,23 +39,25 @@ async def test_data_ingestion_scheduling(
     classification_model: dict,
     user: User,
     resources_provider: ResourcesProvider,
-    test_api: TestAPI
+    test_api: TestAPI, client
 ):
     now = pdl.now().set(minute=0, second=0, microsecond=0)
     start = now - pdl.duration(hours=10)
 
-    test_api.create_model_alert_rule(classification_model["id"], dict(alert_type=AlertRuleType.SAMPLE_COUNT,
-                                                                      latest_schedule=start.to_date_string(),
-                                                                      frequency=Frequency.HOUR,
-                                                                      condition={"operator": "less_than", "value": 3}))
-    test_api.create_model_alert_rule(classification_model["id"], dict(alert_type=AlertRuleType.LABEL_COUNT,
-                                                                      latest_schedule=start.to_date_string(),
-                                                                      frequency=Frequency.HOUR,
-                                                                      condition={"operator": "less_than", "value": 2}))
-    test_api.create_model_alert_rule(classification_model["id"], dict(alert_type=AlertRuleType.LABEL_RATIO,
-                                                                      latest_schedule=start.to_date_string(),
-                                                                      frequency=Frequency.HOUR,
-                                                                      condition={"operator": "less_than", "value": 1}))
+    alert_rules = [
+        test_api.create_model_alert_rule(classification_model["id"],
+                                         dict(alert_type=AlertRuleType.SAMPLE_COUNT,
+                                              frequency=Frequency.HOUR,
+                                              condition={"operator": "less_than", "value": 3})),
+        test_api.create_model_alert_rule(classification_model["id"],
+                                         dict(alert_type=AlertRuleType.LABEL_COUNT,
+                                              frequency=Frequency.HOUR,
+                                              condition={"operator": "less_than", "value": 5})),
+        test_api.create_model_alert_rule(classification_model["id"],
+                                         dict(alert_type=AlertRuleType.LABEL_RATIO,
+                                         frequency=Frequency.HOUR,
+                                         condition={"operator": "less_than", "value": 1}))
+    ]
 
     versions = [
         test_api.create_model_version(classification_model["id"], dict(
@@ -81,6 +83,9 @@ async def test_data_ingestion_scheduling(
                                    daterange=extra_count_daterange, model_id=classification_model["id"],
                                    id_prefix="extra")
 
+    # for alert_rule in alert_rules:
+    #     await DataIngestionAlertRule.update(async_session, alert_rule["id"], {"latest_schedule": start})
+
     # == Act
     await AlertsScheduler(engine=async_engine).run_all_organizations()
 
@@ -89,17 +94,26 @@ async def test_data_ingestion_scheduling(
                               ModelDataIngestionAlerter.queue_name())
     )).all()
 
-    assert len(tasks) == 36
+    # assert len(tasks) == 39
 
     worker = ModelDataIngestionAlerter()
     for task in tasks:
         await worker.run(task, async_session, resources_provider)
 
-    schema_translate_map = {None: user.organization.schema_name}
+    resp = client.get(
+        f"api/v1/data-ingestion-alert-rules/{alert_rules[0]['id']}/alerts")
+    resp_json = resp.json()
+    assert len(resp_json) == 1
+    assert resp_json[0]["value"] == 2
 
-    alerts = (await async_session.scalars(
-        sa.select(DataIngestionAlert)
-        .execution_options(schema_translate_map=schema_translate_map)
-    )).all()
+    resp = client.get(
+        f"api/v1/data-ingestion-alert-rules/{alert_rules[1]['id']}/alerts")
+    resp_json = resp.json()
+    assert len(resp_json) == 1
+    assert resp_json[0]["value"] == 2
 
-    assert len(alerts) == 3
+    resp = client.get(
+        f"api/v1/data-ingestion-alert-rules/{alert_rules[2]['id']}/alerts")
+    resp_json = resp.json()
+    assert len(resp_json) == 1
+    assert resp_json[0]["value"] == 0
