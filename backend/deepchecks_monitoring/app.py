@@ -7,6 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+# pylint: disable=import-outside-toplevel
 """Module defining the app."""
 import asyncio
 import logging
@@ -14,7 +15,6 @@ import typing as t
 
 import deepchecks
 import dotenv
-import ray
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -110,11 +110,12 @@ def create_application(
 
     if settings.init_local_ray_instance is not None:
         try:
+            import ray
             ray.init(address="auto")
         except ConnectionError:
             logger.info("Local ray instance is not instantiated")
         else:
-            logger.info("Conected to local ray instance")
+            logger.info("Connected to local ray instance")
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(
@@ -176,7 +177,7 @@ def create_application(
 
     # Add stuff available only in the enterprise version
     try:
-        from deepchecks_monitoring import ee  # pylint: disable=import-outside-toplevel
+        from deepchecks_monitoring import ee
     except ImportError:
         pass
     else:
@@ -187,7 +188,7 @@ def create_application(
 
         # Configure telemetry
         if settings.sentry_dsn:
-            import sentry_sdk  # pylint: disable=import-outside-toplevel
+            import sentry_sdk
 
             sentry_sdk.init(
                 dsn=settings.sentry_dsn,
@@ -200,7 +201,7 @@ def create_application(
             ee.utils.telemetry.collect_telemetry(DataIngestionBackend)
 
         if settings.stripe_secret_api_key:
-            import stripe  # pylint: disable=import-outside-toplevel
+            import stripe
             stripe.api_key = settings.stripe_secret_api_key
 
         if settings.debug_mode:

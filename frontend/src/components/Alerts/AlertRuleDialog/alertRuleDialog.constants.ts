@@ -1,5 +1,5 @@
 export const constants = {
-  dialogHeader: (title: string | undefined) => (title ? `Edit Alert Rule: ${title}` : 'Create New Alert Rule'),
+  dialogHeader: (title: string | undefined) => (title ? `Edit Alert: ${title}` : 'Create New Alert'),
   buttons: {
     back: (isFirst: boolean) => (isFirst ? 'Cancel' : 'Back'),
     next: (isNext: boolean) => (isNext ? 'Save' : 'Next')
