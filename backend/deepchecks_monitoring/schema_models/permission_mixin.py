@@ -39,7 +39,7 @@ class PermissionMixin:
     async def get_object_from_http_request(
         cls,
         request: fastapi.Request,
-        user = Depends(auth.CurrentUser()),
+        user=Depends(auth.CurrentUser()),
         session=AsyncSessionDep
     ):
         id_param = cls.__tablename__[:-1] + "_id"
