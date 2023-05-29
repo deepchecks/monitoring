@@ -27,10 +27,10 @@ from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.check import Check 
-    from deepchecks_monitoring.schema_models.model_memeber import ModelMember 
-    from deepchecks_monitoring.schema_models.model_version import ModelVersion 
-    from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule  
+    from deepchecks_monitoring.schema_models.check import Check
+    from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
+    from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+    from deepchecks_monitoring.schema_models.model_version import ModelVersion  
 
 
 __all__ = ["Model", "ModelNote"]

@@ -21,7 +21,7 @@ from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import Task
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import DataIngestionAlert
+from deepchecks_monitoring.schema_models import DataIngestionAlert, DataIngestionAlertRule
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from tests.common import Payload, TestAPI, upload_classification_data
@@ -51,6 +51,9 @@ async def test_data_ingestion_scheduling(
             Model.data_ingestion_alert_sample_count: 3,
             Model.data_ingestion_alert_latest_schedule: start,
         }))
+    async_session.add_all([
+        DataIngestionAlertRule()
+    ])
     await async_session.flush()
     await async_session.commit()
 

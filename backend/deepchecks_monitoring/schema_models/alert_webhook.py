@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from pydantic import AnyUrl, BaseModel, validator
 from sqlalchemy.dialects.postgresql import JSONB
 
-from backend.deepchecks_monitoring.utils.alerts import AlertSeverity
+from deepchecks_monitoring.utils.alerts import AlertSeverity
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models import Base
 

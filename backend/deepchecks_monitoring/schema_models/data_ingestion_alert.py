@@ -8,15 +8,23 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the data-ingestion alert ORM model."""
+from typing import TYPE_CHECKING
+
 import pendulum as pdl
 import sqlalchemy as sa
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 from deepchecks_monitoring.schema_models.base import Base
+from sqlalchemy.orm import Mapped, relationship
+
+if TYPE_CHECKING:
+    from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
+
 
 __all__ = ["DataIngestionAlert"]
 
 
-class DataIngestionAlert(Base):
+class DataIngestionAlert(Base, PermissionMixin):
     """ORM model for the alert."""
 
     __tablename__ = "data_ingestion_alerts"
@@ -33,3 +41,23 @@ class DataIngestionAlert(Base):
         sa.ForeignKey("data_ingestion_alert_rules.id", ondelete="CASCADE", onupdate="RESTRICT"),
         nullable=False
     )
+    alert_rule: Mapped["DataIngestionAlertRule"] = relationship(
+        "DataIngestionAlertRule",
+        back_populates="alerts"
+    )
+
+    @classmethod
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
+        from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
+        from deepchecks_monitoring.schema_models.check import Check
+        from deepchecks_monitoring.schema_models.model import Model
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+        from deepchecks_monitoring.schema_models.monitor import Monitor
+
+        return (sa.select(cls)
+                .join(cls.alert_rule)
+                .join(DataIngestionAlertRule.model)
+                .join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == obj_id))

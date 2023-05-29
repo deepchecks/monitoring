@@ -18,6 +18,7 @@ from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.future import select
 from sqlalchemy.orm import Mapped, column_property, relationship
+from deepchecks_monitoring.utils.alerts import Frequency
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin, MonitorCheckConfSchema
 from deepchecks_monitoring.schema_models.base import Base
@@ -62,25 +63,6 @@ def _calculate_default_latest_schedule(context: DefaultExecutionContext):
         model_start_time=start_time,
         model_end_time=end_time,
     )
-
-
-class Frequency(str, enum.Enum):
-    """Monitor execution frequency."""
-
-    HOUR = "HOUR"
-    DAY = "DAY"
-    WEEK = "WEEK"
-    MONTH = "MONTH"
-
-    def to_pendulum_duration_unit(self):
-        return f"{self.value.lower()}s"
-
-    def to_pendulum_duration(self):
-        unit = self.to_pendulum_duration_unit()
-        return pdl.duration(**{unit: 1})
-
-    def to_postgres_interval(self):
-        return f"INTERVAL '1 {self.value}'"
 
 
 class Monitor(Base, MetadataMixin, PermissionMixin):

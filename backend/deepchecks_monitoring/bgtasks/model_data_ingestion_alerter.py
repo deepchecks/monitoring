@@ -13,10 +13,9 @@ import typing as t
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from backend.deepchecks_monitoring.monitoring_utils import make_oparator_func
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule, AlertRuleType
-from deepchecks_monitoring.utils.alerts import Condition
 
+from backend.deepchecks_monitoring.monitoring_utils import make_oparator_func
+from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -25,6 +24,7 @@ from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPL
 from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
 from deepchecks_monitoring.schema_models.monitor import Frequency, as_pendulum_datetime
 from deepchecks_monitoring.utils import database
+from deepchecks_monitoring.utils.alerts import Condition
 
 __all__ = ["ModelDataIngestionAlerter"]
 

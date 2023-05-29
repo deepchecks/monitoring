@@ -16,6 +16,8 @@ from pydantic import BaseModel
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.api.v1.alert import AlertSchema
+from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse
@@ -26,8 +28,6 @@ from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition
 
-from ...public_models import User
-from .alert import AlertSchema
 from .router import router
 
 
