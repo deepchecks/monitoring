@@ -11,11 +11,13 @@ import ConnectSlack from './components/ConnectSlack';
 
 import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 import { resError } from 'helpers/types/resError';
+import useUser from 'helpers/hooks/useUser';
 
 import { constants } from './integrations.constants';
 
 export const Integrations = () => {
   const theme = useTheme();
+  const { isAdmin, isOwner, availableFeatures } = useUser();
   const isLargeDesktop = useMediaQuery(theme.breakpoints.up(1840));
   const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
     query: {
@@ -24,6 +26,9 @@ export const Integrations = () => {
     }
   });
 
+  const isNotPaid = !availableFeatures?.slack_enabled; // Currently unavailable slack means no subscription (paid plan)
+  const deniedDisplayText = isNotPaid ? constants.integration.error.orgDenied : constants.integration.error.roleDenied;
+  const deniedReason = (!isAdmin && !isOwner) || isNotPaid ? deniedDisplayText : '';
   const stackDisplay = isLargeDesktop ? 'flex' : 'block';
   const isSlackConnected = data?.is_slack_connected;
   const isWebhookConnected = data?.is_webhook_connected;
@@ -43,7 +48,7 @@ export const Integrations = () => {
     return (
       <Box padding="24px">
         <Stack display={stackDisplay} flexDirection="row" gap="85px">
-          <AlertNotifications data={data} />
+          <AlertNotifications data={data} deniedReason={deniedReason} />
           <Box display="flex" flexDirection="column" gap="16px">
             <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />
             <ConnectWebhook isWebhookConnected={isWebhookConnected} />

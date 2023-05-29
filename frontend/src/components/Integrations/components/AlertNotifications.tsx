@@ -82,7 +82,7 @@ const notificationsItems = [
   NotificationDictionary.webhook
 ] as const;
 
-export function AlertNotifications({ data }: { data: NotificationsResponse }) {
+export function AlertNotifications({ data, deniedReason }: { data: NotificationsResponse; deniedReason?: string }) {
   const updateNotifications = useUpdateOrganizationApiV1OrganizationPut();
   const [notifications, setNotifications] = useState<Notifications>({
     [NotificationDictionary.email]: [],
@@ -198,6 +198,7 @@ export function AlertNotifications({ data }: { data: NotificationsResponse }) {
           );
         })}
       </Box>
+      <StyledText text={deniedReason} color="red" margin="16px" />
     </Box>
   );
 }
