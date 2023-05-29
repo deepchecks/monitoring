@@ -9,7 +9,7 @@ fi
 STARTAPP="uvicorn --factory deepchecks_monitoring.app:create_application --host 0.0.0.0 --workers 4 --log-level critical --proxy-headers --forwarded-allow-ips '*'"
 
 if [[ -v DD_ENV ]]; then
-  STARTAPP="ddtrace-run ${RUN}"
+  STARTAPP="ddtrace-run ${STARTAPP}"
 fi
 
 eval "${STARTAPP}"
