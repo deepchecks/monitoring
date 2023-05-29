@@ -92,6 +92,9 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
 
   const bg = (index: number) => (index % 2 !== 0 ? 'transparent' : 'white');
 
+  const isDisabled = (notification: NotificationDictionary) =>
+    !data?.[notification] || (!!deniedReason && notification !== NotificationDictionary.email);
+
   const handleNotifications = (
     event: React.ChangeEvent<HTMLInputElement>,
     notification: NotificationsOptions,
@@ -184,7 +187,7 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
                 <Box padding="9px" key={notification}>
                   <Checkbox
                     size="small"
-                    disabled={!data?.[notification]}
+                    disabled={isDisabled(notification)}
                     onChange={event => handleNotifications(event, notification, notificationsMap[notification][index])}
                     checked={notifications[notification].includes(notificationsMap[notification][index])}
                   />
