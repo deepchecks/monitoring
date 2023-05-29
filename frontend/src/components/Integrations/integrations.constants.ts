@@ -3,8 +3,9 @@ export const constants = {
     title: 'Integrations',
     noAPIDataText: 'Got an error from integrations API, please contact us',
     error: {
-      roleDenied: 'You cant perform this action because you are not an admin, please contact your admin/owner.',
-      orgDenied: 'In order perform the disabled actions you need to set up a subscription with deepchecks.'
+      roleDenied:
+        'You cant perform the disabled actions because you are not an admin, please contact your admin/owner.',
+      orgDenied: 'In order to perform the disabled actions you need to set up a subscription with deepchecks.'
     }
   },
   connect: {

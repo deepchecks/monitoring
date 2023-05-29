@@ -9,7 +9,13 @@ import webhook from '../../../assets/integrations/webhook.svg';
 
 import { constants } from '../integrations.constants';
 
-const ConnectWebhook = ({ isWebhookConnected }: { isWebhookConnected: boolean | undefined }) => {
+const ConnectWebhook = ({
+  isWebhookConnected,
+  disabled
+}: {
+  isWebhookConnected: boolean | undefined;
+  disabled: boolean;
+}) => {
   const theme = useTheme();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -24,7 +30,9 @@ const ConnectWebhook = ({ isWebhookConnected }: { isWebhookConnected: boolean | 
         padding: '0 24px',
         display: 'flex',
         width: '500px',
-        height: '170px'
+        height: '170px',
+        opacity: disabled ? '0.5' : 1,
+        pointerEvents: disabled ? 'none' : 'auto'
       }}
     >
       <Box>
