@@ -69,7 +69,6 @@ class CheckPerWindowExecutionArgs(t.TypedDict):
     organization_id: int
 
 
-
 async def execute_check_per_window(
     check_id: int,
     session: AsyncSession,
