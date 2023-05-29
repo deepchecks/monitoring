@@ -113,9 +113,10 @@ def create_application(
             import ray
             ray.init(address="auto")
         except ConnectionError:
-            logger.info("Local ray instance is not instantiated")
+            # NOTE/TODO: we use jsonformatter therefore messages should be passed as dicts
+            logger.info({"message": "Local ray instance is not instantiated"})
         else:
-            logger.info("Connected to local ray instance")
+            logger.info({"message": "Connected to local ray instance"})
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(
