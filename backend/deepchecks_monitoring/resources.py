@@ -350,7 +350,9 @@ class ResourcesProvider(BaseResourcesProvider):
         from ray.util.actor_pool import ActorPool  # noqa
 
         if not ray.is_initialized():
-            logging.getLogger("server").info("Ray is not initialized")
+            logging.getLogger("server").info({
+                "message": "Ray is not initialized"
+            })
             return
 
         if pool := getattr(self, "_parallel_check_executors", None):
