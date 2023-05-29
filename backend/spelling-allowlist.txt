@@ -96,3 +96,4 @@ ee
 TimeWindowOption
 getLogger
 jsonformatter
+mins

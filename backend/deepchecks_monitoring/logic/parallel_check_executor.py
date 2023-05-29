@@ -251,7 +251,11 @@ class CheckPerWindowExecutor:
     """Ray actor for parallel check execution."""
 
     def __init__(self, database_uri: str):
-        self.engine = sa.create_engine(database_uri)
+        self.engine = sa.create_engine(
+            database_uri,
+            pool_pre_ping=True,
+            pool_recycle=1800  # 30 mins
+        )
 
     def execute(self, args: CheckPerWindowExecutionArgs):
         with self._session(args['organization_id']) as s:
