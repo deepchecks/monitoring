@@ -24,7 +24,7 @@ interface App {
   scope: string;
 }
 
-const ConnectSlack = ({ isSlackConnected }: { isSlackConnected: boolean | undefined }) => {
+const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolean | undefined; disabled: boolean }) => {
   const { data: apps, isLoading: isAppsLoading } = useRetrieveInstalationsApiV1SlackAppsGet<App[]>();
   const { data: slackConnect, isLoading: isSlackConnectLoading } =
     useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>();
@@ -75,7 +75,9 @@ const ConnectSlack = ({ isSlackConnected }: { isSlackConnected: boolean | undefi
         padding: '0 24px',
         display: 'flex',
         width: '500px',
-        height: '170px'
+        height: '170px',
+        opacity: disabled ? '0.5' : 1,
+        pointerEvents: disabled ? 'none' : 'auto'
       }}
     >
       <Box>

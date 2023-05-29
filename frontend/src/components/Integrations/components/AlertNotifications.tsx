@@ -82,7 +82,17 @@ const notificationsItems = [
   NotificationDictionary.webhook
 ] as const;
 
-export function AlertNotifications({ data, deniedReason }: { data: NotificationsResponse; deniedReason?: string }) {
+export function AlertNotifications({
+  data,
+  deniedReason,
+  isNotAdminOrOwner,
+  isNotPaid
+}: {
+  data: NotificationsResponse;
+  deniedReason: string;
+  isNotAdminOrOwner: boolean;
+  isNotPaid: boolean;
+}) {
   const updateNotifications = useUpdateOrganizationApiV1OrganizationPut();
   const [notifications, setNotifications] = useState<Notifications>({
     [NotificationDictionary.email]: [],
@@ -93,7 +103,9 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
   const bg = (index: number) => (index % 2 !== 0 ? 'transparent' : 'white');
 
   const isDisabled = (notification: NotificationDictionary) =>
-    !data?.[notification] || (!!deniedReason && notification !== NotificationDictionary.email);
+    !data?.[notification] ||
+    (!!deniedReason && isNotAdminOrOwner) ||
+    (isNotPaid && notification !== NotificationDictionary.email);
 
   const handleNotifications = (
     event: React.ChangeEvent<HTMLInputElement>,
