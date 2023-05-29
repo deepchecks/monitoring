@@ -26,7 +26,7 @@ from sqlalchemy import Column, DateTime, MetaData, Table, Text, func, literal_co
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import joinedload, selectinload, load_only, sessionmaker
+from sqlalchemy.orm import joinedload, load_only, selectinload, sessionmaker
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask

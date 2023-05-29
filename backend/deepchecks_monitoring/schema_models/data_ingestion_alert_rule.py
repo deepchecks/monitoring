@@ -8,9 +8,9 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the alert rule ORM model."""
-from datetime import datetime
 import enum
 import typing as t
+from datetime import datetime
 
 import pendulum as pdl
 import sqlalchemy as sa

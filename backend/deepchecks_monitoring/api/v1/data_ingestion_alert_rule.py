@@ -16,12 +16,12 @@ from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.api.v1.data_ingestion_alert import DataIngestionAlertSchema
-from deepchecks_monitoring.public_models.user import User
-from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse
+from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.utils import auth
 from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition, Frequency

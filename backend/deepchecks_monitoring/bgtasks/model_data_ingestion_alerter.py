@@ -15,13 +15,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from deepchecks_monitoring.monitoring_utils import make_oparator_func
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model
 from deepchecks_monitoring.schema_models.column_type import SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.schema_models.monitor import Frequency, as_pendulum_datetime
 from deepchecks_monitoring.utils import database
 from deepchecks_monitoring.utils.alerts import Condition

@@ -10,8 +10,8 @@
 
 """Module defining the v1 API of the app."""
 
-from . import (alert, alert_rule, alert_webhooks, check, configuration, dashboard, data_input, e2e_support_api, model,
-               model_version, monitor, onboarding, data_ingestion_alert, data_ingestion_alert_rule)
+from . import (alert, alert_rule, alert_webhooks, check, configuration, dashboard, data_ingestion_alert,
+               data_ingestion_alert_rule, data_input, e2e_support_api, model, model_version, monitor, onboarding)
 from .global_api import auth, global_router, helathcheck, organization, users
 from .router import router
 
