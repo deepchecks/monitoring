@@ -16,10 +16,10 @@ from pydantic import BaseModel
 from sqlalchemy import false, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.deepchecks_monitoring.public_models.user import User
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
-from backend.deepchecks_monitoring.schema_models.model_memeber import ModelMember
+from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.schema_models.model import Model

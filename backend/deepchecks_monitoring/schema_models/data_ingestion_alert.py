@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING
 
 import pendulum as pdl
 import sqlalchemy as sa
-from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
+from sqlalchemy.orm import Mapped, relationship
 
 from deepchecks_monitoring.schema_models.base import Base
-from sqlalchemy.orm import Mapped, relationship
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 
 if TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
@@ -49,8 +49,8 @@ class DataIngestionAlert(Base, PermissionMixin):
     @classmethod
     def get_object_by_id(cls, obj_id, user):
         # pylint: disable=redefined-outer-name,import-outside-toplevel
-        from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
         from deepchecks_monitoring.schema_models.check import Check
+        from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
         from deepchecks_monitoring.schema_models.model import Model
         from deepchecks_monitoring.schema_models.model_memeber import ModelMember
         from deepchecks_monitoring.schema_models.monitor import Monitor

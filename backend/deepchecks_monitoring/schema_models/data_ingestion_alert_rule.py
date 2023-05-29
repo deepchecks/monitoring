@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the alert rule ORM model."""
+from datetime import datetime
 import enum
 import typing as t
 
@@ -16,9 +17,9 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, column_property, relationship
 
-from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
 from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition, Frequency
@@ -52,7 +53,6 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
     frequency = sa.Column(sa.Enum(Frequency), nullable=False)
     alert_type = sa.Column(sa.Enum(AlertRuleType), nullable=False)
-    alert_value = sa.Column(sa.Float, nullable=False)
     latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
                                                      default=_current_date_by_timezone)
 
@@ -110,6 +110,17 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
         """Return a string representing current alert rule instance."""
         return f"{self.alert_severity.capitalize()} - {self.condition}"
 
+    @property
+    def next_schedule(self):
+        latest_schedule = pdl.instance(t.cast("datetime", self.latest_schedule))
+        frequency = t.cast("Frequency", self.frequency).to_pendulum_duration()
+        next_schedule = latest_schedule + frequency
+        day_back = pdl.now(self.model.timezone).set(minute=0, second=0, microsecond=0).subtract(days=1)
+        # Does not want to run on past dates, only on near-past
+        if next_schedule < day_back:
+            # Fast forward to today
+            return pdl.now(self.model.timezone).set(hour=0, minute=0, second=0, microsecond=0)
+        return next_schedule
 
 DataIngestionAlertRule.alert_severity_index = column_property(sa.case(
     *(

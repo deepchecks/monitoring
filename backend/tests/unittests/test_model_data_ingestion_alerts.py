@@ -21,7 +21,7 @@ from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import Task
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import DataIngestionAlert, DataIngestionAlertRule
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlert, DataIngestionAlertRule, AlertRuleType
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from tests.common import Payload, TestAPI, upload_classification_data
@@ -43,24 +43,26 @@ async def test_data_ingestion_scheduling(
     now = pdl.now().set(minute=0, second=0, microsecond=0)
     start = now - pdl.duration(hours=10)
 
-    await async_session.execute(
-        sa.update(Model).where(Model.id == classification_model["id"]).values({
-            Model.data_ingestion_alert_frequency: Frequency.HOUR,
-            Model.data_ingestion_alert_label_count: 2,
-            Model.data_ingestion_alert_label_ratio: 1,
-            Model.data_ingestion_alert_sample_count: 3,
-            Model.data_ingestion_alert_latest_schedule: start,
-        }))
-    async_session.add_all([
-        DataIngestionAlertRule()
-    ])
-    await async_session.flush()
-    await async_session.commit()
+    test_api.create_model_alert_rule(classification_model["id"], dict(alert_type=AlertRuleType.SAMPLE_COUNT,
+                                                                      latest_schedule=start.to_date_string(),
+                                                                      frequency=Frequency.HOUR,
+                                                                      condition={"operator": "less_than", "value": 3}))
+    test_api.create_model_alert_rule(classification_model["id"], dict(alert_type=AlertRuleType.LABEL_COUNT,
+                                                                      latest_schedule=start.to_date_string(),
+                                                                      frequency=Frequency.HOUR,
+                                                                      condition={"operator": "less_than", "value": 2}))
+    test_api.create_model_alert_rule(classification_model["id"], dict(alert_type=AlertRuleType.LABEL_RATIO,
+                                                                      latest_schedule=start.to_date_string(),
+                                                                      frequency=Frequency.HOUR,
+                                                                      condition={"operator": "less_than", "value": 1}))
 
     versions = [
-        test_api.create_model_version(classification_model["id"], dict(name="v1", classes=["0", "1", "2"])),
-        test_api.create_model_version(classification_model["id"], dict(name="v2", classes=["0", "1", "2"])),
-        test_api.create_model_version(classification_model["id"], dict(name="v3", classes=["0", "1", "2"])),
+        test_api.create_model_version(classification_model["id"], dict(
+            name="v1", classes=["0", "1", "2"])),
+        test_api.create_model_version(classification_model["id"], dict(
+            name="v2", classes=["0", "1", "2"])),
+        test_api.create_model_version(classification_model["id"], dict(
+            name="v3", classes=["0", "1", "2"])),
     ]
 
     daterange = [start.add(hours=hours) for hours in [1, 3, 4, 5, 7]]
@@ -82,10 +84,11 @@ async def test_data_ingestion_scheduling(
     await AlertsScheduler(engine=async_engine).run_all_organizations()
 
     tasks = (await async_session.scalars(
-        sa.select(Task).where(Task.bg_worker_task == ModelDataIngestionAlerter.queue_name())
+        sa.select(Task).where(Task.bg_worker_task ==
+                              ModelDataIngestionAlerter.queue_name())
     )).all()
 
-    assert len(tasks) == 7
+    assert len(tasks) == 36
 
     worker = ModelDataIngestionAlerter()
     for task in tasks:

@@ -18,12 +18,12 @@ from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.future import select
 from sqlalchemy.orm import Mapped, column_property, relationship
-from deepchecks_monitoring.utils.alerts import Frequency
 
 from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin, MonitorCheckConfSchema
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
+from deepchecks_monitoring.utils.alerts import Frequency
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import

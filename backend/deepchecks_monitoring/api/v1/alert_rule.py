@@ -17,10 +17,10 @@ from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.api.v1.alert import AlertSchema
-from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse
+from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models import Alert, Check, ModelVersion, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule
 from deepchecks_monitoring.schema_models.model import Model

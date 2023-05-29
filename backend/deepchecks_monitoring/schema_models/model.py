@@ -168,17 +168,6 @@ class Model(Base, MetadataMixin, PermissionMixin):
         query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
         return query
 
-    @property
-    def next_data_ingestion_alert_schedule(self):
-        latest_schedule = pdl.instance(t.cast("datetime", self.data_ingestion_alert_latest_schedule))
-        frequency = t.cast("Frequency", self.data_ingestion_alert_frequency).to_pendulum_duration()
-        next_schedule = latest_schedule + frequency
-        day_back = pdl.now(self.timezone).set(minute=0, second=0, microsecond=0).subtract(days=1)
-        # Does not want to run on past dates, only on near-past
-        if next_schedule < day_back:
-            # Fast forward to today
-            return pdl.now(self.timezone).set(hour=0, minute=0, second=0, microsecond=0)
-        return next_schedule
 
 
 class ModelNote(Base, MetadataMixin, PermissionMixin):

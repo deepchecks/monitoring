@@ -26,7 +26,7 @@ from sqlalchemy import Column, DateTime, MetaData, Table, Text, func, literal_co
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import joinedload, load_only, sessionmaker
+from sqlalchemy.orm import joinedload, selectinload, load_only, sessionmaker
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -190,13 +190,13 @@ class AlertsScheduler:
                 schema_search_path=[organization.schema_name, 'public']
             )
             models: t.List[Model] = await session.scalars(
-                select(Model).options(joinedload(Model.alert_rules)))
+                select(Model).options(selectinload(Model.alert_rules)))
 
             for model in models:
                 for alert_rule in model.alert_rules:
                     schedules = []
                     frequency = alert_rule.frequency.to_pendulum_duration()
-                    schedule_time = model.next_data_ingestion_alert_schedule
+                    schedule_time = alert_rule.next_schedule
 
                     while schedule_time <= model.end_time:
                         schedules.append(schedule_time)

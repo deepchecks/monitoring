@@ -14,8 +14,8 @@ Revises: 1b0028e8c1e1
 Create Date: 2023-05-29 16:21:28.896406
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -39,7 +39,6 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('frequency', postgresql.ENUM(name='frequency', create_type=False), nullable=False),
     sa.Column('alert_type', sa.Enum('SAMPLE_COUNT', 'LABEL_COUNT', 'LABEL_RATIO', name='alertruletype'), nullable=False),
-    sa.Column('alert_value', sa.Float(), nullable=False),
     sa.Column('latest_schedule', sa.DateTime(timezone=True), nullable=False),
     sa.Column('model_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['model_id'], ['models.id'], onupdate='RESTRICT', ondelete='CASCADE'),

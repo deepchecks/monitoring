@@ -12,10 +12,10 @@ import typing as t
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
-from backend.deepchecks_monitoring.monitoring_utils import make_oparator_func
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
+from deepchecks_monitoring.monitoring_utils import make_oparator_func
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -70,10 +70,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
 
         alert_rule: DataIngestionAlertRule = (
             await session.execute(sa.select(DataIngestionAlertRule)
-                                  .where(DataIngestionAlertRule.id == alert_rule_id)
-                                  .options(selectinload(DataIngestionAlertRule.model),
-                                           selectinload(Model.versions)))
-        ).scalars().first()
+                                  .where(DataIngestionAlertRule.id == alert_rule_id))).scalars().first()
 
         # in case it was deleted
         if alert_rule is None:
@@ -81,7 +78,9 @@ class ModelDataIngestionAlerter(BackgroundWorker):
             await session.commit()
             return
 
-        model: Model = alert_rule.model
+        model: Model = (await session.execute(sa.select(Model)
+                                             .where(Model.id == alert_rule.model_id)
+                                             .options(joinedload(Model.versions)))).scalars().first()
         freq: Frequency = alert_rule.frequency
         pdl_start_time = as_pendulum_datetime(start_time)
         pdl_end_time = as_pendulum_datetime(end_time)
@@ -149,7 +148,7 @@ class ModelDataIngestionAlerter(BackgroundWorker):
             if operator(value, alert_condition.value):
                 start_time = as_pendulum_datetime(row.timestamp)
                 end_time = start_time + pendulum_freq
-                alert = DataIngestionAlert(alert_rule_id=alert.id, start_time=start_time, end_time=end_time,
+                alert = DataIngestionAlert(alert_rule_id=alert_rule.id, start_time=start_time, end_time=end_time,
                                            value=value)
                 alerts.append(alert)
                 session.add(alert)

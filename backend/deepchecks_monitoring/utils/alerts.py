@@ -2,8 +2,8 @@
 import enum
 import typing as t
 
-from furl import furl
 import pendulum as pdl
+from furl import furl
 from pydantic import BaseModel
 
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum

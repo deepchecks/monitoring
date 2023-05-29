@@ -9,16 +9,16 @@
 # ----------------------------------------------------------------------------
 """V1 API of the alert rules."""
 import typing as t
-from datetime import datetime
 
-from fastapi import Depends, Query, Response, status
+from fastapi import Depends, Response, status
 from pydantic import BaseModel
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.deepchecks_monitoring.public_models.user import User
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.api.v1.data_ingestion_alert import DataIngestionAlertSchema
+from deepchecks_monitoring.public_models.user import User
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.monitoring_utils import IdResponse
@@ -56,6 +56,7 @@ class DataIngestionAlertRuleSchema(BaseModel):
 
 class AlertRuleUpdateSchema(BaseModel):
     """Schema defines the parameters for updating alert rule."""
+
     alert_severity: t.Optional[AlertSeverity]
     condition: t.Optional[Condition]
     is_active: t.Optional[bool]
@@ -63,7 +64,7 @@ class AlertRuleUpdateSchema(BaseModel):
 
 
 @router.post(
-    "/models/{model_id}/alert-rules",
+    "/models/{model_id}/data-ingestion-alert-rules",
     response_model=IdResponse,
     tags=[Tags.ALERTS],
     dependencies=[Depends(Model.get_object_from_http_request)],
@@ -127,7 +128,7 @@ async def delete_alert_rule(
 
 
 @router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}/alerts", 
-            response_model=t.List[AlertSchema], tags=[Tags.ALERTS])
+            response_model=t.List[DataIngestionAlertSchema], tags=[Tags.ALERTS])
 async def get_alerts_of_alert_rule(
         data_ingestion_alert_rule_id: int,  # pylint: disable=unused-argument
         resolved: t.Optional[bool] = None,
@@ -139,7 +140,7 @@ async def get_alerts_of_alert_rule(
     if resolved is not None:
         query = query.where(DataIngestionAlert.resolved.is_(resolved))
     query = await session.execute(query.order_by(DataIngestionAlert.start_time))
-    alerts = [AlertSchema.from_orm(a) for a in query.scalars().all()]
+    alerts = [DataIngestionAlertSchema.from_orm(a) for a in query.scalars().all()]
     return alerts
 
 
