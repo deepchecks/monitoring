@@ -113,7 +113,9 @@ def create_application(
             import ray
             ray.init(address="auto")
         except ConnectionError:
-            # NOTE/TODO: we use jsonformatter therefore messages should be passed as dicts
+            # NOTE/TODO:
+            # we use jsonformatter therefore messages must be passed as dictionaries
+            # otherwise they will not appear the the log
             logger.info({"message": "Local ray instance is not instantiated"})
         else:
             logger.info({"message": "Connected to local ray instance"})
