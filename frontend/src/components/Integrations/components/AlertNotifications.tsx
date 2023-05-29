@@ -131,7 +131,7 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
       setNotifications({
         [NotificationDictionary.email]: data[NotificationDictionary?.email],
         [NotificationDictionary.slack]: data[NotificationDictionary?.slack],
-        [NotificationDictionary.webhook]: data[NotificationDictionary?.slack] // TODO - change to data.webhook
+        [NotificationDictionary.webhook]: data[NotificationDictionary?.webhook]
       } as any);
     }
   }, [data]);
