@@ -5,11 +5,11 @@ import Box from '@mui/material/Box';
 
 import { RoleEnum, useRetrieveUserInfoApiV1UsersMeGet } from 'api/generated';
 
-import Billing from './Billing/Billing';
-import Members from './Members/Members';
-import ModelsTab from './ModelsTab/ModelsTab';
-import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
-import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
+import Billing from './components/Billing/Billing';
+import Members from './components/Members/Members';
+import ModelsTab from './components/ModelsTab/ModelsTab';
+import NotAdminDialog from './components/NotAdminDialog/NotAdminDialog';
+import BillingPaidSkeleton from './components/Billing/BillingPaidView/BillingPaidSkeleton';
 import { Text } from 'components/lib/components/Text/Text';
 
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';

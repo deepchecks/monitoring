@@ -1,4 +1,4 @@
-import { styled } from '@mui/material';
+import { styled, Stack } from '@mui/material';
 import TableContainer from '@mui/material/TableContainer';
 import IconButton from '@mui/material/IconButton';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
@@ -65,3 +65,8 @@ export const StyledIconButton = styled(IconButton)(({ theme }) => ({
     fill: theme.palette.grey[400]
   }
 }));
+
+export const StyledDialogListContainer = styled(Stack)({
+  height: '460px',
+  overflow: 'auto'
+});

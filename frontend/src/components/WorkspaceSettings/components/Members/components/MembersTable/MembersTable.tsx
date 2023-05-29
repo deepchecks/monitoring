@@ -9,7 +9,7 @@ import Paper from '@mui/material/Paper';
 import { MembersTableHead } from './MembersTableHead';
 import { MembersTableRow } from './MembersTableRow';
 
-import { StyledTableContainer } from '../../../WorkspaceSettings.styles';
+import { StyledTableContainer } from '../../../../WorkspaceSettings.styles';
 
 import { selectMultiple, isSelected } from 'components/WorkspaceSettings/WorkspaceSettings.helpers';
 import { MembersActionDialogOptions } from '../../Members.type';

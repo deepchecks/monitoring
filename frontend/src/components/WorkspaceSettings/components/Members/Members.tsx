@@ -9,7 +9,7 @@ import { MembersTable } from './components/MembersTable/MembersTable';
 import { DeleteWorkspace } from './components/DeleteWorkspace';
 
 import { MembersActionDialogOptions } from './Members.type';
-import { useOrganizationMembers } from '../useOrganizationMembers';
+import { useOrganizationMembers } from '../../useOrganizationMembers';
 
 const Members = () => {
   const {
@@ -42,7 +42,8 @@ const Members = () => {
         initialMembersList={sortedOrganizationMembers}
         setMembersList={setOrganizationMembersList}
         handleOpenActionDialog={handleOpenActionDialog}
-        actionButtonsDisabled={!selectedMembers.length}
+        removeMultipleMembersDisabled={!selectedMembers.length}
+        assignModelsButtonDisabled={selectedMembers.length !== 1}
       />
       {isOrganizationMembersLoading ? (
         <Loader />

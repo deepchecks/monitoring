@@ -6,7 +6,7 @@ import { TableRowProps } from '@mui/material';
 
 import { StyledButton } from 'components/lib';
 
-import { StyledTableRow, StyledTableCell, StyledTableCellBold } from '../../../WorkspaceSettings.styles';
+import { StyledTableRow, StyledTableCell, StyledTableCellBold } from '../../../../WorkspaceSettings.styles';
 
 import { constants } from '../../modelsTab.constants';
 

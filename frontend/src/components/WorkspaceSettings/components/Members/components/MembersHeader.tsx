@@ -18,7 +18,8 @@ interface MembersHeaderProps {
   initialMembersList: MemberSchema[];
   setMembersList: (value: React.SetStateAction<MemberSchema[]>) => void;
   handleOpenActionDialog: (action: MembersActionDialogOptions, member?: MemberSchema | null) => void;
-  actionButtonsDisabled: boolean;
+  removeMultipleMembersDisabled: boolean;
+  assignModelsButtonDisabled: boolean;
 }
 
 const { title, assignModels, removeMembers, inviteMembers } = constants.header;
@@ -27,7 +28,8 @@ export const MembersHeader = ({
   initialMembersList,
   setMembersList,
   handleOpenActionDialog,
-  actionButtonsDisabled
+  removeMultipleMembersDisabled,
+  assignModelsButtonDisabled
 }: MembersHeaderProps) => {
   const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<MemberSchema>(
     initialMembersList,
@@ -39,20 +41,20 @@ export const MembersHeader = ({
 
   const handleRemoveSelectedMembers = () => handleOpenActionDialog(MembersActionDialogOptions.removeSelected);
 
-  const handleAssignModel = () => handleOpenActionDialog(MembersActionDialogOptions.assignModel);
+  const handleAssignModel = () => handleOpenActionDialog(MembersActionDialogOptions.assignModels);
 
   return (
     <Stack direction="row" spacing="16px" marginBottom="16px">
       <StyledButton
         startIcon={<ModeEditIcon />}
         label={assignModels}
-        disabled={actionButtonsDisabled}
+        disabled={assignModelsButtonDisabled}
         onClick={handleAssignModel}
       />
       <StyledButton
         startIcon={<DeleteIcon />}
         label={removeMembers}
-        disabled={actionButtonsDisabled}
+        disabled={removeMultipleMembersDisabled}
         onClick={handleRemoveSelectedMembers}
       />
       <StyledInput

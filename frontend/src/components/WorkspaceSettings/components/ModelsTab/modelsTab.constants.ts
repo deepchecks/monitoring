@@ -8,7 +8,7 @@ export const constants = {
   },
   editMembers: 'Edit members',
   dialog: {
-    inputPlaceholder: 'Edit members...',
+    inputPlaceholder: 'Search members...',
     submitButtonLabel: 'Save'
   }
 };

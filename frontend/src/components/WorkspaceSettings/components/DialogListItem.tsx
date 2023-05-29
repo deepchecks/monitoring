@@ -1,12 +1,11 @@
 import React from 'react';
 
-import { MemberSchema } from 'api/generated';
-
 import { Stack, Checkbox, alpha, styled, StackProps } from '@mui/material';
 import { StyledText } from 'components/lib';
 
-interface AssignMembersToModelDialogItemProps extends StackProps {
-  member: MemberSchema;
+interface DialogListItemProps extends StackProps {
+  title: string;
+  subtitle: string;
   selected: boolean;
 }
 
@@ -21,17 +20,13 @@ export const StyledContainer = styled(Stack)(({ theme }) => ({
   }
 }));
 
-export const AssignMembersToModelDialogItem = ({
-  member,
-  selected,
-  ...otherProps
-}: AssignMembersToModelDialogItemProps) => {
+export const DialogListItem = ({ title, subtitle, selected, ...otherProps }: DialogListItemProps) => {
   return (
     <StyledContainer {...otherProps}>
       <Checkbox checked={selected} sx={{ marginRight: '15px' }} />
       <Stack>
-        <StyledText type="h3" text={member.full_name} sx={{ fontWeight: 700, marginBottom: '3px' }} />
-        <StyledText type="smallNormal" text={member.email} />
+        <StyledText type="h3" text={title} sx={{ fontWeight: 700, marginBottom: '3px' }} />
+        <StyledText type="smallNormal" text={subtitle} />
       </Stack>
     </StyledContainer>
   );

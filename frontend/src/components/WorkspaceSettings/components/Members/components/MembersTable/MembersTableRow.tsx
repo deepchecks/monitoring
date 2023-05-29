@@ -14,7 +14,7 @@ import {
   StyledTableCell,
   StyledIconButton,
   StyledTableCellBold
-} from '../../../WorkspaceSettings.styles';
+} from '../../../../WorkspaceSettings.styles';
 
 import { constants } from '../../members.constants';
 

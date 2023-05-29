@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 
 import { MemberSchema, ModelManagmentSchema, assignUsersToModelApiV1ModelsModelIdMembersPost } from 'api/generated';
 
-import { Stack } from '@mui/material';
-
 import { StyledDialog, StyledInput } from 'components/lib';
-import { AssignMembersToModelDialogItem } from './AssignMembersToModelDialogItem';
+import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
 
+import { StyledDialogListContainer } from 'components/WorkspaceSettings/WorkspaceSettings.styles';
 import { selectMultiple, isSelected } from 'components/WorkspaceSettings/WorkspaceSettings.helpers';
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import { constants } from '../modelsTab.constants';
@@ -86,21 +85,22 @@ export const AssignMembersToModelDialog = ({
         fullWidth
         sx={{ marginBottom: '5px' }}
       />
-      <Stack height="460px" overflow="auto">
+      <StyledDialogListContainer>
         {membersList.map(m => {
           const id = m.id;
           const isItemSelected = isSelected(id, selectedMembers);
 
           return (
-            <AssignMembersToModelDialogItem
+            <DialogListItem
               key={id}
-              member={m}
+              title={m.full_name || '-'}
+              subtitle={m.email}
               selected={isItemSelected}
               onClick={e => selectMultiple(e, id, selectedMembers, setSelectedMembers)}
             />
           );
         })}
-      </Stack>
+      </StyledDialogListContainer>
     </StyledDialog>
   );
 };

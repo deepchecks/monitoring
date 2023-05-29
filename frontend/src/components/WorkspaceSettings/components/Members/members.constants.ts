@@ -1,7 +1,9 @@
+import dayjs from 'dayjs';
+
 export const constants = {
   header: {
     title: 'Search member...',
-    assignModels: 'Assign Model',
+    assignModels: 'Assign Models',
     removeMembers: 'Remove Members',
     inviteMembers: 'Invite members'
   },
@@ -54,5 +56,12 @@ export const constants = {
     dialogMessage2: 'Please confirm this by writing the workspace name below.',
     inputPlaceholder: 'Workspace name',
     dialogSubmitButtonLabel: 'Yes, delete'
+  },
+  assignModels: {
+    title: 'Assign Models',
+    submitButtonLabel: 'Assign',
+    searchfieldPlaceholder: 'Search models',
+    dialogListItemSubtitle: (subtitle: number | undefined) =>
+      `Last data update: ${subtitle ? dayjs(subtitle).format('ll') : '-'}`
   }
 };

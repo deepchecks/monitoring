@@ -8,7 +8,7 @@ import Paper from '@mui/material/Paper';
 
 import { ModelsTabTableHead } from './ModelsTabTableHead';
 
-import { StyledTableContainer } from '../../../WorkspaceSettings.styles';
+import { StyledTableContainer } from '../../../../WorkspaceSettings.styles';
 import { ModelsTabTableRow } from './ModelsTabTableRow';
 
 import { constants } from '../../modelsTab.constants';

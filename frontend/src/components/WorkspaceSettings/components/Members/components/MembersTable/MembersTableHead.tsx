@@ -3,7 +3,7 @@ import React from 'react';
 import TableHead, { TableHeadProps } from '@mui/material/TableHead';
 import Checkbox from '@mui/material/Checkbox';
 
-import { StyledTableRow, StyledTableCellBold } from '../../../WorkspaceSettings.styles';
+import { StyledTableRow, StyledTableCellBold } from '../../../../WorkspaceSettings.styles';
 
 import { constants } from '../../members.constants';
 
