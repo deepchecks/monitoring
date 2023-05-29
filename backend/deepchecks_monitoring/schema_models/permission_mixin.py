@@ -10,7 +10,6 @@
 # pylint: disable=ungrouped-imports,import-outside-toplevel
 """Module defining utility functions for the deepchecks_monitoring app."""
 import abc
-import typing as t
 
 import fastapi
 import sqlalchemy as sa
