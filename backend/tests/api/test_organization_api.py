@@ -87,8 +87,10 @@ async def test_organization_retrieval(
     assert isinstance(data, dict)
     assert "name" in data
     assert "is_slack_connected" in data
+    assert "is_webhook_connected" in data
     assert "slack_notification_levels" in data
     assert "email_notification_levels" in data
+    assert "webhook_notification_levels" in data
 
 
 def test_organization_available_features(

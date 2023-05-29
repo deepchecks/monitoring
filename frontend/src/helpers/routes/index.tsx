@@ -38,7 +38,6 @@ const AlertsPage = lazy(() => lazyRetry(() => import('pages/AlertsPage')));
 const DashboardPage = lazy(() => lazyRetry(() => import('pages/DashboardPage')));
 const IntegrationsPage = lazy(() => lazyRetry(() => import('pages/IntegrationsPage')));
 const AnalysisPage = lazy(() => lazyRetry(() => import('pages/AnalysisPage')));
-const NotificationsPage = lazy(() => lazyRetry(() => import('pages/NotificationsPage')));
 const ModelsPage = lazy(() => lazyRetry(() => import('pages/ModelsPage')));
 const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
@@ -127,13 +126,6 @@ export const pathsInfo: PathInfo[] = [
         link: '/configuration/models',
         Icon: null,
         element: () => <ModelsPage />,
-        ActiveIcon: null
-      },
-      {
-        title: 'Notification',
-        link: '/configuration/notifications',
-        Icon: null,
-        element: () => <NotificationsPage />,
         ActiveIcon: null
       },
       {
