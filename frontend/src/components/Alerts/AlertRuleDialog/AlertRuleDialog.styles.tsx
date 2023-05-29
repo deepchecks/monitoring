@@ -1,11 +1,14 @@
 import { styled, Stack, Box, Step } from '@mui/material';
 import { MUIBaseButton } from 'components/base/Button/MUIBaseButton';
 
-const StyledContentContainer = styled(Stack)({
+const StyledContentContainer = styled(Stack)(({ theme }) => ({
   justifyContent: 'center',
   flexDirection: 'column',
-  alignItems: 'center'
-});
+  alignItems: 'center',
+
+  '& .css-1n575qe': { borderColor: theme.palette.primary.main, borderWidth: '2px', width: '10px' },
+  '& .css-1n575qe::after': { display: 'none' }
+}));
 
 const StyledButton = styled(MUIBaseButton)({
   width: '99px',
