@@ -90,6 +90,8 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
     [NotificationDictionary.webhook]: []
   });
 
+  const bg = (index: number) => (index % 2 !== 0 ? 'transparent' : 'white');
+
   const handleNotifications = (
     event: React.ChangeEvent<HTMLInputElement>,
     notification: NotificationsOptions,
@@ -135,7 +137,7 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
   }, [data]);
 
   return (
-    <Box width="100%" maxWidth="900px" marginBottom="36px">
+    <Box width="100%" marginBottom="36px">
       <StyledText text={constants.integration.title} type="h1" marginBottom="36px" />
       <Box
         sx={theme => ({
@@ -151,7 +153,7 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
         <Stack direction="row" spacing="74px">
           {icons.map(({ Icon, label }, index) => {
             return (
-              <Box key={index} display="inline-flex" height="24px" alignItems="center" gap="12px">
+              <Box key={index} display="inline-flex" height="24px" alignItems="center" gap="16px">
                 {Icon}
                 {label}
               </Box>
@@ -160,43 +162,37 @@ export function AlertNotifications({ data, deniedReason }: { data: Notifications
         </Stack>
       </Box>
       <Box>
-        {alertConfigurations.map((label, index) => {
-          const bg = index % 2 !== 0 ? 'transparent' : 'white';
-
-          return (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '9px 16px',
-                margin: '10px 0',
-                borderRadius: '10px',
-                backgroundColor: bg,
-                ':last-of-type': {
-                  marginBottom: 0
-                }
-              }}
-              key={index}
-            >
-              <StyledText text={label} type="bodyBold" fontSize="16px" color="black" />
-              <Stack direction="row" spacing="120px">
-                {notificationsItems.map(notification => (
-                  <Box padding="9px" key={notification}>
-                    <Checkbox
-                      size="small"
-                      disabled={!data?.[notification]}
-                      onChange={event =>
-                        handleNotifications(event, notification, notificationsMap[notification][index])
-                      }
-                      checked={notifications[notification].includes(notificationsMap[notification][index])}
-                    />
-                  </Box>
-                ))}
-              </Stack>
-            </Box>
-          );
-        })}
+        {alertConfigurations.map((label, index) => (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '9px 24px',
+              margin: '10px 0',
+              borderRadius: '10px',
+              backgroundColor: bg(index),
+              ':last-of-type': {
+                marginBottom: 0
+              }
+            }}
+            key={index}
+          >
+            <StyledText text={label} type="bodyBold" fontSize="16px" color="black" />
+            <Stack direction="row" spacing="120px">
+              {notificationsItems.map(notification => (
+                <Box padding="9px" key={notification}>
+                  <Checkbox
+                    size="small"
+                    disabled={!data?.[notification]}
+                    onChange={event => handleNotifications(event, notification, notificationsMap[notification][index])}
+                    checked={notifications[notification].includes(notificationsMap[notification][index])}
+                  />
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+        ))}
       </Box>
       <StyledText text={deniedReason} color="red" margin="16px" />
     </Box>

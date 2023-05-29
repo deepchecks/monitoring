@@ -18,7 +18,7 @@ import { constants } from './integrations.constants';
 export const Integrations = () => {
   const theme = useTheme();
   const { isAdmin, isOwner, availableFeatures } = useUser();
-  const isLargeDesktop = useMediaQuery(theme.breakpoints.up(1840));
+  const isLargeDesktop = useMediaQuery(theme.breakpoints.up('xl'));
   const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
     query: {
       cacheTime: 0,

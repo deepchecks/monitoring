@@ -74,8 +74,7 @@ const ConnectSlack = ({ isSlackConnected }: { isSlackConnected: boolean | undefi
         borderRadius: '10px',
         padding: '0 24px',
         display: 'flex',
-        width: '100%',
-        maxWidth: '500px',
+        width: '500px',
         height: '170px'
       }}
     >
