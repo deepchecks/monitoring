@@ -31,6 +31,7 @@ from sqlalchemy.orm import joinedload, load_only, sessionmaker
 from deepchecks_monitoring import config
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
+from deepchecks_monitoring.bgtasks.object_storage_ingestor import ObjectStorageIngestor
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, Task
@@ -218,6 +219,31 @@ class AlertsScheduler:
                         if isinstance(error, DBAPIError) and not is_serialization_error(error):
                             self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
                             raise
+
+    async def run_object_storage_ingestion(self, organization):
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
+            models: t.List[Model] = await session.scalars(
+                select(Model)
+                .where(Model.s3_path.isnot(None))
+            )
+
+            time = pdl.now()
+            tasks = []
+            for model in models:
+                if pdl.instance(model.s3_last_scan_time).add(hours=2) < time:
+                    tasks.append(dict(name=f'{organization.id}:{model.id}',
+                                      bg_worker_task=ObjectStorageIngestor.queue_name(),
+                                      params=dict(model_id=model.id, organization_id=organization.id)))
+
+            # In case of conflict update the params in order to update the random hash
+            return await session.scalar(insert(Task).values(tasks)
+                                        .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT)
+                                        .returning(Task.id))
+
 
 
 async def get_versions_hour_windows(

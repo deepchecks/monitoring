@@ -77,6 +77,11 @@ class Model(Base, MetadataMixin, PermissionMixin):
     data_ingestion_alert_label_count = sa.Column(sa.Integer)
     data_ingestion_alert_sample_count = sa.Column(sa.Integer)
 
+    # For ingestion from object storage
+    s3_last_scan_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    s3_path = sa.Column(sa.String, nullable=True)
+    latest_labels_file_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
+
     members: Mapped[t.List["ModelMember"]] = relationship(
         "ModelMember",
         back_populates="model",

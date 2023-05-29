@@ -42,10 +42,9 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
     updated during the worker run than we know to recreate the task, so it will be run again later.
     """
 
-    def __init__(self):
+    def __init__(self, consumer: aiokafka.AIOKafkaConsumer):
         super().__init__()
-        self.lock = threading.Lock()
-        self.consumer: Optional[aiokafka.AIOKafkaConsumer] = None
+        self.consumer = consumer
 
     @classmethod
     def queue_name(cls) -> str:
@@ -56,12 +55,6 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
         return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider):
-        if self.consumer is None:
-            with self.lock:
-                if self.consumer is None:
-                    self.consumer = aiokafka.AIOKafkaConsumer(**resources_provider.kafka_settings.kafka_params)
-                    await self.consumer.start()
-
         # Backward compatibility, remove in next release and replace with:
         # entity_id = task.params['id']
         # entity = task.params['entity']

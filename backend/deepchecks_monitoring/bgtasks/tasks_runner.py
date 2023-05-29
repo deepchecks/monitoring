@@ -13,6 +13,7 @@ import inspect
 import logging.handlers
 import typing as t
 
+import aiokafka
 import anyio
 import pendulum as pdl
 import uvloop
@@ -26,10 +27,12 @@ from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelData
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
+from deepchecks_monitoring.bgtasks.object_storage_ingestor import ObjectStorageIngestor
 from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
+from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
 
 try:
     from deepchecks_monitoring import ee
@@ -191,14 +194,23 @@ def execute_worker():
                 # Ignoring this logger since it can spam sentry with errors
                 sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
-                   ModelDataIngestionAlerter(), DeleteDbTableTask(), AlertsTask()]
-
         # AIOKafka is spamming our logs, disable it for errors and warnings
         logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
 
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+            consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
+            await consumer.start()
+            kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
+            await kafka_admin.start()
+
+            workers = [ModelVersionTopicDeletionWorker(kafka_admin),
+                       ModelVersionOffsetUpdate(consumer),
+                       ModelVersionCacheInvalidation(),
+                       ModelDataIngestionAlerter(),
+                       DeleteDbTableTask(),
+                       AlertsTask(),
+                       ObjectStorageIngestor(rp)]
 
             async with anyio.create_task_group() as g:
                 worker = tasks_runner.TaskRunner(rp, async_redis, workers, logger)
