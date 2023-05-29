@@ -254,7 +254,7 @@ class CheckPerWindowExecutor:
         self.engine = sa.create_engine(
             database_uri,
             pool_pre_ping=True,
-            pool_recycle=1800  # 30mins
+            pool_recycle=1800  # 30 mins
         )
 
     def execute(self, args: CheckPerWindowExecutionArgs):
