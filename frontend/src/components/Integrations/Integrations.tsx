@@ -9,7 +9,6 @@ import { StyledText, StyledLoader } from 'components/lib';
 import ConnectWebhook from './components/ConnectWebhook';
 import ConnectSlack from './components/ConnectSlack';
 
-import { featuresList, PermissionControlWrapper } from 'helpers/permissionControl';
 import { resError } from 'helpers/types/resError';
 import useUser from 'helpers/hooks/useUser';
 
@@ -26,9 +25,10 @@ export const Integrations = () => {
     }
   });
 
+  const isNotAdminOrOwner = !isAdmin && !isOwner;
   const isNotPaid = !availableFeatures?.slack_enabled; // Currently unavailable slack means no subscription (paid plan)
   const deniedDisplayText = isNotPaid ? constants.integration.error.orgDenied : constants.integration.error.roleDenied;
-  const deniedReason = (!isAdmin && !isOwner) || isNotPaid ? deniedDisplayText : '';
+  const deniedReason = isNotAdminOrOwner || isNotPaid ? deniedDisplayText : '';
   const stackDisplay = isLargeDesktop ? 'flex' : 'block';
   const isSlackConnected = data?.is_slack_connected;
   const isWebhookConnected = data?.is_webhook_connected;
@@ -48,13 +48,16 @@ export const Integrations = () => {
     return (
       <Box padding="24px">
         <Stack display={stackDisplay} flexDirection="row" gap="85px">
-          <AlertNotifications data={data} deniedReason={deniedReason} />
+          <AlertNotifications
+            data={data}
+            deniedReason={deniedReason}
+            isNotAdminOrOwner={isNotAdminOrOwner}
+            isNotPaid={isNotPaid}
+          />
           <Box display="flex" flexDirection="column" gap="16px">
             <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />
-            <ConnectWebhook isWebhookConnected={isWebhookConnected} />
-            <PermissionControlWrapper feature={featuresList.slack_enabled}>
-              <ConnectSlack isSlackConnected={isSlackConnected} />
-            </PermissionControlWrapper>
+            <ConnectWebhook isWebhookConnected={isWebhookConnected} disabled={isNotAdminOrOwner || isNotPaid} />
+            <ConnectSlack isSlackConnected={isSlackConnected} disabled={isNotAdminOrOwner || isNotPaid} />
           </Box>
         </Stack>
       </Box>
