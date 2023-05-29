@@ -16,6 +16,7 @@ import {
 import { getAlertFilters } from 'helpers/alertFilters';
 
 import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, Tooltip } from '@mui/material';
+import SyncIcon from '@mui/icons-material/Sync';
 
 import { RunDownloadSuite } from 'components/RunDownloadSuite';
 import { ShareButton } from 'components/base/Button/ShareButton';
@@ -28,7 +29,7 @@ import { OperatorsEnumMap } from 'helpers/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
 import { FrequencyMap } from 'helpers/utils/frequency';
 
-import { CloseIcon, Check, Sync } from 'assets/icon/icon';
+import { CloseIcon, Check } from 'assets/icon/icon';
 import { useLocation } from 'react-router-dom';
 import { theme } from 'components/lib/theme';
 
@@ -180,7 +181,7 @@ export const AlertsDrawerHeader = ({
           <Tooltip title={resolved ? 'Reactivate' : 'Resolve'} placement="top">
             <Box>
               <StyledButtonResolve variant="text" disabled={isLoading} onClick={handleAlert}>
-                {resolved ? <Sync opacity={iconOpacity} /> : <Check opacity={iconOpacity} />}
+                {resolved ? <SyncIcon opacity={iconOpacity} color="primary" /> : <Check opacity={iconOpacity} />}
               </StyledButtonResolve>
             </Box>
           </Tooltip>

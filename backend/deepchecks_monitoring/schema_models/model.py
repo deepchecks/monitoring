@@ -22,10 +22,12 @@ from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.model_memeber import ModelMember  # pylint: disable=unused-import
     from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
 
 
@@ -37,7 +39,7 @@ def _current_date_by_timezone(context):
     return pdl.now(timezone).set(hour=0, minute=0, second=0, microsecond=0)
 
 
-class Model(Base, MetadataMixin):
+class Model(Base, MetadataMixin, PermissionMixin):
     """ORM model for the model."""
 
     __tablename__ = "models"
@@ -75,6 +77,13 @@ class Model(Base, MetadataMixin):
     data_ingestion_alert_label_count = sa.Column(sa.Integer)
     data_ingestion_alert_sample_count = sa.Column(sa.Integer)
 
+    members: Mapped[t.List["ModelMember"]] = relationship(
+        "ModelMember",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+    )
     versions: Mapped[t.List["ModelVersion"]] = relationship(
         "ModelVersion",
         back_populates="model",
@@ -97,6 +106,15 @@ class Model(Base, MetadataMixin):
         passive_deletes=True,
         passive_updates=True,
     )
+
+    @classmethod
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+
+        return (sa.select(cls).join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == obj_id))
 
     async def update_timestamps(self, min_timestamp: datetime, max_timestamp: datetime, session: AsyncSession):
         """Update start and end date if needed based on given timestamps."""
@@ -163,7 +181,7 @@ class Model(Base, MetadataMixin):
         return next_schedule
 
 
-class ModelNote(Base, MetadataMixin):
+class ModelNote(Base, MetadataMixin, PermissionMixin):
     """ORM Model to represent model notes."""
 
     __tablename__ = "model_notes"
@@ -181,3 +199,12 @@ class ModelNote(Base, MetadataMixin):
         "Model",
         back_populates="notes"
     )
+
+    @classmethod
+    def get_object_by_id(cls, obj_id, user):
+        # pylint: disable=redefined-outer-name,import-outside-toplevel
+        from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+
+        return (sa.select(cls).join(ModelNote.model).join(Model.members)
+                .where(ModelMember.user_id == user.id)
+                .where(cls.id == obj_id))

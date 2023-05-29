@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
+import { Box, List, ListItem, styled } from '@mui/material';
+
 import {
   AlertRuleInfoSchema,
   useGetAlertRulesApiV1AlertRulesGet,
@@ -9,21 +11,19 @@ import {
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
 
-import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
-
-import { Box, List, ListItem, styled } from '@mui/material';
-
-import { events, reportEvent } from 'helpers/services/mixPanel';
-
 import { AlertsDrawer } from 'components/Alerts/AlertsDrawer';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import { AlertsHeader } from 'components/Alerts/AlertsHeader';
 import { AlertsRulesItem } from 'components/Alerts/AlertRulesItem';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 import { Loader } from 'components/base/Loader/Loader';
-import NoResults from 'components/NoResults';
-import useModels from '../helpers/hooks/useModels';
 import { StyledDeletionDialog } from 'components/lib';
+import NoResults from 'components/NoResults';
+
+import useModels from '../helpers/hooks/useModels';
+import { events, reportEvent } from 'helpers/services/mixPanel';
+import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
+import { getParams, handleSetParams } from 'helpers/utils/getParams';
 
 const snackbarPosition = {
   vertical: 'bottom',
@@ -77,7 +77,8 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   const {
     data: alertRules,
     isLoading: alertRulesIsLoading,
-    isError: isAlertRulesError
+    isError: isAlertRulesError,
+    refetch: refetchAlertRules
   } = useGetAlertRulesApiV1AlertRulesGet({ ...alertFilters, resolved: resolved });
   const { mutateAsync: resolveAllAlerts, isError: resolveAllAlertsError } =
     useResolveAllAlertsOfAlertRuleApiV1AlertRulesAlertRuleIdResolveAllPost();
@@ -108,8 +109,30 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
   // if there are no alerts to show
   useEffect(() => {
     const isTwoWeeksOlder = checkIsTwoWeeksOlder(models, alertFilters, alertRules);
-    if (isTwoWeeksOlder !== undefined) setIsModelsEndTimeTwoWeeksOlder(isTwoWeeksOlder);
+    if (isTwoWeeksOlder) setIsModelsEndTimeTwoWeeksOlder(isTwoWeeksOlder);
   }, [alertFilters, alertRules]);
+
+  useEffect(() => {
+    if (getParams().alertRuleId) {
+      const alertRule = alertRules?.find(ar => ar.id === +getParams().alertRuleId);
+      alertRule && setDrawerAlertRule(alertRule);
+    }
+  }, [alertRules]);
+
+  const handleOpenDrawer = (alertRule: AlertRuleInfoSchema) => {
+    handleSetParams('alertRuleId', alertRule.id);
+    setDrawerAlertRule(alertRule);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerAlertRule(null);
+    handleSetParams('alertRuleId');
+  };
+
+  const handleResolveAll = async () => {
+    await onResolve(resolveAlertRule);
+    refetchAlertRules();
+  };
 
   return (
     <>
@@ -125,7 +148,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
                 <AlertsRulesItem
                   alertRule={alertRule}
                   onResolveOpen={() => setResolveAlertRule(alertRule)}
-                  onDrawerOpen={() => setDrawerAlertRule(alertRule)}
+                  onDrawerOpen={() => handleOpenDrawer(alertRule)}
                   resolved={resolved ? 1 : 0}
                 />
               </StyledListItem>
@@ -144,7 +167,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         anchor="right"
         open={!!drawerAlertRule}
         alertRule={drawerAlertRule}
-        onClose={() => setDrawerAlertRule(null)}
+        onClose={handleCloseDrawer}
         resolved={resolved}
       />
       <AlertsSnackbar
@@ -161,7 +184,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         title="Resolve All"
         closeDialog={() => setResolveAlertRule(null)}
         submitButtonLabel="Yes, continue"
-        submitButtonAction={() => onResolve(resolveAlertRule)}
+        submitButtonAction={handleResolveAll}
         cancelButtonLabel="No, cancel"
         alertTypeButtons={false}
         messageStart="You are about to resolve "

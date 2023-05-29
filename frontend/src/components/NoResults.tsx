@@ -11,23 +11,30 @@ interface NoResultsProps extends BoxProps {
   isTwoWeeksOlder?: boolean;
 }
 
+const constants = {
+  noResults: {
+    first: 'No results found for the applied filters, maybe try to \n',
+    second: 'reset the filters'
+  },
+  noResults2Weeks: 'No results found.\n Note that alerts are running on the most recent 2 weeks'
+};
+
 const NoResults = ({ handleReset, isTwoWeeksOlder, ...props }: NoResultsProps) => (
   <Box sx={{ display: 'flex', justifyContent: 'center', mx: 'auto' }} {...props}>
     <Box width={444}>
       <NoResultsImage />
-      {isTwoWeeksOlder ? (
-        <StyledTypography>Note that alerts are running on the most recent 2 weeks</StyledTypography>
+      {!isTwoWeeksOlder ? (
+        <StyledTypography>{constants.noResults2Weeks}</StyledTypography>
       ) : (
         <StyledTypography variant="body1">
-          No results found for the applied filters maybe try to{' '}
+          {constants.noResults.first}
           <Typography
             component="span"
-            sx={{ color: theme => theme.palette.primary.main, cursor: 'pointer' }}
+            sx={{ color: theme => theme.palette.primary.main, cursor: 'pointer', fontWeight: 700, fontSize: '16px' }}
             onClick={handleReset}
           >
-            reset the filters
-          </Typography>{' '}
-          and start over
+            {constants.noResults.second}
+          </Typography>
         </StyledTypography>
       )}
     </Box>
@@ -40,5 +47,7 @@ const StyledTypography = styled(Typography)({
   marginTop: '60px',
   color: theme.palette.text.disabled,
   textAlign: 'center',
-  padding: '0 20px'
+  padding: '0 20px',
+  fontSize: '16px',
+  whiteSpace: 'pre-line'
 });

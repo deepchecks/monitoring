@@ -15,7 +15,6 @@ from copy import deepcopy
 from numbers import Number
 
 import pendulum as pdl
-import sqlalchemy
 from deepchecks import BaseCheck, CheckResult
 from deepchecks.core.reduce_classes import ReduceFeatureMixin
 from deepchecks.tabular.metric_utils.scorers import binary_scorers_dict, multiclass_scorers_dict
@@ -41,6 +40,10 @@ from deepchecks_monitoring.schema_models.column_type import (REFERENCE_SAMPLE_ID
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.schema_models.monitor import Frequency, round_up_datetime
 from deepchecks_monitoring.utils.typing import as_pendulum_datetime
+
+if t.TYPE_CHECKING:
+    # pylint: disable=unused-import
+    import sqlalchemy as sa
 
 MAX_FEATURES_TO_RETURN = 1000
 
@@ -247,9 +250,9 @@ async def run_check_per_window_in_range(
         check_id: int,
         session: AsyncSession,
         monitor_options: MonitorOptions,
-        monitor_id: int = None,
-        cache_funcs: CacheFunctions = None,
-        organization_id: int = None,
+        monitor_id: int | None = None,
+        cache_funcs: CacheFunctions | None = None,
+        organization_id: int | None = None,
         parallel: bool = True,
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
@@ -277,13 +280,19 @@ async def run_check_per_window_in_range(
         A dictionary containing the output of the check and the time labels.
     """
     # get the relevant objects from the db
-    check: Check = await fetch_or_404(session, Check, id=check_id,
-                                      options=joinedload(Check.model).load_only(Model.timezone))
+    check = await fetch_or_404(
+        session,
+        Check,
+        id=check_id,
+        options=joinedload(Check.model).load_only(Model.timezone)
+    )
+
     all_windows = monitor_options.calculate_windows(check.model.timezone)[-31:]
     frequency = monitor_options.frequency
 
     assert frequency is not None
     aggregation_window = frequency.to_pendulum_duration() * monitor_options.aggregation_window
+
     model, model_versions = await get_model_versions_for_time_range(
         session,
         check.model_id,
@@ -298,13 +307,18 @@ async def run_check_per_window_in_range(
     model_columns = list(model_versions[0].model_columns.keys())
     columns = top_feat + model_columns
 
+    # First filter out model versions that doesn't fit the filter
+    model_versions = [model_version for model_version in model_versions
+                      if model_version.is_filter_fit(monitor_options.filter)]
+    if len(model_versions) == 0:
+        return {
+            "output": {},
+            "time_labels": [],
+        }
+
     model_versions_data = {}
     for model_version in model_versions:
         query_reference = False
-        # If filter does not fit the model version, skip it
-        if not model_version.is_filter_fit(monitor_options.filter):
-            continue
-
         test_info: t.List[t.Dict] = []
         # create the session per time window
         for window_end in all_windows:
@@ -340,12 +354,14 @@ async def run_check_per_window_in_range(
         model_versions_data[model_version.id] = {"reference": reference, "windows": test_info}
 
     # get result from active sessions and run the check per each model version
-    check_results = await get_results_for_model_versions_per_window(model_versions_data,
-                                                                    model_versions,
-                                                                    model,
-                                                                    check,
-                                                                    monitor_options.additional_kwargs,
-                                                                    parallel=parallel)
+    check_results = await get_results_for_model_versions_per_window(
+        model_versions_data,
+        model_versions,
+        model,
+        check,
+        monitor_options.additional_kwargs,
+        parallel=parallel
+    )
 
     # Reduce the check results
     reduce_results = defaultdict(list)
@@ -462,13 +478,13 @@ async def run_check_window(
 def create_execution_data_query(
         model_version: ModelVersion,
         options: TableFiltersSchema,
-        period: pdl.Period = None,
-        columns: t.List[str] = None,
+        period: "t.Optional[pdl.Period]" = None,
+        columns: "t.Optional[list[str]]" = None,
         n_samples: int = DEFAULT_N_SAMPLES,
         with_labels: bool = False,
         filter_labels_exist: bool = False,
         is_ref: bool = False
-) -> sqlalchemy.select:
+) -> "sa.sql.Selectable":
     """Return sessions of the data load for the given model version.
 
     Parameters

@@ -22,7 +22,6 @@ from deepchecks_monitoring import public_models as models
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import (AccessForbidden, BadRequest, InvalidConfigurationException,
                                               UnacceptedEULA, Unauthorized)
-from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.utils import database
 
 __all__ = ["CurrentUser", "CurrentActiveUser", "AdminUser", "create_api_token"]
@@ -70,7 +69,6 @@ async def get_user(
             raise Unauthorized("Received incorrect/old secret")
 
         base64email, api_secret = token.api_token.split(".")
-
         try:
             user_email = base64.b64decode(base64email).decode()
         except (binascii.Error, UnicodeDecodeError) as exc:
@@ -86,8 +84,11 @@ async def get_user(
         ))
 
         # Validate user password
-        if user is None or user.api_secret_hash is None or \
-                not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode()):
+        if (
+            user is None
+            or user.api_secret_hash is None
+            or not bcrypt.checkpw(api_secret.encode(), user.api_secret_hash.encode())
+        ):
             raise Unauthorized("Received invalid secret")
 
         return user
@@ -334,7 +335,7 @@ class AdminUser(CurrentActiveUser):
         if len([
             role
             for role in user.roles
-            if role.role in {RoleEnum.ADMIN, RoleEnum.OWNER}
+            if role.role in {models.role.RoleEnum.ADMIN, models.role.RoleEnum.OWNER}
         ]) == 0 or user.disabled:
             raise AccessForbidden("User does not have admin rights")
         return user
@@ -351,6 +352,6 @@ class OwnerUser(CurrentActiveUser):
     ) -> t.Optional["models.User"]:
         """Dependency for validation of a current active owner user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
-        if len([role for role in user.roles if role.role == RoleEnum.OWNER]) == 0 or user.disabled:
+        if len([role for role in user.roles if role.role == models.role.RoleEnum.OWNER]) == 0 or user.disabled:
             raise AccessForbidden("User does not have owner rights")
         return user

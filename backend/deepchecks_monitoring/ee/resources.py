@@ -9,9 +9,11 @@
 # ----------------------------------------------------------------------------
 #  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
-from typing import cast
+import logging
+from typing import TYPE_CHECKING, cast
 
 import ldclient
+from ldclient import Context
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
 
@@ -23,6 +25,10 @@ from deepchecks_monitoring.features_control import FeaturesControl
 from deepchecks_monitoring.integrations.email import EmailSender
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider as OpenSourceResourcesProvider
+
+if TYPE_CHECKING:
+    # pylint: disable=unused-import
+    from ray.util.actor_pool import ActorPool
 
 __all__ = ["ResourcesProvider"]
 
@@ -93,6 +99,20 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         if self.settings.is_cloud:
             return CloudFeaturesControl(user, self.lauchdarkly_client)
         return FeaturesControl()
+
+    @property
+    def parallel_check_executors_pool(self) -> "ActorPool | None":
+        parallel_check_executor_flag = self.lauchdarkly_client.variation(
+            "parallelCheckExecutorEnabled",
+            context=Context.builder("parallelCheckExecutorEnabled").build(),
+            default=False
+        )
+        logging.getLogger("server").info({
+            "mesage": "'parallelCheckExecutorEnabled' is set to False"
+        })
+
+        if parallel_check_executor_flag:
+            return super().parallel_check_executors_pool
 
     def initialize_telemetry_collectors(
         self,

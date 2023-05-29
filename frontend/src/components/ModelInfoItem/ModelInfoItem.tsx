@@ -29,7 +29,7 @@ dayjs.extend(localizedFormat);
 
 interface ModelInfoItemProps {
   model: ConnectedModelSchema;
-  onDelete: () => Promise<void>;
+  onDelete: () => void;
 }
 
 const MAX_MODEL_NAME_WIDTH = 275;
@@ -87,7 +87,7 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
       <StyledModelInfoItemFooter>
         <FooterItem value={sample_count} title="samples" />
         <FooterItem value={label_count} title="labels" />
-        <FooterItem value={+label_ratio.toPrecision(5)} title="missing labels %" />
+        <FooterItem value={+((1 - label_ratio) * 100).toFixed(2)} title="missing labels %" />
       </StyledModelInfoItemFooter>
       {isHovered && (
         <>
