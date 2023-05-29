@@ -108,7 +108,7 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             default=False
         )
         logging.getLogger("server").info({
-            "mesage": "'parallelCheckExecutorEnabled' is set to False"
+            "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
         })
 
         if parallel_check_executor_flag:
