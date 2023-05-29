@@ -10,6 +10,7 @@
 # pylint: disable=ungrouped-imports,import-outside-toplevel
 """Module defining utility functions for the deepchecks_monitoring app."""
 import abc
+import typing as t
 
 import fastapi
 import sqlalchemy as sa
@@ -17,13 +18,13 @@ from fastapi import Depends
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import AccessForbidden, NotFound
+from deepchecks_monitoring.utils import auth
 
+if t.TYPE_CHECKING:
+    from deepchecks_monitoring.public_models.user import User
 
 class PermissionMixin:
     """Mixin class for ORM entities that have relation to a model."""
-
-    from deepchecks_monitoring.public_models.user import User
-    from deepchecks_monitoring.utils import auth
 
     @classmethod
     @abc.abstractmethod
@@ -38,9 +39,12 @@ class PermissionMixin:
         return obj
 
     @classmethod
-    async def get_object_from_http_request(cls, request: fastapi.Request,
-                                           user: User = Depends(auth.CurrentUser()),
-                                           session=AsyncSessionDep):
+    async def get_object_from_http_request(
+        cls,
+        request: fastapi.Request,
+        user: 'User' = Depends(auth.CurrentUser()),
+        session=AsyncSessionDep
+    ):
         id_param = cls.__tablename__[:-1] + "_id"
         id_param_val = request.query_params.get(id_param) or request.path_params.get(id_param)
         if id_param_val is None:
