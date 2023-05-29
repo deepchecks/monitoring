@@ -29,7 +29,11 @@ const StyledHeader = styled(Stack)(() => ({
 const StyledAlertName = styled(Typography)({
   fontWeight: 700,
   fontSize: '20px',
-  marginLeft: '-12px'
+  marginLeft: '-12px',
+  width: '210px',
+  whiteSpace: 'pre-line',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis'
 });
 
 const StyledBody = styled(Stack)({
