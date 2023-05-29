@@ -107,7 +107,9 @@ class ResourcesProvider(OpenSourceResourcesProvider):
             context=Context.builder("parallelCheckExecutorEnabled").build(),
             default=False
         )
-        logging.getLogger("server").info("'parallelCheckExecutorEnabled' is set to False")
+        logging.getLogger("server").info({
+            "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
+        })
 
         if parallel_check_executor_flag:
             return super().parallel_check_executors_pool

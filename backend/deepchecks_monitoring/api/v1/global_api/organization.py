@@ -31,6 +31,7 @@ from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
+from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook
 from deepchecks_monitoring.utils import auth
 
 from .global_router import router
@@ -121,8 +122,10 @@ class OrganizationSchema(BaseModel):
 
     name: str
     is_slack_connected: bool
+    is_webhook_connected: bool
     slack_notification_levels: t.List[AlertSeverity]
     email_notification_levels: t.List[AlertSeverity]
+    webhook_notification_levels: t.List[AlertSeverity]
 
     class Config:
         """Pydantic configuration."""
@@ -148,17 +151,31 @@ async def retrive_organization(
     session: AsyncSession = AsyncSessionDep,
 ) -> OrganizationSchema:
     """Retrive an organization."""
+    is_slack_connected = await session.scalar(
+        sa.select(
+            sa.select(SlackInstallation.id)
+            .limit(1)
+            .exists()
+        )
+    )
+    webhook = await session.scalar(
+        sa.select(AlertWebhook)
+        .order_by(AlertWebhook.id.asc())
+        .limit(1)
+    )
+    if webhook is not None:
+        is_webhook_connected = True
+        webhook_notification_levels = webhook.notification_levels
+    else:
+        is_webhook_connected = False
+        webhook_notification_levels = []
     return OrganizationSchema(
         name=user.organization.name,
         slack_notification_levels=user.organization.slack_notification_levels,
         email_notification_levels=user.organization.email_notification_levels,
-        is_slack_connected=(await session.scalar(
-            sa.select(
-                sa.select(SlackInstallation.id)
-                .limit(1)
-                .exists()
-            )
-        ))
+        is_slack_connected=is_slack_connected,
+        is_webhook_connected=is_webhook_connected,
+        webhook_notification_levels=webhook_notification_levels
     )
 
 
