@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { MemberSchema } from 'api/generated';
+import useModels from 'helpers/hooks/useModels';
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -23,6 +24,8 @@ interface MembersTableProps {
 }
 
 export const MembersTable = ({ members, selected, setSelected, handleOpenActionDialog }: MembersTableProps) => {
+  const { models } = useModels();
+
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       const newSelected = members.map(m => m.id);
@@ -35,6 +38,9 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
   const editMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.edit, member);
 
   const removeMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.remove, member);
+
+  const assignModels = (member: MemberSchema) =>
+    handleOpenActionDialog(MembersActionDialogOptions.assignModels, member);
 
   return (
     <StyledTableContainer component={Paper} sx={{ height: 'calc(100vh - 446px)' }}>
@@ -58,8 +64,10 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
                 member={member}
                 editMember={editMember}
                 removeMember={removeMember}
+                assignModels={assignModels}
                 selected={isItemSelected}
                 onClick={e => selectMultiple(e, id, selected, setSelected)}
+                models={models}
               />
             );
           })}

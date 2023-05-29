@@ -4,6 +4,8 @@ import IconButton from '@mui/material/IconButton';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
+import { StyledButton } from 'components/lib';
+
 export const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   boxShadow: 'none',
   backgroundColor: theme.palette.grey[100],
@@ -70,3 +72,9 @@ export const StyledDialogListContainer = styled(Stack)({
   height: '460px',
   overflow: 'auto'
 });
+
+export const StyledTableCellButton = styled(StyledButton)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  fontWeight: 600,
+  padding: 0
+}));

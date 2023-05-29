@@ -4,9 +4,12 @@ import { ModelManagmentSchema } from 'api/generated';
 
 import { TableRowProps } from '@mui/material';
 
-import { StyledButton } from 'components/lib';
-
-import { StyledTableRow, StyledTableCell, StyledTableCellBold } from '../../../../WorkspaceSettings.styles';
+import {
+  StyledTableRow,
+  StyledTableCell,
+  StyledTableCellBold,
+  StyledTableCellButton
+} from '../../../../WorkspaceSettings.styles';
 
 import { constants } from '../../modelsTab.constants';
 
@@ -23,12 +26,7 @@ export const ModelsTabTableRow = ({ model, editMembers, ...otherProps }: ModelsT
       <StyledTableCellBold scope="row">{name || 'n/a'}</StyledTableCellBold>
       <StyledTableCell>{`${members.length} member${members.length === 1 ? '' : 's'}`}</StyledTableCell>
       <StyledTableCell align="right">
-        <StyledButton
-          label={constants.editMembers}
-          variant="text"
-          onClick={() => editMembers(model)}
-          sx={theme => ({ color: theme.palette.primary.main, fontWeight: 600 })}
-        />
+        <StyledTableCellButton label={constants.editMembers} variant="text" onClick={() => editMembers(model)} />
       </StyledTableCell>
     </StyledTableRow>
   );

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-import { MemberSchema, ModelManagmentSchema } from 'api/generated';
+import { MemberSchema, ModelManagmentSchema, assignModelsToUserApiV1UsersUserIdModelsPost } from 'api/generated';
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import useModels from 'helpers/hooks/useModels';
 
@@ -19,10 +19,11 @@ interface AssignModelsProps extends MembersActionDialog {
 const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel } = constants.assignModels;
 
 export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) => {
-  const { models: initialModels } = useModels();
+  const { models: initialModels, refetchModels } = useModels();
 
   const [modelsList, setModelsList] = useState(initialModels);
   const [selectedModels, setSelectedModels] = useState<readonly number[]>([]);
+  const [fetching, setFetching] = useState(false);
 
   const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<ModelManagmentSchema>(
     initialModels,
@@ -30,11 +31,39 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
     'name'
   );
 
+  useEffect(() => {
+    const result: number[] = [];
+
+    if (member) {
+      modelsList.forEach(({ id, members }) => {
+        if (members.includes(member.id)) result.push(id);
+      });
+    }
+
+    setSelectedModels(result);
+  }, [member, modelsList]);
+
+  const handleAssignModelsToMember = async () => {
+    setFetching(true);
+
+    if (member) {
+      await assignModelsToUserApiV1UsersUserIdModelsPost(member.id, {
+        model_ids: selectedModels as number[],
+        replace: true
+      });
+      refetchModels();
+    }
+
+    closeDialog();
+    setFetching(false);
+  };
+
   return (
     <StyledDialog
       title={title}
       submitButtonLabel={submitButtonLabel}
-      submitButtonAction={closeDialog}
+      submitButtonAction={handleAssignModelsToMember}
+      submitButtonDisabled={fetching}
       open={open}
       closeDialog={closeDialog}
     >

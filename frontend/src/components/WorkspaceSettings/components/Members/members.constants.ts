@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 export const constants = {
   header: {
     title: 'Search member...',
-    assignModels: 'Assign Models',
     removeMembers: 'Remove Members',
     inviteMembers: 'Invite members'
   },
@@ -13,12 +12,15 @@ export const constants = {
     email: 'Email address',
     activeSince: 'Active since',
     role: 'Role',
+    modelAccess: 'Model access',
     actions: 'Actions',
     roles: {
       member: 'Member',
       admin: 'Admin',
       owner: 'Owner'
-    }
+    },
+    allModels: 'All models',
+    assignModels: 'Assign models'
   },
   editMember: {
     title: 'Edit Member',
@@ -60,7 +62,7 @@ export const constants = {
   assignModels: {
     title: 'Assign Models',
     submitButtonLabel: 'Assign',
-    searchfieldPlaceholder: 'Search models',
+    searchfieldPlaceholder: 'Search models...',
     dialogListItemSubtitle: (subtitle: number | undefined) =>
       `Last data update: ${subtitle ? dayjs(subtitle).format('ll') : '-'}`
   }

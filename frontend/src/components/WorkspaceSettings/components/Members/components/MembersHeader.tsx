@@ -8,7 +8,6 @@ import { StyledButton, StyledInput } from 'components/lib';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import { MembersActionDialogOptions } from '../Members.type';
@@ -22,14 +21,13 @@ interface MembersHeaderProps {
   assignModelsButtonDisabled: boolean;
 }
 
-const { title, assignModels, removeMembers, inviteMembers } = constants.header;
+const { title, removeMembers, inviteMembers } = constants.header;
 
 export const MembersHeader = ({
   initialMembersList,
   setMembersList,
   handleOpenActionDialog,
-  removeMultipleMembersDisabled,
-  assignModelsButtonDisabled
+  removeMultipleMembersDisabled
 }: MembersHeaderProps) => {
   const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<MemberSchema>(
     initialMembersList,
@@ -41,16 +39,8 @@ export const MembersHeader = ({
 
   const handleRemoveSelectedMembers = () => handleOpenActionDialog(MembersActionDialogOptions.removeSelected);
 
-  const handleAssignModel = () => handleOpenActionDialog(MembersActionDialogOptions.assignModels);
-
   return (
     <Stack direction="row" spacing="16px" marginBottom="16px">
-      <StyledButton
-        startIcon={<ModeEditIcon />}
-        label={assignModels}
-        disabled={assignModelsButtonDisabled}
-        onClick={handleAssignModel}
-      />
       <StyledButton
         startIcon={<DeleteIcon />}
         label={removeMembers}

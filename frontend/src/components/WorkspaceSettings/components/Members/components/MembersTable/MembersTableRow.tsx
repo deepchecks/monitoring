@@ -2,7 +2,7 @@ import React from 'react';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import { MemberSchema, RoleEnum } from 'api/generated';
+import { MemberSchema, ModelManagmentSchema, RoleEnum } from 'api/generated';
 
 import { Checkbox, TableRowProps } from '@mui/material';
 
@@ -13,7 +13,8 @@ import {
   StyledTableRow,
   StyledTableCell,
   StyledIconButton,
-  StyledTableCellBold
+  StyledTableCellBold,
+  StyledTableCellButton
 } from '../../../../WorkspaceSettings.styles';
 
 import { constants } from '../../members.constants';
@@ -24,9 +25,12 @@ interface MembersTableRowProps extends TableRowProps {
   member: MemberSchema;
   editMember: (member: MemberSchema) => void;
   removeMember: (member: MemberSchema) => void;
+  assignModels: (member: MemberSchema) => void;
+  models: ModelManagmentSchema[];
 }
 
-const { member, admin, owner } = constants.table.roles;
+const { roles, allModels, assignModels } = constants.table;
+const { member, admin, owner } = roles;
 
 function getRole(roles: RoleEnum[]) {
   if (roles.includes(RoleEnum.owner)) return owner;
@@ -34,18 +38,34 @@ function getRole(roles: RoleEnum[]) {
   return member;
 }
 
+function calculateButtonLabel(memberId: number, models: ModelManagmentSchema[]) {
+  let count = 0;
+
+  models.forEach(m => {
+    if (m.members.includes(memberId)) count++;
+  });
+
+  if (count === models.length) return allModels;
+
+  if (count === 0) return assignModels;
+
+  return `${count} model${count === 1 ? '' : 's'}`;
+}
+
 export const MembersTableRow = ({
   member,
   editMember,
   removeMember,
   selected,
+  assignModels,
+  models,
   ...otherProps
 }: MembersTableRowProps) => {
   const { id, full_name, email, created_at, roles } = member;
 
-  const handleMemberActions = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, remove?: boolean) => {
+  const handleMemberActions = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, action?: 'assign' | 'remove') => {
     e.stopPropagation();
-    remove ? removeMember(member) : editMember(member);
+    action === 'assign' ? assignModels(member) : action === 'remove' ? removeMember(member) : editMember(member);
   };
 
   return (
@@ -59,11 +79,18 @@ export const MembersTableRow = ({
       <StyledTableCell>{email}</StyledTableCell>
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
       <StyledTableCell>{getRole(roles)}</StyledTableCell>
+      <StyledTableCell>
+        <StyledTableCellButton
+          label={calculateButtonLabel(member.id, models)}
+          variant="text"
+          onClick={e => handleMemberActions(e, 'assign')}
+        />
+      </StyledTableCell>
       <StyledTableCell align="right">
         <StyledIconButton onClick={handleMemberActions}>
           <ModeEditIcon />
         </StyledIconButton>
-        <StyledIconButton onClick={e => handleMemberActions(e, true)}>
+        <StyledIconButton onClick={e => handleMemberActions(e, 'remove')}>
           <DeleteIcon />
         </StyledIconButton>
       </StyledTableCell>
