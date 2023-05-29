@@ -272,6 +272,8 @@ class CheckPerWindowExecutor:
                 yield s
             except Exception:  # pylint: disable=broad-except
                 s.rollback()
+            else:
+                s.commit()
             finally:
                 s.close()
 
