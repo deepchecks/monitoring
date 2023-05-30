@@ -161,10 +161,10 @@ class DataGenerator:
             "http_url": "https://httpbin.org",
             "http_method": random.choice(["GET", "POST"]),
             "http_headers": {"X-value": "Hello world"},
-            "notification_levels": [
+            "notification_levels": list({
                 random.choice(list(AlertSeverity)).value
                 for _ in range(len(AlertSeverity))
-            ],
+            }),
         }
 
     def generate_random_model_note(self):

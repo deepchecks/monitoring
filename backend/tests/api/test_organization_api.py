@@ -207,15 +207,14 @@ async def test_organization_member_removal_without_required_permissions(
     remove_organization_member(unauthorized_client, t.cast(int, admin.id), expected_status=403)
 
 
-@pytest.mark.asyncio
-async def test_organization_update(test_api: TestAPI):
+def test_organization_update(test_api: TestAPI):
     t.cast(Payload, test_api.create_alert_webhook())
     org = t.cast(Payload, test_api.fetch_organization())
 
     assert org["is_webhook_connected"] is True
 
     test_api.update_organization({
-        "email_notification_levels": ["low", "medium"],
+        "email_notification_levels": ["medium"],
         "webhook_notification_levels": ["critical"]
     })
 
