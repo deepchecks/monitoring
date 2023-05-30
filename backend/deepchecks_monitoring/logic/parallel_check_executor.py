@@ -205,7 +205,7 @@ async def execute_check_per_window(
     )
     calculated_check_results = (
         result
-        for batch_results in actor_pool.map(task_factory, windows_batches)
+        for batch_results in actor_pool.map_unordered(task_factory, windows_batches)
         for result in batch_results
     )
 

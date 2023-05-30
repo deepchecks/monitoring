@@ -119,6 +119,7 @@ def create_application(
             logger.info({"message": "Local ray instance is not instantiated"})
         else:
             logger.info({"message": "Connected to local ray instance"})
+            app.state.resources_provider.parallel_check_executors_pool  # init actors
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(
