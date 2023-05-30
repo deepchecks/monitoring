@@ -8,6 +8,7 @@ import StepContent from '@mui/material/StepContent';
 
 import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
 import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
+import RegenerateToken from './RegenerateToken/RegenerateToken';
 
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
@@ -24,6 +25,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
 
   const [activeStep, setActiveStep] = useState(1);
   const [apiToken, setApiToken] = useState('API_TOKEN');
+  const [isTokenExpired, setIsTokenExpired] = useState();
 
   const isLastStep = activeStep === 3;
 
@@ -49,6 +51,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
 
       if (res?.step < 4) {
         setActiveStep(res?.step);
+        setIsTokenExpired((res as any)?.is_token_expired);
       } else if (res?.step === 4) {
         redirectToDashboard();
       }
@@ -59,6 +62,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
 
   return (
     <OnBoardingStepperContainer>
+      {isTokenExpired && <RegenerateToken />}
       <Stepper activeStep={activeStep} orientation="vertical">
         {constants.steps.map(step => (
           <Step key={step.title}>
