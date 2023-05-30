@@ -254,7 +254,7 @@ class TestAPI:
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        response = self.api.session.get('organization')
+        response = self.api.session.get("organization")
         expected_status.assert_response_status(response)
 
         if expected_status.is_negative():
@@ -270,7 +270,7 @@ class TestAPI:
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, Payload]:
         expected_status = ExpectedHttpStatus.create(expected_status)
-        response = self.api.session.put('organization', json=organization)
+        response = self.api.session.put("organization", json=organization)
         expected_status.assert_response_status(response)
 
         if expected_status.is_negative():
