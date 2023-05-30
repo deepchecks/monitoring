@@ -26,7 +26,6 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   const [error, setError] = useState('');
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
-  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
   const [description, setDescription] = useState('');
   const [headers, setHeaders] = useState<{ [key: string]: any }>({ 'HEADER-NAME': 'Value' });
 
@@ -37,7 +36,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
     name: name,
     description: description,
     http_url: url,
-    http_method: httpMethod,
+    http_method: 'POST',
     http_headers: headers,
     notification_levels: []
   };
@@ -81,7 +80,6 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
 
         setUrl(lastValue.http_url);
         setName(lastValue.name);
-        setHttpMethod(lastValue.http_method);
         setDescription(lastValue.description as string);
         setHeaders(lastValue.http_headers as { [key: string]: any });
       }
@@ -112,12 +110,6 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
           value={url}
           onChange={e => setUrl(e.target.value)}
           onCloseIconClick={() => setUrl('')}
-        />
-        <StyledInput
-          label="Http Method"
-          placeholder="GET / POST"
-          value={httpMethod}
-          onChange={e => setHttpMethod(e.target.value.toUpperCase() as 'GET' | 'POST')}
         />
         <StyledInput
           label="Description"
