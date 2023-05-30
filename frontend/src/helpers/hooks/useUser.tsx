@@ -23,6 +23,7 @@ export type UserContext = {
   isAdmin: boolean;
   isOwner: boolean;
   availableFeatures: FeaturesSchema | undefined;
+  refetchUser: () => void;
 };
 
 const UserContext = createContext<UserContext | null>(null);
@@ -42,11 +43,13 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   const [isOwner, setIsOwner] = useState(false);
   const [availableFeatures, setAvailableFeatures] = useState<FeaturesSchema>();
 
-  const { data } = useRetrieveUserInfoApiV1UsersMeGet({
+  const { data, refetch } = useRetrieveUserInfoApiV1UsersMeGet({
     query: {
       refetchOnWindowFocus: false
     }
   });
+
+  const refetchUser = () => refetch();
 
   const isUserDetailsComplete = !!user?.organization;
 
@@ -72,7 +75,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
     }
   }, [user]);
 
-  const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner };
+  const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner, refetchUser };
 
   if (user) {
     if (isUserDetailsComplete) {

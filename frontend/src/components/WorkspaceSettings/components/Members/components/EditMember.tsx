@@ -23,7 +23,7 @@ const { title, submit, nameInputLabel, emailInputLabel, role } = constants.editM
 const ROLES = [RoleEnumWithMember.member, RoleEnumWithMember.admin, RoleEnumWithMember.owner];
 
 export const EditMember = ({ member, open, closeDialog, refetchMembers }: MembersActionDialogWithMember) => {
-  const { availableFeatures, isOwner, user } = useUser();
+  const { availableFeatures, isOwner, user, refetchUser } = useUser();
   const navigate = useNavigate();
 
   const currentRole = useMemo(
@@ -67,7 +67,10 @@ export const EditMember = ({ member, open, closeDialog, refetchMembers }: Member
       refetchMembers();
       setFetching(false);
 
-      if (member.id === user?.id && body.roles.length === 0) navigate('/dashboard', { replace: true });
+      if (member.id === user?.id && body.roles.length === 0) {
+        refetchUser();
+        navigate('/dashboard', { replace: true });
+      }
     }
 
     closeDialog();
