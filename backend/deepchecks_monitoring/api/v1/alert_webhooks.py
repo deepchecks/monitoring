@@ -127,6 +127,7 @@ async def update_webhook(
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
 ):
+    """Update specified alert webhook."""
     webhook = await fetch_or_404(
         session=session,
         model=AlertWebhook,
