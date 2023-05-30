@@ -20,18 +20,21 @@ import { constants } from '../onBoarding.constants';
 
 const FirstOnBoarding = () => {
   const [dataType, setDataType] = useState<'demo' | 'user'>();
+  const [initialStep, setInitialStep] = useState(1);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleUnavailableOnboarding = async () => {
+    const handleConditionalOnboarding = async () => {
       const res = await getOnboardingStateApiV1OnboardingGet();
+      setInitialStep(res?.step);
 
       if (res.step === 4) {
         navigate('/');
       }
     };
 
-    handleUnavailableOnboarding();
+    handleConditionalOnboarding();
   }, []);
 
   return (
@@ -51,14 +54,15 @@ const FirstOnBoarding = () => {
           )*/}
         </FirstOnBoardingSelectContainer>
         {dataType ? (
-          <OnBoarding dataType={dataType} />
+          <OnBoarding dataType={dataType} initialStep={initialStep} />
         ) : (
           <>
             <StyledText text={constants.first.description} type="bodyBold" letterSpacing="1.5px" />
             <StyledText text={constants.first.chooseText} type="bodyNormal" margin="50px 0 4px" letterSpacing="1.5px" />
             <StyledContainer display="flex" flexDirection="row" gap="24px" padding={0}>
               <FirstOnBoardingOutlinedBox
-                /* onClick={() => setDataType('user')}*/ sx={{ opacity: 0.3, cursor: 'auto' }}
+                onClick={() => setDataType('user')}
+                sx={{ opacity: 0.3, cursor: 'auto', pointerEvents: 'none' }}
               >
                 <StyledImage src={userDataImg} margin="-24px 0 0 -12px" />
                 <FirstOnBoardingBoxLabel>{constants.first.userDataBtnLabel}</FirstOnBoardingBoxLabel>
