@@ -408,6 +408,7 @@ class StandardWebhookProperties(BaseModel):
 
 # TODO: move to utils or create separate module for it
 class UnsetType:
+    """Represents not passed/unset values."""
 
     def __repr__(self):
         return "UNSET"
