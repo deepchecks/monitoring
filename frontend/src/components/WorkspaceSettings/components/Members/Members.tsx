@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 
-import { MemberSchema, useRetrieveOrganizationMembersApiV1OrganizationMembersGet } from 'api/generated';
+import { MemberSchema } from 'api/generated';
 
 import { Loader } from 'components/base/Loader/Loader';
 import { MembersListActionDialog } from './components/MembersListActionDialog';
@@ -9,37 +9,21 @@ import { MembersTable } from './components/MembersTable/MembersTable';
 import { DeleteWorkspace } from './components/DeleteWorkspace';
 
 import { MembersActionDialogOptions } from './Members.type';
-
-function sortMembersList(members: MemberSchema[]) {
-  return [...members].sort((a, b) => {
-    if (a.full_name && b.full_name) {
-      if (a.full_name > b.full_name) return 1;
-      if (a.full_name < b.full_name) return -1;
-      return 0;
-    } else return 0;
-  });
-}
+import { useOrganizationMembers } from '../../useOrganizationMembers';
 
 const Members = () => {
   const {
-    data: organizationMembers = [],
-    isLoading: isOrganizationMembersLoading,
-    refetch
-  } = useRetrieveOrganizationMembersApiV1OrganizationMembersGet();
+    isOrganizationMembersLoading,
+    organizationMembersList,
+    refetchOrganizationMembers,
+    setOrganizationMembersList,
+    sortedOrganizationMembers
+  } = useOrganizationMembers();
 
-  const sortedOrganizationMembers = useMemo(() => sortMembersList(organizationMembers), [organizationMembers]);
-
-  const [membersList, setMembersList] = useState(sortedOrganizationMembers);
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [dialogAction, setDialogAction] = useState(MembersActionDialogOptions.invite);
   const [currentMember, setCurrentMember] = useState<MemberSchema | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<readonly number[]>([]);
-
-  useEffect(() => {
-    setMembersList(sortedOrganizationMembers);
-  }, [sortedOrganizationMembers]);
-
-  const refetchMembers = () => refetch();
 
   const handleOpenActionDialog = (action: MembersActionDialogOptions, member: MemberSchema | null = null) => {
     setDialogAction(action);
@@ -48,17 +32,18 @@ const Members = () => {
   };
 
   const handleCloseActionDialog = () => {
-    setCurrentMember(null);
     setShowActionDialog(false);
+    setTimeout(() => setCurrentMember(null), 100);
   };
 
   return (
     <>
       <MembersHeader
-        organizationMembers={sortedOrganizationMembers}
-        setMembersList={setMembersList}
+        initialMembersList={sortedOrganizationMembers}
+        setMembersList={setOrganizationMembersList}
         handleOpenActionDialog={handleOpenActionDialog}
-        actionButtonsDisabled={!selectedMembers.length}
+        removeMultipleMembersDisabled={!selectedMembers.length}
+        assignModelsButtonDisabled={selectedMembers.length !== 1}
       />
       {isOrganizationMembersLoading ? (
         <Loader />
@@ -67,7 +52,7 @@ const Members = () => {
           <MembersTable
             selected={selectedMembers}
             setSelected={setSelectedMembers}
-            members={membersList}
+            members={organizationMembersList}
             handleOpenActionDialog={handleOpenActionDialog}
           />
           <DeleteWorkspace handleOpenActionDialog={handleOpenActionDialog} />
@@ -75,13 +60,13 @@ const Members = () => {
       )}
       <MembersListActionDialog
         action={dialogAction}
-        members={membersList}
+        members={organizationMembersList}
         selectedMembers={selectedMembers}
         setSelectedMembers={setSelectedMembers}
         currentMember={currentMember}
         open={showActionDialog}
         closeDialog={handleCloseActionDialog}
-        refetchMembers={refetchMembers}
+        refetchMembers={refetchOrganizationMembers}
       />
     </>
   );
