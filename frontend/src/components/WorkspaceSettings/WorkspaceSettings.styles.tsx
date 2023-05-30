@@ -76,5 +76,9 @@ export const StyledDialogListContainer = styled(Stack)({
 export const StyledTableCellButton = styled(StyledButton)(({ theme }) => ({
   color: theme.palette.primary.main,
   fontWeight: 600,
-  padding: 0
+  padding: 0,
+
+  '&:hover': {
+    opacity: 0.5
+  }
 }));
