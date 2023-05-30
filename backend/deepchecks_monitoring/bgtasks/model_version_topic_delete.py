@@ -45,6 +45,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     """
 
     def __init__(self):
+        super().__init__()
         self.lock = threading.Lock()
         self.kafka_admin: Optional[ExtendedAIOKafkaAdminClient] = None
 

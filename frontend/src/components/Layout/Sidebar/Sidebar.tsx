@@ -10,7 +10,7 @@ import useWindowResize from '../../../helpers/hooks/windowResize';
 import { AnalysisSubMenu } from './components/AnalysisSubMenu';
 import { SidebarMenuItem } from './components/SidebarMenuItem';
 import { UserInfo } from './components/UserInfo';
-import { InviteMember } from 'components/WorkspaceSettings/Members/components/InviteMember';
+import { InviteMember } from 'components/WorkspaceSettings/components/Members/components/InviteMember';
 
 import { StyledButton, StyledContainer, StyledLogo } from 'components/lib';
 

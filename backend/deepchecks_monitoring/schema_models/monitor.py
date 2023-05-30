@@ -8,7 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the monitor ORM model."""
-import enum
 import typing as t
 from datetime import datetime
 

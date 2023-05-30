@@ -10,7 +10,6 @@
 """Module defining the alert rule ORM model."""
 import enum
 import typing as t
-from datetime import datetime
 
 import pendulum as pdl
 import sqlalchemy as sa
@@ -27,6 +26,7 @@ from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition, Frequen
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
+    from datetime import datetime
     from deepchecks_monitoring.schema_models.model import Model
 
 __all__ = ["DataIngestionAlertRule", "AlertRuleType"]
@@ -48,9 +48,9 @@ def _calculate_default_latest_schedule(context: DefaultExecutionContext):
 
 
 class AlertRuleType(str, enum.Enum):
-    SAMPLE_COUNT = 'sample_count'
-    LABEL_COUNT = 'label_count'
-    LABEL_RATIO = 'label_ratio'
+    SAMPLE_COUNT = "sample_count"
+    LABEL_COUNT = "label_count"
+    LABEL_RATIO = "label_ratio"
 
 
 class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):

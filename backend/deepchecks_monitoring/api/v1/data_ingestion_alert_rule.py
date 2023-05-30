@@ -91,7 +91,7 @@ async def create_alert_rule(
 
 
 
-@router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}", 
+@router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}",
             response_model=DataIngestionAlertRuleSchema, tags=[Tags.ALERTS])
 async def get_alert_rule(
         data_ingestion_alert_rule_id: int,  # pylint: disable=unused-argument
@@ -129,7 +129,7 @@ async def delete_alert_rule(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}/alerts", 
+@router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}/alerts",
             response_model=t.List[DataIngestionAlertSchema], tags=[Tags.ALERTS])
 async def get_alerts_of_alert_rule(
         data_ingestion_alert_rule_id: int,  # pylint: disable=unused-argument

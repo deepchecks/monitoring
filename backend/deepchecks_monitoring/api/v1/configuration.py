@@ -15,9 +15,9 @@ from fastapi import Query
 from pydantic.main import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
-from backend.deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
 
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.public_models import User
@@ -236,7 +236,7 @@ async def get_all_alert_rules(
                 user_schema = BasicUserSchema.from_orm(user)
                 alert_rule_schema.user = user_schema
         data_alert_rule_schemas.append(alert_rule_schema)
-    
+
     return AlertRulesConfigSchema(alert_rules=alert_rule_schemas, data_alert_rules=data_alert_rule_schemas)
 
 

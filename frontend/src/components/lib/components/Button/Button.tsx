@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 
-import { Button as MUIButton, ButtonProps as MUIBtnProps, useTheme, CircularProgress } from '@mui/material';
+import { Button as MUIButton, ButtonProps as MUIBtnProps, useTheme, CircularProgress, styled } from '@mui/material';
 
 export interface ButtonProps extends MUIBtnProps {
   label: string | ReactNode;
@@ -9,8 +9,26 @@ export interface ButtonProps extends MUIBtnProps {
   width?: string;
 }
 
+interface StyledMUIButtonProps {
+  width: string;
+  margin: string;
+  buttonTextColor: string;
+}
+
+const StyledMUIButton = styled(MUIButton, {
+  shouldForwardProp: prop => prop !== 'buttonTextColor'
+})<StyledMUIButtonProps>(({ width, margin, buttonTextColor }) => ({
+  padding: '7px 24px',
+  borderRadius: '28px',
+  transition: '0.6s',
+  width: width,
+  margin: margin,
+  color: buttonTextColor,
+  BorderWidth: '2px'
+}));
+
 export const Button = (props: ButtonProps) => {
-  const { label, loading, width = 'auto', margin = '0', variant = 'contained' } = props;
+  const { label, loading, width = 'auto', margin = '0', variant = 'contained', ...otherProps } = props;
 
   const theme = useTheme();
 
@@ -19,20 +37,8 @@ export const Button = (props: ButtonProps) => {
   const loaderColor = !isHollow ? theme.palette.grey[100] : '';
 
   return (
-    <MUIButton
-      variant={variant}
-      sx={{
-        padding: '7px 24px',
-        borderRadius: '28px',
-        transition: '0.6s',
-        width: width,
-        margin: margin,
-        color: buttonTextColor,
-        BorderWidth: '2px'
-      }}
-      {...props}
-    >
+    <StyledMUIButton variant={variant} width={width} margin={margin} buttonTextColor={buttonTextColor} {...otherProps}>
       {loading ? <CircularProgress sx={{ color: loaderColor }} size={20} /> : label}
-    </MUIButton>
+    </StyledMUIButton>
   );
 };

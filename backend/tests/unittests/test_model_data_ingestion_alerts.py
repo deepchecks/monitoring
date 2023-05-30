@@ -43,17 +43,20 @@ async def test_data_ingestion_scheduling(
 
     alert_rules = [
         test_api.create_model_alert_rule(classification_model["id"],
-                                         dict(alert_type=AlertRuleType.SAMPLE_COUNT,
+                                         dict(name="ahh",
+                                              alert_type=AlertRuleType.SAMPLE_COUNT,
                                               frequency=Frequency.HOUR,
                                               condition={"operator": "less_than", "value": 3})),
         test_api.create_model_alert_rule(classification_model["id"],
-                                         dict(alert_type=AlertRuleType.LABEL_COUNT,
+                                         dict(name="ahh",
+                                              alert_type=AlertRuleType.LABEL_COUNT,
                                               frequency=Frequency.HOUR,
                                               condition={"operator": "less_than", "value": 3})),
         test_api.create_model_alert_rule(classification_model["id"],
-                                         dict(alert_type=AlertRuleType.LABEL_RATIO,
-                                         frequency=Frequency.HOUR,
-                                         condition={"operator": "less_than", "value": 1}))
+                                         dict(name="ahh",
+                                              alert_type=AlertRuleType.LABEL_RATIO,
+                                              frequency=Frequency.HOUR,
+                                              condition={"operator": "less_than", "value": 1}))
     ]
 
     versions = [

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { logoutApiV1AuthLogoutGet, RoleEnum } from 'api/generated';
+import { logoutApiV1AuthLogoutGet } from 'api/generated';
 import { cancelPendingRequests } from 'helpers/services/customAxios';
 
 import useUser from 'helpers/hooks/useUser';
@@ -22,10 +22,10 @@ export const UserInfo = () => {
   const navigate = useNavigate();
 
   const open = Boolean(anchorEl);
-  const { user } = useUser();
+  const { user, isAdmin, isOwner } = useUser();
   if (!user) return null;
 
-  const { full_name, picture_url, roles } = user;
+  const { full_name, picture_url } = user;
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     setAnchorEl(event.currentTarget);
@@ -85,7 +85,7 @@ export const UserInfo = () => {
             textOverflow: 'ellipsis'
           }}
         />
-        {roles.includes(RoleEnum.owner) && (
+        {(isAdmin || isOwner) && (
           <SettingsSuggestIcon
             onClick={() => navigate('/workspace-settings')}
             cursor="pointer"

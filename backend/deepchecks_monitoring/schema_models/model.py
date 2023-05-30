@@ -21,7 +21,6 @@ from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
-from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
@@ -30,7 +29,7 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
     from deepchecks_monitoring.schema_models.model_memeber import ModelMember
-    from deepchecks_monitoring.schema_models.model_version import ModelVersion  
+    from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
 __all__ = ["Model", "ModelNote"]

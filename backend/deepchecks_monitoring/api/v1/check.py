@@ -7,6 +7,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
+# pylint: disable=import-outside-toplevel
 """V1 API of the check."""
 import typing as t
 
@@ -37,7 +38,6 @@ from deepchecks_monitoring.logic.check_logic import (CheckNotebookSchema, CheckR
 from deepchecks_monitoring.logic.model_logic import (get_model_versions_for_time_range,
                                                      get_results_for_model_versions_per_window,
                                                      get_top_features_or_from_conf)
-from deepchecks_monitoring.logic.parallel_check_executor import execute_check_per_window
 from deepchecks_monitoring.logic.statistics import bins_for_feature
 from deepchecks_monitoring.monitoring_utils import (CheckIdentifier, DataFilter, DataFilterList, ExtendedAsyncSession,
                                                     ModelIdentifier, MonitorCheckConf, NameIdResponse, OperatorsEnum,
@@ -399,6 +399,7 @@ async def run_standalone_check_per_window_in_range(
         Check run result.
     """
     if pool := resources_provider.parallel_check_executors_pool:
+        from deepchecks_monitoring.logic.parallel_check_executor import execute_check_per_window
         return await execute_check_per_window(
             actor_pool=pool,
             session=session,

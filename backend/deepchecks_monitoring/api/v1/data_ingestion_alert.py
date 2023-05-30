@@ -51,7 +51,7 @@ class DataIngestionAlertSchema(DataIngestionAlertCreationSchema):
     created_at: pdl.DateTime
 
 
-@router.get("/data-ingestion-alerts/count_active", 
+@router.get("/data-ingestion-alerts/count_active",
             response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
 async def count_alerts(
     session: AsyncSession = AsyncSessionDep,
@@ -99,7 +99,7 @@ async def reactivate_alert(
                           .values(resolved=False))
 
 
-@router.get("/data-ingestion-alerts/{data_ingestion_alert_id}", 
+@router.get("/data-ingestion-alerts/{data_ingestion_alert_id}",
             response_model=DataIngestionAlertSchema, tags=[Tags.ALERTS])
 async def get_alert(
         data_ingestion_alert_id: int,  # pylint: disable=unused-argument

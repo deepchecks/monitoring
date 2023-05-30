@@ -7,20 +7,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
-#  pylint: disable=unnecessary-ellipsis
-"""Module with resources instatiation logic."""
+# pylint: disable=unnecessary-ellipsis
+"""Module with resources instantiation logic."""
 import logging
 import typing as t
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
-import ray
 from aiokafka import AIOKafkaProducer
 from authlib.integrations.starlette_client import OAuth
 from kafka import KafkaAdminClient
 from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
-from ray.util.actor_pool import ActorPool
 from redis.client import Redis
 from redis.cluster import RedisCluster
 from redis.exceptions import RedisClusterException
@@ -345,16 +343,21 @@ class ResourcesProvider(BaseResourcesProvider):
         return self._email_sender
 
     @property
-    def parallel_check_executors_pool(self) -> "ActorPool | None":
+    def parallel_check_executors_pool(self):
         """Return parallel check executors actors."""
+        # pylint: disable=import-outside-toplevel
+        import ray  # noqa
+        from ray.util.actor_pool import ActorPool  # noqa
+
         if not ray.is_initialized():
-            logging.getLogger("server").info("Ray is not initialized")
+            logging.getLogger("server").info({
+                "message": "Ray is not initialized"
+            })
             return
 
         if pool := getattr(self, "_parallel_check_executors", None):
             return pool
 
-        # pylint: disable=import-outside-toplevel
         from deepchecks_monitoring.logic.parallel_check_executor import CheckPerWindowExecutor
         database_uri = str(self.database_settings.database_uri)
 
@@ -370,6 +373,8 @@ class ResourcesProvider(BaseResourcesProvider):
     def shutdown_parallel_check_executors_pool(self):
         """Shutdown parallel check executors actors."""
         self._parallel_check_executors = None
+        # pylint: disable=import-outside-toplevel
+        import ray  # noqa
         ray.shutdown()
 
     def ensure_kafka_topic(self, topic_name, num_partitions=1) -> bool:

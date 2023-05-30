@@ -69,28 +69,11 @@ interface StyledSelectProps {
   width?: StyledSelectWidth;
 }
 
-export const StyledSelect = styled(Select, { shouldForwardProp: prop => prop !== 'width' })<StyledSelectProps>(
-  ({ width, theme }) => ({
-    minWidth: 200,
-    borderRadius: '5px',
-
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderColor: theme.palette.grey.light
-    },
-
-    '@media (max-width: 1536px)': {
-      minWidth: 100,
-      width: width ? width.xs : '100%',
-      height: '36px'
-    },
-
-    '& .MuiSelect-select': {
-      '@media (max-width: 1536px)': {
-        fontSize: '12px'
-      }
-    }
-  })
-);
+export const StyledSelect = styled(Select, { shouldForwardProp: prop => prop !== 'width' })<StyledSelectProps>(() => ({
+  minWidth: 200,
+  fontSize: '14px',
+  border: 'none'
+}));
 
 interface StyledIconButtonProps {
   active: boolean;
