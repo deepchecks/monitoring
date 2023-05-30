@@ -133,7 +133,7 @@ async def update_webhook(
         id=webhook_id
     )
     if webhook.kind != data.kind:
-        raise BadRequest('Incorrect payload kind, it does not match webhook kind')
+        raise BadRequest("Incorrect payload kind, it does not match webhook kind")
 
     session.add(data.update_instance(webhook))
     await session.commit()
