@@ -8,8 +8,8 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining parallel check execution logic."""
-import logging
 import contextlib
+import logging
 import typing as t
 from collections import defaultdict
 
@@ -28,12 +28,11 @@ from deepchecks_monitoring.logic.cache_functions import CacheFunctions
 from deepchecks_monitoring.logic.check_logic import MonitorOptions, create_execution_data_query, reduce_check_result
 from deepchecks_monitoring.logic.model_logic import (dataframe_to_dataset_and_pred, get_model_versions_for_time_range,
                                                      get_top_features_or_from_conf, initialize_check)
-from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema, configure_logger, fetch_or_404
 from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.utils.database import SessionParameter
-from deepchecks_monitoring.monitoring_utils import configure_logger
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
@@ -217,12 +216,6 @@ async def execute_check_per_window(
         start = results[model_version_id][window_index]['start']
         end = results[model_version_id][window_index]['end']
 
-        value = (
-            reduce_check_result(value, monitor_options.additional_kwargs)
-            if value is not None
-            else value
-        )
-
         # TODO: consider caching results not only when a 'monitor_id' is provided
         if cache_funcs and monitor_id:
             cache_funcs.set_monitor_cache(
@@ -341,7 +334,11 @@ def _execute_check_per_window(
                 y_pred_train=reference_pred,
                 y_proba_train=reference_proba,
                 model_classes=model_classes,
-                feature_importance=pd.Series(args['feature_importance'])
+                feature_importance=(
+                    pd.Series(feature_importance)
+                    if (feature_importance := args['feature_importance']) is not None
+                    else None
+                )
             )
         except errors.NotEnoughSamplesError:
             test_length = (
@@ -366,7 +363,7 @@ def _execute_check_per_window(
             })
         except Exception:
             logger.exception({
-                'message': 'Unexpected exception, failed to execute the chekc instance',
+                'message': 'Unexpected exception, failed to execute the check instance',
                 'organization_id': args['organization_id'],
                 'model_version_id': window['model_version_id'],
                 'window_start': window['start'],
@@ -374,7 +371,10 @@ def _execute_check_per_window(
                 'check_type_name': type(check_instance).__name__
             })
         else:
-            window_result['result'] = check_result
+            window_result['result'] = reduce_check_result(
+                check_result,
+                args['additional_check_kwargs']
+            )
 
     return results
 
@@ -439,12 +439,16 @@ class CheckPerWindowExecutor:
         )
 
     def execute(self, args: CheckPerWindowExecutionArgs):
-        with self._session(args['organization_id']) as s:
-            return _execute_check_per_window(
-                session=s,
-                args=args,
-                logger=self.logger
-            )
+        try:
+            with self._session(args['organization_id']) as s:
+                return _execute_check_per_window(
+                    session=s,
+                    args=args,
+                    logger=self.logger
+                )
+        except Exception:
+            self.logger.exception({'message': 'Unexpected exception'})
+            raise
 
     @contextlib.contextmanager
     def _session(self, organization_id):
@@ -463,7 +467,6 @@ class CheckPerWindowExecutor:
                 yield s
             except Exception:  # pylint: disable=broad-except
                 s.rollback()
-                self.logger.exception({'message': 'Unexpected execption'})
                 raise
             else:
                 s.commit()
