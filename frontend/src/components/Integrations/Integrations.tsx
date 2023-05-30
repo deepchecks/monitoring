@@ -16,9 +16,9 @@ import { constants } from './integrations.constants';
 
 export const Integrations = () => {
   const theme = useTheme();
-  const { isAdmin, isOwner, availableFeatures } = useUser();
+  const { isAdmin, isOwner, user } = useUser();
   const isLargeDesktop = useMediaQuery(theme.breakpoints.up('xl'));
-  const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
+  const { data, isLoading, refetch } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
     query: {
       cacheTime: 0,
       staleTime: Infinity
@@ -26,12 +26,15 @@ export const Integrations = () => {
   });
 
   const isNotAdminOrOwner = !isAdmin && !isOwner;
-  const isNotPaid = !availableFeatures?.slack_enabled; // Currently unavailable slack means no subscription (paid plan)
-  const deniedDisplayText = isNotPaid ? constants.integration.error.orgDenied : constants.integration.error.roleDenied;
+  const isNotPaid = user?.organization?.tier === 'FREE';
+  const deniedDisplayText = isNotPaid
+    ? constants.integration.error.orgDenied(isNotAdminOrOwner)
+    : constants.integration.error.roleDenied;
   const deniedReason = isNotAdminOrOwner || isNotPaid ? deniedDisplayText : '';
   const stackDisplay = isLargeDesktop ? 'flex' : 'block';
   const isSlackConnected = data?.is_slack_connected;
   const isWebhookConnected = data?.is_webhook_connected;
+  const deniedLink = isNotPaid && !isNotAdminOrOwner ? constants.integration.error.link.text : '';
 
   if (isLoading) {
     return <StyledLoader />;
@@ -53,10 +56,15 @@ export const Integrations = () => {
             deniedReason={deniedReason}
             isNotAdminOrOwner={isNotAdminOrOwner}
             isNotPaid={isNotPaid}
+            deniedLink={deniedLink}
           />
           <Box display="flex" flexDirection="column" gap="16px">
             <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />
-            <ConnectWebhook isWebhookConnected={isWebhookConnected} disabled={isNotAdminOrOwner || isNotPaid} />
+            <ConnectWebhook
+              isWebhookConnected={isWebhookConnected}
+              disabled={isNotAdminOrOwner || isNotPaid}
+              refetch={refetch}
+            />
             <ConnectSlack isSlackConnected={isSlackConnected} disabled={isNotAdminOrOwner || isNotPaid} />
           </Box>
         </Stack>
