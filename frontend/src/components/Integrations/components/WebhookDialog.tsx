@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useTheme } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
 
-import { StandardWebhookProperties, createWebhookApiV1AlertWebhooksPost } from 'api/generated';
+import {
+  StandardWebhookProperties,
+  createWebhookApiV1AlertWebhooksPost,
+  listWebhooksApiV1AlertWebhooksGet
+} from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
 
@@ -34,7 +38,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
     http_url: url,
     http_method: httpMethod,
     http_headers: headers,
-    notification_levels: ['low', 'high', 'medium', 'critical']
+    notification_levels: []
   };
 
   const handleAddHeader = () =>
@@ -65,6 +69,24 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
       window.location.reload();
     }
   };
+
+  const handleEditInitValues = async () => {
+    if (isWebhookConnected) {
+      const res = await listWebhooksApiV1AlertWebhooksGet();
+
+      if (res[0]) {
+        const lastValue = res[res.length - 1] as StandardWebhookProperties;
+
+        setUrl(lastValue.http_url);
+        setName(lastValue.name);
+        setHttpMethod(lastValue.http_method);
+        setDescription(lastValue.description as string);
+        setHeaders(lastValue.http_headers as { [key: string]: any });
+      }
+    }
+  };
+
+  useEffect(() => void handleEditInitValues(), []);
 
   return (
     <StyledDialog
