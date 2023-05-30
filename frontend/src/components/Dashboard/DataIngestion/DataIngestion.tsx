@@ -27,6 +27,8 @@ interface DataIngestionProps {
   modelId: number | null;
 }
 
+const LABELS_ARR = ['Samples', 'Labels', 'Missing Labels'];
+
 export const DataIngestion = ({ modelId }: DataIngestionProps) => {
   const [selectedPointType, setSelectedPointType] = useState<string>('Samples');
   const [currentTime, setCurrentTime, timeOptions] = useStatsTime();
@@ -35,26 +37,27 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
 
   const { graphData, isLoading } = useDataIngestion(modelId, selectedPointType, timeValue);
 
-  const labelsArr = ['Samples', 'Labels', 'Missing Labels'];
+  const handleTime = (value: unknown) => {
+    if (typeof value !== 'string' && typeof value !== 'number') return;
 
-  useEffect(() => {
-    if (+timeValue <= 3600) {
+    const newTimeValue = +value;
+    const newTimeIndex = timeOptions.findIndex(time => time.value === newTimeValue);
+
+    if (newTimeValue <= frequencyValues.HOUR) {
       setMinTimeUnit('minute');
-    } else if (+timeValue <= frequencyValues.DAY) {
+    } else if (newTimeValue <= frequencyValues.DAY) {
       setMinTimeUnit('hour');
-    } else {
+    } else if (newTimeValue <= frequencyValues.WEEK) {
       setMinTimeUnit('day');
+    } else if (newTimeValue <= frequencyValues.MONTH) {
+      setMinTimeUnit('week');
+    } else {
+      setMinTimeUnit('month');
     }
-  }, [timeValue]);
 
-  const handleTime = (newTimeValue: unknown) => {
-    if (typeof newTimeValue !== 'string' && typeof newTimeValue !== 'number') return;
-
-    const newTimeIndex = timeOptions.findIndex(time => time.value === +newTimeValue);
-
-    setTimeValue(+newTimeValue);
-
+    setTimeValue(newTimeValue);
     setCurrentTime(timeOptions[newTimeIndex].id);
+
     reportEvent(events.dashboardPage.changedTimerFilterProdData, {
       'Filter value': newTimeValue
     });
@@ -83,7 +86,7 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
             size="small"
             onChange={e => setSelectedPointType(e.target.value as string)}
           >
-            {labelsArr.map((val, i) => (
+            {LABELS_ARR.map((val, i) => (
               <MenuItem key={i} value={val}>
                 # {val}
               </MenuItem>
