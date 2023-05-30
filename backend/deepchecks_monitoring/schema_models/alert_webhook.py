@@ -408,12 +408,16 @@ class StandardWebhookProperties(BaseModel):
 
 # TODO: move to utils or create separate module for it
 class UnsetType:
+
     def __repr__(self):
         return "UNSET"
+
     def __str__(self):
         return "UNSET"
+
     def __copy__(self):
         return self
+
     def __eq__(self, v: object) -> bool:
         return self is v
 
