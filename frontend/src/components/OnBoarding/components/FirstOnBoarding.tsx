@@ -20,17 +20,16 @@ import { constants } from '../onBoarding.constants';
 
 const FirstOnBoarding = () => {
   const [dataType, setDataType] = useState<'demo' | 'user'>();
-  const [ignoreTokenGeneration, setIgnoreTokenGeneration] = useState(false);
+  const [initialStep, setInitialStep] = useState(1);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleConditionalOnboarding = async () => {
       const res = await getOnboardingStateApiV1OnboardingGet();
+      setInitialStep(res?.step);
 
-      if (res?.step > 1) {
-        setIgnoreTokenGeneration(true);
-      } else if (res.step === 4) {
+      if (res.step === 4) {
         navigate('/');
       }
     };
@@ -55,7 +54,7 @@ const FirstOnBoarding = () => {
           )*/}
         </FirstOnBoardingSelectContainer>
         {dataType ? (
-          <OnBoarding dataType={dataType} ignoreTokenGeneration={ignoreTokenGeneration} />
+          <OnBoarding dataType={dataType} initialStep={initialStep} />
         ) : (
           <>
             <StyledText text={constants.first.description} type="bodyBold" letterSpacing="1.5px" />

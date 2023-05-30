@@ -17,13 +17,13 @@ import { constants } from './onBoarding.constants';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
-  ignoreTokenGeneration?: boolean;
+  initialStep: number;
 }
 
-const OnBoarding = ({ dataType, ignoreTokenGeneration }: OnBoardingProps) => {
+const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const theme = useTheme();
 
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(initialStep);
   const [apiToken, setApiToken] = useState('API_TOKEN');
 
   const isLastStep = activeStep === 3;
@@ -37,7 +37,7 @@ const OnBoarding = ({ dataType, ignoreTokenGeneration }: OnBoardingProps) => {
   };
 
   useEffect(() => {
-    !ignoreTokenGeneration && regenerateApiToken();
+    activeStep === 1 && regenerateApiToken();
   }, []);
 
   useEffect(() => {
