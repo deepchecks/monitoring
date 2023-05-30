@@ -129,7 +129,7 @@ class ObjectStorageIngestor(BackgroundWorker):
 
 
 def ingest_prefix(s3, bucket, prefix, last_file_time=pdl.date(1970, 1, 1)):
-    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)['Contents']
+    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
     if 'Contents' in resp:
         # Iterate over files in prefix
         for obj in resp['Contents']:

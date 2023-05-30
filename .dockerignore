@@ -1,4 +1,5 @@
 backend/.venv
+backend/.env
 backend/.pytest_cache
 backend/deepchecks_monitoring.egg-info
 node_modules

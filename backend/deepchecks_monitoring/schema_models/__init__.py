@@ -22,6 +22,7 @@ from .model_memeber import ModelMember
 from .model_version import ModelVersion
 from .monitor import Monitor
 from .slack import SlackInstallation, SlackInstallationState
+from .data_sources import DataSource
 
 __all__ = [
     'Base',
@@ -43,4 +44,5 @@ __all__ = [
     'AlertWebhook',
     'DataIngestionAlert',
     'ModelMember',
+    'DataSource'
 ]
