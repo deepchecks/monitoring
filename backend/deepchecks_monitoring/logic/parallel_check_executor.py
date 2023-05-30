@@ -361,7 +361,7 @@ def _execute_check_per_window(
                 'reference_dataset_length': reference_length,
                 'check_type_name': type(check_instance).__name__
             })
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             logger.exception({
                 'message': 'Unexpected exception, failed to execute the check instance',
                 'organization_id': args['organization_id'],
