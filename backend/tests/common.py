@@ -249,6 +249,40 @@ class TestAPI:
         yield self
         self.api.session.headers["Authorization"] = current_token
 
+    def fetch_organization(
+        self,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get('organization')
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        payload = response.json()
+        assert isinstance(payload, dict)
+        return payload
+
+    def update_organization(
+        self,
+        organization: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put('organization', json=organization)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = t.cast(Payload, self.fetch_organization())
+
+        for k, v in organization.items():
+            assert data.get(k) == v, data.get(k)
+
+        return data
+
     def create_model(
         self,
         model: t.Optional[Payload] = None,
