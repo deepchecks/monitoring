@@ -9,13 +9,13 @@ import webhook from '../../../assets/integrations/webhook.svg';
 
 import { constants } from '../integrations.constants';
 
-const ConnectWebhook = ({
-  isWebhookConnected,
-  disabled
-}: {
+interface ConnectWebhookProps {
   isWebhookConnected: boolean | undefined;
   disabled: boolean;
-}) => {
+  refetch: () => void;
+}
+
+const ConnectWebhook = ({ isWebhookConnected, disabled, refetch }: ConnectWebhookProps) => {
   const theme = useTheme();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -48,7 +48,12 @@ const ConnectWebhook = ({
         />
       </Box>
       <StyledImage alt="webhook" src={webhook} width="100px" height="100px" margin="auto" />
-      <WebhookDialog open={isDialogOpen} handleClose={handleCloseDialog} isWebhookConnected={isWebhookConnected} />
+      <WebhookDialog
+        open={isDialogOpen}
+        handleClose={handleCloseDialog}
+        isWebhookConnected={isWebhookConnected}
+        refetch={refetch}
+      />
     </Box>
   );
 };

@@ -15,11 +15,12 @@ import { resError } from 'helpers/types/resError';
 
 interface WebhookDialogProps {
   open: boolean;
-  handleClose: () => void;
   isWebhookConnected: boolean | undefined;
+  handleClose: () => void;
+  refetch: () => void;
 }
 
-const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogProps) => {
+const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: WebhookDialogProps) => {
   const theme = useTheme();
 
   const [error, setError] = useState('');
@@ -66,7 +67,8 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
     if ((response as unknown as resError)?.error_message) {
       setError(response.error_message as any);
     } else {
-      window.location.reload();
+      refetch();
+      handleClose();
     }
   };
 

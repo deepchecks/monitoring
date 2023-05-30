@@ -18,7 +18,7 @@ export const Integrations = () => {
   const theme = useTheme();
   const { isAdmin, isOwner, availableFeatures } = useUser();
   const isLargeDesktop = useMediaQuery(theme.breakpoints.up('xl'));
-  const { data, isLoading } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
+  const { data, isLoading, refetch } = useRetriveOrganizationApiV1OrganizationGet<NotificationsResponse>({
     query: {
       cacheTime: 0,
       staleTime: Infinity
@@ -56,7 +56,11 @@ export const Integrations = () => {
           />
           <Box display="flex" flexDirection="column" gap="16px">
             <StyledText text={constants.connect.title} type="h1" marginBottom="16px" />
-            <ConnectWebhook isWebhookConnected={isWebhookConnected} disabled={isNotAdminOrOwner || isNotPaid} />
+            <ConnectWebhook
+              isWebhookConnected={isWebhookConnected}
+              disabled={isNotAdminOrOwner || isNotPaid}
+              refetch={refetch}
+            />
             <ConnectSlack isSlackConnected={isSlackConnected} disabled={isNotAdminOrOwner || isNotPaid} />
           </Box>
         </Stack>
