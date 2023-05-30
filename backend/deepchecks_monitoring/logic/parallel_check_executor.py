@@ -8,6 +8,7 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining parallel check execution logic."""
+import logging
 import contextlib
 import typing as t
 from collections import defaultdict
@@ -32,6 +33,7 @@ from deepchecks_monitoring.public_models.organization import Organization
 from deepchecks_monitoring.schema_models.check import Check
 from deepchecks_monitoring.schema_models.model import Model, TaskType
 from deepchecks_monitoring.utils.database import SessionParameter
+from deepchecks_monitoring.monitoring_utils import configure_logger
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
@@ -50,6 +52,8 @@ class WindowResult(t.TypedDict):
 class WindowExecutionArgs(t.TypedDict):
     model_version_id: int
     window_index: int
+    start: 'pdl.datetime.DateTime'
+    end: 'pdl.datetime.DateTime'
     samples_query: 'sa.sql.Selectable'
 
 
@@ -168,6 +172,8 @@ async def execute_check_per_window(
                 'window_index': window_index,
                 'model_version_id': model_version_id,
                 'samples_query': samples_query,
+                'start': window_start,
+                'end': window_end,
             })
 
         if check.is_reference_required and create_reference_query:
@@ -247,8 +253,10 @@ async def execute_check_per_window(
 
 def _execute_check_per_window(
     session: Session,
-    args: CheckPerWindowExecutionArgs
+    args: CheckPerWindowExecutionArgs,
+    logger: logging.Logger | None = None
 ) -> t.List[WindowResult]:
+    logger = logger or configure_logger('check-executor')
     references_queries = args['references_queries']
 
     references_dataframes: dict[int, tuple[
@@ -322,19 +330,51 @@ def _execute_check_per_window(
             top_feat=args['top_features'],
             dataset_name='Production'
         )
-        check_result = _execute_check_instance(
-            check_instance,
-            test_dataset=test_dataset,
-            train_dataset=reference_dataset,
-            y_pred_test=test_pred,
-            y_proba_test=test_proba,
-            y_pred_train=reference_pred,
-            y_proba_train=reference_proba,
-            model_classes=model_classes,
-            feature_importance=pd.Series(args['feature_importance'])
-        )
 
-        window_result['result'] = check_result
+        try:
+            check_result = _execute_check_instance(
+                check_instance,
+                test_dataset=test_dataset,
+                train_dataset=reference_dataset,
+                y_pred_test=test_pred,
+                y_proba_test=test_proba,
+                y_pred_train=reference_pred,
+                y_proba_train=reference_proba,
+                model_classes=model_classes,
+                feature_importance=pd.Series(args['feature_importance'])
+            )
+        except errors.NotEnoughSamplesError:
+            test_length = (
+                test_dataset.n_samples
+                if test_dataset is not None
+                else None
+            )
+            reference_length = (
+                reference_dataset.n_samples
+                if reference_dataset is not None
+                else None
+            )
+            logger.warning({
+                'message': 'Window does not have enough sampes. ',
+                'organization_id': args['organization_id'],
+                'model_version_id': window['model_version_id'],
+                'window_start': window['start'],
+                'window_end': window['end'],
+                'test_dataset_length': test_length,
+                'reference_dataset_length': reference_length,
+                'check_type_name': type(check_instance).__name__
+            })
+        except Exception:
+            logger.exception({
+                'message': 'Unexpected exception, failed to execute the chekc instance',
+                'organization_id': args['organization_id'],
+                'model_version_id': window['model_version_id'],
+                'window_start': window['start'],
+                'window_end': window['end'],
+                'check_type_name': type(check_instance).__name__
+            })
+        else:
+            window_result['result'] = check_result
 
     return results
 
@@ -383,25 +423,7 @@ def _execute_check_instance(
     else:
         raise ValueError(f'incompatible check type {type(check_instance)}')
 
-    try:
-        return check_instance.run(*args, **kwargs)
-    except errors.NotEnoughSamplesError:
-        return None
-    except Exception:  # pylint: disable=broad-except
-        return None
-        # # TODO:
-        # send error to sentry, needs to be done in the ee sub-package
-        # error_message = (
-        #     str(e)
-        #     if not (msg := getattr(e, 'message', None))
-        #     else msg
-        # )
-        # logging.getLogger('monitor_run_logger').exception(
-        #     'For model version(id=%s) check(%s) got exception: %s',
-        #     window['model_version_id'],
-        #     check_instance.name,
-        #     error_message
-        # )
+    return check_instance.run(*args, **kwargs)
 
 
 @ray.remote(max_restarts=-1)
@@ -409,6 +431,7 @@ class CheckPerWindowExecutor:
     """Ray actor for parallel check execution."""
 
     def __init__(self, database_uri: str):
+        self.logger = configure_logger('parallel-check-executor-actor')
         self.engine = sa.create_engine(
             database_uri,
             pool_pre_ping=True,
@@ -417,7 +440,11 @@ class CheckPerWindowExecutor:
 
     def execute(self, args: CheckPerWindowExecutionArgs):
         with self._session(args['organization_id']) as s:
-            return _execute_check_per_window(s, args)
+            return _execute_check_per_window(
+                session=s,
+                args=args,
+                logger=self.logger
+            )
 
     @contextlib.contextmanager
     def _session(self, organization_id):
@@ -425,7 +452,9 @@ class CheckPerWindowExecutor:
             org = t.cast(t.Optional[Organization], s.get(Organization, organization_id))
 
             if org is None:
-                raise RuntimeError(f'Organization with id "{organization_id}" does not exist')
+                message = f'Organization with id "{organization_id}" does not exist'
+                self.logger.error({'message': message})
+                raise RuntimeError(message)
 
             search_path = t.cast(str, org.schema_name)
             s.execute(SessionParameter('search_path', value=search_path))
@@ -434,6 +463,7 @@ class CheckPerWindowExecutor:
                 yield s
             except Exception:  # pylint: disable=broad-except
                 s.rollback()
+                self.logger.exception({'message': 'Unexpected execption'})
                 raise
             else:
                 s.commit()
