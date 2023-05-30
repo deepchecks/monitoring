@@ -53,7 +53,7 @@ export const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    if ((dashboard?.monitors?.length === 0 && onboardingEnabled) || !isCloud) {
+    if (dashboard?.monitors?.length === 0 && (onboardingEnabled || !isCloud)) {
       navigate({ pathname: '/onboarding' });
     }
   }, [dashboard, onboardingEnabled]);
