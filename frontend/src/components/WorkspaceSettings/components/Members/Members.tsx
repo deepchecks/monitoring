@@ -32,8 +32,8 @@ const Members = () => {
   };
 
   const handleCloseActionDialog = () => {
-    setCurrentMember(null);
     setShowActionDialog(false);
+    setTimeout(() => setCurrentMember(null), 100);
   };
 
   return (

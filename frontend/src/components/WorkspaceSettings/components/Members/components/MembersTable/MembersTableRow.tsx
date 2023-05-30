@@ -79,7 +79,7 @@ export const MembersTableRow = ({
       <StyledTableCell>{email}</StyledTableCell>
       <StyledTableCell>{dayjs(created_at).format('L')}</StyledTableCell>
       <StyledTableCell>{getRole(roles)}</StyledTableCell>
-      <StyledTableCell>
+      <StyledTableCell align="center">
         <StyledTableCellButton
           label={calculateButtonLabel(member.id, models)}
           variant="text"

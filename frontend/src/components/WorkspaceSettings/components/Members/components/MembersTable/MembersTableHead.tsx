@@ -29,7 +29,9 @@ export const MembersTableHead = ({ numSelected, rowCount, selectAllClick, ...oth
       <StyledTableCellBold width="25%">{email}</StyledTableCellBold>
       <StyledTableCellBold width="15%">{activeSince}</StyledTableCellBold>
       <StyledTableCellBold width="10%">{role}</StyledTableCellBold>
-      <StyledTableCellBold width="15%">{modelAccess}</StyledTableCellBold>
+      <StyledTableCellBold align="center" width="15%">
+        {modelAccess}
+      </StyledTableCellBold>
       <StyledTableCellBold align="right" width="10%">
         {actions}
       </StyledTableCellBold>
