@@ -9,6 +9,7 @@ import { RemoveSelectedMembers } from './RemoveSelectedMembers';
 import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 
 import { MembersActionDialog, MembersActionDialogOptions } from '../Members.type';
+import { AssignModels } from './AssignModels';
 
 interface MembersListActionDialogProps extends MembersActionDialog {
   members: MemberSchema[];
@@ -55,8 +56,8 @@ export const MembersListActionDialog = ({
         />
       );
 
-    case MembersActionDialogOptions.assignModel:
-      return <></>;
+    case MembersActionDialogOptions.assignModels:
+      return <AssignModels member={currentMember} {...sharedProps} />;
 
     case MembersActionDialogOptions.deleteWorkspace:
       return <DeleteWorkspaceDialog {...sharedProps} />;
