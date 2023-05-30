@@ -27,6 +27,25 @@ def test_standard_webhook_deletion(test_api: TestAPI):
     test_api.delete_alert_webhook(webhook["id"])
 
 
+def test_standard_webhook_update(test_api: TestAPI):
+    webhook = t.cast(Payload, test_api.create_alert_webhook())
+
+    payload = {
+        "kind": "STANDARD",
+        "name": "Updated Webhook",
+        "http_method": "POST",
+        "http_headers": {"X-NEW": "new-value"},
+        "notification_levels": ["critical"]
+    }
+    updated_webhook = t.cast(Payload, test_api.update_alert_webhook(
+        webhook_id=webhook["id"],
+        webhook=payload
+    ))
+
+    for k, v in payload.items():
+        assert updated_webhook[k] == v
+
+
 def test_pager_duty_webhook_creation(test_api: TestAPI):
     payload = {
         "kind": "PAGER_DUTY",

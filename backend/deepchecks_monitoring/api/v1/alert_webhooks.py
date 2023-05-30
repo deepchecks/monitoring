@@ -10,10 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.dependencies import AsyncSessionDep
 from deepchecks_monitoring.exceptions import BadRequest
-from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, exists_or_404
+from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession, exists_or_404, fetch_or_404
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models import AlertSeverity
 from deepchecks_monitoring.schema_models.alert_webhook import (AlertWebhook, PagerDutyWebhookProperties,
+                                                               PartialPagerDutyWebhookProperties,
+                                                               PartialStandardWebhookProperties,
                                                                StandardWebhookProperties, WebhookHttpMethod,
                                                                WebhookKind)
 from deepchecks_monitoring.utils import auth
@@ -95,7 +97,11 @@ async def create_webhook(
         raise ValueError(f"Unexpected type of webhook - {type(webhook)}")
 
     try:
-        httpx.request(method=http_method, url=webhook.http_url)
+        httpx.request(
+            method=http_method,
+            url=webhook.http_url,
+            timeout=5  # seconds
+        )
     except (httpx.TransportError, httpx.ProxyError, httpx.UnsupportedProtocol) as e:
         raise BadRequest("Failed to connect to the given URL address") from e
 
@@ -105,6 +111,32 @@ async def create_webhook(
         .returning(AlertWebhook.id)
     )
     return {"id": webhook_id}
+
+
+@router.put(
+    "/alert-webhooks/{webhook_id}",
+    tags=["alert-webhooks"],
+    description="Update webhook",
+)
+async def update_webhook(
+    webhook_id: int = Path(...),
+    data: t.Union[
+        PartialStandardWebhookProperties,
+        PartialPagerDutyWebhookProperties
+    ] = Body(discriminator="kind"),
+    session: AsyncSession = AsyncSessionDep,
+    user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
+):
+    webhook = await fetch_or_404(
+        session=session,
+        model=AlertWebhook,
+        id=webhook_id
+    )
+    if webhook.kind != data.kind:
+        raise BadRequest('Incorrect payload kind, it does not match webhook kind')
+
+    session.add(data.update_instance(webhook))
+    await session.commit()
 
 
 @router.delete(

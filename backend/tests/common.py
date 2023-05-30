@@ -1151,6 +1151,23 @@ class TestAPI:
         assert "id" in data
         return self.fetch_alert_webhook(data["id"])
 
+    def update_alert_webhook(
+        self,
+        webhook_id: int,
+        webhook: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put(f"alert-webhooks/{webhook_id}", json=webhook)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        updated_webhook = self.fetch_alert_webhook(webhook_id)
+        # TODO:
+        return updated_webhook
+
     def delete_alert_webhook(
         self,
         webhook_id: int,
