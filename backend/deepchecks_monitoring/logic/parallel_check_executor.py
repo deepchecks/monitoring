@@ -53,6 +53,22 @@ class WindowExecutionArgs(t.TypedDict):
     samples_query: 'sa.sql.Selectable'
 
 
+class CheckPerWindowExecutionArgs(t.TypedDict):
+    """Arguments for check execution on a set for windows."""
+
+    check_config: dict[str, t.Any]
+    additional_check_kwargs: MonitorCheckConfSchema | None
+    windows: list[WindowExecutionArgs]
+    classes: dict[int, t.Optional[list[str | int]]]   # dict[model-version-id, list-of-classes]
+    balance_classes: dict[int, bool]                  # dict[model-version-id, bool]
+    feature_columns: dict[int, dict[str, str]]        # dict[model-version-id, columns]
+    references_queries: dict[int, 'sa.sql.Selectable']  # dict[model-version-id, window-query]
+    task_type: TaskType
+    top_features: list[str]
+    feature_importance: dict[str, float] | None
+    organization_id: int
+
+
 async def execute_check_per_window(
     check_id: int,
     session: AsyncSession,
@@ -172,7 +188,7 @@ async def execute_check_per_window(
         task_type=t.cast(TaskType, model.task_type),
         organization_id=organization_id,
         references_queries=references_queries,
-        feature_importance=list(feat_imp) if feat_imp is not None else None,
+        feature_importance=dict(feat_imp) if feat_imp is not None else None,
         top_features=top_feat,
         balance_classes=balance_classes_per_model_version,
         feature_columns=features_per_model_version,
@@ -229,21 +245,163 @@ async def execute_check_per_window(
     }
 
 
-class CheckPerWindowExecutionArgs(t.TypedDict):
-    """Arguments for check execution on a set for windows."""
+def _execute_check_per_window(
+    session: Session,
+    args: CheckPerWindowExecutionArgs
+) -> t.List[WindowResult]:
+    references_queries = args['references_queries']
 
-    check_config: dict[str, t.Any]
-    additional_check_kwargs: MonitorCheckConfSchema | None
-    windows: list[WindowExecutionArgs]
-    classes: dict[int, t.Optional[list[str | int]]]   # dict[model-version-id, list-of-classes]
-    balance_classes: dict[int, bool]                # dict[model-version-id, bool]
-    feature_columns: dict[int, dict[str, str]]      # dict[model-version-id, columns]
-    references_queries: dict[int, 'sa.sql.Selectable']  # dict[model-version-id, window-query]
-    task_type: TaskType
+    references_dataframes: dict[int, tuple[
+        pd.DataFrame,
+        Dataset | None,
+        np.ndarray | None,
+        np.ndarray | None
+    ]] = {}
 
-    top_features: list[str]
-    feature_importance: list[float] | None
-    organization_id: int
+    results = []
+
+    for window in args['windows']:
+        reference_df = None
+        reference_dataset = None
+        reference_pred = None
+        reference_proba = None
+        features_columns = args['feature_columns'][window['model_version_id']]
+        model_classes = args['classes'][window['model_version_id']]
+
+        check_instance = initialize_check(
+            args['check_config'],
+            args['balance_classes'][window['model_version_id']],
+            args['additional_check_kwargs']
+        )
+        window_result = {
+            'window_index': window['window_index'],
+            'model_version_id': window['model_version_id'],
+            'result': None
+        }
+
+        results.append(window_result)
+
+        if window['model_version_id'] in references_dataframes:
+            reference_data = references_dataframes[window['model_version_id']]
+            reference_df, reference_dataset, reference_pred, reference_proba = reference_data
+
+        elif window['model_version_id'] in references_queries:
+            query = references_queries[window['model_version_id']]
+            query_result = session.execute(query)
+            reference_df = pd.DataFrame(
+                query_result.all(),
+                columns=[str(key) for key in query_result.keys()]
+            )
+            reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
+                reference_df,
+                features_columns=features_columns,
+                task_type=args['task_type'].value,
+                top_feat=args['top_features'],
+                dataset_name='Reference'
+            )
+            references_dataframes[window['model_version_id']] = (
+                reference_df,
+                reference_dataset,
+                reference_pred,
+                reference_proba
+            )
+
+        if reference_df is not None and reference_df.empty:
+            continue
+
+        window_data = session.execute(window['samples_query'])
+        window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
+
+        if window_df.empty:
+            continue
+
+        test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
+            window_df,
+            features_columns=features_columns,
+            task_type=args['task_type'].value,
+            top_feat=args['top_features'],
+            dataset_name='Production'
+        )
+        check_result = _execute_check_instance(
+            check_instance,
+            test_dataset=test_dataset,
+            train_dataset=reference_dataset,
+            y_pred_test=test_pred,
+            y_proba_test=test_proba,
+            y_pred_train=reference_pred,
+            y_proba_train=reference_proba,
+            model_classes=model_classes,
+            feature_importance=pd.Series(args['feature_importance'])
+        )
+
+        window_result['result'] = check_result
+
+    return results
+
+
+def _execute_check_instance(
+    check_instance,
+    train_dataset,
+    test_dataset,
+    y_pred_train,
+    y_proba_train,
+    y_pred_test,
+    y_proba_test,
+    feature_importance,
+    model_classes,
+):
+    shared_args = {
+        'feature_importance': feature_importance,
+        'with_display': False,
+        'model_classes': model_classes
+    }
+    single_dataset_args = {
+        'y_pred_train': y_pred_train,
+        'y_proba_train': y_proba_train,
+        **shared_args
+    }
+    train_test_args = {
+        'train_dataset': train_dataset,
+        'test_dataset': test_dataset,
+        'y_pred_train': y_pred_train,
+        'y_proba_train': y_proba_train,
+        'y_pred_test': y_pred_test,
+        'y_proba_test': y_proba_test,
+        **shared_args
+    }
+
+    if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
+        args, kwargs = (test_dataset,), single_dataset_args
+    elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
+        args, kwargs = tuple(), train_test_args
+    elif isinstance(check_instance, Suite):
+        args, kwargs = (
+            ((test_dataset,), single_dataset_args)
+            if train_dataset is None
+            else (tuple(), train_test_args | {'run_single_dataset': 'Test'})
+        )
+    else:
+        raise ValueError(f'incompatible check type {type(check_instance)}')
+
+    try:
+        return check_instance.run(*args, **kwargs)
+    except errors.NotEnoughSamplesError:
+        return None
+    except Exception:  # pylint: disable=broad-except
+        return None
+        # # TODO:
+        # send error to sentry, needs to be done in the ee sub-package
+        # error_message = (
+        #     str(e)
+        #     if not (msg := getattr(e, 'message', None))
+        #     else msg
+        # )
+        # logging.getLogger('monitor_run_logger').exception(
+        #     'For model version(id=%s) check(%s) got exception: %s',
+        #     window['model_version_id'],
+        #     check_instance.name,
+        #     error_message
+        # )
 
 
 @ray.remote(max_restarts=-1)
@@ -259,7 +417,7 @@ class CheckPerWindowExecutor:
 
     def execute(self, args: CheckPerWindowExecutionArgs):
         with self._session(args['organization_id']) as s:
-            return self._execute(s, args)
+            return _execute_check_per_window(s, args)
 
     @contextlib.contextmanager
     def _session(self, organization_id):
@@ -276,162 +434,8 @@ class CheckPerWindowExecutor:
                 yield s
             except Exception:  # pylint: disable=broad-except
                 s.rollback()
+                raise
             else:
                 s.commit()
             finally:
                 s.close()
-
-    def _execute(self, session: Session, args: CheckPerWindowExecutionArgs):
-        references_queries = args['references_queries']
-
-        references_dataframes: dict[int, tuple[
-            pd.DataFrame,
-            Dataset | None,
-            np.ndarray | None,
-            np.ndarray | None
-        ]] = {}
-
-        results = []
-
-        for window in args['windows']:
-            reference_df = None
-            reference_dataset = None
-            reference_pred = None
-            reference_proba = None
-            features_columns = args['feature_columns'][window['model_version_id']]
-            model_classes = args['classes'][window['model_version_id']]
-
-            check_instance = initialize_check(
-                args['check_config'],
-                args['balance_classes'][window['model_version_id']],
-                args['additional_check_kwargs']
-            )
-            window_result = {
-                'window_index': window['window_index'],
-                'model_version_id': window['model_version_id'],
-                'result': None
-            }
-
-            results.append(window_result)
-
-            if window['model_version_id'] in references_dataframes:
-                reference_data = references_dataframes[window['model_version_id']]
-                reference_df, reference_dataset, reference_pred, reference_proba = reference_data
-
-            elif window['model_version_id'] in references_queries:
-                query = references_queries[window['model_version_id']]
-                query_result = session.execute(query)
-                reference_df = pd.DataFrame(
-                    query_result.all(),
-                    columns=[str(key) for key in query_result.keys()]
-                )
-                reference_dataset, reference_pred, reference_proba = dataframe_to_dataset_and_pred(
-                    reference_df,
-                    features_columns=features_columns,
-                    task_type=args['task_type'].value,
-                    top_feat=args['top_features'],
-                    dataset_name='Reference'
-                )
-                references_dataframes[window['model_version_id']] = (
-                    reference_df,
-                    reference_dataset,
-                    reference_pred,
-                    reference_proba
-                )
-
-            if reference_df is not None and reference_df.empty:
-                continue
-
-            window_data = session.execute(window['samples_query'])
-            window_df = pd.DataFrame(window_data.all(), columns=[str(key) for key in window_data.keys()])
-
-            if window_df.empty:
-                continue
-
-            test_dataset, test_pred, test_proba = dataframe_to_dataset_and_pred(
-                window_df,
-                features_columns=features_columns,
-                task_type=args['task_type'].value,
-                top_feat=args['top_features'],
-                dataset_name='Production'
-            )
-            check_result = self._execute_check(
-                check_instance,
-                test_dataset=test_dataset,
-                train_dataset=reference_dataset,
-                y_pred_test=test_pred,
-                y_proba_test=test_proba,
-                y_pred_train=reference_pred,
-                y_proba_train=reference_proba,
-                model_classes=model_classes,
-                feature_importance=args['feature_importance']
-            )
-
-            window_result['result'] = check_result
-
-        return results
-
-    def _execute_check(
-        self,
-        check_instance,
-        train_dataset,
-        test_dataset,
-        y_pred_train,
-        y_proba_train,
-        y_pred_test,
-        y_proba_test,
-        feature_importance,
-        model_classes,
-    ):
-        shared_args = {
-            'feature_importance': feature_importance,
-            'with_display': False,
-            'model_classes': model_classes
-        }
-        single_dataset_args = {
-            'y_pred_train': y_pred_train,
-            'y_proba_train': y_proba_train,
-            **shared_args
-        }
-        train_test_args = {
-            'train_dataset': train_dataset,
-            'test_dataset': test_dataset,
-            'y_pred_train': y_pred_train,
-            'y_proba_train': y_proba_train,
-            'y_pred_test': y_pred_test,
-            'y_proba_test': y_proba_test,
-            **shared_args
-        }
-
-        if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
-            args, kwargs = (test_dataset,), single_dataset_args
-        elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
-            args, kwargs = tuple(), train_test_args
-        elif isinstance(check_instance, Suite):
-            args, kwargs = (
-                ((test_dataset,), single_dataset_args)
-                if train_dataset is None
-                else (tuple(), train_test_args | {'run_single_dataset': 'Test'})
-            )
-        else:
-            raise ValueError(f'incompatible check type {type(check_instance)}')
-
-        try:
-            return check_instance.run(*args, **kwargs)
-        except errors.NotEnoughSamplesError:
-            return None
-        except Exception:  # pylint: disable=broad-except
-            return None
-            # # TODO:
-            # send error to sentry, needs to be done in the ee sub-package
-            # error_message = (
-            #     str(e)
-            #     if not (msg := getattr(e, 'message', None))
-            #     else msg
-            # )
-            # logging.getLogger('monitor_run_logger').exception(
-            #     'For model version(id=%s) check(%s) got exception: %s',
-            #     window['model_version_id'],
-            #     check_instance.name,
-            #     error_message
-            # )
