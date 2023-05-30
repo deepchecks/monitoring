@@ -22,8 +22,7 @@ from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import Task
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import (
-    AlertRuleType, DataIngestionAlert)
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from tests.common import Payload, TestAPI, upload_classification_data
 
@@ -37,7 +36,6 @@ async def test_data_ingestion_scheduling(
     async_session: AsyncSession,
     async_engine,
     classification_model: dict,
-    user: User,
     resources_provider: ResourcesProvider,
     test_api: TestAPI, client
 ):
@@ -52,7 +50,7 @@ async def test_data_ingestion_scheduling(
         test_api.create_model_alert_rule(classification_model["id"],
                                          dict(alert_type=AlertRuleType.LABEL_COUNT,
                                               frequency=Frequency.HOUR,
-                                              condition={"operator": "less_than", "value": 5})),
+                                              condition={"operator": "less_than", "value": 3})),
         test_api.create_model_alert_rule(classification_model["id"],
                                          dict(alert_type=AlertRuleType.LABEL_RATIO,
                                          frequency=Frequency.HOUR,
@@ -84,8 +82,11 @@ async def test_data_ingestion_scheduling(
                                    id_prefix="extra")
 
     # for alert_rule in alert_rules:
-    #     await DataIngestionAlertRule.update(async_session, alert_rule["id"], {"latest_schedule": start})
+    #     await async_session.execute(sa.update(DataIngestionAlertRule)
+    #                                 .where(DataIngestionAlertRule.id == alert_rule["id"])
+    #                                 .values({DataIngestionAlertRule.latest_schedule: start}))
 
+    await async_session.flush()
     # == Act
     await AlertsScheduler(engine=async_engine).run_all_organizations()
 
@@ -94,7 +95,7 @@ async def test_data_ingestion_scheduling(
                               ModelDataIngestionAlerter.queue_name())
     )).all()
 
-    # assert len(tasks) == 39
+    assert len(tasks) == 39
 
     worker = ModelDataIngestionAlerter()
     for task in tasks:
@@ -115,5 +116,6 @@ async def test_data_ingestion_scheduling(
     resp = client.get(
         f"api/v1/data-ingestion-alert-rules/{alert_rules[2]['id']}/alerts")
     resp_json = resp.json()
-    assert len(resp_json) == 1
-    assert resp_json[0]["value"] == 0
+    assert len(resp_json) == 2
+    assert resp_json[0]["value"] == 0.6666666666666666
+    assert resp_json[1]["value"] == 0.6666666666666666
