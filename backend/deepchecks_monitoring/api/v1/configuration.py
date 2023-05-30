@@ -11,21 +11,23 @@
 import typing as t
 
 import pendulum as pdl
-from fastapi import Query
+from fastapi import Depends, Query
 from pydantic.main import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.utils import auth
 
 from .global_api.users import BasicUserSchema
 from .router import router
@@ -71,6 +73,7 @@ async def get_all_alert_rules(
         "severity:asc",
         "severity:desc",
     ]] = Query(default=[]),
+    user: User = Depends(auth.CurrentUser()),
     session: AsyncSession = AsyncSessionDep
 ):
     """Return all alert rules for the configuration screen.
@@ -131,6 +134,8 @@ async def get_all_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
         .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
         .outerjoin(total_count, total_count.c.alert_rule_id == AlertRule.id)
     )
@@ -205,6 +210,9 @@ async def get_all_alert_rules(
             total_count.c.recent_alert,
             severity_index
         )
+        .join(DataIngestionAlertRule.model)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
         .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == DataIngestionAlertRule.id)
         .outerjoin(total_count, total_count.c.alert_rule_id == DataIngestionAlertRule.id)
     )

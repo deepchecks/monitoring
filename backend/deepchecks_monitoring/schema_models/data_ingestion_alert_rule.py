@@ -27,6 +27,7 @@ from deepchecks_monitoring.utils.alerts import AlertSeverity, Condition, Frequen
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
     from datetime import datetime
+
     from deepchecks_monitoring.schema_models.model import Model
 
 __all__ = ["DataIngestionAlertRule", "AlertRuleType"]
