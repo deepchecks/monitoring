@@ -32,6 +32,7 @@ from .router import router
 class DataIngestionAlertRuleCreationSchema(BaseModel):
     """Schema defines the parameters for creating new alert rule."""
 
+    name: str
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
     is_active: t.Optional[bool]
@@ -43,6 +44,7 @@ class DataIngestionAlertRuleSchema(BaseModel):
     """Schema for the alert rule."""
 
     id: int
+    name: str
     model_id: int
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
@@ -54,13 +56,13 @@ class DataIngestionAlertRuleSchema(BaseModel):
         orm_mode = True
 
 
-class AlertRuleUpdateSchema(BaseModel):
+class DataIngestionAlertRuleUpdateSchema(BaseModel):
     """Schema defines the parameters for updating alert rule."""
 
+    name: t.Optional[str]
     alert_severity: t.Optional[AlertSeverity]
     condition: t.Optional[Condition]
     is_active: t.Optional[bool]
-    frequency: t.Optional[Frequency]
 
 
 @router.post(
@@ -105,7 +107,7 @@ async def get_alert_rule(
             summary="Update data-ingestion alert rule by id.")
 async def update_alert(
         data_ingestion_alert_rule_id: int,
-        body: AlertRuleUpdateSchema,
+        body: DataIngestionAlertRuleUpdateSchema,
         session: AsyncSession = AsyncSessionDep,
         user: User = Depends(auth.CurrentUser()),
 ):

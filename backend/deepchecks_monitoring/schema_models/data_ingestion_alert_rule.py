@@ -14,8 +14,8 @@ from datetime import datetime
 
 import pendulum as pdl
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.engine.default import DefaultExecutionContext
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, column_property, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
@@ -59,6 +59,7 @@ class DataIngestionAlertRule(Base, MetadataMixin, PermissionMixin):
     __tablename__ = "data_ingestion_alert_rules"
 
     id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
     condition = sa.Column(PydanticType(pydantic_model=Condition))
     alert_severity = sa.Column(sa.Enum(
         AlertSeverity), default=AlertSeverity.MEDIUM, nullable=False, index=True)

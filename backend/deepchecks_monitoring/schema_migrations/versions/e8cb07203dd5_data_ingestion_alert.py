@@ -34,6 +34,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String, nullable=False),
     sa.Column('condition', PydanticType(astext_type=sa.Text()), nullable=True),
     sa.Column('alert_severity', postgresql.ENUM(name='alertseverity', create_type=False), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),

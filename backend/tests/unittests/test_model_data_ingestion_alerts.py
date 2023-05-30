@@ -15,14 +15,13 @@ import pendulum as pdl
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
 
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.public_models.task import Task
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from tests.common import Payload, TestAPI, upload_classification_data
 
@@ -81,12 +80,14 @@ async def test_data_ingestion_scheduling(
                                    daterange=extra_count_daterange, model_id=classification_model["id"],
                                    id_prefix="extra")
 
-    # for alert_rule in alert_rules:
-    #     await async_session.execute(sa.update(DataIngestionAlertRule)
-    #                                 .where(DataIngestionAlertRule.id == alert_rule["id"])
-    #                                 .values({DataIngestionAlertRule.latest_schedule: start}))
+    for alert_rule in alert_rules:
+        await async_session.execute(sa.update(DataIngestionAlertRule)
+                                    .where(DataIngestionAlertRule.id == alert_rule["id"])
+                                    .values({DataIngestionAlertRule.latest_schedule: start}))
 
+    await async_session.commit()
     await async_session.flush()
+
     # == Act
     await AlertsScheduler(engine=async_engine).run_all_organizations()
 
@@ -95,7 +96,7 @@ async def test_data_ingestion_scheduling(
                               ModelDataIngestionAlerter.queue_name())
     )).all()
 
-    assert len(tasks) == 39
+    assert len(tasks) == 21
 
     worker = ModelDataIngestionAlerter()
     for task in tasks:
