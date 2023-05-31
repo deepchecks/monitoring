@@ -24,7 +24,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   const theme = useTheme();
 
   const [error, setError] = useState('');
-  const [webhookId, setWebhookId] = useState(0);
+  const [webhookId, setWebhookId] = useState(1);
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
