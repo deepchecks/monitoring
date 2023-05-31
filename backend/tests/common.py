@@ -161,10 +161,10 @@ class DataGenerator:
             "http_url": "https://httpbin.org",
             "http_method": random.choice(["GET", "POST"]),
             "http_headers": {"X-value": "Hello world"},
-            "notification_levels": [
+            "notification_levels": list({
                 random.choice(list(AlertSeverity)).value
                 for _ in range(len(AlertSeverity))
-            ],
+            }),
         }
 
     def generate_random_model_note(self):
@@ -248,6 +248,40 @@ class TestAPI:
         self.api.session.headers["Authorization"] = f"Bearer {token}"
         yield self
         self.api.session.headers["Authorization"] = current_token
+
+    def fetch_organization(
+        self,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get("organization")
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        payload = response.json()
+        assert isinstance(payload, dict)
+        return payload
+
+    def update_organization(
+        self,
+        organization: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put("organization", json=organization)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = t.cast(Payload, self.fetch_organization())
+
+        for k, v in organization.items():
+            assert data.get(k) == v, data.get(k)
+
+        return data
 
     def create_model(
         self,
@@ -1116,6 +1150,23 @@ class TestAPI:
         assert isinstance(data, dict)
         assert "id" in data
         return self.fetch_alert_webhook(data["id"])
+
+    def update_alert_webhook(
+        self,
+        webhook_id: int,
+        webhook: Payload,
+        expected_status: ExpectedStatus = (200, 299)
+    ):
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.put(f"alert-webhooks/{webhook_id}", json=webhook)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        updated_webhook = self.fetch_alert_webhook(webhook_id)
+        # TODO:
+        return updated_webhook
 
     def delete_alert_webhook(
         self,
