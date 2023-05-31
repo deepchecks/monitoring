@@ -3,9 +3,12 @@ export const constants = {
     title: 'Integrations',
     noAPIDataText: 'Got an error from integrations API, please contact us',
     error: {
-      roleDenied:
-        'You cant perform the disabled actions because you are not an admin, please contact your admin/owner.',
-      orgDenied: 'In order to perform the disabled actions you need to set up a subscription with deepchecks.'
+      roleDenied: 'This operation is only open to your organization admins',
+      orgDenied: (isNotAdminOrOwner: boolean) =>
+        isNotAdminOrOwner
+          ? 'This is open only to users with a paid subscription. \n Contact your admin.'
+          : 'This is open only to users with a paid subscription.',
+      link: { text: 'You can subscribe here', href: '/workspace-settings' }
     }
   },
   connect: {

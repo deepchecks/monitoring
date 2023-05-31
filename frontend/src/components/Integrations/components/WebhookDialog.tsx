@@ -1,27 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useTheme } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
 
-import { StandardWebhookProperties, createWebhookApiV1AlertWebhooksPost } from 'api/generated';
+import {
+  StandardWebhookProperties,
+  createWebhookApiV1AlertWebhooksPost,
+  listWebhooksApiV1AlertWebhooksGet
+} from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
 
 interface WebhookDialogProps {
   open: boolean;
-  handleClose: () => void;
   isWebhookConnected: boolean | undefined;
+  handleClose: () => void;
+  refetch: () => void;
 }
 
-const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogProps) => {
+const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: WebhookDialogProps) => {
   const theme = useTheme();
 
   const [error, setError] = useState('');
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
-  const [httpMethod, setHttpMethod] = useState<'GET' | 'POST'>('GET');
   const [description, setDescription] = useState('');
   const [headers, setHeaders] = useState<{ [key: string]: any }>({ 'HEADER-NAME': 'Value' });
 
@@ -32,9 +36,9 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
     name: name,
     description: description,
     http_url: url,
-    http_method: httpMethod,
+    http_method: 'POST',
     http_headers: headers,
-    notification_levels: ['low', 'high', 'medium', 'critical']
+    notification_levels: []
   };
 
   const handleAddHeader = () =>
@@ -62,9 +66,27 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
     if ((response as unknown as resError)?.error_message) {
       setError(response.error_message as any);
     } else {
-      window.location.reload();
+      refetch();
+      handleClose();
     }
   };
+
+  const handleEditInitValues = async () => {
+    if (isWebhookConnected) {
+      const res = await listWebhooksApiV1AlertWebhooksGet();
+
+      if (res[0]) {
+        const lastValue = res[res.length - 1] as StandardWebhookProperties;
+
+        setUrl(lastValue.http_url);
+        setName(lastValue.name);
+        setDescription(lastValue.description as string);
+        setHeaders(lastValue.http_headers as { [key: string]: any });
+      }
+    }
+  };
+
+  useEffect(() => void handleEditInitValues(), []);
 
   return (
     <StyledDialog
@@ -88,12 +110,6 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected }: WebhookDialogP
           value={url}
           onChange={e => setUrl(e.target.value)}
           onCloseIconClick={() => setUrl('')}
-        />
-        <StyledInput
-          label="Http Method"
-          placeholder="GET / POST"
-          value={httpMethod}
-          onChange={e => setHttpMethod(e.target.value.toUpperCase() as 'GET' | 'POST')}
         />
         <StyledInput
           label="Description"

@@ -86,12 +86,14 @@ export function AlertNotifications({
   data,
   deniedReason,
   isNotAdminOrOwner,
-  isNotPaid
+  isNotPaid,
+  deniedLink
 }: {
   data: NotificationsResponse;
   deniedReason: string;
   isNotAdminOrOwner: boolean;
   isNotPaid: boolean;
+  deniedLink: string;
 }) {
   const updateNotifications = useUpdateOrganizationApiV1OrganizationPut();
   const [notifications, setNotifications] = useState<Notifications>({
@@ -209,7 +211,10 @@ export function AlertNotifications({
           </Box>
         ))}
       </Box>
-      <StyledText text={deniedReason} color="red" margin="16px" />
+      <StyledText text={deniedReason} color="red" margin="16px 0 8px" />
+      <a href="/workspace-settings" style={{ textDecoration: 'none', display: deniedLink ? 'block' : 'none' }}>
+        <StyledText text={deniedLink} color="red" fontWeight={800} />
+      </a>
     </Box>
   );
 }

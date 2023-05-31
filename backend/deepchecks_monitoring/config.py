@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 """Module defining the configuration for the deepchecks_monitoring package."""
 import json
+import os
 import pathlib
 import secrets
 import typing as t
@@ -156,7 +157,7 @@ class Settings(
     oauth_client_secret: str
 
     init_local_ray_instance: str | None = None
-    total_number_of_check_executor_actors: int = 8
+    total_number_of_check_executor_actors: int = os.cpu_count() or 8
 
 
 class Tags(Enum):

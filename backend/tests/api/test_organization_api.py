@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models import Invitation
 from tests.common import generate_user
+from tests.common import TestAPI
+from tests.common import Payload
 from tests.conftest import ROWS_PER_MINUTE_LIMIT
 
 
@@ -203,6 +205,18 @@ async def test_organization_member_removal_without_required_permissions(
 
     unauthorized_client.headers["Authorization"] = f"bearer {member.access_token}"
     remove_organization_member(unauthorized_client, t.cast(int, admin.id), expected_status=403)
+
+
+def test_organization_update(test_api: TestAPI):
+    t.cast(Payload, test_api.create_alert_webhook())
+    org = t.cast(Payload, test_api.fetch_organization())
+
+    assert org["is_webhook_connected"] is True
+
+    test_api.update_organization({
+        "email_notification_levels": ["medium"],
+        "webhook_notification_levels": ["critical"]
+    })
 
 
 def remove_organization_member(

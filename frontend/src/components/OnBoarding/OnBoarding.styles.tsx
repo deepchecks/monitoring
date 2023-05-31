@@ -1,6 +1,7 @@
 import { Box, Link, styled, Typography } from '@mui/material';
 
 import { StyledContainer } from 'components/lib';
+import { isLargeDesktop } from 'components/lib/theme/typography';
 
 const FirstOnBoardingTitle = styled(Typography)(({ theme }) => ({
   fontSize: 32,
@@ -31,16 +32,6 @@ const FirstOnBoardingSelectContainer = styled(StyledContainer)(() => ({
   '& .MuiBox-root': { gap: 0, padding: 0 }
 }));
 
-const OnBoardingSnippetContainer = styled(Box)(({ theme }) => ({
-  width: '100%',
-  borderRadius: 16,
-  border: `1px solid ${theme.palette.grey[400]}`,
-  background: theme.palette.grey[200],
-  padding: '24px',
-  margin: '24px 0 18px',
-  whiteSpace: 'pre-line'
-}));
-
 const OnBoardingDocsLink = styled(Link)(({ theme }) => ({
   fontSize: 14,
   fontWeight: 700,
@@ -55,7 +46,7 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
 
   '& .MuiStepContent-root, .MuiStepConnector-line': { borderColor: theme.palette.primary.main },
   '& .MuiStepConnector-root, .MuiStepContent-root': { marginLeft: 16 },
-  '& .MuiStepLabel-label': { fontWeight: 700, color: theme.palette.grey[500] },
+  '& .MuiStepLabel-label': { fontWeight: 700, color: theme.palette.grey[500], fontSize: isLargeDesktop ? 16 : 14 },
   '& .Mui-disabled': { fontWeight: 500 },
   '& .MuiSvgIcon-root': {
     width: '32px',
@@ -69,7 +60,6 @@ export {
   FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
   FirstOnBoardingSelectContainer,
-  OnBoardingSnippetContainer,
   OnBoardingDocsLink,
   OnBoardingStepperContainer
 };

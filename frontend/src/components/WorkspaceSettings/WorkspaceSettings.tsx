@@ -5,10 +5,11 @@ import Box from '@mui/material/Box';
 
 import { RoleEnum, useRetrieveUserInfoApiV1UsersMeGet } from 'api/generated';
 
-import Billing from './Billing/Billing';
-import Members from './Members/Members';
-import NotAdminDialog from './NotAdminDialog/NotAdminDialog';
-import BillingPaidSkeleton from './Billing/BillingPaidView/BillingPaidSkeleton';
+import Billing from './components/Billing/Billing';
+import Members from './components/Members/Members';
+import ModelsTab from './components/ModelsTab/ModelsTab';
+import NotAdminDialog from './components/NotAdminDialog/NotAdminDialog';
+import BillingPaidSkeleton from './components/Billing/BillingPaidView/BillingPaidSkeleton';
 import { Text } from 'components/lib/components/Text/Text';
 
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
@@ -16,7 +17,8 @@ import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 const constants = {
   title: 'Workspace Settings',
   billingTabLabel: 'Billing',
-  membersTabLabel: 'Members'
+  membersTabLabel: 'Members',
+  modelsTabLabel: 'Models'
 };
 
 const WorkspaceSettings = () => {
@@ -53,12 +55,14 @@ const WorkspaceSettings = () => {
           >
             <Tab label={constants.billingTabLabel} />
             <Tab label={constants.membersTabLabel} />
+            <Tab label={constants.modelsTabLabel} />
           </Tabs>
         )}
       </Box>
       <Box sx={{ marginY: '32px' }}>
         {value === 0 && is_cloud && <Billing />}
         {value === 1 && <Members />}
+        {value === 2 && <ModelsTab />}
       </Box>
     </Box>
   );

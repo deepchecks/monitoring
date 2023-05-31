@@ -333,7 +333,11 @@ class PagerDutyWebhookProperties(BaseModel):
     @property
     def access_token(self) -> str:
         """Return PagerDuty 'Authorization' header value."""
-        return f"Token token={self.api_access_key}" if self.api_access_key else ""
+        return (
+            _pagerduty_access_token(self.api_access_key)
+            if self.api_access_key
+            else ""
+        )
 
     def as_webhook(self) -> "AlertWebhook":
         """Create a webhook instance from properties.
@@ -357,7 +361,7 @@ class PagerDutyWebhookProperties(BaseModel):
             "kind": self.kind,
             "http_url": self.http_url,
             "http_method": WebhookHttpMethod.POST,
-            "http_headers": {"Authorization": self.access_token} if self.api_access_key else {},
+            "http_headers": _pager_duty_access_header(self.api_access_key),
             "notification_levels": list(set(self.notification_levels)) if self.notification_levels else [],
             "additional_arguments": {
                 "routing_key": self.event_routing_key,
@@ -400,3 +404,99 @@ class StandardWebhookProperties(BaseModel):
             output["notification_levels"] = list(set(output["notification_levels"]))
 
         return self.dict(exclude_none=True)
+
+
+# NOTE: Properties for objects update
+class PartialPagerDutyWebhookProperties(BaseModel):
+    """PagerDuty service webhook properties."""
+
+    kind: t.Literal[WebhookKind.PAGER_DUTY] = WebhookKind.PAGER_DUTY
+    name: str | None
+    description: str | None
+    notification_levels: t.List[AlertSeverity] | None
+    api_access_key: str | None
+    event_routing_key: str | None
+    event_group: str | None
+    event_class: str | None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def update_instance(self, webhook: AlertWebhook) -> AlertWebhook:
+        """Update given webhook instance.
+
+        Note: current method mutates given webhook instance.
+        """
+        if webhook.kind != self.kind:
+            raise ValueError(f"Incorrect webhook kind - {webhook.kind}")
+
+        data = self.dict(
+            exclude_unset=True,
+            exclude_defaults=True,
+            exclude={"kind"}
+        )
+        if "notification_levels" in data:
+            data["notification_levels"] = list(set(data["notification_levels"]))
+        if "api_access_key" in data:
+            webhook.http_headers = t.cast(
+                t.Any,
+                _pager_duty_access_header(data.pop("api_access_key"))
+            )
+
+        for input_key_name in ("event_routing_key", "event_group", "event_class"):
+            *_, original_key_name = input_key_name.split("_", maxsplit=1)
+            if input_key_name in data:
+                webhook.additional_arguments[original_key_name] = data.pop(input_key_name)
+
+        for k, v in data.items():
+            setattr(webhook, k, v)
+
+        return AlertWebhook
+
+
+# NOTE: Properties for objects update
+class PartialStandardWebhookProperties(BaseModel):
+    """Standard webhook properties."""
+
+    kind: t.Literal[WebhookKind.STANDARD] = WebhookKind.STANDARD
+    name: str | None
+    description: str | None
+    http_url: HttpsUrl | None
+    http_method: WebhookHttpMethod | None
+    http_headers: t.Dict[str, str] | None
+    notification_levels: t.List[AlertSeverity] | None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def update_instance(self, webhook: AlertWebhook) -> AlertWebhook:
+        """Update given webhook instance.
+
+        Note: current method mutates given webhook instance.
+        """
+        if webhook.kind != self.kind:
+            raise ValueError(f"Incorrect webhook kind - {webhook.kind}")
+
+        data = self.dict(
+            exclude_unset=True,
+            exclude_defaults=True,
+            exclude={"kind"}
+        )
+        if "notification_levels" in data:
+            data["notification_levels"] = list(set(data["notification_levels"]))
+        for k, v in data.items():
+            setattr(webhook, k, v)
+
+        return webhook
+
+
+def _pagerduty_access_token(access_key):
+    return f"Token token={access_key}"
+
+
+def _pager_duty_access_header(api_access_key):
+    return (
+        {"Authorization": _pagerduty_access_token(api_access_key)}
+        if api_access_key
+        else {}
+    )

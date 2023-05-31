@@ -17,12 +17,13 @@ import { constants } from './onBoarding.constants';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
+  initialStep: number;
 }
 
-const OnBoarding = ({ dataType }: OnBoardingProps) => {
+const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const theme = useTheme();
 
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(initialStep);
   const [apiToken, setApiToken] = useState('API_TOKEN');
 
   const isLastStep = activeStep === 3;
@@ -36,7 +37,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
   };
 
   useEffect(() => {
-    regenerateApiToken();
+    activeStep === 1 && regenerateApiToken();
   }, []);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const OnBoarding = ({ dataType }: OnBoardingProps) => {
           <Step key={step.title}>
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
-              <StyledText text={step.description} color={theme.palette.grey[500]} />
+              <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
               <StyledCodeSnippet code={step.codeSnippet} />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
