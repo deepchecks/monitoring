@@ -9,10 +9,10 @@
 # ----------------------------------------------------------------------------
 """Module defining the configuration for the deepchecks_monitoring package."""
 import json
+import os
 import pathlib
 import secrets
 import typing as t
-import os
 from enum import Enum
 
 import boto3
