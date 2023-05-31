@@ -365,10 +365,11 @@ class ResourcesProvider(BaseResourcesProvider):
             CheckPerWindowExecutor.options(
                 name=f"CheckExecutor-{index}",
                 get_if_exists=True,
-                max_task_retries=2,
-                max_restarts=2
-            )
-            .remote(database_uri)
+                namespace="check-executors",
+                lifetime="detached",
+                max_task_retries=-1,
+                max_restarts=4,
+            ).remote(database_uri)
             for index in range(self.settings.total_number_of_check_executor_actors)
         ])
 
