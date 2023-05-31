@@ -4,18 +4,20 @@ import { paletteOptions } from './palette';
 
 import { isDarkMode } from './darkMode.helpers';
 
+export const isLargeDesktop = window.innerWidth > 1920;
+
 export const typographyOptions: TypographyOptions = {
   fontFamily: 'Manrope, sans-serif',
   h1: {
     fontSize: 24,
     fontWeight: 600,
-    lineHeight: '140%',
+    lineHeight: '32px',
     color: paletteOptions.grey?.[500]
   },
   h2: {
     fontSize: 20,
     fontWeight: 600,
-    lineHeight: '20px',
+    lineHeight: '26px',
     color: isDarkMode ? paletteOptions.common?.white : paletteOptions.grey?.[600]
   },
   h3: {
@@ -33,7 +35,7 @@ export const typographyOptions: TypographyOptions = {
   h6: {
     fontWeight: 500,
     fontSize: '10px',
-    lineHeight: '140%'
+    lineHeight: '14px'
   },
   body1: {
     fontSize: 14,
