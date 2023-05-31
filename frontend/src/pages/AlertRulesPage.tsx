@@ -22,7 +22,7 @@ import NoResults from 'components/NoResults';
 import { reportEvent } from 'helpers/services/mixPanel';
 import { getAlertFilters, resetAlertFilters } from '../helpers/base/alertFilters';
 
-export const AlertRules = () => {
+export const AlertRulesPage = () => {
   const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);
   const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -122,4 +122,4 @@ const StyledAlertRulesContainer = styled(Box)({
   padding: 0
 });
 
-export default AlertRules;
+export default AlertRulesPage;
