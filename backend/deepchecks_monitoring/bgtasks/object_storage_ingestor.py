@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 import io
-from pathlib import Path
 from urllib.parse import urlparse
 
 import boto3

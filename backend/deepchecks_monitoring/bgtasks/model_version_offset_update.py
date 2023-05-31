@@ -8,9 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-import threading
-from typing import Optional
-
 import aiokafka
 import pendulum as pdl
 from kafka.errors import KafkaError

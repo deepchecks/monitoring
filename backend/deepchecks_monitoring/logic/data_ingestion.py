@@ -31,7 +31,6 @@ from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_mode
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import DATA_TOPIC_PREFIXES, data_topic_name_to_ids, get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import configure_logger
-from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,

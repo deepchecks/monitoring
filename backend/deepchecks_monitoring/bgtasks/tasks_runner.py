@@ -200,14 +200,14 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
-            # consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
-            # await consumer.start()
-            # kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
-            # await kafka_admin.start()
+            consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
+            await consumer.start()
+            kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
+            await kafka_admin.start()
 
             workers = [
-                # ModelVersionTopicDeletionWorker(kafka_admin),
-                # ModelVersionOffsetUpdate(consumer),
+                ModelVersionTopicDeletionWorker(kafka_admin),
+                ModelVersionOffsetUpdate(consumer),
                 ModelVersionCacheInvalidation(),
                 ModelDataIngestionAlerter(),
                 DeleteDbTableTask(),
