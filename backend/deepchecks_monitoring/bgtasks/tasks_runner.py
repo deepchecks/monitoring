@@ -122,9 +122,10 @@ class TaskRunner:
                 delay = start.int_timestamp - queued_timestamp
                 self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
             else:
-                self.logger.error(f'Unknown task type: {task.bg_worker_task}')
+                self.logger.error({'message': f'Unknown task type: {task.bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
-            self.logger.exception('Exception running task')
+            await session.rollback()
+            self.logger.exception({'message': 'Exception running task'})
 
 
 class BaseWorkerSettings():
@@ -199,18 +200,20 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
-            consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
-            await consumer.start()
-            kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
-            await kafka_admin.start()
+            # consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
+            # await consumer.start()
+            # kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
+            # await kafka_admin.start()
 
-            workers = [ModelVersionTopicDeletionWorker(kafka_admin),
-                       ModelVersionOffsetUpdate(consumer),
-                       ModelVersionCacheInvalidation(),
-                       ModelDataIngestionAlerter(),
-                       DeleteDbTableTask(),
-                       AlertsTask(),
-                       ObjectStorageIngestor(rp)]
+            workers = [
+                # ModelVersionTopicDeletionWorker(kafka_admin),
+                # ModelVersionOffsetUpdate(consumer),
+                ModelVersionCacheInvalidation(),
+                ModelDataIngestionAlerter(),
+                DeleteDbTableTask(),
+                AlertsTask(),
+                ObjectStorageIngestor(rp)
+            ]
 
             async with anyio.create_task_group() as g:
                 worker = tasks_runner.TaskRunner(rp, async_redis, workers, logger)

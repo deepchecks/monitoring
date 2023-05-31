@@ -308,7 +308,7 @@ class DeepchecksClient:
         schema = read_schema(schema, fail_on_invalid_column=True)
         features_dict = schema['features']
 
-        if set(features_dict.keys()) != set(reference_dataset.features):
+        if reference_dataset is not None and set(features_dict.keys()) != set(reference_dataset.features):
             raise DeepchecksValueError(
                 f'Features found in reference dataset ({reference_dataset.features}) do not '
                 f'match feature schema ({features_dict.keys()}).'

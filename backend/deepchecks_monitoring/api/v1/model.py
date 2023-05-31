@@ -107,6 +107,7 @@ class ModelCreationSchema(BaseModel):
     alerts_delay_labels_ratio: float
     alerts_delay_seconds: int
     notes: t.Optional[t.List[ModelNoteCreationSchema]] = None
+    s3_path: t.Optional[str]
 
     class Config:
         """Config for Model schema."""

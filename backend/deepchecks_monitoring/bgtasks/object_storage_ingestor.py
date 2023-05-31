@@ -59,7 +59,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         model_id = task.params['model_id']
 
         organization_schema = (await session.scalar(
-            select(Organization).where(Organization.id == organization_id)
+            select(Organization.schema_name).where(Organization.id == organization_id)
         ))
 
         if organization_schema is None:
@@ -93,7 +93,9 @@ class ObjectStorageIngestor(BackgroundWorker):
         )
 
         s3_url = urlparse(model.s3_path)
-        model_path = Path(s3_url.path)
+        model_path = s3_url.path[1:]
+        if model_path[-1] == '/':
+            model_path = model_path[:-1]
         bucket = s3_url.netloc
         new_scan_time = pdl.now()
         # First ever scan of model - will scan all files
@@ -109,9 +111,9 @@ class ObjectStorageIngestor(BackgroundWorker):
 
         version: ModelVersion
         for version in model.versions:
-            version_path = model_path / version.name
+            version_path = f'{model_path}/{version.name}'
             # If first scan of specific version - scan all files under version, else scan only new files by date
-            version_prefixes = model_prefixes if version.last_file_ingested is not None else ['']
+            version_prefixes = model_prefixes if version.latest_file_time is not None else ['']
             for prefix in version_prefixes:
                 for df, time in ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time):
                     await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
@@ -128,8 +130,12 @@ class ObjectStorageIngestor(BackgroundWorker):
         s3.close()
 
 
-def ingest_prefix(s3, bucket, prefix, last_file_time=pdl.date(1970, 1, 1)):
+def ingest_prefix(s3, bucket, prefix, last_file_time=None):
+    """Ingest all files in prefix, return df and file time"""
+    last_file_time = last_file_time or pdl.datetime(year=1970, month=1, day=1)
+    # First read all file names, then retrieve them sorted by date
     resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    files = []
     if 'Contents' in resp:
         # Iterate over files in prefix
         for obj in resp['Contents']:
@@ -148,11 +154,17 @@ def ingest_prefix(s3, bucket, prefix, last_file_time=pdl.date(1970, 1, 1)):
                 # TODO: Log error
                 continue
             # If file is older than last file ingested - skip
-            if file_time <= last_file_time:
-                continue
-            file_response = s3.get_object(Bucket=bucket, Key=obj['Key'])
-            value = file_response.get("Body").read()
-            if extension == 'csv':
-                yield pd.read_csv(io.BytesIO(value)), file_time
-            elif extension == 'parquet':
-                yield pd.read_parquet(io.BytesIO(value)), file_time
+            if file_time > last_file_time:
+                files.append({'key': key, 'time': file_time, 'extension': extension})
+
+    files = sorted(files, key=lambda x: x['time'])
+    for file in files:
+        file_response = s3.get_object(Bucket=bucket, Key=file['key'])
+        value = io.BytesIO(file_response.get('Body').read())
+        if file['extension'] == 'csv':
+            df = pd.read_csv(value)
+        elif file['extension'] == 'parquet':
+            df = pd.read_parquet(value)
+        else:
+            raise ValueError('Should not get here')
+        yield df, file['time']

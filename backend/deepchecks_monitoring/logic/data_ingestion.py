@@ -326,6 +326,9 @@ class DataIngestionBackend(object):
         organization_id: int
         log_time
         """
+        if isinstance(data, pd.DataFrame):
+            data = data.to_dict(orient="records")
+
         if self.use_kafka:
             entity = "model-version"
             await insert_model_version_offset_update_task(organization_id, model_version.id, entity, session)
@@ -340,9 +343,6 @@ class DataIngestionBackend(object):
 
             if self._producer is None:
                 self._producer = await self.resources_provider.kafka_producer
-
-            if isinstance(data, pd.DataFrame):
-                data = data.to_dict(orient="records")
 
             send_futures = []
             for sample in data:
@@ -370,6 +370,9 @@ class DataIngestionBackend(object):
         session: AsyncSession
         organization_id: int
         """
+        if isinstance(data, pd.DataFrame):
+            data = data.to_dict(orient="records")
+
         if self.use_kafka:
             entity = "model"
             await insert_model_version_offset_update_task(organization_id, model.id, entity, session)
@@ -383,9 +386,6 @@ class DataIngestionBackend(object):
 
             if self._producer is None:
                 self._producer = await self.resources_provider.kafka_producer
-
-            if isinstance(data, pd.DataFrame):
-                data = data.to_dict(orient="records")
 
             send_futures = []
             for sample in data:
