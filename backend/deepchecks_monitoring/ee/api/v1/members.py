@@ -71,6 +71,9 @@ async def update_user_role(roles_schema: RoleUpdateSchema,
     if user.organization_id != current_user.organization_id:
         raise BadRequest("User doesn't exists in your organization.")
 
+    if user_id == user.id and roles_schema.replace and RoleEnum.OWNER not in roles_schema.roles:
+        raise BadRequest("Owner cannot remove their owner role if there are no other owners in the organization.")
+
     roles: t.List[Role] = (await session.execute(sa.select(Role).where(Role.user_id == user_id))).scalars().all()
     roles_to_create = []
     roles_to_delete = []
