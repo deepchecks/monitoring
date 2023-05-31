@@ -3,7 +3,7 @@ import React from 'react';
 import { BoxProps, useTheme } from '@mui/material';
 
 import { Prism } from 'react-syntax-highlighter';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { materialDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 import { isLargeDesktop } from 'components/lib/theme/typography';
 
