@@ -21,7 +21,6 @@ import { ReactComponent as HomeIcon } from './home.svg';
 import { ReactComponent as Info } from './info.svg';
 import { ReactComponent as InfoIcon } from './infoIcon.svg';
 import { ReactComponent as LockIcon } from './lock.svg';
-import { ReactComponent as MenuVertical } from './menuVertical.svg';
 import { ReactComponent as NLPModel } from './NLPModel.svg';
 import { ReactComponent as OpenLockIcon } from './openLock.svg';
 import { ReactComponent as PauseIcon } from './pause.svg';
@@ -75,7 +74,6 @@ export {
   FilterIcon,
   GraphLegendCurrent,
   GraphLegendPrevious,
-  MenuVertical,
   NLPModel,
   HomeIcon,
   Info,

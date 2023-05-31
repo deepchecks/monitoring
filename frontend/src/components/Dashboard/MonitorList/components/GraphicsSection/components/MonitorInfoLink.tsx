@@ -35,6 +35,7 @@ const StyledContent = styled(Stack)({
 });
 
 const StyledTypography = styled(Typography)({
+  color: theme.palette.primary.main,
   fontWeight: 600,
   fontSize: '12px',
   lineHeight: '15px',

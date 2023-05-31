@@ -10,7 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 import { AlertRuleConfigSchema } from 'api/generated';
 
-import { NoMaxWidthTooltip } from 'components/base/Tooltip';
+import { NoMaxWidthTooltip } from 'components/base/Tooltip/Tooltip';
 
 import {
   StyledAlertName,

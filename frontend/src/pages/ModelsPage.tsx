@@ -19,7 +19,6 @@ import {
   Alert
 } from '@mui/material';
 
-import HeaderLayout from 'components/Layout/HeaderLayout';
 import { Loader } from 'components/base/Loader/Loader';
 import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
@@ -202,71 +201,68 @@ export const ModelsPage = () => {
 
   return (
     <>
-      <Box>
-        <HeaderLayout title="Connected Models" />
-        <StyledModelsContainer>
-          <Stack direction="row" justifyContent="space-between">
-            <Autocomplete
-              freeSolo
-              value={searchValue}
-              onChange={updateSearch}
-              inputValue={searchInputValue}
-              onInputChange={(_event, newInputValue) => {
-                setSearchInputValue(newInputValue);
-              }}
-              options={modelNamesArray}
-              sx={{ width: 300 }}
-              renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
-            />
-            {searchInputValue || searchValue || sort ? (
-              <Stack direction="row" spacing="11px">
-                <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
-                <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-              </Stack>
-            ) : (
+      <StyledModelsContainer>
+        <Stack direction="row" justifyContent="space-between">
+          <Autocomplete
+            freeSolo
+            value={searchValue}
+            onChange={updateSearch}
+            inputValue={searchInputValue}
+            onInputChange={(_event, newInputValue) => {
+              setSearchInputValue(newInputValue);
+            }}
+            options={modelNamesArray}
+            sx={{ width: 300 }}
+            renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
+          />
+          {searchInputValue || searchValue || sort ? (
+            <Stack direction="row" spacing="11px">
+              <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
               <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-            )}
-            <Menu
-              anchorEl={anchorElSortMenu}
-              open={Boolean(anchorElSortMenu)}
-              onClose={handleCloseSortMenu}
-              MenuListProps={{
-                'aria-labelledby': 'basic-button'
-              }}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right'
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right'
-              }}
-            >
-              {sortOptions.map(sortMethod => (
-                <StyledSortMenuItem
-                  sort={sort}
-                  sortMethod={sortMethod}
-                  key={sortMethod}
-                  onClick={() => handleSort(sortMethod)}
-                >
-                  <Typography variant="subtitle2">{sortMethod}</Typography>
-                </StyledSortMenuItem>
-              ))}
-            </Menu>
-          </Stack>
-          {isLoading || !filteredAndSortedModelsList ? (
-            <Loader />
-          ) : filteredAndSortedModelsList.length !== 0 ? (
-            <StyledModelsList>
-              {filteredAndSortedModelsList.map(model => (
-                <ModelInfoItem key={model.id} model={model} onDelete={() => handleOpenModal(model.id)} />
-              ))}
-            </StyledModelsList>
+            </Stack>
           ) : (
-            <NoResults margin="168px auto" handleReset={handleReset} />
+            <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
           )}
-        </StyledModelsContainer>
-      </Box>
+          <Menu
+            anchorEl={anchorElSortMenu}
+            open={Boolean(anchorElSortMenu)}
+            onClose={handleCloseSortMenu}
+            MenuListProps={{
+              'aria-labelledby': 'basic-button'
+            }}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right'
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right'
+            }}
+          >
+            {sortOptions.map(sortMethod => (
+              <StyledSortMenuItem
+                sort={sort}
+                sortMethod={sortMethod}
+                key={sortMethod}
+                onClick={() => handleSort(sortMethod)}
+              >
+                <Typography variant="subtitle2">{sortMethod}</Typography>
+              </StyledSortMenuItem>
+            ))}
+          </Menu>
+        </Stack>
+        {isLoading || !filteredAndSortedModelsList ? (
+          <Loader />
+        ) : filteredAndSortedModelsList.length !== 0 ? (
+          <StyledModelsList>
+            {filteredAndSortedModelsList.map(model => (
+              <ModelInfoItem key={model.id} model={model} onDelete={() => handleOpenModal(model.id)} />
+            ))}
+          </StyledModelsList>
+        ) : (
+          <NoResults margin="168px auto" handleReset={handleReset} />
+        )}
+      </StyledModelsContainer>
       <StyledDeletionDialog
         open={!!modelIdToDelete}
         onClose={handleModalClose}

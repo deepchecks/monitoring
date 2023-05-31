@@ -3,6 +3,7 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import UndoIcon from '@mui/icons-material/Undo';
 import { Box, IconButton, Typography, Stack, styled, alpha } from '@mui/material';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import { MonitorSchema } from 'api/generated';
 
@@ -11,7 +12,7 @@ import { StyledH6 } from 'components/base/Text/Header.styles';
 
 import { constants } from 'components/Dashboard/dashboard.constants';
 
-import { MenuVertical, InfoIcon } from 'assets/icon/icon';
+import { InfoIcon } from 'assets/icon/icon';
 
 import { theme } from 'components/lib/theme';
 
@@ -77,7 +78,7 @@ export const MonitorInfoWidget = (props: MonitorInfoWidgetProps) => {
             </IconButton>
           </StyledTooltip>
           <IconButton onClick={handleOpenRootMenu} size="small" sx={{ marginLeft: '8px' }}>
-            <MenuVertical />
+            <MoreVertIcon color="primary" />
           </IconButton>
         </StyledTooltipContainer>
       )}

@@ -42,12 +42,13 @@ export const MonitorInfoTooltipBody = ({ monitor }: MonitorInfoTooltipBodyProps)
   );
 };
 
-const StyledInfoItem = styled(Typography)({
+const StyledInfoItem = styled(Typography)(({ theme }) => ({
+  color: theme.palette.primary.main,
   display: 'inline-block',
   fontWeight: 400,
   fontSize: '12px',
   lineHeight: '15px'
-});
+}));
 
 const StyledInfoItemTitle = styled(StyledInfoItem)({
   fontWeight: 600
