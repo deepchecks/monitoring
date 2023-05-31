@@ -18,7 +18,7 @@ import { Loader } from 'components/base/Loader/Loader';
 import AnalysisItem from 'components/Analysis/AnalysisItem/AnalysisItem';
 import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
 
-import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
+import { ControlledMarkedSelectSelectValues } from 'components/base/MarkedSelect/ControlledMarkedSelect';
 import { getAvailableFeaturesNames } from 'helpers/utils/featuresUtils';
 import { FrequencyMap } from 'helpers/utils/frequency';
 

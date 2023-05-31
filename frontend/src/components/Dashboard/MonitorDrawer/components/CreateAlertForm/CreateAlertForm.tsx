@@ -12,7 +12,7 @@ import useModels from 'helpers/hooks/useModels';
 
 import { Box, Button, Divider, MenuItem, Stack, Typography } from '@mui/material';
 
-import { MarkedSelect } from 'components/MarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 import { SelectCondition } from './SelectCondition';
 
 import { checkInfoInitValue, monitorInfo } from './CreateAlertForm.helpers';

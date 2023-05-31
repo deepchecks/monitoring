@@ -26,7 +26,7 @@ import {
   StyledValue
 } from './AlertRuleConfigItem.style';
 
-import { OperatorsEnumMap } from 'helpers/conditionOperator';
+import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
 import { FrequencyMap } from 'helpers/utils/frequency';
 import { truncateString } from 'helpers/utils/truncateString';
 

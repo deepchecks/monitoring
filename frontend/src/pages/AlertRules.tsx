@@ -20,7 +20,7 @@ import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 
 import { reportEvent } from 'helpers/services/mixPanel';
-import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
+import { getAlertFilters, resetAlertFilters } from '../helpers/base/alertFilters';
 
 export const AlertRules = () => {
   const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);

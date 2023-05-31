@@ -9,8 +9,8 @@ import {
 
 import { Stack, MenuItem } from '@mui/material';
 
-import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
-import { MarkedSelect } from 'components/MarkedSelect';
+import { ControlledMarkedSelect } from 'components/base/MarkedSelect/ControlledMarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 import { Subcategory } from 'components/Subcategory';
 
 import { SetStateType, SelectValues } from 'helpers/types';

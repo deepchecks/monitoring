@@ -22,7 +22,7 @@ import NoResults from 'components/NoResults';
 
 import useModels from '../helpers/hooks/useModels';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
+import { getAlertFilters, resetAlertFilters } from 'helpers/base/alertFilters';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
 
 const snackbarPosition = {

@@ -19,7 +19,7 @@ import {
   Alert
 } from '@mui/material';
 
-import HeaderLayout from 'components/HeaderLayout';
+import HeaderLayout from 'components/Layout/HeaderLayout';
 import { Loader } from 'components/base/Loader/Loader';
 import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';

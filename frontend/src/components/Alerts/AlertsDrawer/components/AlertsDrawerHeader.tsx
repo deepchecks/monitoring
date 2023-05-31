@@ -13,19 +13,19 @@ import {
   useReactivateAlertApiV1AlertsAlertIdReactivatePost,
   GetAlertRulesApiV1AlertRulesGetParams
 } from 'api/generated';
-import { getAlertFilters } from 'helpers/alertFilters';
+import { getAlertFilters } from 'helpers/base/alertFilters';
 
 import { Box, Button, Divider, IconButton, Stack, styled, Typography, useTheme, Tooltip } from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
 
-import { RunDownloadSuite } from 'components/RunDownloadSuite';
+import { RunDownloadSuite } from 'components/SuiteView/RunDownloadSuite';
 import { ShareButton } from 'components/base/Button/ShareButton';
 import { AlertsBadge } from './AlertBadge';
 import { DiagramAlertCountWidget } from 'components/DiagramLine/DiagramAlertCountWidget/DiagramAlertCountWidget';
 import { FullLengthTooltip } from 'components/DiagramLine/DiagramTutorialTooltip/DiagramTutorialTooltip';
 import { AlertsSnackbar } from 'components/Alerts/AlertsSnackbar';
 
-import { OperatorsEnumMap } from 'helpers/conditionOperator';
+import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
 import { FrequencyMap } from 'helpers/utils/frequency';
 

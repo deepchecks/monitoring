@@ -3,7 +3,7 @@ import React from 'react';
 import { Box, Stack } from '@mui/material';
 
 import { APIKey } from 'components/APIKey';
-import HeaderLayout from 'components/HeaderLayout';
+import HeaderLayout from 'components/Layout/HeaderLayout';
 
 export const APIKeyPage = function () {
   return (

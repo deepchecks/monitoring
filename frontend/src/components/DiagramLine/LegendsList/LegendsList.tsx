@@ -7,7 +7,7 @@ import HorizontalScrolling from './components/HorizontalScrolling';
 import LegendItem from './components/LegendItem';
 
 import { GraphData } from 'helpers/types';
-import { PREVIOUS_PERIOD } from 'helpers/setGraphOptions';
+import { PREVIOUS_PERIOD } from 'helpers/base/setGraphOptions';
 
 interface LegendsListProps {
   data: ChartData<'line', GraphData, unknown>;
