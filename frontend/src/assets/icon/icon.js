@@ -1,39 +1,25 @@
 import { ReactComponent as Arrow } from './arow.svg';
 import { ReactComponent as ArrowDropDown } from './arrowDropDown.svg';
 import { ReactComponent as Calendar } from './calendar.svg';
-import { ReactComponent as CheckboxDefault } from './checkboxDefault.svg';
-import { ReactComponent as CheckboxSelected } from './checkboxSelected.svg';
 import { ReactComponent as Clear } from './clear.svg';
 import { ReactComponent as CloseIcon } from './close.svg';
 import { ReactComponent as CollapseArrowLeft } from './collapseArrowLeft.svg';
 import { ReactComponent as CollapseArrowRight } from './collapseArrowRight.svg';
 import { ReactComponent as DeleteIcon } from './delete.svg';
 import { ReactComponent as Email } from './email.svg';
-import { ReactComponent as EmailIcon } from './emailIcon.svg';
-import { ReactComponent as ExpandIcon } from './expand.svg';
-import { ReactComponent as ExpandMore } from './expandMore.svg';
 import { ReactComponent as FastForward } from './fastForward.svg';
 import { ReactComponent as FileUploadIcon } from './fileUpload.svg';
-import { ReactComponent as FilterIcon } from './filterIcon.svg';
 import { ReactComponent as GraphLegendCurrent } from './graphLegendCurrent.svg';
 import { ReactComponent as GraphLegendPrevious } from './graphLegendPrevious.svg';
-import { ReactComponent as HomeIcon } from './home.svg';
 import { ReactComponent as Info } from './info.svg';
 import { ReactComponent as InfoIcon } from './infoIcon.svg';
-import { ReactComponent as LockIcon } from './lock.svg';
 import { ReactComponent as NLPModel } from './NLPModel.svg';
-import { ReactComponent as OpenLockIcon } from './openLock.svg';
-import { ReactComponent as PauseIcon } from './pause.svg';
-import { ReactComponent as PlusIcon } from './plus.svg';
 import { ReactComponent as Rewind } from './rewind.svg';
-import { ReactComponent as RightArrow } from './right-arrow.svg';
 import { ReactComponent as SearchIcon } from './search.svg';
 import { ReactComponent as Slack } from './slack.svg';
 import { ReactComponent as Sort } from './sort.svg';
 import { ReactComponent as TableChart } from './tableChart.svg';
-import { ReactComponent as TestTube } from './testTube.svg';
 import { ReactComponent as Undo } from './undo.svg';
-import { ReactComponent as UserInvite } from './userInvite.svg';
 import { ReactComponent as VisualModel } from './visualModel.svg';
 import { ReactComponent as WarningIcon } from './warning.svg';
 import { ReactComponent as RedWarningIcon } from './red-warning.svg';
@@ -43,7 +29,6 @@ import { ReactComponent as Research } from './research.svg';
 import { ReactComponent as Link } from './Link.svg';
 import { ReactComponent as MarkedMail } from './markedMail.svg';
 import { ReactComponent as ViewDetails } from './viewDetails.svg';
-import { ReactComponent as HighPriority } from './highPriority.svg';
 import { ReactComponent as Check } from './check.svg';
 import { ReactComponent as Download } from './download.svg';
 import { ReactComponent as GraphReport } from './graphReport.svg';
@@ -60,40 +45,26 @@ export {
   Arrow,
   ArrowDropDown,
   Calendar,
-  CheckboxDefault,
-  CheckboxSelected,
   Clear,
   CloseIcon,
   CollapseArrowLeft,
   CollapseArrowRight,
   Email,
-  EmailIcon,
-  ExpandMore,
   FastForward,
   FileUploadIcon,
-  FilterIcon,
   GraphLegendCurrent,
   GraphLegendPrevious,
   NLPModel,
-  HomeIcon,
   Info,
   InfoIcon,
-  PlusIcon,
   Rewind,
   SearchIcon,
   Slack,
   Sort,
-  UserInvite,
-  ExpandIcon,
-  PauseIcon,
   DeleteIcon,
   WarningIcon,
   RedWarningIcon,
-  RightArrow,
-  LockIcon,
-  OpenLockIcon,
   TableChart,
-  TestTube,
   VisualModel,
   Undo,
   Notebook,
@@ -102,7 +73,6 @@ export {
   Link,
   MarkedMail,
   ViewDetails,
-  HighPriority,
   Check,
   Download,
   GraphReport,
