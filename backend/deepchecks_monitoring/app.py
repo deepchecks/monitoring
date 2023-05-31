@@ -120,7 +120,7 @@ def create_application(
         else:
             logger.info({"message": "Connected to local ray instance"})
             # init actors
-            app.state.resources_provider.parallel_check_executors_pool  # pylint: disalbe=pointless-statement
+            app.state.resources_provider.parallel_check_executors_pool  # pylint: disable=pointless-statement
 
     @app.exception_handler(BaseHTTPException)
     async def base_http_exceptions_handler(
