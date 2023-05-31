@@ -18,6 +18,6 @@ export enum MembersActionDialogOptions {
   edit = 'edit',
   remove = 'remove',
   removeSelected = 'removeSelected',
-  assignModel = 'assignModel',
+  assignModels = 'assignModels',
   deleteWorkspace = 'deleteWorkspace'
 }

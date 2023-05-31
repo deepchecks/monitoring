@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { MemberSchema } from 'api/generated';
+import useModels from 'helpers/hooks/useModels';
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -9,8 +10,9 @@ import Paper from '@mui/material/Paper';
 import { MembersTableHead } from './MembersTableHead';
 import { MembersTableRow } from './MembersTableRow';
 
-import { StyledTableContainer } from './MembersTable.style';
+import { StyledTableContainer } from '../../../../WorkspaceSettings.styles';
 
+import { selectMultiple, isSelected } from 'components/WorkspaceSettings/WorkspaceSettings.helpers';
 import { MembersActionDialogOptions } from '../../Members.type';
 import { constants } from '../../members.constants';
 
@@ -22,6 +24,8 @@ interface MembersTableProps {
 }
 
 export const MembersTable = ({ members, selected, setSelected, handleOpenActionDialog }: MembersTableProps) => {
+  const { models } = useModels();
+
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       const newSelected = members.map(m => m.id);
@@ -31,31 +35,15 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
     setSelected([]);
   };
 
-  const handleSelect = (event: React.MouseEvent<unknown>, id: number) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: readonly number[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-    }
-
-    setSelected(newSelected);
-  };
-
-  const isSelected = (id: number) => selected.indexOf(id) !== -1;
-
   const editMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.edit, member);
 
   const removeMember = (member: MemberSchema) => handleOpenActionDialog(MembersActionDialogOptions.remove, member);
 
+  const assignModels = (member: MemberSchema) =>
+    handleOpenActionDialog(MembersActionDialogOptions.assignModels, member);
+
   return (
-    <StyledTableContainer component={Paper}>
+    <StyledTableContainer component={Paper} sx={{ height: 'calc(100vh - 446px)' }}>
       <Table stickyHeader sx={{ minWidth: 650 }} aria-label={constants.table.ariaLabel}>
         <MembersTableHead
           numSelected={selected.length}
@@ -66,7 +54,7 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
         <TableBody>
           {members.map(member => {
             const id = member.id;
-            const isItemSelected = isSelected(id);
+            const isItemSelected = isSelected(id, selected);
 
             return (
               <MembersTableRow
@@ -76,8 +64,10 @@ export const MembersTable = ({ members, selected, setSelected, handleOpenActionD
                 member={member}
                 editMember={editMember}
                 removeMember={removeMember}
+                assignModels={assignModels}
                 selected={isItemSelected}
-                onClick={event => handleSelect(event, id)}
+                onClick={e => selectMultiple(e, id, selected, setSelected)}
+                models={models}
               />
             );
           })}

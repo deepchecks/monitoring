@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import BillingPaymentWrapper from '../BillingPaymentWrapper';
 import BillingMethodDialog from './BillingMethodDialog';
 
-import creditCard from '../../../../assets/icon/credit-card.svg';
+import creditCard from 'assets/icon/credit-card.svg';
 
 import { Col8Gap, Row16Gap } from 'components/base/Container/Container.styles';
 import { StyledH3 } from 'components/base/Text/Header.styles';

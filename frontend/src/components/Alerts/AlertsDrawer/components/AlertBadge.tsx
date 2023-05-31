@@ -70,7 +70,6 @@ const StyledContainer = styled(Box, {
   flexDirection: 'row',
   alignItems: 'center',
   gap: '5px',
-  width: '77px',
   height: '27px',
   marginRight: '10px',
   padding: '0px 0px 0px 4px',
@@ -96,7 +95,8 @@ const StyledTypography = styled(Typography, {
   fontWeight: 600,
   fontSize: '12px',
   letterSpacing: '0.1px',
-  color
+  color,
+  paddingRight: '5.5px'
 }));
 
 export const AlertsBadge = memo(AlertBadgeComponent);

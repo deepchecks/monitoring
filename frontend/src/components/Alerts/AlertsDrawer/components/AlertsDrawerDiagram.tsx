@@ -35,7 +35,7 @@ export const AlertsDrawerDiagram = ({
 
   useEffect(() => {
     if (graphData.labels.length > 0 && alerts[alertIndex]?.end_time) {
-      const currentAlertEndTime = new Date(alerts[alertIndex].end_time).getTime();
+      const currentAlertEndTime = new Date(alerts[alertIndex].end_time).getTime() + 1; // millisecond correction
 
       if (graphData.labels.includes(currentAlertEndTime)) return;
 

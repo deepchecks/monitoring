@@ -116,7 +116,7 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
           spacing="10px"
           justifyContent={fixedHeader ? 'space-between' : 'start'}
           flex={1}
-          ref={selectRef}
+          ref={selectRef as any}
         >
           <StyledDropdownTextField
             onClick={handleFiltersOpen}

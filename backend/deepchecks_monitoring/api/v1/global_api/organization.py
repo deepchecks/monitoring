@@ -138,6 +138,7 @@ class OrganizationUpdateSchema(BaseModel):
 
     slack_notification_levels: t.Optional[t.List[AlertSeverity]] = None
     email_notification_levels: t.Optional[t.List[AlertSeverity]] = None
+    webhook_notification_levels: t.Optional[t.List[AlertSeverity]] = None
 
     class Config:
         """Pydantic configuration."""
@@ -186,11 +187,28 @@ async def update_organization(
     session: AsyncSession = AsyncSessionDep,
 ):
     """Update an organization."""
+
     if (data := body.dict(exclude_none=True)):
-        user.organization.email_notification_levels = data['email_notification_levels']
-        user.organization.slack_notification_levels = data['slack_notification_levels']
-        session.add(user)
-        await session.flush()
+        if 'webhook_notification_levels' in data:
+            webhook = (
+                sa.select(AlertWebhook.id)
+                .order_by(AlertWebhook.id)
+                .limit(1)
+                .cte()
+            )
+            await session.execute(
+                sa.update(AlertWebhook)
+                .where(AlertWebhook.id == webhook.c.id)
+                .values(notification_levels=data.pop('webhook_notification_levels'))
+            )
+        if len(data) != 0:
+            await session.execute(
+                sa.update(Organization)
+                .where(Organization.id == t.cast('Organization', user.organization).id)
+                .values(**data)
+            )
+
+        await session.commit()
 
 
 @router.delete('/organization')

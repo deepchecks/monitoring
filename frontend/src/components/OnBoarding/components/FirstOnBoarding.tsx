@@ -6,6 +6,7 @@ import OnBoarding from '../OnBoarding';
 import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
 
 import { StyledContainer, StyledImage, /* StyledSelect,*/ StyledText } from 'components/lib';
+import { isLargeDesktop } from 'components/lib/theme/typography';
 import {
   FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
@@ -20,18 +21,23 @@ import { constants } from '../onBoarding.constants';
 
 const FirstOnBoarding = () => {
   const [dataType, setDataType] = useState<'demo' | 'user'>();
+  const [initialStep, setInitialStep] = useState(1);
+
   const navigate = useNavigate();
 
+  const font = isLargeDesktop ? { size: 20, lineHeight: '22px' } : { size: 16, lineHeight: '18px' };
+
   useEffect(() => {
-    const handleUnavailableOnboarding = async () => {
+    const handleConditionalOnboarding = async () => {
       const res = await getOnboardingStateApiV1OnboardingGet();
+      setInitialStep(res?.step);
 
       if (res.step === 4) {
         navigate('/');
       }
     };
 
-    handleUnavailableOnboarding();
+    handleConditionalOnboarding();
   }, []);
 
   return (
@@ -51,21 +57,39 @@ const FirstOnBoarding = () => {
           )*/}
         </FirstOnBoardingSelectContainer>
         {dataType ? (
-          <OnBoarding dataType={dataType} />
+          <OnBoarding dataType={dataType} initialStep={initialStep} />
         ) : (
           <>
-            <StyledText text={constants.first.description} type="bodyBold" letterSpacing="1.5px" />
-            <StyledText text={constants.first.chooseText} type="bodyNormal" margin="50px 0 4px" letterSpacing="1.5px" />
+            <StyledText
+              text={constants.first.description}
+              type="bodyBold"
+              letterSpacing="1.5px"
+              lineHeight={font.lineHeight}
+              fontSize={font.size}
+            />
+            <StyledText
+              text={constants.first.chooseText}
+              type="bodyNormal"
+              margin="50px 0 4px"
+              letterSpacing="1.5px"
+              lineHeight={font.lineHeight}
+              fontSize={font.size}
+            />
             <StyledContainer display="flex" flexDirection="row" gap="24px" padding={0}>
               <FirstOnBoardingOutlinedBox
-                /* onClick={() => setDataType('user')}*/ sx={{ opacity: 0.3, cursor: 'auto' }}
+                onClick={() => setDataType('user')}
+                sx={{ opacity: 0.3, cursor: 'auto', pointerEvents: 'none' }}
               >
                 <StyledImage src={userDataImg} margin="-24px 0 0 -12px" />
-                <FirstOnBoardingBoxLabel>{constants.first.userDataBtnLabel}</FirstOnBoardingBoxLabel>
+                <FirstOnBoardingBoxLabel lineHeight={font.lineHeight} fontSize={font.size}>
+                  {constants.first.userDataBtnLabel}
+                </FirstOnBoardingBoxLabel>
               </FirstOnBoardingOutlinedBox>
               <FirstOnBoardingOutlinedBox onClick={() => setDataType('demo')}>
                 <StyledImage src={demoDataImg} />
-                <FirstOnBoardingBoxLabel>{constants.first.demoDataBtnLabel}</FirstOnBoardingBoxLabel>
+                <FirstOnBoardingBoxLabel lineHeight={font.lineHeight} fontSize={font.size}>
+                  {constants.first.demoDataBtnLabel}
+                </FirstOnBoardingBoxLabel>
               </FirstOnBoardingOutlinedBox>
             </StyledContainer>
           </>
