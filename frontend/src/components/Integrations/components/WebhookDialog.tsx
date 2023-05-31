@@ -24,6 +24,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   const theme = useTheme();
 
   const [error, setError] = useState('');
+  const [webhookId, setWebhookId] = useState(0);
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -61,7 +62,9 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   };
 
   const handleSubmitWebhookForm = async () => {
-    const response = await createWebhookApiV1AlertWebhooksPost(payload);
+    const response = isWebhookConnected
+      ? await createWebhookApiV1AlertWebhooksPost(payload) // Edit with webhookId
+      : await createWebhookApiV1AlertWebhooksPost(payload);
 
     if ((response as unknown as resError)?.error_message) {
       setError(response.error_message as any);
@@ -76,12 +79,11 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
       const res = await listWebhooksApiV1AlertWebhooksGet();
 
       if (res[0]) {
-        const lastValue = res[res.length - 1] as StandardWebhookProperties;
-
-        setUrl(lastValue.http_url);
-        setName(lastValue.name);
-        setDescription(lastValue.description as string);
-        setHeaders(lastValue.http_headers as { [key: string]: any });
+        setWebhookId(res[0].id);
+        setUrl(res[0].http_url);
+        setName(res[0].name);
+        setDescription(res[0].description as string);
+        setHeaders(res[0].http_headers as { [key: string]: any });
       }
     }
   };
