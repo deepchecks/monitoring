@@ -81,7 +81,7 @@ export const CompleteDetails = () => {
             </>
           ) : (
             <>
-              <Typography sx={{ fontWeight: 300, mt: 8 }}>Some extra details so we can help you better.</Typography>
+              <Typography sx={{ fontWeight: 300, mt: 8 }}>Sign Up</Typography>
               {acceptInvite ? (
                 <Alert
                   severity="info"
