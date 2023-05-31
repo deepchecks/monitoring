@@ -263,7 +263,7 @@ export const ModelsPage = () => {
               ))}
             </StyledModelsList>
           ) : (
-            <NoResults margin="168px auto" handleReset={handleReset} />
+            <NoResults margin="168px auto" handleReset={handleReset} simple />
           )}
         </StyledModelsContainer>
       </Box>
