@@ -91,6 +91,10 @@ export type AddChecksApiV1ModelsModelIdChecksPostBody = CheckCreationSchema | Ch
 
 export type AddChecksApiV1ModelsModelIdChecksPostParams = { identifier_kind?: IdentifierKind };
 
+export type UpdateWebhookApiV1AlertWebhooksWebhookIdPutBody =
+  | PartialStandardWebhookProperties
+  | PartialPagerDutyWebhookProperties;
+
 export type CreateWebhookApiV1AlertWebhooksPost201 = { [key: string]: number };
 
 export type CreateWebhookApiV1AlertWebhooksPostBody = StandardWebhookProperties | PagerDutyWebhookProperties;
@@ -157,8 +161,10 @@ export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
 export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
   name: string;
   is_slack_connected: boolean;
+  is_webhook_connected: boolean;
   slack_notification_levels: AlertSeverity[];
   email_notification_levels: AlertSeverity[];
+  webhook_notification_levels: AlertSeverity[];
 }
 
 /**
@@ -352,6 +358,51 @@ export interface PaymentMethodSchema {
   payment_method_id: string;
 }
 
+export type PartialStandardWebhookPropertiesHttpHeaders = { [key: string]: string };
+
+export type PartialStandardWebhookPropertiesKind =
+  typeof PartialStandardWebhookPropertiesKind[keyof typeof PartialStandardWebhookPropertiesKind];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const PartialStandardWebhookPropertiesKind = {
+  STANDARD: 'STANDARD'
+} as const;
+
+/**
+ * Standard webhook properties.
+ */
+export interface PartialStandardWebhookProperties {
+  kind?: PartialStandardWebhookPropertiesKind;
+  name?: string;
+  description?: string;
+  http_url?: string;
+  http_method?: WebhookHttpMethod;
+  http_headers?: PartialStandardWebhookPropertiesHttpHeaders;
+  notification_levels?: AlertSeverity[];
+}
+
+export type PartialPagerDutyWebhookPropertiesKind =
+  typeof PartialPagerDutyWebhookPropertiesKind[keyof typeof PartialPagerDutyWebhookPropertiesKind];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const PartialPagerDutyWebhookPropertiesKind = {
+  PAGER_DUTY: 'PAGER_DUTY'
+} as const;
+
+/**
+ * PagerDuty service webhook properties.
+ */
+export interface PartialPagerDutyWebhookProperties {
+  kind?: PartialPagerDutyWebhookPropertiesKind;
+  name?: string;
+  description?: string;
+  notification_levels?: AlertSeverity[];
+  api_access_key?: string;
+  event_routing_key?: string;
+  event_group?: string;
+  event_class?: string;
+}
+
 export type PagerDutyWebhookPropertiesKind =
   typeof PagerDutyWebhookPropertiesKind[keyof typeof PagerDutyWebhookPropertiesKind];
 
@@ -381,6 +432,7 @@ export interface PagerDutyWebhookProperties {
 export interface OrganizationUpdateSchema {
   slack_notification_levels?: AlertSeverity[];
   email_notification_levels?: AlertSeverity[];
+  webhook_notification_levels?: AlertSeverity[];
 }
 
 /**
@@ -501,8 +553,6 @@ export interface MonitorNotebookSchema {
   as_script?: boolean;
 }
 
-export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
-
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
 
 /**
@@ -528,6 +578,8 @@ export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
 }
+
+export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
 
 /**
  * List of data filters.
@@ -2061,6 +2113,58 @@ export const useRetriveWebhookApiV1AlertWebhooksWebhookIdGet = <
   query.queryKey = queryKey;
 
   return query;
+};
+
+/**
+ * Update webhook
+ * @summary Update Webhook
+ */
+export const updateWebhookApiV1AlertWebhooksWebhookIdPut = (
+  webhookId: number,
+  updateWebhookApiV1AlertWebhooksWebhookIdPutBody: UpdateWebhookApiV1AlertWebhooksWebhookIdPutBody
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/alert-webhooks/${webhookId}`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: updateWebhookApiV1AlertWebhooksWebhookIdPutBody
+  });
+};
+
+export type UpdateWebhookApiV1AlertWebhooksWebhookIdPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateWebhookApiV1AlertWebhooksWebhookIdPut>>
+>;
+export type UpdateWebhookApiV1AlertWebhooksWebhookIdPutMutationBody = UpdateWebhookApiV1AlertWebhooksWebhookIdPutBody;
+export type UpdateWebhookApiV1AlertWebhooksWebhookIdPutMutationError = ErrorType<HTTPValidationError>;
+
+export const useUpdateWebhookApiV1AlertWebhooksWebhookIdPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWebhookApiV1AlertWebhooksWebhookIdPut>>,
+    TError,
+    { webhookId: number; data: UpdateWebhookApiV1AlertWebhooksWebhookIdPutBody },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWebhookApiV1AlertWebhooksWebhookIdPut>>,
+    { webhookId: number; data: UpdateWebhookApiV1AlertWebhooksWebhookIdPutBody }
+  > = props => {
+    const { webhookId, data } = props ?? {};
+
+    return updateWebhookApiV1AlertWebhooksWebhookIdPut(webhookId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updateWebhookApiV1AlertWebhooksWebhookIdPut>>,
+    TError,
+    { webhookId: number; data: UpdateWebhookApiV1AlertWebhooksWebhookIdPutBody },
+    TContext
+  >(mutationFn, mutationOptions);
 };
 
 /**
