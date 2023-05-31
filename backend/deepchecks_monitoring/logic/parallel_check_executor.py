@@ -396,8 +396,8 @@ def _execute_check_instance(
         'model_classes': model_classes
     }
     single_dataset_args = {
-        'y_pred_train': y_pred_train,
-        'y_proba_train': y_proba_train,
+        'y_pred_train': y_pred_test,
+        'y_proba_train': y_proba_test,
         **shared_args
     }
     train_test_args = {
@@ -409,7 +409,6 @@ def _execute_check_instance(
         'y_proba_test': y_proba_test,
         **shared_args
     }
-
     if isinstance(check_instance, tabular_base_checks.SingleDatasetCheck):
         args, kwargs = (test_dataset,), single_dataset_args
     elif isinstance(check_instance, tabular_base_checks.TrainTestCheck):
