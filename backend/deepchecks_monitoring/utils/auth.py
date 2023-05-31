@@ -320,6 +320,7 @@ class CurrentActiveUser(CurrentUser):
 
         return user
 
+
 def is_admin(user: "models.User") -> bool:
     """Return true if user is admin or above."""
     return len([
@@ -327,6 +328,7 @@ def is_admin(user: "models.User") -> bool:
             for role in user.roles
             if role.role in {models.role.RoleEnum.ADMIN, models.role.RoleEnum.OWNER}
         ]) > 0 and not user.disabled
+
 
 class AdminUser(CurrentActiveUser):
     """Authenticate a user and verify that he is an admin."""
