@@ -396,6 +396,14 @@ def _execute_check_instance(
         'model_classes': model_classes
     }
     single_dataset_args = {
+        # NOTE: this is not a bug or a mistake
+        #
+        # it is not possible to execute a check instance only on a test dataset,
+        # without a train dataset, but a reverse situation is allowed, a check
+        # instance can be executed only on a train dataset. Therefore, here, we are
+        # passing our test dataset as a train dataset
+        #
+        # see 'deepchecks.tabular.context.Context.__init__' method for more info
         'y_pred_train': y_pred_test,
         'y_proba_train': y_proba_test,
         **shared_args
