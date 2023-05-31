@@ -468,6 +468,7 @@ class ModelManagmentSchema(BaseModel):
     description="Retrieve list of available models."
 )
 async def retrieve_available_models(
+    show_all: bool = Query(default=False),
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentUser()),
 ) -> t.List[ModelManagmentSchema]:
@@ -475,29 +476,30 @@ async def retrieve_available_models(
     alerts_count = AlertsCountPerModel.cte()
     monitors_count = MonitorsCountPerModel.cte()
 
-    records = (await session.execute(
-        sa.select(
-            Model,
-            alerts_count.c.count.label("n_of_alerts"),
-            alerts_count.c.max.label("max_severity"),
-            monitors_count.c.count.label("n_of_monitors"),
-        )
-        .select_from(Model)
-        .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
-        .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
-        .join(Model.members)
-        .where(ModelMember.user_id == user.id)
-        .options(
-            joinedload(Model.members),
-            joinedload(Model.versions).load_only(
-                ModelVersion.id,
-                ModelVersion.name,
-                ModelVersion.model_id,
-                ModelVersion.start_time,
-                ModelVersion.end_time,
+    query = (sa.select(
+                Model,
+                alerts_count.c.count.label("n_of_alerts"),
+                alerts_count.c.max.label("max_severity"),
+                monitors_count.c.count.label("n_of_monitors"),
             )
-        )
-    )).unique().all()
+            .select_from(Model)
+            .outerjoin(alerts_count, alerts_count.c.model_id == Model.id)
+            .outerjoin(monitors_count, monitors_count.c.model_id == Model.id)
+            .options(
+                joinedload(Model.members),
+                joinedload(Model.versions).load_only(
+                    ModelVersion.id,
+                    ModelVersion.name,
+                    ModelVersion.model_id,
+                    ModelVersion.start_time,
+                    ModelVersion.end_time,
+                )
+            ))
+
+    if not (show_all and auth.is_admin(user)):
+        query = query.join(Model.members).where(ModelMember.user_id == user.id)
+
+    records = (await session.execute(query)).unique().all()
 
     return [
         ModelManagmentSchema(

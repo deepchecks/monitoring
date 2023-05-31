@@ -372,9 +372,10 @@ class TestAPI:
 
     def fetch_available_models(
         self,
+        show_all: bool = False,
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
-        response = self.api.session.get("available-models")
+        response = self.api.session.get(f"available-models?show_all={show_all}")
         response = t.cast(httpx.Response, response)
         expected_status = ExpectedHttpStatus.create(expected_status)
         expected_status.assert_response_status(response)
