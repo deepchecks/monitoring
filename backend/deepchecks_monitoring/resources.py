@@ -362,9 +362,14 @@ class ResourcesProvider(BaseResourcesProvider):
         database_uri = str(self.database_settings.database_uri)
 
         p = self._parallel_check_executors = ActorPool([
-            CheckPerWindowExecutor
-            .options(name=f"CheckExecutor-{index}", get_if_exists=True)
-            .remote(database_uri)
+            CheckPerWindowExecutor.options(
+                name=f"CheckExecutor-{index}",
+                get_if_exists=True,
+                namespace="check-executors",
+                lifetime="detached",
+                max_task_retries=-1,
+                max_restarts=4,
+            ).remote(database_uri)
             for index in range(self.settings.total_number_of_check_executor_actors)
         ])
 

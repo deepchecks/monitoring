@@ -14,6 +14,7 @@ import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
 import { getParams } from 'helpers/utils/getParams';
 import { featuresList, usePermissionControl } from 'helpers/permissionControl';
+import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export const DashboardPage = () => {
     }
   });
   const onboardingEnabled = usePermissionControl({ feature: featuresList.onboarding_enabled });
+
+  const isCloud = getStorageItem(storageKeys.environment)['is_cloud'];
 
   function refetchMonitors() {
     refetch();
@@ -50,7 +53,7 @@ export const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    if (dashboard?.monitors?.length === 0 && onboardingEnabled) {
+    if (dashboard?.monitors?.length === 0 && (onboardingEnabled || !isCloud)) {
       navigate({ pathname: '/onboarding' });
     }
   }, [dashboard, onboardingEnabled]);
