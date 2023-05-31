@@ -400,7 +400,7 @@ def _execute_check_instance(
         #
         # it is not possible to execute a check instance only on a test dataset,
         # without a train dataset, but a reverse situation is allowed, a check
-        # instance can be executed only on a train dataset. Threfore, here, we are
+        # instance can be executed only on a train dataset. Therefore, here, we are
         # passing our test dataset as a train dataset
         #
         # see 'deepchecks.tabular.context.Context.__init__' method for more info
