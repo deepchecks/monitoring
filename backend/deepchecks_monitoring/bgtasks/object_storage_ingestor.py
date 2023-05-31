@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 import boto3
 import pandas as pd
 import pendulum as pdl
+from pandas.core.dtypes.common import is_integer_dtype
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,6 +25,7 @@ from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
+from deepchecks_monitoring.schema_models.column_type import SAMPLE_TS_COL
 from deepchecks_monitoring.schema_models.data_sources import DataSource
 from deepchecks_monitoring.utils import database
 
@@ -167,4 +169,12 @@ def ingest_prefix(s3, bucket, prefix, last_file_time=None):
             df = pd.read_parquet(value)
         else:
             raise ValueError('Should not get here')
+
+        if SAMPLE_TS_COL not in df or not is_integer_dtype(df[SAMPLE_TS_COL]):
+            # TODO - log error
+            continue
+        # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
+        df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())
+        # Sort by timestamp
+        df = df.sort_values(by=[SAMPLE_TS_COL])
         yield df, file['time']
