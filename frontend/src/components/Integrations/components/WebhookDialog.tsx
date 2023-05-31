@@ -8,7 +8,8 @@ import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'componen
 import {
   StandardWebhookProperties,
   createWebhookApiV1AlertWebhooksPost,
-  listWebhooksApiV1AlertWebhooksGet
+  listWebhooksApiV1AlertWebhooksGet,
+  updateWebhookApiV1AlertWebhooksWebhookIdPut
 } from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
@@ -63,11 +64,11 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
 
   const handleSubmitWebhookForm = async () => {
     const response = isWebhookConnected
-      ? await createWebhookApiV1AlertWebhooksPost(payload) // Edit with webhookId
+      ? await updateWebhookApiV1AlertWebhooksWebhookIdPut(webhookId, payload)
       : await createWebhookApiV1AlertWebhooksPost(payload);
 
     if ((response as unknown as resError)?.error_message) {
-      setError(response.error_message as any);
+      setError((response as any).error_message);
     } else {
       refetch();
       handleClose();
