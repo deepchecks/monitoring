@@ -406,38 +406,18 @@ class StandardWebhookProperties(BaseModel):
         return self.dict(exclude_none=True)
 
 
-# TODO: move to utils or create separate module for it
-class UnsetType:
-    """Represents not passed/unset values."""
-
-    def __repr__(self):
-        return "UNSET"
-
-    def __str__(self):
-        return "UNSET"
-
-    def __copy__(self):
-        return self
-
-    def __eq__(self, v: object) -> bool:
-        return self is v
-
-
-UNSET = UnsetType()
-
-
 # NOTE: Properties for objects update
 class PartialPagerDutyWebhookProperties(BaseModel):
     """PagerDuty service webhook properties."""
 
     kind: t.Literal[WebhookKind.PAGER_DUTY] = WebhookKind.PAGER_DUTY
-    name: str | UnsetType = UNSET
-    description: str | UnsetType = UNSET
-    notification_levels: t.List[AlertSeverity] | UnsetType = UNSET
-    api_access_key: str | UnsetType | None = UNSET
-    event_routing_key: str | UnsetType = UNSET
-    event_group: str | UnsetType = UNSET
-    event_class: str | UnsetType = UNSET
+    name: str | None
+    description: str | None
+    notification_levels: t.List[AlertSeverity] | None
+    api_access_key: str | None
+    event_routing_key: str | None
+    event_group: str | None
+    event_class: str | None
 
     class Config:
         arbitrary_types_allowed = True
@@ -462,9 +442,12 @@ class PartialPagerDutyWebhookProperties(BaseModel):
                 t.Any,
                 _pager_duty_access_header(data.pop("api_access_key"))
             )
-        for k in ("event_routing_key", "event_group", "event_class"):
-            if k in data:
-                webhook.additional_arguments[k] = data.pop(k)
+
+        for input_key_name in ("event_routing_key", "event_group", "event_class"):
+            *_, original_key_name = input_key_name.split("_", maxsplit=1)
+            if input_key_name in data:
+                webhook.additional_arguments[original_key_name] = data.pop(input_key_name)
+
         for k, v in data.items():
             setattr(webhook, k, v)
 
@@ -476,12 +459,12 @@ class PartialStandardWebhookProperties(BaseModel):
     """Standard webhook properties."""
 
     kind: t.Literal[WebhookKind.STANDARD] = WebhookKind.STANDARD
-    name: str | UnsetType = UNSET
-    description: str | UnsetType = UNSET
-    http_url: HttpsUrl | UnsetType = UNSET
-    http_method: WebhookHttpMethod | UnsetType = UNSET
-    http_headers: t.Dict[str, str] | UnsetType = UNSET
-    notification_levels: t.List[AlertSeverity] | UnsetType = UNSET
+    name: str | None
+    description: str | None
+    http_url: HttpsUrl | None
+    http_method: WebhookHttpMethod | None
+    http_headers: t.Dict[str, str] | None
+    notification_levels: t.List[AlertSeverity] | None
 
     class Config:
         arbitrary_types_allowed = True
