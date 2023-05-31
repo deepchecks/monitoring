@@ -1,39 +1,37 @@
 import React from 'react';
 
-import { Box, BoxProps, Typography, useTheme } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { BoxProps, useTheme } from '@mui/material';
+
+import { Prism } from 'react-syntax-highlighter';
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+import { isLargeDesktop } from 'components/lib/theme/typography';
 
 export interface CodeSnippetProps extends BoxProps {
   code: string;
-  copyBtn?: boolean;
+  maxWidth?: string;
 }
 
-export const CodeSnippet = ({ code, copyBtn }: CodeSnippetProps) => {
+export const CodeSnippet = ({ code, maxWidth = '770px' }: CodeSnippetProps) => {
   const theme = useTheme();
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-  };
+  // const handleCopy = () => navigator.clipboard.writeText(code);
 
   return (
-    <Box
-      sx={{
+    <Prism
+      language="python"
+      style={materialDark}
+      customStyle={{
         width: '100%',
+        maxWidth: maxWidth,
         borderRadius: '16px',
         border: `1px solid ${theme.palette.grey[400]}`,
-        background: theme.palette.grey[200],
         padding: '24px',
         margin: '24px 0 18px',
-        whiteSpace: 'pre-line'
+        whiteSpace: 'pre-line',
+        fontSize: isLargeDesktop ? '14px' : '12px'
       }}
     >
-      {copyBtn && (
-        <ContentCopyIcon
-          sx={{ cursor: 'pointer', float: 'right', width: '24px', height: '24px', color: theme.palette.grey[500] }}
-          onClick={handleCopy}
-        />
-      )}
-      <Typography variant="body1">{code}</Typography>
-    </Box>
+      {code}
+    </Prism>
   );
 };

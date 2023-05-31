@@ -211,9 +211,9 @@ export function AlertNotifications({
           </Box>
         ))}
       </Box>
-      <StyledText text={deniedReason} color="red" margin="16px" />
+      <StyledText text={deniedReason} color="red" margin="16px 0 8px" />
       <a href="/workspace-settings" style={{ textDecoration: 'none', display: deniedLink ? 'block' : 'none' }}>
-        <StyledText text={deniedLink} color="red" margin="16px" fontWeight={800} />
+        <StyledText text={deniedLink} color="red" fontWeight={800} />
       </a>
     </Box>
   );

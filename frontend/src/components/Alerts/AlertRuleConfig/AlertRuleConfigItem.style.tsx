@@ -30,6 +30,7 @@ const StyledAlertName = styled(Typography)({
   fontWeight: 700,
   fontSize: '20px',
   marginLeft: '-12px',
+  lineHeight: '28px',
   width: '210px',
   whiteSpace: 'pre-line',
   overflow: 'hidden',
