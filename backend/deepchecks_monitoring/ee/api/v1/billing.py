@@ -316,6 +316,8 @@ async def stripe_webhook(request: Request,
                 billing.bought_models = 0
                 billing.subscription_id = None
                 org.tier = OrgTier.FREE
+
+            await session.commit()
             await session.flush()
 
     return {"status": "success"}
