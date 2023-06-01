@@ -72,8 +72,8 @@ DOCS_SRC     := $(DOCS)/source
 DOCS_BUILD   := $(DOCS)/build
 DOCS_REQUIRE := $(DOCS)/$(REQUIRE)
 
-# Cypress
-CYPRESS := $(shell realpath ./cypress)
+# E2E tests
+E2E := $(shell realpath ./e2e)
 
 # variables that will be passed to the documentation make file
 SPHINXOPTS   ?=
@@ -314,19 +314,19 @@ docker:
 	@docker build -t deepchecks-enterprise-testing --build-arg DEEPCHECKS_CI_TOKEN=$DEEPCHECKS_CI_TOKEN .
 
 external-services-setup:
-	@docker-compose up -d
+	@docker-compose -f $(E2E)/docker-compose.yml up -d
 	@sleep 2
 
 env-setup: external-services-setup
-	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
+	@docker run -d --env-file $(E2E)/.development.env -e LAUCHDARKLY_SDK_KEY -e OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET --network deepchecks -p 8000:8000 deepchecks-enterprise-testing start-test.sh
 	@sleep 15
-	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
-	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
-	@docker run -d --env-file .development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
+	@docker run -d --env-file $(E2E)/.development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-alert-scheduler.sh
+	@docker run -d --env-file $(E2E)/.development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-queuer.sh
+	@docker run -d --env-file $(E2E)/.development.env -e LAUCHDARKLY_SDK_KEY --network deepchecks deepchecks-enterprise-testing start-task-runner.sh
 	@sleep 10
 
 cypress: env-setup
-	@cd $(CYPRESS) && npm install && TZ=UTC npx cypress run
+	@cd $(E2E) && npm install && TZ=UTC npx cypress run
 
 ### Documentation
 
