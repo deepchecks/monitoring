@@ -54,7 +54,8 @@ def test_model_creation(deepchecks_sdk: DeepchecksClient):
         "task_type": "multiclass",
         "description": None,
         "alerts_delay_labels_ratio": 1.0,
-        "alerts_delay_seconds": 259200
+        "alerts_delay_seconds": 259200,
+        "s3_path": None,
     }
 
 

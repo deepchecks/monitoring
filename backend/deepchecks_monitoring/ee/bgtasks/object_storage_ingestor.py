@@ -32,17 +32,10 @@ __all__ = ['ObjectStorageIngestor']
 
 
 class ObjectStorageIngestor(BackgroundWorker):
-    """Worker to delete kafka topics when they are no longer in use.
-
-    NOTE:
-    In this worker we are doing actions on 2 external services, kafka and postgres. This action can never be atomic.
-    Therefore, we can have a case where we first delete the topics, (task is still in the db), than user sends data,
-    topics are re-created but the task won't be created since the insert will see task already exists. For this case
-    we are using the hash in the params. In case of conflict we update the hash, and then if it was updated during the
-    worker run than we know to recreate the task, so it will be run again later.
-    """
+    """Worker to ingest files from s3"""
 
     def __init__(self, resources_provider: ResourcesProvider):
+        super().__init__()
         self.ingestion_backend = DataIngestionBackend(resources_provider)
 
     @classmethod
