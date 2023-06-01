@@ -44,7 +44,7 @@ const WorkspaceSettings = () => {
     setValue(newValue);
   };
 
-  const showBilling = user && !user.roles.includes(RoleEnum.admin) && is_cloud;
+  const showBilling = user && user.roles.includes(RoleEnum.owner) && is_cloud;
 
   return (
     <Box sx={{ width: '100%' }}>
