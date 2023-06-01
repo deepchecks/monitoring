@@ -94,31 +94,12 @@ sudo -E docker-compose -f docker-compose.yml stop &> /dev/null || true
 #    \"event\": \"magic_curl_install_start\"
 #}" https://app.dc.com/batch/ &> /dev/null
 
-GIT_EXIST=$(which git || echo '')
-
-# update apt cache
-if [[ ! -z $YUM_CMD ]]; then
-  echo "Grabbing latest yum caches"
-  sudo yum update
-  if [[ -z $GIT_EXIST ]]; then
-    sudo yum install -y git
-  fi;
-elif [[ ! -z $APT_GET_CMD ]]; then
-  echo "Grabbing latest apt-get caches"
-  sudo apt-get update
-    if [[ -z $GIT_EXIST ]]; then
-      sudo apt-get install -y git
-    fi;
-fi;
-
-
-# clone deepchecks
-echo "Installing Deepchecks ❤️ from Github"
-# try to clone - if folder is already there pull latest for that branch
-git clone https://github.com/deepchecks/monitoring.git &> /dev/null || true
-cd monitoring
-git pull
-cd ..
+# download deployment files
+echo "Installing Deepchecks  ❤️ from Github"
+curl -LO https://github.com/deepchecks/monitoring/archive/refs/heads/main.zip
+unzip -o main.zip "monitoring-main/deploy/*" -d "."
+unzip -o main.zip "monitoring-main/bin/*" -d "."
+rm main.zip
 
 if [[ "$OS" == *darwin* ]]; then
   brew install gettext
@@ -216,23 +197,23 @@ fi;
 # start up the stack
 echo "Configuring Docker Compose...."
 rm -f docker-compose.yml
-cp monitoring/docker-compose-oss.yml docker-compose-oss.yml.tmpl
-envsubst <  monitoring/oss-conf.env > oss-conf.env
-cp -a monitoring/bin/. bin/
+cp monitoring-main/deploy/docker-compose.yml docker-compose.yml.tmpl
+envsubst <  monitoring-main/deploy/oss-conf.env > oss-conf.env
+cp -a monitoring-main/bin/. bin/
 
-envsubst < docker-compose-oss.yml.tmpl > docker-compose-oss.yml
+envsubst < docker-compose.yml.tmpl > docker-compose.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf
 envsubst < bin/casbin_conf/init_data/init_data.json.tmpl > bin/casbin_conf/init_data/init_data.json
 
-rm docker-compose-oss.yml.tmpl bin/casbin_conf/app.conf.tmpl
+rm docker-compose.yml.tmpl bin/casbin_conf/app.conf.tmpl
 
 echo "Starting the stack!"
 # First pull the image to prevent rate throttling from aws ecr
 docker pull public.ecr.aws/deepchecks/monitoring:"$DEEPCHECKS_APP_TAG"
 if [[ "$OS" == *linux* ]]; then
-  sudo -E docker-compose -f docker-compose-oss.yml up -d --build
+  sudo -E docker-compose up -d --build
 else
-  docker-compose -f docker-compose-oss.yml up -d --build
+  docker-compose up -d --build
 fi
 
 echo "We will need to wait ~5-10 minutes for things to settle down, migrations to finish, and TLS certs to be issued"
