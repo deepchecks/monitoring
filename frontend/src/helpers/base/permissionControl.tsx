@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 
 import { getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet } from 'api/generated';
 
-import { resError } from './types/resError';
+import { resError } from '../types/resError';
 
 interface Dict {
   type: { [key: string]: number | boolean };

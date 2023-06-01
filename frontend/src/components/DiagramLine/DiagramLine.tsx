@@ -4,7 +4,7 @@ import { Line } from 'react-chartjs-2';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import 'chartjs-adapter-dayjs-3';
 
-import { drawAlerts, drawCircle, setAlertLine } from 'helpers/diagramLine';
+import { drawAlerts, drawCircle, setAlertLine } from 'helpers/base/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { frequencyValues } from 'helpers/utils/frequency';

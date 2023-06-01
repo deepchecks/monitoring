@@ -22,7 +22,7 @@ import NoResults from 'components/NoResults';
 
 import useModels from '../helpers/hooks/useModels';
 import { events, reportEvent } from 'helpers/services/mixPanel';
-import { getAlertFilters, resetAlertFilters } from 'helpers/alertFilters';
+import { getAlertFilters, resetAlertFilters } from 'helpers/base/alertFilters';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
 
 const snackbarPosition = {
@@ -158,6 +158,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
               <NoResults
                 isTwoWeeksOlder={isModelsEndTimeTwoWeeksOlder}
                 handleReset={() => resetAlertFilters(setAlertFilters)}
+                margin="0 auto"
               />
             </StyledNoResultsContainer>
           )}

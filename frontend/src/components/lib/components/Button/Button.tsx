@@ -16,15 +16,18 @@ interface StyledMUIButtonProps {
 }
 
 const StyledMUIButton = styled(MUIButton, {
-  shouldForwardProp: prop => prop !== 'buttonTextColor'
+  shouldForwardProp: prop => prop !== 'buttonTextColor' && prop !== 'margin' && prop !== 'width'
 })<StyledMUIButtonProps>(({ width, margin, buttonTextColor }) => ({
   padding: '7px 24px',
   borderRadius: '28px',
+  borderWidth: '2px',
   transition: '0.6s',
   width: width,
   margin: margin,
   color: buttonTextColor,
-  BorderWidth: '2px'
+  BorderWidth: '2px',
+
+  '&:hover': { borderWidth: '2px' }
 }));
 
 export const Button = (props: ButtonProps) => {

@@ -4,10 +4,10 @@ import { useGetModelColumnsApiV1ModelsModelIdColumnsGet } from 'api/generated';
 
 import { Stack, MenuItem, SelectChangeEvent } from '@mui/material';
 
-import { MarkedSelect } from 'components/MarkedSelect';
-import { ControlledMarkedSelect } from 'components/MarkedSelect/ControlledMarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
+import { ControlledMarkedSelect } from 'components/base/MarkedSelect/ControlledMarkedSelect';
 import { Subcategory } from 'components/Subcategory';
-import { RangePicker } from 'components/RangePicker/RangePicker';
+import { RangePicker } from 'components/base/RangePicker/RangePicker';
 
 import { ColumnType } from 'helpers/types/model';
 import { SetStateType, SelectValues } from 'helpers/types';

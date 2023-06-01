@@ -9,14 +9,14 @@ import {
 
 import { Box, Divider, Menu, MenuItem, SelectChangeEvent, Stack, styled, TextField, Typography } from '@mui/material';
 
-import { DatePicker } from '../DatePicker/DatePicker';
+import { DatePicker } from '../base/DatePicker/DatePicker';
 import { SelectPrimary } from '../Select/SelectPrimary';
 import { SelectSeverity, SeverityAll, severityAll } from '../Select/SelectSeverity';
 import { FiltersResetButton } from './components/FiltersResetButton';
 
 import useModels from 'helpers/hooks/useModels';
 import { reportEvent } from 'helpers/services/mixPanel';
-import { resetAlertFilters } from 'helpers/alertFilters';
+import { resetAlertFilters } from 'helpers/base/alertFilters';
 import { handleSetParams } from 'helpers/utils/getParams';
 
 import { theme } from 'components/lib/theme';

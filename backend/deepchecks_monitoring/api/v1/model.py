@@ -730,18 +730,14 @@ async def retrieve_connected_models(
             label_count = 0
             label_ratio = 0
         else:
-            labels_table = model.get_sample_labels_table(session)
             data_query = \
                 sa.union_all(*(sa.select(_sample_id(table.c).label("sample_id")).distinct() for table in tables))
-            joined_query = sa.select(data_query.c.sample_id,
-                                     sa.func.cast(_sample_label(labels_table.c), sa.String).label("label")) \
-                .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
-            row = (await session.execute(
-                sa.select(
-                    sa.func.count(joined_query.c.sample_id).label("count"),
-                    sa.func.count(sa.func.cast(joined_query.c.label, sa.String)).label("label_count"))
-            )).first()
+            row = (await session.execute(sa.select(
+                        sa.func.count(data_query.c.sample_id).label("count")))).first()
             sample_count = row.count
+            labels_table = model.get_sample_labels_table(session)
+            row = (await session.execute(sa.select(
+                        sa.func.count(_sample_id(labels_table.c)).label("label_count")))).first()
             label_count = row.label_count
             label_ratio = sample_count and label_count / sample_count
 

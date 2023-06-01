@@ -10,14 +10,15 @@ import {
 
 import useModels from 'helpers/hooks/useModels';
 
-import { Box, Button, Divider, MenuItem, Stack, Typography } from '@mui/material';
+import { Box, Divider, MenuItem, Stack, Typography } from '@mui/material';
 
-import { MarkedSelect } from 'components/MarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 import { SelectCondition } from './SelectCondition';
 
 import { checkInfoInitValue, monitorInfo } from './CreateAlertForm.helpers';
 
 import { theme } from 'components/lib/theme';
+import { StyledButton } from 'components/lib';
 
 interface EditMonitorProps {
   monitor: MonitorSchema;
@@ -129,14 +130,12 @@ export function CreateAlertForm({ monitor, onClose, runCheckLookBack, setMonitor
           />
         </Box>
       </Box>
-      <Button
+      <StyledButton
+        label="Save & Activate"
         onClick={handleCreateAlert}
-        size="large"
         disabled={!operator || !severity}
-        sx={{ width: 1, margin: 'auto auto 20px auto' }}
-      >
-        Save & Activate
-      </Button>
+        sx={{ margin: 'auto auto 20px auto', width: '200px' }}
+      />
     </Stack>
   );
 }

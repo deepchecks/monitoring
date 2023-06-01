@@ -236,7 +236,12 @@ class AlertWebhook(Base, MetadataMixin):
         monitor = t.cast("Monitor", alert_rule.monitor)
         check = t.cast("Check", monitor.check)
         model = t.cast("Model", check.model)
-        alert_link = str(prepare_alert_link(alert=alert, deepchecks_host=settings.deployment_url))
+
+        alert_link = str(prepare_alert_link(
+            deepchecks_host=settings.deployment_url,
+            model_id=t.cast(int, model.id),
+            severity=alert_rule.alert_severity.value
+        ))
 
         if self.kind == WebhookKind.STANDARD:
             return {

@@ -5,7 +5,7 @@ import { AlertSeverity, Frequency } from 'api/generated';
 import { MenuItem, Stack, TextField } from '@mui/material';
 
 import { SelectSeverity } from 'components/Select/SelectSeverity';
-import { MarkedSelect } from 'components/MarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 import { StyledContentContainer } from '../AlertRuleDialog.styles';
 import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 import { AlertRuleStepBaseProps } from '../AlertRuleDialog.type';
@@ -13,7 +13,7 @@ import { constants } from '../alertRuleDialog.constants';
 
 import { SelectValues } from 'helpers/types';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
-import { freqTimeWindow } from 'helpers/monitorFields.helpers';
+import { freqTimeWindow } from 'helpers/base/monitorFields.helpers';
 import useModels from 'helpers/hooks/useModels';
 
 const {

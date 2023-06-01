@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 
 import { AlertRuleSchema, AlertSchema } from 'api/generated';
 
-import { ACTIVE_BAR_BG_COLOR } from '../components/SegmentsDrillDown/SegmentsDrillDown.helpers';
+import { ACTIVE_BAR_BG_COLOR } from '../../components/SegmentsDrillDown/SegmentsDrillDown.helpers';
 
 import { theme } from 'components/lib/theme';
 
