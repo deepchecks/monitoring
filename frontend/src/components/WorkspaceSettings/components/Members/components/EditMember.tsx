@@ -86,8 +86,8 @@ export const EditMember = ({ member, open, closeDialog, refetchMembers }: Member
       submitButtonDisabled={fetching}
     >
       <MembersActionDialogContentLayout>
-        <MembersActionDialogInput label={nameInputLabel} value={name} onChange={handleNameChange} />
-        <MembersActionDialogInput label={emailInputLabel} value={email} onChange={handleEmailChange} />
+        <MembersActionDialogInput label={nameInputLabel} value={name} onChange={handleNameChange} disabled />
+        <MembersActionDialogInput label={emailInputLabel} value={email} onChange={handleEmailChange} disabled />
         {isOwner && availableFeatures?.update_roles && (
           <MembersActionDialogDropdown
             label={role}
