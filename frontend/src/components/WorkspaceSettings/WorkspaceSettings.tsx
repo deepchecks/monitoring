@@ -18,7 +18,7 @@ import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 const constants = {
   title: 'Workspace Settings',
   billingTabLabel: 'Billing',
-  membersTabLabel: 'Members',
+  membersTabLabel: 'Users',
   modelsTabLabel: 'Models'
 };
 

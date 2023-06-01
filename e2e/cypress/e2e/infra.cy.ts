@@ -27,7 +27,7 @@ describe("load main page", () => {
     // Intercepting the request
     cy.intercept("PUT", "/api/v1/organization/invite").as("invitation");
     // Inviting the second user
-    cy.contains("button", "Invite members").click();
+    cy.contains("button", "Invite users").click();
     cy.get(
       'input[placeholder="email1@org-name.com, email2@org-name.com, email3@org-name.com, email4@org..."]'
     ).type(Cypress.env("second_username"));
