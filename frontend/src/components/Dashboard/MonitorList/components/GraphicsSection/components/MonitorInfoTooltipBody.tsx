@@ -46,7 +46,7 @@ const StyledInfoItem = styled(Typography)(({ theme }) => ({
   color: theme.palette.primary.main,
   display: 'inline-block',
   fontWeight: 400,
-  fontSize: '12px',
+  fontSize: '14px',
   lineHeight: '15px'
 }));
 

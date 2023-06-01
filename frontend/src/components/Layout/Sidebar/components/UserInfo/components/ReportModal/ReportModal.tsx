@@ -1,19 +1,12 @@
 import React, { FC, useState } from 'react';
-import {
-  StyledBox,
-  StyledCloseModalButton,
-  StyledDescription,
-  StyledForm,
-  StyledHeader,
-  StyledModal,
-  StyledSubmitButton,
-  StyledTextField,
-  StyledTitle,
-  StyledUploadArea
-} from './ReportModal.style';
-import { CloseIcon, FileUploadIcon } from '../../../../../../../assets/icon/icon';
 import { Button } from '@mui/material';
 import * as Sentry from '@sentry/react';
+
+import { StyledDescription, StyledForm, StyledTextField, StyledUploadArea } from './ReportModal.style';
+
+import { StyledDialog } from 'components/lib';
+
+import { FileUploadIcon } from '../../../../../../../assets/icon/icon';
 
 interface ReportModalProps {
   open: boolean;
@@ -55,35 +48,31 @@ export const ReportModal: FC<ReportModalProps> = ({ open, onClose }) => {
   };
 
   return (
-    <StyledModal disableAutoFocus={true} open={open} onClose={onClose}>
-      <StyledBox>
-        <StyledHeader component="header">
-          <StyledTitle variant="h2">Report a bug</StyledTitle>
-          <StyledDescription paragraph={true}>Please tell us what went wrong with the product</StyledDescription>
-          <StyledCloseModalButton onClick={onClose}>
-            <CloseIcon />
-          </StyledCloseModalButton>
-        </StyledHeader>
-        <StyledForm onSubmit={handleFormSubmit} component="form">
-          <StyledTextField
-            value={inputDescription}
-            onChange={handleInputChange}
-            label="Describe the bug"
-            required
-            multiline
-            rows={4}
-          />
-          <StyledUploadArea>
-            <Button startIcon={<FileUploadIcon />} variant="text" component="label">
-              Upload screenshot
-              <input onChange={handleFileChange} type="file" hidden accept="image/*" />
-            </Button>
-          </StyledUploadArea>
-          <StyledSubmitButton type="submit" variant="contained">
-            Send report
-          </StyledSubmitButton>
-        </StyledForm>
-      </StyledBox>
-    </StyledModal>
+    <StyledDialog
+      open={open}
+      onClose={onClose}
+      closeDialog={onClose}
+      title="Report a bug"
+      submitButtonLabel="Sent Report"
+      submitButtonAction={handleFormSubmit as () => void}
+    >
+      <StyledDescription paragraph={true}>Please tell us what went wrong with the product</StyledDescription>
+      <StyledForm onSubmit={handleFormSubmit} component="form">
+        <StyledTextField
+          value={inputDescription}
+          onChange={handleInputChange}
+          label="Describe the bug"
+          required
+          multiline
+          rows={4}
+        />
+        <StyledUploadArea>
+          <Button startIcon={<FileUploadIcon />} variant="text" component="label">
+            Upload screenshot
+            <input onChange={handleFileChange} type="file" hidden accept="image/*" />
+          </Button>
+        </StyledUploadArea>
+      </StyledForm>
+    </StyledDialog>
   );
 };
