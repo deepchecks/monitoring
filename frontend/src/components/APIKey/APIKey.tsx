@@ -36,12 +36,12 @@ export function APIKey() {
   return (
     <>
       <StyledContainer flexDirection="row">
-        <StyledText text={text} />
+        <StyledText text={text} marginLeft="-6px" />
         <a href="https://docs.deepchecks.com/stable/getting-started/welcome.html" target="_blank" rel="noreferrer">
           {link}
         </a>
       </StyledContainer>
-      <StyledApiKeyContainer type="card" margin="24px 6px">
+      <StyledApiKeyContainer type="card" margin="24px 0">
         <StyledApiKeyContainer>
           <StyledApiKey text={apiToken || '*'.repeat(59)} />
           <StyledButton onClick={handleClick} label={apiToken ? copy : regenerate} />

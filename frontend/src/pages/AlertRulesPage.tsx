@@ -69,7 +69,7 @@ export const AlertRulesPage = () => {
   };
 
   return (
-    <Box margin="24px 0">
+    <Box margin="36px 0">
       <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
       <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="16px 0">
         <StyledText text="Alert Rules" type="h1" />
