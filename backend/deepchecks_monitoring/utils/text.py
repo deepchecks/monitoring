@@ -27,7 +27,7 @@ def slugify(
     return value
 
 
-T  = t.TypeVar("T")
+T = t.TypeVar("T")
 
 
 def format_float(value: T, n_of_digits: int = 5) -> T:
