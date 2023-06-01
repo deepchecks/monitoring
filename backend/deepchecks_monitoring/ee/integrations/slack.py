@@ -4,7 +4,6 @@ import logging
 import typing as t
 
 from deepchecks.core.checks import CheckConfig
-from furl import furl
 from pydantic import BaseModel, ValidationError, validator
 from slack_sdk import WebClient as SlackClient
 from slack_sdk.errors import SlackApiError
