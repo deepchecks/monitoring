@@ -72,6 +72,9 @@ DOCS_SRC     := $(DOCS)/source
 DOCS_BUILD   := $(DOCS)/build
 DOCS_REQUIRE := $(DOCS)/$(REQUIRE)
 
+# Cypress
+CYPRESS := $(shell realpath ./cypress)
+
 # variables that will be passed to the documentation make file
 SPHINXOPTS   ?=
 
@@ -323,8 +326,7 @@ env-setup: external-services-setup
 	@sleep 10
 
 cypress: env-setup
-	@npm install
-	@TZ=UTC npx cypress run
+	@cd $(CYPRESS) && npm install TZ=UTC npx cypress run
 
 ### Documentation
 
