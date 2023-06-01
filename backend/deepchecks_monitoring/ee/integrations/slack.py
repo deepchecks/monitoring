@@ -4,7 +4,6 @@ import logging
 import typing as t
 
 from deepchecks.core.checks import CheckConfig
-from deepchecks.utils.strings import format_number
 from pydantic import BaseModel, ValidationError, validator
 from slack_sdk import WebClient as SlackClient
 from slack_sdk.errors import SlackApiError
@@ -17,6 +16,7 @@ from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as Che
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
 from deepchecks_monitoring.utils.alerts import prepare_alert_link
+from deepchecks_monitoring.utils.text import format_float
 
 __all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification", "SlackInstallationUtils",
            "SlackSender"]
@@ -224,7 +224,7 @@ class SlackAlertNotification(BaseSlackNotification):
         """Prepare the check result section."""
         # Take first failed value (can be failed values for multiple versions)
         fail_value = list(self.alert.failed_values.values())[0]
-        fail_value = _format_float(fail_value)
+        fail_value = format_float(fail_value)
         return {
             "type": "section",
             "text": {
@@ -323,14 +323,3 @@ class SlackSender:
         """Send slack message."""
         notification = SlackAlertNotification(alert, self.settings.deployment_url).blocks()
         return app.webhook_client().send(blocks=notification)
-
-
-def _format_float(value, n_of_digits=5):
-    if isinstance(value, float):
-        return format_number(value, n_of_digits)
-    elif isinstance(value, (list, tuple)):
-        return type(value)(_format_float(it, n_of_digits) for it in value)
-    elif isinstance(value, dict):
-        return {k: _format_float(v, n_of_digits) for k, v in value.items()}
-    else:
-        return value
