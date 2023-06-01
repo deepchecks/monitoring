@@ -1,3 +1,3 @@
-from . import api, config, integrations, middlewares, notifications, resources, utils, bgtasks
+from . import api, bgtasks, config, integrations, middlewares, notifications, resources, utils
 
 __all__ = []

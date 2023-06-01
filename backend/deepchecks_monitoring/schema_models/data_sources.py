@@ -13,7 +13,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from deepchecks_monitoring.schema_models.base import Base
 
-
 __all__ = ["DataSource"]
 
 
