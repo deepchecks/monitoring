@@ -1,9 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import ActionDialog from 'components/base/Dialog/ActionDialog/ActionDialog';
-
-import { BillingText } from '../Billing/Billing.styles';
+import { DeletionDialog } from 'components/lib/components/Dialog/DeletionDialog/DeletionDialog';
 
 const constants = {
   notAdminTitle: 'Access Forbidden',
@@ -15,17 +13,14 @@ const NotAdminDialog = () => {
   const navigate = useNavigate();
 
   return (
-    <ActionDialog
+    <DeletionDialog
       open={true}
       title={constants.notAdminTitle}
       submitButtonAction={() => navigate('/')}
       submitButtonLabel={constants.notAdminBtnLabel}
       closeDialog={() => navigate('/')}
-    >
-      <BillingText weight={'700'} color={'red'} margin={'44px'}>
-        {constants.notAdminText}
-      </BillingText>
-    </ActionDialog>
+      messageStart={constants.notAdminText}
+    />
   );
 };
 

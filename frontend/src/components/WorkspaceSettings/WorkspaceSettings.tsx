@@ -8,8 +8,9 @@ import { RoleEnum, useRetrieveUserInfoApiV1UsersMeGet } from 'api/generated';
 import Billing from './components/Billing/Billing';
 import Members from './components/Members/Members';
 import ModelsTab from './components/ModelsTab/ModelsTab';
-import NotAdminDialog from './components/NotAdminDialog/NotAdminDialog';
+import NotAdminDialog from './components/PermissionError/NotAdminDialog';
 import BillingPaidSkeleton from './components/Billing/BillingPaidView/BillingPaidSkeleton';
+import NotOwnerMsg from './components/PermissionError/NotOwnerMsg';
 import { Text } from 'components/lib/components/Text/Text';
 
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
@@ -35,13 +36,15 @@ const WorkspaceSettings = () => {
     setValue(!is_cloud ? 1 : 0);
   }, [is_cloud]);
 
-  if (user && !user.roles.includes(RoleEnum.owner)) {
+  if (user && !user.roles.includes(RoleEnum.admin)) {
     return isLoading ? <BillingPaidSkeleton /> : <NotAdminDialog />;
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
+
+  const showBilling = user && !user.roles.includes(RoleEnum.admin) && is_cloud;
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -60,7 +63,7 @@ const WorkspaceSettings = () => {
         )}
       </Box>
       <Box sx={{ marginY: '32px' }}>
-        {value === 0 && is_cloud && <Billing />}
+        {value === 0 && (showBilling ? <Billing /> : <NotOwnerMsg />)}
         {value === 1 && <Members />}
         {value === 2 && <ModelsTab />}
       </Box>
