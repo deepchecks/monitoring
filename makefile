@@ -326,7 +326,7 @@ env-setup: external-services-setup
 	@sleep 10
 
 cypress: env-setup
-	@cd $(CYPRESS) && npm install TZ=UTC npx cypress run
+	@cd $(CYPRESS) && npm install && TZ=UTC npx cypress run
 
 ### Documentation
 
