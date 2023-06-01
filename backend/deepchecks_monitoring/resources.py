@@ -415,7 +415,7 @@ class ResourcesProvider(BaseResourcesProvider):
 
     def get_features_control(self, user: User) -> FeaturesControl:  # pylint: disable=unused-argument
         """Return features control."""
-        return FeaturesControl()
+        return FeaturesControl(self.settings)
 
     def initialize_telemetry_collectors(self, *targets):
         """Initialize telemetry."""
