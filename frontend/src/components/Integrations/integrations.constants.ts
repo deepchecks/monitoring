@@ -9,7 +9,7 @@ export const constants = {
           ? 'This is open only to users with a paid subscription. \n Contact your admin.'
           : 'This is open only to users with a paid subscription.',
       link: { text: 'You can subscribe here', href: '/workspace-settings' },
-      emailConfig: 'Email is not configured. Go to docs for guide how to configure it'
+      emailConfig: 'Email is not configured. Learn how to configure it on our docs' // TODO - Update to a link once we have it on docs
     }
   },
   connect: {
