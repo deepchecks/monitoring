@@ -3,17 +3,17 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import UndoIcon from '@mui/icons-material/Undo';
 import { Box, IconButton, Typography, Stack, styled, alpha } from '@mui/material';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import { MonitorSchema } from 'api/generated';
 
 import { MonitorInfoTooltipBody } from './MonitorInfoTooltipBody';
-import { StyledH6 } from 'components/base/Text/Header.styles';
+import { theme } from 'components/lib/theme';
+import { StyledText } from 'components/lib';
+
+import { InfoIcon } from 'assets/icon/icon';
 
 import { constants } from 'components/Dashboard/dashboard.constants';
-
-import { MenuVertical, InfoIcon } from 'assets/icon/icon';
-
-import { theme } from 'components/lib/theme';
 
 interface MonitorInfoWidgetProps {
   monitor: MonitorSchema;
@@ -36,7 +36,13 @@ export const MonitorInfoWidget = (props: MonitorInfoWidgetProps) => {
         <StyledTooltipContainer>
           {zoomEnabled && (
             <StyledTooltip
-              title={<StyledH6 color={theme.palette.primary.light}>{constants.monitorInfoWidget.zoomReset}</StyledH6>}
+              title={
+                <StyledText
+                  color={theme.palette.primary.light}
+                  text={constants.monitorInfoWidget.zoomReset}
+                  type="bodyBold"
+                />
+              }
               placement="top"
               arrow
             >
@@ -47,7 +53,11 @@ export const MonitorInfoWidget = (props: MonitorInfoWidgetProps) => {
           )}
           <StyledTooltip
             title={
-              <StyledH6 color={theme.palette.primary.light}>{constants.monitorInfoWidget.zoomToolTipText}</StyledH6>
+              <StyledText
+                color={theme.palette.primary.light}
+                text={constants.monitorInfoWidget.zoomToolTipText}
+                type="bodyBold"
+              />
             }
             placement="top"
             arrow
@@ -77,7 +87,7 @@ export const MonitorInfoWidget = (props: MonitorInfoWidgetProps) => {
             </IconButton>
           </StyledTooltip>
           <IconButton onClick={handleOpenRootMenu} size="small" sx={{ marginLeft: '8px' }}>
-            <MenuVertical />
+            <MoreVertIcon color="primary" />
           </IconButton>
         </StyledTooltipContainer>
       )}

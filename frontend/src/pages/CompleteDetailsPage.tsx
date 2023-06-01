@@ -13,7 +13,7 @@ import { StyledLogo } from 'components/lib';
 import { LoginScreenImage } from 'assets/bg/backgrounds';
 import { postCompleteDetails, postCompleteDetailsAndAcceptInvite } from '../helpers/services/userService';
 
-export const CompleteDetails = () => {
+export const CompleteDetailsPage = () => {
   const { data: completeDetailsData, isLoading } = useGetCompleteDetailsApiV1UsersCompleteDetailsGet();
 
   const [fullName, setFullName] = useState('');
@@ -192,4 +192,4 @@ export const CompleteDetails = () => {
   );
 };
 
-export default CompleteDetails;
+export default CompleteDetailsPage;

@@ -20,9 +20,9 @@ import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 
 import { reportEvent } from 'helpers/services/mixPanel';
-import { getAlertFilters, resetAlertFilters } from '../helpers/alertFilters';
+import { getAlertFilters, resetAlertFilters } from '../helpers/base/alertFilters';
 
-export const AlertRules = () => {
+export const AlertRulesPage = () => {
   const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);
   const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -69,7 +69,7 @@ export const AlertRules = () => {
   };
 
   return (
-    <Box margin="24px 0">
+    <Box margin="36px 0">
       <FiltersSort alertFilters={alertFilters} setAlertFilters={setAlertFilters} isFilterByTimeLine={false} />
       <StyledContainer display="flex" flexDirection="row" justifyContent="space-between" margin="16px 0">
         <StyledText text="Alert Rules" type="h1" />
@@ -122,4 +122,4 @@ const StyledAlertRulesContainer = styled(Box)({
   padding: 0
 });
 
-export default AlertRules;
+export default AlertRulesPage;

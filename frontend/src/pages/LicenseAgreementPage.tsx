@@ -16,7 +16,7 @@ import {
 
 import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
 
-import { termsAndConditions } from 'helpers/termsAndConditions';
+import { termsAndConditions } from 'helpers/base/termsAndConditions';
 
 import { theme } from '../components/lib/theme';
 

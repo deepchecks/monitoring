@@ -2,8 +2,9 @@ import React from 'react';
 
 import { Link, Typography, Stack, styled } from '@mui/material';
 
-import { InfoIconFilled } from 'assets/icon/icon';
 import { theme } from 'components/lib/theme';
+
+import { Info } from '@mui/icons-material';
 
 interface MonitorInfoLinkProps {
   docsLink: string;
@@ -12,7 +13,7 @@ interface MonitorInfoLinkProps {
 export const MonitorInfoLink = ({ docsLink }: MonitorInfoLinkProps) => (
   <StyledLink href={docsLink} target="_blank" rel="noreferrer">
     <StyledContent>
-      <InfoIconFilled />
+      <Info color="primary" />
       <StyledTypography>Get more info</StyledTypography>
     </StyledContent>
   </StyledLink>
@@ -35,8 +36,9 @@ const StyledContent = styled(Stack)({
 });
 
 const StyledTypography = styled(Typography)({
+  color: theme.palette.primary.main,
   fontWeight: 600,
-  fontSize: '12px',
+  fontSize: '14px',
   lineHeight: '15px',
   marginLeft: '7.3px'
 });

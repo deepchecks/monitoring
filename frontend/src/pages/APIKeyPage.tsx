@@ -1,18 +1,14 @@
 import React from 'react';
 
-import { Box, Stack } from '@mui/material';
-
 import { APIKey } from 'components/APIKey';
-import HeaderLayout from 'components/HeaderLayout';
+import { StyledText } from 'components/lib';
 
 export const APIKeyPage = function () {
   return (
-    <Box>
-      <Stack spacing="40px">
-        <HeaderLayout title="API Key" />
-        <APIKey />
-      </Stack>
-    </Box>
+    <>
+      <StyledText text="API Key" type="h1" margin="32px 4px 0" />
+      <APIKey />
+    </>
   );
 };
 

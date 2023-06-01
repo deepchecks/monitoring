@@ -1,6 +1,6 @@
 import { DataFilter, MonitorCreationSchemaAdditionalKwargs, OperatorsEnum } from 'api/generated';
 
-import { timeValues } from 'helpers/time';
+import { timeValues } from 'helpers/base/time';
 import { SelectValues } from 'helpers/types';
 
 export const freqTimeWindow = [
