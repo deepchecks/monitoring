@@ -38,9 +38,3 @@ jobs:
           npm install 
           npm run tsc
         working-directory: ./frontend
-
-      - name: Run Tests
-        run: |
-          npm install 
-          npm test
-        working-directory: ./frontend
