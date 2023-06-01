@@ -170,7 +170,7 @@ def settings(async_engine, smtp_server):
 
 
 @pytest.fixture(scope="session")
-def features_control_mock():
+def features_control_mock(settings):
     class TestsFeaturesControl(CloudFeaturesControl):
         """Mocked features control class for tests, replacing launchdarkly usage."""
 
@@ -188,7 +188,7 @@ def features_control_mock():
             self._model_assignment = True
 
     def mock_get_features_control(self, user):  # pylint: disable=unused-argument
-        return TestsFeaturesControl(user, None)
+        return TestsFeaturesControl(user, None, settings)
 
     return mock_get_features_control
 
