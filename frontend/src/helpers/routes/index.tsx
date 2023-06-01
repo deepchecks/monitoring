@@ -33,7 +33,7 @@ export const lazyRetry = function (componentImport: () => Promise<any>) {
   });
 };
 
-const AlertRules = lazy(() => lazyRetry(() => import('pages/AlertRules')));
+const AlertRules = lazy(() => lazyRetry(() => import('pages/AlertRulesPage')));
 const AlertsPage = lazy(() => lazyRetry(() => import('pages/AlertsPage')));
 const DashboardPage = lazy(() => lazyRetry(() => import('pages/DashboardPage')));
 const IntegrationsPage = lazy(() => lazyRetry(() => import('pages/IntegrationsPage')));
@@ -43,8 +43,8 @@ const APIKeyPage = lazy(() => lazyRetry(() => import('pages/APIKeyPage')));
 const SuiteViewPage = lazy(() => lazyRetry(() => import('pages/SuiteViewPage')));
 const WorkspaceSettingsPage = lazy(() => lazyRetry(() => import('pages/WorkspaceSettingsPage')));
 const OnBoardingPage = lazy(() => lazyRetry(() => import('pages/OnBoardingPage')));
-const CompleteDetails = lazy(() => lazyRetry(() => import('pages/CompleteDetails')));
-const LicenseAgreementPage = lazy(() => lazyRetry(() => import('pages/LicenseAgreement')));
+const CompleteDetails = lazy(() => lazyRetry(() => import('pages/CompleteDetailsPage')));
+const LicenseAgreementPage = lazy(() => lazyRetry(() => import('pages/LicenseAgreementPage')));
 const NotFoundPage = lazy(() => lazyRetry(() => import('pages/NotFoundPage')));
 
 const DashboardIcon = () => <Dashboard sx={{ color: 'grey' }} />;

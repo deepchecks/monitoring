@@ -13,11 +13,11 @@ import useModels from 'helpers/hooks/useModels';
 
 import { TextField, Stack, MenuItem, OutlinedInput, Typography } from '@mui/material';
 
-import { MarkedSelect } from 'components/MarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 import {
   ControlledMarkedSelect,
   ControlledMarkedSelectDisabledCallback
-} from 'components/MarkedSelect/ControlledMarkedSelect';
+} from 'components/base/MarkedSelect/ControlledMarkedSelect';
 import { SelectCheck as Check } from 'components/Select/SelectCheck';
 import { SelectColumn as Column } from 'components/Select/SelectColumn';
 import { TooltipInputWrapper } from 'components/TooltipInputWrapper';
@@ -27,9 +27,9 @@ import { StyledButton } from 'components/lib';
 
 import { StyledDivider, StyledLink, StyledFormContainer } from './MonitorForm.style';
 
-import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
+import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/base/monitorFields.helpers';
 import { SelectValues } from 'helpers/types';
-import { timeValues } from 'helpers/time';
+import { timeValues } from 'helpers/base/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';

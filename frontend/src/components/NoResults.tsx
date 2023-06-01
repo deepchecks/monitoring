@@ -1,53 +1,55 @@
 import React from 'react';
 
-import { Box, Typography, BoxProps, styled } from '@mui/material';
+import { Typography, styled, Stack, StackProps } from '@mui/material';
 
 import { NoResultsImage } from 'assets/bg/backgrounds';
 
-import { theme } from 'components/lib/theme';
-
-interface NoResultsProps extends BoxProps {
+interface NoResultsProps extends StackProps {
   handleReset: () => void;
+  simple?: boolean;
   isTwoWeeksOlder?: boolean;
 }
 
 const constants = {
   noResults: {
+    simple: 'No results found',
     first: 'No results found for the applied filters, maybe try to \n',
     second: 'reset the filters'
   },
-  noResults2Weeks: 'No results found.\n Note that alerts are running on the most recent 2 weeks'
+  noResults2Weeks: 'No results found\n Note that alerts are running on the most recent 2 weeks'
 };
 
-const NoResults = ({ handleReset, isTwoWeeksOlder, ...props }: NoResultsProps) => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', mx: 'auto' }} {...props}>
-    <Box width={444}>
-      <NoResultsImage />
-      {!isTwoWeeksOlder ? (
-        <StyledTypography>{constants.noResults2Weeks}</StyledTypography>
-      ) : (
-        <StyledTypography variant="body1">
-          {constants.noResults.first}
-          <Typography
-            component="span"
-            sx={{ color: theme => theme.palette.primary.main, cursor: 'pointer', fontWeight: 700, fontSize: '16px' }}
-            onClick={handleReset}
-          >
-            {constants.noResults.second}
-          </Typography>
-        </StyledTypography>
-      )}
-    </Box>
-  </Box>
+const NoResults = ({ handleReset, isTwoWeeksOlder, simple, ...props }: NoResultsProps) => (
+  <Stack justifyContent="center" alignItems="center" {...props}>
+    <NoResultsImage width={444} />
+    {simple ? (
+      <StyledTypography>{constants.noResults.simple}</StyledTypography>
+    ) : !isTwoWeeksOlder ? (
+      <StyledTypography>{constants.noResults2Weeks}</StyledTypography>
+    ) : (
+      <StyledTypography variant="body1">
+        {constants.noResults.first}
+        <StyledLink component="span" onClick={handleReset}>
+          {constants.noResults.second}
+        </StyledLink>
+      </StyledTypography>
+    )}
+  </Stack>
 );
 
 export default NoResults;
 
-const StyledTypography = styled(Typography)({
+const StyledTypography = styled(Typography)(({ theme }) => ({
   marginTop: '60px',
   color: theme.palette.text.disabled,
   textAlign: 'center',
-  padding: '0 20px',
-  fontSize: '16px',
+  fontSize: '18px',
   whiteSpace: 'pre-line'
-});
+}));
+
+const StyledLink = styled(Typography)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  cursor: 'pointer',
+  fontWeight: 700,
+  fontSize: '16px'
+})) as typeof Typography;

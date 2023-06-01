@@ -222,7 +222,7 @@ jobs:
           make external-services-setup
       - name: DB load
         run: |
-          docker run --env-file .development.env --network deepchecks deepchecks-enterprise-testing init-test-db.sh
+          docker run --env-file e2e/.development.env --network deepchecks deepchecks-enterprise-testing init-test-db.sh
           echo "DEEPCHECKS_API_TOKEN=ZTJlLXRlc3RpbmdAZGVlcGNoZWNrcy5jb20=.ASB8rB13J5i_4Nma7zZfIA" >> $GITHUB_ENV
           echo "DEEPCHECKS_API_HOST=http://127.0.0.1:8000" >> $GITHUB_ENV
         env:

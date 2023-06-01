@@ -2,7 +2,7 @@ import React, { memo, Dispatch, SetStateAction } from 'react';
 
 import { SelectChangeEvent, MenuItem, SelectProps } from '@mui/material';
 
-import { MarkedSelect } from 'components/MarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 
 export type ControlledMarkedSelectSelectValues = string | number | undefined;
 export type ControlledMarkedSelectSelectValueType =

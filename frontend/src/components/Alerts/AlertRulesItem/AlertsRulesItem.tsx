@@ -17,7 +17,7 @@ import { AlertRuleDialog } from '../AlertRuleDialog/AlertRuleDialog';
 import { Loader } from '../../base/Loader/Loader';
 import { StyledSeverity } from 'components/lib';
 
-import { OperatorsEnumMap } from 'helpers/conditionOperator';
+import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 

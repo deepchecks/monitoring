@@ -49,7 +49,7 @@ export const Integrations = () => {
     );
   } else {
     return (
-      <Box padding="24px">
+      <Box padding="36px 8px">
         <Stack display={stackDisplay} flexDirection="row" gap="85px">
           <AlertNotifications
             data={data}

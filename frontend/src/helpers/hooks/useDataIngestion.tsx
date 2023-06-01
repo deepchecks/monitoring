@@ -5,7 +5,7 @@ import {
   useRetrieveAllModelsDataIngestionApiV1ModelsDataIngestionGet,
   useRetrieveModelsDataIngestionApiV1ModelsModelIdDataIngestionGet
 } from '../../api/generated';
-import { setLineGraphOptions } from '../setGraphOptions';
+import { setLineGraphOptions } from '../base/setGraphOptions';
 import useModels from './useModels';
 
 import { resError } from 'helpers/types/resError';

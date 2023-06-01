@@ -28,6 +28,7 @@ export const UserInfo = () => {
   const { full_name, picture_url } = user;
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
 

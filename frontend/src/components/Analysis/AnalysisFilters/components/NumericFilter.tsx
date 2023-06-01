@@ -4,7 +4,7 @@ import { ColumnStatistics } from 'api/generated';
 import { AnalysisContext } from 'helpers/context/AnalysisProvider';
 
 import { alpha, Box, Button } from '@mui/material';
-import { RangePicker } from 'components/RangePicker/RangePicker';
+import { RangePicker } from 'components/base/RangePicker/RangePicker';
 
 interface NumericFilterProps {
   data: ColumnStatistics;

@@ -6,9 +6,9 @@ import { StyledContainer, StyledSeverity, StyledTypography } from './MonitorAler
 import { ExclamationMarkRhombus } from 'assets/icon/icon';
 
 import { getHighestPriorityAlertRule } from './MonitorAlertRuleWidget.helpers';
-import { OperatorsEnumMap } from 'helpers/conditionOperator';
+import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
 import { capitalizeFirstChar } from 'helpers/utils/capitalizeFirstChar';
-import { severityColor } from 'helpers/severityColor';
+import { severityColor } from 'helpers/base/severityColor';
 import { CheckFilterTypes } from 'helpers/utils/checkUtil';
 
 import { constants } from 'components/Dashboard/dashboard.constants';
