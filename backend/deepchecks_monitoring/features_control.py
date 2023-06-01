@@ -119,4 +119,5 @@ class FeaturesControl:
             onboarding_enabled=self.onboarding_enabled,
             update_roles=self.update_roles,
             model_assignment=self.model_assignment,
+            email_enabled=self.email_enabled
         )
