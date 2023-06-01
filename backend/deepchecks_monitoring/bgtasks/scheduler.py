@@ -41,13 +41,6 @@ from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMP
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.utils import database
 
-try:
-    import deepchecks_monitoring.ee
-except ImportError:
-    with_ee = False
-else:
-    with_ee = True
-
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
     from pendulum.datetime import DateTime as PendulumDateTime
