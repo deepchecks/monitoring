@@ -13,14 +13,19 @@ if t.TYPE_CHECKING:
 __all__ = ["prepare_alert_link", "Condition", "AlertSeverity"]
 
 
-def prepare_alert_link(alert: "Alert", deepchecks_host: str) -> furl:
+def prepare_alert_link(
+    deepchecks_host: str,
+    model_id: int | None = None,
+    severity: str | None = None
+) -> furl:
     """Return link to the given alert instance."""
-    alert_rule = alert.alert_rule
-    monitor = alert_rule.monitor
-    check = monitor.check
-    model = check.model
-    alert_link = (furl(deepchecks_host) / "alert-rules")
-    return alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
+    alert_link = (furl(deepchecks_host) / "configuration" / "alert-rules")
+    params = {}
+    if model_id is not None:
+        params["modelId"] = model_id
+    if severity is not None:
+        params["severity"] = severity
+    return alert_link.add(params)
 
 
 class Condition(BaseModel):

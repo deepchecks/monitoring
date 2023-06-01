@@ -14,7 +14,6 @@ import logging.handlers
 import typing as t
 
 import sqlalchemy as sa
-from furl import furl
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from typing_extensions import Self
@@ -25,6 +24,7 @@ from deepchecks_monitoring.schema_models import Check, Model
 from deepchecks_monitoring.schema_models.alert import Alert
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule
 from deepchecks_monitoring.schema_models.monitor import Monitor
+from deepchecks_monitoring.utils.alerts import prepare_alert_link
 
 if t.TYPE_CHECKING:
     from deepchecks_monitoring.resources import ResourcesProvider  # pylint: disable=unused-import
@@ -115,7 +115,10 @@ class AlertNotificator:
 
         model_members_ids = [member.user_id for member in model.members]
         members_emails = (await self.session.scalars(
-            sa.select(User.email).where(sa.and_(User.organization_id == org.id, User.id.in_(model_members_ids)))
+            sa.select(User.email).where(sa.and_(
+                User.organization_id == org.id,
+                User.id.in_(model_members_ids)
+            ))
         )).all()
 
         if not members_emails:
@@ -124,11 +127,17 @@ class AlertNotificator:
             return False
 
         deepchecks_host = self.resources_provider.settings.deployment_url
-        alert_link = (furl(deepchecks_host) / "alert-rules")
-        alert_link = alert_link.add({"models": model.id, "severity": alert_rule.alert_severity.value})
 
-        email_failed_values = alert.named_failed_values if \
-            hasattr(alert, "named_failed_values") else alert.failed_values
+        alert_link = prepare_alert_link(
+            deepchecks_host=deepchecks_host,
+            model_id=t.cast(int, model.id),
+            severity=alert_rule.alert_severity.value
+        )
+        email_failed_values = (
+            alert.named_failed_values
+            if hasattr(alert, "named_failed_values")
+            else alert.failed_values
+        )
 
         email_sender.send(
             subject=f"Alert. Model: {model.name}, Monitor: {monitor.name}",
