@@ -16,6 +16,7 @@ from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as Che
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
 from deepchecks_monitoring.utils.alerts import prepare_alert_link
+from deepchecks_monitoring.utils.text import format_float
 
 __all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification", "SlackInstallationUtils",
            "SlackSender"]
@@ -223,6 +224,7 @@ class SlackAlertNotification(BaseSlackNotification):
         """Prepare the check result section."""
         # Take first failed value (can be failed values for multiple versions)
         fail_value = list(self.alert.failed_values.values())[0]
+        fail_value = format_float(fail_value)
         return {
             "type": "section",
             "text": {
