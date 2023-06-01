@@ -8,7 +8,8 @@ export const constants = {
         isNotAdminOrOwner
           ? 'This is open only to users with a paid subscription. \n Contact your admin.'
           : 'This is open only to users with a paid subscription.',
-      link: { text: 'You can subscribe here', href: '/workspace-settings' }
+      link: { text: 'You can subscribe here', href: '/workspace-settings' },
+      emailConfig: 'Email is not configured. Go to docs for guide how to configure it'
     }
   },
   connect: {
