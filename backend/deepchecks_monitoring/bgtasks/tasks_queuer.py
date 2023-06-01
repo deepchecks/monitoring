@@ -28,7 +28,6 @@ from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelData
 from deepchecks_monitoring.bgtasks.model_version_cache_invalidation import ModelVersionCacheInvalidation
 from deepchecks_monitoring.bgtasks.model_version_offset_update import ModelVersionOffsetUpdate
 from deepchecks_monitoring.bgtasks.model_version_topic_delete import ModelVersionTopicDeletionWorker
-from deepchecks_monitoring.bgtasks.object_storage_ingestor import ObjectStorageIngestor
 from deepchecks_monitoring.config import DatabaseSettings, RedisSettings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
@@ -164,7 +163,11 @@ def execute_worker():
                 ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
         workers = [ModelVersionTopicDeletionWorker, ModelVersionOffsetUpdate, ModelVersionCacheInvalidation,
-                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask, ObjectStorageIngestor]
+                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask]
+
+        # Add ee workers
+        if with_ee:
+            workers.append(ee.bgtasks.ObjectStorageIngestor)
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
