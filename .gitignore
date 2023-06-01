@@ -173,8 +173,8 @@ docs/source/**/auto_quickstarts/
 docs/source/**/auto_demos/
 
 # cypress test outputs
-cypress/videos
-cypress/screenshots
+e2e/videos
+e2e/screenshots
 
 
 backend/tests/*.pem
