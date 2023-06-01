@@ -180,7 +180,7 @@ async def log_labels(
     labels_table_json_schema = {
         "type": "object",
         "properties": {
-            name: data_type.to_json_schema_type(nullable=name != SAMPLE_ID_COL)
+            name: data_type.to_json_schema_type(nullable=name not in [SAMPLE_ID_COL, SAMPLE_LABEL_COL])
             for name, data_type in labels_table_columns.items()
         },
         "required": list(labels_table_columns.keys()),
@@ -191,6 +191,7 @@ async def log_labels(
 
     for sample in data:
         try:
+            sample[SAMPLE_TS_COL] = pdl.now() if sample[SAMPLE_TS_COL] is None  else pdl.parse(sample[SAMPLE_TS_COL])
             validator(sample)
         except fastjsonschema.JsonSchemaValueException:
             pass

@@ -233,7 +233,7 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             data: 'pd.DataFrame',
             predictions: t.Union[pd.Series, np.ndarray, t.List[t.Any]],
             prediction_probas: t.Union[np.ndarray, pd.Series, t.List[t.Any], None] = None,
-            timestamps: t.Union[np.ndarray, pd.Series, t.List[int], None] = None,
+            timestamps: t.Union[t.List[int], None] = None,
             samples_per_send: int = 10_000
     ):
         """Log batch of samples.
@@ -248,8 +248,8 @@ class DeepchecksModelVersionClient(core_client.DeepchecksModelVersionClient):
             set of predictions
         prediction_probas : Optional[numpy.ndarray] , default None
             set of predictions probabilities
-        timestamps : Union[numpy.ndarray, pandas.Series, List[int], None] , default None
-            set of numerical timestamps that represent second-based epoch time.
+        timestamps : Union[List[int], None] , default None
+            list of numerical timestamps that represent second-based epoch time.
             If not provided then current time will be used.
         samples_per_send : int , default 10_000
             how many samples to send by one request
@@ -728,7 +728,7 @@ def _process_sample(
     sample_id: str,
     values: t.Optional[t.Dict[str, t.Any]] = None,
     prediction: t.Union[str, float, None] = None,
-    timestamp: t.Union[datetime, int, str, None] = None,
+    timestamp: int = None,
     prediction_proba: t.Optional[t.Sequence[float]] = None,
     model_classes: t.Optional[t.Sequence[str]] = None,
 ) -> t.Dict[str, t.Any]:

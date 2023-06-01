@@ -273,7 +273,8 @@ async def _retrieve_models_data_ingestion(
     """Retrieve models data ingestion status."""
 
     def is_within_dateframe(col, end_time):
-        return col > sa.text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')")
+        return sa.and_(col > sa.text(f"(TIMESTAMP '{end_time}' - interval '{time_filter} seconds')"),
+                        col < sa.text(f"(TIMESTAMP '{end_time}')"))
 
     def truncate_date(col, agg_time_unit: str = "day"):
         return sa.func.cast(sa.func.extract("epoch", sa.func.date_trunc(agg_time_unit, col)), sa.Integer)
@@ -307,14 +308,14 @@ async def _retrieve_models_data_ingestion(
 
     end_time = pdl.parse(end_time) if end_time else max((m.end_time for m in models))
 
-    all_models_queries = []
+    all_models_sample_queries = []
+    all_model_label_queries = []
 
     for model in models:
         tables = [version.get_monitor_table(session) for version in model.versions]
         if not tables:
             continue
-
-        labels_table = model.get_sample_labels_table(session)
+        
         # Get all samples within time window from all the versions
         data_query = sa.union_all(*(
             sa.select(
@@ -326,38 +327,70 @@ async def _retrieve_models_data_ingestion(
             )).distinct()  # TODO why distinct?
             for table in tables)
         )
-        # Join with labels table
-        all_models_queries.append(
+        all_models_sample_queries.append(
             sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
                       data_query.c.sample_id,
-                      data_query.c.timestamp,
-                      sa.func.cast(_sample_label(labels_table.c), sa.String).label("label"))
-            .join(labels_table, onclause=data_query.c.sample_id == _sample_id(labels_table.c), isouter=True)
+                      data_query.c.timestamp
+            )
+        )
+        # now for lables
+        labels_table = model.get_sample_labels_table(session)
+        data_query = sa.select(
+                _sample_id(labels_table.c).label("sample_id"),
+                truncate_date(_sample_timestamp(labels_table.c), agg_time_unit).label("timestamp")
+            ).where(is_within_dateframe(
+                _sample_timestamp(labels_table.c),
+                end_time
+            )).distinct()
+
+        # Join with labels table
+        all_model_label_queries.append(
+            sa.select(sa.literal(getattr(model, model_identifier_name)).label("model_id"),
+                      data_query.c.sample_id,
+                      data_query.c.timestamp
+            )
         )
 
-    if not all_models_queries:
+    if not all_models_sample_queries:
         return {}
 
-    union = sa.union_all(*all_models_queries)
+    sample_union = sa.union_all(*all_models_sample_queries)
+    label_union = sa.union_all(*all_model_label_queries)
 
-    rows = (await session.execute(
+    sample_rows = (await session.execute(
         sa.select(
-            union.c.model_id,
-            union.c.timestamp,
-            sa.func.count(union.c.sample_id).label("count"),
-            sa.func.count(sa.func.cast(union.c.label, sa.String)).label("label_count"))
-        .group_by(union.c.model_id, union.c.timestamp)
-        .order_by(union.c.model_id, union.c.timestamp, "count"),
+            sample_union.c.model_id,
+            sample_union.c.timestamp,
+            sa.func.count(sample_union.c.sample_id).label("count")
+        )
+        .group_by(sample_union.c.model_id, sample_union.c.timestamp)
+        .order_by(sample_union.c.model_id, sample_union.c.timestamp, "count"),
     )).fetchall()
+    label_rows = (await session.execute(
+        sa.select(
+            label_union.c.model_id,
+            label_union.c.timestamp,
+            sa.func.count(label_union.c.sample_id).label("count")
+        )
+        .group_by(label_union.c.model_id, label_union.c.timestamp)
+        .order_by(label_union.c.model_id, label_union.c.timestamp, "count"),
+    )).fetchall()
+
+    count_dict = defaultdict(lambda: defaultdict(dict))
+    for sample_row in sample_rows:
+        count_dict[sample_row.model_id][sample_row.timestamp]["sample_count"] = sample_row.count
+    for label_row in label_rows:
+        count_dict[label_row.model_id][label_row.timestamp]["label_count"] = label_row.count
 
     result = defaultdict(list)
 
-    for row in rows:
-        result[row.model_id].append(ModelDailyIngestion(
-            count=row.count,
-            label_count=row.label_count,
-            timestamp=row.timestamp
-        ))
+    for model_id, data in count_dict.items():
+        for timestamp, value_dict in data.items():
+            result[model_id].append(ModelDailyIngestion(
+                count=value_dict.get("sample_count", 0),
+                label_count=value_dict.get("label_count", 0),
+                timestamp=timestamp
+            ))
 
     return result
 

@@ -307,6 +307,7 @@ class DeepchecksModelClient:
 
         sample_id_column = DeepchecksColumns.SAMPLE_ID_COL.value
         label_column = DeepchecksColumns.SAMPLE_LABEL_COL.value
+        time_column = DeepchecksColumns.SAMPLE_TS_COL.value
         task_type = TaskType(self.model['task_type'])
         self.label_data_type = {TaskType.MULTICLASS: 'string', TaskType.BINARY: 'string',
                                 TaskType.REGRESSION: 'number'}[task_type]
@@ -317,6 +318,7 @@ class DeepchecksModelClient:
             'properties': {
                 sample_id_column: {'type': 'string'},
                 label_column: {'type': [self.label_data_type, 'null']},
+                time_column: {'type': ['datetime', 'null']},
             }
         }))
 
@@ -743,6 +745,7 @@ class DeepchecksModelClient:
             self,
             sample_id: str,
             label: t.Any,
+            timestamp: int
     ):
         """Update an existing sample.
 
@@ -755,6 +758,9 @@ class DeepchecksModelClient:
             The sample id.
         label: Any
             label of the sample
+        timestamp : Union[List[int], None] , default None
+            numerical timestamp that represent second-based epoch time.
+            If not provided then current time will be used.
         """
         if label is not None:
             if self.label_data_type == 'string':
@@ -764,7 +770,9 @@ class DeepchecksModelClient:
             else:
                 raise ValueError(f'Unsupported label data type - {self.label_data_type}')
 
-        sample = {DeepchecksColumns.SAMPLE_ID_COL: str(sample_id), DeepchecksColumns.SAMPLE_LABEL_COL: label}
+        sample = {DeepchecksColumns.SAMPLE_ID_COL: str(sample_id), 
+                  DeepchecksColumns.SAMPLE_LABEL_COL: label,
+                  DeepchecksColumns.SAMPLE_TS_COL: pdl.from_timestamp(timestamp).to_iso8601_string()}
         sample = t.cast(t.Dict[str, t.Any], DeepchecksEncoder.encode(sample))
         self.log_labels_validator(sample)
         self._log_labels.append(sample)
@@ -773,6 +781,7 @@ class DeepchecksModelClient:
             self,
             sample_ids: t.Sequence[str],
             labels: t.Sequence[t.Any],
+            timestamps : t.Union[t.List[int], None],
             samples_per_send: int = 10_000
     ):
         """Update samples labels.
@@ -794,6 +803,9 @@ class DeepchecksModelClient:
             A sequence of sample labels.
         samples_per_send: int , default 10_000
             how many samples to send by one request
+        timestamps : Union[List[int], None] , default None
+            list of numerical timestamps that represent second-based epoch time.
+            If not provided then current time will be used.
         """
         if len(sample_ids) == 0:
             raise ValueError('"sample_ids" array cannot be empty')
@@ -801,8 +813,8 @@ class DeepchecksModelClient:
         if len(labels) != len(sample_ids):
             raise ValueError('length of "labels" array must be equal to length of "sample_ids" array')
 
-        for sample_id, label in zip(sample_ids, labels):
-            self.log_label(sample_id=sample_id, label=label)
+        for sample_id, label, timestamp in zip(sample_ids, labels, timestamps):
+            self.log_label(sample_id=sample_id, label=label, timestamp=timestamp)
 
         self.send(samples_per_send)
 
