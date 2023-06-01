@@ -31,7 +31,6 @@ from sqlalchemy.orm import joinedload, load_only, sessionmaker
 from deepchecks_monitoring import config
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
 from deepchecks_monitoring.bgtasks.model_data_ingestion_alerter import ModelDataIngestionAlerter
-from deepchecks_monitoring.bgtasks.object_storage_ingestor import ObjectStorageIngestor
 from deepchecks_monitoring.monitoring_utils import TimeUnit, configure_logger, json_dumps
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import UNIQUE_NAME_TASK_CONSTRAINT, Task
@@ -41,6 +40,13 @@ from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMP
                                                              get_predictions_columns_by_type)
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.utils import database
+
+try:
+    import deepchecks_monitoring.ee
+except ImportError:
+    with_ee = False
+else:
+    with_ee = True
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
@@ -111,14 +117,15 @@ class AlertsScheduler:
                                   'org_id': org.id})
             except:  # noqa: E722
                 self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
-            try:
-                start = perf_counter()
-                await self.run_object_storage_ingestion(org)
-                duration = perf_counter() - start
-                self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
-                                  'org_id': org.id})
-            except:  # noqa: E722
-                self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+            if with_ee:
+                try:
+                    start = perf_counter()
+                    await self.run_object_storage_ingestion(org)
+                    duration = perf_counter() - start
+                    self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
+                                      'org_id': org.id})
+                except:  # noqa: E722
+                    self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -244,7 +251,7 @@ class AlertsScheduler:
             for model in models:
                 if model.s3_last_scan_time is None or pdl.instance(model.s3_last_scan_time).add(hours=2) < time:
                     tasks.append(dict(name=f'{organization.id}:{model.id}',
-                                      bg_worker_task=ObjectStorageIngestor.queue_name(),
+                                      bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
                                       params=dict(model_id=model.id, organization_id=organization.id)))
 
             await session.execute(insert(Task).values(tasks)
