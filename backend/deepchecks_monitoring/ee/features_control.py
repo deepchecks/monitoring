@@ -23,8 +23,8 @@ class TierConfSchema(BaseModel):
 class CloudFeaturesControl(FeaturesControl):
     """Feature controls class for the cloud version."""
 
-    def __init__(self, user: User, ld_client: LDClient, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, user: User, ld_client: LDClient, settings):
+        super().__init__(settings)
         self.user = user
         self.ld_client = ld_client
         self._max_models = None
