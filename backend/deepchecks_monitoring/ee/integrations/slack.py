@@ -16,6 +16,7 @@ from deepchecks_monitoring.ee.config import SlackSettings
 from deepchecks_monitoring.monitoring_utils import CheckParameterTypeEnum as CheckParameterKind
 from deepchecks_monitoring.monitoring_utils import MonitorCheckConfSchema as MonitorConfig
 from deepchecks_monitoring.schema_models import Alert, AlertRule, AlertSeverity, Check, Model, Monitor
+from deepchecks_monitoring.utils.alerts import prepare_alert_link
 
 __all__ = ["SlackInstallationSchema", "SlackInstallationError", "SlackAlertNotification", "SlackInstallationUtils",
            "SlackSender"]
@@ -162,10 +163,11 @@ class SlackAlertNotification(BaseSlackNotification):
         self.check_config = t.cast(CheckConfig, self.check.config)
         self.model = t.cast(Model, self.check.model)
 
-        self.alert_link = (furl(deepchecks_host) / "alerts").add({
-            "modelId": self.model.id,
-            "severity": self.rule.alert_severity.value
-        })
+        self.alert_link = prepare_alert_link(
+            deepchecks_host=deepchecks_host,
+            model_id=t.cast(int, self.model.id),
+            severity=self.rule.alert_severity.value
+        )
         self.monitor_config = t.cast(
             t.Optional[MonitorConfig],
             self.monitor.additional_kwargs
