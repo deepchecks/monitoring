@@ -169,7 +169,7 @@ def settings(async_engine, smtp_server):
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def features_control_mock(settings):
     class TestsFeaturesControl(CloudFeaturesControl):
         """Mocked features control class for tests, replacing launchdarkly usage."""
