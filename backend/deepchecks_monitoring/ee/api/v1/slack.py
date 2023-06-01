@@ -130,7 +130,6 @@ async def installation_callback(
 
     try:
         redirect_path = str(request.url_for('slack-installation-callback'))
-        breakpoint()
         installation = utils.finish_installation(code, redirect_path)
     except SlackInstallationError as exception:
         return RedirectResponse(
