@@ -2,7 +2,7 @@ import React, { createContext, ReactNode, useCallback, useMemo, useState, useEff
 
 import { DataFilter, AutoFrequencyResponse, OperatorsEnum } from 'api/generated';
 
-import { timeMap, timeValues } from 'helpers/time';
+import { timeMap, timeValues } from 'helpers/base/time';
 import { SetStateType } from 'helpers/types';
 import { setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { getParams, setParams } from 'helpers/utils/getParams';

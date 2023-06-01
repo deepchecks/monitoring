@@ -6,7 +6,7 @@ import { SwitchButton } from 'components/base/Button/SwitchButton';
 import {
   ControlledMarkedSelect,
   ControlledMarkedSelectSelectValues
-} from 'components/MarkedSelect/ControlledMarkedSelect';
+} from 'components/base/MarkedSelect/ControlledMarkedSelect';
 
 import { Checks, Research } from 'assets/icon/icon';
 

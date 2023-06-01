@@ -6,7 +6,7 @@ import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
 import { SelectPrimary, SelectPrimaryItem } from './SelectPrimary';
 import { Subcategory } from 'components/Subcategory';
 
-import { freqTimeWindow } from '../../helpers/monitorFields.helpers';
+import { freqTimeWindow } from '../../helpers/base/monitorFields.helpers';
 
 interface SelectFrequencyProps {
   timeWindows?: { label: string; value: number }[];

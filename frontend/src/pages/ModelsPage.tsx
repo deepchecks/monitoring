@@ -19,7 +19,6 @@ import {
   Alert
 } from '@mui/material';
 
-import HeaderLayout from 'components/HeaderLayout';
 import { Loader } from 'components/base/Loader/Loader';
 import { ModelInfoItem } from '../components/ModelInfoItem';
 import NoResults from 'components/NoResults';
@@ -27,13 +26,12 @@ import { FiltersResetButton } from 'components/FiltersSort/components/FiltersRes
 import FiltersSortButton from 'components/FiltersSort/components/FiltersSortButton';
 import { sortOptionsVariants, sortOptions } from 'components/FiltersSort/FiltersSort';
 import { StyledDeletionDialog } from 'components/lib';
+import { theme } from 'components/lib/theme';
 
 import useModels from '../helpers/hooks/useModels';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { resError } from 'helpers/types/resError';
-
-import { theme } from 'components/lib/theme';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
 
@@ -202,71 +200,68 @@ export const ModelsPage = () => {
 
   return (
     <>
-      <Box>
-        <HeaderLayout title="Connected Models" />
-        <StyledModelsContainer>
-          <Stack direction="row" justifyContent="space-between">
-            <Autocomplete
-              freeSolo
-              value={searchValue}
-              onChange={updateSearch}
-              inputValue={searchInputValue}
-              onInputChange={(_event, newInputValue) => {
-                setSearchInputValue(newInputValue);
-              }}
-              options={modelNamesArray}
-              sx={{ width: 300 }}
-              renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
-            />
-            {searchInputValue || searchValue || sort ? (
-              <Stack direction="row" spacing="11px">
-                <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
-                <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-              </Stack>
-            ) : (
+      <StyledModelsContainer>
+        <Stack direction="row" justifyContent="space-between">
+          <Autocomplete
+            freeSolo
+            value={searchValue}
+            onChange={updateSearch}
+            inputValue={searchInputValue}
+            options={modelNamesArray}
+            sx={{ width: 300 }}
+            renderInput={params => <StyledAutocompleteTextField {...params} label="Search..." />}
+            onInputChange={(_event, newInputValue) => {
+              setSearchInputValue(newInputValue);
+            }}
+          />
+          {searchInputValue || searchValue || sort ? (
+            <Stack direction="row" spacing="11px">
+              <FiltersResetButton handleReset={handleReset} isLoading={isLoading} />
               <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
-            )}
-            <Menu
-              anchorEl={anchorElSortMenu}
-              open={Boolean(anchorElSortMenu)}
-              onClose={handleCloseSortMenu}
-              MenuListProps={{
-                'aria-labelledby': 'basic-button'
-              }}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right'
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right'
-              }}
-            >
-              {sortOptions.map(sortMethod => (
-                <StyledSortMenuItem
-                  sort={sort}
-                  sortMethod={sortMethod}
-                  key={sortMethod}
-                  onClick={() => handleSort(sortMethod)}
-                >
-                  <Typography variant="subtitle2">{sortMethod}</Typography>
-                </StyledSortMenuItem>
-              ))}
-            </Menu>
-          </Stack>
-          {isLoading || !filteredAndSortedModelsList ? (
-            <Loader />
-          ) : filteredAndSortedModelsList.length !== 0 ? (
-            <StyledModelsList>
-              {filteredAndSortedModelsList.map(model => (
-                <ModelInfoItem key={model.id} model={model} onDelete={() => handleOpenModal(model.id)} />
-              ))}
-            </StyledModelsList>
+            </Stack>
           ) : (
-            <NoResults margin="168px auto" handleReset={handleReset} simple />
+            <FiltersSortButton handleOpenSortMenu={handleOpenSortMenu} isLoading={isLoading} />
           )}
-        </StyledModelsContainer>
-      </Box>
+          <Menu
+            anchorEl={anchorElSortMenu}
+            open={Boolean(anchorElSortMenu)}
+            onClose={handleCloseSortMenu}
+            MenuListProps={{
+              'aria-labelledby': 'basic-button'
+            }}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right'
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right'
+            }}
+          >
+            {sortOptions.map(sortMethod => (
+              <StyledSortMenuItem
+                sort={sort}
+                sortMethod={sortMethod}
+                key={sortMethod}
+                onClick={() => handleSort(sortMethod)}
+              >
+                <Typography variant="subtitle2">{sortMethod}</Typography>
+              </StyledSortMenuItem>
+            ))}
+          </Menu>
+        </Stack>
+        {isLoading || !filteredAndSortedModelsList ? (
+          <Loader />
+        ) : filteredAndSortedModelsList.length !== 0 ? (
+          <StyledModelsList>
+            {filteredAndSortedModelsList.map(model => (
+              <ModelInfoItem key={model.id} model={model} onDelete={() => handleOpenModal(model.id)} />
+            ))}
+          </StyledModelsList>
+        ) : (
+          <NoResults margin="168px auto" handleReset={handleReset} simple />
+        )}
+      </StyledModelsContainer>
       <StyledDeletionDialog
         open={!!modelIdToDelete}
         onClose={handleModalClose}

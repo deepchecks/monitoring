@@ -18,7 +18,7 @@ import { CheckPerSegment } from './components/CheckPerSegment';
 import { ClassOrFeature } from 'components/Analysis/AnalysisGroupBy/AnalysisGroupBy.types';
 import { Loader } from 'components/base/Loader/Loader';
 
-import { ControlledMarkedSelectSelectValues } from 'components/MarkedSelect/ControlledMarkedSelect';
+import { ControlledMarkedSelectSelectValues } from 'components/base/MarkedSelect/ControlledMarkedSelect';
 
 import { getKeyByDatasetName } from './SegmentsDrillDown.helpers';
 

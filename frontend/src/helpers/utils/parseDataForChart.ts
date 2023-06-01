@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 
 import { CheckResultSchema, AlertSchema } from 'api/generated';
 
-import { setBarGraphOptions, setLineGraphOptions } from 'helpers/setGraphOptions';
+import { setBarGraphOptions, setLineGraphOptions } from 'helpers/base/setGraphOptions';
 
 interface ChartOptions {
   id: string;

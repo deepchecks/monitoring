@@ -8,7 +8,7 @@ import { GraphLayout } from './GraphLayout';
 
 import { TITLE, chartData, chartOptions, barsColorArray } from '../SegmentsDrillDown.helpers';
 import { SetStateType } from 'helpers/types';
-import { drawActiveBarEffect } from 'helpers/diagramLine';
+import { drawActiveBarEffect } from 'helpers/base/diagramLine';
 import { CheckGroupBySchema } from 'api/generated';
 
 interface CheckPerSegmentProps {
