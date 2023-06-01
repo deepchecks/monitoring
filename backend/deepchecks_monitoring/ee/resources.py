@@ -28,7 +28,7 @@ from deepchecks_monitoring.resources import ResourcesProvider as OpenSourceResou
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import
-    from ray.util.actor_pool import ActorPool
+    from ray.util.actor_pool import ActorPool  # noqa
 
 __all__ = ["ResourcesProvider"]
 
@@ -97,8 +97,8 @@ class ResourcesProvider(OpenSourceResourcesProvider):
     def get_features_control(self, user: User) -> FeaturesControl:
         """Return features control."""
         if self.settings.is_cloud:
-            return CloudFeaturesControl(user, self.lauchdarkly_client)
-        return FeaturesControl()
+            return CloudFeaturesControl(user, self.lauchdarkly_client, self.settings)
+        return FeaturesControl(self.settings)
 
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":

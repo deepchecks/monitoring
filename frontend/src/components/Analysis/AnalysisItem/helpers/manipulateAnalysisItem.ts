@@ -1,7 +1,7 @@
 import { MutableRefObject } from 'react';
 import { CheckResultSchema, CheckSchema, DataFilter, MonitorCheckConfSchema } from 'api/generated';
 
-import { FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
+import { FrequencyNumberMap, FrequencyNumberType, frequencyValues } from 'helpers/utils/frequency';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { showDatasets } from './showDatasets';
 
@@ -62,12 +62,16 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
   async function getData() {
     let response;
 
+    // subtracting one day
+    const start = new Date(period[0].getTime() - frequencyValues.DAY);
+    const end = new Date(period[1].getTime() - frequencyValues.DAY);
+
     const runCheckBody: RunCheckBody = {
       checkId: check.id,
       data: {
         frequency: FrequencyNumberMap[frequency as FrequencyNumberType['type']],
-        start_time: period[0].toISOString(),
-        end_time: period[1].toISOString()
+        start_time: start.toISOString(),
+        end_time: end.toISOString()
       }
     };
 
@@ -90,13 +94,13 @@ export const manipulateAnalysisItem = (props: ManipulateData) => {
     const parsedChartData = parseDataForLineChart(response as CheckResultSchema);
 
     if (compareWithPreviousPeriod) {
-      const periodsTimeDifference = period[1].getTime() - period[0].getTime();
+      const periodsTimeDifference = end.getTime() - start.getTime();
       const runCheckPreviousPeriodBody: RunCheckBody = {
         ...runCheckBody,
         data: {
           ...runCheckBody.data,
-          start_time: new Date(period[0].getTime() - periodsTimeDifference).toISOString(),
-          end_time: new Date(period[1].getTime() - periodsTimeDifference).toISOString()
+          start_time: new Date(start.getTime() - periodsTimeDifference).toISOString(),
+          end_time: new Date(end.getTime() - periodsTimeDifference).toISOString()
         }
       };
 

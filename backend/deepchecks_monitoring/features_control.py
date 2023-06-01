@@ -27,13 +27,14 @@ class FeaturesSchema(BaseModel):
     onboarding_enabled: bool
     update_roles: bool
     model_assignment: bool
+    email_enabled: bool
 
 
 class FeaturesControl:
     """Features control class with default parameters for the open source version."""
 
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, settings):
+        self.settings = settings
 
     @property
     def max_models(self) -> int:
@@ -99,6 +100,11 @@ class FeaturesControl:
         """Whether multi-tenant is enabled."""
         return False
 
+    @property
+    def email_enabled(self) -> bool:
+        """Whether email is enabled."""
+        return self.settings.email_smtp_host is not None
+
     def get_all_features(self) -> FeaturesSchema:
         """Get all features for the client."""
         return FeaturesSchema(
@@ -113,4 +119,5 @@ class FeaturesControl:
             onboarding_enabled=self.onboarding_enabled,
             update_roles=self.update_roles,
             model_assignment=self.model_assignment,
+            email_enabled=self.email_enabled
         )
