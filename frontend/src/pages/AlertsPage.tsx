@@ -158,6 +158,7 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
               <NoResults
                 isTwoWeeksOlder={isModelsEndTimeTwoWeeksOlder}
                 handleReset={() => resetAlertFilters(setAlertFilters)}
+                margin="0 auto"
               />
             </StyledNoResultsContainer>
           )}
