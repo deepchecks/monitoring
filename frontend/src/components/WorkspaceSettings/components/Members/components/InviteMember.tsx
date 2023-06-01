@@ -34,9 +34,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
   const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
 
-  const errMessage = !isEmailEnabled
-    ? "Invitee won't get email since email is not configured. Go to to docs for guide how to configure it"
-    : err !== 'none' && err;
+  const errMessage = !isEmailEnabled ? constants.inviteMember.mailConfigErr : err !== 'none' && err;
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;

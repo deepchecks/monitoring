@@ -34,7 +34,8 @@ export const constants = {
     placeholder: 'email1@org-name.com, email2@org-name.com, email3@org-name.com, email4@org...',
     submit: 'Send Invite',
     inputLabel: 'Email address of the invitees',
-    success: 'Users invited successfully!'
+    success: 'Users invited successfully!',
+    mailConfigErr: "Invitee won't get email since email is not configured. Go to to docs for guide how to configure it"
   },
   removeMember: {
     title: 'Remove Member',
