@@ -251,7 +251,8 @@ async def log_labels(
         insert_statement = postgresql.insert(labels_table)
         upsert_statement = insert_statement.on_conflict_do_update(
             index_elements=[SAMPLE_ID_COL],
-            set_={SAMPLE_LABEL_COL: insert_statement.excluded[SAMPLE_LABEL_COL]}
+            set_={SAMPLE_LABEL_COL: insert_statement.excluded[SAMPLE_LABEL_COL],
+                  SAMPLE_TS_COL: insert_statement.excluded[SAMPLE_TS_COL]}
         )
         await session.execute(upsert_statement, list(valid_data.values()))
 

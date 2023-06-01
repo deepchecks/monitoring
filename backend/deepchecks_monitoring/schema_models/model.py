@@ -19,7 +19,7 @@ from sqlalchemy.orm import Mapped, Query, relationship
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
-from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
+from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_TS_COL,ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
 from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
@@ -145,7 +145,8 @@ class Model(Base, MetadataMixin, PermissionMixin):
     def get_sample_labels_columns(self):
         return {
             SAMPLE_ID_COL: ColumnType.TEXT,
-            SAMPLE_LABEL_COL: get_label_column_type(TaskType(self.task_type))
+            SAMPLE_LABEL_COL: get_label_column_type(TaskType(self.task_type)),
+            SAMPLE_TS_COL: ColumnType.DATETIME
         }
 
     def get_samples_versions_map_table_name(self):
