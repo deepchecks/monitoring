@@ -56,16 +56,16 @@ const WorkspaceSettings = () => {
             value={value}
             onChange={handleTabChange}
           >
-            <Tab label={constants.billingTabLabel} />
             <Tab label={constants.membersTabLabel} />
             <Tab label={constants.modelsTabLabel} />
+            <Tab label={constants.billingTabLabel} />
           </Tabs>
         )}
       </Box>
       <Box sx={{ marginY: '32px' }}>
-        {value === 0 && (showBilling ? <Billing /> : <NotOwnerMsg />)}
-        {value === 1 && <Members />}
-        {value === 2 && <ModelsTab />}
+        {value === 0 && <Members />}
+        {value === 1 && <ModelsTab />}
+        {value === 2 && (showBilling ? <Billing /> : <NotOwnerMsg />)}
       </Box>
     </Box>
   );
