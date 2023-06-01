@@ -103,7 +103,7 @@ export const Sidebar = () => {
             <StyledButton
               onClick={handleInviteToOrgClick}
               variant="outlined"
-              label="Invite members"
+              label="Invite Users"
               margin="0 auto"
               width="100%"
             />
