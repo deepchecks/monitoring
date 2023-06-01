@@ -8,12 +8,12 @@ import RemoveCircleRoundedIcon from '@mui/icons-material/RemoveCircleRounded';
 
 import useModels from 'helpers/hooks/useModels';
 import { SelectValues } from 'helpers/types';
-import { freqTimeWindow, buildFilters } from 'helpers/monitorFields.helpers';
+import { freqTimeWindow, buildFilters } from 'helpers/base/monitorFields.helpers';
 import { FilteredValues, unionCheckConf } from 'helpers/utils/checkUtil';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 import { SelectCheck } from 'components/Select/SelectCheck';
-import { MarkedSelect } from 'components/MarkedSelect';
+import { MarkedSelect } from 'components/base/MarkedSelect';
 import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 import { SelectColumn } from 'components/Select/SelectColumn';
 import { StyledText } from 'components/lib';

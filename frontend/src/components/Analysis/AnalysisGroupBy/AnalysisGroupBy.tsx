@@ -18,9 +18,9 @@ import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
 import {
   ControlledMarkedSelect,
   ControlledMarkedSelectSelectValues
-} from 'components/MarkedSelect/ControlledMarkedSelect';
+} from 'components/base/MarkedSelect/ControlledMarkedSelect';
 import { SegmentsDrillDown } from 'components/SegmentsDrillDown';
-import { RunDownloadSuite } from 'components/RunDownloadSuite';
+import { RunDownloadSuite } from 'components/SuiteView/RunDownloadSuite';
 
 import { CheckTypeOptions } from 'helpers/types/check';
 import { ClassOrFeature, AnalysisGroupByProps } from './AnalysisGroupBy.types';
