@@ -200,6 +200,7 @@ rm -f docker-compose.yml
 cp monitoring-main/deploy/docker-compose.yml docker-compose.yml.tmpl
 envsubst <  monitoring-main/deploy/oss-conf.env > oss-conf.env
 cp -a monitoring-main/bin/. bin/
+rm -rf monitoring-main
 
 envsubst < docker-compose.yml.tmpl > docker-compose.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf
