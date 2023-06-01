@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
@@ -25,7 +25,7 @@ function convertEmailsIntoAnArray(emails: string) {
 }
 
 export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const [buttonEnabled, setButtonEnabled] = useState(false);
@@ -48,18 +48,21 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
 
   const handleInviteMember = async () => {
     const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
-    setErr((res as resError)?.error_message ?? 'none');
-  };
 
-  useEffect(() => {
-    if (err === 'none') {
+    if ((res as resError)?.error_message) {
+      const errorMessage = (res as resError).additional_information?.errors?.map(e => e.msg).join(', ');
+      setErr(errorMessage || (res as resError)?.error_message);
+    } else {
+      setErr(null);
       setSuccess(true);
+
       reportEvent(events.authentication.inviteUser, {
         'Invited users emails': email
       });
+
       handleCloseDialog();
     }
-  }, [err]);
+  };
 
   const handleCloseSnackBar = () => setSuccess(false);
 
