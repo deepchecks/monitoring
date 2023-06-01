@@ -2,12 +2,12 @@ import dayjs from 'dayjs';
 
 export const constants = {
   header: {
-    title: 'Search member...',
-    removeMembers: 'Remove Members',
-    inviteMembers: 'Invite members'
+    title: 'Search user...',
+    removeMembers: 'Remove Users',
+    inviteMembers: 'Invite Users'
   },
   table: {
-    ariaLabel: 'organization members table',
+    ariaLabel: 'organization users table',
     name: 'Name',
     email: 'Email address',
     activeSince: 'Active since',
@@ -23,36 +23,37 @@ export const constants = {
     assignModels: 'Assign models'
   },
   editMember: {
-    title: 'Edit Member',
+    title: 'Edit User',
     submit: 'Save Changes',
     nameInputLabel: 'Name',
     emailInputLabel: 'Email address',
     role: 'Role'
   },
   inviteMember: {
-    title: 'Invite Members',
+    title: 'Invite Users',
     placeholder: 'email1@org-name.com, email2@org-name.com, email3@org-name.com, email4@org...',
     submit: 'Send Invite',
     inputLabel: 'Email address of the invitees',
-    success: 'Users invited successfully!'
+    success: 'Users invited successfully!',
+    mailConfigErr: 'Email is not configured. Learn how to configure it on our docs.' // TODO - Update to a link once we have it on docs
   },
   removeMember: {
-    title: 'Remove Member',
-    submit: 'Remove Member',
+    title: 'Remove User',
+    submit: 'Remove User',
     messageStart: 'Are you sure you want to remove ',
-    name: (name: string | undefined) => (name ? name : 'this member'),
+    name: (name: string | undefined) => (name ? name : 'this User'),
     messageEnd: ' from the workspace?'
   },
   removeSelectedMembers: {
-    title: 'Remove Members',
-    submit: 'Remove Members',
+    title: 'Remove Users',
+    submit: 'Remove Users',
     messageStart: 'Are you sure you want to remove ',
     messageEnd: ' from the workspace?',
-    allMembers: 'all members'
+    allMembers: 'all users'
   },
   deleteWorkspace: {
     title: 'Workspace Settings',
-    description: 'Delete your account along with all other members accounts.',
+    description: 'Delete your account along with all other users accounts.',
     deleteWorkspace: 'Delete Workspace',
     dialogMessage1: 'Deleting the workspace will erase all data and is irreversible.',
     dialogMessage2: 'Please confirm this by writing the workspace name below.',

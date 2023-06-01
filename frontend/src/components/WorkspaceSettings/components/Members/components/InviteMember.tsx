@@ -11,6 +11,7 @@ import { MembersActionDialogInput } from './MembersActionDialogInput';
 import { events, reportEvent } from 'helpers/services/mixPanel';
 import { validateEmail } from 'helpers/utils/validateEmail';
 import { resError } from 'helpers/types/resError';
+import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
@@ -31,6 +32,9 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
+  const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
+
+  const errMessage = !isEmailEnabled ? constants.inviteMember.mailConfigErr : err !== 'none' && err;
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -70,7 +74,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
         title={constants.inviteMember.title}
         closeDialog={handleCloseDialog}
         submitButtonLabel={constants.inviteMember.submit}
-        submitButtonDisabled={!buttonEnabled}
+        submitButtonDisabled={!buttonEnabled || !isEmailEnabled}
         submitButtonAction={handleInviteMember}
       >
         <MembersActionDialogContentLayout>
@@ -79,8 +83,9 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
             label={constants.inviteMember.inputLabel}
             value={email}
             onChange={handleEmailChange}
+            disabled={!isEmailEnabled}
           />
-          <Typography sx={{ margin: '8px', color: theme.palette.error.main }}>{err !== 'none' && err}</Typography>
+          <Typography sx={{ margin: '8px', color: theme.palette.error.main }}>{errMessage}</Typography>
         </MembersActionDialogContentLayout>
       </StyledDialog>
       <Snackbar
