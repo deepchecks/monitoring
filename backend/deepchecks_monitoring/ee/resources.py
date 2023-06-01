@@ -10,12 +10,14 @@
 #  pylint: disable=unnecessary-ellipsis
 """Module with resources instatiation logic."""
 import logging
+import pathlib
 from typing import TYPE_CHECKING, cast
 
 import ldclient
 from ldclient import Context
 from ldclient.client import LDClient
 from ldclient.config import Config as LDConfig
+from starlette.templating import Jinja2Templates
 
 from deepchecks_monitoring.ee import utils
 from deepchecks_monitoring.ee.config import Settings, SlackSettings, StripeSettings, TelemetrySettings
@@ -42,6 +44,18 @@ class ResourcesProvider(OpenSourceResourcesProvider):
         super().__init__(settings)
         self._lauchdarkly_client = None
         self._is_telemetry_initialized = False
+        self._jinja_templates = None
+
+    @property
+    def jinja_templates(self) -> Jinja2Templates:
+        """Return jinja templates."""
+        if templates := getattr(self, "_jinja_templates", None):
+            return templates
+
+        directory = pathlib.Path(__file__).absolute().parent / "templates"
+        templates = self._jinja_templates = Jinja2Templates(directory)
+        self._jinja_templates = templates
+        return templates
 
     @property
     def telemetry_settings(self) -> TelemetrySettings:

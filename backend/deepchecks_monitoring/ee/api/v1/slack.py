@@ -8,9 +8,10 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pginsert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
+from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep, SettingsDep
 from deepchecks_monitoring.ee.config import Settings
 from deepchecks_monitoring.ee.integrations.slack import SlackInstallationError, SlackInstallationUtils
+from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.monitoring_utils import exists_or_404
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models.slack import SlackInstallation, SlackInstallationState
@@ -53,7 +54,12 @@ async def installation_redirect(
     )
 
 
-@ee_router.get('/slack.install', name='slack-installation-callback', tags=['slack'])
+@ee_router.get(
+    '/slack.install',
+    name='slack-installation-callback',
+    tags=['slack'],
+    include_in_schema=False
+)
 async def installation_callback(
     request: Request,
     code: t.Optional[str] = Query(...),
@@ -76,69 +82,62 @@ async def installation_callback(
     """
     utils = SlackInstallationUtils(settings)
     headers = {'set-cookie': utils.generate_state_cookies_removal()}
+    result_page_url = request.url_for('slack-installation-result')
 
     if error is not None:
-        # TODO:
-        # what page should we show in this case?
-        # where user should be redirected in this case?
-        return PlainTextResponse(
-            status_code=status.HTTP_200_OK,
-            content=f'Failed to install slack into workspace.\nError: {error}',
+        return RedirectResponse(
+            url=result_page_url.include_query_params(
+                is_successful=False,
+                message=f'Failed to install slack into workspace.\nError: {error}'
+            ),
             headers=headers
         )
-
     if code is None:
-        # TODO:
-        # what page should we show in this case?
-        # where user should be redirected in this case
-        return PlainTextResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content='Redirection request missing exchange code',
+        return RedirectResponse(
+            url=result_page_url.include_query_params(
+                is_successful=False,
+                message='Redirection request missing exchange code'
+            ),
             headers=headers
         )
-
     if state is None:
-        # TODO:
-        # what page should we show in this case?
-        # where user should be redirected in this case
-        return PlainTextResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content='Missing installation state code',
+        return RedirectResponse(
+            url=result_page_url.include_query_params(
+                is_successful=False,
+                message='Missing installation state code'
+            ),
             headers=headers
         )
-
     if not utils.is_valid_state_cookies(state, request.headers):
-        # TODO:
-        # what page should we show in this case?
-        # where user should be redirected in this case
-        return PlainTextResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content='Invalid or missed installation state cookie',
+        return RedirectResponse(
+            url=result_page_url.include_query_params(
+                is_successful=False,
+                message='Invalid or missed installation state cookie'
+            ),
             headers=headers
         )
 
     is_active_state = await SlackInstallationState.is_active(session, state)
 
     if not is_active_state:
-        # TODO:
-        # what page should we show in this case?
-        # where user should be redirected in this case
-        return PlainTextResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content='Expired installation state code',
+        return RedirectResponse(
+            url=result_page_url.include_query_params(
+                is_successful=False,
+                message='Expired installation state code'
+            ),
             headers=headers
         )
 
     try:
         redirect_path = str(request.url_for('slack-installation-callback'))
+        breakpoint()
         installation = utils.finish_installation(code, redirect_path)
     except SlackInstallationError as exception:
-        # TODO:
-        # what page should we show in this case?
-        # where user should be redirected in this case
-        return PlainTextResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=str(exception),
+        return RedirectResponse(
+            url=result_page_url.include_query_params(
+                is_successful=False,
+                message=str(exception)
+            ),
             headers=headers
         )
 
@@ -175,13 +174,41 @@ async def installation_callback(
         )
     ))
 
-    # TODO:
-    # what page should we show in this case?
-    # where user should be redirected in this case
-    return PlainTextResponse(
-        status_code=status.HTTP_201_CREATED,
-        content='Slack app installed',
+    return RedirectResponse(
+        url=result_page_url.include_query_params(
+            is_successful=True,
+            message='Slack app installed'
+        ),
         headers=headers
+    )
+
+
+@ee_router.get(
+    '/slack.installation-result',
+    name='slack-installation-result',
+    tags=['slack'],
+    include_in_schema=False
+)
+def installation_finish_page(
+    request: Request,
+    is_successful: bool = Query(...),
+    message: str = Query(...),
+    resources_provider: ResourcesProvider = ResourcesProviderDep
+):
+    if not message:
+        message = (
+            "Slack app installed"
+            if is_successful
+            else "Failed to install slack app"
+        )
+    return resources_provider.jinja_templates.TemplateResponse(
+        name='slack/installation-status.html',
+        status_code=status.HTTP_200_OK,
+        context={
+            'request': request,
+            'message': message,
+            'is_successful': is_successful
+        },
     )
 
 
