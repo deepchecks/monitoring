@@ -62,6 +62,7 @@ export const constants = {
   },
   assignModels: {
     title: 'Assign Models',
+    willBeAssignedTo: 'Will be assigned to',
     submitButtonLabel: 'Assign',
     searchfieldPlaceholder: 'Search models...',
     dialogListItemSubtitle: (subtitle: number | undefined) =>

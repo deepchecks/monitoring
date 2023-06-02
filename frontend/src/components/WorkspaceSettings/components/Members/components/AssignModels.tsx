@@ -4,7 +4,9 @@ import { MemberSchema, ModelManagmentSchema, assignModelsToUserApiV1UsersUserIdM
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import useModels from 'helpers/hooks/useModels';
 
-import { StyledDialog, StyledInput } from 'components/lib';
+import { Stack } from '@mui/material';
+
+import { StyledDialog, StyledInput, StyledText } from 'components/lib';
 import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
 
 import { StyledDialogListContainer } from 'components/WorkspaceSettings/WorkspaceSettings.styles';
@@ -16,7 +18,8 @@ interface AssignModelsProps extends MembersActionDialog {
   member: MemberSchema | null;
 }
 
-const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel } = constants.assignModels;
+const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel, willBeAssignedTo } =
+  constants.assignModels;
 
 export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) => {
   const { models: initialModels, refetchModels } = useModels('showAll');
@@ -71,6 +74,12 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
       open={open}
       closeDialog={closeDialog}
     >
+      {member?.full_name && (
+        <Stack sx={{ flexDirection: 'row', margin: '-15px 0 0 4px' }}>
+          <StyledText text={willBeAssignedTo} sx={{ marginRight: '2.5px' }} />
+          <StyledText type="bodyBold" text={member?.full_name} sx={theme => ({ color: theme.palette.primary.main })} />
+        </Stack>
+      )}
       <StyledInput
         placeholder={searchfieldPlaceholder}
         value={searchFieldValue}
