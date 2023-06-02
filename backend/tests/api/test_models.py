@@ -362,6 +362,16 @@ def test_available_models_retrieval(test_api: TestAPI, classification_model: Pay
     assert len(available_models) == 1
     assert available_models[0]["name"] == classification_model["name"]
 
+def test_available_models_retrieval_show_all(test_api: TestAPI, client, user, classification_model: Payload):
+    response = client.post(f"/api/v1/users/{user.id}/models", json={"model_ids": []})
+    assert response.status_code == 200, response.content
+    available_models = test_api.fetch_available_models()
+    assert len(available_models) == 0
+
+    available_models = t.cast(t.List[Payload], test_api.fetch_available_models(show_all=True))
+    assert len(available_models) == 1
+    assert available_models[0]["name"] == classification_model["name"]
+
 @pytest.mark.asyncio
 async def test_user_model_update(client: TestClient,
                                  test_api,
