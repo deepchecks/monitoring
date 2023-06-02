@@ -102,6 +102,9 @@ class ResourcesProvider(OpenSourceResourcesProvider):
 
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":
+        if not self.settings.is_cloud:
+            return
+
         parallel_check_executor_flag = self.lauchdarkly_client.variation(
             "parallelCheckExecutorEnabled",
             context=Context.builder("parallelCheckExecutorEnabled").build(),
