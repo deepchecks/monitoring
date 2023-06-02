@@ -14,7 +14,7 @@ const ModelsTab = () => {
   const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>([]);
 
   useEffect(() => {
-    setModelsList(initialModels);
+    initialModels.length && setModelsList(initialModels);
   }, [initialModels]);
 
   return (
