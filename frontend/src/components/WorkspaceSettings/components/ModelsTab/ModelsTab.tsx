@@ -9,7 +9,7 @@ import { ModelsTabHeader } from './components/ModelsTabHeader';
 import { ModelsTabTable } from './components/ModelsTabTable/ModelsTabTable';
 
 const ModelsTab = () => {
-  const { models: initialModels, isLoading, refetchModels } = useModels();
+  const { models: initialModels, isLoading, refetchModels } = useModels('showAll');
 
   const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>([]);
 

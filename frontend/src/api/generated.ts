@@ -34,6 +34,8 @@ export type GetModelColumnsApiV1ModelsModelIdColumnsGet200 = { [key: string]: Co
 
 export type GetModelColumnsApiV1ModelsModelIdColumnsGetParams = { identifier_kind?: IdentifierKind };
 
+export type RetrieveAvailableModelsApiV1AvailableModelsGetParams = { show_all?: boolean };
+
 export type GetVersionsPerModelApiV1ModelsModelIdVersionsGetParams = { identifier_kind?: IdentifierKind };
 
 export type DeleteModelApiV1ModelsModelIdDeleteParams = { identifier_kind?: IdentifierKind };
@@ -4044,30 +4046,38 @@ export const useGetVersionsPerModelApiV1ModelsModelIdVersionsGet = <
  * Retrieve list of available models.
  * @summary Retrieve Available Models
  */
-export const retrieveAvailableModelsApiV1AvailableModelsGet = (signal?: AbortSignal) => {
-  return customInstance<ModelManagmentSchema[]>({ url: `/api/v1/available-models`, method: 'get', signal });
+export const retrieveAvailableModelsApiV1AvailableModelsGet = (
+  params?: RetrieveAvailableModelsApiV1AvailableModelsGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<ModelManagmentSchema[]>({ url: `/api/v1/available-models`, method: 'get', params, signal });
 };
 
-export const getRetrieveAvailableModelsApiV1AvailableModelsGetQueryKey = () => [`/api/v1/available-models`];
+export const getRetrieveAvailableModelsApiV1AvailableModelsGetQueryKey = (
+  params?: RetrieveAvailableModelsApiV1AvailableModelsGetParams
+) => [`/api/v1/available-models`, ...(params ? [params] : [])];
 
 export type RetrieveAvailableModelsApiV1AvailableModelsGetQueryResult = NonNullable<
   Awaited<ReturnType<typeof retrieveAvailableModelsApiV1AvailableModelsGet>>
 >;
-export type RetrieveAvailableModelsApiV1AvailableModelsGetQueryError = ErrorType<unknown>;
+export type RetrieveAvailableModelsApiV1AvailableModelsGetQueryError = ErrorType<HTTPValidationError>;
 
 export const useRetrieveAvailableModelsApiV1AvailableModelsGet = <
   TData = Awaited<ReturnType<typeof retrieveAvailableModelsApiV1AvailableModelsGet>>,
-  TError = ErrorType<unknown>
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveAvailableModelsApiV1AvailableModelsGet>>, TError, TData>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  TError = ErrorType<HTTPValidationError>
+>(
+  params?: RetrieveAvailableModelsApiV1AvailableModelsGetParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof retrieveAvailableModelsApiV1AvailableModelsGet>>, TError, TData>;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getRetrieveAvailableModelsApiV1AvailableModelsGetQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getRetrieveAvailableModelsApiV1AvailableModelsGetQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof retrieveAvailableModelsApiV1AvailableModelsGet>>> = ({
     signal
-  }) => retrieveAvailableModelsApiV1AvailableModelsGet(signal);
+  }) => retrieveAvailableModelsApiV1AvailableModelsGet(params, signal);
 
   const query = useQuery<Awaited<ReturnType<typeof retrieveAvailableModelsApiV1AvailableModelsGet>>, TError, TData>(
     queryKey,
