@@ -24,7 +24,7 @@ interface MembersTableProps {
 }
 
 export const MembersTable = ({ members, selected, setSelected, handleOpenActionDialog }: MembersTableProps) => {
-  const { models } = useModels();
+  const { models } = useModels('showAll');
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
