@@ -116,40 +116,40 @@ rm -f Caddyfile
 if [[ $ENABLE_HTTP == 'true' ]]; then
   export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   envsubst > Caddyfile <<EOF
-  {
-    auto_https disable_redirects
-  }
-  $DOMAIN:8443 {
-      tls /certs/localhost.crt /certs/localhost.key
+{
+  auto_https disable_redirects
+}
+$DOMAIN:8443 {
+    tls /certs/localhost.crt /certs/localhost.key
 
-      reverse_proxy http://casdoor:4545 {
-          header_up Host {upstream_hostport}
-          header_up X-Real-IP {remote_host}
-      }
-  }
-  $DOMAIN, :443 {
-      tls /certs/localhost.crt /certs/localhost.key
+    reverse_proxy http://casdoor:4545 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+    }
+}
+$DOMAIN, :443 {
+    tls /certs/localhost.crt /certs/localhost.key
 
-      reverse_proxy http://app:8000
-  }
-  $DOMAIN:80 {
-      reverse_proxy http://app:8000
-  }
+    reverse_proxy http://app:8000
+}
+$DOMAIN:80 {
+    reverse_proxy http://app:8000
+}
 EOF
 else
   envsubst > Caddyfile <<EOF
-  {
-    $TLS_BLOCK
-  }
-  $DOMAIN:8443 {
-      reverse_proxy http://casdoor:4545 {
-          header_up Host {upstream_hostport}
-          header_up X-Real-IP {remote_host}
-      }
-  }
-  $DOMAIN, :80, :443 {
-  reverse_proxy http://app:8000
-  }
+{
+  $TLS_BLOCK
+}
+$DOMAIN:8443 {
+    reverse_proxy http://casdoor:4545 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+    }
+}
+$DOMAIN, :80, :443 {
+    reverse_proxy http://app:8000
+}
 EOF
 
 fi;
@@ -200,7 +200,7 @@ rm -f docker-compose.yml
 cp monitoring-main/deploy/docker-compose.yml docker-compose.yml.tmpl
 envsubst <  monitoring-main/deploy/oss-conf.env > oss-conf.env
 cp -a monitoring-main/bin/. bin/
-rm -rf monitoring-main
+mv monitoring-main monitoring
 
 envsubst < docker-compose.yml.tmpl > docker-compose.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf
