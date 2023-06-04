@@ -25,7 +25,7 @@ The [deepchecks](https://github.com/deepchecks/deepchecks) checks (which are the
 can be customized and adapted to the monitoring service.
 
 Moreover, when you focus on an issue that requires code level analysis, you can launch the full testing
-package, with the relevant data on your Python environmen and continue the root cause analysis in your
+package, with the relevant data on your Python environment and continue the root cause analysis in your
 "home" environment.
 
 Deepchecks Monitoring provides a comprehensive solution for detecting data and model drift,
