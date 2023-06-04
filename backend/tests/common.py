@@ -33,12 +33,13 @@ async def generate_user(
     with_org: bool = True,
     switch_schema: bool = False,
     eula: bool = True,
-    organization_id=None
+    organization_id=None,
+    email=None
 ) -> User:
     f = faker.Faker()
-
+    email = email or f.email()
     u = await User.from_oauth_info(
-        info=UserOAuthDTO(email=f.email(), name=f.name()),
+        info=UserOAuthDTO(email=email, name=f.name()),
         session=session,
         auth_jwt_secret=auth_jwt_secret,
         eula=eula
@@ -373,9 +374,10 @@ class TestAPI:
 
     def fetch_available_models(
         self,
+        show_all: bool = False,
         expected_status: ExpectedStatus = (200, 299)
     ) -> t.Union[httpx.Response, t.List[Payload]]:
-        response = self.api.session.get("available-models")
+        response = self.api.session.get(f"available-models?show_all={show_all}")
         response = t.cast(httpx.Response, response)
         expected_status = ExpectedHttpStatus.create(expected_status)
         expected_status.assert_response_status(response)

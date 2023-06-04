@@ -19,11 +19,15 @@ interface AssignModelsProps extends MembersActionDialog {
 const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel } = constants.assignModels;
 
 export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) => {
-  const { models: initialModels, refetchModels } = useModels();
+  const { models: initialModels, refetchModels } = useModels('showAll');
 
-  const [modelsList, setModelsList] = useState(initialModels);
+  const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>([]);
   const [selectedModels, setSelectedModels] = useState<readonly number[]>([]);
   const [fetching, setFetching] = useState(false);
+
+  useEffect(() => {
+    initialModels.length && setModelsList(initialModels);
+  }, [initialModels]);
 
   const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<ModelManagmentSchema>(
     initialModels,

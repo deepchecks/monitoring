@@ -321,6 +321,15 @@ class CurrentActiveUser(CurrentUser):
         return user
 
 
+def is_admin(user: "models.User") -> bool:
+    """Return true if user is admin or above."""
+    return len([
+            role
+            for role in user.roles
+            if role.role in {models.role.RoleEnum.ADMIN, models.role.RoleEnum.OWNER}
+        ]) > 0 and not user.disabled
+
+
 class AdminUser(CurrentActiveUser):
     """Authenticate a user and verify that he is an admin."""
 
@@ -332,11 +341,7 @@ class AdminUser(CurrentActiveUser):
     ) -> t.Optional["models.User"]:
         """Dependency for validation of a current active admin user."""
         user = t.cast("models.User", await super().__call__(request, bearer, session))
-        if len([
-            role
-            for role in user.roles
-            if role.role in {models.role.RoleEnum.ADMIN, models.role.RoleEnum.OWNER}
-        ]) == 0 or user.disabled:
+        if not is_admin(user):
             raise AccessForbidden("User does not have admin rights")
         return user
 
