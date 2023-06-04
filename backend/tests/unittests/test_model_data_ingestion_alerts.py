@@ -42,17 +42,17 @@ async def test_data_ingestion_scheduling(
     start = now - pdl.duration(hours=10)
 
     alert_rules = [
-        test_api.create_model_alert_rule(classification_model["id"],
+        test_api.create_data_ingestion_alert_rule(classification_model["id"],
                                          dict(name="ahh",
                                               alert_type=AlertRuleType.SAMPLE_COUNT,
                                               frequency=Frequency.HOUR,
                                               condition={"operator": "less_than", "value": 3})),
-        test_api.create_model_alert_rule(classification_model["id"],
+        test_api.create_data_ingestion_alert_rule(classification_model["id"],
                                          dict(name="ahh",
                                               alert_type=AlertRuleType.LABEL_COUNT,
                                               frequency=Frequency.HOUR,
                                               condition={"operator": "less_than", "value": 3})),
-        test_api.create_model_alert_rule(classification_model["id"],
+        test_api.create_data_ingestion_alert_rule(classification_model["id"],
                                          dict(name="ahh",
                                               alert_type=AlertRuleType.LABEL_RATIO,
                                               frequency=Frequency.HOUR,

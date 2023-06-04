@@ -722,7 +722,7 @@ class TestAPI:
 
         return t.cast(Payload, self.fetch_alert_rule(alert_rule_id=data["id"]))
 
-    def create_model_alert_rule(
+    def create_data_ingestion_alert_rule(
         self,
         model_id: int,
         alert_rule: t.Optional[t.Dict[t.Any, t.Any]],
@@ -741,7 +741,7 @@ class TestAPI:
         assert isinstance(data, dict)
         assert "id" in data
 
-        return t.cast(Payload, self.fetch_model_alert_rule(data_ingestion_alert_rule_id=data["id"]))
+        return t.cast(Payload, self.fetch_data_ingestion_alert_rule(data_ingestion_alert_rule_id=data["id"]))
 
     def fetch_alert_rule(
         self,
@@ -758,7 +758,7 @@ class TestAPI:
 
         return self._assert_alert_rule(response.json())
 
-    def fetch_model_alert_rule(
+    def fetch_data_ingestion_alert_rule(
         self,
         data_ingestion_alert_rule_id: int,
         expected_status: ExpectedStatus = (200, 299)

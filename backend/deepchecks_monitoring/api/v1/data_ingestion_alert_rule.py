@@ -68,7 +68,7 @@ class DataIngestionAlertRuleUpdateSchema(BaseModel):
 @router.post(
     "/models/{model_id}/data-ingestion-alert-rules",
     response_model=IdResponse,
-    tags=[Tags.ALERTS],
+    tags=[Tags.DATA_ALERTS],
     dependencies=[Depends(Model.get_object_from_http_request)],
     summary="Create new alert rule on a given model."
 )
@@ -92,7 +92,7 @@ async def create_alert_rule(
 
 
 @router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}",
-            response_model=DataIngestionAlertRuleSchema, tags=[Tags.ALERTS])
+            response_model=DataIngestionAlertRuleSchema, tags=[Tags.DATA_ALERTS])
 async def get_alert_rule(
         data_ingestion_alert_rule_id: int,  # pylint: disable=unused-argument
         alert_rule: DataIngestionAlertRule = Depends(DataIngestionAlertRule.get_object_from_http_request)
@@ -102,7 +102,7 @@ async def get_alert_rule(
 
 
 @router.put("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}",
-            tags=[Tags.ALERTS],
+            tags=[Tags.DATA_ALERTS],
             dependencies=[Depends(DataIngestionAlertRule.get_object_from_http_request)],
             summary="Update data-ingestion alert rule by id.")
 async def update_alert(
@@ -118,7 +118,7 @@ async def update_alert(
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.delete("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}", tags=[Tags.ALERTS])
+@router.delete("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}", tags=[Tags.DATA_ALERTS])
 async def delete_alert_rule(
         data_ingestion_alert_rule_id: int,  # pylint: disable=unused-argument
         session: AsyncSession = AsyncSessionDep,
@@ -130,7 +130,7 @@ async def delete_alert_rule(
 
 
 @router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}/alerts",
-            response_model=t.List[DataIngestionAlertSchema], tags=[Tags.ALERTS])
+            response_model=t.List[DataIngestionAlertSchema], tags=[Tags.DATA_ALERTS])
 async def get_alerts_of_alert_rule(
         data_ingestion_alert_rule_id: int,  # pylint: disable=unused-argument
         resolved: t.Optional[bool] = None,
@@ -148,7 +148,7 @@ async def get_alerts_of_alert_rule(
 
 @router.post("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}/resolve-all",
              dependencies=[Depends(DataIngestionAlertRule.get_object_from_http_request)],
-             tags=[Tags.ALERTS])
+             tags=[Tags.DATA_ALERTS])
 async def resolve_all_alerts_of_alert_rule(
         alert_rule_id: int,
         session: AsyncSession = AsyncSessionDep
@@ -162,7 +162,7 @@ async def resolve_all_alerts_of_alert_rule(
 
 @router.post(
     "/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}/alerts/reactivate-resolved",
-    tags=[Tags.ALERTS],
+    tags=[Tags.DATA_ALERTS],
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(DataIngestionAlertRule.get_object_from_http_request)],
     description="Reactivate all resolved alerts"

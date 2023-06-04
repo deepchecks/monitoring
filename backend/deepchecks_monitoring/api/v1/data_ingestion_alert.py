@@ -52,7 +52,7 @@ class DataIngestionAlertSchema(DataIngestionAlertCreationSchema):
 
 
 @router.get("/data-ingestion-alerts/count_active",
-            response_model=t.Dict[AlertSeverity, int], tags=[Tags.ALERTS])
+            response_model=t.Dict[AlertSeverity, int], tags=[Tags.DATA_ALERTS])
 async def count_alerts(
     session: AsyncSession = AsyncSessionDep,
     user: User = Depends(auth.CurrentUser()),
@@ -72,7 +72,7 @@ async def count_alerts(
 
 @router.post("/data-ingestion-alerts/{data_ingestion_alert_id}/resolve",
              dependencies=[Depends(DataIngestionAlert.get_object_from_http_request)],
-             tags=[Tags.ALERTS])
+             tags=[Tags.DATA_ALERTS])
 async def resolve_alert(
         data_ingestion_alert_id: int,
         session: AsyncSession = AsyncSessionDep,
@@ -84,7 +84,7 @@ async def resolve_alert(
 
 @router.post(
     "/data-ingestion-alerts/{data_ingestion_alert_id}/reactivate",
-    tags=[Tags.ALERTS],
+    tags=[Tags.DATA_ALERTS],
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(DataIngestionAlert.get_object_from_http_request)],
     description="Reactivate resolved alert."
@@ -100,7 +100,7 @@ async def reactivate_alert(
 
 
 @router.get("/data-ingestion-alerts/{data_ingestion_alert_id}",
-            response_model=DataIngestionAlertSchema, tags=[Tags.ALERTS])
+            response_model=DataIngestionAlertSchema, tags=[Tags.DATA_ALERTS])
 async def get_alert(
         data_ingestion_alert_id: int,  # pylint: disable=unused-argument
         alert: DataIngestionAlert = Depends(DataIngestionAlert.get_object_from_http_request)
@@ -109,7 +109,7 @@ async def get_alert(
     return DataIngestionAlertSchema.from_orm(alert)
 
 
-@router.delete("/data-ingestion-alerts/{data_ingestion_alert_id}", tags=[Tags.ALERTS])
+@router.delete("/data-ingestion-alerts/{data_ingestion_alert_id}", tags=[Tags.DATA_ALERTS])
 async def delete_alert(
         data_ingestion_alert_id: int,  # pylint: disable=unused-argument
         session: AsyncSession = AsyncSessionDep,
