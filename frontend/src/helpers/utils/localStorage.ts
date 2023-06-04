@@ -2,7 +2,8 @@ export const storageKeys = {
   dataIngestionTimeFilter: 'data_ingestion_time_filter',
   analysisFrequency: 'analysis_frequency',
   analysisPeriod: 'analysis_period',
-  environment: 'environment'
+  environment: 'environment',
+  user: 'user'
 };
 
 export const getStorageItem = (key: string) => {

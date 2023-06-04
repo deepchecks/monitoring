@@ -8,10 +8,12 @@ import {
   UserSchema,
   getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet,
   FeaturesSchema,
-  RoleEnum
+  RoleEnum,
+  useRetrieveBackendVersionApiV1BackendVersionGet
 } from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
+import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -49,13 +51,30 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
     }
   });
 
+  const { data: versionData } = useRetrieveBackendVersionApiV1BackendVersionGet();
+
   const refetchUser = () => refetch();
 
+  const deployment = getStorageItem(storageKeys.environment)['is_cloud'] === true ? 'saas' : 'on-prem';
+  const userRole = data?.roles.includes('admin') ? (data?.roles.includes('owner') ? 'owner' : 'admin') : 'member';
   const isUserDetailsComplete = !!user?.organization;
 
   useEffect(() => {
     setUser(data as UserSchema);
-  }, [data]);
+
+    setStorageItem(storageKeys.user, {
+      u_id: data?.id,
+      u_role: userRole,
+      u_email: data?.email,
+      u_name: data?.email,
+      u_org: data?.organization?.name,
+      u_created_at: data?.created_at,
+      o_deployment: deployment,
+      o_tier: data?.organization?.tier,
+      o_name: data?.organization?.name,
+      o_version: (versionData as any)?.version
+    });
+  }, [data, deployment, versionData]);
 
   useEffect(() => {
     if (!user || isUserDetailsComplete) return;
