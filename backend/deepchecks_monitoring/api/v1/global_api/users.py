@@ -149,6 +149,13 @@ async def delete_user(
         session: AsyncSession = AsyncSessionDep,
 ):
     """Delete the user."""
+    # Attach the organization schema to the session in order to query the model members
+    await database.attach_schema_switcher_listener(
+        session=session,
+        schema_search_path=[user.organization.schema_name, "public"]
+    )
+
+    await session.delete(select(ModelMember).where(ModelMember.user_id == user.id))
     await session.delete(user)
     return Response()
 
