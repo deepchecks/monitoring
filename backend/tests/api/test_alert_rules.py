@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
+from deepchecks_monitoring.utils.alerts import Frequency
 from tests.common import Payload, TestAPI, create_alert
 
 
@@ -278,6 +280,19 @@ async def test_alert_rules_config(
 ):
     monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
 
+    data_alert_rules = [
+        test_api.create_data_ingestion_alert_rule(classification_model_check["id"],
+                                         dict(name="ahh",
+                                              alert_type=AlertRuleType.SAMPLE_COUNT,
+                                              frequency=Frequency.HOUR,
+                                              condition={"operator": "less_than", "value": 3})),
+        test_api.create_data_ingestion_alert_rule(classification_model_check["id"],
+                                         dict(name="ahh",
+                                              alert_type=AlertRuleType.LABEL_COUNT,
+                                              frequency=Frequency.HOUR,
+                                              alert_severity=AlertSeverity.LOW.value,
+                                              condition={"operator": "less_than", "value": 3}))
+    ]
     alert_rule = as_dict(test_api.create_alert_rule(
         monitor_id=monitor["id"],
         alert_rule={
@@ -307,7 +322,11 @@ async def test_alert_rules_config(
     assert response.status_code == 200
 
     rules = t.cast(t.List[t.Dict[str, t.Any]], response.json())
-
-    assert len(rules) == 2
-    assert rules[0]["alert_severity"] == "medium"
-    assert rules[1]["alert_severity"] == "low"
+    alert_rules = rules["alert_rules"]
+    assert len(alert_rules) == 2
+    assert alert_rules[0]["alert_severity"] == "medium"
+    assert alert_rules[1]["alert_severity"] == "low"
+    data_alert_rules = rules["data_alert_rules"]
+    assert len(data_alert_rules) == 2
+    assert data_alert_rules[0]["alert_severity"] == "medium"
+    assert data_alert_rules[1]["alert_severity"] == "low"

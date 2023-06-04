@@ -30,9 +30,10 @@ from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.resources import ResourcesProvider
-from deepchecks_monitoring.schema_models import AlertSeverity, SlackInstallation
+from deepchecks_monitoring.schema_models import SlackInstallation
 from deepchecks_monitoring.schema_models.alert_webhook import AlertWebhook
 from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils.alerts import AlertSeverity
 
 from .global_router import router
 
