@@ -33,12 +33,13 @@ async def generate_user(
     with_org: bool = True,
     switch_schema: bool = False,
     eula: bool = True,
-    organization_id=None
+    organization_id=None,
+    email=None
 ) -> User:
     f = faker.Faker()
-
+    email = email or f.email()
     u = await User.from_oauth_info(
-        info=UserOAuthDTO(email=f.email(), name=f.name()),
+        info=UserOAuthDTO(email=email, name=f.name()),
         session=session,
         auth_jwt_secret=auth_jwt_secret,
         eula=eula

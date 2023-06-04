@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, LicenseError
-from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.organization import OrgTier
@@ -29,7 +29,7 @@ from deepchecks_monitoring.public_models.role import RoleEnum
 from deepchecks_monitoring.public_models.user import User
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
-from deepchecks_monitoring.utils import auth
+from deepchecks_monitoring.utils import auth, database
 from deepchecks_monitoring.utils.auth import create_api_token
 
 from .global_router import router
@@ -122,11 +122,17 @@ async def update_complete_details(
     elif body.accept_invite:
         invite: Invitation = await fetch_or_404(session, Invitation, email=user.email)
         # Check organization exists
-        await exists_or_404(session, Organization, id=invite.organization_id)
+        organization = await fetch_or_404(session, Organization, id=invite.organization_id)
         # Update user in database
         user.organization_id = invite.organization_id
         # delete the invite
         await session.delete(invite)
+
+        # Attach the organization schema to the session in order to query the models
+        await database.attach_schema_switcher_listener(
+            session=session,
+            schema_search_path=[organization.schema_name, "public"]
+        )
 
         model_ids = await session.scalars(select(Model.id))
         model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
