@@ -44,7 +44,7 @@ for us automatically!
 
 .. code-block:: bash
 
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy/deploy-oss.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy-oss.sh)"
 
 You will be asked for the release tag you would like to use (default to `latest-release`), the domain you'd like to use,
 and whether this deployment should be secured (HTTP or HTTPS).
