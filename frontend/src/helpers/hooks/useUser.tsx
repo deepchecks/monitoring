@@ -64,7 +64,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       u_id: data?.id,
       u_role: userRole,
       u_email: data?.email,
-      u_name: data?.email,
+      u_name: data?.full_name,
       u_org: data?.organization?.name,
       u_created_at: data?.created_at,
       o_tier: data?.organization?.tier,
