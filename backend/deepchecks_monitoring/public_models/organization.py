@@ -98,8 +98,8 @@ class Organization(Base):
         """Generate a schema name for organization."""
         value = slugify(org_name, separator="_")
         value = value if value else "".join(choice(ascii_lowercase) for _ in range(10))
-        # postgres schema name has limit of 63 characters, so truncate the hash and org name
-        return f"org_{value[:30]}_{secrets.token_hex(16)}"
+        # postgres schema name has limit of 63 characters, so truncate the org name
+        return f"org_{value[:30]}_{secrets.token_hex(8)}"
 
     @classmethod
     def generate_stripe_customer_id(cls, org_name: str) -> t.Optional[str]:
