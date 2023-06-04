@@ -87,6 +87,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       getAvailableFeatures();
       setIsAdmin(!!user?.roles.includes(RoleEnum.admin));
       setIsOwner(!!user?.roles.includes(RoleEnum.owner));
+      user?.id && mixpanel.identify(user?.id.toString());
     }
   }, [user]);
 
@@ -97,14 +98,8 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
 
   const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner, refetchUser };
 
-  if (user) {
-    if (isUserDetailsComplete) {
-      if (hotjar.initialized()) {
-        hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
-      }
-
-      mixpanel.identify(`${user.id}`);
-    }
+  if (user && isUserDetailsComplete && hotjar.initialized()) {
+    hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
   }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

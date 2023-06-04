@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import mixpanel from 'mixpanel-browser';
 
 import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
@@ -35,6 +36,7 @@ export const UserInfo = () => {
     reportEvent(events.authentication.logout);
     logoutApiV1AuthLogoutGet().then(() => {
       handleClose();
+      mixpanel.reset();
       window.location.reload();
     });
   };
