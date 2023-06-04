@@ -1,8 +1,9 @@
 import React, { PropsWithChildren, useState } from 'react';
 import { Link } from '@mui/material';
-import { InfoIcon } from 'assets/icon/icon';
-import { events, reportEvent } from 'helpers/services/mixPanel';
+
 import { theme } from 'components/lib/theme';
+
+import { InfoIcon } from 'assets/icon/icon';
 
 interface InfoLinkItemProps {
   docsLink: string;
@@ -14,7 +15,6 @@ export function InfoLink({ docsLink }: PropsWithChildren<InfoLinkItemProps>) {
 
   const onMouseEnter = () => {
     setIsHovered(true);
-    reportEvent(events.analysisPage.clickedInfoButton);
   };
 
   return (

@@ -23,8 +23,6 @@ import {
 
 import { DeleteIcon, ViewDetails } from 'assets/icon/icon';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
-
 dayjs.extend(localizedFormat);
 
 interface ModelInfoItemProps {
@@ -56,7 +54,6 @@ export const ModelInfoItem = ({ model, onDelete }: ModelInfoItemProps) => {
 
   const handleOpen = () => {
     setOpen(true);
-    reportEvent(events.modelsPage.clickedViewDetails);
   };
 
   const handleClose = () => setOpen(false);

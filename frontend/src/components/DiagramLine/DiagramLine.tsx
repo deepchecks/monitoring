@@ -6,7 +6,6 @@ import 'chartjs-adapter-dayjs-3';
 
 import { drawAlerts, drawCircle, setAlertLine } from 'helpers/base/diagramLine';
 import { createGradient, defaultTooltipCallbacks, initAlertsWidget } from './DiagramLine.helpers';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { frequencyValues } from 'helpers/utils/frequency';
 
 import { alpha, Box, Typography, styled } from '@mui/material';
@@ -73,8 +72,6 @@ function DiagramLine({
 
   const hideLine = useCallback(
     (item: LegendItem) => {
-      reportEvent(events.analysisPage.clickedGraphLegend);
-
       if (currentChart && typeof item.datasetIndex === 'number') {
         const isDatasetVisible = currentChart.isDatasetVisible(item.datasetIndex);
 

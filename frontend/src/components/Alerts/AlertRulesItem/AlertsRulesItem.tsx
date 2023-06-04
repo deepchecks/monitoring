@@ -19,7 +19,6 @@ import { StyledSeverity } from 'components/lib';
 
 import { OperatorsEnumMap } from 'helpers/base/conditionOperator';
 import processFrequency from 'helpers/utils/processFrequency';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import {
   StyledBlur,
@@ -68,13 +67,11 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
 
   const handleOpenResolve = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    reportEvent(events.alertsPage.clickedResolveAll);
     return onResolveOpen();
   };
 
   const handleEditRuleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    reportEvent(events.alertRulesPage.clickedEditRule);
     return setEditedAlertRule(alertRule.id);
   };
 
@@ -84,7 +81,6 @@ export const AlertsRulesItem = memo(({ alertRule, onResolveOpen, onDrawerOpen, r
 
   const handleOpenDrawer = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    reportEvent(events.sidebar.clickedAlertsRules);
     return onDrawerOpen();
   };
 

@@ -5,12 +5,10 @@ import useModels from 'helpers/hooks/useModels';
 
 import { Loader } from 'components/base/Loader/Loader';
 import { MonitorsGroup } from './components/MonitorsGroup';
-
 import { DeleteMonitor } from './components/DeleteMonitor';
 
 import { DrawerNames } from '../Dashboard.types';
 import { SetStateType } from 'helpers/types';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 interface MonitorsListProps {
   dashboard: DashboardSchema | undefined;
@@ -58,8 +56,6 @@ export const MonitorList = ({
 
   const handleDeleteMonitor = async () => {
     if (!currentMonitor) return;
-
-    reportEvent(events.dashboardPage.clickedConfirmDeletion);
 
     await DeleteMonitorById({ monitorId: currentMonitor.id });
 

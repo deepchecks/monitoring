@@ -5,7 +5,6 @@ import { AlertSeverity, useUpdateOrganizationApiV1OrganizationPut } from 'api/ge
 import { Box, Checkbox } from '@mui/material';
 import { Stack } from '@mui/system';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 
 import { StyledImage, StyledText } from 'components/lib';
@@ -144,8 +143,6 @@ export function AlertNotifications({
 
       return currentNotifications;
     });
-
-    reportEvent(events.notificationPage.changedNotification);
   };
 
   useEffect(() => {

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MemberSchema, ModelManagmentSchema, assignModelsToUserApiV1UsersUserIdModelsPost } from 'api/generated';
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import useModels from 'helpers/hooks/useModels';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { StyledDialog, StyledInput } from 'components/lib';
 import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
@@ -54,6 +55,11 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
       await assignModelsToUserApiV1UsersUserIdModelsPost(member.id, {
         model_ids: selectedModels as number[],
         replace: true
+      });
+      reportEvent(events.workspaceSettings.adminModelAssign, {
+        type: 'models to user',
+        user_id: member?.id,
+        model_ids: selectedModels
       });
       refetchModels();
     }
