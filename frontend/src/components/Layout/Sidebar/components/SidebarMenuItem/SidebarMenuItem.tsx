@@ -4,7 +4,6 @@ import { Link, LinkProps, useLocation, useNavigate } from 'react-router-dom';
 import { Box, styled, Typography } from '@mui/material';
 
 import { PathInfo } from 'helpers/routes';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { Arrow } from 'assets/icon/icon';
 
@@ -41,37 +40,6 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
 
   const onMouseLeave = () => {
     setHover(false);
-  };
-
-  const handleClick = (infoPath: string) => {
-    switch (infoPath) {
-      case '/dashboard':
-        reportEvent(events.sidebar.clickedDashboard);
-        break;
-
-      case '/alerts':
-        reportEvent(events.sidebar.clickedAlerts);
-        break;
-
-      case '/configuration/alert-rules':
-        reportEvent(events.sidebar.clickedAlertsRules);
-        break;
-
-      case '/configuration/notifications':
-        reportEvent(events.sidebar.clickedNotification);
-        break;
-
-      case '/configuration/integrations':
-        reportEvent(events.sidebar.clickedIntegrations);
-        break;
-
-      case '/configuration/api-key':
-        reportEvent(events.sidebar.clickedAPIKey);
-        break;
-
-      default:
-        break;
-    }
   };
 
   const goToLink = (e: React.SyntheticEvent<Element, Event>, link: string) => {
@@ -206,7 +174,6 @@ function SidebarMenuItemComponent({ info, onOpenSubMenu }: SidebarMenuItemProps)
                 width: '100%',
                 borderRadius: '4px'
               }}
-              onClick={() => handleClick(childInfo.link)}
             >
               <Typography
                 sx={{

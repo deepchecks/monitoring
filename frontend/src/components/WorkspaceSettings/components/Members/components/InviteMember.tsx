@@ -8,7 +8,6 @@ import { StyledDialog } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { validateEmail } from 'helpers/utils/validateEmail';
 import { resError } from 'helpers/types/resError';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
@@ -58,9 +57,6 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   useEffect(() => {
     if (err === 'none') {
       setSuccess(true);
-      reportEvent(events.authentication.inviteUser, {
-        'Invited users emails': email
-      });
       handleCloseDialog();
     }
   }, [err]);

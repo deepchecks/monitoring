@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 
 import {
   AlertSeverity,
@@ -13,13 +12,11 @@ import { DatePicker } from '../base/DatePicker/DatePicker';
 import { SelectPrimary } from '../Select/SelectPrimary';
 import { SelectSeverity, SeverityAll, severityAll } from '../Select/SelectSeverity';
 import { FiltersResetButton } from './components/FiltersResetButton';
+import { theme } from 'components/lib/theme';
 
 import useModels from 'helpers/hooks/useModels';
-import { reportEvent } from 'helpers/services/mixPanel';
 import { resetAlertFilters } from 'helpers/base/alertFilters';
 import { handleSetParams } from 'helpers/utils/getParams';
-
-import { theme } from 'components/lib/theme';
 
 export type AlertsFiltersProps = {
   isFilterByTimeLine?: boolean;
@@ -44,11 +41,7 @@ const sortMethodMap = {
 
 export const sortOptions = [sortOptionsVariants.AZ, sortOptionsVariants.ZA] as const;
 
-const trackFiltersAndSortChange = (path: string) =>
-  reportEvent(`${path === '/alerts' ? 'Alerts' : 'Alerts Rules'}: changed filters & sort`);
-
 export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine = true }: AlertsFiltersProps) => {
-  const { pathname } = useLocation();
   const [startDate, setStartDate] = useState<Date | null>(initStartDate);
   const [endDate, setEndDate] = useState<Date | null>(initEndDate);
   const [model, setModel] = useState<number>(-1);
@@ -66,8 +59,6 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
   };
 
   const handleModelChange = (event: SelectChangeEvent<number | unknown>) => {
-    trackFiltersAndSortChange(pathname);
-
     const currentModel = event.target.value as number;
     setModel(currentModel);
 
@@ -85,8 +76,6 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
   };
 
   const handleSeverityChange = (event: SelectChangeEvent<unknown>) => {
-    trackFiltersAndSortChange(pathname);
-
     const currentSeverity = event.target.value as AlertSeverity | SeverityAll;
     setSeverity(currentSeverity);
 
@@ -117,8 +106,6 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
         ...prevAlertFilters,
         start: currentStartDate.toISOString()
       }));
-
-      trackFiltersAndSortChange(pathname);
     }
   };
 
@@ -129,8 +116,6 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
         ...prevAlertFilters,
         end: currentEndDate.toISOString()
       }));
-
-      trackFiltersAndSortChange(pathname);
     }
   };
 
@@ -152,12 +137,9 @@ export const FiltersSort = ({ alertFilters, setAlertFilters, isFilterByTimeLine 
     });
 
     handleCloseSortMenu();
-
-    trackFiltersAndSortChange(pathname);
   };
 
   const handleReset = () => {
-    trackFiltersAndSortChange(pathname);
     resetAlertFilters(setAlertFilters);
   };
 

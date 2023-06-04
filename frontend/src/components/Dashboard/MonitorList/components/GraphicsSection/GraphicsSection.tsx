@@ -10,15 +10,12 @@ import { Loader } from 'components/base/Loader/Loader';
 import { RootMenu } from './components/RootMenu';
 import { MonitorInfoWidget } from './components/MonitorInfoWidget';
 import { MonitorAlertRuleWidget } from './components/MonitorAlertRuleWidget';
-
+import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { constants } from 'components/Dashboard/dashboard.constants';
 import { StyledContainer, StyledText } from './GraphicsSection.style';
 
 import { GraphData } from 'helpers/types';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { FrequencyMap } from 'helpers/utils/frequency';
-
-import { constants } from 'components/Dashboard/dashboard.constants';
 
 interface GraphicsSectionProps extends BoxProps {
   data: ChartData<'line', GraphData>;
@@ -58,17 +55,11 @@ export function GraphicsSection({
   };
 
   const handleOpenMonitor = (drawerName: DrawerNames) => {
-    if (drawerName === DrawerNames.EditMonitor) {
-      reportEvent(events.dashboardPage.clickedEditMonitor);
-    }
-
     onOpenMonitorDrawer(drawerName, monitor);
     setAnchorElRootMenu(null);
   };
 
   const handleOpenDeleteMonitor = () => {
-    reportEvent(events.dashboardPage.clickedDeleteMonitor);
-
     onDeleteMonitor(monitor);
     setAnchorElRootMenu(null);
   };
