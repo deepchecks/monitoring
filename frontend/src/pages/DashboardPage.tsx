@@ -1,7 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { MonitorSchema, useGetOrCreateDashboardApiV1DashboardsGet } from 'api/generated';
+import {
+  MonitorSchema,
+  useGetOrCreateDashboardApiV1DashboardsGet,
+  useRetrieveBackendVersionApiV1BackendVersionGet
+} from 'api/generated';
 
 import { Grid } from '@mui/material';
 
@@ -14,7 +18,7 @@ import { DrawerNames } from 'components/Dashboard/Dashboard.types';
 
 import { getParams } from 'helpers/utils/getParams';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
-import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -57,6 +61,14 @@ export const DashboardPage = () => {
       navigate({ pathname: '/onboarding' });
     }
   }, [dashboard, onboardingEnabled]);
+
+  // Update user version
+  const { data } = useRetrieveBackendVersionApiV1BackendVersionGet();
+
+  useEffect(() => {
+    const userStorageData = getStorageItem(storageKeys.user);
+    setStorageItem(storageKeys.user, { ...userStorageData, o_version: (data as any)?.version });
+  }, []);
 
   return (
     <>

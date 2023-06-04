@@ -53,7 +53,7 @@ export const LicenseAgreementPage = function () {
           <DialogContentText
             id="scroll-dialog-description"
             ref={descriptionElementRef}
-            sx={{ padding: '24px', width: 'calc(100% - 48px)' }}
+            sx={{ padding: '36px', width: 'calc(100% - 48px)' }}
           >
             <div dangerouslySetInnerHTML={{ __html: termsAndConditions }} />
           </DialogContentText>
@@ -64,7 +64,7 @@ export const LicenseAgreementPage = function () {
             label="I agree to the end user license agreement"
             sx={{ flex: 1, ml: 0 }}
           />
-          <Button disabled={!agree} onClick={handleSubscribe} variant="contained">
+          <Button disabled={!agree} onClick={handleSubscribe}>
             Continue
           </Button>
         </DialogActions>

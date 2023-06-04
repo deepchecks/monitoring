@@ -8,8 +8,7 @@ import {
   UserSchema,
   getAvailableFeaturesApiV1OrganizationAvailableFeaturesGet,
   FeaturesSchema,
-  RoleEnum,
-  useRetrieveBackendVersionApiV1BackendVersionGet
+  RoleEnum
 } from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
@@ -52,8 +51,6 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
     }
   });
 
-  const { data: versionData } = useRetrieveBackendVersionApiV1BackendVersionGet();
-
   const refetchUser = () => refetch();
 
   const deployment = getStorageItem(storageKeys.environment)['is_cloud'] === true ? 'saas' : 'on-prem';
@@ -73,10 +70,9 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       u_created_at: data?.created_at,
       o_deployment: deployment,
       o_tier: data?.organization?.tier,
-      o_name: data?.organization?.name,
-      o_version: (versionData as any)?.version
+      o_name: data?.organization?.name
     });
-  }, [data, deployment, versionData]);
+  }, [data]);
 
   useEffect(() => {
     if (!user || isUserDetailsComplete) return;
