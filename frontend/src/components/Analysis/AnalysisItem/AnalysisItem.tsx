@@ -8,7 +8,6 @@ import { useRunCheckLookback } from 'helpers/hooks/useRunCheckLookback';
 import { useElementOnScreen } from 'helpers/hooks/useElementOnScreen';
 import { AnalysisItemProps } from './AnalysisItem.types';
 import { CheckFilterTypes, FilteredValues } from 'helpers/utils/checkUtil';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { manipulateAnalysisItem } from './helpers/manipulateAnalysisItem';
 import { getReference } from './helpers/getReference';
 
@@ -66,7 +65,6 @@ const AnalysisItem = ({
     (datasetName: string, versionName: string, timeLabel: number) => {
       if (onPointCLick) {
         onPointCLick(datasetName, versionName, timeLabel, additionalKwargs as MonitorCheckConfSchema, checkInfo, check);
-        reportEvent(events.analysisPage.clickedPointOnTheGraph);
       }
     },
     [additionalKwargs, check, checkInfo, onPointCLick]

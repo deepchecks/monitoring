@@ -1,19 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import { logoutApiV1AuthLogoutGet } from 'api/generated';
-import { cancelPendingRequests } from 'helpers/services/customAxios';
-
-import useUser from 'helpers/hooks/useUser';
+import mixpanel from 'mixpanel-browser';
 
 import { alpha, Avatar, Box, Divider, Menu, Typography } from '@mui/material';
-
-import { StyledMenuItem } from 'components/Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
-
-import { ReportModal } from './components/ReportModal';
-
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 
+import { logoutApiV1AuthLogoutGet } from 'api/generated';
+
+import { cancelPendingRequests } from 'helpers/services/customAxios';
+import useUser from 'helpers/hooks/useUser';
+import { events, reportEvent } from 'helpers/services/mixPanel';
+
+import { StyledMenuItem } from 'components/Dashboard/MonitorList/components/GraphicsSection/GraphicsSection.style';
+import { ReportModal } from './components/ReportModal';
 import { StyledText } from 'components/lib';
 
 export const UserInfo = () => {
@@ -34,8 +33,10 @@ export const UserInfo = () => {
 
   const handleLogout = () => {
     cancelPendingRequests();
+    reportEvent(events.authentication.logout);
     logoutApiV1AuthLogoutGet().then(() => {
       handleClose();
+      mixpanel.reset();
       window.location.reload();
     });
   };

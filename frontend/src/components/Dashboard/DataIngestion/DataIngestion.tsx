@@ -7,7 +7,6 @@ import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/local
 
 import { MenuItem } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { frequencyValues } from 'helpers/utils/frequency';
 
 import DiagramLine from 'components/DiagramLine/DiagramLine';
@@ -57,10 +56,6 @@ export const DataIngestion = ({ modelId }: DataIngestionProps) => {
 
     setTimeValue(newTimeValue);
     setCurrentTime(timeOptions[newTimeIndex].id);
-
-    reportEvent(events.dashboardPage.changedTimerFilterProdData, {
-      'Filter value': newTimeValue
-    });
   };
 
   useEffect(() => {

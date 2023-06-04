@@ -30,7 +30,6 @@ import { theme } from 'components/lib/theme';
 
 import useModels from '../helpers/hooks/useModels';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { resError } from 'helpers/types/resError';
 
 const mapModelsNames = (models: ConnectedModelSchema[]) => models.map(m => m.name);
@@ -76,10 +75,6 @@ export const ModelsPage = () => {
 
   const [error, setError] = useState<string>('');
   const [fetching, setFetching] = useState(false);
-
-  useEffect(() => {
-    reportEvent(events.modelsPage.modelsPageView);
-  }, []);
 
   useEffect(() => {
     const paramModelId = +getParams()?.modelId;
@@ -165,7 +160,6 @@ export const ModelsPage = () => {
         await refetchAvailableModels();
       }
 
-      reportEvent(events.modelsPage.clickedDeleteModel);
       handleModalClose();
       setFetching(false);
     }

@@ -4,10 +4,11 @@ import { MemberSchema, ModelManagmentSchema, assignUsersToModelApiV1ModelsModelI
 
 import { StyledDialog, StyledInput } from 'components/lib';
 import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
-
 import { StyledDialogListContainer } from 'components/WorkspaceSettings/WorkspaceSettings.styles';
 import { selectMultiple, isSelected } from 'components/WorkspaceSettings/WorkspaceSettings.helpers';
+
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 import { constants } from '../modelsTab.constants';
 
 const { editMembers, dialog } = constants;
@@ -59,6 +60,11 @@ export const AssignMembersToModelDialog = ({
       await assignUsersToModelApiV1ModelsModelIdMembersPost(currentModel.id, {
         user_ids: selectedMembers as number[],
         replace: true
+      });
+      reportEvent(events.workspaceSettings.adminModelAssign, {
+        type: 'users to model',
+        model_id: currentModel?.id,
+        user_ids: selectedMembers
       });
       refetchModels();
     }
