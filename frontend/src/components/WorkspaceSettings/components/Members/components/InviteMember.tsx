@@ -32,7 +32,7 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
-  const isEmailEnabled = !usePermissionControl({ feature: featuresList.email_enabled });
+  const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
 
   const mailErrMessage = !isEmailEnabled && constants.inviteMember.mailConfigErr;
   const resErrMessage = err !== 'none' && err;

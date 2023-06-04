@@ -35,7 +35,8 @@ export const constants = {
     add: 'Add Users',
     inputLabel: 'Email address of the invitees',
     success: 'Users invited successfully!',
-    mailConfigErr: `Email is not configured, Learn how to configure it on our docs. \n At the meantime, you can add users and send them the following URL to login: \n ${window.location.origin}` // TODO - Update to a link once we have it on docs
+    mailConfigErr:
+      'Email is not configured, Learn how to configure it on our docs. \n At the meantime, you can add users and send them the deployment URL to login.' // TODO - Update to a link once we have it on docs
   },
   removeMember: {
     title: 'Remove User',
