@@ -95,8 +95,9 @@ class TaskRunner:
         """Run single task."""
         # Using distributed lock to make sure long task won't be ran twice
         lock_name = TASK_RUNNER_LOCK.format(task_id)
-        # Allows for 30 minutes of task execution before marking it as dead
-        lock = self.redis.lock(lock_name, blocking=False, timeout=60 * 30)
+        # By default, allow task 5 minutes before removes lock to allow another run. Inside the task itself we can
+        # extend the lock if we are doing slow operation and want more time
+        lock = self.redis.lock(lock_name, blocking=False, timeout=60 * 5)
         lock_acquired = await lock.acquire()
         if not lock_acquired:
             self.logger.debug(f'Failed to acquire lock for task id: {task_id}')
@@ -105,7 +106,7 @@ class TaskRunner:
         task = await session.scalar(select(Task).where(Task.id == task_id))
         # Making sure task wasn't deleted for some reason
         if task is not None:
-            await self._run_task(task, session, queued_timestamp)
+            await self._run_task(task, session, queued_timestamp, lock)
         else:
             self.logger.debug(f'Got already removed task id: {task_id}')
 
@@ -115,14 +116,14 @@ class TaskRunner:
             self.logger.error(f'Failed to release lock for task id: {task_id}. probably task run for longer than '
                               f'maximum time for the lock')
 
-    async def _run_task(self, task: Task, session, queued_timestamp):
+    async def _run_task(self, task: Task, session, queued_timestamp, lock):
         """Inner function to run task, created in order to wrap in the telemetry instrumentor and be able
         to log the task parameters and queued time."""
         try:
             worker: BackgroundWorker = self.workers.get(task.bg_worker_task)
             if worker:
                 start = pdl.now()
-                await worker.run(task, session, self.resource_provider)
+                await worker.run(task, session, self.resource_provider, lock)
                 duration = (pdl.now() - start).total_seconds()
                 delay = start.int_timestamp - queued_timestamp
                 self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
