@@ -67,7 +67,40 @@ Now to get some data into the application, you should follow the
 Customizing your deployment (optional)
 --------------------------------------
 
-By default, the docker-compose.yml file that gets run comes with a series of default config values that should work for
-most deployments. If you need to customize anything, you can take a look at the full list of
+The configuration file exists under the name `oss-conf.env` and comes with a series of default config values that should
+work for most deployments. If you need to customize anything, you can take a look at the full list of
 :doc:`environment variables </installation/configuration>`.
 After making any changes, simply restart the stack with docker-compose.
+
+
+Define SMTP for email integration
+---------------------------------
+
+Deepchecks sends emails to users in multiple scenarios. Among these, it will send emails to users that are invited to
+the platform and can be configured to send emails when there is a new alert.
+To enable this feature you need to use your own SMTP server, which can be configured in the environment file with the
+following variables:
+
+.. list-table:: Environment Variables
+   :header-rows: 1
+   :widths: 25 40 35
+
+   * - email_smtp_host
+     - SMTP host for email
+     -
+
+   * - email_smtp_port
+     - SMTP port for email
+     - 25
+
+   * - email_smtp_username
+     - SMTP username for email
+     -
+
+   * - email_smtp_password
+     - SMTP password for email
+     -
+
+   * - deepchecks_email
+     - Allows to set "sender" field in emails instead of the "email_smtp_username" value
+     -
