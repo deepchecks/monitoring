@@ -17,7 +17,8 @@ from time import perf_counter
 
 import anyio
 import pendulum as pdl
-import redis
+from redis.asyncio import Redis, RedisCluster
+from redis.exceptions import RedisClusterException, ConnectionError
 import uvloop
 from sqlalchemy import case, func, update
 from sqlalchemy.cimmutabledict import immutabledict
@@ -49,6 +50,7 @@ class TasksQueuer:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
+            redis_client,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
             run_interval,
@@ -57,6 +59,7 @@ class TasksQueuer:
         self.resource_provider = resource_provider
         self.logger = logger
         self.run_interval = run_interval
+        self.redis = redis_client
 
         # Build the query once to be used later
         intervals_by_type = case([
@@ -100,9 +103,9 @@ class TasksQueuer:
         if task_ids:
             try:
                 # Push to sorted set. if task id is already in set then do nothing.
-                pushed_count = self.resource_provider.redis_client.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
+                pushed_count = await self.redis.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
                 return pushed_count
-            except redis.ConnectionError:
+            except ConnectionError:
                 # If redis failed, does not commit the update to the db
                 await session.rollback()
         return 0
@@ -132,6 +135,15 @@ else:
     class WorkerSettings(BaseWorkerSettings):
         """Set of worker settings."""
         pass
+
+async def init_async_redis(redis_uri):
+    """Initialize redis connection."""
+    try:
+        redis = RedisCluster.from_url(redis_uri)
+        await redis.ping()
+        return redis
+    except RedisClusterException:
+        return Redis.from_url(redis_uri)
 
 
 def execute_worker():
@@ -171,7 +183,8 @@ def execute_worker():
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                worker = tasks_queuer.TasksQueuer(rp, workers, logger, settings.queuer_run_interval)
+                async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+                worker = tasks_queuer.TasksQueuer(rp, async_redis, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 
     uvloop.install()

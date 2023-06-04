@@ -13,6 +13,7 @@ import logging
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
+from fakeredis.aioredis import FakeRedis
 
 from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
 from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
@@ -39,8 +40,9 @@ logger = logging.Logger('test')
 @pytest.mark.asyncio
 async def test_task_queue(resources_provider, async_session):
     workers = [Worker()]
-    queuer = TasksQueuer(resources_provider, workers, logger, 1)
-    runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
+    redis = FakeRedis()
+    queuer = TasksQueuer(resources_provider, redis, workers, logger, 1)
+    runner = TaskRunner(resources_provider, redis, workers, logger)
 
     await async_session.execute(sa.insert(Task).values({'name': 'test', 'bg_worker_task': 'test'}))
     await async_session.commit()
