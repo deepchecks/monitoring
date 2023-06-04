@@ -7,9 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models import Invitation
-from tests.common import generate_user
-from tests.common import TestAPI
-from tests.common import Payload
+from tests.common import Payload, TestAPI, generate_user
 from tests.conftest import ROWS_PER_MINUTE_LIMIT
 
 
