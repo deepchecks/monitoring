@@ -238,7 +238,8 @@ class AlertsScheduler:
             time = pdl.now()
             tasks = []
             for model in models:
-                if model.obj_store_last_scan_time is None or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time:
+                if (model.obj_store_last_scan_time is None
+                        or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time):
                     tasks.append(dict(name=f'{organization.id}:{model.id}',
                                       bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
                                       params=dict(model_id=model.id, organization_id=organization.id)))
