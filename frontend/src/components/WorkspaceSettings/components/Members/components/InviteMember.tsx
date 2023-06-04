@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 
 import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
-import { Snackbar, Typography } from '@mui/material';
+import { Snackbar } from '@mui/material';
 
-import { StyledDialog } from 'components/lib';
+import { StyledDialog, StyledText } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
 
@@ -32,9 +32,11 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
-  const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
+  const isEmailEnabled = !usePermissionControl({ feature: featuresList.email_enabled });
 
-  const errMessage = !isEmailEnabled ? constants.inviteMember.mailConfigErr : err !== 'none' && err;
+  const mailErrMessage = !isEmailEnabled && constants.inviteMember.mailConfigErr;
+  const resErrMessage = err !== 'none' && err;
+  const btnAndTitleLabel = isEmailEnabled ? constants.inviteMember.submit : constants.inviteMember.add;
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -69,10 +71,10 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
     <>
       <StyledDialog
         open={open}
-        title={constants.inviteMember.title}
+        title={btnAndTitleLabel}
         closeDialog={handleCloseDialog}
-        submitButtonLabel={constants.inviteMember.submit}
-        submitButtonDisabled={!buttonEnabled || !isEmailEnabled}
+        submitButtonLabel={btnAndTitleLabel}
+        submitButtonDisabled={!buttonEnabled}
         submitButtonAction={handleInviteMember}
       >
         <MembersActionDialogContentLayout>
@@ -81,9 +83,9 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
             label={constants.inviteMember.inputLabel}
             value={email}
             onChange={handleEmailChange}
-            disabled={!isEmailEnabled}
           />
-          <Typography sx={{ margin: '8px', color: theme.palette.error.main }}>{errMessage}</Typography>
+          <StyledText text={resErrMessage} color={theme.palette.error.main} marginBottom="8px" />
+          <StyledText text={mailErrMessage} type="bodyBold" />
         </MembersActionDialogContentLayout>
       </StyledDialog>
       <Snackbar

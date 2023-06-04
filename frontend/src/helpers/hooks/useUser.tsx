@@ -106,7 +106,6 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       }
 
       mixpanel.identify(`${user.id}`);
-      mixpanel.set_group('organization', `${user.organization?.name}(ID-${user.organization?.id})`);
     }
   }
 
