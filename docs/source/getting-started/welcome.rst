@@ -1,4 +1,4 @@
-.. image:: /_static/images/general/continuous_validation_bright_bkg.png
+.. image:: /_static/images/general/cont_validation_light.png
    :target: https://deepchecks.com/?utm_source=docs.deepchecks.com&utm_medium=referral&utm_campaign=welcome
    :alt: Deepchecks Continuous Validation: Testing, CI & Monitoring
    :align: center
@@ -26,6 +26,7 @@ Get Started with Deepchecks Monitoring
    :align: center
    :width: 70%
 
+|
 
 .. grid:: 1
     :gutter: 3
