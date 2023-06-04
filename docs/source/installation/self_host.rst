@@ -76,9 +76,10 @@ After making any changes, simply restart the stack with docker-compose.
 Define SMTP for email integration
 ---------------------------------
 
-Deepchecks can send emails to users when they are invited to the platform and when there is a new alert. To enable
-this feature you need to use your own SMTP server, which can be configured in the environment file with the following
-variables:
+Deepchecks sends emails to users in multiple scenarios. Among these, it will send emails to users that are invited to
+the platform and can be configured to send emails when there is a new alert.
+To enable this feature you need to use your own SMTP server, which can be configured in the environment file with the
+following variables:
 
 .. list-table:: Environment Variables
    :header-rows: 1
