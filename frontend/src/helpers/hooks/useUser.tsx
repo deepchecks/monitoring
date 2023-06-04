@@ -14,6 +14,7 @@ import {
 
 import { resError } from 'helpers/types/resError';
 import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -56,6 +57,7 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
   const refetchUser = () => refetch();
 
   const deployment = getStorageItem(storageKeys.environment)['is_cloud'] === true ? 'saas' : 'on-prem';
+  const loggedIn = getStorageItem(storageKeys.loggedIn);
   const userRole = data?.roles.includes('admin') ? (data?.roles.includes('owner') ? 'owner' : 'admin') : 'member';
   const isUserDetailsComplete = !!user?.organization;
 
@@ -93,6 +95,11 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       setIsOwner(!!user?.roles.includes(RoleEnum.owner));
     }
   }, [user]);
+
+  useEffect(() => {
+    !loggedIn && reportEvent(events.authentication.login);
+    setStorageItem(storageKeys.loggedIn, true);
+  }, []);
 
   const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner, refetchUser };
 
