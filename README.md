@@ -36,7 +36,7 @@ monitoring key performance indicators (KPIs) 📊, and alerting when anomalies a
 Deploy a hobby instance in one line on Linux/MacOS (Windows is WIP!) with Docker:
 
 ```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy/deploy-oss.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/deepchecks/monitoring/main/deploy-oss.sh)"
 ```
 
 This will automatically download the necessary dependencies and start the application locally.
