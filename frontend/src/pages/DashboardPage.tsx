@@ -22,6 +22,7 @@ import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/local
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
+  const { data: versionData } = useRetrieveBackendVersionApiV1BackendVersionGet();
   const {
     data: dashboard,
     isLoading: isDashboardLoading,
@@ -62,13 +63,16 @@ export const DashboardPage = () => {
     }
   }, [dashboard, onboardingEnabled]);
 
-  // Update user version
-  const { data } = useRetrieveBackendVersionApiV1BackendVersionGet();
-
   useEffect(() => {
+    // Update user version
     const userStorageData = getStorageItem(storageKeys.user);
-    setStorageItem(storageKeys.user, { ...userStorageData, o_version: (data as any)?.version });
-  }, []);
+
+    setStorageItem(storageKeys.user, {
+      ...userStorageData,
+      o_version: (versionData as any)?.version,
+      o_deployment: isCloud ? 'saas' : 'on-prem'
+    });
+  }, [versionData]);
 
   return (
     <>

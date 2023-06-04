@@ -53,7 +53,6 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
 
   const refetchUser = () => refetch();
 
-  const deployment = getStorageItem(storageKeys.environment)['is_cloud'] === true ? 'saas' : 'on-prem';
   const loggedIn = getStorageItem(storageKeys.loggedIn);
   const userRole = data?.roles.includes('admin') ? (data?.roles.includes('owner') ? 'owner' : 'admin') : 'member';
   const isUserDetailsComplete = !!user?.organization;
@@ -68,7 +67,6 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       u_name: data?.email,
       u_org: data?.organization?.name,
       u_created_at: data?.created_at,
-      o_deployment: deployment,
       o_tier: data?.organization?.tier,
       o_name: data?.organization?.name
     });
