@@ -280,19 +280,6 @@ async def test_alert_rules_config(
 ):
     monitor = as_dict(test_api.create_monitor(classification_model_check["id"]))
 
-    data_alert_rules = [
-        test_api.create_data_ingestion_alert_rule(classification_model_check["id"],
-                                         dict(name="ahh",
-                                              alert_type=AlertRuleType.SAMPLE_COUNT,
-                                              frequency=Frequency.HOUR,
-                                              condition={"operator": "less_than", "value": 3})),
-        test_api.create_data_ingestion_alert_rule(classification_model_check["id"],
-                                         dict(name="ahh",
-                                              alert_type=AlertRuleType.LABEL_COUNT,
-                                              frequency=Frequency.HOUR,
-                                              alert_severity=AlertSeverity.LOW.value,
-                                              condition={"operator": "less_than", "value": 3}))
-    ]
     alert_rule = as_dict(test_api.create_alert_rule(
         monitor_id=monitor["id"],
         alert_rule={

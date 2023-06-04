@@ -22,8 +22,7 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
-from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
@@ -175,79 +174,6 @@ async def get_all_alert_rules(
                 user_schema = BasicUserSchema.from_orm(user)
                 alert_rule_schema.user = user_schema
         alert_rule_schemas.append(alert_rule_schema)
-
-    # # nearly duplicated code (not sure if I can do it prettier)
-    # non_resolved_alerts_count = (
-    #     select(
-    #         DataIngestionAlert.alert_rule_id.label("alert_rule_id"),
-    #         func.count(DataIngestionAlert.id).label("non_resolved_alerts"),
-    #     )
-    #     .where(DataIngestionAlert.resolved.is_(False))
-    #     .group_by(DataIngestionAlert.alert_rule_id)
-    # )
-
-    # non_resolved_alerts_count = non_resolved_alerts_count.subquery()
-
-    # total_count = (
-    #     select(
-    #         DataIngestionAlert.alert_rule_id.label("alert_rule_id"),
-    #         func.count(DataIngestionAlert.id).label("total_alerts"),
-    #         func.max(DataIngestionAlert.end_time).label("recent_alert")
-    #     )
-    #     .group_by(DataIngestionAlert.alert_rule_id)
-    # )
-
-    # total_count = total_count.subquery()
-    # severity_index = DataIngestionAlertRule.alert_severity_index.label("severity_index")
-
-    # q = (
-    #     select(
-    #         DataIngestionAlertRule.id,
-    #         DataIngestionAlertRule.created_by,
-    #         DataIngestionAlertRule.condition,
-    #         DataIngestionAlertRule.name,
-    #         DataIngestionAlertRule.alert_severity,
-    #         DataIngestionAlertRule.frequency,
-    #         DataIngestionAlertRule.alert_type,
-    #         non_resolved_alerts_count.c.non_resolved_alerts,
-    #         total_count.c.total_alerts,
-    #         total_count.c.recent_alert,
-    #         severity_index
-    #     )
-    #     .join(DataIngestionAlertRule.model)
-    #     .join(Model.members)
-    #     .where(ModelMember.user_id == user.id)
-    #     .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == DataIngestionAlertRule.id)
-    #     .outerjoin(total_count, total_count.c.alert_rule_id == DataIngestionAlertRule.id)
-    # )
-    # if models:
-    #     q = q.where(DataIngestionAlertRule.model_id.in_(models))
-    # if severity:
-    #     q = q.where(DataIngestionAlertRule.alert_severity.in_(severity))
-
-    # if not sortby:
-    #     q = q.order_by(severity_index.desc(), total_count.c.recent_alert.desc())
-    # else:
-    #     if "severity:asc" in sortby:
-    #         q = q.order_by(severity_index.asc())
-    #     if "severity:desc" in sortby:
-    #         q = q.order_by(severity_index.desc())
-    #     if "alert-window:asc" in sortby:
-    #         q = q.order_by(total_count.c.recent_alert.asc())
-    #     if "alert-window:desc" in sortby:
-    #         q = q.order_by(total_count.c.recent_alert.desc())
-
-    # alert_rules_rows = (await session.execute(q)).all()
-    # data_alert_rule_schemas = []
-    # for row in alert_rules_rows:
-    #     alert_rule_schema = DataAlertRuleConfigSchema.from_orm(row)
-    #     if row.created_by != 0:
-    #         q = select(User).where(User.id == row.created_by)
-    #         user = (await session.execute(q)).scalars().first()
-    #         if user is not None:
-    #             user_schema = BasicUserSchema.from_orm(user)
-    #             alert_rule_schema.user = user_schema
-    #     data_alert_rule_schemas.append(alert_rule_schema)
 
     return alert_rule_schemas
 
