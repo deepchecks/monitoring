@@ -162,8 +162,12 @@ def execute_worker():
                 )
                 ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
-                   ModelDataIngestionAlerter(), DeleteDbTableTask(), AlertsTask()]
+        workers = [ModelVersionTopicDeletionWorker, ModelVersionOffsetUpdate, ModelVersionCacheInvalidation,
+                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask]
+
+        # Add ee workers
+        if with_ee:
+            workers.append(ee.bgtasks.ObjectStorageIngestor)
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:

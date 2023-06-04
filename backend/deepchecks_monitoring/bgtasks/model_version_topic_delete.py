@@ -8,9 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 #
-import threading
-from typing import Optional
-
 import pendulum as pdl
 from kafka.errors import KafkaError, UnknownTopicOrPartitionError
 from sqlalchemy import delete, select
@@ -44,10 +41,9 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     worker run than we know to recreate the task, so it will be run again later.
     """
 
-    def __init__(self):
+    def __init__(self, kafka_admin: ExtendedAIOKafkaAdminClient):
         super().__init__()
-        self.lock = threading.Lock()
-        self.kafka_admin: Optional[ExtendedAIOKafkaAdminClient] = None
+        self.kafka_admin = kafka_admin
 
     @classmethod
     def queue_name(cls) -> str:
@@ -58,12 +54,6 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
         return DELAY
 
     async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider):
-        if self.kafka_admin is None:
-            with self.lock:
-                if self.kafka_admin is None:
-                    self.kafka_admin = ExtendedAIOKafkaAdminClient(**resources_provider.kafka_settings.kafka_params)
-                    await self.kafka_admin.start()
-
         # Backward compatibility, remove in next release and replace with:
         # model_version_id = task.params['id']
         # entity = task.params['entity']

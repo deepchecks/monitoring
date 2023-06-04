@@ -66,6 +66,11 @@ class Model(Base, MetadataMixin, PermissionMixin):
     topic_end_offset = sa.Column(sa.BigInteger, default=-1)
     timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
 
+    # For ingestion from object storage
+    obj_store_last_scan_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    obj_store_path = sa.Column(sa.String, nullable=True)
+    latest_labels_file_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
+
     members: Mapped[t.List["ModelMember"]] = relationship(
         "ModelMember",
         back_populates="model",

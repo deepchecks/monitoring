@@ -110,6 +110,15 @@ class AlertsScheduler:
                                   'org_id': org.id})
             except:  # noqa: E722
                 self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+            if with_ee:
+                try:
+                    start = perf_counter()
+                    await self.run_object_storage_ingestion(org)
+                    duration = perf_counter() - start
+                    self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
+                                      'org_id': org.id})
+                except:  # noqa: E722
+                    self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -214,6 +223,30 @@ class AlertsScheduler:
                             if isinstance(error, DBAPIError) and not is_serialization_error(error):
                                 self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
                                 raise
+
+    async def run_object_storage_ingestion(self, organization):
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
+            models: t.List[Model] = await session.scalars(
+                select(Model)
+                .where(Model.obj_store_path.isnot(None))
+            )
+
+            time = pdl.now()
+            tasks = []
+            for model in models:
+                if (model.obj_store_last_scan_time is None
+                        or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time):
+                    tasks.append(dict(name=f'{organization.id}:{model.id}',
+                                      bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
+                                      params=dict(model_id=model.id, organization_id=organization.id)))
+
+            await session.execute(insert(Task).values(tasks)
+                                  .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+            await session.commit()
 
 
 async def get_versions_hour_windows(
