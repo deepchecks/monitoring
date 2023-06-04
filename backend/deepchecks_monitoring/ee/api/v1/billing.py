@@ -17,6 +17,7 @@ from fastapi import Depends, Request
 from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from deepchecks_monitoring.api.v1.global_api import global_router
 from deepchecks_monitoring.dependencies import AsyncSessionDep, SettingsDep
 from deepchecks_monitoring.exceptions import AccessForbidden, BadRequest
 from deepchecks_monitoring.public_models import Billing, Organization, User
@@ -269,7 +270,7 @@ def update_subscription(
         return AccessForbidden(str(e))
 
 
-@router.post("/billing/webhook", tags=["billing"])
+@global_router.post("/billing/webhook", tags=["billing"])
 async def stripe_webhook(request: Request,
                          settings=SettingsDep,
                          session: AsyncSession = AsyncSessionDep):
