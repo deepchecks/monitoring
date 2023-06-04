@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 #
 """Contains alert scheduling logic."""
-import inspect
 import logging.handlers
 import typing as t
 

@@ -18,7 +18,7 @@ from time import perf_counter
 import anyio
 import pendulum as pdl
 from redis.asyncio import Redis, RedisCluster
-from redis.exceptions import RedisClusterException, ConnectionError
+import redis.exceptions as redis_exceptions
 import uvloop
 from sqlalchemy import case, func, update
 from sqlalchemy.cimmutabledict import immutabledict
@@ -105,7 +105,7 @@ class TasksQueuer:
                 # Push to sorted set. if task id is already in set then do nothing.
                 pushed_count = await self.redis.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
                 return pushed_count
-            except ConnectionError:
+            except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
                 await session.rollback()
         return 0
@@ -142,7 +142,7 @@ async def init_async_redis(redis_uri):
         redis = RedisCluster.from_url(redis_uri)
         await redis.ping()
         return redis
-    except RedisClusterException:
+    except redis_exceptions.RedisClusterException:
         return Redis.from_url(redis_uri)
 
 
