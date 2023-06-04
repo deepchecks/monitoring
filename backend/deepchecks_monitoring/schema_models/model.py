@@ -21,22 +21,18 @@ from deepchecks_monitoring.monitoring_utils import MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, ColumnType,
                                                              column_types_to_table_columns, get_label_column_type)
-from deepchecks_monitoring.schema_models.monitor import Frequency
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.task_type import TaskType
 
 if t.TYPE_CHECKING:
-    from deepchecks_monitoring.schema_models.check import Check  # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.model_memeber import ModelMember  # pylint: disable=unused-import
-    from deepchecks_monitoring.schema_models.model_version import ModelVersion  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from deepchecks_monitoring.schema_models.check import Check
+    from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import DataIngestionAlertRule
+    from deepchecks_monitoring.schema_models.model_memeber import ModelMember
+    from deepchecks_monitoring.schema_models.model_version import ModelVersion
 
 
 __all__ = ["Model", "ModelNote"]
-
-
-def _current_date_by_timezone(context):
-    timezone = context.get_current_parameters().get("timezone", "UTC")
-    return pdl.now(timezone).set(hour=0, minute=0, second=0, microsecond=0)
 
 
 class Model(Base, MetadataMixin, PermissionMixin):
@@ -70,13 +66,6 @@ class Model(Base, MetadataMixin, PermissionMixin):
     topic_end_offset = sa.Column(sa.BigInteger, default=-1)
     timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
 
-    data_ingestion_alert_frequency = sa.Column(sa.Enum(Frequency), nullable=False, default=Frequency.DAY)
-    data_ingestion_alert_latest_schedule = sa.Column(sa.DateTime(timezone=True), nullable=False,
-                                                     default=_current_date_by_timezone)
-    data_ingestion_alert_label_ratio = sa.Column(sa.Float)
-    data_ingestion_alert_label_count = sa.Column(sa.Integer)
-    data_ingestion_alert_sample_count = sa.Column(sa.Integer)
-
     members: Mapped[t.List["ModelMember"]] = relationship(
         "ModelMember",
         back_populates="model",
@@ -91,6 +80,14 @@ class Model(Base, MetadataMixin, PermissionMixin):
         passive_deletes=True,
         passive_updates=True,
         order_by="desc(ModelVersion.end_time)"
+    )
+    alert_rules: Mapped[t.List["DataIngestionAlertRule"]] = relationship(
+        "DataIngestionAlertRule",
+        back_populates="model",
+        cascade="save-update, merge, delete",
+        passive_deletes=True,
+        passive_updates=True,
+        order_by="DataIngestionAlertRule.alert_severity.desc()"
     )
     checks: Mapped[t.List["Check"]] = relationship(
         "Check",
@@ -167,18 +164,6 @@ class Model(Base, MetadataMixin, PermissionMixin):
             query = query.where(labels_table.c[SAMPLE_LABEL_COL].isnot(None))
         query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
         return query
-
-    @property
-    def next_data_ingestion_alert_schedule(self):
-        latest_schedule = pdl.instance(t.cast("datetime", self.data_ingestion_alert_latest_schedule))
-        frequency = t.cast("Frequency", self.data_ingestion_alert_frequency).to_pendulum_duration()
-        next_schedule = latest_schedule + frequency
-        day_back = pdl.now(self.timezone).set(minute=0, second=0, microsecond=0).subtract(days=1)
-        # Does not want to run on past dates, only on near-past
-        if next_schedule < day_back:
-            # Fast forward to today
-            return pdl.now(self.timezone).set(hour=0, minute=0, second=0, microsecond=0)
-        return next_schedule
 
 
 class ModelNote(Base, MetadataMixin, PermissionMixin):
