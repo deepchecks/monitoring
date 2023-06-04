@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 from deepchecks_monitoring.config import Tags
 from deepchecks_monitoring.dependencies import AsyncSessionDep, ResourcesProviderDep
 from deepchecks_monitoring.exceptions import BadRequest, LicenseError
-from deepchecks_monitoring.monitoring_utils import exists_or_404, fetch_or_404
+from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.invitation import Invitation
 from deepchecks_monitoring.public_models.organization import OrgTier
