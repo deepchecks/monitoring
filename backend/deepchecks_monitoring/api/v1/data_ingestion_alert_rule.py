@@ -90,7 +90,6 @@ async def create_alert_rule(
     return {"id": rule_id}
 
 
-
 @router.get("/data-ingestion-alert-rules/{data_ingestion_alert_rule_id}",
             response_model=DataIngestionAlertRuleSchema, tags=[Tags.DATA_ALERTS])
 async def get_alert_rule(

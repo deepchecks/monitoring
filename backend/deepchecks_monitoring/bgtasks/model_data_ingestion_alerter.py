@@ -79,8 +79,8 @@ class ModelDataIngestionAlerter(BackgroundWorker):
             return
 
         model: Model = (await session.execute(sa.select(Model)
-                                             .where(Model.id == alert_rule.model_id)
-                                             .options(joinedload(Model.versions)))).scalars().first()
+                                              .where(Model.id == alert_rule.model_id)
+                                              .options(joinedload(Model.versions)))).scalars().first()
         freq: Frequency = alert_rule.frequency
         pdl_start_time = as_pendulum_datetime(start_time)
         pdl_end_time = as_pendulum_datetime(end_time)

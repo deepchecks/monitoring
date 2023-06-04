@@ -35,8 +35,6 @@ if t.TYPE_CHECKING:
 __all__ = ["Model", "ModelNote"]
 
 
-
-
 class Model(Base, MetadataMixin, PermissionMixin):
     """ORM model for the model."""
 
@@ -166,7 +164,6 @@ class Model(Base, MetadataMixin, PermissionMixin):
             query = query.where(labels_table.c[SAMPLE_LABEL_COL].isnot(None))
         query = query.join(labels_table, onclause=data_table.c[SAMPLE_ID_COL] == labels_table.c[SAMPLE_ID_COL])
         return query
-
 
 
 class ModelNote(Base, MetadataMixin, PermissionMixin):

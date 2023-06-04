@@ -51,19 +51,23 @@ class GeneralAlertRuleConfigSchema(BaseModel):
 
         orm_mode = True
 
+
 class AlertRuleConfigSchema(GeneralAlertRuleConfigSchema):
     """Schema for the alert rule."""
 
     check_name: str
+
 
 class DataAlertRuleConfigSchema(GeneralAlertRuleConfigSchema):
     """Schema for the data alert rule."""
 
     alert_type: AlertRuleType
 
+
 class AlertRulesConfigSchema(BaseModel):
     alert_rules: t.List[AlertRuleConfigSchema]
     data_alert_rules: t.List[DataAlertRuleConfigSchema]
+
 
 @router.get("/config/alert-rules", response_model=AlertRulesConfigSchema, tags=[Tags.CONFIG])
 async def get_all_alert_rules(
@@ -172,7 +176,7 @@ async def get_all_alert_rules(
                 alert_rule_schema.user = user_schema
         alert_rule_schemas.append(alert_rule_schema)
 
-    # nearly duplicated code (not sure if I can do it preittier)
+    # nearly duplicated code (not sure if I can do it prettier)
     non_resolved_alerts_count = (
         select(
             DataIngestionAlert.alert_rule_id.label("alert_rule_id"),
