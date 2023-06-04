@@ -14,7 +14,6 @@ from datetime import datetime
 from fastapi import Depends, Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from starlette import status
 from starlette.responses import RedirectResponse
@@ -136,9 +135,8 @@ async def update_complete_details(
         )
 
         model_ids = await session.scalars(select(Model.id))
-        model_members = [dict(user_id=user.id, model_id=model_id) for model_id in model_ids]
-        await session.execute(postgresql.insert(ModelMember).values(model_members)
-                              .on_conflict_do_nothing())
+        model_members = [ModelMember(user_id=user.id, model_id=model_id) for model_id in model_ids]
+        session.add_all(model_members)
 
     await session.flush()
     # Redirect carries over the POST verb, in order to change it to GET we need to set 302 code instead of 307
@@ -151,6 +149,13 @@ async def delete_user(
         session: AsyncSession = AsyncSessionDep,
 ):
     """Delete the user."""
+    # Attach the organization schema to the session in order to query the model members
+    await database.attach_schema_switcher_listener(
+        session=session,
+        schema_search_path=[user.organization.schema_name, "public"]
+    )
+
+    await session.delete(select(ModelMember).where(ModelMember.user_id == user.id))
     await session.delete(user)
     return Response()
 
