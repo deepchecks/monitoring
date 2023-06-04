@@ -19,9 +19,9 @@ export const reportEvent = (eventName: string, eventData?: { [param: string]: an
 
 export const events = {
   authentication: {
-    logout: 'logout',
-    login: 'login',
-    signup: 'signup'
+    logout: 'logout', // TODO - Add method {google/email}
+    login: 'login', // TODO - Implement + method {google/email}
+    signup: 'signup' // TODO - Implement + method {google/email}
   },
   workspaceSettings: {
     adminModelAssign: 'admin model assign',
