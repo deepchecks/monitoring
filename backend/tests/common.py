@@ -109,7 +109,7 @@ class DataGenerator:
             "description": self.faker.text(),
             "alerts_delay_labels_ratio": 0,
             "alerts_delay_seconds": 0,
-            "s3_path": None
+            "obj_store_path": None
         }
 
     def generate_random_check(self) -> "Payload":

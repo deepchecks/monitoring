@@ -55,7 +55,7 @@ def test_model_creation(deepchecks_sdk: DeepchecksClient):
         "description": None,
         "alerts_delay_labels_ratio": 1.0,
         "alerts_delay_seconds": 259200,
-        "s3_path": None,
+        "obj_store_path": None,
     }
 
 

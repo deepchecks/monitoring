@@ -79,7 +79,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
 
     # For ingestion from object storage
     s3_last_scan_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
-    s3_path = sa.Column(sa.String, nullable=True)
+    obj_store_path = sa.Column(sa.String, nullable=True)
     latest_labels_file_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
 
     members: Mapped[t.List["ModelMember"]] = relationship(

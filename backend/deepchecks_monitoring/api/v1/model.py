@@ -90,7 +90,7 @@ class ModelSchema(BaseModel):
     task_type: t.Optional[TaskType]
     alerts_delay_labels_ratio: float
     alerts_delay_seconds: int
-    s3_path: t.Optional[str]
+    obj_store_path: t.Optional[str]
 
     class Config:
         """Config for Model schema."""
@@ -107,7 +107,7 @@ class ModelCreationSchema(BaseModel):
     alerts_delay_labels_ratio: float
     alerts_delay_seconds: int
     notes: t.Optional[t.List[ModelNoteCreationSchema]] = None
-    s3_path: t.Optional[str]
+    obj_store_path: t.Optional[str]
 
     class Config:
         """Config for Model schema."""

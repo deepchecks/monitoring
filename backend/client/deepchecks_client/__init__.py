@@ -77,7 +77,7 @@ class DeepchecksClient:
         alerts_delay_seconds: int = 3600 * 72,  # 3 days
         model_notes: t.Optional[t.List[t.Dict[str, str]]] = None,
         monitoring_frequency: str = 'day',
-        s3_path: t.Optional[str] = None,
+        obj_store_path: t.Optional[str] = None,
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -107,8 +107,9 @@ class DeepchecksClient:
         monitoring_frequency : str, default 'day'
             The frequency & aggregation window for the default monitors and alerts.
             One of 'hour', 'day', 'week', 'month'.
-        s3_path : str, default None
-            The s3 path to the model data. The authentication info should be provided inside the system.
+        obj_store_path : str, default None
+            The path to the model data in the object store. The authentication info should be provided inside the
+            system.
 
         Returns
         -------
@@ -153,7 +154,7 @@ class DeepchecksClient:
                 'alerts_delay_labels_ratio': alerts_delay_labels_ratio,
                 'alerts_delay_seconds': alerts_delay_seconds,
                 'notes': model_notes,
-                's3_path': s3_path
+                'obj_store_path': obj_store_path
             })
 
             model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_name(name))
@@ -254,7 +255,7 @@ class DeepchecksClient:
         alerts_delay_labels_ratio: float = 1.0,
         alerts_delay_seconds: int = 3600 * 72,  # 3 days
         monitoring_frequency: str = 'day',
-        s3_path: t.Optional[str] = None,
+        obj_store_path: t.Optional[str] = None,
     ) -> TabularModelVersionClient:
         """
         Create a tabular model version and uploads the reference data if provided.
@@ -297,8 +298,9 @@ class DeepchecksClient:
             alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
         monitoring_frequency : str, default 'day'
             The frequency & aggregation window for the default monitors and alerts. One of 'hour', 'day', 'week'.
-        s3_path : str, default None
-            The s3 path to the model data. The authentication info should be provided inside the system.
+        obj_store_path : str, default None
+            The path to the model data in the object store. The authentication info should be provided inside the
+            system.
 
         Returns
         -------
@@ -357,7 +359,7 @@ class DeepchecksClient:
         version_client = self.get_or_create_model(
             model_name, task_type, description, create_model_defaults,
             alerts_delay_labels_ratio=alerts_delay_labels_ratio, alerts_delay_seconds=alerts_delay_seconds,
-            monitoring_frequency=monitoring_frequency, s3_path=s3_path
+            monitoring_frequency=monitoring_frequency, obj_store_path=obj_store_path
         ).version(
             version_name,
             schema=schema,

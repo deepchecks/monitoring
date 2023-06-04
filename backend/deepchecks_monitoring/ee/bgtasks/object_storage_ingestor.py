@@ -86,7 +86,7 @@ class ObjectStorageIngestor(BackgroundWorker):
             aws_secret_access_key=secret_key
         )
 
-        s3_url = urlparse(model.s3_path)
+        s3_url = urlparse(model.obj_store_path)
         model_path = s3_url.path[1:]
         if model_path[-1] == '/':
             model_path = model_path[:-1]
