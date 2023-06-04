@@ -110,7 +110,8 @@ class DataGenerator:
             "task_type": random.choice(list(TaskType)).value,
             "description": self.faker.text(),
             "alerts_delay_labels_ratio": 0,
-            "alerts_delay_seconds": 0
+            "alerts_delay_seconds": 0,
+            "obj_store_path": None
         }
 
     def generate_random_check(self) -> "Payload":

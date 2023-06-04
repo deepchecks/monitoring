@@ -16,6 +16,7 @@ import typing as t
 
 import asyncpg.exceptions
 import fastjsonschema
+import pandas as pd
 import pendulum as pdl
 import sqlalchemy.exc
 from sqlalchemy import Column, select, text
@@ -30,7 +31,6 @@ from deepchecks_monitoring.bgtasks.model_version_topic_delete import insert_mode
 from deepchecks_monitoring.logic.kafka_consumer import consume_from_kafka
 from deepchecks_monitoring.logic.keys import DATA_TOPIC_PREFIXES, data_topic_name_to_ids, get_data_topic_name
 from deepchecks_monitoring.monitoring_utils import configure_logger
-from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Model, ModelVersion
 from deepchecks_monitoring.schema_models.column_type import (SAMPLE_ID_COL, SAMPLE_LABEL_COL, SAMPLE_LOGGED_TIME_COL,
@@ -310,9 +310,9 @@ class DataIngestionBackend(object):
     async def log_samples(
             self,
             model_version: ModelVersion,
-            data: t.List[t.Dict[str, t.Any]],
+            data: t.List[t.Dict[str, t.Any]] | pd.DataFrame,
             session: AsyncSession,
-            user: User,
+            organization_id: int,
             log_time: "pdl.DateTime",
     ):
         """Log new data.
@@ -322,19 +322,22 @@ class DataIngestionBackend(object):
         model_version: ModelVersion
         data: t.List[t.Dict[str, t.Any]
         session: AsyncSession
-        user: User
+        organization_id: int
         log_time
         """
+        if isinstance(data, pd.DataFrame):
+            data = data.to_dict(orient="records")
+
         if self.use_kafka:
             entity = "model-version"
-            await insert_model_version_offset_update_task(user.organization_id, model_version.id, entity, session)
-            topic_name = get_data_topic_name(user.organization_id, model_version.id, entity)
+            await insert_model_version_offset_update_task(organization_id, model_version.id, entity, session)
+            topic_name = get_data_topic_name(organization_id, model_version.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
             # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
             if not topic_existed:
                 model_version.ingestion_offset = -1
                 model_version.topic_end_offset = -1
-                await insert_model_version_topic_delete_task(user.organization_id, model_version.id, entity,
+                await insert_model_version_topic_delete_task(organization_id, model_version.id, entity,
                                                              session)
 
             if self._producer is None:
@@ -348,14 +351,14 @@ class DataIngestionBackend(object):
             await asyncio.gather(*send_futures)
         else:
             await log_data(model_version, data, session, [log_time] * len(data), self.logger,
-                           user.organization_id, self.resources_provider.cache_functions)
+                           organization_id, self.resources_provider.cache_functions)
 
     async def log_labels(
             self,
             model: Model,
-            data: t.List[t.Dict[str, t.Any]],
+            data: t.List[t.Dict[str, t.Any]] | pd.DataFrame,
             session: AsyncSession,
-            user: User,
+            organization_id: int,
     ):
         """Log new data.
 
@@ -364,18 +367,21 @@ class DataIngestionBackend(object):
         model: Model
         data: t.List[t.Dict[str, t.Any]
         session: AsyncSession
-        user: User
+        organization_id: int
         """
+        if isinstance(data, pd.DataFrame):
+            data = data.to_dict(orient="records")
+
         if self.use_kafka:
             entity = "model"
-            await insert_model_version_offset_update_task(user.organization_id, model.id, entity, session)
-            topic_name = get_data_topic_name(user.organization_id, model.id, entity)
+            await insert_model_version_offset_update_task(organization_id, model.id, entity, session)
+            topic_name = get_data_topic_name(organization_id, model.id, entity)
             topic_existed = self.resources_provider.ensure_kafka_topic(topic_name)
             # If topic was created, resetting the offsets and adding a task to delete it when data upload is done
             if not topic_existed:
                 model.ingestion_offset = -1
                 model.topic_end_offset = -1
-                await insert_model_version_topic_delete_task(user.organization_id, model.id, entity, session)
+                await insert_model_version_topic_delete_task(organization_id, model.id, entity, session)
 
             if self._producer is None:
                 self._producer = await self.resources_provider.kafka_producer
@@ -387,7 +393,7 @@ class DataIngestionBackend(object):
                 send_futures.append(await self._producer.send(topic_name, value=message, key=key))
             await asyncio.gather(*send_futures)
         else:
-            await log_labels(model, data, session, user.organization_id,
+            await log_labels(model, data, session, organization_id,
                              self.resources_provider.cache_functions, self.logger)
 
     async def run_data_consumer(self):

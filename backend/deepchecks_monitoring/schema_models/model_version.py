@@ -92,6 +92,9 @@ class ModelVersion(Base, MetadataMixin, PermissionMixin):
     topic_end_offset = Column(BigInteger, default=-1)
     balance_classes = Column(Boolean, nullable=False, default=False)
 
+    # For object storage ingestion
+    latest_file_time = Column(DateTime(timezone=True), nullable=True)
+
     model_id = Column(
         Integer,
         ForeignKey("models.id", ondelete="CASCADE", onupdate="RESTRICT"),
