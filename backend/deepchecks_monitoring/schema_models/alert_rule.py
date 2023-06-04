@@ -27,7 +27,7 @@ if t.TYPE_CHECKING:
     from deepchecks_monitoring.schema_models.check import Check
     from deepchecks_monitoring.schema_models.monitor import Monitor
 
-__all__ = ["Condition", "AlertRule", "AlertSeverity"]
+__all__ = ["AlertRule"]
 
 
 class AlertRule(Base, MetadataMixin, PermissionMixin):

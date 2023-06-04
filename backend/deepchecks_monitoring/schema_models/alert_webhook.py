@@ -12,7 +12,8 @@ from pydantic import AnyUrl, BaseModel, validator
 from sqlalchemy.dialects.postgresql import JSONB
 
 from deepchecks_monitoring.monitoring_utils import MetadataMixin
-from deepchecks_monitoring.schema_models import AlertSeverity, Base
+from deepchecks_monitoring.schema_models import Base
+from deepchecks_monitoring.utils.alerts import AlertSeverity
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
