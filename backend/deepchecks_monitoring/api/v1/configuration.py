@@ -11,7 +11,7 @@
 import typing as t
 
 import pendulum as pdl
-from fastapi import Query
+from fastapi import Depends, Query
 from pydantic.main import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,18 +22,22 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
+from deepchecks_monitoring.schema_models.data_ingestion_alert import DataIngestionAlert
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType, DataIngestionAlertRule
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.utils import auth
 
 from .global_api.users import BasicUserSchema
 from .router import router
 
 
-class AlertRuleConfigSchema(BaseModel):
-    """Schema for the alert rule."""
+class GeneralAlertRuleConfigSchema(BaseModel):
+    """Schema for general alert rule."""
 
     id: int
     name: str
-    check_name: str
     frequency: Frequency
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
@@ -48,7 +52,24 @@ class AlertRuleConfigSchema(BaseModel):
         orm_mode = True
 
 
-@router.get("/config/alert-rules", response_model=t.List[AlertRuleConfigSchema], tags=[Tags.CONFIG])
+class AlertRuleConfigSchema(GeneralAlertRuleConfigSchema):
+    """Schema for the alert rule."""
+
+    check_name: str
+
+
+class DataAlertRuleConfigSchema(GeneralAlertRuleConfigSchema):
+    """Schema for the data alert rule."""
+
+    alert_type: AlertRuleType
+
+
+class AlertRulesConfigSchema(BaseModel):
+    alert_rules: t.List[AlertRuleConfigSchema]
+    data_alert_rules: t.List[DataAlertRuleConfigSchema]
+
+
+@router.get("/config/alert-rules", response_model=AlertRulesConfigSchema, tags=[Tags.CONFIG])
 async def get_all_alert_rules(
     models: t.List[int] = Query(default=[]),
     severity: t.List[AlertSeverity] = Query(default=[]),
@@ -56,6 +77,7 @@ async def get_all_alert_rules(
         "severity:asc",
         "severity:desc",
     ]] = Query(default=[]),
+    user: User = Depends(auth.CurrentUser()),
     session: AsyncSession = AsyncSessionDep
 ):
     """Return all alert rules for the configuration screen.
@@ -116,6 +138,8 @@ async def get_all_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
         .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
         .outerjoin(total_count, total_count.c.alert_rule_id == AlertRule.id)
     )
@@ -151,7 +175,81 @@ async def get_all_alert_rules(
                 user_schema = BasicUserSchema.from_orm(user)
                 alert_rule_schema.user = user_schema
         alert_rule_schemas.append(alert_rule_schema)
-    return alert_rule_schemas
+
+    # nearly duplicated code (not sure if I can do it prettier)
+    non_resolved_alerts_count = (
+        select(
+            DataIngestionAlert.alert_rule_id.label("alert_rule_id"),
+            func.count(DataIngestionAlert.id).label("non_resolved_alerts"),
+        )
+        .where(DataIngestionAlert.resolved.is_(False))
+        .group_by(DataIngestionAlert.alert_rule_id)
+    )
+
+    non_resolved_alerts_count = non_resolved_alerts_count.subquery()
+
+    total_count = (
+        select(
+            DataIngestionAlert.alert_rule_id.label("alert_rule_id"),
+            func.count(DataIngestionAlert.id).label("total_alerts"),
+            func.max(DataIngestionAlert.end_time).label("recent_alert")
+        )
+        .group_by(DataIngestionAlert.alert_rule_id)
+    )
+
+    total_count = total_count.subquery()
+    severity_index = DataIngestionAlertRule.alert_severity_index.label("severity_index")
+
+    q = (
+        select(
+            DataIngestionAlertRule.id,
+            DataIngestionAlertRule.created_by,
+            DataIngestionAlertRule.condition,
+            DataIngestionAlertRule.name,
+            DataIngestionAlertRule.alert_severity,
+            DataIngestionAlertRule.frequency,
+            DataIngestionAlertRule.alert_type,
+            non_resolved_alerts_count.c.non_resolved_alerts,
+            total_count.c.total_alerts,
+            total_count.c.recent_alert,
+            severity_index
+        )
+        .join(DataIngestionAlertRule.model)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
+        .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == DataIngestionAlertRule.id)
+        .outerjoin(total_count, total_count.c.alert_rule_id == DataIngestionAlertRule.id)
+    )
+    if models:
+        q = q.where(DataIngestionAlertRule.model_id.in_(models))
+    if severity:
+        q = q.where(DataIngestionAlertRule.alert_severity.in_(severity))
+
+    if not sortby:
+        q = q.order_by(severity_index.desc(), total_count.c.recent_alert.desc())
+    else:
+        if "severity:asc" in sortby:
+            q = q.order_by(severity_index.asc())
+        if "severity:desc" in sortby:
+            q = q.order_by(severity_index.desc())
+        if "alert-window:asc" in sortby:
+            q = q.order_by(total_count.c.recent_alert.asc())
+        if "alert-window:desc" in sortby:
+            q = q.order_by(total_count.c.recent_alert.desc())
+
+    alert_rules_rows = (await session.execute(q)).all()
+    data_alert_rule_schemas = []
+    for row in alert_rules_rows:
+        alert_rule_schema = DataAlertRuleConfigSchema.from_orm(row)
+        if row.created_by != 0:
+            q = select(User).where(User.id == row.created_by)
+            user = (await session.execute(q)).scalars().first()
+            if user is not None:
+                user_schema = BasicUserSchema.from_orm(user)
+                alert_rule_schema.user = user_schema
+        data_alert_rule_schemas.append(alert_rule_schema)
+
+    return AlertRulesConfigSchema(alert_rules=alert_rule_schemas, data_alert_rules=data_alert_rule_schemas)
 
 
 @router.get("/configurations")

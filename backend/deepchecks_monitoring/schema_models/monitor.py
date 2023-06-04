@@ -8,7 +8,6 @@
 # along with Deepchecks.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 """Module defining the monitor ORM model."""
-import enum
 import typing as t
 from datetime import datetime
 
@@ -23,6 +22,7 @@ from deepchecks_monitoring.monitoring_utils import DataFilterList, MetadataMixin
 from deepchecks_monitoring.schema_models.base import Base
 from deepchecks_monitoring.schema_models.permission_mixin import PermissionMixin
 from deepchecks_monitoring.schema_models.pydantic_type import PydanticType
+from deepchecks_monitoring.utils.alerts import Frequency
 
 if t.TYPE_CHECKING:
     # pylint: disable=unused-import
@@ -62,25 +62,6 @@ def _calculate_default_latest_schedule(context: DefaultExecutionContext):
         model_start_time=start_time,
         model_end_time=end_time,
     )
-
-
-class Frequency(str, enum.Enum):
-    """Monitor execution frequency."""
-
-    HOUR = "HOUR"
-    DAY = "DAY"
-    WEEK = "WEEK"
-    MONTH = "MONTH"
-
-    def to_pendulum_duration_unit(self):
-        return f"{self.value.lower()}s"
-
-    def to_pendulum_duration(self):
-        unit = self.to_pendulum_duration_unit()
-        return pdl.duration(**{unit: 1})
-
-    def to_postgres_interval(self):
-        return f"INTERVAL '1 {self.value}'"
 
 
 class Monitor(Base, MetadataMixin, PermissionMixin):
