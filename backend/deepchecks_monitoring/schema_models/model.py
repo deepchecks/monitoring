@@ -67,7 +67,7 @@ class Model(Base, MetadataMixin, PermissionMixin):
     timezone = sa.Column(sa.String(50), nullable=False, server_default=sa.literal("UTC"))
 
     # For ingestion from object storage
-    s3_last_scan_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    obj_store_last_scan_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
     obj_store_path = sa.Column(sa.String, nullable=True)
     latest_labels_file_time = sa.Column(sa.DateTime(timezone=True), nullable=True)
 

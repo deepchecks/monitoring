@@ -95,12 +95,12 @@ class ObjectStorageIngestor(BackgroundWorker):
         bucket = s3_url.netloc
         new_scan_time = pdl.now()
         # First ever scan of model - will scan all files
-        if model.s3_last_scan_time is None:
+        if model.obj_store_last_scan_time is None:
             model_prefixes = ['']
         # Else scan only new files since last scan (by date)
         else:
             model_prefixes = []
-            date = pdl.instance(model.s3_last_scan_time).date()
+            date = pdl.instance(model.obj_store_last_scan_time).date()
             while date <= new_scan_time.date():
                 date = date.add(days=1)
                 model_prefixes.append(date.isoformat())
@@ -122,7 +122,7 @@ class ObjectStorageIngestor(BackgroundWorker):
                 await self.ingestion_backend.log_labels(model, df, session, organization_id)
                 model.latest_labels_file_time = max(model.latest_labels_file_time, time)
 
-        model.s3_last_scan_time = new_scan_time
+        model.obj_store_last_scan_time = new_scan_time
         await session.commit()
         s3.close()
 
