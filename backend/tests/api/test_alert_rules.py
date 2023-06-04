@@ -14,8 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.testclient import TestClient
 
 from deepchecks_monitoring.schema_models.alert_rule import AlertSeverity
-from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
-from deepchecks_monitoring.utils.alerts import Frequency
 from tests.common import Payload, TestAPI, create_alert
 
 
