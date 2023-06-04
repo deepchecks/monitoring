@@ -168,6 +168,7 @@ class Tags(Enum):
     CHECKS = 'Checks'
     MONITORS = 'Monitors'
     ALERTS = 'Alerts'
+    DATA_ALERTS = 'Data Alerts'
     DATA = 'Data'
     CONFIG = 'Configuration'
 

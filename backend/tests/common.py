@@ -15,10 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from deepchecks_monitoring.monitoring_utils import OperatorsEnum, TimeUnit
 from deepchecks_monitoring.public_models import Organization, User, UserOAuthDTO
 from deepchecks_monitoring.public_models.billing import Billing
-from deepchecks_monitoring.schema_models import Alert, AlertSeverity, ColumnType, TaskType
+from deepchecks_monitoring.schema_models import Alert, ColumnType
 from deepchecks_monitoring.schema_models.model import Model
 from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.schema_models.task_type import TaskType
+from deepchecks_monitoring.utils.alerts import AlertSeverity
 from deepchecks_monitoring.utils.database import attach_schema_switcher_listener
 
 if t.TYPE_CHECKING:
@@ -756,6 +758,27 @@ class TestAPI:
 
         return t.cast(Payload, self.fetch_alert_rule(alert_rule_id=data["id"]))
 
+    def create_data_ingestion_alert_rule(
+        self,
+        model_id: int,
+        alert_rule: t.Optional[t.Dict[t.Any, t.Any]],
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+
+        response = self.api.session.post(f"models/{model_id}/data-ingestion-alert-rules", json=alert_rule)
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "id" in data
+
+        return t.cast(Payload, self.fetch_data_ingestion_alert_rule(data_ingestion_alert_rule_id=data["id"]))
+
     def fetch_alert_rule(
         self,
         alert_rule_id: int,
@@ -771,11 +794,29 @@ class TestAPI:
 
         return self._assert_alert_rule(response.json())
 
+    def fetch_data_ingestion_alert_rule(
+        self,
+        data_ingestion_alert_rule_id: int,
+        expected_status: ExpectedStatus = (200, 299)
+    ) -> t.Union[httpx.Response, Payload]:
+        expected_status = ExpectedHttpStatus.create(expected_status)
+        response = self.api.session.get(f"data-ingestion-alert-rules/{data_ingestion_alert_rule_id}")
+        response = t.cast(httpx.Response, response)
+        expected_status.assert_response_status(response)
+
+        if expected_status.is_negative():
+            return response
+
+        return self._assert_alert_rule(response.json(), is_model_rule=True)
+
     @classmethod
-    def _assert_alert_rule(cls, data: Payload):
+    def _assert_alert_rule(cls, data: Payload, is_model_rule=False):
         assert isinstance(data, dict)
         assert "id" in data and isinstance(data["id"], int)
-        assert "monitor_id" in data and isinstance(data["monitor_id"], int)
+        if is_model_rule:
+            assert "model_id" in data and isinstance(data["model_id"], int)
+        else:
+            assert "monitor_id" in data and isinstance(data["monitor_id"], int)
         assert "condition" in data and isinstance(data["condition"], dict)
         assert "alert_severity" in data and isinstance(data["alert_severity"], str)
         assert "is_active" in data and isinstance(data["is_active"], bool)
