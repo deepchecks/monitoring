@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from deepchecks_monitoring.logic.data_ingestion import DataIngestionBackend
+from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models import Organization
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
 from deepchecks_monitoring.resources import ResourcesProvider
@@ -37,6 +38,7 @@ class ObjectStorageIngestor(BackgroundWorker):
     def __init__(self, resources_provider: ResourcesProvider):
         super().__init__()
         self.ingestion_backend = DataIngestionBackend(resources_provider)
+        self.logger = configure_logger(self.__class__.__name__)
 
     @classmethod
     def queue_name(cls) -> str:
@@ -74,7 +76,7 @@ class ObjectStorageIngestor(BackgroundWorker):
         # Get s3 authentication info
         s3_data_source = (await session.scalar(select(DataSource).where(DataSource.type == 's3')))
         if s3_data_source is None:
-            # TODO: Write error to somewhere
+            self.logger.error({'message': 'No data source of type s3 found'})
             await session.commit()
             return
 
@@ -109,13 +111,14 @@ class ObjectStorageIngestor(BackgroundWorker):
             # If first scan of specific version - scan all files under version, else scan only new files by date
             version_prefixes = model_prefixes if version.latest_file_time is not None else ['']
             for prefix in version_prefixes:
-                for df, time in ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time):
+                for df, time in self.ingest_prefix(s3, bucket, f'{version_path}/{prefix}', version.latest_file_time):
                     await self.ingestion_backend.log_samples(version, df, session, organization_id, new_scan_time)
                     version.latest_file_time = max(version.latest_file_time, time)
 
         # Ingest labels
         for prefix in model_prefixes:
-            for df, time in ingest_prefix(s3, bucket, f'{model_path}/labels/{prefix}', model.latest_labels_file_time):
+            labels_path = f'{model_path}/labels/{prefix}'
+            for df, time in self.ingest_prefix(s3, bucket, labels_path, model.latest_labels_file_time):
                 await self.ingestion_backend.log_labels(model, df, session, organization_id)
                 model.latest_labels_file_time = max(model.latest_labels_file_time, time)
 
@@ -123,50 +126,56 @@ class ObjectStorageIngestor(BackgroundWorker):
         await session.commit()
         s3.close()
 
+    def ingest_prefix(self, s3, bucket, prefix, last_file_time=None):
+        """Ingest all files in prefix, return df and file time"""
+        last_file_time = last_file_time or pdl.datetime(year=1970, month=1, day=1)
+        # First read all file names, then retrieve them sorted by date
+        resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+        files = []
+        if 'Contents' not in resp:
+            self.logger.error({'message': f'No files found for bucket {bucket} and prefix {prefix}'})
+            return
 
-def ingest_prefix(s3, bucket, prefix, last_file_time=None):
-    """Ingest all files in prefix, return df and file time"""
-    last_file_time = last_file_time or pdl.datetime(year=1970, month=1, day=1)
-    # First read all file names, then retrieve them sorted by date
-    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
-    files = []
-    if 'Contents' in resp:
         # Iterate over files in prefix
         for obj in resp['Contents']:
             key = obj['Key']
             file_with_extension = key.rsplit('/', maxsplit=1)[-1]
             if file_with_extension.count('.') != 1:
-                # TODO: Log error
+                self.logger.error({'message': f'Expected single dot in file name: {file_with_extension}'})
                 continue
             file_name, extension = file_with_extension.split('.')
             if extension not in ['csv', 'parquet']:
-                # TODO: Log error
+                self.logger.error({'message': f'Invalid file extension: {extension}'})
                 continue
             try:
                 file_time = pdl.parse(file_name)
             except pdl.parsing.exceptions.ParserError:
-                # TODO: Log error
+                self.logger.error({'message': f'Invalid date format in file name: {file_name}'})
                 continue
-            # If file is older than last file ingested - skip
+            # If file is before the last file ingested - skip
             if file_time > last_file_time:
                 files.append({'key': key, 'time': file_time, 'extension': extension})
+            else:
+                self.logger.info({'message': f'file {key} is before latest file time {last_file_time} - skipping'})
 
-    files = sorted(files, key=lambda x: x['time'])
-    for file in files:
-        file_response = s3.get_object(Bucket=bucket, Key=file['key'])
-        value = io.BytesIO(file_response.get('Body').read())
-        if file['extension'] == 'csv':
-            df = pd.read_csv(value)
-        elif file['extension'] == 'parquet':
-            df = pd.read_parquet(value)
-        else:
-            raise ValueError('Should not get here')
+        files = sorted(files, key=lambda x: x['time'])
+        for file in files:
+            self.logger.info({'message': f'Ingesting file {file["key"]}'})
+            file_response = s3.get_object(Bucket=bucket, Key=file['key'])
+            value = io.BytesIO(file_response.get('Body').read())
+            if file['extension'] == 'csv':
+                df = pd.read_csv(value)
+            elif file['extension'] == 'parquet':
+                df = pd.read_parquet(value)
+            else:
+                self.logger.error({'message': f'Invalid file extension: {file["extension"]}'})
+                continue
 
-        if SAMPLE_TS_COL not in df or not is_integer_dtype(df[SAMPLE_TS_COL]):
-            # TODO - log error
-            continue
-        # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
-        df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())
-        # Sort by timestamp
-        df = df.sort_values(by=[SAMPLE_TS_COL])
-        yield df, file['time']
+            if SAMPLE_TS_COL not in df or not is_integer_dtype(df[SAMPLE_TS_COL]):
+                self.logger.error({'message': f'Invalid timestamp column: {SAMPLE_TS_COL}'})
+                continue
+            # The user facing API requires unix timestamps, but for the ingestion we convert it to ISO format
+            df[SAMPLE_TS_COL] = df[SAMPLE_TS_COL].apply(lambda x: pdl.from_timestamp(x).isoformat())
+            # Sort by timestamp
+            df = df.sort_values(by=[SAMPLE_TS_COL])
+            yield df, file['time']
