@@ -29,9 +29,11 @@ from deepchecks_monitoring.utils.alerts import AlertSeverity
 from .router import router
 
 
-class DataIngestionAlertCreationSchema(BaseModel):
-    """Schema for the alert creation."""
+class DataIngestionAlertSchema(BaseModel):
+    """Schema for the alert."""
 
+    id: int
+    created_at: pdl.DateTime
     alert_rule_id: int
     value: float
     start_time: pdl.DateTime
@@ -42,13 +44,6 @@ class DataIngestionAlertCreationSchema(BaseModel):
         """Config for Alert schema."""
 
         orm_mode = True
-
-
-class DataIngestionAlertSchema(DataIngestionAlertCreationSchema):
-    """Schema for the alert."""
-
-    id: int
-    created_at: pdl.DateTime
 
 
 @router.get("/data-ingestion-alerts/count_active",
