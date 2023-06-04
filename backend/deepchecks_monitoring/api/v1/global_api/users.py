@@ -11,10 +11,10 @@
 import typing as t
 from datetime import datetime
 
-from sqlalchemy.dialects import postgresql
 from fastapi import Depends, Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from starlette import status
 from starlette.responses import RedirectResponse
