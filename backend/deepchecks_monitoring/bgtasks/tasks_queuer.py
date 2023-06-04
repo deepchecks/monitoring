@@ -17,9 +17,9 @@ from time import perf_counter
 
 import anyio
 import pendulum as pdl
-from redis.asyncio import Redis, RedisCluster
 import redis.exceptions as redis_exceptions
 import uvloop
+from redis.asyncio import Redis, RedisCluster
 from sqlalchemy import case, func, update
 from sqlalchemy.cimmutabledict import immutabledict
 
@@ -135,6 +135,7 @@ else:
     class WorkerSettings(BaseWorkerSettings):
         """Set of worker settings."""
         pass
+
 
 async def init_async_redis(redis_uri):
     """Initialize redis connection."""

@@ -17,7 +17,7 @@ import anyio
 import pendulum as pdl
 import uvloop
 from redis.asyncio import Redis, RedisCluster
-from redis.exceptions import RedisClusterException, LockNotOwnedError
+from redis.exceptions import LockNotOwnedError, RedisClusterException
 from sqlalchemy import select
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask

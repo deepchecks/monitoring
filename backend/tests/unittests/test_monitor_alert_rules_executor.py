@@ -17,8 +17,8 @@ import pendulum as pdl
 import pytest
 import sqlalchemy as sa
 from deepchecks.tabular.checks import SingleDatasetPerformance
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from fakeredis.aioredis import FakeRedis
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask, execute_monitor
 from deepchecks_monitoring.bgtasks.scheduler import AlertsScheduler

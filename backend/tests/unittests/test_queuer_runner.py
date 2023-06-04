@@ -12,8 +12,8 @@ import logging
 
 import pytest
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncSession
 from fakeredis.aioredis import FakeRedis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.bgtasks.tasks_queuer import TasksQueuer
 from deepchecks_monitoring.bgtasks.tasks_runner import TaskRunner
