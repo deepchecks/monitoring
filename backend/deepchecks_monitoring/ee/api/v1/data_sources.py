@@ -39,8 +39,6 @@ class DataSourceSchema(DataSourceCreationSchema):
     """Data Source schema."""
 
     id: int
-    type: str
-    parameters: t.Dict[str, t.Any]
 
     class Config:
         orm_mode = True
