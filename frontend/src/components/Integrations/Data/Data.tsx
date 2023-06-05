@@ -52,7 +52,7 @@ const Data = () => {
         />
       </StyledContainer>
       <S3Dialog open={openS3Dialog} handleClose={handleCloseS3Dialog} refetch={refetch} />
-      <StyledText text={isAdmin ? '' : constants.data.adminErrMsg} type="bodyBold" color="red" margin="124px 0" />
+      <StyledText text={isAdmin ? '' : constants.data.adminErrMsg} type="bodyBold" color="red" margin="36px 12px" />
     </>
   );
 };
