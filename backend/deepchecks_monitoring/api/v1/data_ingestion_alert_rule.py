@@ -149,12 +149,12 @@ async def get_alerts_of_alert_rule(
              dependencies=[Depends(DataIngestionAlertRule.get_object_from_http_request)],
              tags=[Tags.DATA_ALERTS])
 async def resolve_all_alerts_of_alert_rule(
-        alert_rule_id: int,
+        data_ingestion_alert_rule_id: int,
         session: AsyncSession = AsyncSessionDep
 ):
     """Resolve all alerts of alert rule."""
     await session.execute(update(DataIngestionAlert)
-                          .where(DataIngestionAlert.alert_rule_id == alert_rule_id)
+                          .where(DataIngestionAlert.alert_rule_id == data_ingestion_alert_rule_id)
                           .values(resolved=True))
     return Response(status_code=status.HTTP_200_OK)
 
@@ -167,10 +167,10 @@ async def resolve_all_alerts_of_alert_rule(
     description="Reactivate all resolved alerts"
 )
 async def reactivate_resolved_alerts(
-        alert_rule_id: int,
+        data_ingestion_alert_rule_id: int,
         session: AsyncSession = AsyncSessionDep
 ):
     """Reactivate all resolved alerts."""
     await session.execute(update(DataIngestionAlert)
-                          .where(DataIngestionAlert.alert_rule_id == alert_rule_id)
+                          .where(DataIngestionAlert.alert_rule_id == data_ingestion_alert_rule_id)
                           .values(resolved=False))
