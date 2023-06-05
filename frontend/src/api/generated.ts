@@ -155,6 +155,15 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
 
 /**
+ * Schema for organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
+  id: number;
+  name: string;
+  tier: OrgTier;
+}
+
+/**
  * Schema for the organization.
  */
 export interface DeepchecksMonitoringApiV1GlobalApiOrganizationOrganizationSchema {
@@ -448,15 +457,6 @@ export const OrgTier = {
 } as const;
 
 /**
- * Schema for organization.
- */
-export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
-  id: number;
-  name: string;
-  tier: OrgTier;
-}
-
-/**
  * Operators for numeric and categorical filters.
  */
 export type OperatorsEnum = typeof OperatorsEnum[keyof typeof OperatorsEnum];
@@ -561,6 +561,8 @@ export interface MonitorNotebookSchema {
   as_script?: boolean;
 }
 
+export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
+
 export type MonitorCreationSchemaDataFilters = DataFilterList | null;
 
 /**
@@ -586,8 +588,6 @@ export interface MonitorCheckConfSchema {
   check_conf: MonitorCheckConfSchemaCheckConf;
   res_conf?: string[];
 }
-
-export type MonitorCreationSchemaAdditionalKwargs = MonitorCheckConfSchema | null;
 
 /**
  * List of data filters.
@@ -855,6 +855,27 @@ export interface FeaturesSchema {
   update_roles: boolean;
   model_assignment: boolean;
   email_enabled: boolean;
+}
+
+export type DataSourceSchemaParameters = { [key: string]: any };
+
+/**
+ * Data Source schema.
+ */
+export interface DataSourceSchema {
+  type: string;
+  parameters: DataSourceSchemaParameters;
+  id: number;
+}
+
+export type DataSourceCreationSchemaParameters = { [key: string]: any };
+
+/**
+ * Data Source creation schema.
+ */
+export interface DataSourceCreationSchema {
+  type: string;
+  parameters: DataSourceCreationSchemaParameters;
 }
 
 /**
@@ -6936,6 +6957,135 @@ export const useStripeWebhookApiV1BillingWebhookPost = <
     mutationFn,
     mutationOptions
   );
+};
+
+/**
+ * @summary Get Data Sources
+ */
+export const getDataSourcesApiV1DataSourcesGet = (signal?: AbortSignal) => {
+  return customInstance<DataSourceSchema[]>({ url: `/api/v1/data-sources`, method: 'get', signal });
+};
+
+export const getGetDataSourcesApiV1DataSourcesGetQueryKey = () => [`/api/v1/data-sources`];
+
+export type GetDataSourcesApiV1DataSourcesGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDataSourcesApiV1DataSourcesGet>>
+>;
+export type GetDataSourcesApiV1DataSourcesGetQueryError = ErrorType<unknown>;
+
+export const useGetDataSourcesApiV1DataSourcesGet = <
+  TData = Awaited<ReturnType<typeof getDataSourcesApiV1DataSourcesGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getDataSourcesApiV1DataSourcesGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDataSourcesApiV1DataSourcesGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDataSourcesApiV1DataSourcesGet>>> = ({ signal }) =>
+    getDataSourcesApiV1DataSourcesGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof getDataSourcesApiV1DataSourcesGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * @summary New Data Source
+ */
+export const newDataSourceApiV1DataSourcesPut = (dataSourceCreationSchema: DataSourceCreationSchema) => {
+  return customInstance<unknown>({
+    url: `/api/v1/data-sources`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: dataSourceCreationSchema
+  });
+};
+
+export type NewDataSourceApiV1DataSourcesPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof newDataSourceApiV1DataSourcesPut>>
+>;
+export type NewDataSourceApiV1DataSourcesPutMutationBody = DataSourceCreationSchema;
+export type NewDataSourceApiV1DataSourcesPutMutationError = ErrorType<HTTPValidationError>;
+
+export const useNewDataSourceApiV1DataSourcesPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof newDataSourceApiV1DataSourcesPut>>,
+    TError,
+    { data: DataSourceCreationSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof newDataSourceApiV1DataSourcesPut>>,
+    { data: DataSourceCreationSchema }
+  > = props => {
+    const { data } = props ?? {};
+
+    return newDataSourceApiV1DataSourcesPut(data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof newDataSourceApiV1DataSourcesPut>>,
+    TError,
+    { data: DataSourceCreationSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * @summary Delete Data Source
+ */
+export const deleteDataSourceApiV1DataSourcesDataSourceIdDelete = (dataSourceId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/data-sources/${dataSourceId}`, method: 'delete' });
+};
+
+export type DeleteDataSourceApiV1DataSourcesDataSourceIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteDataSourceApiV1DataSourcesDataSourceIdDelete>>
+>;
+
+export type DeleteDataSourceApiV1DataSourcesDataSourceIdDeleteMutationError = ErrorType<HTTPValidationError>;
+
+export const useDeleteDataSourceApiV1DataSourcesDataSourceIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDataSourceApiV1DataSourcesDataSourceIdDelete>>,
+    TError,
+    { dataSourceId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteDataSourceApiV1DataSourcesDataSourceIdDelete>>,
+    { dataSourceId: number }
+  > = props => {
+    const { dataSourceId } = props ?? {};
+
+    return deleteDataSourceApiV1DataSourcesDataSourceIdDelete(dataSourceId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof deleteDataSourceApiV1DataSourcesDataSourceIdDelete>>,
+    TError,
+    { dataSourceId: number },
+    TContext
+  >(mutationFn, mutationOptions);
 };
 
 /**
