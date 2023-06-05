@@ -62,6 +62,10 @@ async def new_data_source(body: DataSourceCreationSchema,
                          ):
     data_source = DataSource(**body.dict())
     if data_source.type == 's3':
+        # Test parameters name given
+        expected = {'aws_access_key_id', 'aws_secret_access_key', 'region'}
+        if set(data_source.parameters.keys()) != expected:
+            raise BadRequest(f'Invalid parameters for S3 data source, expected: {sorted(expected)}')
         # Test credentials to S3
         access_key = data_source.parameters['aws_access_key_id']
         secret_key = data_source.parameters['aws_secret_access_key']
