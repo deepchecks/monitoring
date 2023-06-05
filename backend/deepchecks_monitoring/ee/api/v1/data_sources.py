@@ -11,8 +11,8 @@
 import typing as t
 
 import boto3
-from botocore.config import Config
 import sqlalchemy as sa
+from botocore.config import Config
 from fastapi import Depends, Response
 from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
