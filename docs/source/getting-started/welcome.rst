@@ -10,10 +10,11 @@ Welcome to Deepchecks!
 ========================
 
 `Deepchecks <https://github.com/deepchecks/deepchecks>`__ is a holistic open-source solution for all of your AI & ML validation needs, 
-enabling to thoroughly test your data and models from research to production.
+enabling you to thoroughly test your data and models from research to production.
 
-See more info in the :ref:`Deepchecks Components for Continuous Validation <welcome__deepchecks_components>`
-section, along with the direct links to the documentation of each component.
+Jump to the :ref:`Deepchecks Components for Continuous Validation` section for more info
+about each of the components (Testing, CI, Monitoring) and for links to their 
+corresponding documentation.
 
 
 .. _welcome__start_with_deepchecks_monitoring:
@@ -105,9 +106,10 @@ Deepchecks' Components
         Tests and continuous monitoring during production
         
 
-Deepchecks accompanies you through various testing needs such as verifying your data's integrity, 
-inspecting its distributions, validating data splits, evaluating your model and comparing between different models,
-throughout the model's lifecycle.
+Deepchecks provides comprehensive support for your testing requirements,
+from examining data integrity and assessing distributions,
+to validating data splits, comparing models and evaluating their 
+performance across the model's entire development process. 
 
 .. image:: /_static/images/general/testing_phases_in_pipeline.png
    :alt: Phases for Continuous Validation of ML Models and Data
@@ -115,9 +117,9 @@ throughout the model's lifecycle.
 
 |
 
-Deechecks' continuous validation approach is based on testing the ML models and data throughout the different phases 
+Deechecks' continuous validation approach is based on testing the ML models and data throughout their lifecycle
 using the exact same checks, enabling a simple, elaborate and seamless experience for configuring and consuming the results.
-Each phase has its relevant interfaces (e.g. visual outputs, output results to json, alert configuration, push notifications, RCA, etc.) for
+Each phase has its relevant interfaces (e.g. visual outputs, python/json output results, alert configuration, push notifications, RCA, etc.) for
 interacting with the test results.
 
 
