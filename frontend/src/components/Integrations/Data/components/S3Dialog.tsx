@@ -29,15 +29,16 @@ const S3Dialog = ({ handleClose, open }: S3DialogProps) => {
       setError('Please fill all the require fields');
     } else {
       console.log(payload);
+      setError('');
     }
   };
 
   return (
     <StyledDialog
       open={open}
-      title={'Integrate AWS S3'}
+      title="Integrate AWS S3"
       closeDialog={handleClose}
-      submitButtonLabel={'Integrate AWS S3'}
+      submitButtonLabel="Integrate"
       submitButtonAction={handleSubmitS3Form}
     >
       <StyledContainer flexDirection="column" gap="16px">

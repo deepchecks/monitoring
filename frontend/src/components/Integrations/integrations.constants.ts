@@ -29,7 +29,7 @@ export const constants = {
     }
   },
   data: {
-    tableNameColumn: 'Data integration',
+    tableNameColumn: 'Data Integration',
     tableStatusColumn: 'Status',
     s3: {
       name: 'AWS S3',
