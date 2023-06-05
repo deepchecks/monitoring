@@ -11,6 +11,7 @@
 import typing as t
 
 import boto3
+from botocore.config import Config
 import sqlalchemy as sa
 from fastapi import Depends, Response
 from pydantic.main import BaseModel
@@ -64,14 +65,11 @@ async def new_data_source(body: DataSourceCreationSchema,
         if set(data_source.parameters.keys()) != expected:
             raise BadRequest(f'Invalid parameters for S3 data source, expected: {sorted(expected)}')
         # Test credentials to S3
-        access_key = data_source.parameters['aws_access_key_id']
-        secret_key = data_source.parameters['aws_secret_access_key']
-        region = data_source.parameters['region']
         sts = boto3.client(
             'sts',
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            region=region
+            aws_access_key_id=data_source.parameters['aws_access_key_id'],
+            aws_secret_access_key=data_source.parameters['aws_secret_access_key'],
+            config=Config(region_name=data_source.parameters['region'])
         )
         try:
             sts.get_caller_identity()
