@@ -102,7 +102,7 @@ async def test_data_ingestion_scheduling(
 
     worker = ModelDataIngestionAlerter()
     for task in tasks:
-        await worker.run(task, async_session, resources_provider)
+        await worker.run(task, async_session, resources_provider, lock=None)
 
     resp = client.get(
         f"api/v1/data-ingestion-alert-rules/{alert_rules[0]['id']}/alerts")

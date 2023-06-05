@@ -29,7 +29,7 @@ class Worker(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return 0
 
-    async def run(self, task: Task, session: AsyncSession, resources_provider):
+    async def run(self, task: Task, session: AsyncSession, resources_provider, lock):
         await session.execute(sa.update(Task).where(Task.id == task.id).values({'params': {'run': True}}))
         await session.commit()
 
