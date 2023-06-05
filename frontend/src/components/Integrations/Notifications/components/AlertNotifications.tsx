@@ -13,7 +13,7 @@ import mailIcon from 'assets/integrations/mail.svg';
 import webhookIcon from 'assets/integrations/purple-webhook.svg';
 import slackIcon from 'assets/integrations/slack.svg';
 
-import { constants } from '../integrations.constants';
+import { constants } from '../../integrations.constants';
 
 export enum NotificationDictionary {
   email = 'email_notification_levels',
@@ -157,7 +157,6 @@ export function AlertNotifications({
 
   return (
     <Box width="100%" marginBottom="36px">
-      <StyledText text={constants.integration.title} type="h1" marginBottom="36px" />
       <Box
         sx={theme => ({
           display: 'flex',

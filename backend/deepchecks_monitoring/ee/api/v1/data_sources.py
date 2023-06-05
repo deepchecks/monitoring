@@ -11,7 +11,10 @@
 import typing as t
 
 import boto3
+<<<<<<< HEAD
 from botocore.config import Config
+=======
+>>>>>>> d7387aa9f9edfe15b931cda404c2c8c53df7fea4
 import sqlalchemy as sa
 from fastapi import Depends, Response
 from pydantic.main import BaseModel

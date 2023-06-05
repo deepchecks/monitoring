@@ -10,11 +10,11 @@ import {
 import { Box, Stack } from '@mui/material';
 
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
-import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../lib';
+import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../../lib';
 
-import slack from '../../../assets/integrations/slack.svg';
+import slack from '../../../../assets/integrations/slack.svg';
 
-import { constants } from '../integrations.constants';
+import { constants } from '../../integrations.constants';
 
 interface App {
   id: number;

@@ -1,4 +1,8 @@
 export const constants = {
+  tabs: {
+    data: 'Data',
+    notifications: 'Notifications'
+  },
   integration: {
     title: 'Integrations',
     noAPIDataText: 'Got an error from integrations API, please contact us',
@@ -13,7 +17,6 @@ export const constants = {
     }
   },
   connect: {
-    title: 'Add New Integrations',
     slack: {
       title: 'Get notified on Slack',
       description: 'Get DeepChecks alerts and communications via slack integrations.',
@@ -24,5 +27,14 @@ export const constants = {
       description: 'Get DeepChecks alerts and communications via Webhook integration.',
       buttonLabel: (connected: boolean | undefined) => (connected ? 'Edit Webhook' : 'Create Webhook')
     }
+  },
+  data: {
+    tableNameColumn: 'Data Integration',
+    tableStatusColumn: 'Status',
+    s3: {
+      name: 'AWS S3',
+      status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect')
+    },
+    adminErrMsg: 'Admin only operation'
   }
 };
