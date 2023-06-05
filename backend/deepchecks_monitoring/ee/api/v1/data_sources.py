@@ -36,7 +36,6 @@ class DataSourceSchema(BaseModel):
     parameters: t.Dict[str, t.Any]
 
     class Config:
-
         orm_mode = True
 
 
@@ -50,7 +49,7 @@ class DataSourceCreationSchema(BaseModel):
 @router.get('/data-sources', response_model=t.List[DataSourceSchema], tags=[Tags.DATA_SOURCES])
 async def get_data_sources(session: AsyncSession = AsyncSessionDep,
                            current_user: User = Depends(auth.AdminUser())  # pylint: disable=unused-argument
-                          ):
+                           ):
     data_sources = await session.scalars(sa.select(DataSource))
     return data_sources.all()
 
@@ -59,7 +58,7 @@ async def get_data_sources(session: AsyncSession = AsyncSessionDep,
 async def new_data_source(body: DataSourceCreationSchema,
                           session: AsyncSession = AsyncSessionDep,
                           current_user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
-                         ):
+                          ):
     data_source = DataSource(**body.dict())
     if data_source.type == 's3':
         # Test parameters name given
@@ -92,7 +91,7 @@ async def new_data_source(body: DataSourceCreationSchema,
 async def delete_data_source(data_source_id: int,
                              session: AsyncSession = AsyncSessionDep,
                              current_user: User = Depends(auth.AdminUser()),  # pylint: disable=unused-argument
-                            ):
+                             ):
     data_source = await fetch_or_404(session, DataSource, id=data_source_id)
     await session.delete(data_source)
     await session.commit()
