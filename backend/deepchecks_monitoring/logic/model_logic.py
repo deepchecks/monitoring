@@ -284,6 +284,11 @@ def run_deepchecks(
         dataset_name='Production',
     )
     shared_args = dict(
+        feature_importance=feat_imp,
+        with_display=with_display,
+        model_classes=model_version.classes
+    )
+    single_dataset_args = dict(
         # NOTE: this is not a bug or a mistake
         #
         # it is not possible to execute a check instance only on a test dataset,
@@ -292,11 +297,6 @@ def run_deepchecks(
         # passing our test dataset as a train dataset
         #
         # see 'deepchecks.tabular.context.Context.__init__' method for more info
-        feature_importance=feat_imp,
-        with_display=with_display,
-        model_classes=model_version.classes
-    )
-    single_dataset_args = dict(
         y_pred_train=test_pred,
         y_proba_train=test_proba,
         **shared_args

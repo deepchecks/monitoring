@@ -165,6 +165,7 @@ async def execute_check_per_window(
                 period=period,
                 columns=columns,
                 with_labels=t.cast(bool, check.is_label_required),
+                filter_labels_exist=t.cast(bool, check.is_label_required),
                 is_ref=False
             )
             windows_to_calculate.append({
@@ -181,6 +182,7 @@ async def execute_check_per_window(
                 monitor_options,
                 columns=columns,
                 with_labels=t.cast(bool, check.is_label_required),
+                filter_labels_exist=t.cast(bool, check.is_label_required),
                 is_ref=True
             )
 
