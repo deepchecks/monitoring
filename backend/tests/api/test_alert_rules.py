@@ -306,8 +306,7 @@ async def test_alert_rules_config(
     response = client.get("/api/v1/config/alert-rules")
     assert response.status_code == 200
 
-    rules = t.cast(t.List[t.Dict[str, t.Any]], response.json())
-
-    assert len(rules) == 2
-    assert rules[0]["alert_severity"] == "medium"
-    assert rules[1]["alert_severity"] == "low"
+    alert_rules = t.cast(t.List[t.Dict[str, t.Any]], response.json())
+    assert len(alert_rules) == 2
+    assert alert_rules[0]["alert_severity"] == "medium"
+    assert alert_rules[1]["alert_severity"] == "low"

@@ -26,7 +26,7 @@ from sqlalchemy import Column, DateTime, MetaData, Table, Text, func, literal_co
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import joinedload, load_only, sessionmaker
+from sqlalchemy.orm import joinedload, load_only, selectinload, sessionmaker
 
 from deepchecks_monitoring import config
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask
@@ -110,6 +110,15 @@ class AlertsScheduler:
                                   'org_id': org.id})
             except:  # noqa: E722
                 self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
+            if with_ee:
+                try:
+                    start = perf_counter()
+                    await self.run_object_storage_ingestion(org)
+                    duration = perf_counter() - start
+                    self.logger.info({'duration': duration, 'task': 'run_object_storage_ingestion',
+                                      'org_id': org.id})
+                except:  # noqa: E722
+                    self.logger.exception({'task': 'run_organization_data_ingestion_alert', 'org_id': org.id})
 
     async def run_organization(self, organization):
         """Try enqueue monitor execution tasks."""
@@ -190,34 +199,54 @@ class AlertsScheduler:
                 schema_search_path=[organization.schema_name, 'public']
             )
             models: t.List[Model] = await session.scalars(
-                select(Model)
-                .where(sa.or_(
-                    Model.data_ingestion_alert_label_count.isnot(None),
-                    Model.data_ingestion_alert_label_ratio.isnot(None),
-                    Model.data_ingestion_alert_sample_count.isnot(None)
-                )))
+                select(Model).options(selectinload(Model.alert_rules)))
 
             for model in models:
-                schedules = []
-                frequency = model.data_ingestion_alert_frequency.to_pendulum_duration()
-                schedule_time = model.next_data_ingestion_alert_schedule
+                for alert_rule in model.alert_rules:
+                    schedules = []
+                    frequency = alert_rule.frequency.to_pendulum_duration()
+                    schedule_time = alert_rule.next_schedule
 
-                while schedule_time <= model.end_time:
-                    schedules.append(schedule_time)
-                    schedule_time = schedule_time + frequency
+                    while schedule_time <= model.end_time:
+                        schedules.append(schedule_time)
+                        schedule_time = schedule_time + frequency
 
-                if schedules:
-                    try:
-                        await enqueue_ingestion_tasks(model, schedules, frequency, organization, session)
-                        model.data_ingestion_alert_latest_schedule = schedules[-1]
-                        await session.commit()
-                    # NOTE:
-                    # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
-                    # error is possible. In that case we just skip the monitor and try again next time.
-                    except (SerializationError, DBAPIError) as error:
-                        if isinstance(error, DBAPIError) and not is_serialization_error(error):
-                            self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
-                            raise
+                    if schedules:
+                        try:
+                            await enqueue_ingestion_tasks(alert_rule, schedules, frequency, organization, session)
+                            alert_rule.latest_schedule = schedules[-1]
+                            await session.commit()
+                        # NOTE:
+                        # We use 'Repeatable Read Isolation Level' to run query therefore transaction serialization
+                        # error is possible. In that case we just skip the monitor and try again next time.
+                        except (SerializationError, DBAPIError) as error:
+                            if isinstance(error, DBAPIError) and not is_serialization_error(error):
+                                self.logger.exception('Model(id=%s) tasks enqueue failed', model.id)
+                                raise
+
+    async def run_object_storage_ingestion(self, organization):
+        async with self.async_session_factory() as session:
+            await database.attach_schema_switcher_listener(
+                session=session,
+                schema_search_path=[organization.schema_name, 'public']
+            )
+            models: t.List[Model] = await session.scalars(
+                select(Model)
+                .where(Model.obj_store_path.isnot(None))
+            )
+
+            time = pdl.now()
+            tasks = []
+            for model in models:
+                if (model.obj_store_last_scan_time is None
+                        or pdl.instance(model.obj_store_last_scan_time).add(hours=2) < time):
+                    tasks.append(dict(name=f'{organization.id}:{model.id}',
+                                      bg_worker_task=ee.bgtasks.ObjectStorageIngestor.queue_name(),
+                                      params=dict(model_id=model.id, organization_id=organization.id)))
+
+            await session.execute(insert(Task).values(tasks)
+                                  .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
+            await session.commit()
 
 
 async def get_versions_hour_windows(
@@ -324,13 +353,13 @@ async def enqueue_tasks(monitor, schedules, organization, session):
                               .on_conflict_do_nothing(constraint=UNIQUE_NAME_TASK_CONSTRAINT))
 
 
-async def enqueue_ingestion_tasks(model, schedules, duration, organization, session):
+async def enqueue_ingestion_tasks(alert_rule, schedules, duration, organization, session):
     tasks = []
     for schedule in schedules:
         tasks.append(dict(
-            name=f'Org:{organization.id}:Model:{model.id}:ts:{schedule.int_timestamp}',
+            name=f'Org:{organization.id}:AlertRule:{alert_rule.id}:ts:{schedule.int_timestamp}',
             bg_worker_task=ModelDataIngestionAlerter.queue_name(),
-            params={'model_id': model.id,
+            params={'alert_rule_id': alert_rule.id,
                     'end_time': schedule.to_iso8601_string(),
                     'start_time': (schedule - duration).to_iso8601_string(),
                     'organization_id': organization.id

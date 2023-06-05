@@ -13,6 +13,7 @@ import inspect
 import logging.handlers
 import typing as t
 
+import aiokafka
 import anyio
 import pendulum as pdl
 import uvloop
@@ -30,6 +31,7 @@ from deepchecks_monitoring.config import Settings
 from deepchecks_monitoring.logic.keys import GLOBAL_TASK_QUEUE
 from deepchecks_monitoring.monitoring_utils import configure_logger
 from deepchecks_monitoring.public_models.task import BackgroundWorker, Task
+from deepchecks_monitoring.utils.other import ExtendedAIOKafkaAdminClient
 
 try:
     from deepchecks_monitoring import ee
@@ -119,9 +121,10 @@ class TaskRunner:
                 delay = start.int_timestamp - queued_timestamp
                 self.logger.info({'duration': duration, 'task': task.bg_worker_task, 'delay': delay})
             else:
-                self.logger.error(f'Unknown task type: {task.bg_worker_task}')
+                self.logger.error({'message': f'Unknown task type: {task.bg_worker_task}'})
         except Exception:  # pylint: disable=broad-except
-            self.logger.exception('Exception running task')
+            await session.rollback()
+            self.logger.exception({'message': 'Exception running task'})
 
 
 class BaseWorkerSettings():
@@ -178,27 +181,43 @@ def execute_worker():
         # the telemetry collection. Adding here this import to fix this
         from deepchecks_monitoring.bgtasks import tasks_runner  # pylint: disable=import-outside-toplevel
 
-        if with_ee:
-            if settings.sentry_dsn:
-                import sentry_sdk  # pylint: disable=import-outside-toplevel
+        if with_ee and settings.sentry_dsn:
+            import sentry_sdk  # pylint: disable=import-outside-toplevel
 
-                sentry_sdk.init(
-                    dsn=settings.sentry_dsn,
-                    traces_sample_rate=0.1,
-                    environment=settings.sentry_env
-                )
-                ee.utils.telemetry.collect_telemetry(tasks_runner.TaskRunner)
-                # Ignoring this logger since it can spam sentry with errors
-                sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
-
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
-                   ModelDataIngestionAlerter(), DeleteDbTableTask(), AlertsTask()]
-
-        # AIOKafka is spamming our logs, disable it for errors and warnings
-        logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sample_rate=0.1,
+                environment=settings.sentry_env
+            )
+            ee.utils.telemetry.collect_telemetry(tasks_runner.TaskRunner)
+            # Ignoring this logger since it can spam sentry with errors
+            sentry_sdk.integrations.logging.ignore_logger('aiokafka.cluster')
 
         async with ResourcesProvider(settings) as rp:
             async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+
+            workers = [
+                ModelVersionCacheInvalidation(),
+                ModelDataIngestionAlerter(),
+                DeleteDbTableTask(),
+                AlertsTask(),
+            ]
+
+            # Adding kafka related workers
+            if settings.kafka_host is not None:
+                # AIOKafka is spamming our logs, disable it for errors and warnings
+                logging.getLogger('aiokafka.cluster').setLevel(logging.CRITICAL)
+                consumer = aiokafka.AIOKafkaConsumer(**rp.kafka_settings.kafka_params)
+                await consumer.start()
+                kafka_admin = ExtendedAIOKafkaAdminClient(**rp.kafka_settings.kafka_params)
+                await kafka_admin.start()
+
+                workers.append(ModelVersionTopicDeletionWorker(kafka_admin))
+                workers.append(ModelVersionOffsetUpdate(consumer))
+
+            # Adding ee workers
+            if with_ee:
+                workers.append(ee.bgtasks.ObjectStorageIngestor(rp))
 
             async with anyio.create_task_group() as g:
                 worker = tasks_runner.TaskRunner(rp, async_redis, workers, logger)

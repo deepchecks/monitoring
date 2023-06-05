@@ -7,9 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepchecks_monitoring.public_models import Invitation
-from tests.common import generate_user
-from tests.common import TestAPI
-from tests.common import Payload
+from tests.common import Payload, TestAPI, generate_user
 from tests.conftest import ROWS_PER_MINUTE_LIMIT
 
 
@@ -48,6 +46,20 @@ async def test_user_invitation_to_organization(
     )
 
     assert invitation_exists
+
+    # Generate the invited user
+    invited_user = await generate_user(async_session, settings.auth_jwt_secret, email="someluckyuser@testing.com",
+                                       with_org=False)
+
+    # Accept the invite
+    response = unauthorized_client.post(
+        "/api/v1/users/complete-details",
+        headers={"Authorization": f"bearer {invited_user.access_token}"},
+        json={"user_full_name": "lucky user", "accept_invite": True},
+        follow_redirects=False
+    )
+
+    assert response.status_code == 302
 
 
 @pytest.mark.asyncio

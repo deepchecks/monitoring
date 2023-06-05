@@ -30,12 +30,13 @@ export const constants = {
     role: 'Role'
   },
   inviteMember: {
-    title: 'Invite Users',
     placeholder: 'email1@org-name.com, email2@org-name.com, email3@org-name.com, email4@org...',
-    submit: 'Send Invite',
+    submit: 'Invite Users',
+    add: 'Add Users',
     inputLabel: 'Email address of the invitees',
     success: 'Users invited successfully!',
-    mailConfigErr: 'Email is not configured. Learn how to configure it on our docs.' // TODO - Update to a link once we have it on docs
+    mailConfigErr:
+      'Email is not configured, learn how to configure it on our docs. \n At the meantime, you can add users and send them the deployment URL to login.' // TODO - Update to a link once we have it on docs
   },
   removeMember: {
     title: 'Remove User',
@@ -62,6 +63,7 @@ export const constants = {
   },
   assignModels: {
     title: 'Assign Models',
+    willBeAssignedTo: 'Will be assigned to ',
     submitButtonLabel: 'Assign',
     searchfieldPlaceholder: 'Search models...',
     dialogListItemSubtitle: (subtitle: number | undefined) =>

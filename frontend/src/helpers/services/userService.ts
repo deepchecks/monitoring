@@ -1,4 +1,3 @@
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { customInstance } from './customAxios';
 
 interface completeDetailsProps {
@@ -20,12 +19,6 @@ export const postCompleteDetails = async (completeDetails: completeDetailsProps)
     url: '/api/v1/users/complete-details'
   });
 
-  reportEvent(events.authentication.signup, {
-    'From invitation': false,
-    'Org name': organization,
-    'Full name': fullName
-  });
-
   window.location.href = '/';
 };
 
@@ -36,12 +29,6 @@ export const postCompleteDetailsAndAcceptInvite = async (completeDetails: comple
     method: 'POST',
     data: { user_full_name: fullName, accept_invite: acceptInvite },
     url: '/api/v1/users/complete-details'
-  });
-
-  reportEvent(events.authentication.signup, {
-    'From invitation': true,
-    'Full name': fullName,
-    'Accept Invite': acceptInvite
   });
 
   window.location.href = '/';

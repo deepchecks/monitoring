@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import { AlertSchema } from 'api/generated';
 
 import { Button, Stack, styled, Typography, StackProps } from '@mui/material';
-
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { FastForward as Next, Rewind as Prev } from 'assets/icon/icon';
 
@@ -29,10 +27,6 @@ export const DiagramAlertCountWidget = ({
   changeAlertIndex,
   ...props
 }: DiagramAlertCountWidgetProps) => {
-  useEffect(() => {
-    reportEvent(events.alertsPage.navigationBetweenAlerts);
-  }, [alertIndex]);
-
   const isPrevDisabled = !alertIndex;
   const isNextDisabled = alertIndex + 1 === alerts.length;
 
