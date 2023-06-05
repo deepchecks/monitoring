@@ -61,6 +61,12 @@ export type LogLabelsApiV1ModelModelIdLabelsPutBodyItem = { [key: string]: any }
 
 export type LogDataBatchApiV1ModelVersionsModelVersionIdDataPostBodyItem = { [key: string]: any };
 
+export type GetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetParams = {
+  resolved?: boolean;
+};
+
+export type CountAlertsApiV1DataIngestionAlertsCountActiveGet200 = { [key: string]: number };
+
 export type GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem =
   typeof GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem[keyof typeof GetAllAlertRulesApiV1ConfigAlertRulesGetSortbyItem];
 
@@ -147,15 +153,6 @@ export type GetAlertRulesApiV1MonitorsMonitorIdAlertRulesGetParams = {
 };
 
 export type CountAlertsApiV1AlertsCountActiveGet200 = { [key: string]: number };
-
-/**
- * Schema for organization.
- */
-export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
-  id: number;
-  name: string;
-  tier: OrgTier;
-}
 
 /**
  * Schema for the organization.
@@ -451,6 +448,15 @@ export const OrgTier = {
 } as const;
 
 /**
+ * Schema for organization.
+ */
+export interface DeepchecksMonitoringApiV1GlobalApiUsersOrganizationSchema {
+  id: number;
+  name: string;
+  tier: OrgTier;
+}
+
+/**
  * Operators for numeric and categorical filters.
  */
 export type OperatorsEnum = typeof OperatorsEnum[keyof typeof OperatorsEnum];
@@ -676,6 +682,7 @@ export interface ModelSchema {
   task_type?: TaskType;
   alerts_delay_labels_ratio: number;
   alerts_delay_seconds: number;
+  obj_store_path?: string;
 }
 
 /**
@@ -738,6 +745,7 @@ export interface ModelCreationSchema {
   alerts_delay_labels_ratio: number;
   alerts_delay_seconds: number;
   notes?: ModelNoteCreationSchema[];
+  obj_store_path?: string;
 }
 
 /**
@@ -847,6 +855,53 @@ export interface FeaturesSchema {
   update_roles: boolean;
   model_assignment: boolean;
   email_enabled: boolean;
+}
+
+/**
+ * Schema for the alert.
+ */
+export interface DataIngestionAlertSchema {
+  id: number;
+  created_at: string;
+  alert_rule_id: number;
+  value: number;
+  start_time: string;
+  end_time: string;
+  resolved: boolean;
+}
+
+/**
+ * Schema defines the parameters for updating alert rule.
+ */
+export interface DataIngestionAlertRuleUpdateSchema {
+  name?: string;
+  alert_severity?: AlertSeverity;
+  condition?: Condition;
+  is_active?: boolean;
+}
+
+/**
+ * Schema for the alert rule.
+ */
+export interface DataIngestionAlertRuleSchema {
+  id: number;
+  name: string;
+  model_id: number;
+  condition: Condition;
+  alert_severity?: AlertSeverity;
+  is_active: boolean;
+}
+
+/**
+ * Schema defines the parameters for creating new alert rule.
+ */
+export interface DataIngestionAlertRuleCreationSchema {
+  name: string;
+  condition: Condition;
+  alert_severity?: AlertSeverity;
+  is_active?: boolean;
+  alert_type: AlertRuleType;
+  frequency: Frequency;
 }
 
 /**
@@ -1154,6 +1209,18 @@ export interface AlertRuleUpdateSchema {
 }
 
 /**
+ * An enumeration.
+ */
+export type AlertRuleType = typeof AlertRuleType[keyof typeof AlertRuleType];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const AlertRuleType = {
+  sample_count: 'sample_count',
+  label_count: 'label_count',
+  label_ratio: 'label_ratio'
+} as const;
+
+/**
  * Schema for the alert rule.
  */
 export interface AlertRuleSchema {
@@ -1195,7 +1262,6 @@ export interface AlertRuleCreationSchema {
 export interface AlertRuleConfigSchema {
   id: number;
   name: string;
-  check_name: string;
   frequency: Frequency;
   condition: Condition;
   alert_severity?: AlertSeverity;
@@ -1203,6 +1269,7 @@ export interface AlertRuleConfigSchema {
   non_resolved_alerts?: number;
   recent_alert?: string;
   user?: BasicUserSchema;
+  check_name: string;
 }
 
 /**
@@ -3537,6 +3604,672 @@ export const useDeleteDashboardApiV1DashboardsDashboardIdDelete = <
     TContext
   >(mutationFn, mutationOptions);
 };
+
+/**
+ * Count alerts.
+ * @summary Count Alerts
+ */
+export const countAlertsApiV1DataIngestionAlertsCountActiveGet = (signal?: AbortSignal) => {
+  return customInstance<CountAlertsApiV1DataIngestionAlertsCountActiveGet200>({
+    url: `/api/v1/data-ingestion-alerts/count_active`,
+    method: 'get',
+    signal
+  });
+};
+
+export const getCountAlertsApiV1DataIngestionAlertsCountActiveGetQueryKey = () => [
+  `/api/v1/data-ingestion-alerts/count_active`
+];
+
+export type CountAlertsApiV1DataIngestionAlertsCountActiveGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof countAlertsApiV1DataIngestionAlertsCountActiveGet>>
+>;
+export type CountAlertsApiV1DataIngestionAlertsCountActiveGetQueryError = ErrorType<unknown>;
+
+export const useCountAlertsApiV1DataIngestionAlertsCountActiveGet = <
+  TData = Awaited<ReturnType<typeof countAlertsApiV1DataIngestionAlertsCountActiveGet>>,
+  TError = ErrorType<unknown>
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof countAlertsApiV1DataIngestionAlertsCountActiveGet>>, TError, TData>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCountAlertsApiV1DataIngestionAlertsCountActiveGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof countAlertsApiV1DataIngestionAlertsCountActiveGet>>> = ({
+    signal
+  }) => countAlertsApiV1DataIngestionAlertsCountActiveGet(signal);
+
+  const query = useQuery<Awaited<ReturnType<typeof countAlertsApiV1DataIngestionAlertsCountActiveGet>>, TError, TData>(
+    queryKey,
+    queryFn,
+    queryOptions
+  ) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Resolve alert by id.
+ * @summary Resolve Alert
+ */
+export const resolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost = (dataIngestionAlertId: number) => {
+  return customInstance<unknown>({
+    url: `/api/v1/data-ingestion-alerts/${dataIngestionAlertId}/resolve`,
+    method: 'post'
+  });
+};
+
+export type ResolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost>>
+>;
+
+export type ResolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePostMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useResolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost>>,
+    TError,
+    { dataIngestionAlertId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost>>,
+    { dataIngestionAlertId: number }
+  > = props => {
+    const { dataIngestionAlertId } = props ?? {};
+
+    return resolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost(dataIngestionAlertId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof resolveAlertApiV1DataIngestionAlertsDataIngestionAlertIdResolvePost>>,
+    TError,
+    { dataIngestionAlertId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Reactivate resolved alert.
+ * @summary Reactivate Alert
+ */
+export const reactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost = (
+  dataIngestionAlertId: number
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/data-ingestion-alerts/${dataIngestionAlertId}/reactivate`,
+    method: 'post'
+  });
+};
+
+export type ReactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost>>
+>;
+
+export type ReactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePostMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useReactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost>>,
+    TError,
+    { dataIngestionAlertId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost>>,
+    { dataIngestionAlertId: number }
+  > = props => {
+    const { dataIngestionAlertId } = props ?? {};
+
+    return reactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost(dataIngestionAlertId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof reactivateAlertApiV1DataIngestionAlertsDataIngestionAlertIdReactivatePost>>,
+    TError,
+    { dataIngestionAlertId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Get alert by id.
+ * @summary Get Alert
+ */
+export const getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet = (
+  dataIngestionAlertId: number,
+  signal?: AbortSignal
+) => {
+  return customInstance<DataIngestionAlertSchema>({
+    url: `/api/v1/data-ingestion-alerts/${dataIngestionAlertId}`,
+    method: 'get',
+    signal
+  });
+};
+
+export const getGetAlertApiV1DataIngestionAlertsDataIngestionAlertIdGetQueryKey = (dataIngestionAlertId: number) => [
+  `/api/v1/data-ingestion-alerts/${dataIngestionAlertId}`
+];
+
+export type GetAlertApiV1DataIngestionAlertsDataIngestionAlertIdGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet>>
+>;
+export type GetAlertApiV1DataIngestionAlertsDataIngestionAlertIdGetQueryError = ErrorType<HTTPValidationError>;
+
+export const useGetAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet = <
+  TData = Awaited<ReturnType<typeof getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  dataIngestionAlertId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAlertApiV1DataIngestionAlertsDataIngestionAlertIdGetQueryKey(dataIngestionAlertId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet>>> = ({
+    signal
+  }) => getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet(dataIngestionAlertId, signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof getAlertApiV1DataIngestionAlertsDataIngestionAlertIdGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!dataIngestionAlertId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Delete alert by id.
+ * @summary Delete Alert
+ */
+export const deleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete = (dataIngestionAlertId: number) => {
+  return customInstance<unknown>({ url: `/api/v1/data-ingestion-alerts/${dataIngestionAlertId}`, method: 'delete' });
+};
+
+export type DeleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete>>
+>;
+
+export type DeleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDeleteMutationError = ErrorType<HTTPValidationError>;
+
+export const useDeleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete>>,
+    TError,
+    { dataIngestionAlertId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete>>,
+    { dataIngestionAlertId: number }
+  > = props => {
+    const { dataIngestionAlertId } = props ?? {};
+
+    return deleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete(dataIngestionAlertId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof deleteAlertApiV1DataIngestionAlertsDataIngestionAlertIdDelete>>,
+    TError,
+    { dataIngestionAlertId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Create new alert rule on a given check.
+ * @summary Create new alert rule on a given model.
+ */
+export const createAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost = (
+  modelId: number,
+  dataIngestionAlertRuleCreationSchema: DataIngestionAlertRuleCreationSchema
+) => {
+  return customInstance<IdResponse>({
+    url: `/api/v1/models/${modelId}/data-ingestion-alert-rules`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    data: dataIngestionAlertRuleCreationSchema
+  });
+};
+
+export type CreateAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost>>
+>;
+export type CreateAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPostMutationBody =
+  DataIngestionAlertRuleCreationSchema;
+export type CreateAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPostMutationError = ErrorType<HTTPValidationError>;
+
+export const useCreateAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost>>,
+    TError,
+    { modelId: number; data: DataIngestionAlertRuleCreationSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost>>,
+    { modelId: number; data: DataIngestionAlertRuleCreationSchema }
+  > = props => {
+    const { modelId, data } = props ?? {};
+
+    return createAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost(modelId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof createAlertRuleApiV1ModelsModelIdDataIngestionAlertRulesPost>>,
+    TError,
+    { modelId: number; data: DataIngestionAlertRuleCreationSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Get data-ingestion alert rule by id.
+ * @summary Get Alert Rule
+ */
+export const getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet = (
+  dataIngestionAlertRuleId: number,
+  signal?: AbortSignal
+) => {
+  return customInstance<DataIngestionAlertRuleSchema>({
+    url: `/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}`,
+    method: 'get',
+    signal
+  });
+};
+
+export const getGetAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGetQueryKey = (
+  dataIngestionAlertRuleId: number
+) => [`/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}`];
+
+export type GetAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet>>
+>;
+export type GetAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGetQueryError =
+  ErrorType<HTTPValidationError>;
+
+export const useGetAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet = <
+  TData = Awaited<ReturnType<typeof getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  dataIngestionAlertRuleId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGetQueryKey(dataIngestionAlertRuleId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet>>
+  > = ({ signal }) =>
+    getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet(dataIngestionAlertRuleId, signal);
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof getAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!dataIngestionAlertRuleId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Update data-ingestion alert rule by id.
+ * @summary Update data-ingestion alert rule by id.
+ */
+export const updateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut = (
+  dataIngestionAlertRuleId: number,
+  dataIngestionAlertRuleUpdateSchema: DataIngestionAlertRuleUpdateSchema
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}`,
+    method: 'put',
+    headers: { 'Content-Type': 'application/json' },
+    data: dataIngestionAlertRuleUpdateSchema
+  });
+};
+
+export type UpdateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut>>
+>;
+export type UpdateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPutMutationBody =
+  DataIngestionAlertRuleUpdateSchema;
+export type UpdateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPutMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useUpdateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut>>,
+    TError,
+    { dataIngestionAlertRuleId: number; data: DataIngestionAlertRuleUpdateSchema },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut>>,
+    { dataIngestionAlertRuleId: number; data: DataIngestionAlertRuleUpdateSchema }
+  > = props => {
+    const { dataIngestionAlertRuleId, data } = props ?? {};
+
+    return updateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut(dataIngestionAlertRuleId, data);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof updateAlertApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdPut>>,
+    TError,
+    { dataIngestionAlertRuleId: number; data: DataIngestionAlertRuleUpdateSchema },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Delete data-ingestion alert rule by id.
+ * @summary Delete Alert Rule
+ */
+export const deleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete = (
+  dataIngestionAlertRuleId: number
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}`,
+    method: 'delete'
+  });
+};
+
+export type DeleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete>>
+>;
+
+export type DeleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDeleteMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useDeleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete>>,
+    TError,
+    { dataIngestionAlertRuleId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete>>,
+    { dataIngestionAlertRuleId: number }
+  > = props => {
+    const { dataIngestionAlertRuleId } = props ?? {};
+
+    return deleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete(dataIngestionAlertRuleId);
+  };
+
+  return useMutation<
+    Awaited<ReturnType<typeof deleteAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdDelete>>,
+    TError,
+    { dataIngestionAlertRuleId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Get list of alerts raised by a given data-ingestion alert rule.
+ * @summary Get Alerts Of Alert Rule
+ */
+export const getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet = (
+  dataIngestionAlertRuleId: number,
+  params?: GetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<DataIngestionAlertSchema[]>({
+    url: `/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}/alerts`,
+    method: 'get',
+    params,
+    signal
+  });
+};
+
+export const getGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetQueryKey = (
+  dataIngestionAlertRuleId: number,
+  params?: GetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetParams
+) => [`/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}/alerts`, ...(params ? [params] : [])];
+
+export type GetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet>>
+>;
+export type GetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetQueryError =
+  ErrorType<HTTPValidationError>;
+
+export const useGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet = <
+  TData = Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet>>,
+  TError = ErrorType<HTTPValidationError>
+>(
+  dataIngestionAlertRuleId: number,
+  params?: GetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet>>,
+      TError,
+      TData
+    >;
+  }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGetQueryKey(
+      dataIngestionAlertRuleId,
+      params
+    );
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet>>
+  > = ({ signal }) =>
+    getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet(
+      dataIngestionAlertRuleId,
+      params,
+      signal
+    );
+
+  const query = useQuery<
+    Awaited<ReturnType<typeof getAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsGet>>,
+    TError,
+    TData
+  >(queryKey, queryFn, { enabled: !!dataIngestionAlertRuleId, ...queryOptions }) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryKey;
+
+  return query;
+};
+
+/**
+ * Resolve all alerts of alert rule.
+ * @summary Resolve All Alerts Of Alert Rule
+ */
+export const resolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost = (
+  dataIngestionAlertRuleId: number
+) => {
+  return customInstance<unknown>({
+    url: `/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}/resolve-all`,
+    method: 'post'
+  });
+};
+
+export type ResolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof resolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost>
+    >
+  >;
+
+export type ResolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPostMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useResolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<
+      ReturnType<typeof resolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost>
+    >,
+    TError,
+    { dataIngestionAlertRuleId: number },
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<
+      ReturnType<typeof resolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost>
+    >,
+    { dataIngestionAlertRuleId: number }
+  > = props => {
+    const { dataIngestionAlertRuleId } = props ?? {};
+
+    return resolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost(
+      dataIngestionAlertRuleId
+    );
+  };
+
+  return useMutation<
+    Awaited<
+      ReturnType<typeof resolveAllAlertsOfAlertRuleApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdResolveAllPost>
+    >,
+    TError,
+    { dataIngestionAlertRuleId: number },
+    TContext
+  >(mutationFn, mutationOptions);
+};
+
+/**
+ * Reactivate all resolved alerts
+ * @summary Reactivate Resolved Alerts
+ */
+export const reactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost =
+  (dataIngestionAlertRuleId: number) => {
+    return customInstance<unknown>({
+      url: `/api/v1/data-ingestion-alert-rules/${dataIngestionAlertRuleId}/alerts/reactivate-resolved`,
+      method: 'post'
+    });
+  };
+
+export type ReactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPostMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof reactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost
+      >
+    >
+  >;
+
+export type ReactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPostMutationError =
+  ErrorType<HTTPValidationError>;
+
+export const useReactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost =
+  <TError = ErrorType<HTTPValidationError>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<
+          typeof reactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost
+        >
+      >,
+      TError,
+      { dataIngestionAlertRuleId: number },
+      TContext
+    >;
+  }) => {
+    const { mutation: mutationOptions } = options ?? {};
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<
+          typeof reactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost
+        >
+      >,
+      { dataIngestionAlertRuleId: number }
+    > = props => {
+      const { dataIngestionAlertRuleId } = props ?? {};
+
+      return reactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost(
+        dataIngestionAlertRuleId
+      );
+    };
+
+    return useMutation<
+      Awaited<
+        ReturnType<
+          typeof reactivateResolvedAlertsApiV1DataIngestionAlertRulesDataIngestionAlertRuleIdAlertsReactivateResolvedPost
+        >
+      >,
+      TError,
+      { dataIngestionAlertRuleId: number },
+      TContext
+    >(mutationFn, mutationOptions);
+  };
 
 /**
  * This API logs asynchronously a batch of new samples of the inference data of an existing model version, it requires the actual data and validates it matches the version schema.
@@ -6165,6 +6898,47 @@ export const useEulaAcceptanceApiV1UsersAcceptEulaGet = <
 };
 
 /**
+ * Webhook to catch stripe events.
+ * @summary Stripe Webhook
+ */
+export const stripeWebhookApiV1BillingWebhookPost = () => {
+  return customInstance<unknown>({ url: `/api/v1/billing/webhook`, method: 'post' });
+};
+
+export type StripeWebhookApiV1BillingWebhookPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>
+>;
+
+export type StripeWebhookApiV1BillingWebhookPostMutationError = ErrorType<unknown>;
+
+export const useStripeWebhookApiV1BillingWebhookPost = <
+  TError = ErrorType<unknown>,
+  TVariables = void,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
+    TError,
+    TVariables,
+    TContext
+  >;
+}) => {
+  const { mutation: mutationOptions } = options ?? {};
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
+    TVariables
+  > = () => {
+    return stripeWebhookApiV1BillingWebhookPost();
+  };
+
+  return useMutation<Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>, TError, TVariables, TContext>(
+    mutationFn,
+    mutationOptions
+  );
+};
+
+/**
  * Update user roles.
  * @summary Update User Role
  */
@@ -6864,45 +7638,4 @@ export const useCancelSubscriptionApiV1BillingSubscriptionSubscriptionIdDelete =
     { subscriptionId: string },
     TContext
   >(mutationFn, mutationOptions);
-};
-
-/**
- * Webhook to catch stripe events.
- * @summary Stripe Webhook
- */
-export const stripeWebhookApiV1BillingWebhookPost = () => {
-  return customInstance<unknown>({ url: `/api/v1/billing/webhook`, method: 'post' });
-};
-
-export type StripeWebhookApiV1BillingWebhookPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>
->;
-
-export type StripeWebhookApiV1BillingWebhookPostMutationError = ErrorType<unknown>;
-
-export const useStripeWebhookApiV1BillingWebhookPost = <
-  TError = ErrorType<unknown>,
-  TVariables = void,
-  TContext = unknown
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
-    TError,
-    TVariables,
-    TContext
-  >;
-}) => {
-  const { mutation: mutationOptions } = options ?? {};
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>,
-    TVariables
-  > = () => {
-    return stripeWebhookApiV1BillingWebhookPost();
-  };
-
-  return useMutation<Awaited<ReturnType<typeof stripeWebhookApiV1BillingWebhookPost>>, TError, TVariables, TContext>(
-    mutationFn,
-    mutationOptions
-  );
 };
