@@ -24,6 +24,7 @@ from deepchecks_monitoring.monitoring_utils import fetch_or_404
 from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.schema_models import DataSource
 from deepchecks_monitoring.utils import auth
+
 from .routers import ee_router as router
 
 
@@ -73,10 +74,10 @@ async def new_data_source(body: DataSourceCreationSchema,
         )
         try:
             sts.get_caller_identity()
-        except boto3.exceptions.ClientError:
-            raise BadRequest("Invalid credentials to S3")
+        except boto3.exceptions.ClientError as e:
+            raise BadRequest('Invalid credentials to S3') from e
     else:
-        raise BadRequest("Invalid data source type")
+        raise BadRequest('Invalid data source type')
 
     session.add(data_source)
     await session.commit()
