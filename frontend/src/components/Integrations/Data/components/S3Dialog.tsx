@@ -18,8 +18,7 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
 
   const payload = {
     type: 's3',
-    parameters: { aws_access_key_id: accessKeyID, aws_secret_access_key: secretKey, region: region },
-    id: 1
+    parameters: { aws_access_key_id: accessKeyID, aws_secret_access_key: secretKey, region: region }
   };
 
   const handleSubmitS3Form = async () => {
