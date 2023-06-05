@@ -18,7 +18,6 @@ import { ActiveColumnsFilters } from 'components/ActiveColumnsFilters';
 import { DropdownEndAdornment } from './components/DropdownEndAdornment';
 
 import { ColumnType } from 'helpers/types/model';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 // import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 import { FrequencyMap } from 'helpers/utils/frequency';
 import { calculateInitialActiveFilters, calculateCurrentFilters } from './AnalysisFilters.helpers';
@@ -69,8 +68,9 @@ export function AnalysisFilters({ model, fixedHeader, ...props }: AnalysisFilter
   };
 
   const handleFiltersOpen = () => {
-    if (selectRef.current) setAnchorEl(selectRef.current);
-    reportEvent(events.analysisPage.clickedOnFilter);
+    if (selectRef.current) {
+      setAnchorEl(selectRef.current);
+    }
   };
 
   useEffect(() => {

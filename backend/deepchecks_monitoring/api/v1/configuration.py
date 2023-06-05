@@ -11,7 +11,7 @@
 import typing as t
 
 import pendulum as pdl
-from fastapi import Query
+from fastapi import Depends, Query
 from pydantic.main import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,18 +22,21 @@ from deepchecks_monitoring.public_models import User
 from deepchecks_monitoring.resources import ResourcesProvider
 from deepchecks_monitoring.schema_models import Alert, Check, Monitor
 from deepchecks_monitoring.schema_models.alert_rule import AlertRule, AlertSeverity, Condition
+from deepchecks_monitoring.schema_models.data_ingestion_alert_rule import AlertRuleType
+from deepchecks_monitoring.schema_models.model import Model
+from deepchecks_monitoring.schema_models.model_memeber import ModelMember
 from deepchecks_monitoring.schema_models.monitor import Frequency
+from deepchecks_monitoring.utils import auth
 
 from .global_api.users import BasicUserSchema
 from .router import router
 
 
-class AlertRuleConfigSchema(BaseModel):
-    """Schema for the alert rule."""
+class GeneralAlertRuleConfigSchema(BaseModel):
+    """Schema for general alert rule."""
 
     id: int
     name: str
-    check_name: str
     frequency: Frequency
     condition: Condition
     alert_severity: t.Optional[AlertSeverity]
@@ -48,6 +51,23 @@ class AlertRuleConfigSchema(BaseModel):
         orm_mode = True
 
 
+class AlertRuleConfigSchema(GeneralAlertRuleConfigSchema):
+    """Schema for the alert rule."""
+
+    check_name: str
+
+
+class DataAlertRuleConfigSchema(GeneralAlertRuleConfigSchema):
+    """Schema for the data alert rule."""
+
+    alert_type: AlertRuleType
+
+
+class AlertRulesConfigSchema(BaseModel):
+    alert_rules: t.List[AlertRuleConfigSchema]
+    data_alert_rules: t.List[DataAlertRuleConfigSchema]
+
+
 @router.get("/config/alert-rules", response_model=t.List[AlertRuleConfigSchema], tags=[Tags.CONFIG])
 async def get_all_alert_rules(
     models: t.List[int] = Query(default=[]),
@@ -56,6 +76,7 @@ async def get_all_alert_rules(
         "severity:asc",
         "severity:desc",
     ]] = Query(default=[]),
+    user: User = Depends(auth.CurrentUser()),
     session: AsyncSession = AsyncSessionDep
 ):
     """Return all alert rules for the configuration screen.
@@ -116,6 +137,8 @@ async def get_all_alert_rules(
         .join(AlertRule.monitor)
         .join(Monitor.check)
         .join(Check.model)
+        .join(Model.members)
+        .where(ModelMember.user_id == user.id)
         .outerjoin(non_resolved_alerts_count, non_resolved_alerts_count.c.alert_rule_id == AlertRule.id)
         .outerjoin(total_count, total_count.c.alert_rule_id == AlertRule.id)
     )
@@ -151,6 +174,7 @@ async def get_all_alert_rules(
                 user_schema = BasicUserSchema.from_orm(user)
                 alert_rule_schema.user = user_schema
         alert_rule_schemas.append(alert_rule_schema)
+
     return alert_rule_schemas
 
 

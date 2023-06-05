@@ -19,6 +19,7 @@ import { eulaAcceptanceApiV1UsersAcceptEulaGet } from 'api/generated';
 import { termsAndConditions } from 'helpers/base/termsAndConditions';
 
 import { theme } from '../components/lib/theme';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 export const LicenseAgreementPage = function () {
   const descriptionElementRef = React.useRef<HTMLElement>(null);
@@ -37,6 +38,10 @@ export const LicenseAgreementPage = function () {
     });
   };
 
+  useEffect(() => {
+    reportEvent(events.authentication.signUp);
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <Grid container component="main" sx={{ height: '100vh' }}>
@@ -48,7 +53,7 @@ export const LicenseAgreementPage = function () {
           <DialogContentText
             id="scroll-dialog-description"
             ref={descriptionElementRef}
-            sx={{ padding: '24px', width: 'calc(100% - 48px)' }}
+            sx={{ padding: '36px', width: 'calc(100% - 48px)' }}
           >
             <div dangerouslySetInnerHTML={{ __html: termsAndConditions }} />
           </DialogContentText>

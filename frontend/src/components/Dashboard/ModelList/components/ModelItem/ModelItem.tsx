@@ -20,7 +20,6 @@ import {
   StyledAlertsCount
 } from './ModelItem.style';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { handleSetParams } from 'helpers/utils/getParams';
 import { constants } from '../../../dashboard.constants';
 
@@ -47,7 +46,6 @@ export function ModelItem({ activeModel, onModelClick, model, connectedModelsMap
   };
 
   const handleModelClick = () => {
-    reportEvent(events.dashboardPage.clickedModelInModelList);
     onModelClick(model);
   };
 

@@ -16,6 +16,8 @@ from .check import Check
 from .column_type import ColumnType
 from .dashboard import Dashboard
 from .data_ingestion_alert import DataIngestionAlert
+from .data_ingestion_alert_rule import DataIngestionAlertRule
+from .data_sources import DataSource
 from .ingestion_errors import IngestionError
 from .model import Model, ModelNote, TaskType
 from .model_memeber import ModelMember
@@ -43,4 +45,6 @@ __all__ = [
     'AlertWebhook',
     'DataIngestionAlert',
     'ModelMember',
+    'DataSource',
+    'DataIngestionAlertRule',
 ]

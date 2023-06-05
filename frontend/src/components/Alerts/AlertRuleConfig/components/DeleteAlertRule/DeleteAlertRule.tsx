@@ -4,7 +4,6 @@ import { AlertRuleConfigSchema, useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDele
 
 import { StyledDeletionDialog } from 'components/lib';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { constants } from '../../alertRuleConfig.constants';
 
 const { messageEnd, messageStart, name, submit, title } = constants.deleteAlertRule;
@@ -20,10 +19,7 @@ export const DeleteAlertRule = ({ alertRule, open, closeDialog, refetchAlertRule
   const { mutateAsync: deleteAlertRuleById } = useDeleteAlertRuleApiV1AlertRulesAlertRuleIdDelete();
 
   const deleteAlertRule = () => {
-    if (alertRule) {
-      reportEvent(events.alertRulesPage.clickedDeleteRule);
-      deleteAlertRuleById({ alertRuleId: alertRule.id }).then(() => refetchAlertRules());
-    }
+    alertRule && deleteAlertRuleById({ alertRuleId: alertRule.id }).then(() => refetchAlertRules());
 
     closeDialog();
   };

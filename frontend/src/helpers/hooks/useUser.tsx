@@ -12,6 +12,8 @@ import {
 } from 'api/generated';
 
 import { resError } from 'helpers/types/resError';
+import { getStorageItem, setStorageItem, storageKeys } from 'helpers/utils/localStorage';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 export type UserProvider = {
   children: JSX.Element;
@@ -51,10 +53,23 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
 
   const refetchUser = () => refetch();
 
+  const loggedIn = getStorageItem(storageKeys.loggedIn);
+  const userRole = data?.roles.includes('admin') ? (data?.roles.includes('owner') ? 'owner' : 'admin') : 'member';
   const isUserDetailsComplete = !!user?.organization;
 
   useEffect(() => {
     setUser(data as UserSchema);
+
+    setStorageItem(storageKeys.user, {
+      u_id: data?.id,
+      u_role: userRole,
+      u_email: data?.email,
+      u_name: data?.full_name,
+      u_org: data?.organization?.name,
+      u_created_at: data?.created_at,
+      o_tier: data?.organization?.tier,
+      o_name: data?.organization?.name
+    });
   }, [data]);
 
   useEffect(() => {
@@ -72,20 +87,19 @@ export const UserProvider = ({ children }: UserProvider): JSX.Element => {
       getAvailableFeatures();
       setIsAdmin(!!user?.roles.includes(RoleEnum.admin));
       setIsOwner(!!user?.roles.includes(RoleEnum.owner));
+      user?.id && mixpanel.identify(user?.id.toString());
     }
   }, [user]);
 
+  useEffect(() => {
+    !loggedIn && reportEvent(events.authentication.login);
+    setStorageItem(storageKeys.loggedIn, true);
+  }, []);
+
   const value = { user, isUserDetailsComplete, availableFeatures, isAdmin, isOwner, refetchUser };
 
-  if (user) {
-    if (isUserDetailsComplete) {
-      if (hotjar.initialized()) {
-        hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
-      }
-
-      mixpanel.identify(`${user.id}`);
-      mixpanel.set_group('organization', `${user.organization?.name}(ID-${user.organization?.id})`);
-    }
+  if (user && isUserDetailsComplete && hotjar.initialized()) {
+    hotjar.identify('USER_ID', { email: user.email, full_name: user.full_name });
   }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

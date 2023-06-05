@@ -19,7 +19,6 @@ import { StyledButton, StyledText, StyledContainer } from 'components/lib';
 import { FiltersSort } from 'components/FiltersSort/FiltersSort';
 import NoResults from 'components/NoResults';
 
-import { reportEvent } from 'helpers/services/mixPanel';
 import { getAlertFilters, resetAlertFilters } from '../helpers/base/alertFilters';
 
 export const AlertRulesPage = () => {
@@ -48,7 +47,6 @@ export const AlertRulesPage = () => {
   };
 
   const onDialogOpen = ({ alertRule, isDataAlert }: { alertRule?: AlertRuleConfigSchema; isDataAlert?: boolean }) => {
-    reportEvent(`Click on the ${alertRule ? 'Edit' : 'Add'} rule`);
     setEditableAlertRuleId(alertRule?.id);
 
     if (isDataAlert) {

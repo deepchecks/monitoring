@@ -16,7 +16,6 @@ import { MonitorForm } from './components/MonitorForm';
 import { CreateAlertForm } from './components/CreateAlertForm';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { DrawerNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
@@ -79,7 +78,6 @@ export const MonitorDrawer = ({
   };
 
   const handleOnCloseDrawer = () => {
-    reportEvent(events.dashboardPage.exitedEditMonitorWithoutSaving);
     closeDrawer();
   };
 
