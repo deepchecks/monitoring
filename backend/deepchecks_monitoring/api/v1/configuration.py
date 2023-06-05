@@ -68,7 +68,7 @@ class AlertRulesConfigSchema(BaseModel):
     data_alert_rules: t.List[DataAlertRuleConfigSchema]
 
 
-@router.get("/config/alert-rules", response_model=AlertRuleConfigSchema, tags=[Tags.CONFIG])
+@router.get("/config/alert-rules", response_model=t.List[AlertRuleConfigSchema], tags=[Tags.CONFIG])
 async def get_all_alert_rules(
     models: t.List[int] = Query(default=[]),
     severity: t.List[AlertSeverity] = Query(default=[]),
