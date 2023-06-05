@@ -4,11 +4,21 @@
 User Guide
 ==========
 
-Here you can find the key concepts, structure, recommended flow, and dive in to many of the functionalities of
-deepchecks monitoring.
+For quick onboarding to the system, check out the :ref:`tabluar_quickstarts`, 
+and for more info about installation check out the :ref:`Insallation Guide <installation>`.
+To get better familiar with the way the system operates, and dive into various concepts and
+configuration options, make sure to check the :ref:`user_guide__general` section.
+
+
+.. _user_guide__general:
 
 General
 -------
+
+Here you can find all of the data related to the system and the way it operates, this includes:
+info about our concepts and terminology (e.g. checks, monitors, alert rules, etc.),
+workspaces, FAQ about interacting with the SDK and app (e.g. recommendations regarding uploading of the data),
+aggregation methods (over windows), metrics, etc.
 
 .. toctree::
     :maxdepth: 2
@@ -23,6 +33,10 @@ General
 Tabular
 -------
 
+Here you can find more info and examples about how to set your data and model and see them in deepchecks.
+In the quickstarts you can find quick guides, and aside from them you can find more elaborate explanations
+about each of the steps.
+
 .. toctree::
     :maxdepth: 2
     :caption: Tabular
@@ -35,6 +49,9 @@ Tabular
 User Interface
 ----------------
 
+This section goes through the different screens in the Deepchecks Monitoring UI,
+and how you can work with each of them.
+
 .. toctree::
     :maxdepth: 2
     :caption: User Interface
@@ -46,6 +63,9 @@ User Interface
 
 Examples
 --------
+
+End-to-end examples showcasing how to send data from real-life scenarios, all the way through to finding
+issues in production and pinpointing their root cause.
 
 .. toctree::
     :maxdepth: 2

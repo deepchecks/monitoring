@@ -12,7 +12,7 @@ Welcome to Deepchecks!
 `Deepchecks <https://github.com/deepchecks/deepchecks>`__ is a holistic open-source solution for all of your AI & ML validation needs, 
 enabling you to thoroughly test your data and models from research to production.
 
-Jump to the :ref:`Deepchecks Components for Continuous Validation` section for more info
+Jump to the :ref:`Deepchecks Components for Continuous Validation <welcome__deepchecks_components>` section for more info
 about each of the components (Testing, CI, Monitoring) and for links to their 
 corresponding documentation.
 
@@ -46,22 +46,22 @@ Get Started with Deepchecks Monitoring
         or by opening `an issue on Github <https://github.com/deepchecks/deepchecks/issues>`__.
 
     .. grid-item-card:: 💻  Install 💻 
-        :link-type: doc
-        :link: /installation/index
+        :link-type: ref
+        :link: installation
 
         Install the deepchecks-client and get your API token
         to start working with the system.
     
     .. grid-item-card:: 🤓 User Guide 🤓
-        :link-type: doc
-        :link: /user-guide/index
+        :link-type: ref
+        :link: user_guide
         
         A comprehensive view of deepchecks monitoring functionalities,
         concepts, available configurations and core use cases.
 
     .. grid-item-card:: 🚀 Demos 🚀
-        :link-type: doc
-        :link: /user-guide/auto_demos/index
+        :link-type: ref
+        :link: demos
         
         Full examples of industry use cases - from sending the data to seeing and 
         understanding the results in the system. Follow along the examples or download 
@@ -107,7 +107,7 @@ Deepchecks' Components
         
 
 Deepchecks provides comprehensive support for your testing requirements,
-from examining data integrity and assessing distributions,
+from examining data integrity and assessing distributןמions,
 to validating data splits, comparing models and evaluating their 
 performance across the model's entire development process. 
 

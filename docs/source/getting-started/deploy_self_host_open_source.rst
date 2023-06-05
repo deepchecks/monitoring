@@ -1,4 +1,4 @@
-.. _self_host_deepchecks:
+.. _installation__self_host_deepchecks:
 
 ======================
 Open-source Deployment
@@ -9,18 +9,18 @@ concerns when sharing your data with SaaS tools, or you're an engineer wishing t
 of Deepchecks, you're in the right place! The open-source deployment let's you spin up a fresh Deepchecks instance
 in a few minutes.
 
-Want more reliability? The easiest way to get started with Deepchecks is to use
-`Deepchecks Cloud <https://app.deepchecks.com>`_.
+Don't want to manage the deepchecks app yourself? The quickest way to get started with Deepchecks is to use
+the SaaS `Deepchecks Cloud <https://app.deepchecks.com>`__ offering.
 
 .. note::
-    The self-hosted open-sourced version is intended for proof-of-concept and experimentation and provided without
-    guarantee. You should be confident in your security and ops knowledge to run it. It is limited to 1 model
-    and is unlikely to handle more than 100K data samples/month (depends on your infrastructure limitations).
+    The open source version is built for monitoring 1 model per deployment. Its ability to handle scale
+    (e.g. more than 100K data samples/month) may be limited and depends also on your infrastructure limitations.
+
 
 Requirements
 ============
 
-* A Linux Ubuntu Server / MacOS / Windows with `installed docker <https://docs.docker.com/desktop/install/windows-install/>`_
+* A Linux Ubuntu Server / MacOS / Windows with `installed docker <https://docs.docker.com/desktop/install/windows-install/>`__
 * At least 4GB of RAM
 * At least 2 vCPU cores
 * At least 20GB of persistent volumes
@@ -33,14 +33,23 @@ Requirements
 Configuration
 =============
 
-Deepchecks can be configured using environment variables. See the :doc:`Configuration section </installation/configuration>`
+Deepchecks can be configured using environment variables. See the :ref:`Configuration section <installation__self_host__configuration>`
 for more details.
 
 Installing
 ==========
 
-To get started, all you need to do is to run the following command, which will spin up a new Deepchecks deployment
+To get started: first make sure you have the docker engine up and running 
+(try running ``docker`` or ``docker ps`` in your cli and check if you receive relevant output).
+
+Now all you need to do is to run the following command, which will spin up a new Deepchecks deployment
 for us automatically!
+
+
+.. .. code-block:: bash
+    
+..     pip install deepchecks-installer
+..     deepchecks-installer monitoring-install
 
 .. code-block:: bash
 
@@ -69,7 +78,7 @@ Customizing your deployment (optional)
 
 The configuration file exists under the name `oss-conf.env` and comes with a series of default config values that should
 work for most deployments. If you need to customize anything, you can take a look at the full list of
-:doc:`environment variables </installation/configuration>`.
+:ref:`environment variables <installation__self_host__configurationn>`.
 After making any changes, simply restart the stack with docker-compose.
 
 
@@ -81,7 +90,7 @@ the platform and can be configured to send emails when there is a new alert.
 To enable this feature you need to use your own SMTP server, which can be configured in the environment file with the
 following variables:
 
-.. list-table:: Environment Variables
+.. list-table::
    :header-rows: 1
    :widths: 25 40 35
 
@@ -104,3 +113,10 @@ following variables:
    * - deepchecks_email
      - Allows to set "sender" field in emails instead of the "email_smtp_username" value
      -
+
+
+.. toctree::
+    :hidden:
+    :maxdepth: 2
+
+    deploy_configuration

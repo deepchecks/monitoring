@@ -4,7 +4,7 @@ Getting Started
 
 .. toctree::
     :hidden:
-    :titlesonly:
-    :maxdepth: 1
+    :maxdepth: 3
 
     welcome
+    installation

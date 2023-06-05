@@ -322,4 +322,4 @@ model_client.log_batch_labels(sample_ids=labels_to_update, labels=[0] * len(labe
 
 # dc_client.delete_model(model_name)
 
-# sphinx_gallery_thumbnail_path = '_static/images/examples/lending/money.png'
+# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/examples/lending/money.png'

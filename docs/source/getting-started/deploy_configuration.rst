@@ -1,4 +1,4 @@
-.. _self_host__configuration:
+.. _installation__self_host_configuration:
 
 ===============================
 Open-source Deployment Settings

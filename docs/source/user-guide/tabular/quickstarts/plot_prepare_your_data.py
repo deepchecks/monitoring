@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-.. _prepare_your_data:
+.. _prepare_your_tabular_data:
 
 Preparing Your Tabular Data for Deepchecks Monitoring
 *****************************************************
@@ -23,10 +23,10 @@ Preparing Your Data
 In this short tutorial we'll go over the required steps in order to prepare your data
 for Deepchecks Monitoring which include:
 
-1. :ref:`Preparing the Reference Data <prepare_your_data__reference_data>` (Optional)
-2. :ref:`Creating a Data Schema <prepare_your_data__data_schema>`
-3. :ref:`Preparing the Production Data <prepare_your_data__production_data>`
-4. :ref:`Supplying Model Predictions <prepare_your_data__model_predictions>` (Optional)
+1. :ref:`Preparing the Reference Data <prepare_your_tabular_data__reference_data>` (Optional)
+2. :ref:`Creating a Data Schema <prepare_your_tabular_data__data_schema>`
+3. :ref:`Preparing the Production Data <prepare_your_tabular_data__production_data>`
+4. :ref:`Supplying Model Predictions <prepare_your_tabular_data__model_predictions>` (Optional)
 
 After this tutorial you will have a ready to go setup in order to start monitoring your data and model using
 Deepchecks. See :doc:`Setup Guide </user-guide/tabular/tabular_setup>` for a follow-up tutorial on
@@ -40,7 +40,7 @@ this tutorial on your own data or one that you are familiar with.
 """
 
 # %%
-# .. _prepare_your_data__reference_data:
+# .. _prepare_your_tabular_data__reference_data:
 # Preparing the Reference Data (Optional)
 # ---------------------------------------
 #
@@ -79,7 +79,8 @@ ref_dataset = Dataset(train_df, cat_features=cat_features, features=features, la
 ref_dataset
 
 # %%
-# .. _prepare_your_data__data_schema:
+# .. _prepare_your_tabular_data__data_schema:
+#
 # Creating the Data Schema
 # ------------------------
 # Schema file contains the description of the data (features and additional data) associated with a model version and
@@ -96,7 +97,8 @@ read_schema(schema_file_path)
 # After editing, you can use the `read_schema` function to verify the validity of the syntax in your updated schema.
 
 # %%
-# .. _prepare_your_data__production_data:
+# .. _prepare_your_tabular_data__production_data:
+#
 # Preparing the Production Data
 # -----------------------------
 #
@@ -121,7 +123,8 @@ assert prod_data.index.is_unique
 assert prod_data['issue_d'].min() > 0 and prod_data['issue_d'].max() < int(time())
 
 # %%
-# .. _prepare_your_data__model_predictions:
+# .. _prepare_your_tabular_data__model_predictions:
+#
 # Supplying Model Predictions
 # ---------------------------
 #
@@ -147,3 +150,5 @@ ref_predictions = model.predict_proba(train_df[features].fillna('NONE'))
 prod_predictions = model.predict_proba(prod_data[features].fillna('NONE'))
 
 # %%
+#
+# sphinx_gallery_thumbnail_path = '_static/images/sphinx_thumbnails/quickstarts/prepare-data-guide-white.png
