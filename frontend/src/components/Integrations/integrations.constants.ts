@@ -30,6 +30,10 @@ export const constants = {
   },
   data: {
     tableNameColumn: 'Data integration',
-    tableStatusColumn: 'Status'
+    tableStatusColumn: 'Status',
+    s3: {
+      name: 'AWS S3',
+      status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect AWS S3')
+    }
   }
 };

@@ -21,8 +21,8 @@ const Integrations = () => {
           value={value}
           onChange={handleTabChange}
         >
-          <Tab label={'Notifications'} />
-          <Tab label={'Data'} />
+          <Tab label={constants.tabs.notifications} />
+          <Tab label={constants.tabs.data} />
         </Tabs>
       </Box>
       <Box marginY="32px">
