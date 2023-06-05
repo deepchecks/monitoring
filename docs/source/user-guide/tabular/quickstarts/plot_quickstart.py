@@ -45,7 +45,7 @@ cannot run without it.
 # %%
 # Preparing the Reference Data
 # -------------------------------
-# See :ref:`link <deepchecks:tabluar__dataset_object>` for more information on the Dataset object and how
+# See :ref:`link <deepchecks:tabular__dataset_object>` for more information on the Dataset object and how
 # to create it from different data sources.
 
 from deepchecks.tabular.datasets.regression.airbnb import load_data, \
