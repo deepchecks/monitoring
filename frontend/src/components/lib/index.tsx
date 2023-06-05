@@ -8,6 +8,7 @@ import { Checkbox as StyledCheckbox } from './components/Button/Checkbox/Checkbo
 import { Toggle as StyledToggle } from './components/Button/Toggle/Toggle';
 import { Radio as StyledRadio } from './components/Button/Radio/Radio';
 import { Text as StyledText } from './components/Text/Text';
+import { HighlightedText as StyledHighlightedText } from './components/Text/HighlightedText/HighlightedText';
 import { Image as StyledImage } from './components/Image/Image';
 import { Dialog as StyledDialog } from './components/Dialog/Dialog';
 import { DeletionDialog as StyledDeletionDialog } from './components/Dialog/DeletionDialog/DeletionDialog';
@@ -32,6 +33,7 @@ export {
   StyledToggle,
   StyledRadio,
   StyledText,
+  StyledHighlightedText,
   StyledImage,
   StyledDialog,
   StyledDeletionDialog,
