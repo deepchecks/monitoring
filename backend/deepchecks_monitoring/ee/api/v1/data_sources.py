@@ -28,7 +28,14 @@ from deepchecks_monitoring.utils import auth
 from .routers import ee_router as router
 
 
-class DataSourceSchema(BaseModel):
+class DataSourceCreationSchema(BaseModel):
+    """Data Source creation schema."""
+
+    type: str
+    parameters: t.Dict[str, t.Any]
+
+
+class DataSourceSchema(DataSourceCreationSchema):
     """Data Source schema."""
 
     id: int
@@ -37,13 +44,6 @@ class DataSourceSchema(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-class DataSourceCreationSchema(BaseModel):
-    """Data Source creation schema."""
-
-    type: str
-    parameters: t.Dict[str, t.Any]
 
 
 @router.get('/data-sources', response_model=t.List[DataSourceSchema], tags=[Tags.DATA_SOURCES])
