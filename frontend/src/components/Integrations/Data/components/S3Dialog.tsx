@@ -30,6 +30,7 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
       if ((res as unknown as resError).error_message) {
         setError((res as resError).error_message);
       } else {
+        setError('');
         refetch();
         handleClose();
       }

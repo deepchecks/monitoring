@@ -34,6 +34,7 @@ export const constants = {
     s3: {
       name: 'AWS S3',
       status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect AWS S3')
-    }
+    },
+    adminErrMsg: 'Only admins can connect data integrations, please contact your admin.'
   }
 };
