@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 
-import { useTheme } from '@mui/material';
-
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
-
-// import { resError } from 'helpers/types/resError';
 
 interface S3DialogProps {
   open: boolean;
@@ -12,20 +8,18 @@ interface S3DialogProps {
 }
 
 const S3Dialog = ({ handleClose, open }: S3DialogProps) => {
-  const theme = useTheme();
-
   const [error, setError] = useState('');
-  const [accessKey, setAccessKey] = useState('');
+  const [accessKeyID, setAccessKeyID] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [region, setRegion] = useState('');
 
   const payload = {
     type: 's3',
-    parameters: { access_key: accessKey, secret_key: secretKey, region: region }
+    parameters: { aws_access_key_id: accessKeyID, aws_secret_access_key: secretKey, region: region }
   };
 
   const handleSubmitS3Form = () => {
-    if (!accessKey || !secretKey || !region) {
+    if (!accessKeyID || !secretKey || !region) {
       setError('Please fill all the require fields');
     } else {
       console.log(payload);
@@ -43,15 +37,15 @@ const S3Dialog = ({ handleClose, open }: S3DialogProps) => {
     >
       <StyledContainer flexDirection="column" gap="16px">
         <StyledInput
-          label="Access Key"
-          placeholder="Enter Access Key"
-          value={accessKey}
-          onChange={e => setAccessKey(e.target.value)}
-          onCloseIconClick={() => setAccessKey('')}
+          label="Access Key ID"
+          placeholder="Enter Access Key ID"
+          value={accessKeyID}
+          onChange={e => setAccessKeyID(e.target.value)}
+          onCloseIconClick={() => setAccessKeyID('')}
         />
         <StyledInput
-          label="Secret Key"
-          placeholder="Enter Secret Key"
+          label="Secret Access Key"
+          placeholder="Enter Secret Access Key"
           value={secretKey}
           onChange={e => setSecretKey(e.target.value)}
           onCloseIconClick={() => setSecretKey('')}
@@ -64,7 +58,7 @@ const S3Dialog = ({ handleClose, open }: S3DialogProps) => {
           onCloseIconClick={() => setRegion('')}
         />
       </StyledContainer>
-      <StyledText text={error} color={theme.palette.error.main} />
+      <StyledText text={error} color="red" />
     </StyledDialog>
   );
 };
