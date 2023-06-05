@@ -12,8 +12,8 @@ import abc
 import typing as t
 from datetime import datetime
 
-from redis.asyncio.lock import Lock
 import sqlalchemy as sa
+from redis.asyncio.lock import Lock
 from sqlalchemy import Integer, func
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
