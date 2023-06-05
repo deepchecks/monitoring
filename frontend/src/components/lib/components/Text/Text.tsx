@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { Typography, TypographyProps } from '@mui/material';
 import { Variant } from '@mui/material/styles/createTypography';
 
-type TextTypes =
+export type TextTypes =
   | 'h1'
   | 'h2'
   | 'h3'
