@@ -4,9 +4,7 @@ import { MemberSchema, ModelManagmentSchema, assignModelsToUserApiV1UsersUserIdM
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import useModels from 'helpers/hooks/useModels';
 
-import { Stack } from '@mui/material';
-
-import { StyledDialog, StyledInput, StyledText } from 'components/lib';
+import { StyledDialog, StyledHighlightedText, StyledInput } from 'components/lib';
 import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
 
 import { StyledDialogListContainer } from 'components/WorkspaceSettings/WorkspaceSettings.styles';
@@ -75,10 +73,12 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
       closeDialog={closeDialog}
     >
       {member?.full_name && (
-        <Stack sx={{ flexDirection: 'row', margin: '-15px 0 0 4px' }}>
-          <StyledText text={willBeAssignedTo} sx={{ marginRight: '2.5px' }} />
-          <StyledText type="bodyBold" text={member?.full_name} sx={theme => ({ color: theme.palette.primary.main })} />
-        </Stack>
+        <StyledHighlightedText
+          beforeHighlightedText={willBeAssignedTo}
+          highlightedText={member.full_name}
+          highlightedTextType="bodyBold"
+          margin="-15px 0 0 4px"
+        />
       )}
       <StyledInput
         placeholder={searchfieldPlaceholder}
