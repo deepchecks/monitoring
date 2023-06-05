@@ -846,6 +846,7 @@ export interface FeaturesSchema {
   onboarding_enabled: boolean;
   update_roles: boolean;
   model_assignment: boolean;
+  email_enabled: boolean;
 }
 
 /**
