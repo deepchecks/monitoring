@@ -33,11 +33,11 @@ types of the features. It is also highly recommended to provide the feature impo
 which is used by the system to prioritize features in various calculations and displays.
 
 The easiest way to create a model version, which is demonstrated
-here, requires a :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object
+here, requires a :ref:`Dataset <deepchecks:tabular__dataset_object>` object
 containing the reference data for the version. Reference data is a dataset to which we wish to compare
 our production data stream. Typically, this will be the dataset on which the model was trained.
-Providing reference data is optional yet many important :doc:`checks <deepchecks:user-guide/general/deepchecks_hierarchy>`
-such as :doc:`Train Test Feature Drift (Tabular Version) <deepchecks:checks_gallery/tabular/train_test_validation/plot_train_test_feature_drift>`
+Providing reference data is optional yet many important :ref:`checks <deepchecks:general__deepchecks_hierarchyy>`
+such as :ref:`Feature Drift (Tabular Version) <deepchecks:tabular__feature_drift>`
 cannot run without it.
 
 """
@@ -45,7 +45,7 @@ cannot run without it.
 # %%
 # Preparing the Reference Data
 # -------------------------------
-# See :doc:`link <deepchecks:user-guide/tabular/dataset_object>` for more information on the Dataset object and how
+# See :ref:`link <deepchecks:tabluar__dataset_object>` for more information on the Dataset object and how
 # to create it from different data sources.
 
 from deepchecks.tabular.datasets.regression.airbnb import load_data, \

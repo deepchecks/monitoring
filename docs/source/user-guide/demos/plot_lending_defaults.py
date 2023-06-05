@@ -94,7 +94,7 @@ train_df.head(2)
 # **It is highly recommended to review the created schema file before moving forward to creating the model version.**
 #
 # In order to create a schema file, the easiest way is to first define a deepchecks
-# :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object, which contains the actual data (DataFrame)
+# :ref:`Dataset <deepchecks:tabular__dataset_object>` object, which contains the actual data (DataFrame)
 # together with metadata about the role of each column.
 
 from deepchecks.tabular import Dataset
@@ -139,7 +139,7 @@ read_schema(schema_file_path)
 #
 # In order to provide the best analysis and alerts, we should let Deepchecks know about the relative importance of the
 # features to the model's prediction. In this example we'll load our model and get its feature importance, but these can
-# be easily :doc:`calculated using deepchecks <deepchecks:user-guide/tabular/feature_importance>`, or other methods
+# be easily :ref:`calculated using deepchecks <deepchecks:tabular__feature_importance>`, or other methods
 # (such as SHAP). Note that the feature importance values should be normalized to sum to 1.
 
 import joblib

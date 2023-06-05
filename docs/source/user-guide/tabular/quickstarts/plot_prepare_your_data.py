@@ -49,7 +49,7 @@ this tutorial on your own data or one that you are familiar with.
 # :doc:`Feature Drift <deepchecks:checks_gallery/tabular/train_test_validation/plot_train_test_feature_drift>` check.
 #
 # We will load the reference data from a csv file and use it to create a
-# :doc:`Dataset <deepchecks:user-guide/tabular/dataset_object>` object which is used in order to create the
+# :ref:`Dataset <deepchecks:tabular__dataset_object>` object which is used in order to create the
 # data schema and upload the reference data to the monitoring system.
 
 import pandas as pd

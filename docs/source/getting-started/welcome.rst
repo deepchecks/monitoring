@@ -107,7 +107,7 @@ Deepchecks' Components
         
 
 Deepchecks provides comprehensive support for your testing requirements,
-from examining data integrity and assessing distributןמions,
+from examining data integrity and assessing distributions,
 to validating data splits, comparing models and evaluating their 
 performance across the model's entire development process. 
 
