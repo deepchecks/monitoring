@@ -33,7 +33,13 @@ const Data = () => {
           <StyledImage src={s3} height="24px" width="24px" />
           <StyledText type="h3" text={constants.data.s3.name} fontWeight={700} />
         </StyledContainer>
-        <Tooltip title={!isAdmin && !isS3Connected ? constants.data.adminErrMsg : ''}>
+        <Tooltip
+          title={
+            !isAdmin && !isS3Connected ? <StyledText text={constants.data.adminErrMsg} color="red" padding="8px" /> : ''
+          }
+          placement="top"
+          arrow
+        >
           <Box width="100px" marginRight="39%" padding="8px">
             <StyledButton
               label={constants.data.s3.status(!!isS3Connected)}
