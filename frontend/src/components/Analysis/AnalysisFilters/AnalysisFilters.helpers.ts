@@ -38,17 +38,20 @@ export function calculateInitialActiveFilters(filters: ColumnsFilters) {
   const result = { ...filters };
 
   Object.entries(getParams()).forEach(([key, value]) => {
-    if (STANDALONE_FILTERS.includes(key)) return;
+    if (STANDALONE_FILTERS.includes(key) || !Object.keys(filters).includes(key)) return;
 
     if (filters[key]) {
       const categoricalValuesArray = value.split(',');
       const categoricalValues: CategoricalFilters = {};
 
-      categoricalValuesArray.forEach(v => (categoricalValues[v] = true));
+      categoricalValuesArray.forEach(v => {
+        if (Object.keys(filters[key] || {}).includes(v)) categoricalValues[v] = true;
+      });
+
       result[key] = { ...filters[key], ...categoricalValues };
     } else {
       const [gte, lte] = value.split(',');
-      result[key] = [+gte, +lte];
+      if (!isNaN(+gte) && !isNaN(+lte)) result[key] = [+gte, +lte];
     }
   });
 
