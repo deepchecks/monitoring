@@ -33,8 +33,8 @@ export const constants = {
     tableStatusColumn: 'Status',
     s3: {
       name: 'AWS S3',
-      status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect AWS S3')
+      status: (isConnected: boolean) => (isConnected ? 'Connected' : 'Connect')
     },
-    adminErrMsg: 'Only admins can connect data integrations, please contact your admin.'
+    adminErrMsg: 'Admin only operation'
   }
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Box, Tooltip } from '@mui/material';
 
 import { useGetDataSourcesApiV1DataSourcesGet } from 'api/generated';
 
@@ -27,32 +28,29 @@ const Data = () => {
         <StyledText type="bodyBold" text={constants.data.tableNameColumn} />
         <StyledText type="bodyBold" text={constants.data.tableStatusColumn} marginRight="40%" />
       </StyledContainer>
-      <StyledContainer
-        flexDirection="row"
-        justifyContent="space-between"
-        sx={{ opacity: isAdmin ? 1 : 0.6, pointerEvents: isAdmin ? 'auto' : 'none', background: 'white' }}
-      >
+      <StyledContainer flexDirection="row" justifyContent="space-between" type="card">
         <StyledContainer flexDirection="row">
           <StyledImage src={s3} height="24px" width="24px" />
           <StyledText type="h3" text={constants.data.s3.name} fontWeight={700} />
         </StyledContainer>
-        <StyledButton
-          label={constants.data.s3.status(!!isS3Connected)}
-          onClick={handleOpenS3Dialog}
-          variant="outlined"
-          sx={{
-            border: 'none',
-            marginRight: 'calc(40% - 75px)',
-            width: '300px',
-            color: isS3Connected ? 'green' : 'primary',
-            pointerEvents: isS3Connected || !isAdmin ? 'none' : 'auto',
+        <Tooltip title={!isAdmin && !isS3Connected ? constants.data.adminErrMsg : ''}>
+          <Box width="100px" marginRight="39%" padding="8px">
+            <StyledButton
+              label={constants.data.s3.status(!!isS3Connected)}
+              onClick={handleOpenS3Dialog}
+              variant="outlined"
+              sx={{
+                border: 'none',
+                color: isS3Connected ? 'green' : 'primary',
+                pointerEvents: isS3Connected || !isAdmin ? 'none' : 'auto',
 
-            '&:hover': { border: 'none' }
-          }}
-        />
+                '&:hover': { border: 'none' }
+              }}
+            />
+          </Box>
+        </Tooltip>
       </StyledContainer>
       <S3Dialog open={openS3Dialog} handleClose={handleCloseS3Dialog} refetch={refetch} />
-      <StyledText text={isAdmin ? '' : constants.data.adminErrMsg} type="bodyBold" color="red" margin="36px 12px" />
     </>
   );
 };
