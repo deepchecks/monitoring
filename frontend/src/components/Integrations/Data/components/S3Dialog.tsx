@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
+import { newDataSourceApiV1DataSourcesPut } from 'api/generated';
+import { resError } from 'helpers/types/resError';
 
 interface S3DialogProps {
   open: boolean;
   handleClose: () => void;
+  refetch: () => void;
 }
 
-const S3Dialog = ({ handleClose, open }: S3DialogProps) => {
+const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
   const [error, setError] = useState('');
   const [accessKeyID, setAccessKeyID] = useState('');
   const [secretKey, setSecretKey] = useState('');
@@ -15,15 +18,22 @@ const S3Dialog = ({ handleClose, open }: S3DialogProps) => {
 
   const payload = {
     type: 's3',
-    parameters: { aws_access_key_id: accessKeyID, aws_secret_access_key: secretKey, region: region }
+    parameters: { aws_access_key_id: accessKeyID, aws_secret_access_key: secretKey, region: region },
+    id: 1
   };
 
-  const handleSubmitS3Form = () => {
+  const handleSubmitS3Form = async () => {
     if (!accessKeyID || !secretKey || !region) {
       setError('Please fill all the require fields');
     } else {
-      console.log(payload);
-      setError('');
+      const res = await newDataSourceApiV1DataSourcesPut(payload);
+
+      if ((res as unknown as resError).error_message) {
+        setError((res as resError).error_message);
+      } else {
+        refetch();
+        handleClose();
+      }
     }
   };
 
