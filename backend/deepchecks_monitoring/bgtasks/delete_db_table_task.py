@@ -35,7 +35,7 @@ class DeleteDbTableTask(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return 0
 
-    async def run(self, task: 'Task', session: AsyncSession, resources_provider):
+    async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock):
         for table in task.params['full_table_paths']:
             await session.execute(text(f'DROP TABLE IF EXISTS {table}'))
         # Deleting the task

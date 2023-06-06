@@ -17,6 +17,7 @@ import pendulum as pdl
 import pytest
 import sqlalchemy as sa
 from deepchecks.tabular.checks import SingleDatasetPerformance
+from fakeredis.aioredis import FakeRedis
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from deepchecks_monitoring.bgtasks.alert_task import AlertsTask, execute_monitor
@@ -39,8 +40,9 @@ def as_payload(v):
 async def run_alerts_worker(resources_provider: ResourcesProvider, async_session: AsyncSession):
     workers = [AlertsTask()]
     logger = logging.getLogger("test")
-    queuer = TasksQueuer(resources_provider, workers, logger, 1)
-    runner = TaskRunner(resources_provider, resources_provider.redis_client, workers, logger)
+    redis = FakeRedis()
+    queuer = TasksQueuer(resources_provider, redis, workers, logger, 1)
+    runner = TaskRunner(resources_provider, redis, workers, logger)
 
     await queuer.move_tasks_to_queue(async_session)
     while task := await runner.wait_for_task(timeout=1):

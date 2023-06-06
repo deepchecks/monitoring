@@ -53,7 +53,7 @@ class ModelVersionTopicDeletionWorker(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return DELAY
 
-    async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider):
+    async def run(self, task: 'Task', session: AsyncSession, resources_provider: ResourcesProvider, lock):
         # Backward compatibility, remove in next release and replace with:
         # model_version_id = task.params['id']
         # entity = task.params['entity']
