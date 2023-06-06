@@ -49,7 +49,7 @@ class AlertsTask(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return 0
 
-    async def run(self, task: Task, session: AsyncSession, resources_provider: ResourcesProvider):
+    async def run(self, task: Task, session: AsyncSession, resources_provider: ResourcesProvider, lock):
         organization_id = task.params["organization_id"]
         monitor_id = task.params["monitor_id"]
         timestamp = task.params["timestamp"]
