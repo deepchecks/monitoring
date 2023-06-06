@@ -32,11 +32,16 @@ export const constants = {
   inviteMember: {
     placeholder: 'email1@org-name.com, email2@org-name.com, email3@org-name.com, email4@org...',
     submit: 'Invite Users',
-    add: 'Add Users',
+    copy: 'Copy URL',
     inputLabel: 'Email address of the invitees',
     success: 'Users invited successfully!',
-    mailConfigErr:
-      'Email is not configured, learn how to configure it on our docs. \n At the meantime, you can add users and send them the deployment URL to login.' // TODO - Update to a link once we have it on docs
+    mailConfigErr: {
+      first: 'Email server is not configured, learn how to configure it',
+      second: ' here.',
+      third: 'At the meantime, you can send your team members the deployment URL in order to login.',
+      docLink:
+        'https://docs.deepchecks.com/monitoring/stable/installation/self_host.html#define-smtp-for-email-integration'
+    }
   },
   removeMember: {
     title: 'Remove User',
