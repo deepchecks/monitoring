@@ -28,7 +28,7 @@ services:
 
   casdoor:
     restart: always
-    image: casbin/casdoor
+    image: casbin/casdoor:v1.327.0
     entrypoint: /bin/sh -c './server --createDatabase=true'
     depends_on:
       - db
