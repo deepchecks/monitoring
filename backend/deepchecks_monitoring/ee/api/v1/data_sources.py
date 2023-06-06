@@ -13,7 +13,7 @@ import typing as t
 import boto3
 import sqlalchemy as sa
 from botocore.config import Config
-from botocore.exceptions import ClientError, InvalidRegionError
+from botocore.exceptions import BotoCoreError
 from fastapi import Depends, Response
 from pydantic.main import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,10 +74,8 @@ async def new_data_source(body: DataSourceCreationSchema,
                 config=Config(region_name=data_source.parameters['region'])
             )
             sts.get_caller_identity()
-        except ClientError as e:
+        except BotoCoreError as e:
             raise BadRequest('Invalid credentials to AWS') from e
-        except InvalidRegionError as e:
-            raise BadRequest('Invalid region') from e
     else:
         raise BadRequest('Invalid data source type')
 
