@@ -41,7 +41,11 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   }, []);
 
   useEffect(() => {
-    reportEvent(events.onBoarding.onboarding, { step: constants.steps[activeStep].title, type: `${dataType}` });
+    reportEvent(events.onBoarding.onboarding, {
+      step_name: constants.steps[activeStep].title,
+      step_number: activeStep,
+      type: `${dataType}`
+    });
   }, [activeStep]);
 
   useEffect((): void | (() => void) => {
