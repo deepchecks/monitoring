@@ -310,6 +310,17 @@ async def run_monitor_lookback(
         additional_kwargs=monitor.additional_kwargs,
         filter=monitor.data_filters
     )
+
+    if pool := resources_provider.parallel_check_executors_pool:
+        from deepchecks_monitoring.logic.parallel_check_executor import execute_check_per_window
+        return await execute_check_per_window(
+            actor_pool=pool,
+            session=session,
+            check_id=t.cast(int, monitor.check_id),
+            monitor_options=options,
+            organization_id=t.cast(int, user.organization_id)
+        )
+
     return await run_check_per_window_in_range(
         monitor.check_id,
         session,
