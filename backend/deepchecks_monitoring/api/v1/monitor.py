@@ -312,6 +312,7 @@ async def run_monitor_lookback(
     )
 
     if pool := resources_provider.parallel_check_executors_pool:
+        # pylint: disable=import-outside-toplevel
         from deepchecks_monitoring.logic.parallel_check_executor import execute_check_per_window
         return await execute_check_per_window(
             actor_pool=pool,
