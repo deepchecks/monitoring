@@ -71,7 +71,9 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
-              {isLastStep && <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} />}
+              {isLastStep && (
+                <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} variant="outlined" />
+              )}
             </StepContent>
           </Step>
         ))}
