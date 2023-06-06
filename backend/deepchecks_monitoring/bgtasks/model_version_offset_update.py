@@ -51,7 +51,7 @@ class ModelVersionOffsetUpdate(BackgroundWorker):
     def delay_seconds(cls) -> int:
         return DELAY
 
-    async def run(self, task: 'Task', session: AsyncSession, resources_provider):
+    async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock):
         # Backward compatibility, remove in next release and replace with:
         # entity_id = task.params['id']
         # entity = task.params['entity']

@@ -63,7 +63,7 @@ async def test_delete_monitor_cache_by_timestamp(resources_provider):
     async with resources_provider.async_session_factory() as session:
         task_id = await insert_model_version_cache_invalidation_task(1, 1, session=session)
         task = await session.scalar(select(Task).where(Task.id == task_id))
-        await ModelVersionCacheInvalidation().run(task, session, resources_provider)
+        await ModelVersionCacheInvalidation().run(task, session, resources_provider, lock=None)
 
     # Assert - 2 monitors and 3 timestamps
     assert len(cache_funcs.redis.keys()) == 400 - 2 * 3

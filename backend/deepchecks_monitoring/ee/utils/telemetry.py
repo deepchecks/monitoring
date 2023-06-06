@@ -294,7 +294,7 @@ class TaskRunerInstrumentor:
         """Instrument the task runner functions we want to monitor."""
 
         @wraps(self.original_run_task)
-        async def _run_task(runner: "TaskRunner", task, session, queued_time):
+        async def _run_task(runner: "TaskRunner", task, session, queued_time, lock):
             redis_uri = runner.resource_provider.redis_settings.redis_uri
             database_uri = runner.resource_provider.database_settings.database_uri
             kafka_settings = runner.resource_provider.kafka_settings
@@ -327,7 +327,7 @@ class TaskRunerInstrumentor:
 
                     try:
                         start = perf_counter()
-                        result = await self.original_run_task(runner, task, session, queued_time)
+                        result = await self.original_run_task(runner, task, session, queued_time, lock)
                         span.set_data("task.execution-duration", perf_counter() - start)
                         span.set_status(SpanStatus.OK)
                     except Exception as error:
