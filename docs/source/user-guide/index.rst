@@ -14,7 +14,7 @@ General
     :maxdepth: 2
     :caption: General
 
-    general/workspace_and_users
+    general/workspace_settings
     general/concepts
     general/faq
     general/aggregation_methods
