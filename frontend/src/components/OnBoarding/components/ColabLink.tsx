@@ -22,10 +22,10 @@ const ColabLink = () => (
         borderRadius: '12px',
         paddingRight: '36px',
 
-        '&:hover': { background: 'rgba(121, 100, 255, 0.15)' }
+        '&:hover': { background: 'rgba(121, 100, 255, 0.1)' }
       }}
     >
-      <StyledImage src={logoImg} width="34px" height="34px" margin="0 16px 0 0" />
+      <StyledImage src={logoImg} width="36px" height="36px" margin="0 16px 0 0" />
       {constants.text}
     </Button>
   </a>
