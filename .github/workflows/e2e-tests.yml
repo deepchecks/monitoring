@@ -65,7 +65,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           tags: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }},${{ secrets.MON_IMAGE_NAME }}:latest,${{ secrets.PUBLIC_IMAGE_NAME }}:latest
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
