@@ -27,5 +27,13 @@ Model access setting
 ~~~~~~~~~~~~~~~~~~~~
  Here you can edit users the models each users has access to and what models the users will view.
 
-.. image:: /_static/images/user-guide/general/edit_user.png
+.. image:: /_static/images/user-guide/general/assign_models.png
+    :width: 600
+
+
+Workspace models Tab
+-------------------
+Similiar to the model access setting in the users tab. Here you can change the permissions in a diffrent view.
+
+.. image:: /_static/images/user-guide/general/assign_users.png
     :width: 600
