@@ -30,15 +30,6 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /code
 
-# RUN apt-get update && \
-#     apt-get install \
-#     "libpq" \
-#     "libxslt" \
-#     "nodejs-current" \
-#     "chromium" \
-#     "chromium-chromedriver" \
-#     "xmlsec"
-
 COPY backend/requirements.txt ./
 COPY backend/addon-requirements.txt ./
 
@@ -46,13 +37,12 @@ COPY backend/addon-requirements.txt ./
 ARG DEEPCHECKS_CI_TOKEN
 ARG IS_DEEPCHECKS_OSS
 
-RUN pip install -U pip setuptools==58.3.0 && \
-    pip install -q -r requirements.txt --compile --no-cache-dir
-    # && apk del .build-deps
+RUN pip install -U pip setuptools
+# For ARM arch, ray>2.3.1 uses grpcio==1.51.3 which doesn't has wheel and takes forever to build from source
+RUN pip install ray==2.3.1 grpcio==1.54.2
+RUN pip install -r requirements.txt --compile --no-cache-dir
 
 RUN if [[ -z "$IS_DEEPCHECKS_OSS" ]] ; then pip install -q -r addon-requirements.txt --compile --no-cache-dir ; fi
-
-RUN pip install pyinstrument
 
 RUN adduser --system --group deepchecks
 
