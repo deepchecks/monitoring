@@ -43,10 +43,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          tags: |
-            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
-            ${{ secrets.MON_IMAGE_NAME }}:latest
-            ${{ secrets.PUBLIC_IMAGE_NAME }}:latest
+          tags: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
           outputs: type=docker,dest=/tmp/commImage.tar
@@ -102,6 +99,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
+          cache-from: type=registry,ref=${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
           tags: |
             ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
             ${{ secrets.MON_IMAGE_NAME }}:latest
