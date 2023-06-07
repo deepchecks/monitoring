@@ -6,10 +6,12 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 
-import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
+import { OnBoardingAdditionalContainer, OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
 import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
+import ColabLink from './components/ColabLink';
+import GenerateToken from './components/GenerateToken';
 
-import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
+import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
@@ -24,21 +26,10 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const theme = useTheme();
 
   const [activeStep, setActiveStep] = useState(initialStep);
-  const [apiToken, setApiToken] = useState('API_TOKEN');
 
   const isLastStep = activeStep === 3;
 
   const redirectToDashboard = () => window.location.replace('/');
-
-  const regenerateApiToken = async () => {
-    regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
-      value && setApiToken(value);
-    });
-  };
-
-  useEffect(() => {
-    activeStep === 1 && regenerateApiToken();
-  }, []);
 
   useEffect(() => {
     reportEvent(events.onBoarding.onboarding, {
@@ -64,6 +55,10 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
 
   return (
     <OnBoardingStepperContainer>
+      <OnBoardingAdditionalContainer>
+        <ColabLink />
+        <GenerateToken />
+      </OnBoardingAdditionalContainer>
       <Stepper activeStep={activeStep} orientation="vertical">
         {constants.steps.map(step => (
           <Step key={step.title}>
@@ -71,7 +66,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
             <StepContent>
               <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
               <StyledCodeSnippet code={step.codeSnippet} />
-              {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
+              {step?.secondCodeSnippet !== '' && <StyledCodeSnippet code={step.secondCodeSnippet} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>

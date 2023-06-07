@@ -55,11 +55,18 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
   }
 }));
 
+const OnBoardingAdditionalContainer = styled(StyledContainer)({
+  gap: '24px',
+  position: 'absolute',
+  marginLeft: '850px'
+});
+
 export {
   FirstOnBoardingTitle,
   FirstOnBoardingBoxLabel,
   FirstOnBoardingOutlinedBox,
   FirstOnBoardingSelectContainer,
   OnBoardingDocsLink,
-  OnBoardingStepperContainer
+  OnBoardingStepperContainer,
+  OnBoardingAdditionalContainer
 };
