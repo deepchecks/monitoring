@@ -66,10 +66,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-          tags:
-            - ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
-            - ${{ secrets.MON_IMAGE_NAME }}:latest
-            - ${{ secrets.PUBLIC_IMAGE_NAME }}:latest
+          tags: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }},${{ secrets.MON_IMAGE_NAME }}:latest,${{ secrets.PUBLIC_IMAGE_NAME }}:latest
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
       - name: Configure AWS credentials
