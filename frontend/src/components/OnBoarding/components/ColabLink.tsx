@@ -1,8 +1,6 @@
 import React from 'react';
 
-import { Button } from '@mui/material';
-
-import { StyledImage } from 'components/lib';
+import { StyledButton, StyledImage } from 'components/lib';
 
 import logoImg from '../../../assets/onBoarding/colab.svg';
 
@@ -12,22 +10,16 @@ const constants = {
 };
 
 const ColabLink = () => (
-  <a href={constants.link} target="_blank" rel="noreferrer" style={{ width: '240px' }}>
-    <Button
-      variant="outlined"
-      sx={{
-        background: 'rgba(121, 100, 255, 0.2)',
-        width: '240px',
-        borderColor: '#7964FF',
-        borderRadius: '12px',
-        paddingRight: '36px',
-
-        '&:hover': { background: 'rgba(121, 100, 255, 0.1)' }
-      }}
-    >
-      <StyledImage src={logoImg} width="36px" height="36px" margin="0 16px 0 0" />
-      {constants.text}
-    </Button>
+  <a href={constants.link} target="_blank" rel="noreferrer">
+    <StyledButton
+      label={
+        <>
+          <StyledImage src={logoImg} width="36px" height="36px" margin="0 16px 0 -8px" />
+          {constants.text}
+        </>
+      }
+      sx={{ width: '240px', borderRadius: '16px' }}
+    />
   </a>
 );
 
