@@ -16,6 +16,7 @@ export interface DialogProps extends MUIDialogProps {
   alertTypeButtons?: boolean;
   cancelButtonAction?: () => void;
   cancelButtonLabel?: string;
+  isLoading?: boolean;
   children?: ReactNode | ReactNode[];
 }
 
@@ -30,6 +31,7 @@ export const Dialog = (props: DialogProps) => {
     cancelButtonLabel = 'Cancel',
     submitButtonDisabled,
     alertTypeButtons,
+    isLoading,
     children,
     ...otherProps
   } = props;
@@ -50,6 +52,8 @@ export const Dialog = (props: DialogProps) => {
             onClick={submitButtonAction}
             disabled={submitButtonDisabled}
             color={buttonColor}
+            loading={isLoading}
+            sx={{ minWidth: '100px' }}
           />
           <Button
             label={cancelButtonLabel}

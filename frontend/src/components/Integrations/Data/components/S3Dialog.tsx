@@ -12,6 +12,7 @@ interface S3DialogProps {
 
 const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [accessKeyID, setAccessKeyID] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [region, setRegion] = useState('');
@@ -25,14 +26,18 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
     if (!accessKeyID || !secretKey || !region) {
       setError('Please fill all the require fields');
     } else {
-      const res = await newDataSourceApiV1DataSourcesPut(payload);
-
+      setIsLoading(true);
       setError('');
+
+      const res = await newDataSourceApiV1DataSourcesPut(payload);
 
       if ((res as unknown as resError).error_message) {
         setError((res as resError).error_message);
+        setIsLoading(false);
       } else {
         refetch();
+        setIsLoading(false);
+        setError('');
         handleClose();
       }
     }
@@ -45,6 +50,7 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
       closeDialog={handleClose}
       submitButtonLabel="Integrate"
       submitButtonAction={handleSubmitS3Form}
+      isLoading={isLoading}
     >
       <StyledContainer flexDirection="column" gap="16px">
         <StyledInput

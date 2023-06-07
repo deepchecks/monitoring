@@ -40,7 +40,7 @@ const Data = () => {
           placement="top"
           arrow
         >
-          <Box width="100px" marginRight="39%" padding="8px">
+          <Box width="100px" marginRight="calc(40% - 20px)" padding="8px">
             <StyledButton
               label={constants.data.s3.status(!!isS3Connected)}
               onClick={handleOpenS3Dialog}
