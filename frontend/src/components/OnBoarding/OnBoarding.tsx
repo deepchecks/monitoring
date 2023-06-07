@@ -54,7 +54,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   }, [activeStep]);
 
   return (
-    <StyledContainer display="flex" flexDirection="row">
+    <StyledContainer display="flex" flexDirection="row" gap="24px">
       <OnBoardingStepperContainer>
         <Stepper activeStep={activeStep} orientation="vertical">
           {constants.steps.map(step => (

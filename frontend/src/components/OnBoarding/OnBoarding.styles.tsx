@@ -56,7 +56,8 @@ const OnBoardingStepperContainer = styled(Box)(({ theme }) => ({
 }));
 
 const OnBoardingAdditionalContainer = styled(StyledContainer)({
-  gap: '24px'
+  gap: '24px',
+  marginTop: '24px'
 });
 
 export {
