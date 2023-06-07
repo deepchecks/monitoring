@@ -7,7 +7,7 @@ import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 
 import { OnBoardingAdditionalContainer, OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
-import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
+import { StyledButton, StyledCodeSnippet, StyledContainer, StyledText } from 'components/lib';
 import ColabLink from './components/ColabLink';
 import GenerateToken from './components/GenerateToken';
 
@@ -54,30 +54,32 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   }, [activeStep]);
 
   return (
-    <OnBoardingStepperContainer>
+    <StyledContainer display="flex" flexDirection="row">
+      <OnBoardingStepperContainer>
+        <Stepper activeStep={activeStep} orientation="vertical">
+          {constants.steps.map(step => (
+            <Step key={step.title}>
+              <StepLabel>{step.title}</StepLabel>
+              <StepContent>
+                <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
+                <StyledCodeSnippet code={step.codeSnippet} />
+                {step?.secondCodeSnippet !== '' && <StyledCodeSnippet code={step.secondCodeSnippet} />}
+                <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
+                  {step.docLink.label}
+                </OnBoardingDocsLink>
+                {isLastStep && (
+                  <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} variant="outlined" />
+                )}
+              </StepContent>
+            </Step>
+          ))}
+        </Stepper>
+      </OnBoardingStepperContainer>
       <OnBoardingAdditionalContainer>
         <ColabLink />
         <GenerateToken />
       </OnBoardingAdditionalContainer>
-      <Stepper activeStep={activeStep} orientation="vertical">
-        {constants.steps.map(step => (
-          <Step key={step.title}>
-            <StepLabel>{step.title}</StepLabel>
-            <StepContent>
-              <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
-              <StyledCodeSnippet code={step.codeSnippet} />
-              {step?.secondCodeSnippet !== '' && <StyledCodeSnippet code={step.secondCodeSnippet} />}
-              <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
-                {step.docLink.label}
-              </OnBoardingDocsLink>
-              {isLastStep && (
-                <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} variant="outlined" />
-              )}
-            </StepContent>
-          </Step>
-        ))}
-      </Stepper>
-    </OnBoardingStepperContainer>
+    </StyledContainer>
   );
 };
 
