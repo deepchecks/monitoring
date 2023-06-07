@@ -17,6 +17,7 @@ General
     general/workspace_settings
     general/concepts
     general/faq
+    general/deploying_on_ec2
     general/aggregation_methods
     general/scorers
 
