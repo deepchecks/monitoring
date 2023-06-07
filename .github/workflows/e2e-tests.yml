@@ -55,18 +55,31 @@ jobs:
   docker-push:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: commImage
+          path: /tmp
+      - name: Load Docker image
+        # Loading the image from artifact should reuse it and rebuild only the missing arm64 version
+        run: docker load --input /tmp/commImage.tar
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64/v8
-          tags: ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }},${{ secrets.MON_IMAGE_NAME }}:latest,${{ secrets.PUBLIC_IMAGE_NAME }}:latest
+          outputs: type=image,push=false
+          tags: |
+            ${{ secrets.MON_IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.MON_IMAGE_NAME }}:latest
+            ${{ secrets.PUBLIC_IMAGE_NAME }}:latest
           build-args: |
             DEEPCHECKS_CI_TOKEN=${{ secrets.DEEPCHECKS_CI_TOKEN }}
       - name: Configure AWS credentials
