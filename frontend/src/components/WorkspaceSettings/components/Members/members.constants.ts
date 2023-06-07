@@ -72,6 +72,6 @@ export const constants = {
     submitButtonLabel: 'Assign',
     searchfieldPlaceholder: 'Search models...',
     dialogListItemSubtitle: (subtitle: number | undefined) =>
-      `Last data update: ${subtitle ? dayjs(subtitle).format('ll') : '-'}`
+      `Last data update: ${subtitle ? dayjs.unix(subtitle).format('ll') : '-'}`
   }
 };
