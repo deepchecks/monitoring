@@ -233,7 +233,10 @@ class AlertsScheduler:
             models: t.List[Model] = await session.scalars(
                 select(Model)
                 .where(Model.obj_store_path.isnot(None))
-            )
+            ).all()
+
+            if len(models) == 0:
+                return
 
             time = pdl.now()
             tasks = []
