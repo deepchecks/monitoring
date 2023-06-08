@@ -29,13 +29,7 @@ export const SelectCondition = ({
 }: SelectConditionProps) => (
   <>
     <StyledTitle>{title}</StyledTitle>
-    <Stack
-      direction="row"
-      divider={<ArrowForwardIcon />}
-      spacing={2}
-      alignItems="center"
-      justifyContent="space-between"
-    >
+    <Stack direction="row" divider={<ArrowForwardIcon />} alignItems="center" justifyContent="space-between">
       <SelectPrimary
         label="Select Operator"
         value={operator}

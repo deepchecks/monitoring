@@ -135,8 +135,8 @@ export const SelectCheckComponent = ({
     return conf.is_agg_shown != null && conf.is_agg_shown != isAgg;
   }
 
-  useMemo(() => {
-    if (checkInfo === undefined || (type === CheckTypeOptions.Class && !filteredValues?.scorer?.[0])) {
+  useEffect(() => {
+    if (!checkInfo || (type === CheckTypeOptions.Class && !filteredValues?.scorer?.[0])) {
       setIsValidConfig(false);
     } else {
       setIsValidConfig(isAgg || !!filteredValues?.feature?.[0] || !!resConf);

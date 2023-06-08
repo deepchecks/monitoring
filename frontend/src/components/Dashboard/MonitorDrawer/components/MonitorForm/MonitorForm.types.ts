@@ -16,6 +16,7 @@ export interface MonitorFormProps extends StackProps {
   selectedModelId: number | null;
   reset: boolean;
   setReset: SetStateType<boolean>;
+  setSubmitButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface InitialState {

@@ -1,10 +1,4 @@
-import { styled, Divider, Link, Stack } from '@mui/material';
-
-export const StyledFormContainer = styled(Stack)({
-  height: 'calc(100% - 100px)',
-  overflowY: 'auto',
-  overflowX: 'hidden'
-});
+import { styled, Divider, Link } from '@mui/material';
 
 export const StyledDivider = styled(Divider)({
   border: '1px dashed #94A4AD'

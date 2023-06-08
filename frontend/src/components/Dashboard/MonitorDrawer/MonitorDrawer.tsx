@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { ChartData } from 'chart.js';
 
 import {
@@ -8,9 +8,8 @@ import {
   Frequency
 } from 'api/generated';
 
-import { Stack, DrawerProps, Box } from '@mui/material';
+import { Stack, Box } from '@mui/material';
 
-import { CustomDrawer, CustomDrawerHeader } from 'components/CustomDrawer';
 import { MonitorDrawerGraph as GraphView } from './components/MonitorDrawerGraph';
 import { MonitorForm } from './components/MonitorForm';
 import { CreateAlertForm } from './components/CreateAlertForm';
@@ -21,8 +20,14 @@ import { DrawerNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
 import { SelectValues } from 'helpers/types';
 import { FrequencyMap, frequencyValues } from 'helpers/utils/frequency';
+import { StyledDialog } from 'components/lib';
 
-interface MonitorDrawerProps extends DrawerProps {
+interface MonitorDialogContentRef extends HTMLElement {
+  submit(): void;
+}
+
+interface MonitorDrawerProps {
+  open: boolean;
   monitor: MonitorSchema | null;
   drawerName: DrawerNames;
   setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -38,15 +43,17 @@ export const MonitorDrawer = ({
   open,
   onClose,
   refetchMonitors,
-  selectedModelId,
-  ...props
+  selectedModelId
 }: MonitorDrawerProps) => {
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
   const [graphData, setGraphData] = useState<ChartData<'line', GraphData> | null>(null);
   const [graphFrequency, setGraphFrequency] = useState<SelectValues>(monitor?.frequency || '');
+  const [submitButtonDisabled, setSubmitButtonDisabled] = useState(false);
   const [reset, setReset] = useState(false);
+
+  const ref = useRef<MonitorDialogContentRef>();
 
   const timeFreq = useMemo(() => {
     if (graphFrequency) return +graphFrequency;
@@ -81,32 +88,48 @@ export const MonitorDrawer = ({
     closeDrawer();
   };
 
+  const isCreateAlert = drawerName === DrawerNames.CreateAlert;
+
   return (
-    <CustomDrawer open={open} onClose={handleOnCloseDrawer} padding="40px 40px 0 40px" {...props}>
-      <CustomDrawerHeader title={drawerName} onClick={handleOnCloseDrawer} marginBottom="32px" />
-      <Stack direction="row" justifyContent="space-between" height="calc(100vh - 120px)">
-        {drawerName === DrawerNames.CreateAlert && monitor ? (
-          <CreateAlertForm
-            monitor={monitor}
-            onClose={closeDrawer}
-            runCheckLookBack={handleGraphLookBack}
-            setMonitorToRefreshId={setMonitorToRefreshId}
-          />
-        ) : (
-          <MonitorForm
-            monitor={monitor}
-            refetchMonitors={refetchMonitors}
-            setMonitorToRefreshId={setMonitorToRefreshId}
-            handleCloseDrawer={closeDrawer}
-            runCheckLookBack={handleGraphLookBack}
-            isDrawerOpen={!!open}
-            setGraphFrequency={setGraphFrequency}
-            selectedModelId={selectedModelId}
-            reset={reset}
-            setReset={setReset}
-          />
-        )}
-        <Box width={{ xs: '520px', xl: '630px' }} height="350px">
+    <StyledDialog
+      open={!!open}
+      closeDialog={handleOnCloseDrawer}
+      title={drawerName}
+      submitButtonLabel={isCreateAlert ? 'Save & Activate' : 'Save'}
+      submitButtonAction={() => ref.current?.submit()}
+      submitButtonDisabled={submitButtonDisabled}
+      maxWidth="md"
+      fullWidth
+    >
+      <Stack justifyContent="space-between" height="893px">
+        <Box sx={{ height: '650px', overflowY: 'auto' }}>
+          {isCreateAlert && monitor ? (
+            <CreateAlertForm
+              monitor={monitor}
+              onClose={closeDrawer}
+              runCheckLookBack={handleGraphLookBack}
+              setMonitorToRefreshId={setMonitorToRefreshId}
+              setSubmitButtonDisabled={setSubmitButtonDisabled}
+              ref={ref}
+            />
+          ) : (
+            <MonitorForm
+              monitor={monitor}
+              refetchMonitors={refetchMonitors}
+              setMonitorToRefreshId={setMonitorToRefreshId}
+              handleCloseDrawer={closeDrawer}
+              runCheckLookBack={handleGraphLookBack}
+              isDrawerOpen={!!open}
+              setGraphFrequency={setGraphFrequency}
+              selectedModelId={selectedModelId}
+              reset={reset}
+              setReset={setReset}
+              setSubmitButtonDisabled={setSubmitButtonDisabled}
+              ref={ref}
+            />
+          )}
+        </Box>
+        <Box height="173px" marginBottom="36.6px">
           <GraphView
             graphData={graphData}
             isLoading={isRunCheckLoading}
@@ -116,6 +139,6 @@ export const MonitorDrawer = ({
           />
         </Box>
       </Stack>
-    </CustomDrawer>
+    </StyledDialog>
   );
 };

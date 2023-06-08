@@ -32,19 +32,22 @@ export const MonitorDrawerGraph = ({
   isLoading ? (
     <Loader />
   ) : graphData?.datasets.length ? (
-    <DiagramLine data={graphData} height={{ lg: 350, xl: 350 }} timeFreq={timeFreq} />
+    <DiagramLine data={graphData} height={{ lg: 173, xl: 173 }} timeFreq={timeFreq} />
   ) : (
-    <Box sx={{ transform: 'translateX(25px)' }}>
-      <NoDataToShow title={title} />
+    <Box>
+      <NoDataToShow title={title} height={193} />
       {monitor && setReset && <StyledReset onClick={() => setReset(true)}>{reset}</StyledReset>}
     </Box>
   );
 
 const StyledReset = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  cursor: 'pointer',
+  fontSize: '18px',
+  fontWeight: 600,
   textAlign: 'center',
+  color: theme.palette.primary.main,
   transition: 'opacity ease 0.3s',
-  transform: 'translateY(-45px)',
+  transform: 'translateY(-18px)',
+  cursor: 'pointer',
+
   '&:hover': { opacity: 0.5 }
 }));
