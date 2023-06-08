@@ -71,7 +71,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
-              <StyledCodeSnippet code={step.codeSnippet} />
+              <StyledCodeSnippet code={step.codeSnippet} width="800px" />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
