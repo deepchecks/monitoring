@@ -25,6 +25,7 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   const theme = useTheme();
 
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [webhookId, setWebhookId] = useState(1);
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
@@ -63,14 +64,17 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
   };
 
   const handleSubmitWebhookForm = async () => {
+    setIsLoading(true);
     const response = isWebhookConnected
       ? await updateWebhookApiV1AlertWebhooksWebhookIdPut(webhookId, payload)
       : await createWebhookApiV1AlertWebhooksPost(payload);
 
     if ((response as unknown as resError)?.error_message) {
       setError((response as any).error_message);
+      setIsLoading(false);
     } else {
       refetch();
+      setIsLoading(false);
       handleClose();
     }
   };
@@ -98,6 +102,8 @@ const WebhookDialog = ({ handleClose, open, isWebhookConnected, refetch }: Webho
       closeDialog={handleClose}
       submitButtonLabel={dialogTitleAndBtn}
       submitButtonAction={handleSubmitWebhookForm}
+      submitButtonWidth="150px"
+      isLoading={isLoading}
     >
       <StyledContainer flexDirection="column" gap="16px">
         <StyledInput

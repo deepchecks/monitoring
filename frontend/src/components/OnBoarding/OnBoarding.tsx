@@ -6,7 +6,7 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 
-import { OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
+import { OnBoardingAdditionalContainer, OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
 import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
 
 import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
@@ -14,6 +14,7 @@ import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegen
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { constants } from './onBoarding.constants';
+import DownloadNotebook from './components/DownloadNotebook';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
@@ -70,7 +71,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
-              <StyledCodeSnippet code={step.codeSnippet} />
+              <StyledCodeSnippet code={step.codeSnippet} width="800px" />
               {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
@@ -82,6 +83,9 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
           </Step>
         ))}
       </Stepper>
+      <OnBoardingAdditionalContainer>
+        <DownloadNotebook token={apiToken} />
+      </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );
 };

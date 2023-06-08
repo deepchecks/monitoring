@@ -8,14 +8,15 @@ import { isLargeDesktop } from '../../../theme/typography';
 export interface CodeSnippetProps {
   code: string;
   maxWidth?: string;
+  width?: string;
 }
 
-export const CodeSnippet = ({ code, maxWidth = '770px' }: CodeSnippetProps) => (
+export const CodeSnippet = ({ code, maxWidth = '770px', width = '100%' }: CodeSnippetProps) => (
   <Prism
     language="python"
     style={materialDark}
     customStyle={{
-      width: '100%',
+      width: width,
       maxWidth: maxWidth,
       borderRadius: '16px',
       border: `1px solid lightgray`,
