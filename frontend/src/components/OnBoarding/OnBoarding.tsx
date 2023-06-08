@@ -8,14 +8,13 @@ import StepContent from '@mui/material/StepContent';
 
 import { OnBoardingAdditionalContainer, OnBoardingDocsLink, OnBoardingStepperContainer } from './OnBoarding.styles';
 import { StyledButton, StyledCodeSnippet, StyledText } from 'components/lib';
-import ColabLink from './components/ColabLink';
-import GenerateToken from './components/GenerateToken';
 
-import { getOnboardingStateApiV1OnboardingGet } from 'api/generated';
+import { getOnboardingStateApiV1OnboardingGet, regenerateApiTokenApiV1UsersRegenerateApiTokenGet } from 'api/generated';
 
 import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { constants } from './onBoarding.constants';
+import DownloadNotebook from './components/DownloadNotebook';
 
 interface OnBoardingProps {
   dataType?: 'demo' | 'user';
@@ -26,10 +25,21 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   const theme = useTheme();
 
   const [activeStep, setActiveStep] = useState(initialStep);
+  const [apiToken, setApiToken] = useState('API_TOKEN');
 
   const isLastStep = activeStep === 3;
 
   const redirectToDashboard = () => window.location.replace('/');
+
+  const regenerateApiToken = async () => {
+    regenerateApiTokenApiV1UsersRegenerateApiTokenGet().then(value => {
+      value && setApiToken(value);
+    });
+  };
+
+  useEffect(() => {
+    activeStep === 1 && regenerateApiToken();
+  }, []);
 
   useEffect(() => {
     reportEvent(events.onBoarding.onboarding, {
@@ -61,9 +71,8 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
             <StepLabel>{step.title}</StepLabel>
             <StepContent>
               <StyledText text={step.description} color={theme.palette.grey[500]} type="h3" />
-              <StyledCodeSnippet code={step.codeSnippet} width="800px" />
-              {step?.secondCodeSnippet && <StyledCodeSnippet code={step.secondCodeSnippet} />}
-              {step?.thirdCodeSnippet && <StyledCodeSnippet code={step.thirdCodeSnippet} />}
+              <StyledCodeSnippet code={step.codeSnippet} />
+              {step?.secondCodeSnippet() !== '' && <StyledCodeSnippet code={step.secondCodeSnippet(apiToken)} />}
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
@@ -75,8 +84,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <ColabLink />
-        <GenerateToken />
+        <DownloadNotebook />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );
