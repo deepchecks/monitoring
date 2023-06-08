@@ -258,7 +258,23 @@ async def get_checks(
     await Model.fetch_or_403(session, model.id, user)
     q = select(Check).join(Check.model).where(model_identifier.as_expression)
     results = (await session.scalars(q)).all()
-    return [CheckSchema.from_orm(res) for res in results]
+    check_schemas = [CheckSchema.from_orm(res) for res in results]
+
+    def get_check_order(check):
+        order_by_name = ['SingleDatasetPerformance',
+                         'LabelDrift',
+                         'PredictionDrift',
+                         'FeatureDrift']
+        if check.config['class_name'] in order_by_name:
+            return order_by_name.index(check.config['class_name'])
+        # If not in the list, first show checks from model_evaluation module
+        if check.config['module_name'].startswith('deepchecks.tabular.checks.model_evaluation'):
+            return len(order_by_name)
+        # Then show the rest
+        return len(order_by_name) + 1
+
+    # Secondary sort by name
+    return sorted(check_schemas, key=lambda x: (get_check_order(x), x.config['class_name']))
 
 
 @router.get(
