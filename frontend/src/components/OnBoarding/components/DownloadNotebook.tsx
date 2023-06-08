@@ -239,7 +239,7 @@ const DownloadNotebook = ({ token }: { token: string }) => {
           {constants.text}
         </>
       }
-      width="180px"
+      width="230px"
       onClick={handleDownload}
     />
   );
