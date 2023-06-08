@@ -2,7 +2,7 @@
 import typing as t
 
 from fastapi import Depends, Query, Request, status
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pginsert
@@ -196,9 +196,9 @@ def installation_finish_page(
 ):
     if not message:
         message = (
-            "Slack app installed"
+            'Slack app installed'
             if is_successful
-            else "Failed to install slack app"
+            else 'Failed to install slack app'
         )
     return resources_provider.jinja_templates.TemplateResponse(
         name='slack/installation-status.html',
