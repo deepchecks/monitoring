@@ -9,6 +9,7 @@ import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimar
 
 import mapToOptionsList from 'helpers/utils/mapToOptionsList';
 import { SetStateType } from 'helpers/types';
+import { constants } from '../../monitorDialog.constants';
 
 interface SelectConditionProps {
   title?: string;
@@ -19,6 +20,7 @@ interface SelectConditionProps {
 }
 
 const OPERATORS = mapToOptionsList(OperatorsEnum, [OperatorsEnum.in, OperatorsEnum.equals, OperatorsEnum.not_equals]);
+const { selectOperatorLabel, thresholdLabel } = constants.selectCondition;
 
 export const SelectCondition = ({
   title = 'Activate alert when check value is:',
@@ -31,7 +33,7 @@ export const SelectCondition = ({
     <StyledTitle>{title}</StyledTitle>
     <Stack direction="row" divider={<ArrowForwardIcon />} alignItems="center" justifyContent="space-between">
       <SelectPrimary
-        label="Select Operator"
+        label={selectOperatorLabel}
         value={operator}
         onChange={event => setOperator(event.target.value as OperatorsEnum)}
         sx={{ width: '268px' }}
@@ -46,7 +48,7 @@ export const SelectCondition = ({
         sx={{ width: '200px' }}
         placeholder="0"
         type="number"
-        label="Threshold"
+        label={thresholdLabel}
         value={value}
         onChange={event => setValue(event.target.value)}
       />

@@ -31,8 +31,18 @@ import { SelectValues } from 'helpers/types';
 import { timeValues } from 'helpers/base/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
-
 import { InitialState, MonitorFormProps } from './MonitorForm.types';
+import { constants } from '../../monitorDialog.constants';
+
+const {
+  aggWindowLabel,
+  displayRangeLabel,
+  displayRangeTooltip,
+  frequencyLabel,
+  frequencyTooltip,
+  modelLabel,
+  monitorNameLabel
+} = constants.monitorForm;
 
 export const MonitorForm = forwardRef(
   (
@@ -298,14 +308,14 @@ export const MonitorForm = forwardRef(
       <Stack spacing="30px" {...otherProps}>
         <TextField
           sx={{ marginTop: '10px' }}
-          label="Monitor name"
+          label={monitorNameLabel}
           size="small"
           value={monitorName}
           onChange={event => setMonitorName(event.target.value)}
           required={!monitor}
         />
         <MarkedSelect
-          label="Model"
+          label={modelLabel}
           value={model}
           onChange={event => {
             setModel(event.target.value as string);
@@ -346,9 +356,9 @@ export const MonitorForm = forwardRef(
           setNumericValue={setNumericValue}
         />
         <StyledDivider />
-        <TooltipInputWrapper title="The frequency of sampling the monitor data">
+        <TooltipInputWrapper title={frequencyTooltip}>
           <MarkedSelect
-            label="Frequency"
+            label={frequencyLabel}
             value={frequency}
             required
             onChange={event => setFrequency(event.target.value as string)}
@@ -379,7 +389,7 @@ export const MonitorForm = forwardRef(
           <Subcategory sx={{ marginTop: '0 !important' }}>
             <Typography sx={{ color: 'gray' }}>Aggregation value</Typography>
             <OutlinedInput
-              placeholder="Aggregation window"
+              placeholder={aggWindowLabel}
               size="small"
               value={aggregationWindow}
               onChange={event => setAggregationWindow(Number(event.target.value))}
@@ -403,9 +413,9 @@ export const MonitorForm = forwardRef(
             </StyledLink>
           </Subcategory>
         )}
-        <TooltipInputWrapper title="The range of viewing the monitor: e.g. from <date> to <date>">
+        <TooltipInputWrapper title={displayRangeTooltip}>
           <ControlledMarkedSelect
-            label="Display range"
+            label={displayRangeLabel}
             values={lookbackTimeWindow}
             value={lookBack}
             setValue={setLookBack}

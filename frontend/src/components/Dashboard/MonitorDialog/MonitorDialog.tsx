@@ -13,14 +13,14 @@ import { Stack, Box } from '@mui/material';
 import { MonitorDialogGraph as GraphView } from './components/MonitorDialogGraph';
 import { MonitorForm } from './components/MonitorForm';
 import { CreateAlertForm } from './components/CreateAlertForm';
+import { StyledDialog } from 'components/lib';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
-
 import { DialogNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
 import { SelectValues } from 'helpers/types';
 import { FrequencyMap, frequencyValues } from 'helpers/utils/frequency';
-import { StyledDialog } from 'components/lib';
+import { constants } from './monitorDialog.constants';
 
 interface MonitorDialogContentRef extends HTMLElement {
   submit(): void;
@@ -95,7 +95,7 @@ export const MonitorDialog = ({
       open={!!open}
       closeDialog={handleOnCloseDrawer}
       title={dialogName}
-      submitButtonLabel={isCreateAlert ? 'Save & Activate' : 'Save'}
+      submitButtonLabel={constants.submitButtonLabel(isCreateAlert)}
       submitButtonAction={() => ref.current?.submit()}
       submitButtonDisabled={submitButtonDisabled}
       maxWidth="md"

@@ -16,6 +16,7 @@ import { MarkedSelect } from 'components/base/MarkedSelect';
 import { SelectCondition } from './SelectCondition';
 
 import { checkInfoInitValue, monitorInfo } from './CreateAlertForm.helpers';
+import { constants } from '../../monitorDialog.constants';
 
 import { theme } from 'components/lib/theme';
 
@@ -26,6 +27,8 @@ interface EditMonitorProps extends StackProps {
   setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
   setSubmitButtonDisabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+const { alertSeverityString, raiseAlert, severityLabel } = constants.createAlertForm;
 
 export const CreateAlertForm = forwardRef(
   (
@@ -116,11 +119,11 @@ export const CreateAlertForm = forwardRef(
         </Stack>
         <Divider sx={{ m: '40px 0 11px', border: theme => `1px dashed ${theme.palette.text.primary}` }} />
         <Typography variant="subtitle1" sx={{ color: theme => theme.palette.text.primary }}>
-          Alert severity
+          {alertSeverityString}
         </Typography>
         <Box mt="25px">
           <MarkedSelect
-            label="Severity"
+            label={severityLabel}
             size="small"
             clearValue={() => {
               setSeverity('');
@@ -139,7 +142,7 @@ export const CreateAlertForm = forwardRef(
         </Box>
         <Divider sx={{ m: '25px 0 11px', border: theme => `1px dashed ${theme.palette.text.primary}` }} />
         <Typography variant="subtitle1" sx={{ color: theme => theme.palette.text.primary }}>
-          Raise alert when check value is:
+          {raiseAlert}
         </Typography>
         <Box width={1} marginTop="25px">
           <SelectCondition

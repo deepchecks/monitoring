@@ -4,10 +4,14 @@ import { DialogProps } from '@mui/material/Dialog';
 
 import { StyledDialog, StyledText } from 'components/lib';
 
+import { constants } from '../monitorDialog.constants';
+
 interface ActiveAlertsModalProps extends DialogProps {
   setActiveAlertsModalOpen: (value: React.SetStateAction<boolean>) => void;
   handleActiveAlertResolve: () => void;
 }
+
+const { message, submitButtonLabel, title } = constants.activeAlertsModal;
 
 export const ActiveAlertsModal = ({
   setActiveAlertsModalOpen,
@@ -15,15 +19,12 @@ export const ActiveAlertsModal = ({
   ...props
 }: ActiveAlertsModalProps) => (
   <StyledDialog
-    title="Confirmation"
+    title={title}
     closeDialog={() => setActiveAlertsModalOpen(false)}
-    submitButtonLabel="OK"
+    submitButtonLabel={submitButtonLabel}
     submitButtonAction={handleActiveAlertResolve}
     {...props}
   >
-    <StyledText
-      text="This monitor has active alerts connected to it. In order to edit the monitor, all alerts must be resolved first.Are you sure you want to edit this monitor and resolve all alerts connected to it?"
-      type="h3"
-    />
+    <StyledText text={message} type="h3" />
   </StyledDialog>
 );
