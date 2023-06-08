@@ -175,7 +175,6 @@ async def get_results_for_model_versions_per_window(
     """Get results for active model version sessions per window."""
     top_feat, feat_imp = get_top_features_or_from_conf(model_versions[0], additional_kwargs)
 
-    jobs = []
     model_results = {}
     need_ref = check.is_reference_required if isinstance(check, Check) else \
         any((c.is_reference_required for c in check))

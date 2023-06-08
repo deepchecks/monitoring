@@ -452,8 +452,7 @@ async def run_check_window(
             model,
             check,
             monitor_options.additional_kwargs,
-            with_display,
-            parallel=False,
+            with_display
         )
     else:
         model_results_per_window = await get_results_for_model_versions_for_reference(

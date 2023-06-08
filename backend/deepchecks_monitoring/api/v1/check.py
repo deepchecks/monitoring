@@ -579,8 +579,7 @@ async def run_check_group_by_feature(
         model_version_id: int,
         feature: str,
         monitor_options: SingleCheckRunOptions,
-        session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        session: AsyncSession = AsyncSessionDep
 ):
     """Run check window with a group by on given feature.
 
@@ -696,8 +695,7 @@ async def get_check_display(
         check_id: int,
         model_version_id: int,
         monitor_options: SingleCheckRunOptions,
-        session: AsyncSession = AsyncSessionDep,
-        resources_provider: ResourcesProvider = ResourcesProviderDep,
+        session: AsyncSession = AsyncSessionDep
 ):
     check: Check = await fetch_or_404(session, Check, id=check_id)
     model_version: ModelVersion = await fetch_or_404(session, ModelVersion, id=model_version_id,
