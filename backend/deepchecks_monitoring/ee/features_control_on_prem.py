@@ -8,7 +8,7 @@ class OnPremFeaturesControl(FeaturesControl):
 
     @property
     def max_models(self) -> int:
-        return 10
+        return 9999
 
     async def get_allowed_models(self, session) -> int:
         return 10
@@ -55,4 +55,4 @@ class OnPremFeaturesControl(FeaturesControl):
 
     @property
     def multi_tenant(self) -> bool:
-        return True
+        return False
