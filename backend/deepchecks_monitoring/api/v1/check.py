@@ -426,8 +426,7 @@ async def run_standalone_check_per_window_in_range(
     return await run_check_per_window_in_range(
         check_id,
         session,
-        monitor_options,
-        parallel=resources_provider.settings.parallel_enabled,
+        monitor_options
     )
 
 
@@ -679,8 +678,7 @@ async def run_check_group_by_feature(
         # Get value from check to run
         model_results_per_window = await get_results_for_model_versions_per_window(
             {model_version.id: session_info}, [model_version], model_version.model, check,
-            monitor_options.additional_kwargs, with_display=False,
-            parallel=resources_provider.settings.parallel_enabled)
+            monitor_options.additional_kwargs, with_display=False)
         # The function we called is more general, but we know here we have single version and window
         result = model_results_per_window[model_version][0]
         if result['result'] is not None:
@@ -726,7 +724,7 @@ async def get_check_display(
     # Get value from check to run
     model_results_per_window = await get_results_for_model_versions_per_window(
         {model_version.id: model_version_data}, [model_version], model_version.model, check,
-        monitor_options.additional_kwargs, with_display=True, parallel=resources_provider.settings.parallel_enabled)
+        monitor_options.additional_kwargs, with_display=True)
 
     # The function we called is more general, but we know here we have single version and window
     result = model_results_per_window[model_version][0]

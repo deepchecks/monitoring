@@ -253,7 +253,6 @@ async def run_check_per_window_in_range(
         monitor_id: int | None = None,
         cache_funcs: CacheFunctions | None = None,
         organization_id: int | None = None,
-        parallel: bool = True,
 ) -> t.Dict[str, t.Any]:
     """Run a check on a monitor table per time window in the time range.
     The function gets the relevant model versions and the task type of the check.
@@ -271,8 +270,6 @@ async def run_check_per_window_in_range(
     monitor_id
     cache_funcs
     organization_id
-    parallel : bool, default True
-        Whether to run the checks in parallel with joblib.
 
     Returns
     -------
@@ -361,8 +358,7 @@ async def run_check_per_window_in_range(
         model_versions,
         model,
         check,
-        monitor_options.additional_kwargs,
-        parallel=parallel
+        monitor_options.additional_kwargs
     )
 
     # Reduce the check results
