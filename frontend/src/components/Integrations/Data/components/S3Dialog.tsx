@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 
 import { StyledContainer, StyledDialog, StyledInput, StyledText } from 'components/lib';
+import { SelectPrimary, SelectPrimaryItem } from 'components/Select/SelectPrimary';
+
 import { newDataSourceApiV1DataSourcesPut } from 'api/generated';
 import { resError } from 'helpers/types/resError';
+
+import { s3RegionsList } from '../helpers/s3RegionsList';
 
 interface S3DialogProps {
   open: boolean;
@@ -60,6 +64,7 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
           value={accessKeyID}
           onChange={e => setAccessKeyID(e.target.value)}
           onCloseIconClick={() => setAccessKeyID('')}
+          sx={{ height: '50px' }}
         />
         <StyledInput
           label="Secret Access Key"
@@ -67,14 +72,15 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
           value={secretKey}
           onChange={e => setSecretKey(e.target.value)}
           onCloseIconClick={() => setSecretKey('')}
+          sx={{ height: '50px', margin: '0 0 16px' }}
         />
-        <StyledInput
-          label="Region"
-          placeholder="Enter Region"
-          value={region}
-          onChange={e => setRegion(e.target.value)}
-          onCloseIconClick={() => setRegion('')}
-        />
+        <SelectPrimary label="Region" onChange={e => setRegion(e.target.value as string)} value={region}>
+          {s3RegionsList.map(({ value, label }) => (
+            <SelectPrimaryItem value={value} key={value}>
+              {label}
+            </SelectPrimaryItem>
+          ))}
+        </SelectPrimary>
       </StyledContainer>
       <StyledText text={error} color="red" />
     </StyledDialog>
