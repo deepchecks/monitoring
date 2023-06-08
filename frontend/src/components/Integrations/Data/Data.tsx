@@ -31,7 +31,7 @@ const Data = () => {
       <StyledContainer flexDirection="row" justifyContent="space-between" type="card">
         <StyledContainer flexDirection="row">
           <StyledImage src={s3} height="24px" width="24px" />
-          <StyledText type="h3" text={constants.data.s3.name} fontWeight={700} />
+          <StyledText type="h3" text={constants.data.s3.name} fontWeight={700} marginTop="2px" />
         </StyledContainer>
         <Tooltip
           title={
