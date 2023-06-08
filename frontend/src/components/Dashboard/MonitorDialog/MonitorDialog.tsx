@@ -10,13 +10,13 @@ import {
 
 import { Stack, Box } from '@mui/material';
 
-import { MonitorDrawerGraph as GraphView } from './components/MonitorDrawerGraph';
+import { MonitorDialogGraph as GraphView } from './components/MonitorDialogGraph';
 import { MonitorForm } from './components/MonitorForm';
 import { CreateAlertForm } from './components/CreateAlertForm';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 
-import { DrawerNames } from '../Dashboard.types';
+import { DialogNames } from '../Dashboard.types';
 import { GraphData } from 'helpers/types';
 import { SelectValues } from 'helpers/types';
 import { FrequencyMap, frequencyValues } from 'helpers/utils/frequency';
@@ -26,25 +26,25 @@ interface MonitorDialogContentRef extends HTMLElement {
   submit(): void;
 }
 
-interface MonitorDrawerProps {
+interface MonitorDialogProps {
   open: boolean;
   monitor: MonitorSchema | null;
-  drawerName: DrawerNames;
+  dialogName: DialogNames;
   setMonitorToRefreshId: React.Dispatch<React.SetStateAction<number | null>>;
   onClose: () => void;
   refetchMonitors(): void;
   selectedModelId: number | null;
 }
 
-export const MonitorDrawer = ({
+export const MonitorDialog = ({
   monitor,
-  drawerName,
+  dialogName,
   setMonitorToRefreshId,
   open,
   onClose,
   refetchMonitors,
   selectedModelId
-}: MonitorDrawerProps) => {
+}: MonitorDialogProps) => {
   const { mutateAsync: runCheck, isLoading: isRunCheckLoading } =
     useRunStandaloneCheckPerWindowInRangeApiV1ChecksCheckIdRunLookbackPost();
 
@@ -88,13 +88,13 @@ export const MonitorDrawer = ({
     closeDrawer();
   };
 
-  const isCreateAlert = drawerName === DrawerNames.CreateAlert;
+  const isCreateAlert = dialogName === DialogNames.CreateAlert;
 
   return (
     <StyledDialog
       open={!!open}
       closeDialog={handleOnCloseDrawer}
-      title={drawerName}
+      title={dialogName}
       submitButtonLabel={isCreateAlert ? 'Save & Activate' : 'Save'}
       submitButtonAction={() => ref.current?.submit()}
       submitButtonDisabled={submitButtonDisabled}

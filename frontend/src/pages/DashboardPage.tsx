@@ -13,8 +13,8 @@ import { ModelList } from 'components/Dashboard/ModelList';
 import { DataIngestion } from 'components/Dashboard/DataIngestion';
 import { MonitorListHeader } from 'components/Dashboard/MonitorListHeader/MonitorListHeader';
 import { MonitorList } from 'components/Dashboard/MonitorList';
-import { MonitorDrawer } from 'components/Dashboard/MonitorDrawer';
-import { DrawerNames } from 'components/Dashboard/Dashboard.types';
+import { MonitorDialog } from 'components/Dashboard/MonitorDialog';
+import { DialogNames } from 'components/Dashboard/Dashboard.types';
 
 import { getParams } from 'helpers/utils/getParams';
 import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
@@ -44,15 +44,15 @@ export const DashboardPage = () => {
   const [selectedModelId, setSelectedModelId] = useState<number | null>(+getParams()?.modelId || null);
   const [monitorToRefreshId, setMonitorToRefreshId] = useState<number | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerName, setDrawerName] = useState(DrawerNames.CreateMonitor);
+  const [dialogName, setDialogName] = useState(DialogNames.CreateMonitor);
 
-  const handleOpenMonitorDrawer = (drawerName: DrawerNames, monitor?: MonitorSchema) => {
+  const handleOpenMonitorDialog = (dialogName: DialogNames, monitor?: MonitorSchema) => {
     if (monitor) setCurrentMonitor(monitor);
-    setDrawerName(drawerName);
+    setDialogName(dialogName);
     setIsDrawerOpen(true);
   };
 
-  const handleCloseMonitorDrawer = useCallback(() => {
+  const handleCloseMonitorDialog = useCallback(() => {
     setCurrentMonitor(null);
     setIsDrawerOpen(false);
   }, []);
@@ -91,7 +91,7 @@ export const DashboardPage = () => {
           <DataIngestion modelId={selectedModelId} />
         </Grid>
         <Grid item md={12}>
-          <MonitorListHeader onClick={handleOpenMonitorDrawer} />
+          <MonitorListHeader onClick={handleOpenMonitorDialog} />
         </Grid>
         <Grid item md={12}>
           <MonitorList
@@ -99,19 +99,19 @@ export const DashboardPage = () => {
             currentModelId={selectedModelId}
             currentMonitor={currentMonitor}
             setCurrentMonitor={setCurrentMonitor}
-            handleOpenMonitorDrawer={handleOpenMonitorDrawer}
+            handleOpenMonitorDialog={handleOpenMonitorDialog}
             monitorToRefreshId={monitorToRefreshId}
             setMonitorToRefreshId={setMonitorToRefreshId}
             isLoading={isDashboardLoading}
           />
         </Grid>
       </Grid>
-      <MonitorDrawer
+      <MonitorDialog
         monitor={currentMonitor}
         refetchMonitors={refetchMonitors}
-        drawerName={drawerName}
+        dialogName={dialogName}
         open={isDrawerOpen}
-        onClose={handleCloseMonitorDrawer}
+        onClose={handleCloseMonitorDialog}
         setMonitorToRefreshId={setMonitorToRefreshId}
         selectedModelId={selectedModelId}
       />

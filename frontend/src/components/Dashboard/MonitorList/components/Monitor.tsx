@@ -13,14 +13,14 @@ import { GraphicsSection } from './GraphicsSection';
 
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
 import { SetStateType } from 'helpers/types';
-import { DrawerNames } from '../../Dashboard.types';
+import { DialogNames } from '../../Dashboard.types';
 
 interface MonitorProps extends GridProps {
   initialMonitor: MonitorSchema;
   hidden?: boolean;
   setCurrentMonitor: SetStateType<MonitorSchema | null>;
   setIsDeleteMonitorDialogOpen: SetStateType<boolean>;
-  handleOpenMonitorDrawer: (drawerName: DrawerNames, monitor?: MonitorSchema) => void;
+  handleOpenMonitorDialog: (drawerName: DialogNames, monitor?: MonitorSchema) => void;
   monitorToRefreshId: number | null;
   setMonitorToRefreshId: SetStateType<number | null>;
 }
@@ -29,7 +29,7 @@ const MonitorComponent = ({
   initialMonitor,
   setCurrentMonitor,
   setIsDeleteMonitorDialogOpen,
-  handleOpenMonitorDrawer,
+  handleOpenMonitorDialog,
   monitorToRefreshId,
   setMonitorToRefreshId,
   ...props
@@ -92,7 +92,7 @@ const MonitorComponent = ({
         data={data}
         monitor={monitor}
         isLoading={loading}
-        onOpenMonitorDrawer={handleOpenMonitorDrawer}
+        onOpenMonitorDrawer={handleOpenMonitorDialog}
         onDeleteMonitor={openDeleteMonitorDialog}
       />
     </Grid>

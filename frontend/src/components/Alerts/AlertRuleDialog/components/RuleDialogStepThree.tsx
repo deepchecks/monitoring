@@ -12,8 +12,8 @@ import {
 
 import { AlertRuleDialogContext } from '../AlertRuleDialogContext';
 
-import { SelectCondition } from 'components/Dashboard/MonitorDrawer/components/CreateAlertForm/SelectCondition';
-import { MonitorDrawerGraph } from 'components/Dashboard/MonitorDrawer/components/MonitorDrawerGraph';
+import { SelectCondition } from 'components/Dashboard/MonitorDialog/components/CreateAlertForm/SelectCondition';
+import { MonitorDialogGraph } from 'components/Dashboard/MonitorDialog/components/MonitorDialogGraph';
 
 import { GraphData } from 'helpers/types';
 import { parseDataForLineChart } from 'helpers/utils/parseDataForChart';
@@ -99,7 +99,7 @@ export const AlertRuleDialogStepThree = forwardRef(({ setNextButtonDisabled }: A
         />
       </Box>
       <Box width="536px" height="350px" marginBottom="30px">
-        <MonitorDrawerGraph
+        <MonitorDialogGraph
           graphData={graphData}
           isLoading={isRunCheckLoading}
           timeFreq={FrequencyMap[monitor?.frequency]}

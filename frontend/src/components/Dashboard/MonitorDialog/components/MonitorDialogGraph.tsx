@@ -12,7 +12,7 @@ import { NoDataToShow } from 'components/DiagramLine/NoData/NoDataToShow';
 import { GraphData } from 'helpers/types';
 import { constants } from '../../dashboard.constants';
 
-interface MonitorDrawerGraphViewGraphProps {
+interface MonitorDialogGraphViewGraphProps {
   graphData: ChartData<'line', GraphData> | null;
   isLoading: boolean;
   timeFreq?: number;
@@ -22,13 +22,13 @@ interface MonitorDrawerGraphViewGraphProps {
 
 const { reset, title } = constants.monitorDrawer.graph;
 
-export const MonitorDrawerGraph = ({
+export const MonitorDialogGraph = ({
   graphData,
   isLoading,
   timeFreq,
   monitor,
   setReset
-}: MonitorDrawerGraphViewGraphProps) =>
+}: MonitorDialogGraphViewGraphProps) =>
   isLoading ? (
     <Loader />
   ) : graphData?.datasets.length ? (
