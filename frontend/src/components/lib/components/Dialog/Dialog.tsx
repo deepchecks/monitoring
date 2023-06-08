@@ -56,7 +56,6 @@ export const Dialog = (props: DialogProps) => {
             color={buttonColor}
             loading={isLoading}
             width={submitButtonWidth}
-            sx={{ pointerEvents: isLoading ? 'none' : 'auto' }}
           />
           <Button
             label={cancelButtonLabel}
