@@ -7,7 +7,7 @@ import { StyledButton } from 'components/lib';
 
 const constants = {
   text: 'Download Notebook',
-  notebook: `
+  notebook: (token: string) => `
   {
     "nbformat": 4,
     "nbformat_minor": 0,
@@ -86,7 +86,7 @@ const constants = {
       {
         "cell_type": "code",
         "source": [
-          "from deepchecks.tabular.datasets.regression.airbnb import load_data,\'",
+          "from deepchecks.tabular.datasets.regression.airbnb import load_data, \'",
           "load_pre_calculated_prediction, load_pre_calculated_feature_importance ",
           "",
           "ref_dataset, _ = load_data(data_format='Dataset') ",
@@ -149,7 +149,7 @@ const constants = {
         "source": [
           "import os ",
           "",
-          "dc_client = DeepchecksClient(host='YOUR_DEPLOYMENT_URL', token='YOUR_API_TOKEN') ",
+          "dc_client = DeepchecksClient(host='${window.location.href}', token='${token}') ",
           "",
           "version_arguments = {",
           "    'model_name' : 'Airbnb',",
@@ -226,9 +226,9 @@ const constants = {
   `
 };
 
-const DownloadNotebook = () => {
+const DownloadNotebook = ({ token }: { token: string }) => {
   const handleDownload = () => {
-    const blob = new Blob([constants.notebook], { type: 'application/json' });
+    const blob = new Blob([constants.notebook(token)], { type: 'application/json' });
     FileSaver.saveAs(blob, 'onboarding.ipynb');
   };
 

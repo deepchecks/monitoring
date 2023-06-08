@@ -84,7 +84,7 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
         ))}
       </Stepper>
       <OnBoardingAdditionalContainer>
-        <DownloadNotebook />
+        <DownloadNotebook token={apiToken} />
       </OnBoardingAdditionalContainer>
     </OnBoardingStepperContainer>
   );
