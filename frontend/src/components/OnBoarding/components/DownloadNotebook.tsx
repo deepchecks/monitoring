@@ -86,8 +86,7 @@ const constants = {
       {
         "cell_type": "code",
         "source": [
-          "from deepchecks.tabular.datasets.regression.airbnb import load_data, \'",
-          "load_pre_calculated_prediction, load_pre_calculated_feature_importance ",
+          "from deepchecks.tabular.datasets.regression.airbnb import load_data, load_pre_calculated_prediction, load_pre_calculated_feature_importance ",
           "",
           "ref_dataset, _ = load_data(data_format='Dataset') ",
           "ref_predictions, _ = load_pre_calculated_prediction() ",
