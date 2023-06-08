@@ -83,7 +83,7 @@ async def log_data_batch(
             }
         )
 
-    await data_ingest.log_samples(model_version, data[:remains], session, user, time)
+    await data_ingest.log_samples(model_version, data[:remains], session, user.organization_id, time)
 
     if remains < len(data):
         return ORJSONResponse(
@@ -134,7 +134,7 @@ async def log_labels(
             }
         )
 
-    await data_ingest.log_labels(model, data[:remains], session, user)
+    await data_ingest.log_labels(model, data[:remains], session, user.organization_id)
 
     if remains < len(data):
         return ORJSONResponse(

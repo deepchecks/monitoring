@@ -31,7 +31,6 @@ import { freqTimeWindow, lookbackTimeWindow, buildFilters } from 'helpers/base/m
 import { SelectValues } from 'helpers/types';
 import { timeValues } from 'helpers/base/time';
 import { unionCheckConf, FilteredValues } from 'helpers/utils/checkUtil';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { FrequencyMap, FrequencyNumberMap, FrequencyNumberType } from 'helpers/utils/frequency';
 
 import { InitialState, MonitorFormProps } from './MonitorForm.types';
@@ -189,7 +188,6 @@ export const MonitorForm = ({
       }
 
       refetchMonitors();
-      reportEvent(events.dashboardPage.savedSuccessfully, { 'Monitor name': data.name });
     }
 
     handleCloseDrawer();

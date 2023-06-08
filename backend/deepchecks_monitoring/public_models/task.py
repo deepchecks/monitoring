@@ -13,6 +13,7 @@ import typing as t
 from datetime import datetime
 
 import sqlalchemy as sa
+from redis.asyncio.lock import Lock
 from sqlalchemy import Integer, func
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,7 +42,7 @@ class BackgroundWorker(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def run(self, task: 'Task', session: AsyncSession, resources_provider):
+    async def run(self, task: 'Task', session: AsyncSession, resources_provider, lock: Lock):
         """Main logic of the worker."""
         pass
 

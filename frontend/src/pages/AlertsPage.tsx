@@ -21,7 +21,6 @@ import { StyledDeletionDialog } from 'components/lib';
 import NoResults from 'components/NoResults';
 
 import useModels from '../helpers/hooks/useModels';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { getAlertFilters, resetAlertFilters } from 'helpers/base/alertFilters';
 import { getParams, handleSetParams } from 'helpers/utils/getParams';
 
@@ -95,8 +94,6 @@ export const AlertsPage = ({ resolved = false }: AlertsPageProps) => {
         : await resolveAllAlerts({ alertRuleId: alertRule.id });
       setIsNotification(true);
       setResolveAlertRule(null);
-
-      reportEvent(events.alertsPage.resolveAlerts);
     },
     [reactivateAllAlerts, resolveAllAlerts, resolved]
   );

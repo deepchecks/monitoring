@@ -6,8 +6,12 @@ export const emptyModel = {
   name: 'Empty'
 } as ModelManagmentSchema;
 
-export const useModels = () => {
-  const { data: models = [], isLoading, refetch: refetchModels } = useRetrieveAvailableModelsApiV1AvailableModelsGet();
+export const useModels = (showAll?: 'showAll') => {
+  const {
+    data: models = [],
+    isLoading,
+    refetch: refetchModels
+  } = useRetrieveAvailableModelsApiV1AvailableModelsGet({ show_all: !!showAll });
 
   const sortedModels = useMemo(() => [...models].sort((a, b) => a.name.localeCompare(b.name)), [models]);
 

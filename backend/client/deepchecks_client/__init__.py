@@ -76,7 +76,8 @@ class DeepchecksClient:
         alerts_delay_labels_ratio: float = 1.0,
         alerts_delay_seconds: int = 3600 * 72,  # 3 days
         model_notes: t.Optional[t.List[t.Dict[str, str]]] = None,
-        monitoring_frequency: str = 'day'
+        monitoring_frequency: str = 'day',
+        obj_store_path: t.Optional[str] = None,
     ) -> DeepchecksModelClient:
         """Retrieve a model client based on its name if exists, or creates a new model with the provided parameters.
 
@@ -106,6 +107,9 @@ class DeepchecksClient:
         monitoring_frequency : str, default 'day'
             The frequency & aggregation window for the default monitors and alerts.
             One of 'hour', 'day', 'week', 'month'.
+        obj_store_path : str, default None
+            The path to the model data in the object store. The authentication info should be provided inside the
+            system.
 
         Returns
         -------
@@ -149,7 +153,8 @@ class DeepchecksClient:
                 'description': description,
                 'alerts_delay_labels_ratio': alerts_delay_labels_ratio,
                 'alerts_delay_seconds': alerts_delay_seconds,
-                'notes': model_notes
+                'notes': model_notes,
+                'obj_store_path': obj_store_path
             })
 
             model = t.cast(t.Dict[str, t.Any], self.api.fetch_model_by_name(name))
@@ -250,6 +255,7 @@ class DeepchecksClient:
         alerts_delay_labels_ratio: float = 1.0,
         alerts_delay_seconds: int = 3600 * 72,  # 3 days
         monitoring_frequency: str = 'day',
+        obj_store_path: t.Optional[str] = None,
     ) -> TabularModelVersionClient:
         """
         Create a tabular model version and uploads the reference data if provided.
@@ -292,6 +298,9 @@ class DeepchecksClient:
             alert calculation. Together with `alerts_delay_labels_ratio`, trigger occurs on the earliest of the two.
         monitoring_frequency : str, default 'day'
             The frequency & aggregation window for the default monitors and alerts. One of 'hour', 'day', 'week'.
+        obj_store_path : str, default None
+            The path to the model data in the object store. The authentication info should be provided inside the
+            system.
 
         Returns
         -------
@@ -301,7 +310,7 @@ class DeepchecksClient:
         schema = read_schema(schema, fail_on_invalid_column=True)
         features_dict = schema['features']
 
-        if set(features_dict.keys()) != set(reference_dataset.features):
+        if reference_dataset is not None and set(features_dict.keys()) != set(reference_dataset.features):
             raise DeepchecksValueError(
                 f'Features found in reference dataset ({reference_dataset.features}) do not '
                 f'match feature schema ({features_dict.keys()}).'
@@ -350,7 +359,7 @@ class DeepchecksClient:
         version_client = self.get_or_create_model(
             model_name, task_type, description, create_model_defaults,
             alerts_delay_labels_ratio=alerts_delay_labels_ratio, alerts_delay_seconds=alerts_delay_seconds,
-            monitoring_frequency=monitoring_frequency
+            monitoring_frequency=monitoring_frequency, obj_store_path=obj_store_path
         ).version(
             version_name,
             schema=schema,

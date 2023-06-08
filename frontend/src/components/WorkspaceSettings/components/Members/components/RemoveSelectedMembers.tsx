@@ -4,7 +4,6 @@ import { MemberSchema, useRemoveOrganizationMemberApiV1OrganizationMembersMember
 
 import { StyledDeletionDialog } from 'components/lib';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { constants } from '../members.constants';
 import { MembersActionDialogWithRefetch } from '../Members.type';
 
@@ -39,9 +38,6 @@ export const RemoveSelectedMembers = ({
 
   const handleRemoveMember = async (memberId: number) => {
     await removeMember({ memberId: memberId });
-    reportEvent(events.authentication.removeUser, {
-      'Removed user email': members.find(m => m.id === memberId)?.email || ''
-    });
   };
 
   const handleRemoveSelectedMembers = () => {

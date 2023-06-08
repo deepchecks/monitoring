@@ -5,7 +5,7 @@ import { AlertSeverity, useUpdateOrganizationApiV1OrganizationPut } from 'api/ge
 import { Box, Checkbox } from '@mui/material';
 import { Stack } from '@mui/system';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
+import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
 
 import { StyledImage, StyledText } from 'components/lib';
 
@@ -13,7 +13,7 @@ import mailIcon from 'assets/integrations/mail.svg';
 import webhookIcon from 'assets/integrations/purple-webhook.svg';
 import slackIcon from 'assets/integrations/slack.svg';
 
-import { constants } from '../integrations.constants';
+import { constants } from '../../integrations.constants';
 
 export enum NotificationDictionary {
   email = 'email_notification_levels',
@@ -96,21 +96,25 @@ export function AlertNotifications({
   deniedLink: string;
 }) {
   const updateNotifications = useUpdateOrganizationApiV1OrganizationPut();
+  const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
   const [notifications, setNotifications] = useState<Notifications>({
     [NotificationDictionary.email]: [],
     [NotificationDictionary.slack]: [],
     [NotificationDictionary.webhook]: []
   });
 
+  const errMessage = deniedReason ? deniedReason : !isEmailEnabled ? constants.integration.error.emailConfig : '';
+
   const bg = (index: number) => (index % 2 !== 0 ? 'transparent' : 'white');
 
   const isDisabled = (notification: NotificationDictionary) =>
     !data?.[notification] ||
     (!!deniedReason && isNotAdminOrOwner) ||
-    (isNotPaid && notification !== NotificationDictionary.email);
+    (isNotPaid && notification !== NotificationDictionary.email) ||
+    (notification === NotificationDictionary.email && !isEmailEnabled);
 
   const handleNotifications = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    _event: React.ChangeEvent<HTMLInputElement>,
     notification: NotificationsOptions,
     severity: AlertSeverity
   ) => {
@@ -139,8 +143,6 @@ export function AlertNotifications({
 
       return currentNotifications;
     });
-
-    reportEvent(events.notificationPage.changedNotification);
   };
 
   useEffect(() => {
@@ -155,7 +157,6 @@ export function AlertNotifications({
 
   return (
     <Box width="100%" marginBottom="36px">
-      <StyledText text={constants.integration.title} type="h1" marginBottom="36px" />
       <Box
         sx={theme => ({
           display: 'flex',
@@ -211,8 +212,8 @@ export function AlertNotifications({
           </Box>
         ))}
       </Box>
-      <StyledText text={deniedReason} color="red" margin="16px 0 8px" />
-      <a href="/workspace-settings" style={{ textDecoration: 'none', display: deniedLink ? 'block' : 'none' }}>
+      <StyledText text={errMessage} color="red" margin="16px 0 8px" />
+      <a href="/workspace-settings" style={{ textDecoration: 'none' }}>
         <StyledText text={deniedLink} color="red" fontWeight={800} />
       </a>
     </Box>

@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { MemberSchema, ModelManagmentSchema, assignModelsToUserApiV1UsersUserIdModelsPost } from 'api/generated';
 import { useListSearchField } from 'helpers/hooks/useListSearchField';
 import useModels from 'helpers/hooks/useModels';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
-import { StyledDialog, StyledInput } from 'components/lib';
+import { StyledDialog, StyledHighlightedText, StyledInput } from 'components/lib';
 import { DialogListItem } from 'components/WorkspaceSettings/components/DialogListItem';
 
 import { StyledDialogListContainer } from 'components/WorkspaceSettings/WorkspaceSettings.styles';
@@ -16,14 +17,19 @@ interface AssignModelsProps extends MembersActionDialog {
   member: MemberSchema | null;
 }
 
-const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel } = constants.assignModels;
+const { title, dialogListItemSubtitle, searchfieldPlaceholder, submitButtonLabel, willBeAssignedTo } =
+  constants.assignModels;
 
 export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) => {
-  const { models: initialModels, refetchModels } = useModels();
+  const { models: initialModels, refetchModels } = useModels('showAll');
 
-  const [modelsList, setModelsList] = useState(initialModels);
+  const [modelsList, setModelsList] = useState<ModelManagmentSchema[]>([]);
   const [selectedModels, setSelectedModels] = useState<readonly number[]>([]);
   const [fetching, setFetching] = useState(false);
+
+  useEffect(() => {
+    initialModels.length && setModelsList(initialModels);
+  }, [initialModels]);
 
   const { searchFieldValue, handleSearchFieldChange, resetSearchField } = useListSearchField<ModelManagmentSchema>(
     initialModels,
@@ -51,6 +57,11 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
         model_ids: selectedModels as number[],
         replace: true
       });
+      reportEvent(events.workspaceSettings.adminModelAssign, {
+        type: 'models to user',
+        user_id: member?.id,
+        model_ids: selectedModels
+      });
       refetchModels();
     }
 
@@ -67,6 +78,14 @@ export const AssignModels = ({ open, closeDialog, member }: AssignModelsProps) =
       open={open}
       closeDialog={closeDialog}
     >
+      {member?.full_name && (
+        <StyledHighlightedText
+          beforeHighlightedText={willBeAssignedTo}
+          highlightedText={member.full_name}
+          highlightedTextType="bodyBold"
+          margin="-15px 0 0 4px"
+        />
+      )}
       <StyledInput
         placeholder={searchfieldPlaceholder}
         value={searchFieldValue}

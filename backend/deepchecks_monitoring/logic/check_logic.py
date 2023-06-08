@@ -336,6 +336,7 @@ async def run_check_per_window_in_range(
                 period = window_end - window_start
                 query = create_execution_data_query(model_version, monitor_options, period=period, columns=columns,
                                                     with_labels=check.is_label_required,
+                                                    filter_labels_exist=check.is_label_required,
                                                     is_ref=False)
                 curr_test_info["query"] = session.execute(query)
                 query_reference = True
@@ -346,6 +347,7 @@ async def run_check_per_window_in_range(
             # Reference query
             query = create_execution_data_query(model_version, monitor_options, columns=columns,
                                                 with_labels=check.is_label_required,
+                                                filter_labels_exist=check.is_label_required,
                                                 is_ref=True)
             reference = session.execute(query)
         else:

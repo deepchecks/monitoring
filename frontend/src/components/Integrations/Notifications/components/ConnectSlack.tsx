@@ -9,14 +9,12 @@ import {
 
 import { Box, Stack } from '@mui/material';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
-
 import { NotificationDictionary, NotificationsResponse } from './AlertNotifications';
-import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../lib';
+import { StyledButton, StyledImage, StyledLoader, StyledText } from '../../../lib';
 
-import slack from '../../../assets/integrations/slack.svg';
+import slack from '../../../../assets/integrations/slack.svg';
 
-import { constants } from '../integrations.constants';
+import { constants } from '../../integrations.constants';
 
 interface App {
   id: number;
@@ -43,14 +41,13 @@ const ConnectSlack = ({ isSlackConnected, disabled }: { isSlackConnected: boolea
     isSlackConnectLoading || isRemoveInstallationLoading || isAppsLoading || isUpdateNotificationsLoading;
 
   const handleSlack = () => {
-    isSlackConnected
-      ? apps &&
-        apps?.forEach(({ id }) => {
-          removeInstallation({
-            appId: id
-          });
-        })
-      : reportEvent(events.integrationsPage.clickedSlackInstagramIntegration);
+    isSlackConnected &&
+      apps &&
+      apps?.forEach(({ id }) => {
+        removeInstallation({
+          appId: id
+        });
+      });
 
     window.open(
       `${process.env.REACT_APP_BASE_API}/api/v1/slack.authorize`,

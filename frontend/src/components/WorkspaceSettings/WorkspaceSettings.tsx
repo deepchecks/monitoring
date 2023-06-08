@@ -8,8 +8,9 @@ import { RoleEnum, useRetrieveUserInfoApiV1UsersMeGet } from 'api/generated';
 import Billing from './components/Billing/Billing';
 import Members from './components/Members/Members';
 import ModelsTab from './components/ModelsTab/ModelsTab';
-import NotAdminDialog from './components/NotAdminDialog/NotAdminDialog';
+import NotAdminDialog from './components/PermissionError/NotAdminDialog';
 import BillingPaidSkeleton from './components/Billing/BillingPaidView/BillingPaidSkeleton';
+import NotOwnerMsg from './components/PermissionError/NotOwnerMsg';
 import { Text } from 'components/lib/components/Text/Text';
 
 import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
@@ -17,7 +18,7 @@ import { getStorageItem, storageKeys } from 'helpers/utils/localStorage';
 const constants = {
   title: 'Workspace Settings',
   billingTabLabel: 'Billing',
-  membersTabLabel: 'Members',
+  membersTabLabel: 'Users',
   modelsTabLabel: 'Models'
 };
 
@@ -35,13 +36,15 @@ const WorkspaceSettings = () => {
     setValue(!is_cloud ? 1 : 0);
   }, [is_cloud]);
 
-  if (user && !user.roles.includes(RoleEnum.owner)) {
+  if (user && !user.roles.includes(RoleEnum.admin)) {
     return isLoading ? <BillingPaidSkeleton /> : <NotAdminDialog />;
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
+
+  const showBilling = user && user.roles.includes(RoleEnum.owner) && is_cloud;
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -53,16 +56,16 @@ const WorkspaceSettings = () => {
             value={value}
             onChange={handleTabChange}
           >
-            <Tab label={constants.billingTabLabel} />
             <Tab label={constants.membersTabLabel} />
             <Tab label={constants.modelsTabLabel} />
+            <Tab label={constants.billingTabLabel} />
           </Tabs>
         )}
       </Box>
       <Box sx={{ marginY: '32px' }}>
-        {value === 0 && is_cloud && <Billing />}
-        {value === 1 && <Members />}
-        {value === 2 && <ModelsTab />}
+        {value === 0 && <Members />}
+        {value === 1 && <ModelsTab />}
+        {value === 2 && (showBilling ? <Billing /> : <NotOwnerMsg />)}
       </Box>
     </Box>
   );

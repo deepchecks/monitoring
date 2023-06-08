@@ -11,8 +11,6 @@ import {
 import { styled, Tooltip } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
-
 import { DownloadSuiteDropdown } from './DownloadSuiteDropdown';
 
 import { Download, GraphReport } from 'assets/icon/icon';
@@ -69,8 +67,6 @@ export const RunDownloadSuite = ({
     const urlToRedirect = `/suite-view?modelVersionId=${modelVersionId}&dataToSend=${formattedDataToSend}`;
 
     if (modelVersionId) {
-      reportEvent(events.alertsPage.clickedRunTest);
-
       window.open(urlToRedirect);
     } else {
       alert(ALERT_MESSAGE);

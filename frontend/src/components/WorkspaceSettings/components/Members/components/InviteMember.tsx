@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 
 import { useCreateInviteApiV1OrganizationInvitePut } from 'api/generated';
 
-import { Snackbar, Typography } from '@mui/material';
+import { Snackbar } from '@mui/material';
 
-import { StyledDialog } from 'components/lib';
+import { StyledContainer, StyledDialog, StyledText } from 'components/lib';
 import { MembersActionDialogContentLayout } from './MembersActionDialogContentLayout';
 import { MembersActionDialogInput } from './MembersActionDialogInput';
 
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import { validateEmail } from 'helpers/utils/validateEmail';
 import { resError } from 'helpers/types/resError';
+import { featuresList, usePermissionControl } from 'helpers/base/permissionControl';
+import { events, reportEvent } from 'helpers/services/mixPanel';
 
 import { MembersActionDialog } from '../Members.type';
 import { constants } from '../members.constants';
@@ -31,6 +32,10 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   const [buttonEnabled, setButtonEnabled] = useState(false);
 
   const { mutateAsync: inviteUser } = useCreateInviteApiV1OrganizationInvitePut();
+  const isEmailEnabled = usePermissionControl({ feature: featuresList.email_enabled });
+
+  const resErrMessage = err !== 'none' && err;
+  const submitBtnLabel = isEmailEnabled ? constants.inviteMember.submit : constants.inviteMember.copy;
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -47,16 +52,19 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
   };
 
   const handleInviteMember = async () => {
-    const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
-    setErr((res as resError)?.error_message ?? 'none');
+    if (isEmailEnabled) {
+      const res = await inviteUser({ data: { email: convertEmailsIntoAnArray(email) } });
+      setErr((res as resError)?.error_message ?? 'none');
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      handleCloseDialog();
+    }
   };
 
   useEffect(() => {
     if (err === 'none') {
       setSuccess(true);
-      reportEvent(events.authentication.inviteUser, {
-        'Invited users emails': email
-      });
+      reportEvent(events.workspaceSettings.invite, { invitees: email });
       handleCloseDialog();
     }
   }, [err]);
@@ -67,20 +75,38 @@ export const InviteMember = ({ open, closeDialog }: MembersActionDialog) => {
     <>
       <StyledDialog
         open={open}
-        title={constants.inviteMember.title}
+        title={constants.inviteMember.submit}
         closeDialog={handleCloseDialog}
-        submitButtonLabel={constants.inviteMember.submit}
-        submitButtonDisabled={!buttonEnabled}
+        submitButtonLabel={submitBtnLabel}
+        submitButtonDisabled={!buttonEnabled && isEmailEnabled}
         submitButtonAction={handleInviteMember}
       >
         <MembersActionDialogContentLayout>
-          <MembersActionDialogInput
-            placeholder={constants.inviteMember.placeholder}
-            label={constants.inviteMember.inputLabel}
-            value={email}
-            onChange={handleEmailChange}
-          />
-          <Typography sx={{ margin: '8px', color: theme.palette.error.main }}>{err !== 'none' && err}</Typography>
+          {isEmailEnabled ? (
+            <MembersActionDialogInput
+              placeholder={constants.inviteMember.placeholder}
+              label={constants.inviteMember.inputLabel}
+              value={email}
+              onChange={handleEmailChange}
+            />
+          ) : (
+            <>
+              <StyledContainer flexDirection="row" padding="0">
+                <StyledText text={constants.inviteMember.mailConfigErr.first} type="h3" />
+                <a
+                  href={constants.inviteMember.mailConfigErr.docLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '16px' }}
+                >
+                  {constants.inviteMember.mailConfigErr.second}
+                </a>
+              </StyledContainer>
+
+              <StyledText text={constants.inviteMember.mailConfigErr.third} type="h3" />
+            </>
+          )}
+          <StyledText text={resErrMessage} color={theme.palette.error.main} marginBottom="8px" />
         </MembersActionDialogContentLayout>
       </StyledDialog>
       <Snackbar

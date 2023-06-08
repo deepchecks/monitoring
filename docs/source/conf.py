@@ -103,7 +103,7 @@ html_sidebars = {
 
 # Path to logo and favicon
 #
-html_logo = "./_static/images/general/deepchecks_logo.svg"
+html_logo = "./_static/images/general/deepchecks-monitoring-logo.svg"
 html_favicon = "./_static/favicons/favicon.ico"
 
 GIT = {

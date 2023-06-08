@@ -116,15 +116,18 @@ class ResourcesProvider(OpenSourceResourcesProvider):
 
     @property
     def parallel_check_executors_pool(self) -> "ActorPool | None":
-        parallel_check_executor_flag = self.lauchdarkly_client.variation(
-            "parallelCheckExecutorEnabled",
-            context=Context.builder("parallelCheckExecutorEnabled").build(),
-            default=False
-        )
+        if self.settings.is_cloud is False:
+            parallel_check_executor_flag = True
+        else:
+            parallel_check_executor_flag = self.lauchdarkly_client.variation(
+                "parallelCheckExecutorEnabled",
+                context=Context.builder("parallelCheckExecutorEnabled").build(),
+                default=True
+            )
+
         logging.getLogger("server").info({
             "mesage": f"'parallelCheckExecutorEnabled' is set to {parallel_check_executor_flag}"
         })
-
         if parallel_check_executor_flag:
             return super().parallel_check_executors_pool
 

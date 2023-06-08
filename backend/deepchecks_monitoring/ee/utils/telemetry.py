@@ -187,7 +187,7 @@ class DataIngetionInstrumentor:
             model_version: ModelVersion,
             data: t.List[t.Dict[str, t.Any]],
             session: "AsyncSession",
-            user: User,
+            organization_id: int,
             log_time: "PendulumDateTime",
         ):
             settings = data_ingestion_backend.resources_provider.settings
@@ -211,8 +211,7 @@ class DataIngetionInstrumentor:
                     "uri": settings.database_uri
                 })
                 with sentry_sdk.start_span(op="DataIngestionBackend.log_or_update") as span:
-                    span.set_data("user.id", user.id)
-                    span.set_data("user.organization_id", user.organization_id)
+                    span.set_data("organization_id", organization_id)
                     span.set_data("n_of_samples", len(data))
                     try:
                         result = await self.original_log_samples(
@@ -220,7 +219,7 @@ class DataIngetionInstrumentor:
                             model_version,
                             data,
                             session,
-                            user,
+                            organization_id,
                             log_time
                         )
                     except Exception as error:
@@ -236,7 +235,7 @@ class DataIngetionInstrumentor:
                 model: Model,
                 data: t.List[t.Dict[str, t.Any]],
                 session: "AsyncSession",
-                user: User,
+                organization_id: int,
         ):
             settings = data_ingestion_backend.resources_provider.settings
 
@@ -259,8 +258,7 @@ class DataIngetionInstrumentor:
                     "uri": settings.database_uri
                 })
                 with sentry_sdk.start_span(op="DataIngestionBackend.log_or_update") as span:
-                    span.set_data("user.id", user.id)
-                    span.set_data("user.organization_id", user.organization_id)
+                    span.set_data("organization_id", organization_id)
                     span.set_data("n_of_samples", len(data))
                     try:
                         result = await self.original_log_labels(
@@ -268,7 +266,7 @@ class DataIngetionInstrumentor:
                             model,
                             data,
                             session,
-                            user
+                            organization_id
                         )
                     except Exception as error:
                         span.set_status(SpanStatus.FAILED)
@@ -296,7 +294,7 @@ class TaskRunerInstrumentor:
         """Instrument the task runner functions we want to monitor."""
 
         @wraps(self.original_run_task)
-        async def _run_task(runner: "TaskRunner", task, session, queued_time):
+        async def _run_task(runner: "TaskRunner", task, session, queued_time, lock):
             redis_uri = runner.resource_provider.redis_settings.redis_uri
             database_uri = runner.resource_provider.database_settings.database_uri
             kafka_settings = runner.resource_provider.kafka_settings
@@ -329,7 +327,7 @@ class TaskRunerInstrumentor:
 
                     try:
                         start = perf_counter()
-                        result = await self.original_run_task(runner, task, session, queued_time)
+                        result = await self.original_run_task(runner, task, session, queued_time, lock)
                         span.set_data("task.execution-duration", perf_counter() - start)
                         span.set_status(SpanStatus.OK)
                     except Exception as error:

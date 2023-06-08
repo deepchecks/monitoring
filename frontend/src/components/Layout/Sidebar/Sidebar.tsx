@@ -4,7 +4,6 @@ import { AppBar, Box } from '@mui/material';
 import { GlobalStateContext } from 'helpers/context/GlobalProvider';
 import { useScrollBar } from 'helpers/hooks/useScrollBar';
 import { PathInfo } from '../../../helpers/routes';
-import { events, reportEvent } from 'helpers/services/mixPanel';
 import useWindowResize from '../../../helpers/hooks/windowResize';
 
 import { AnalysisSubMenu } from './components/AnalysisSubMenu';
@@ -23,7 +22,6 @@ export const Sidebar = () => {
   const style = useScrollBar(contentRef);
 
   const handleInviteToOrgClick = () => {
-    reportEvent(events.sidebar.clickedInviteWorkspace);
     setUserInviteOpen(true);
   };
 
@@ -103,7 +101,7 @@ export const Sidebar = () => {
             <StyledButton
               onClick={handleInviteToOrgClick}
               variant="outlined"
-              label="Invite members"
+              label="Invite Users"
               margin="0 auto"
               width="100%"
             />

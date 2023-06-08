@@ -17,8 +17,9 @@ from time import perf_counter
 
 import anyio
 import pendulum as pdl
-import redis
+import redis.exceptions as redis_exceptions
 import uvloop
+from redis.asyncio import Redis, RedisCluster
 from sqlalchemy import case, func, update
 from sqlalchemy.cimmutabledict import immutabledict
 
@@ -49,6 +50,7 @@ class TasksQueuer:
     def __init__(
             self,
             resource_provider: ResourcesProvider,
+            redis_client,
             workers: t.List[BackgroundWorker],
             logger: logging.Logger,
             run_interval,
@@ -57,6 +59,7 @@ class TasksQueuer:
         self.resource_provider = resource_provider
         self.logger = logger
         self.run_interval = run_interval
+        self.redis = redis_client
 
         # Build the query once to be used later
         intervals_by_type = case([
@@ -100,9 +103,9 @@ class TasksQueuer:
         if task_ids:
             try:
                 # Push to sorted set. if task id is already in set then do nothing.
-                pushed_count = self.resource_provider.redis_client.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
+                pushed_count = await self.redis.zadd(GLOBAL_TASK_QUEUE, task_ids, nx=True)
                 return pushed_count
-            except redis.ConnectionError:
+            except redis_exceptions.ConnectionError:
                 # If redis failed, does not commit the update to the db
                 await session.rollback()
         return 0
@@ -134,6 +137,16 @@ else:
         pass
 
 
+async def init_async_redis(redis_uri):
+    """Initialize redis connection."""
+    try:
+        redis = RedisCluster.from_url(redis_uri)
+        await redis.ping()
+        return redis
+    except redis_exceptions.RedisClusterException:
+        return Redis.from_url(redis_uri)
+
+
 def execute_worker():
     """Execute worker."""
 
@@ -162,12 +175,17 @@ def execute_worker():
                 )
                 ee.utils.telemetry.collect_telemetry(tasks_queuer.TasksQueuer)
 
-        workers = [ModelVersionTopicDeletionWorker(), ModelVersionOffsetUpdate(), ModelVersionCacheInvalidation(),
-                   ModelDataIngestionAlerter(), DeleteDbTableTask(), AlertsTask()]
+        workers = [ModelVersionTopicDeletionWorker, ModelVersionOffsetUpdate, ModelVersionCacheInvalidation,
+                   ModelDataIngestionAlerter, DeleteDbTableTask, AlertsTask]
+
+        # Add ee workers
+        if with_ee:
+            workers.append(ee.bgtasks.ObjectStorageIngestor)
 
         async with ResourcesProvider(settings) as rp:
             async with anyio.create_task_group() as g:
-                worker = tasks_queuer.TasksQueuer(rp, workers, logger, settings.queuer_run_interval)
+                async_redis = await init_async_redis(rp.redis_settings.redis_uri)
+                worker = tasks_queuer.TasksQueuer(rp, async_redis, workers, logger, settings.queuer_run_interval)
                 g.start_soon(worker.run)
 
     uvloop.install()

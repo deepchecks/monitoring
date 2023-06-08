@@ -7,12 +7,18 @@ DEEPCHECKS_SECRET=$(head -c 28 /dev/urandom | sha224sum -b | head -c 56)
 export DEEPCHECKS_SECRET
 
 OS=$(uname | awk '{print tolower($0)}')
+ARCH=$(uname -m)
 YUM_CMD=$(which yum || echo '')
 APT_GET_CMD=$(which apt-get || echo '')
 
 # Check if the OS is Mac of Linux
 if ! [[ "$OS" == *darwin* || "$OS" == *linux* ]]; then
   echo "Unfortunately, Deepchecks can only be deployed on MacOS or Linux systems at the moment"
+  exit 0
+fi
+# Check if ARMv7, then not supported
+if [[ "$ARCH" == "armv7l" ]]; then
+  echo "Unfortunately, Deepchecks can only be deployed on x86_64 or ARMv8 systems at the moment"
   exit 0
 fi
 
@@ -116,40 +122,40 @@ rm -f Caddyfile
 if [[ $ENABLE_HTTP == 'true' ]]; then
   export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
   envsubst > Caddyfile <<EOF
-  {
-    auto_https disable_redirects
-  }
-  $DOMAIN:8443 {
-      tls /certs/localhost.crt /certs/localhost.key
+{
+  auto_https disable_redirects
+}
+$DOMAIN:8443 {
+    tls /certs/localhost.crt /certs/localhost.key
 
-      reverse_proxy http://casdoor:4545 {
-          header_up Host {upstream_hostport}
-          header_up X-Real-IP {remote_host}
-      }
-  }
-  $DOMAIN, :443 {
-      tls /certs/localhost.crt /certs/localhost.key
+    reverse_proxy http://casdoor:4545 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+    }
+}
+$DOMAIN, :443 {
+    tls /certs/localhost.crt /certs/localhost.key
 
-      reverse_proxy http://app:8000
-  }
-  $DOMAIN:80 {
-      reverse_proxy http://app:8000
-  }
+    reverse_proxy http://app:8000
+}
+$DOMAIN:80 {
+    reverse_proxy http://app:8000
+}
 EOF
 else
   envsubst > Caddyfile <<EOF
-  {
-    $TLS_BLOCK
-  }
-  $DOMAIN:8443 {
-      reverse_proxy http://casdoor:4545 {
-          header_up Host {upstream_hostport}
-          header_up X-Real-IP {remote_host}
-      }
-  }
-  $DOMAIN, :80, :443 {
-  reverse_proxy http://app:8000
-  }
+{
+  $TLS_BLOCK
+}
+$DOMAIN:8443 {
+    reverse_proxy http://casdoor:4545 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+    }
+}
+$DOMAIN, :80, :443 {
+    reverse_proxy http://app:8000
+}
 EOF
 
 fi;
@@ -200,7 +206,7 @@ rm -f docker-compose.yml
 cp monitoring-main/deploy/docker-compose.yml docker-compose.yml.tmpl
 envsubst <  monitoring-main/deploy/oss-conf.env > oss-conf.env
 cp -a monitoring-main/bin/. bin/
-rm -rf monitoring-main
+mv monitoring-main monitoring
 
 envsubst < docker-compose.yml.tmpl > docker-compose.yml
 envsubst < bin/casbin_conf/app.conf.tmpl > bin/casbin_conf/app.conf

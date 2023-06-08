@@ -41,7 +41,11 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
   }, []);
 
   useEffect(() => {
-    reportEvent(events.onBoarding.movedStep, { step: constants.steps[activeStep].title, dataType: `${dataType}` });
+    reportEvent(events.onBoarding.onboarding, {
+      step_name: constants.steps[activeStep].title,
+      step_number: activeStep,
+      type: `${dataType}`
+    });
   }, [activeStep]);
 
   useEffect((): void | (() => void) => {
@@ -71,7 +75,9 @@ const OnBoarding = ({ dataType, initialStep }: OnBoardingProps) => {
               <OnBoardingDocsLink href={step.docLink.url} target="_blank" rel="noreferrer">
                 {step.docLink.label}
               </OnBoardingDocsLink>
-              {isLastStep && <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} />}
+              {isLastStep && (
+                <StyledButton label={constants.skipBtnLabel} onClick={redirectToDashboard} variant="outlined" />
+              )}
             </StepContent>
           </Step>
         ))}
