@@ -32,7 +32,7 @@ from sqlalchemy.orm import sessionmaker
 
 from deepchecks_monitoring.app import create_application
 from deepchecks_monitoring.ee.config import Settings
-from deepchecks_monitoring.ee.features_control import CloudFeaturesControl
+from deepchecks_monitoring.ee.features_control_cloud import CloudFeaturesControl
 from deepchecks_monitoring.ee.resources import ResourcesProvider
 from deepchecks_monitoring.monitoring_utils import ExtendedAsyncSession
 from deepchecks_monitoring.public_models.base import Base as PublicModelsBase

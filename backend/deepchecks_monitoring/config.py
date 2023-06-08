@@ -149,6 +149,7 @@ class Settings(
 
     assets_folder: pathlib.Path = PROJECT_DIR / 'assets'
     is_cloud: bool = False
+    is_on_prem: bool = False
     deployment_url: AnyHttpUrl = 'http://localhost:8000'
     auth_jwt_secret: t.Optional[str] = secrets.token_hex(20)
     oauth_url: AnyHttpUrl
