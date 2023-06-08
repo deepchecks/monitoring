@@ -13,6 +13,7 @@ export interface DialogProps extends MUIDialogProps {
   submitButtonLabel: string;
   submitButtonAction: () => void;
   submitButtonDisabled?: boolean;
+  submitButtonWidth?: string;
   alertTypeButtons?: boolean;
   cancelButtonAction?: () => void;
   cancelButtonLabel?: string;
@@ -29,6 +30,7 @@ export const Dialog = (props: DialogProps) => {
     submitButtonLabel,
     cancelButtonAction,
     cancelButtonLabel = 'Cancel',
+    submitButtonWidth = 'auto',
     submitButtonDisabled,
     alertTypeButtons,
     isLoading,
@@ -53,7 +55,8 @@ export const Dialog = (props: DialogProps) => {
             disabled={submitButtonDisabled}
             color={buttonColor}
             loading={isLoading}
-            sx={{ minWidth: '100px' }}
+            width={submitButtonWidth}
+            sx={{ pointerEvents: isLoading ? 'none' : 'auto' }}
           />
           <Button
             label={cancelButtonLabel}

@@ -50,6 +50,7 @@ const S3Dialog = ({ open, handleClose, refetch }: S3DialogProps) => {
       closeDialog={handleClose}
       submitButtonLabel="Integrate"
       submitButtonAction={handleSubmitS3Form}
+      submitButtonWidth="110px"
       isLoading={isLoading}
     >
       <StyledContainer flexDirection="column" gap="16px">
